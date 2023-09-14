@@ -19,7 +19,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,8 +44,6 @@ public class TestRegistrySettingsProperties {
     }
 
     @Test
-    // TODO enable once patterns are back
-    @Disabled
     void testExclude() {
         MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
         assertThat("'ignore.me' metric is enabled",
@@ -62,8 +59,6 @@ public class TestRegistrySettingsProperties {
                    is(true));
     }
 
-    // TODO enable once patterns are back
-    @Disabled
     @Test
     void testExcludeYaml() {
         MetricsConfig metricsConfig = MetricsConfig.create(fromYaml);

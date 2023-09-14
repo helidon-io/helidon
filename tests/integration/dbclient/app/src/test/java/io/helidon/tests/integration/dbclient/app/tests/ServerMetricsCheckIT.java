@@ -22,7 +22,6 @@ import io.helidon.tests.integration.harness.TestClient;
 import io.helidon.tests.integration.harness.TestServiceClient;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,8 +48,6 @@ class ServerMetricsCheckIT {
      * Read and check Database Client metrics from Helidon Web Server.
      *
      */
-    // TODO metrics
-    @Disabled
     @Test
     void testHttpMetrics() {
         LOGGER.log(System.Logger.Level.DEBUG, () -> String.format("Running %s.%s on client", getClass().getSimpleName(), "testHttpMetrics"));

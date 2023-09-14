@@ -25,26 +25,26 @@ import io.helidon.common.GenericType;
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.StringSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 import io.helidon.http.sse.SseEvent;
-import io.helidon.webserver.sse.SseSink;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.sse.SseSink;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Headers.ACCEPT_EVENT_STREAM;
+import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -83,7 +83,7 @@ class SseServerMediaTest {
 
     private void testSse(String path, String result) {
         try (Http1ClientResponse response = client.get(path).header(ACCEPT_EVENT_STREAM).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(result));
         }
     }

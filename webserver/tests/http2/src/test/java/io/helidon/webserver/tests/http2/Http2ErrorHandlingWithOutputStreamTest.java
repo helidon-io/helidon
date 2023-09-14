@@ -27,26 +27,28 @@ import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
-import io.helidon.webserver.http2.Http2Route;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.ErrorHandler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http2.Http2Route;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Method.GET;
+import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -57,8 +59,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 class Http2ErrorHandlingWithOutputStreamTest {
 
-    private static final Http.HeaderName MAIN_HEADER_NAME = Http.HeaderNames.create("main-handler");
-    private static final Http.HeaderName ERROR_HEADER_NAME = Http.HeaderNames.create("error-handler");
+    private static final HeaderName MAIN_HEADER_NAME = HeaderNames.create("main-handler");
+    private static final HeaderName ERROR_HEADER_NAME = HeaderNames.create("error-handler");
     private static HttpClient httpClient;
     private final int plainPort;
     private final int tlsPort;
@@ -95,20 +97,20 @@ class Http2ErrorHandlingWithOutputStreamTest {
         // explicitly on HTTP/2 only, to make sure we do upgrade
         router.error(CustomException.class, new CustomRoutingHandler())
                 .route(Http2Route.route(GET, "get-outputStream", (req, res) -> {
-                    res.status(Http.Status.OK_200);
+                    res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
                     res.outputStream();
                     throw new CustomException();
                 }))
                 .route(Http2Route.route(GET, "get-outputStream-writeOnceThenError", (req, res) -> {
-                    res.status(Http.Status.OK_200);
+                    res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
                     os.write("writeOnceOnly".getBytes(StandardCharsets.UTF_8));
                     throw new CustomException();
                 }))
                 .route(Http2Route.route(GET, "get-outputStream-writeTwiceThenError", (req, res) -> {
-                    res.status(Http.Status.OK_200);
+                    res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
                     os.write("writeOnce".getBytes(StandardCharsets.UTF_8));
@@ -116,7 +118,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     throw new CustomException();
                 }))
                 .route(Http2Route.route(GET, "get-outputStream-writeFlushThenError", (req, res) -> {
-                    res.status(Http.Status.OK_200);
+                    res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
                     os.write("writeOnce".getBytes(StandardCharsets.UTF_8));
@@ -215,7 +217,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
     private static class CustomRoutingHandler implements ErrorHandler<CustomException> {
         @Override
         public void handle(ServerRequest req, ServerResponse res, CustomException throwable) {
-            res.status(Http.Status.I_AM_A_TEAPOT_418);
+            res.status(Status.I_AM_A_TEAPOT_418);
             res.header(ERROR_HEADER_NAME, "err");
             res.send("TeaPotIAm");
         }

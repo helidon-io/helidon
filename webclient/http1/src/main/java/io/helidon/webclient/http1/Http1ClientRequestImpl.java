@@ -22,7 +22,10 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
@@ -36,7 +39,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     private final Http1ClientImpl http1Client;
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
-                           Http.Method method,
+                           Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
         super(http1Client.clientConfig(),
@@ -49,7 +52,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     //Copy constructor for redirection purposes
     Http1ClientRequestImpl(Http1ClientRequestImpl request,
-                           Http.Method method,
+                           Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
         this(request.http1Client,
@@ -125,10 +128,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     @Override
     public UpgradeResponse upgrade(String protocol) {
-        if (!headers().contains(Http.HeaderNames.UPGRADE)) {
-            headers().set(Http.HeaderNames.UPGRADE, protocol);
+        if (!headers().contains(HeaderNames.UPGRADE)) {
+            headers().set(HeaderNames.UPGRADE, protocol);
         }
-        Http.Header requestedUpgrade = headers().get(Http.HeaderNames.UPGRADE);
+        Header requestedUpgrade = headers().get(HeaderNames.UPGRADE);
         Http1ClientResponseImpl response;
 
         if (followRedirects()) {
@@ -137,7 +140,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             response = invokeRequestWithEntity(BufferData.EMPTY_BYTES);
         }
 
-        if (response.status() == Http.Status.SWITCHING_PROTOCOLS_101) {
+        if (response.status() == Status.SWITCHING_PROTOCOLS_101) {
             // yep, this is the response we want
             if (response.headers().contains(requestedUpgrade)) {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {

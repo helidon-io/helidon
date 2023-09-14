@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.auths.k8s;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.RestApi;
 
 class K8sAuthImpl implements K8sAuth {
@@ -53,6 +53,6 @@ class K8sAuthImpl implements K8sAuth {
     public Login.Response login(Login.Request request) {
         String apiPath = "/auth/" + path + "/login";
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, Login.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, Login.Response.builder());
     }
 }

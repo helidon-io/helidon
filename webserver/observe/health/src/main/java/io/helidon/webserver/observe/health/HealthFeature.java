@@ -41,8 +41,8 @@ import static io.helidon.health.HealthCheckType.STARTUP;
 
 /**
  * Observe health endpoints.
- * This service provides endpoints for {@link io.helidon.http.Http.Method#GET} and
- * {@link io.helidon.http.Http.Method#HEAD} methods.
+ * This service provides endpoints for {@link io.helidon.http.Method#GET} and
+ * {@link io.helidon.http.Method#HEAD} methods.
  */
 public class HealthFeature extends HelidonFeatureSupport {
     private static final System.Logger LOGGER = System.getLogger(HealthFeature.class.getName());
@@ -173,10 +173,10 @@ public class HealthFeature extends HelidonFeatureSupport {
 
         /**
          * Whether details should be printed.
-         * By default, health only returns a {@link io.helidon.http.Http.Status#NO_CONTENT_204} for success,
-         * {@link io.helidon.http.Http.Status#SERVICE_UNAVAILABLE_503} for health down,
-         * and {@link io.helidon.http.Http.Status#INTERNAL_SERVER_ERROR_500} in case of error with no entity.
-         * When details are enabled, health returns {@link io.helidon.http.Http.Status#OK_200} for success, same codes
+         * By default, health only returns a {@link io.helidon.http.Status#NO_CONTENT_204} for success,
+         * {@link io.helidon.http.Status#SERVICE_UNAVAILABLE_503} for health down,
+         * and {@link io.helidon.http.Status#INTERNAL_SERVER_ERROR_500} in case of error with no entity.
+         * When details are enabled, health returns {@link io.helidon.http.Status#OK_200} for success, same codes
          * otherwise
          * and a JSON entity with detailed information about each health check executed.
          *

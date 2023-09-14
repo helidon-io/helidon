@@ -22,7 +22,8 @@ import java.util.List;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.FileSystemWatcher;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.security.Security;
 import io.helidon.tracing.Tracer;
@@ -89,8 +90,8 @@ public final class Main {
                         .addFeature(TracingFeature.create(tracer))
                         // redirect POST / to GET /
                         .post("/", (req, res) -> {
-                            res.header(Http.HeaderNames.LOCATION, "/");
-                            res.status(Http.Status.SEE_OTHER_303);
+                            res.header(HeaderNames.LOCATION, "/");
+                            res.status(Status.SEE_OTHER_303);
                             res.send();
                         })
                         // register static content support (on "/")

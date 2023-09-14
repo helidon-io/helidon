@@ -16,10 +16,10 @@
 
 package io.helidon.webserver.cors;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
 
@@ -58,8 +58,8 @@ class TestTwoCorsConfigs extends AbstractCorsTest {
     void test1PreFlightAllowedOriginOtherGreeting() {
         HttpClientResponse response = runTest1PreFlightAllowedOrigin();
 
-        Http.Status status = response.status();
-        assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));
+        Status status = response.status();
+        assertThat(status.code(), is(Status.FORBIDDEN_403.code()));
         assertThat(status.reasonPhrase(), is("CORS origin is denied"));
     }
 

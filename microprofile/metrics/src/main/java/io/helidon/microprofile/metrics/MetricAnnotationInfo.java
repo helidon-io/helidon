@@ -31,6 +31,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
@@ -154,13 +155,11 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
             // as the MP Metrics spec requires.
 
             if (!Timed.class.isAssignableFrom(annotationType)) {
-                if (metadata.getUnit() != null
-                        && !metadata.getUnit().equals(existingMetadata.getUnit())) {
+                if (!isConsistentWith(metadata.getUnit(), existingMetadata.getUnit())) {
                     mismatches.add("unit");
                 }
             }
-            if (metadata.getDescription() != null
-                    && !metadata.getDescription().equals(existingMetadata.getDescription())) {
+            if (!isConsistentWith(metadata.getDescription(), existingMetadata.getDescription())) {
                 mismatches.add("description");
             }
             if (!mismatches.isEmpty()) {
@@ -174,6 +173,13 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                         existingMetadata,
                         mismatches));
             }
+        }
+
+        private static boolean isConsistentWith(String s1, String s2) {
+            String normalizedS1 = s1 == null || s1.isBlank() || s1.equals(MetricUnits.NONE) ? "" : s1;
+            String normalizedS2 = s2 == null || s2.isBlank() || s2.endsWith(MetricUnits.NONE) ? "" : s2;
+            return normalizedS2.equals(normalizedS1);
+
         }
     }
 

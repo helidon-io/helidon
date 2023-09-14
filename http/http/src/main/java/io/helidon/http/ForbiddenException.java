@@ -17,7 +17,7 @@
 package io.helidon.http;
 
 /**
- * A runtime exception indicating a {@link Http.Status#FORBIDDEN_403 forbidden}.
+ * A runtime exception indicating a {@link Status#FORBIDDEN_403 forbidden}.
  */
 public class ForbiddenException extends HttpException {
 
@@ -27,7 +27,7 @@ public class ForbiddenException extends HttpException {
      * @param message the message
      */
     public ForbiddenException(String message) {
-        super(message, Http.Status.FORBIDDEN_403, null, true);
+        super(message, Status.FORBIDDEN_403, null, true);
     }
 
     /**
@@ -37,6 +37,6 @@ public class ForbiddenException extends HttpException {
      * @param cause the cause of this exception
      */
     public ForbiddenException(String message, Throwable cause) {
-        super(message, Http.Status.FORBIDDEN_403, cause, true);
+        super(message, Status.FORBIDDEN_403, cause, true);
     }
 }

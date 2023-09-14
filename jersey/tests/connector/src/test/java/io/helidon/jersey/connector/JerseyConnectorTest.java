@@ -18,7 +18,7 @@ package io.helidon.jersey.connector;
 
 import java.util.Arrays;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
@@ -70,18 +70,18 @@ class JerseyConnectorTest {
     }
 
     static void basicGet(ServerRequest request, ServerResponse response) {
-        response.status(Http.Status.OK_200).send("ok");
+        response.status(Status.OK_200).send("ok");
     }
 
     static void basicPost(ServerRequest request, ServerResponse response) {
         String entity = request.content().as(String.class);
-        response.status(Http.Status.OK_200).send(entity + entity);
+        response.status(Status.OK_200).send(entity + entity);
     }
 
     static void basicGetQuery(ServerRequest request, ServerResponse response) {
         String first = request.query().get("first");
         String second = request.query().get("second");
-        response.status(Http.Status.OK_200).send(first + second);
+        response.status(Status.OK_200).send(first + second);
     }
 
     static void basicHeaders(ServerRequest request, ServerResponse response) {
@@ -89,7 +89,7 @@ class JerseyConnectorTest {
                 .stream()
                 .filter(h -> h.name().startsWith("X-TEST"))
                 .forEach(response::header);
-        response.status(Http.Status.OK_200).send("ok");
+        response.status(Status.OK_200).send("ok");
     }
 
     @Test

@@ -25,18 +25,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Context;
-import io.helidon.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.jsonp.JsonpSupport;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.providers.opentracing.OpenTracing;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.tracing.WebClientTracing;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.tracing.Tracer;
-import io.helidon.tracing.providers.opentracing.OpenTracing;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
@@ -100,7 +100,7 @@ class TracingPropagationTest {
                 .queryParam("some", "value")
                 .fragment("fragment")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.entity().as(JsonObject.class), notNullValue());
         }
 

@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.Meter;
@@ -73,14 +74,16 @@ class OciMetricsData {
     }
 
     Stream<MetricDataDetails> metricDataDetails(Meter metric) {
-        if (metric instanceof Counter) {
-            return forCounter(metric.id(), ((Counter) metric));
-        } else if (metric instanceof Gauge) {
-            return forGauge(metric.id(), ((Gauge) metric));
-        } else if (metric instanceof Timer) {
-            return forTimer(metric.id(), ((Timer) metric));
-        } else if (metric instanceof DistributionSummary) {
-            return forHistogram(metric.id(), ((DistributionSummary) metric));
+        if (metric instanceof Counter counter) {
+            return forCounter(metric.id(), counter);
+        } else if (metric instanceof FunctionalCounter fCounter) {
+            return forFunctionalCounter(metric.id(), fCounter);
+        } else if (metric instanceof Gauge gauge) {
+            return forGauge(metric.id(), gauge);
+        } else if (metric instanceof Timer timer) {
+            return forTimer(metric.id(), timer);
+        } else if (metric instanceof DistributionSummary summary) {
+            return forHistogram(metric.id(), summary);
         } else {
             return Stream.empty();
         }
@@ -88,6 +91,10 @@ class OciMetricsData {
 
     private Stream<MetricDataDetails> forCounter(Meter.Id metricId, Counter counter) {
         return Stream.of(metricDataDetails(counter, metricId, null, counter.count()));
+    }
+
+    private Stream<MetricDataDetails> forFunctionalCounter(Meter.Id metricId, FunctionalCounter fCounter) {
+        return Stream.of(metricDataDetails(fCounter, metricId, null, fCounter.count()));
     }
 
     private Stream<MetricDataDetails> forGauge(Meter.Id metricId, Gauge gauge) {

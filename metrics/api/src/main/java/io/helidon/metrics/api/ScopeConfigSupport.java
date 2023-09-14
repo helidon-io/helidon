@@ -15,6 +15,9 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Objects;
+import java.util.regex.Pattern;
+
 import io.helidon.builder.api.Prototype;
 
 class ScopeConfigSupport {
@@ -31,7 +34,42 @@ class ScopeConfigSupport {
      */
     @Prototype.PrototypeMethod
     static boolean isMeterEnabled(ScopeConfig scopeConfig, String name) {
-        // TODO actually do the filtering using the include and exclude patterns
-        return scopeConfig.enabled();
+        /*
+         The following must be true for the meter to be enabled:
+
+         1. The scope itself must be enabled (that's the default).
+         2. If there is an exclude pattern, the name must not match it.
+         3. If there is an include pattern, the name must match it.
+         */
+        return scopeConfig.enabled()
+                && scopeConfig.exclude().map(excludePattern -> !excludePattern.matcher(name).matches()).orElse(true)
+                && scopeConfig.include().map(includePattern -> includePattern.matcher(name).matches()).orElse(true);
+
+    }
+
+    /**
+     * Sets the include expression using a {@link java.lang.String} compiled automatically
+     * into a {@link java.util.regex.Pattern}.
+     *
+     * @param builderBase builder
+     * @param includeString include string
+     */
+    @Prototype.BuilderMethod
+    static void include(ScopeConfig.BuilderBase<?, ?> builderBase, String includeString) {
+        Objects.requireNonNull(includeString, "include expression");
+        builderBase.include(Pattern.compile(includeString));
+    }
+
+    /**
+     * Sets the exclude expression using a {@link java.lang.String} compiled automatically
+     * into a {@link java.util.regex.Pattern}.
+     *
+     * @param builderBase builder
+     * @param excludeString exclude string
+     */
+    @Prototype.BuilderMethod
+    static void exclude(ScopeConfig.BuilderBase<?, ?> builderBase, String excludeString) {
+        Objects.requireNonNull(excludeString, "exclude expression");
+        builderBase.exclude(Pattern.compile(excludeString));
     }
 }

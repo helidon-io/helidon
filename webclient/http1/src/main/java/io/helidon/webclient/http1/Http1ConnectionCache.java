@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
@@ -72,17 +72,17 @@ class Http1ConnectionCache {
     }
 
     private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {
-        if (headers.contains(Http.Headers.CONNECTION_CLOSE)) {
+        if (headers.contains(HeaderValues.CONNECTION_CLOSE)) {
             return false;
         }
         if (defaultKeepAlive) {
-            headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
+            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
             return true;
         }
-        if (headers.contains(Http.Headers.CONNECTION_KEEP_ALIVE)) {
+        if (headers.contains(HeaderValues.CONNECTION_KEEP_ALIVE)) {
             return true;
         }
-        headers.set(Http.Headers.CONNECTION_CLOSE);
+        headers.set(HeaderValues.CONNECTION_CLOSE);
         return false;
     }
 

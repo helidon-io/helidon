@@ -213,6 +213,11 @@ cors.paths.1.allow-origins=http://foo.com
 
 == Additional Information
 
+include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-intro]
+You can configure how the Helidon server handles these headers as described in the documentation for xref:{rootdir}/mp/server.adoc#_using_requested_uri_discovery[requested URI discovery].
+
+include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-wrapup]
+
 include::{rootdir}/includes/cors.adoc[tag=understanding-cors-support-in-services]
 
 include::{rootdir}/includes/cors.adoc[tag=builtin-getting-started]

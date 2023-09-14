@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.lra.resources.DontEnd;
@@ -102,7 +102,7 @@ class ParticipantTest {
         return rules -> rules
                 .post("/start", (req, res) -> {
                     String lraId = URI.create("http://localhost:" + port + "/lra-coordinator/xxx-xxx-001").toASCIIString();
-                    res.status(Http.Status.CREATED_201)
+                    res.status(Status.CREATED_201)
                             .header(LRA_HTTP_CONTEXT_HEADER, lraId)
                             .send();
                 })

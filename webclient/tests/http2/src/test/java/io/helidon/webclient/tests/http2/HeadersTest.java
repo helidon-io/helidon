@@ -26,8 +26,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
@@ -124,14 +126,14 @@ class HeadersTest {
         try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
-                .method(Http.Method.GET)
+                .method(Method.GET)
                 .path("/trailer")
                 .priorKnowledge(true)
                 .request()) {
             Headers h = res.headers();
-            assertThat(h.first(Http.HeaderNames.create("test")).orElse(null), is("before"));
+            assertThat(h.first(HeaderNames.create("test")).orElse(null), is("before"));
             assertThat(res.as(String.class), is(DATA));
-            assertThat(h.first(Http.HeaderNames.create("Trailer-header")).orElse(null), is("trailer-test"));
+            assertThat(h.first(HeaderNames.create("Trailer-header")).orElse(null), is("trailer-test"));
         }
     }
 
@@ -140,7 +142,7 @@ class HeadersTest {
         try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
-                .method(Http.Method.GET)
+                .method(Method.GET)
                 .path("/cont-in")
                 .priorKnowledge(true)
                 .request()) {
@@ -148,7 +150,7 @@ class HeadersTest {
             Headers h = res.headers();
             for (int i = 0; i < 500; i++) {
                 String name = "test-header-" + i;
-                assertThat("Headers " + name, h.first(Http.HeaderNames.create(name)).orElse(null), is(DATA));
+                assertThat("Headers " + name, h.first(HeaderNames.create(name)).orElse(null), is(DATA));
             }
 
             assertThat(res.as(String.class), is(DATA));
@@ -161,12 +163,12 @@ class HeadersTest {
         try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
-                .method(Http.Method.GET)
+                .method(Method.GET)
                 .path("/cont-out")
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(Http.Headers.createCached("test-header-" + i, DATA + i));
+                        hv.add(HeaderValues.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })
@@ -182,12 +184,12 @@ class HeadersTest {
         try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
-                .method(Http.Method.POST)
+                .method(Method.POST)
                 .path("/cont-out")
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(Http.Headers.createCached("test-header-" + i, DATA + i));
+                        hv.add(HeaderValues.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })

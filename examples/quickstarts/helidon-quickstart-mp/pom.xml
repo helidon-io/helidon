@@ -37,6 +37,16 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-metrics</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-system-meters</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>

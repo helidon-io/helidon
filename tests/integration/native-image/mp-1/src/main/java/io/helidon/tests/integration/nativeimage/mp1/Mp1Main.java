@@ -55,9 +55,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
-import static io.helidon.http.Http.Status.FORBIDDEN_403;
-import static io.helidon.http.Http.Status.OK_200;
-import static io.helidon.http.Http.Status.UNAUTHORIZED_401;
+import static io.helidon.http.Status.FORBIDDEN_403;
+import static io.helidon.http.Status.OK_200;
+import static io.helidon.http.Status.UNAUTHORIZED_401;
 
 /**
  * Main class of this integration test.
@@ -230,8 +230,7 @@ public final class Mp1Main {
         validateBasicAuthProtectedResource(collector, target);
 
         // Metrics
-        // TODO metrics
-        //validateMetrics(collector, target);
+        validateMetrics(collector, target);
 
         // Access Log
         validateAccessLog(collector);
@@ -547,7 +546,7 @@ public final class Mp1Main {
                 .request(MediaType.APPLICATION_JSON)
                 .get(JsonObject.class);
 
-        int count = vendor.getInt("requests.count;mp_scope=vendor");
+        int count = vendor.getInt("requests.count");
         if (count == 0) {
             collector.fatal("Vendor metric \"requests.count\" must not be zero");
         }

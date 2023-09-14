@@ -16,7 +16,7 @@
 
 package io.helidon.examples.webserver.tutorial;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -52,7 +52,7 @@ public class MainTest {
     @Test
     public void testShutDown() throws InterruptedException {
         try (Http1ClientResponse response = client.post("/mgmt/shutdown").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
         // there may be some delay between the request being completed, and the server shutting down
         // let's give it a second to shut down, then fail

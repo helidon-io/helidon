@@ -16,7 +16,9 @@
 
 package io.helidon.webclient.tests;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
@@ -24,7 +26,7 @@ import io.helidon.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Method.POST;
+import static io.helidon.http.Method.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -50,7 +52,7 @@ class SharedCacheTest {
                     .build();
 
             try (var res = webClient.post().submit("WHATEVER")) {
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
             webServer.stop();
             webServer = WebServer.builder()
@@ -60,7 +62,7 @@ class SharedCacheTest {
                     .start();
 
             try (var res = webClient.post().submit("WHATEVER")) {
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
         } finally {
             if (webServer != null) {
@@ -71,7 +73,7 @@ class SharedCacheTest {
 
     @Test
     void cacheHttp1NoRestart() {
-        Http.HeaderName clientPortHeader = Http.HeaderNames.create("client-port");
+        HeaderName clientPortHeader = HeaderNames.create("client-port");
         WebServer webServer = null;
         try {
             HttpRouting routing = HttpRouting.builder()
@@ -96,13 +98,13 @@ class SharedCacheTest {
             Integer firstReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
 
             Integer secondReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
 
             assertThat("In case of cached connection client port must be the same.",

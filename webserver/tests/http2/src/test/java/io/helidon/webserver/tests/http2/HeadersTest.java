@@ -27,6 +27,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ConnectionSelector;
 import io.helidon.webserver.http2.Http2Route;
@@ -34,17 +39,12 @@ import io.helidon.webserver.http2.Http2Upgrader;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.http1.Http1Config;
-import io.helidon.webserver.http1.Http1ConnectionSelector;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Method.GET;
+import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
@@ -90,10 +90,10 @@ public class ObjectStorageResource {
         try (InputStream fileStream = getObjectResponse.getInputStream()) {
             byte[] objectContent = fileStream.readAllBytes();
             Response.ResponseBuilder ok = Response.ok(objectContent)
-                    .header(Http.HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
+                    .header(HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
                     .header("opc-request-id", getObjectResponse.getOpcRequestId())
                     .header("request-id", getObjectResponse.getOpcClientRequestId())
-                    .header(Http.HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength());
+                    .header(HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength());
 
             return ok.build();
         } catch (IOException e) {

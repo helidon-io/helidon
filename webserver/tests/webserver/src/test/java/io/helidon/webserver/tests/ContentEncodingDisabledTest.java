@@ -15,15 +15,17 @@
  */
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.spi.ServerConnectionSelector;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -60,10 +62,10 @@ class ContentEncodingDisabledTest extends ContentEncodingDisabledAbstract {
 
     @Test
     void testContentEncodingHeader() {
-        try (Http1ClientResponse response = client().method(Http.Method.POST)
-                .header(Http.HeaderNames.CONTENT_ENCODING, "data")
+        try (Http1ClientResponse response = client().method(Method.POST)
+                .header(HeaderNames.CONTENT_ENCODING, "data")
                 .submit("any")) {
-            assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
             assertThat(response.as(String.class), is("Content-Encoding header present when content encoding is disabled"));
         }
     }

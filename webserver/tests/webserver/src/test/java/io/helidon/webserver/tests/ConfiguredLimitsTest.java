@@ -16,13 +16,11 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -33,6 +31,9 @@ import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.spi.ServerConnectionSelector;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -111,14 +112,14 @@ class ConfiguredLimitsTest {
             if (success) {
                 assertThat("Initial line of size " + size + " should have passed",
                            response.status(),
-                           is(Http.Status.OK_200));
+                           is(Status.OK_200));
                 assertThat("This request should return what is configured in routing",
                            response.entity().as(String.class),
                            is("any"));
             } else {
                 assertThat("Initial line of size " + size + " should have failed",
                            response.status(),
-                           is(Http.Status.BAD_REQUEST_400));
+                           is(Status.BAD_REQUEST_400));
             }
         }
     }
@@ -129,19 +130,19 @@ class ConfiguredLimitsTest {
         String headerValue = "m".repeat(size);
 
         try (Http1ClientResponse response = client.get("any")
-                .header(Http.Headers.create(CUSTOM_HEADER, headerValue))
+                .header(HeaderValues.create(CUSTOM_HEADER, headerValue))
                 .request()) {
             if (success) {
                 assertThat("Header of size " + size + " should have passed",
                            response.status(),
-                           is(Http.Status.OK_200));
+                           is(Status.OK_200));
                 assertThat("This request should return content of " + CUSTOM_HEADER + " header",
                            response.entity().as(String.class),
                            is(headerValue));
             } else {
                 assertThat("Header of size " + size + " should have failed",
                            response.status(),
-                           is(Http.Status.BAD_REQUEST_400));
+                           is(Status.BAD_REQUEST_400));
             }
         }
     }

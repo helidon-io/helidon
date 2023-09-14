@@ -19,7 +19,9 @@ package io.helidon.webclient.http1;
 import java.net.URI;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientUri;
 
 class RedirectionProcessor {
@@ -27,8 +29,8 @@ class RedirectionProcessor {
     private RedirectionProcessor() {
     }
 
-    static boolean redirectionStatusCode(Http.Status status) {
-        return status.family() == Http.Status.Family.REDIRECTION;
+    static boolean redirectionStatusCode(Status status) {
+        return status.family() == Status.Family.REDIRECTION;
     }
 
     static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, byte[] entity) {
@@ -46,12 +48,12 @@ class RedirectionProcessor {
                 return clientResponse;
             }
             try (clientResponse) {
-                if (!clientResponse.headers().contains(Http.HeaderNames.LOCATION)) {
-                    throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION
+                if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
+                    throw new IllegalStateException("There is no " + HeaderNames.LOCATION
                                                             + " header present in the response! "
                                                             + "It is not clear where to redirect.");
                 }
-                String redirectedUri = clientResponse.headers().get(Http.HeaderNames.LOCATION).value();
+                String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).value();
                 URI newUri = URI.create(redirectedUri);
                 ClientUri redirectUri = ClientUri.create(newUri);
 
@@ -67,8 +69,8 @@ class RedirectionProcessor {
                     redirectUri.port(resolvedUri.port());
                 }
                 //Method and entity is required to be the same as with original request with 307 and 308 requests
-                if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
-                        || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
+                if (clientResponse.status() == Status.TEMPORARY_REDIRECT_307
+                        || clientResponse.status() == Status.PERMANENT_REDIRECT_308) {
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                clientRequest.method(),
                                                                redirectUri,
@@ -77,7 +79,7 @@ class RedirectionProcessor {
                     //It is possible to change to GET and send no entity with all other redirect codes
                     entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
-                                                               Http.Method.GET,
+                                                               Method.GET,
                                                                redirectUri,
                                                                request.properties());
                 }

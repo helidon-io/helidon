@@ -18,19 +18,20 @@ package io.helidon.webserver.tests;
 
 import java.util.NoSuchElementException;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.encoding.ContentEncodingContextConfig;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +62,7 @@ class ContentEncodingContextTest {
 
     @Test
     void testCustomizeContentEncodingContext() {
-        try (Http1ClientResponse response = client.method(Http.Method.GET).uri("/hello").request()) {
+        try (Http1ClientResponse response = client.method(Method.GET).uri("/hello").request()) {
             assertThat(response.entity().as(String.class), equalTo("hello webserver"));
             assertThat(encodingContext.NO_ACCEPT_ENCODING_COUNT, greaterThan(0));
         }
@@ -112,7 +113,7 @@ class ContentEncodingContextTest {
 
         @Override
         public ContentEncoder encoder(Headers headers) {
-            if (headers.contains(Http.HeaderNames.ACCEPT_ENCODING)) {
+            if (headers.contains(HeaderNames.ACCEPT_ENCODING)) {
                 ACCEPT_ENCODING_COUNT++;
             } else {
                 NO_ACCEPT_ENCODING_COUNT++;

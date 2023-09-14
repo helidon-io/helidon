@@ -18,8 +18,9 @@ package io.helidon.webserver.cors;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.uri.UriInfo;
 import io.helidon.cors.CorsRequestAdapter;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.HeaderName;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -40,8 +41,8 @@ class CorsServerRequestAdapter implements CorsRequestAdapter<ServerRequest> {
     }
 
     @Override
-    public String authority() {
-        return request.authority();
+    public UriInfo requestedUri() {
+        return request.requestedUri();
     }
 
     @Override
@@ -52,7 +53,7 @@ class CorsServerRequestAdapter implements CorsRequestAdapter<ServerRequest> {
     @Override
     public Optional<String> firstHeader(HeaderName key) {
         if (headers.contains(key)) {
-            return Optional.of(headers.get(key).value());
+            return Optional.of(headers.get(key).get());
         }
         return Optional.empty();
     }

@@ -74,14 +74,14 @@ class TestJsonFormatting {
         JsonObject jsonOutput = checkAndCast(formatter.format());
         JsonObject app = jsonOutput.getJsonObject("application");
         assertThat("Counter 1",
-                   app.getJsonNumber("c1;t1=v1;the-scope=application").intValue(),
+                   app.getJsonNumber("c1;t1=v1").intValue(),
                    is(4));
         assertThat("Counter 2",
-                   app.getJsonNumber("c1;the-scope=application").intValue(),
+                   app.getJsonNumber("c1").intValue(),
                    is(1));
         JsonObject timerJson = app.getJsonObject("t1");
         assertThat("Timer", timerJson, notNullValue());
-        assertThat("Timer count", timerJson.getJsonNumber("count;the-scope=application").intValue(), is(1));
+        assertThat("Timer count", timerJson.getJsonNumber("count").intValue(), is(1));
     }
 
 
@@ -110,7 +110,7 @@ class TestJsonFormatting {
 
         JsonObject jsonOutput = checkAndCast(formatter.format());
         JsonObject app = jsonOutput.getJsonObject("application");
-        assertThat("Counter 2", app.getJsonNumber("c2;the-scope=application").intValue(), is(1));
+        assertThat("Counter 2", app.getJsonNumber("c2").intValue(), is(1));
 
         assertThat("Timer", app.getJsonObject("t2"), nullValue());
 

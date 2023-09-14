@@ -20,15 +20,15 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
 
-import io.helidon.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.RepeatedTest;
 
@@ -59,7 +59,7 @@ class MaxTcpConnectionsTest {
 
     @RepeatedTest(100)
     void testConcurrentRequests() throws Exception {
-        String response = client.sendAndReceive(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
+        String response = client.sendAndReceive(Method.GET, "/greet", null, List.of("Connection: keep-alive"));
         assertThat(response, containsString("200 OK"));
 
         // we have a connection established with keep alive, we should not create a new one

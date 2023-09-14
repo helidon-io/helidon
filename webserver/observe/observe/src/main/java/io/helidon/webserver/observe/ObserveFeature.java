@@ -24,8 +24,8 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
@@ -105,7 +105,7 @@ public class ObserveFeature implements HttpFeature, Weighted {
             }
         } else {
             routing.get(endpoint, (req, res) -> {
-                throw new HttpException("Observe endpoint is disabled", Http.Status.SERVICE_UNAVAILABLE_503, true);
+                throw new HttpException("Observe endpoint is disabled", Status.SERVICE_UNAVAILABLE_503, true);
             });
         }
     }

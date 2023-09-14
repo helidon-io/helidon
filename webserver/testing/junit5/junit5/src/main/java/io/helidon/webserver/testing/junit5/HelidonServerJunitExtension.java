@@ -97,7 +97,11 @@ class HelidonServerJunitExtension extends JunitExtensionBase
                 .shutdownHook(false);
 
         server = builder.build().start();
-        uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
+        if (server.hasTls()) {
+            uris.put(DEFAULT_SOCKET_NAME, URI.create("https://localhost:" + server.port() + "/"));
+        } else {
+            uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
+        }
     }
 
     @Override
@@ -178,6 +182,9 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             int port = server.port(it);
             if (port == -1) {
                 return null;
+            }
+            if (server.hasTls(it)) {
+                return URI.create("https://localhost:" + port + "/");
             }
             return URI.create("http://localhost:" + port + "/");
         });

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,25 +16,23 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Containers Integration
+= Cloud Security Container Integrations
 :description: Helidon Security containers integration
 :keywords: helidon, security
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
 
-== Contents
-
-- <<Cloud Security Container Integrations,Cloud Security Container Integrations>>
-- <<Reference,Reference>>
-
-== Cloud Security Container Integrations
 
 The following containers are integrated with Helidon Security:
 
-=== Web server
+- <<WebServer, WebServer>>
+- <<Jersey, Jersey >>
 
-Integration of xref:../webserver.adoc[reactive web server]
+
+== WebServer
+
+To integrate xref:../webserver.adoc[reactive web server], add the following dependency to your project's pom.xml file:
 
 [source,xml]
 .Maven Dependency
@@ -45,12 +43,13 @@ Integration of xref:../webserver.adoc[reactive web server]
 </dependency>
 ----
 
-==== Bootstrapping
+===  Configure Security with WebServer
 
-There are two steps to configure security with web server:
 
-1. Create security instance and register it with server
-2. Protect routes of web server with various security features
+There are two steps to configure security with WebServer:
+
+1. Create a security instance and register it with the server.
+2. Protect server routes with optional security features.
 
 [source,java]
 .Example using builders
@@ -95,9 +94,9 @@ security.web-server:
 
 include::{rootdir}/includes/security/helidon-endpoints.adoc[]
 
-=== Jersey
+== Jersey
 
-Integration of Jersey (JAX-RS implementation) both for inbound and outbound security.
+Jersey (JAX-RS implementation) can be configured for both inbound and outbound security.
 
 [source,xml]
 .Maven Dependency
@@ -108,7 +107,7 @@ Integration of Jersey (JAX-RS implementation) both for inbound and outbound secu
 </dependency>
 ----
 
-==== Inbound security
+=== Inbound Security
 
 [source,java]
 .Integrate with Jersey
@@ -120,10 +119,9 @@ ResourceConfig resourceConfig = new ResourceConfig()
     .register(new io.helidon.security.jersey.SecurityFeature(security));
 ----
 
-=== Protecting a resource
+=== Secure a Resource Method
 
-The current approach does not have a configuration option. The security must be
- configured through annotations.
+The current approach does not have a configuration option so security must be configured through annotations.
 Security currently supports @Authenticated and @Authorized. When a resource is annotated with one of these
  annotations (application class, resource class, or resource method), security will
  be triggered.
@@ -142,7 +140,7 @@ public String getHelloName(@PathParam("name") String name) {
 }
 ----
 
-=== Access context
+=== Access Context
 
 [source,java]
 .Support in a JAX-RS resource
@@ -154,7 +152,7 @@ private SecurityContext securityContext;
 ----
 
 
-==== Outbound security
+=== Outbound Security
 Outbound security is automatically registered with Jersey client.
 The provider must have outbound security configured for identity to be propagated.
 

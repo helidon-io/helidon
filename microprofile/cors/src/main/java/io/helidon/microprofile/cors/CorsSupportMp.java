@@ -20,11 +20,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.cors.CorsRequestAdapter;
 import io.helidon.cors.CorsResponseAdapter;
 import io.helidon.cors.CorsSupportBase;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -103,15 +105,17 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
     static class RequestAdapterMp implements CorsRequestAdapter<ContainerRequestContext> {
 
         private final ContainerRequestContext requestContext;
+        private final LazyValue<UriInfo> uriInfo;
 
+        @SuppressWarnings("unchecked")
         RequestAdapterMp(ContainerRequestContext requestContext) {
             this.requestContext = requestContext;
+            uriInfo = LazyValue.create(() -> ((Supplier<UriInfo>) requestContext.getProperty(UriInfo.class.getName())).get());
         }
 
         @Override
-        public String authority() {
-            // TODO we want authority - we should set it in integration with WebServer as request property
-            return firstHeader(Http.HeaderNames.HOST).orElse("localhost");
+        public UriInfo requestedUri() {
+            return uriInfo.get();
         }
 
         @Override
@@ -121,17 +125,17 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
 
         @Override
-        public Optional<String> firstHeader(Http.HeaderName key) {
+        public Optional<String> firstHeader(HeaderName key) {
             return Optional.ofNullable(requestContext.getHeaders().getFirst(key.defaultCase()));
         }
 
         @Override
-        public boolean headerContainsKey(Http.HeaderName key) {
+        public boolean headerContainsKey(HeaderName key) {
             return requestContext.getHeaders().containsKey(key.defaultCase());
         }
 
         @Override
-        public List<String> allHeaders(Http.HeaderName key) {
+        public List<String> allHeaders(HeaderName key) {
             return requestContext.getHeaders().get(key.defaultCase());
         }
 
@@ -172,13 +176,13 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
 
         @Override
-        public CorsResponseAdapter<Response> header(Http.HeaderName key, String value) {
+        public CorsResponseAdapter<Response> header(HeaderName key, String value) {
             headers.add(key.defaultCase(), value);
             return this;
         }
 
         @Override
-        public CorsResponseAdapter<Response> header(Http.HeaderName key, Object value) {
+        public CorsResponseAdapter<Response> header(HeaderName key, Object value) {
             headers.add(key.defaultCase(), value);
             return this;
         }

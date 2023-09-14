@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 /**
  * Parser of HTTP/1.0 or HTTP/1.1 response status.
@@ -44,7 +44,7 @@ public final class Http1StatusParser {
      *                                                                                 the reader, depending on its
      *                                                                                 implementation
      */
-    public static Http.Status readStatus(DataReader reader, int maxLength) {
+    public static Status readStatus(DataReader reader, int maxLength) {
         int newLine = reader.findNewLine(maxLength);
         if (newLine == maxLength) {
             throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line: \n"
@@ -92,7 +92,7 @@ public final class Http1StatusParser {
         reader.skip(2); // skip the last CRLF
 
         try {
-            return Http.Status.create(Integer.parseInt(code), phrase);
+            return Status.create(Integer.parseInt(code), phrase);
         } catch (NumberFormatException e) {
             throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line HTTP/1.0 or HTTP/1.1 \n"
                                                     + BufferData.create(code.getBytes(StandardCharsets.US_ASCII)) + "\n"

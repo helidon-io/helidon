@@ -39,9 +39,11 @@ import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.providers.oidc.common.OidcConfig;
@@ -62,7 +64,7 @@ import io.helidon.webserver.security.SecurityFeature;
 
 import jakarta.json.JsonObject;
 
-import static io.helidon.http.Http.HeaderNames.HOST;
+import static io.helidon.http.HeaderNames.HOST;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -298,7 +300,7 @@ public final class OidcFeature implements HttpFeature {
 
         if (idTokenCookie.isEmpty()) {
             LOGGER.log(Level.TRACE, "Logout request invoked without ID Token cookie");
-            res.status(Http.Status.FORBIDDEN_403)
+            res.status(Status.FORBIDDEN_403)
                     .send();
             return;
         }
@@ -320,8 +322,8 @@ public final class OidcFeature implements HttpFeature {
             headers.addCookie(idTokenCookieHandler.removeCookie().build());
             headers.addCookie(tenantCookieHandler.removeCookie().build());
 
-            res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.HeaderNames.LOCATION, sb.toString())
+            res.status(Status.TEMPORARY_REDIRECT_307)
+                    .header(HeaderNames.LOCATION, sb.toString())
                     .send();
         } catch (Exception e) {
             sendError(res, e);
@@ -380,12 +382,12 @@ public final class OidcFeature implements HttpFeature {
 
         HttpClientRequest post = webClient.post()
                 .uri(tenant.tokenEndpointUri())
-                .header(Http.Headers.ACCEPT_JSON);
+                .header(HeaderValues.ACCEPT_JSON);
 
         OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form);
 
         try (HttpClientResponse response = post.submit(form.build())) {
-            if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+            if (response.status().family() == Status.Family.SUCCESSFUL) {
                 try {
                     JsonObject jsonObject = response.as(JsonObject.class);
                     processJsonResponse(req, res, jsonObject, tenantName);
@@ -453,7 +455,7 @@ public final class OidcFeature implements HttpFeature {
 
         //redirect to "state"
         String state = req.query().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
-        res.status(Http.Status.TEMPORARY_REDIRECT_307);
+        res.status(Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
             state += (state.contains("?") ? "&" : "?") + oidcConfig.paramName() + "=" + tokenValue;
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
@@ -462,7 +464,7 @@ public final class OidcFeature implements HttpFeature {
         }
 
         state = increaseRedirectCounter(state);
-        res.headers().add(Http.HeaderNames.LOCATION, state);
+        res.headers().add(HeaderNames.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
             try {
@@ -498,11 +500,11 @@ public final class OidcFeature implements HttpFeature {
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Failed to process OIDC request", t);
         }
-        response.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+        response.status(Status.INTERNAL_SERVER_ERROR_500)
                 .send();
     }
 
-    private Optional<String> processError(ServerResponse serverResponse, Http.Status status, String entity) {
+    private Optional<String> processError(ServerResponse serverResponse, Status status, String entity) {
         LOGGER.log(Level.DEBUG,
                    "Invalid token or failed request when connecting to OIDC Token Endpoint. Response: " + entity
                            + ", response status: " + status);
@@ -521,7 +523,7 @@ public final class OidcFeature implements HttpFeature {
     // this must always be the same, so clients cannot guess what kind of problem they are facing
     // if they try to provide wrong data
     private void sendErrorResponse(ServerResponse serverResponse) {
-        serverResponse.status(Http.Status.UNAUTHORIZED_401);
+        serverResponse.status(Status.UNAUTHORIZED_401);
         serverResponse.send("Not a valid authorization code2");
     }
 
@@ -557,7 +559,7 @@ public final class OidcFeature implements HttpFeature {
                            + " Error description: "
                            + errorDescription);
 
-        res.status(Http.Status.BAD_REQUEST_400);
+        res.status(Status.BAD_REQUEST_400);
         res.send("{\"error\": \"" + error + "\", \"error_description\": \"" + errorDescription + "\"}");
     }
 

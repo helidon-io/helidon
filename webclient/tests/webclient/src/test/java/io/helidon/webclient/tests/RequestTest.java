@@ -19,7 +19,7 @@ package io.helidon.webclient.tests;
 import java.net.URI;
 import java.util.Collections;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -67,7 +67,7 @@ class RequestTest extends TestParent {
     @Test
     public void testIncorrect() {
         try (Http1ClientResponse response = client.get("/incorrect").request()) {
-            if (response.status() != Http.Status.NOT_FOUND_404) {
+            if (response.status() != Status.NOT_FOUND_404) {
                 fail("This request should be 404!");
             }
         }
@@ -84,7 +84,7 @@ class RequestTest extends TestParent {
                 .path("/redirect")
                 .followRedirects(false)
                 .request()) {
-            assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+            assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
         }
     }
 
@@ -121,7 +121,7 @@ class RequestTest extends TestParent {
     @Test
     public void testEntityNotHandled() {
         try (HttpClientResponse response = client.get("/incorrect").request()) {
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 

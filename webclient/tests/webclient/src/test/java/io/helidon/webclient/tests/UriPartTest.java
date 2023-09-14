@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.tests;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -52,7 +52,7 @@ class UriPartTest extends TestParent {
                 .queryParam("test", EXPECTED_QUERY)
                 .skipUriEncoding(true)
                 .request()) {
-            assertThat(fullResponse.status(), is(Http.Status.BAD_REQUEST_400));
+            assertThat(fullResponse.status(), is(Status.BAD_REQUEST_400));
         }
     }
 
@@ -104,7 +104,7 @@ class UriPartTest extends TestParent {
                 .fragment(fragment)
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
         }
     }
 
@@ -150,7 +150,7 @@ class UriPartTest extends TestParent {
                 .request(String.class);
 
         // the path is not valid
-        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
     }
 
 }

@@ -16,6 +16,8 @@
 
 package io.helidon.examples.metrics.filtering.se;
 
+import java.util.regex.Pattern;
+
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.logging.common.LogConfig;
@@ -73,7 +75,7 @@ public final class Main {
         // the metrics feature class will use.
         ScopeConfig scopeConfig = ScopeConfig.builder()
                 .name(Meter.Scope.APPLICATION)
-                .exclude(GreetService.TIMER_FOR_GETS)
+                .exclude(Pattern.compile(GreetService.TIMER_FOR_GETS))
                 .build();
 
         MetricsConfig initialMetricsConfig = config.get(MetricsConfig.METRICS_CONFIG_KEY)

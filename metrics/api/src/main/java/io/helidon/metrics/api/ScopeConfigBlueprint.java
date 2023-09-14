@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
@@ -51,7 +52,7 @@ interface ScopeConfigBlueprint {
      * @return include expression
      */
     @ConfiguredOption(key = "filter.include")
-    Optional<String> include();
+    Optional<Pattern> include();
 
     /**
      * Regular expression for meter names to exclude.
@@ -59,7 +60,7 @@ interface ScopeConfigBlueprint {
      * @return exclude expression
      */
     @ConfiguredOption(key = "filter.exclude")
-    Optional<String> exclude();
+    Optional<Pattern> exclude();
 
     /**
      * Returns whether the specified meter name within the current scope is enabled according to the scope settings.

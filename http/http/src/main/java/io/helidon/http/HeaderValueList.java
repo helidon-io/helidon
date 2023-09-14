@@ -23,14 +23,14 @@ import java.util.List;
 class HeaderValueList extends HeaderValueBase {
     private List<String> values;
 
-    HeaderValueList(Http.HeaderName name, boolean changing, boolean sensitive, Collection<String> values) {
+    HeaderValueList(HeaderName name, boolean changing, boolean sensitive, Collection<String> values) {
         super(name, changing, sensitive, values.iterator().next());
 
         this.values = new ArrayList<>(values);
     }
 
     @Override
-    public Http.HeaderValueWriteable addValue(String value) {
+    public HeaderWriteable addValue(String value) {
         values.add(value);
         return this;
     }

@@ -29,8 +29,8 @@ import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.ContentDisposition;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.WritableHeaders;
 
 /**
@@ -106,11 +106,11 @@ public class PathSupport implements MediaSupport {
     }
 
     private static void updateHeaders(Path path, WritableHeaders<?> writableHeaders) {
-        if (!writableHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
+        if (!writableHeaders.contains(HeaderNames.CONTENT_TYPE)) {
             MediaType mediaType = MediaTypes.detectType(path).orElse(MediaTypes.APPLICATION_OCTET_STREAM);
             writableHeaders.contentType(mediaType);
         }
-        if (!writableHeaders.contains(Http.HeaderNames.CONTENT_DISPOSITION)) {
+        if (!writableHeaders.contains(HeaderNames.CONTENT_DISPOSITION)) {
             writableHeaders.set(ContentDisposition.builder()
                                         .filename(String.valueOf(path.getFileName()))
                                         .build());

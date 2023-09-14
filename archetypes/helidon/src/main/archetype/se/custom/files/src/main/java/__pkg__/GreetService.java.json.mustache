@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicReference;
 {{#GreetService-imports}}
 {{.}}
 {{/GreetService-imports}}
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -80,13 +80,13 @@ public class GreetService implements HttpService {
         if (message.getGreeting() == null) {
             Message errorMessage = new Message();
             errorMessage.setMessage("No greeting provided");
-            response.status(Http.Status.BAD_REQUEST_400)
+            response.status(Status.BAD_REQUEST_400)
                     .send(errorMessage);
             return;
         }
 
         greeting.set(message.getGreeting());
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.status(Status.NO_CONTENT_204).send();
     }
 
     /**

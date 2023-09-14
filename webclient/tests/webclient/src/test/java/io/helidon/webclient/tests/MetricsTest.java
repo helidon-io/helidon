@@ -15,7 +15,7 @@
  */
 package io.helidon.webclient.tests;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
@@ -26,7 +26,6 @@ import io.helidon.webclient.metrics.WebClientMetrics;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,7 +46,7 @@ public class MetricsTest extends TestParent {
     public void testCounter() {
         WebClientService serviceCounterAll = WebClientMetrics.counter().nameFormat("counter.%1$s.%2$s").build();
         WebClientService serviceCounterGet = WebClientMetrics.counter()
-                .methods(Http.Method.GET)
+                .methods(Method.GET)
                 .nameFormat("counter.get.%1$s.%2$s")
                 .build();
         WebClientService serviceCounterError = WebClientMetrics.counter()
@@ -89,7 +88,7 @@ public class MetricsTest extends TestParent {
                 .nameFormat("meter.%1$s.%2$s")
                 .build();
         WebClientService serviceMeterGet = WebClientMetrics.meter()
-                .methods(Http.Method.GET)
+                .methods(Method.GET)
                 .nameFormat("meter.get.%1$s.%2$s")
                 .build();
         WebClientService serviceMeterError = WebClientMetrics.meter()
@@ -125,17 +124,15 @@ public class MetricsTest extends TestParent {
         assertThat(meterSuccess.count(), is(1L));
     }
 
-    // TODO metrics
-    @Disabled
     @Test
     public void testGaugeInProgress() {
         WebClientService inProgressAll = WebClientMetrics.gaugeInProgress().nameFormat("gauge.%1$s.%2$s").build();
         WebClientService inProgressPut = WebClientMetrics.gaugeInProgress()
-                .methods(Http.Method.PUT)
+                .methods(Method.PUT)
                 .nameFormat("gauge.put.%1$s.%2$s")
                 .build();
         WebClientService inProgressGet = WebClientMetrics.gaugeInProgress()
-                .methods(Http.Method.GET)
+                .methods(Method.GET)
                 .nameFormat("gauge.get.%1$s.%2$s")
                 .build();
 
@@ -174,12 +171,12 @@ public class MetricsTest extends TestParent {
                 .nameFormat("counter.all.errors.%2$s")
                 .build();
         WebClientService errorGet = WebClientMetrics.counter()
-                .methods(Http.Method.GET)
+                .methods(Method.GET)
                 .success(false)
                 .nameFormat("counter.errors.%1$s.%2$s")
                 .build();
         WebClientService errorPut = WebClientMetrics.counter()
-                .methods(Http.Method.PUT)
+                .methods(Method.PUT)
                 .success(false)
                 .nameFormat("counter.errors.%1$s.%2$s")
                 .build();

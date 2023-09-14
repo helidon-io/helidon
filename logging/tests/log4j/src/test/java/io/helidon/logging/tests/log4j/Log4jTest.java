@@ -16,11 +16,11 @@
 
 package io.helidon.logging.tests.log4j;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +46,7 @@ class Log4jTest {
     //The server should just work
     @Test
     void testOk() {
-        String response = client.method(Http.Method.GET)
+        String response = client.method(Method.GET)
                 .requestEntity(String.class);
 
         LOGGER.log(System.Logger.Level.DEBUG, "Message");

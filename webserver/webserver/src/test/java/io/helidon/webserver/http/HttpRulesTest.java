@@ -20,7 +20,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,7 +55,7 @@ class HttpRulesTest {
 
     @ParameterizedTest
     @MethodSource("httpMethodShortcut")
-    void testHttpMethodShortcut(Http.Method method,
+    void testHttpMethodShortcut(Method method,
                                 Function<String, FakeHttpRules> request) {
         FakeHttpRules rule = request.apply(null);
         assertThat(rule.getMethod(), is(method));
@@ -65,7 +65,7 @@ class HttpRulesTest {
 
     @ParameterizedTest
     @MethodSource("httpMethodShortcutWithPathPattern")
-    void testHttpMethodShortcutWithPathPattern(Http.Method method,
+    void testHttpMethodShortcutWithPathPattern(Method method,
                                                Function<String, FakeHttpRules> request,
                                                String pathPattern) {
         FakeHttpRules rule = request.apply(pathPattern);
@@ -77,36 +77,36 @@ class HttpRulesTest {
 
     private static Stream<Arguments> httpMethodShortcut() {
         return Stream.of(
-                arguments(Http.Method.GET, get),
-                arguments(Http.Method.POST, post),
-                arguments(Http.Method.PUT, put),
-                arguments(Http.Method.DELETE, delete),
-                arguments(Http.Method.HEAD, head),
-                arguments(Http.Method.OPTIONS, options),
-                arguments(Http.Method.TRACE, trace),
-                arguments(Http.Method.PATCH, patch)
+                arguments(Method.GET, get),
+                arguments(Method.POST, post),
+                arguments(Method.PUT, put),
+                arguments(Method.DELETE, delete),
+                arguments(Method.HEAD, head),
+                arguments(Method.OPTIONS, options),
+                arguments(Method.TRACE, trace),
+                arguments(Method.PATCH, patch)
         );
     }
 
     private static Stream<Arguments> httpMethodShortcutWithPathPattern() {
         return Stream.of(
-                arguments(Http.Method.GET, get, "/get"),
-                arguments(Http.Method.POST, post, "/post"),
-                arguments(Http.Method.PUT, put, "/put"),
-                arguments(Http.Method.DELETE, delete, "/delete"),
-                arguments(Http.Method.HEAD, head, "/head"),
-                arguments(Http.Method.OPTIONS, options, "/options"),
-                arguments(Http.Method.TRACE, trace, "/trace"),
-                arguments(Http.Method.PATCH, patch, "/patch")
+                arguments(Method.GET, get, "/get"),
+                arguments(Method.POST, post, "/post"),
+                arguments(Method.PUT, put, "/put"),
+                arguments(Method.DELETE, delete, "/delete"),
+                arguments(Method.HEAD, head, "/head"),
+                arguments(Method.OPTIONS, options, "/options"),
+                arguments(Method.TRACE, trace, "/trace"),
+                arguments(Method.PATCH, patch, "/patch")
         );
     }
 
     private static class FakeHttpRules implements HttpRules {
-        private Http.Method method;
+        private Method method;
         private String pathPattern;
         private Handler handler;
 
-        public Http.Method getMethod() {
+        public Method getMethod() {
             return method;
         }
 
@@ -134,15 +134,15 @@ class HttpRulesTest {
         }
 
         @Override
-        public HttpRules route(Http.Method method, String pathPattern, Handler handler) {
+        public HttpRules route(Method method, String pathPattern, Handler handler) {
             this.method = method;
             this.pathPattern = pathPattern;
             this.handler = handler;
-            return route(Http.Method.predicate(method), PathMatchers.create(pathPattern), handler);
+            return route(Method.predicate(method), PathMatchers.create(pathPattern), handler);
         }
 
         @Override
-        public HttpRules route(Http.Method method, Handler handler) {
+        public HttpRules route(Method method, Handler handler) {
             this.method = method;
             this.pathPattern = null;
             this.handler = handler;

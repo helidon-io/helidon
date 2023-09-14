@@ -76,7 +76,7 @@
                 <value>io.helidon.tracing.TracerBuilder</value>
             </list>
             <list key="Main-static-imports" if="${tracing}">
-                <value>static io.helidon.http.Http.Method.GET</value>
+                <value>static io.helidon.http.Method.GET</value>
             </list>
             <list key="Main-routing-builder" if="${tracing}">
                 <value if="${tracing}"><![CDATA[.addFeature(TracingFeature.create(tracer))
@@ -120,7 +120,7 @@
     @Test
     void testMetricsObserver() {
         try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 ]]></value>

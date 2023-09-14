@@ -24,12 +24,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.http.Http;
-import io.helidon.http.PathMatchers;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
+import io.helidon.http.PathMatchers;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.Handler;
@@ -37,6 +36,9 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.spi.ServerConnectionSelector;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,20 +55,20 @@ class Continue100ImmediatelyTest {
 
     private static final Handler ANY_HANDLER = (req, res) -> {
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.HeaderNames.create("test-fail-before-read"))
+                .first(HeaderNames.create("test-fail-before-read"))
                 .orElse("false"))) {
-            res.status(Http.Status.EXPECTATION_FAILED_417).send();
+            res.status(Status.EXPECTATION_FAILED_417).send();
             return;
         }
 
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.HeaderNames.create("test-throw-before-read"))
+                .first(HeaderNames.create("test-throw-before-read"))
                 .orElse("false"))) {
             throw new RuntimeException("BOOM!!!");
         }
 
         Optional<String> blockId = req.headers()
-                .first(Http.HeaderNames.create("test-block-id"));
+                .first(HeaderNames.create("test-block-id"));
         // Block request content dump if blocker assigned
         blockId.map(BLOCKER_MAP::get)
                 .orElse(CompletableFuture.completedFuture(""))
@@ -76,7 +78,7 @@ class Continue100ImmediatelyTest {
         String s = req.content().as(String.class);
 
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.HeaderNames.create("test-throw-after-read"))
+                .first(HeaderNames.create("test-throw-after-read"))
                 .orElse("false"))) {
             throw new RuntimeException("BOOM!!!");
         }
@@ -101,20 +103,20 @@ class Continue100ImmediatelyTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(Http.Method.predicate(Http.Method.PUT, Http.Method.POST),
+        router.route(Method.predicate(Method.PUT, Method.POST),
                      PathMatchers.exact("/redirect"), (req, res) ->
 
-                             res.status(Http.Status.MOVED_PERMANENTLY_301)
-                                     .header(Http.HeaderNames.LOCATION, "/")
+                             res.status(Status.MOVED_PERMANENTLY_301)
+                                     .header(HeaderNames.LOCATION, "/")
                                      // force 301 to not use chunked encoding
                                      // https://github.com/helidon-io/helidon/issues/5713
-                                     .header(Http.HeaderNames.CONTENT_LENGTH, "0")
+                                     .header(HeaderNames.CONTENT_LENGTH, "0")
                                      .send()
                 )
-                .route(Http.Method.predicate(Http.Method.PUT, Http.Method.POST),
+                .route(Method.predicate(Method.PUT, Method.POST),
                        PathMatchers.exact("/"), ANY_HANDLER)
-                .route(Http.Method.predicate(Http.Method.GET),
-                       PathMatchers.exact("/"), (req, res) -> res.status(Http.Status.OK_200).send("GET TEST"));
+                .route(Method.predicate(Method.GET),
+                       PathMatchers.exact("/"), (req, res) -> res.status(Status.OK_200).send("GET TEST"));
     }
 
     @Test

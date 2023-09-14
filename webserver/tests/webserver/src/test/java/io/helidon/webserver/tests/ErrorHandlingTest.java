@@ -16,10 +16,11 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.DirectClient;
-import io.helidon.webserver.testing.junit5.RoutingTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.ErrorHandler;
@@ -30,6 +31,9 @@ import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.DirectClient;
+import io.helidon.webserver.testing.junit5.RoutingTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,11 +43,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @RoutingTest
 class ErrorHandlingTest {
-    private static final Http.HeaderName CONTROL_HEADER = Http.HeaderNames.create("X-HELIDON-JUNIT");
-    private static final Http.Header FIRST = Http.Headers.create(CONTROL_HEADER, "first");
-    private static final Http.Header SECOND = Http.Headers.create(CONTROL_HEADER, "second");
-    private static final Http.Header ROUTING = Http.Headers.create(CONTROL_HEADER, "routing");
-    private static final Http.Header CUSTOM = Http.Headers.create(CONTROL_HEADER, "custom");
+    private static final HeaderName CONTROL_HEADER = HeaderNames.create("X-HELIDON-JUNIT");
+    private static final Header FIRST = HeaderValues.create(CONTROL_HEADER, "first");
+    private static final Header SECOND = HeaderValues.create(CONTROL_HEADER, "second");
+    private static final Header ROUTING = HeaderValues.create(CONTROL_HEADER, "routing");
+    private static final Header CUSTOM = HeaderValues.create(CONTROL_HEADER, "custom");
 
     private final Http1Client client;
 
@@ -97,8 +101,8 @@ class ErrorHandlingTest {
         try (Http1ClientResponse response = client.get()
                 .header(ROUTING)
                 .request()) {
-            assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
     }
 

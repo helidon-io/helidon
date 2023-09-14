@@ -16,7 +16,7 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
@@ -53,7 +53,7 @@ class RequestedUriTest {
                 res.send(req.requestedUri().toUri().toString());
             } catch (Exception e) {
                 e.printStackTrace();
-                res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                res.status(Status.INTERNAL_SERVER_ERROR_500)
                         .send(e.getClass().getName() + ":" + e.getMessage());
             }
         });
@@ -72,7 +72,7 @@ class RequestedUriTest {
 
         assertAll(
                 () -> assertThat(response.entity(), is("http://[::1]:" + port + "/uri")),
-                () -> assertThat(response.status(), is(Http.Status.OK_200))
+                () -> assertThat(response.status(), is(Status.OK_200))
         );
     }
 }

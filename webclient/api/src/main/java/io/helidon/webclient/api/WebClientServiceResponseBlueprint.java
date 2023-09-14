@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 /**
  * Response which is created upon receiving of server response.
@@ -42,7 +42,7 @@ interface WebClientServiceResponseBlueprint {
      *
      * @return response status
      */
-    Http.Status status();
+    Status status();
 
     /**
      * Input stream to get data of the entity. This allows decorating the entity (such as decryption).

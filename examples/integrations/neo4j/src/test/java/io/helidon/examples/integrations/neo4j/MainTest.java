@@ -16,12 +16,12 @@
 
 package io.helidon.examples.integrations.neo4j;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import jakarta.json.JsonArray;
 import org.junit.jupiter.api.AfterAll;
@@ -88,7 +88,7 @@ public class MainTest {
     @Test
     public void testHealth() {
         try (Http1ClientResponse response = webClient.get("/observe/health").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
     }
 

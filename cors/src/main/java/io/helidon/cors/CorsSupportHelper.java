@@ -30,8 +30,10 @@ import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.cors.LogHelper.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 
 import static io.helidon.cors.LogHelper.DECISION_LEVEL;
 import static java.lang.Character.isDigit;
@@ -324,9 +326,9 @@ public class CorsSupportHelper<Q, R> {
         if (requestType == RequestType.CORS) {
             // Aggregator knows only about expect paths. If response is 404, use an ad hoc cross-origin config for the given
             // origin and method, thus allowing the 404 to pass through the CORS handling in the client.
-            CrossOriginConfig crossOrigin = responseAdapter.status() == Http.Status.NOT_FOUND_404.code()
+            CrossOriginConfig crossOrigin = responseAdapter.status() == Status.NOT_FOUND_404.code()
                 ? CrossOriginConfig.builder()
-                    .allowOrigins(requestAdapter.firstHeader(Http.HeaderNames.ORIGIN).orElse("*"))
+                    .allowOrigins(requestAdapter.firstHeader(HeaderNames.ORIGIN).orElse("*"))
                     .allowMethods(requestAdapter.method())
                     .build()
                 : aggregator.lookupCrossOrigin(
@@ -370,19 +372,19 @@ public class CorsSupportHelper<Q, R> {
     private boolean isRequestTypeNormal(CorsRequestAdapter<Q> requestAdapter, boolean silent) {
         // If no origin header or same as host, then just normal
         Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
-        Optional<String> hostOpt = requestAdapter.firstHeader(HeaderNames.HOST);
+        String host = requestAdapter.requestedUri().host();
 
-        boolean result = originOpt.isEmpty() || (hostOpt.isPresent() && originOpt.get().contains("://" + hostOpt.get()));
-        LogHelper.logIsRequestTypeNormal(result, silent, requestAdapter, originOpt, hostOpt);
+        boolean result = originOpt.isEmpty() || originOpt.get().contains("://" + host);
+        LogHelper.logIsRequestTypeNormal(result, silent, requestAdapter, originOpt, host);
         return result;
     }
 
     private RequestType inferCORSRequestType(CorsRequestAdapter<Q> requestAdapter, boolean silent) {
 
         String methodName = requestAdapter.method();
-        boolean isMethodOPTION = methodName.equalsIgnoreCase(Http.Method.OPTIONS.text());
+        boolean isMethodOPTION = methodName.equalsIgnoreCase(Method.OPTIONS.text());
         boolean requestContainsAccessControlRequestMethodHeader =
-                requestAdapter.headerContainsKey(Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD);
+                requestAdapter.headerContainsKey(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD);
 
         RequestType result = isMethodOPTION && requestContainsAccessControlRequestMethodHeader
                 ? RequestType.PREFLIGHT
@@ -417,7 +419,7 @@ public class CorsSupportHelper<Q, R> {
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOriginConfig.allowOrigins());
-        Optional<String> originOpt = requestAdapter.firstHeader(Http.HeaderNames.ORIGIN);
+        Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
         if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
             return Optional.of(forbid(requestAdapter,
                     responseAdapter,
@@ -443,27 +445,27 @@ public class CorsSupportHelper<Q, R> {
         //
         // Throw an exception if there is no ORIGIN because we should not even be here unless this is a CORS request, which would
         // have required the ORIGIN heading to be present when we determined the request type.
-        String origin = requestAdapter.firstHeader(Http.HeaderNames.ORIGIN)
-                .orElseThrow(noRequiredHeaderExcFactory(Http.HeaderNames.ORIGIN));
+        String origin = requestAdapter.firstHeader(HeaderNames.ORIGIN)
+                .orElseThrow(noRequiredHeaderExcFactory(HeaderNames.ORIGIN));
 
         if (crossOrigin.allowCredentials()) {
             new Headers()
-                    .add(Http.HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
-                    .add(Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, origin)
-                    .add(Http.HeaderNames.VARY, Http.HeaderNames.ORIGIN)
+                    .add(HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
+                    .add(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, origin)
+                    .add(HeaderNames.VARY, HeaderNames.ORIGIN)
                     .setAndLog(responseAdapter::header, "allow-credentials was set in CORS config");
         } else {
             List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
             new Headers()
-                    .add(Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin)
-                    .add(Http.HeaderNames.VARY, Http.HeaderNames.ORIGIN)
+                    .add(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin)
+                    .add(HeaderNames.VARY, HeaderNames.ORIGIN)
                     .setAndLog(responseAdapter::header, "allow-credentials was not set in CORS config");
         }
 
         // Add Access-Control-Expose-Headers if non-empty
         Headers headers = new Headers();
         formatHeader(crossOrigin.exposeHeaders()).ifPresent(
-                h -> headers.add(Http.HeaderNames.ACCESS_CONTROL_EXPOSE_HEADERS, h));
+                h -> headers.add(HeaderNames.ACCESS_CONTROL_EXPOSE_HEADERS, h));
         headers.setAndLog(responseAdapter::header, "expose-headers was set in CORS config");
     }
 
@@ -482,11 +484,11 @@ public class CorsSupportHelper<Q, R> {
 
         Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
         if (originOpt.isEmpty()) {
-            return forbid(requestAdapter, responseAdapter, noRequiredHeader(Http.HeaderNames.ORIGIN));
+            return forbid(requestAdapter, responseAdapter, noRequiredHeader(HeaderNames.ORIGIN));
         }
 
         // Access-Control-Request-Method had to be present in order for this to be assessed as a preflight request.
-        String requestedMethod = requestAdapter.firstHeader(Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD).get();
+        String requestedMethod = requestAdapter.firstHeader(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD).get();
 
         // Lookup the CrossOriginConfig using the requested method, not the current method (which we know is OPTIONS).
         Optional<CrossOriginConfig> crossOriginOpt = aggregator.lookupCrossOrigin(
@@ -520,7 +522,7 @@ public class CorsSupportHelper<Q, R> {
                                         allowedMethods));
         }
         // Check if headers are allowed
-        Set<String> requestHeaders = parseHeader(requestAdapter.allHeaders(Http.HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS));
+        Set<String> requestHeaders = parseHeader(requestAdapter.allHeaders(HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS));
         List<String> allowedHeaders = Arrays.asList(crossOrigin.allowHeaders());
         if (!allowedHeaders.contains("*") && !contains(requestHeaders, allowedHeaders)) {
             return forbid(requestAdapter,
@@ -535,14 +537,14 @@ public class CorsSupportHelper<Q, R> {
         Headers headers = new Headers()
                 .add(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, originOpt.get());
         if (crossOrigin.allowCredentials()) {
-            headers.add(Http.HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true", "allowCredentials config was set");
+            headers.add(HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true", "allowCredentials config was set");
         }
-        headers.add(Http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
+        headers.add(HeaderNames.ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
         formatHeader(requestHeaders.toArray()).ifPresent(
-                h -> headers.add(Http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, h));
+                h -> headers.add(HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, h));
         long maxAgeSeconds = crossOrigin.maxAgeSeconds();
         if (maxAgeSeconds > 0) {
-            headers.add(Http.HeaderNames.ACCESS_CONTROL_MAX_AGE, maxAgeSeconds, "maxAgeSeconds > 0");
+            headers.add(HeaderNames.ACCESS_CONTROL_MAX_AGE, maxAgeSeconds, "maxAgeSeconds > 0");
         }
         headers.setAndLog(responseAdapter::header, "headers set on preflight request");
         return responseAdapter.ok();
@@ -745,11 +747,11 @@ public class CorsSupportHelper<Q, R> {
         return true;
     }
 
-    private static Supplier<IllegalArgumentException> noRequiredHeaderExcFactory(Http.HeaderName header) {
+    private static Supplier<IllegalArgumentException> noRequiredHeaderExcFactory(HeaderName header) {
         return () -> new IllegalArgumentException(noRequiredHeader(header));
     }
 
-    private static String noRequiredHeader(Http.HeaderName header) {
+    private static String noRequiredHeader(HeaderName header) {
         return "CORS request does not have required header " + header.defaultCase();
     }
 

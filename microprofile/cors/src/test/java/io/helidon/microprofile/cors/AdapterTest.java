@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -91,7 +91,7 @@ public class AdapterTest extends BaseCrossOriginTest {
                 .request()
                 .header(TEST_ID_HEADER, testId)
                 .get();
-        assertThat("Response status", response.getStatus(), is(Http.Status.OK_200.code()));
+        assertThat("Response status", response.getStatus(), is(Status.OK_200.code()));
         assertThat("Adapter path", TestFilter.adapters.get(testId).path(), is(requestPath));
     }
 

@@ -26,7 +26,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -196,7 +196,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
                 .post()
                 .uri(asserterUri)
                 .headers(it -> {
-                    it.add(Http.HeaderNames.AUTHORIZATION, "Bearer " + appToken);
+                    it.add(HeaderNames.AUTHORIZATION, "Bearer " + appToken);
                 });
 
         return processRoleRequest(request, requestBuilder.build(), subjectName);

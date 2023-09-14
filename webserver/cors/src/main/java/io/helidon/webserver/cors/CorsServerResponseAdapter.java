@@ -16,8 +16,8 @@
 package io.helidon.webserver.cors;
 
 import io.helidon.cors.CorsResponseAdapter;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.HeaderName;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerResponse;
 
 /**
@@ -45,13 +45,13 @@ class CorsServerResponseAdapter implements CorsResponseAdapter<ServerResponse> {
 
     @Override
     public ServerResponse forbidden(String message) {
-        serverResponse.status(Http.Status.create(Http.Status.FORBIDDEN_403.code(), message));
+        serverResponse.status(Status.create(Status.FORBIDDEN_403.code(), message));
         return serverResponse;
     }
 
     @Override
     public ServerResponse ok() {
-        serverResponse.status(Http.Status.OK_200);
+        serverResponse.status(Status.OK_200);
         return serverResponse;
     }
 

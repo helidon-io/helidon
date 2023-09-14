@@ -38,9 +38,10 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -319,11 +320,11 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
 
             MediaType resultMediaType = requestedMediaType.get();
             final String openAPIDocument = prepareDocument(resultMediaType);
-            resp.status(Http.Status.OK_200);
+            resp.status(Status.OK_200);
             resp.headers().contentType(resultMediaType);
             resp.send(openAPIDocument);
         } catch (Exception ex) {
-            resp.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            resp.status(Status.INTERNAL_SERVER_ERROR_500);
             resp.send("Error serializing OpenAPI document; " + ex.getMessage());
             logger().log(System.Logger.Level.ERROR, "Error serializing OpenAPI document", ex);
         }
@@ -391,7 +392,7 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
         ServerRequestHeaders headersToCheck = req.headers();
         if (headersToCheck.acceptedTypes().isEmpty()) {
             WritableHeaders<?> writableHeaders = WritableHeaders.create(headersToCheck);
-            writableHeaders.add(Http.HeaderNames.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
+            writableHeaders.add(HeaderNames.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
             headersToCheck = ServerRequestHeaders.create(writableHeaders);
         }
         return headersToCheck

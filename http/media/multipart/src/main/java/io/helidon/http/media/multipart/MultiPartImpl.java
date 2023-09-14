@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import io.helidon.common.buffers.DataReader;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;

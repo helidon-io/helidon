@@ -20,8 +20,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -86,13 +87,13 @@ public class MicrometerSimplePrometheusTest {
         counter1.increment(3);
         gauge1.set(4);
         ClientResponseTyped<String> response = webClient.get()
-                .header(Http.HeaderNames.ACCEPT, MediaTypes.TEXT_PLAIN.text())
+                .header(HeaderNames.ACCEPT, MediaTypes.TEXT_PLAIN.text())
                 .path("/micrometer")
                 .request(String.class);
 
         String promOutput = response.entity();
 
-        assertThat("Unexpected HTTP status, response is: " + promOutput, response.status(), is(Http.Status.OK_200));
+        assertThat("Unexpected HTTP status, response is: " + promOutput, response.status(), is(Status.OK_200));
     }
 
     @Test
@@ -101,22 +102,22 @@ public class MicrometerSimplePrometheusTest {
         counter1.increment(3);
         gauge1.set(4);
         ClientResponseTyped<String> response = webClient.get()
-                .header(Http.HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
+                .header(HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
                 .path("/micrometer")
                 .queryParam("type", "prometheus")
                 .request(String.class);
 
-        assertThat("Unexpected HTTP status", response.status(), is(Http.Status.OK_200));
+        assertThat("Unexpected HTTP status", response.status(), is(Status.OK_200));
     }
 
     @Test
     public void checkNoMatch() throws ExecutionException, InterruptedException {
         try(HttpClientResponse response = webClient.get()
-                .header(Http.HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
+                .header(HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
                 .path("/micrometer")
                 .request()) {
 
-            assertThat("Expected failed HTTP status", response.status(), is(Http.Status.NOT_ACCEPTABLE_406));
+            assertThat("Expected failed HTTP status", response.status(), is(Status.NOT_ACCEPTABLE_406));
         }
     }
 

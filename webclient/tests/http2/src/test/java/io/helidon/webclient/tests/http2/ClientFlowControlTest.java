@@ -30,9 +30,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.helidon.http.Http;
-import io.helidon.logging.common.LogConfig;
+import io.helidon.http.Method;
 import io.helidon.http.http2.WindowSize;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
 
@@ -129,7 +129,7 @@ class ClientFlowControlTest {
         ByteArrayInputStream baos = new ByteArrayInputStream(EXPECTED.getBytes());
         CompletableFuture<String> clientFuture = CompletableFuture.supplyAsync(() -> {
             try (Http2ClientResponse res = client
-                    .method(Http.Method.PUT)
+                    .method(Method.PUT)
                     .path("/out")
                     .priorKnowledge(true)
                     .outputStream(out -> {
@@ -166,7 +166,7 @@ class ClientFlowControlTest {
 
         AtomicLong receivedByteSize = new AtomicLong();
         try (Http2ClientResponse res = client
-                .method(Http.Method.GET)
+                .method(Method.GET)
                 .path("/in")
                 .priorKnowledge(true)
                 .request()) {

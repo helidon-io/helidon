@@ -37,9 +37,12 @@ import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Status;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.jsonp.JsonpSupport;
@@ -68,7 +71,7 @@ class LogService implements HttpService {
     private final AtomicBoolean logHandlingInitialized = new AtomicBoolean();
     private final boolean permitAll;
     private final boolean logStreamEnabled;
-    private final Http.Header logStreamMediaTypeHeader;
+    private final Header logStreamMediaTypeHeader;
     private final long logStreamSleepSeconds;
     private final int logStreamQueueSize;
     private final String logStreamIdleString;
@@ -161,7 +164,7 @@ class LogService implements HttpService {
     private void unsetLoggerHandler(ServerRequest req, ServerResponse res) {
         String logger = req.path().pathParameters().first("logger").orElse("");
         Logger.getLogger(logger).setLevel(null);
-        res.status(Http.Status.NO_CONTENT_204).send();
+        res.status(Status.NO_CONTENT_204).send();
     }
 
     private void setLevelHandler(ServerRequest req, ServerResponse res) {
@@ -175,7 +178,7 @@ class LogService implements HttpService {
         Logger.getLogger(logger)
                 .setLevel(desiredLevel);
 
-        res.status(Http.Status.NO_CONTENT_204).send();
+        res.status(Status.NO_CONTENT_204).send();
     }
 
     private void loggerHandler(ServerRequest req, ServerResponse res) {
@@ -262,8 +265,8 @@ class LogService implements HttpService {
     static class Builder implements io.helidon.common.Builder<Builder, LogService> {
         private boolean permitAll = false;
         private boolean logStreamEnabled = true;
-        private Http.Header logStreamMediaTypeHeader = Http.Headers.create(Http.HeaderNames.CONTENT_TYPE,
-                                                                           HttpMediaTypes.PLAINTEXT_UTF_8.text());
+        private Header logStreamMediaTypeHeader = HeaderValues.create(HeaderNames.CONTENT_TYPE,
+                                                                      HttpMediaTypes.PLAINTEXT_UTF_8.text());
         private Charset logStreamCharset = StandardCharsets.UTF_8;
         private long logStreamSleepSeconds = 5L;
         private int logStreamQueueSize = 100;
@@ -305,7 +308,7 @@ class LogService implements HttpService {
         }
 
         Builder logStreamMediaType(HttpMediaType logStreamMediaType) {
-            this.logStreamMediaTypeHeader = Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE, logStreamMediaType.text());
+            this.logStreamMediaTypeHeader = HeaderValues.createCached(HeaderNames.CONTENT_TYPE, logStreamMediaType.text());
             this.logStreamCharset = logStreamMediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
             return this;
         }

@@ -28,8 +28,9 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -46,10 +47,10 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
 
-import static io.helidon.http.Http.HeaderNames.ALLOW;
-import static io.helidon.http.Http.Status.METHOD_NOT_ALLOWED_405;
-import static io.helidon.http.Http.Status.NOT_FOUND_404;
-import static io.helidon.http.Http.Status.OK_200;
+import static io.helidon.http.HeaderNames.ALLOW;
+import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
+import static io.helidon.http.Status.NOT_FOUND_404;
+import static io.helidon.http.Status.OK_200;
 
 /**
  * Support for metrics for Helidon WebServer.
@@ -90,7 +91,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
     private static final String KPI_METER_NAME_PREFIX_WITH_DOT = KPI_METER_NAME_PREFIX + ".";
 
     private static final System.Logger LOGGER = System.getLogger(MetricsFeature.class.getName());
-    private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Http.Status.NOT_FOUND_404)
+    private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Status.NOT_FOUND_404)
             .send("Metrics are disabled");
 
     private static final Iterable<String> EMPTY_ITERABLE = Collections::emptyIterator;
@@ -99,6 +100,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
     private final MetricsConfig metricsConfig;
     private final MeterRegistry meterRegistry;
+    private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     private MetricsFeature(Builder builder) {
         super(LOGGER, builder, "Metrics");
@@ -156,13 +158,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
     @Override
     public Optional<HttpService> service() {
         // main service is responsible for exposing metrics endpoints over HTTP
-        return Optional.of(rules -> {
-            if (metricsConfig.enabled()) {
-                setUpEndpoints(rules);
-            } else {
-                setUpDisabledEndpoints(rules);
-            }
-        });
+        return Optional.of(new MetricsService());
     }
 
     /**
@@ -171,7 +167,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
      * @param rules     rules to use
      */
     public void configureVendorMetrics(HttpRouting.Builder rules) {
-        KeyPerformanceIndicatorSupport.Metrics kpiMetrics =
+        kpiMetrics =
                 KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
                                                         KPI_METER_NAME_PREFIX_WITH_DOT,
                                                         metricsConfig
@@ -214,6 +210,25 @@ public class MetricsFeature extends HelidonFeatureSupport {
         return formatter.format();
     }
 
+    /**
+     * Separate metrics service class with an afterStop method that is properly invoked.
+     */
+    private class MetricsService implements HttpService {
+        @Override
+        public void routing(HttpRules rules) {
+            if (metricsConfig.enabled()) {
+                setUpEndpoints(rules);
+            } else {
+                setUpDisabledEndpoints(rules);
+            }
+        }
+
+        @Override
+        public void afterStop() {
+            kpiMetrics.close();
+        }
+    }
+
     private MeterRegistryFormatter chooseFormatter(MeterRegistry meterRegistry,
                                                    MediaType mediaType,
                                                    Optional<String> scopeTagName,
@@ -237,7 +252,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
             return formatter.get();
         }
         throw new HttpException("Unsupported media type for metrics formatting: " + mediaType,
-                                Http.Status.UNSUPPORTED_MEDIA_TYPE_415,
+                                Status.UNSUPPORTED_MEDIA_TYPE_415,
                                 true);
     }
 
@@ -251,9 +266,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
                              Iterable<String> scopeSelection,
                              Iterable<String> nameSelection) {
         MediaType mediaType = bestAccepted(req);
-        res.header(Http.Headers.CACHE_NO_CACHE);
+        res.header(HeaderValues.CACHE_NO_CACHE);
         if (mediaType == null) {
-            res.status(Http.Status.NOT_ACCEPTABLE_406);
+            res.status(Status.NOT_ACCEPTABLE_406);
             res.send();
         }
 

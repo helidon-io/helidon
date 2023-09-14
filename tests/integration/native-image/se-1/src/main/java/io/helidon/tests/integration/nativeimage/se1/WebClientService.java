@@ -23,10 +23,11 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.http.HttpRules;
@@ -48,7 +49,7 @@ class WebClientService implements HttpService {
         this.context = "http://localhost:" + config.get("port").asInt().orElse(7076);
         client = WebClient.builder()
                 .baseUri(context)
-                .addHeader(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                .addHeader(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                 .config(config.get("client"))
                 .build();
     }
@@ -63,13 +64,13 @@ class WebClientService implements HttpService {
 
     private void redirect(ServerRequest request,
                           ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, context + "/wc/endpoint");
-        response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+        response.headers().add(HeaderNames.LOCATION, context + "/wc/endpoint");
+        response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectInfinite(ServerRequest serverRequest, ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, context + "/wc/redirect/infinite");
-        response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+        response.headers().add(HeaderNames.LOCATION, context + "/wc/redirect/infinite");
+        response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void getEndpoint(final ServerRequest request, final ServerResponse response) {
@@ -85,7 +86,7 @@ class WebClientService implements HttpService {
 
             response.send("ALL TESTS PASSED!\n");
         } catch (Exception e) {
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            response.status(Status.INTERNAL_SERVER_ERROR_500);
             StringWriter writer = new StringWriter();
             e.printStackTrace(new PrintWriter(writer));
             response.send("Failed to process request: " + writer);
@@ -115,7 +116,7 @@ class WebClientService implements HttpService {
                 .path("/wc/redirect")
                 .followRedirects(false)
                 .request()) {
-            assertEquals(response.status(), Http.Status.MOVED_PERMANENTLY_301);
+            assertEquals(response.status(), Status.MOVED_PERMANENTLY_301);
         }
     }
 

@@ -20,8 +20,8 @@ import java.net.URI;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.http.Http.Status.Family;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status.Family;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;

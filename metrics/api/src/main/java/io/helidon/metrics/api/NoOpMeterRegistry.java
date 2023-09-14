@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -31,6 +32,9 @@ import java.util.function.Predicate;
  * </p>
  */
 class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
+
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new CopyOnWriteArrayList<>();
 
     static Builder builder() {
         return new Builder();
@@ -67,6 +71,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     @Override
     public Optional<Meter> remove(Meter meter) {
+        onRemoveListeners.forEach(listener -> listener.accept(meter));
         return Optional.empty();
     }
 
@@ -108,19 +113,36 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     @Override
     public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
         NoOpMeter.Builder<?, ?> b = (NoOpMeter.Builder<?, ?>) builder;
-        return findOrRegister(NoOpMeter.Id.create(b.name(),
-                                                  b.tags()),
-                              builder);
+        M result = findOrRegister(NoOpMeter.Id.create(b.name(),
+                                                      b.tags()),
+                                  builder);
+        onAddListeners.forEach(listener -> listener.accept(result));
+        return result;
     }
 
     @Override
     public MeterRegistry onMeterAdded(Consumer<Meter> listener) {
+        onAddListeners.add(listener);
         return this;
     }
 
     @Override
     public MeterRegistry onMeterRemoved(Consumer<Meter> listener) {
+        onRemoveListeners.add(listener);
         return this;
+    }
+
+    private <M extends Meter> Optional<M> find(Meter.Id id, Class<M> mClass) {
+        return Optional.empty();
+    }
+
+    private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {
+        NoOpMeter.Builder<?, ?> noOpBuilder = (NoOpMeter.Builder<?, ?>) builder;
+        // The following cast will always succeed if we create the meter by invoking the builder,
+        // it will succeed if we retrieved a previously-registered meter of a compatible type,
+        // and it will (correctly) fail if we found a previously-registered meter of an incompatible
+        // type compared to what the caller requested.
+        return (M) noOpBuilder.build();
     }
 
     static class Builder implements MeterRegistry.Builder<Builder, NoOpMeterRegistry> {
@@ -149,18 +171,5 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
         public Builder onMeterRemoved(Consumer<Meter> removeListener) {
             return identity();
         }
-    }
-
-    private <M extends Meter> Optional<M> find(Meter.Id id, Class<M> mClass) {
-        return Optional.empty();
-    }
-
-    private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {
-        NoOpMeter.Builder<?, ?> noOpBuilder = (NoOpMeter.Builder<?, ?>) builder;
-        // The following cast will always succeed if we create the meter by invoking the builder,
-        // it will succeed if we retrieved a previously-registered meter of a compatible type,
-        // and it will (correctly) fail if we found a previously-registered meter of an incompatible
-        // type compared to what the caller requested.
-        return (M) noOpBuilder.build();
     }
 }

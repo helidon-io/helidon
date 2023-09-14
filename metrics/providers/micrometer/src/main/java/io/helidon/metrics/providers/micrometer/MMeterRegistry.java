@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -79,8 +80,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
     private final io.micrometer.core.instrument.MeterRegistry delegate;
 
-    private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new ArrayList<>();
-    private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new ArrayList<>();
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Helidon API clock to be returned by the {@link #clock()} method.
@@ -244,10 +245,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return scopeMembership.keySet();
     }
 
-    // TODO enhance after adding back the filtering config
     @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
-        return metricsConfig.enabled();
+        return metricsConfig.enabled()
+                && (scope.isEmpty()
+                    || metricsConfig.isMeterEnabled(name, scope.get()));
     }
 
     @Override
@@ -392,7 +394,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         try {
 
             if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
-                return metricsFactory.noOpMeter(builder);
+                lock.lock();
+                try {
+                    io.helidon.metrics.api.Meter result = metricsFactory.noOpMeter(builder);
+                    onAddListeners.forEach(listener -> listener.accept(result));
+                    return result;
+                } finally {
+                    lock.unlock();
+                }
             }
 
             io.helidon.metrics.api.Meter helidonMeter;
@@ -482,12 +491,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             }
 
             onAddListeners.forEach(listener -> {
-                try {
-                    listener.accept(mMeter);
-                } catch (Exception ex) {
-                    LOGGER.log(Level.ERROR, "Error invoking on-add callback listener " + listener, ex);
-                    // Continue on with the next listener.
-                }
+                listener.accept(mMeter);
             });
 
         } finally {
@@ -566,6 +570,10 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
             M meter = registration.apply(delegate());
 
+            /*
+             Normally, the on-add listener will have removed the pending builder in scope, but do so here again if the listener
+             did not run--if the meter already exists in the Micrometer meter registry, for example.
+             */
             pendingBuildersInScope.remove(id);
 
             HM result = (HM) meters.get(meter);

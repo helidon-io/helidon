@@ -19,7 +19,7 @@ package io.helidon.examples.integrations.vault.hcp;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
 import io.helidon.integrations.vault.sys.Sys;
@@ -64,7 +64,7 @@ class Kv2Service implements HttpService {
             Kv2Secret kv2Secret = secret.get();
             res.send("Version " + kv2Secret.metadata().version() + ", secret: " + kv2Secret.values().toString());
         } else {
-            res.status(Http.Status.NOT_FOUND_404);
+            res.status(Status.NOT_FOUND_404);
             res.send();
         }
     }

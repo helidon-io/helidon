@@ -19,7 +19,8 @@ package io.helidon.cors;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.http.Http;
+import io.helidon.common.uri.UriInfo;
+import io.helidon.http.HeaderName;
 
 /**
  * <em>Not for use by developers.</em>
@@ -36,11 +37,11 @@ public interface CorsRequestAdapter<T> {
     String path();
 
     /**
-     * Authority of the request (host header, or obtained from forwarded header).
+     * Returns the {@link io.helidon.common.uri.UriInfo} for the request.
      *
-     * @return authority
+     * @return URI info for the request
      */
-    String authority();
+    UriInfo requestedUri();
 
     /**
      * Retrieves the first value for the specified header as a String.
@@ -48,7 +49,7 @@ public interface CorsRequestAdapter<T> {
      * @param key header name to retrieve
      * @return the first header value for the key
      */
-    Optional<String> firstHeader(Http.HeaderName key);
+    Optional<String> firstHeader(HeaderName key);
 
     /**
      * Reports whether the specified header exists.
@@ -56,7 +57,7 @@ public interface CorsRequestAdapter<T> {
      * @param key header name to check for
      * @return whether the header exists among the request's headers
      */
-    boolean headerContainsKey(Http.HeaderName key);
+    boolean headerContainsKey(HeaderName key);
 
     /**
      * Retrieves all header values for a given key as Strings.
@@ -64,7 +65,7 @@ public interface CorsRequestAdapter<T> {
      * @param key header name to retrieve
      * @return header values for the header; empty list if none
      */
-    List<String> allHeaders(Http.HeaderName key);
+    List<String> allHeaders(HeaderName key);
 
     /**
      * Reports the method name for the request.

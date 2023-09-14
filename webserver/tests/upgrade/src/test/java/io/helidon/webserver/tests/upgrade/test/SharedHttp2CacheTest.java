@@ -16,7 +16,9 @@
 
 package io.helidon.webserver.tests.upgrade.test;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
@@ -27,7 +29,7 @@ import io.helidon.webserver.http2.Http2Route;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.helidon.http.Http.Method.POST;
+import static io.helidon.http.Method.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -50,7 +52,7 @@ class SharedHttp2CacheTest {
     @MethodSource("params")
     void cacheHttp2WithServerRestart(Param param) {
         LogConfig.configureRuntime();
-        Http.HeaderName clientPortHeader = Http.HeaderNames.create("client-port");
+        HeaderName clientPortHeader = HeaderNames.create("client-port");
         WebServer webServer = null;
         try {
             HttpRouting routing = HttpRouting.builder()
@@ -79,7 +81,7 @@ class SharedHttp2CacheTest {
             Integer firstReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
 
             if (param.restart()) {
@@ -95,7 +97,7 @@ class SharedHttp2CacheTest {
             Integer secondReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
 
             if (!param.restart()) {

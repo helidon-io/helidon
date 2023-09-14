@@ -23,7 +23,7 @@ import java.util.Optional;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.spi.HttpClientSpi;
 
 /**
@@ -44,7 +44,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
     HttpClientRequest(WebClient webClient,
                       WebClientConfig clientConfig,
-                      Http.Method method,
+                      Method method,
                       ClientUri clientUri,
                       Map<String, LoomClient.ProtocolSpi> protocolsToClients,
                       List<LoomClient.ProtocolSpi> protocols,

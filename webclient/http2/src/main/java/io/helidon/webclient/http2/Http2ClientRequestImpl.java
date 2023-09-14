@@ -22,7 +22,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -40,7 +42,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     private Duration timeout = Duration.ofSeconds(10);
 
     Http2ClientRequestImpl(Http2ClientImpl http2Client,
-                           Http.Method method,
+                           Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
         super(http2Client.clientConfig(),
@@ -56,7 +58,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     }
 
     Http2ClientRequestImpl(Http2ClientRequestImpl request,
-                           Http.Method method,
+                           Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
         this(request.http2Client, method, clientUri, properties);
@@ -161,11 +163,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
             int code = clientResponse.status().code();
             if (code < 300 || code >= 400) {
                 return clientResponse;
-            } else if (!clientResponse.headers().contains(Http.HeaderNames.LOCATION)) {
-                throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION + " header present in the response! "
+            } else if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
+                throw new IllegalStateException("There is no " + HeaderNames.LOCATION + " header present in the response! "
                                                         + "It is not clear where to redirect.");
             }
-            String redirectedUri = clientResponse.headers().get(Http.HeaderNames.LOCATION).value();
+            String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).value();
             URI newUri = URI.create(redirectedUri);
             ClientUri redirectUri = ClientUri.create(newUri);
 
@@ -181,13 +183,13 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                 redirectUri.port(resolvedUri.port());
             }
             //Method and entity is required to be the same as with original request with 307 and 308 requests
-            if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
-                    || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
+            if (clientResponse.status() == Status.TEMPORARY_REDIRECT_307
+                    || clientResponse.status() == Status.PERMANENT_REDIRECT_308) {
                 clientRequest = new Http2ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, properties());
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes
                 entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                clientRequest = new Http2ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, properties());
+                clientRequest = new Http2ClientRequestImpl(clientRequest, Method.GET, redirectUri, properties());
             }
         }
         throw new IllegalStateException("Maximum number of request redirections ("

@@ -17,7 +17,7 @@
 package io.helidon.webclient.api;
 
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     private final HttpClientResponse response;
@@ -42,7 +42,7 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     }
 
     @Override
-    public Http.Status status() {
+    public Status status() {
         return response.status();
     }
 

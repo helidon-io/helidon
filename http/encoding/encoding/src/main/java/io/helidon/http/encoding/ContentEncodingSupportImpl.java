@@ -25,8 +25,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 
 class ContentEncodingSupportImpl implements ContentEncodingContext {
     private static final String IDENTITY_ENCODING = "identity";
@@ -116,11 +116,11 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
     @Override
     public ContentEncoder encoder(Headers headers) {
-        if (!contentEncodingEnabled() || !headers.contains(Http.HeaderNames.ACCEPT_ENCODING)) {
+        if (!contentEncodingEnabled() || !headers.contains(HeaderNames.ACCEPT_ENCODING)) {
             return ContentEncoder.NO_OP;
         }
 
-        String acceptEncoding = headers.get(Http.HeaderNames.ACCEPT_ENCODING).value();
+        String acceptEncoding = headers.get(HeaderNames.ACCEPT_ENCODING).value();
         /*
             Accept-Encoding: gzip
             Accept-Encoding: gzip, compress, br

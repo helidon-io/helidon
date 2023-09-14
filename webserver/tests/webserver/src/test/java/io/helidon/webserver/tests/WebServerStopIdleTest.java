@@ -16,9 +16,10 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -38,7 +39,7 @@ class WebServerStopIdleTest {
                 .baseUri("http://localhost:" + webServer.port())
                 .build();
         try (var response = client.get("/ok").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.entity().as(String.class), is("ok"));
         }
 

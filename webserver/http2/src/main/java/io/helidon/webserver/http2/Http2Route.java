@@ -18,8 +18,8 @@ package io.helidon.webserver.http2;
 
 import java.util.function.Predicate;
 
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 import io.helidon.webserver.http.Handler;
@@ -31,11 +31,11 @@ import io.helidon.webserver.http.HttpRoute;
  * defined on {@link io.helidon.webserver.http.HttpRouting.Builder}.
  */
 public class Http2Route implements HttpRoute {
-    private final Predicate<Http.Method> methodPredicate;
+    private final Predicate<Method> methodPredicate;
     private final PathMatcher pathMatcher;
     private final Handler handler;
 
-    private Http2Route(Predicate<Http.Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
+    private Http2Route(Predicate<Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
         this.methodPredicate = methodPredicate;
         this.pathMatcher = pathMatcher;
         this.handler = handler;
@@ -49,8 +49,8 @@ public class Http2Route implements HttpRoute {
      * @param handler handler
      * @return a new route
      */
-    public static Http2Route route(Http.Method method, String path, Handler handler) {
-        return new Http2Route(Http.Method.predicate(method),
+    public static Http2Route route(Method method, String path, Handler handler) {
+        return new Http2Route(Method.predicate(method),
                               PathMatchers.create(path),
                               handler);
     }

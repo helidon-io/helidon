@@ -38,8 +38,11 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -54,8 +57,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     /**
      * Helidon user agent request header.
      */
-    public static final Http.Header USER_AGENT_HEADER = Http.Headers.create(Http.HeaderNames.USER_AGENT,
-                                                                            "Helidon " + Version.VERSION);
+    public static final Header USER_AGENT_HEADER = HeaderValues.create(HeaderNames.USER_AGENT,
+                                                                       "Helidon " + Version.VERSION);
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
     private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");
 
@@ -63,7 +66,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final HttpClientConfig clientConfig;
     private final WebClientCookieManager cookieManager;
     private final String protocolId;
-    private final Http.Method method;
+    private final Method method;
     private final ClientUri clientUri;
     private final Map<String, String> properties;
     private final ClientRequestHeaders headers;
@@ -84,7 +87,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
-                                Http.Method method,
+                                Method method,
                                 ClientUri clientUri,
                                 Map<String, String> properties) {
         this.clientConfig = clientConfig;
@@ -156,14 +159,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
-    public T header(Http.Header header) {
+    public T header(Header header) {
         this.headers.set(header);
         return identity();
     }
 
     @Override
     public T headers(Headers headers) {
-        for (Http.Header header : headers) {
+        for (Header header : headers) {
             this.headers.add(header);
         }
         return identity();
@@ -276,7 +279,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @return HTTP method
      */
     @Override
-    public Http.Method method() {
+    public Method method() {
         return method;
     }
 
@@ -467,8 +470,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     private void rejectHeadWithEntity() {
-        if (this.method.equals(Http.Method.HEAD)) {
-            throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
+        if (this.method.equals(Method.HEAD)) {
+            throw new IllegalArgumentException("Payload in method '" + Method.HEAD + "' has no defined semantics");
         }
     }
 

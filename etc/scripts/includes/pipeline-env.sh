@@ -65,37 +65,29 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
         PATH="${PATH}:${JAVA_HOME}/bin"
     }
 
-    if [ -n "${HELIDON_PIPELINES}" ] ; then
-      export PIPELINE="true"
-      MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS}"
-      export MAVEN_ARGS
-      # temporary fix for copyright plugin
-      git config diff.renameLimit 32768
-    fi
+    MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+    MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
+    MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
+    # Needed for archetype engine plugin
+    MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.base/java.util=ALL-UNNAMED"
+    # Needed for generating site
+    MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.desktop/com.sun.imageio.plugins.png=ALL-UNNAMED"
+
+    MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS}"
 
     if [ -n "${JENKINS_HOME}" ] ; then
         export PIPELINE="true"
-        export JAVA_HOME="/tools/jdk20"
-        MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-        MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
-        MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
-        # Needed for archetype engine plugin
-        MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.base/java.util=ALL-UNNAMED"
-        # Needed for generating site
-        MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.desktop/com.sun.imageio.plugins.png=ALL-UNNAMED"
-        export MAVEN_OPTS
+        export JAVA_HOME="/tools/jdk21"
         export PATH="/tools/apache-maven-3.8.6/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
         if [ -n "${GITHUB_SSH_KEY}" ] ; then
             export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY}"
         fi
-        MAVEN_ARGS="${MAVEN_ARGS} -B"
         if [ -n "${MAVEN_SETTINGS_FILE}" ] ; then
             MAVEN_ARGS="${MAVEN_ARGS} -s ${MAVEN_SETTINGS_FILE}"
         fi
         if [ -n "${NPM_CONFIG_REGISTRY}" ] ; then
             MAVEN_ARGS="${MAVEN_ARGS} -Dnpm.download.root=${NPM_CONFIG_REGISTRY}/npm/-/"
         fi
-        export MAVEN_ARGS
 
         if [ -n "${https_proxy}" ] && [[ ! "${https_proxy}" =~ ^http:// ]] ; then
             export https_proxy="http://${https_proxy}"
@@ -130,10 +122,35 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
             GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
             /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
         fi
-        # temporary fix for copyright plugin
-        git config diff.renameLimit 32768
     fi
 
+    if [ -n "${RELEASE_WORKFLOW}" ] ; then
+        if [ -n "${MAVEN_SETTINGS}" ] ; then
+            export MAVEN_SETTINGS_FILE="${HOME}/.m2/settings.xml"
+            echo "${MAVEN_SETTINGS}" > "${MAVEN_SETTINGS_FILE}"
+            MAVEN_ARGS="${MAVEN_ARGS} -s ${MAVEN_SETTINGS_FILE}"
+        fi
+        if [ -n "${GPG_PUBLIC_KEY}" ] ; then
+            tmpfile=$(mktemp /tmp/pub.XXXXXX.key)
+            echo "${GPG_PUBLIC_KEY}" > "${tmpfile}"
+            gpg --import --no-tty --batch "${tmpfile}"
+            rm "$tmpfile"
+        fi
+        if [ -n "${GPG_PRIVATE_KEY}" ] ; then
+            tmpfile=$(mktemp /tmp/pri.XXXXXX.key)
+            echo "${GPG_PRIVATE_KEY}" > "${tmpfile}"
+            gpg --allow-secret-key-import --import --no-tty --batch "${tmpfile}"
+            rm "$tmpfile"
+        fi
+        if [ -n "${GPG_PASSPHRASE}" ] ; then
+            echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+            gpg-connect-agent reloadagent /bye
+            GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
+            /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
+        fi
+    fi
+    export MAVEN_ARGS
+    export MAVEN_OPTS
 else
     echo "WARNING: ${WS_DIR}/etc/scripts/includes/pipeline-env.sh included multiple times."
 fi

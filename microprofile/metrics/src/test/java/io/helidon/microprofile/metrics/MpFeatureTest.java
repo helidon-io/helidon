@@ -25,7 +25,6 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,7 +36,6 @@ public class MpFeatureTest {
     @Inject
     private WebTarget webTarget;
     
-    @Disabled
     @Test
     void testEndpoint() {
         MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
@@ -49,12 +47,17 @@ public class MpFeatureTest {
                 .accept(MediaType.TEXT_PLAIN)
                 .get(String.class);
 
-        Pattern pattern = Pattern.compile(".*^endpointCounter_total\\{.*?mp_scope=\"application\".*?}\\s*(\\S*).*?");
+        Pattern pattern = Pattern.compile(".*^endpointCounter_total\\{.*?mp_scope=\"application\".*?}\\s*(\\S*).*?",
+                                          Pattern.DOTALL + Pattern.MULTILINE);
         Matcher matcher = pattern.matcher(metricsResponse);
 
         assertThat("/metrics response", matcher.matches(), is(true));
         assertThat("Captured groups", matcher.groupCount(), is(1));
-        assertThat("Captured counter value", Integer.parseInt(matcher.group(1)), is(4));
+
+        /*
+         Prometheus expresses even counters as decimal values (e.g., 4.0).
+         */
+        assertThat("Captured counter value", Double.parseDouble(matcher.group(1)), is(4.0D));
     }
 
 

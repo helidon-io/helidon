@@ -16,13 +16,13 @@
 
 package io.helidon.examples.webserver.comments;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Status;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.DirectClient;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,14 +53,14 @@ public class MainTest {
                 .contentType(MediaTypes.TEXT_PLAIN)
                 .submit("Spring framework is the BEST!")) {
 
-            assertThat(response.status(), is(Http.Status.NOT_ACCEPTABLE_406));
+            assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406));
         }
     }
 
     @Test
     public void anonymousDisabled() {
         try (Http1ClientResponse response = client.get("/comment/one").request()) {
-            assertThat(response.status(), is(Http.Status.FORBIDDEN_403));
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
         }
     }
 }

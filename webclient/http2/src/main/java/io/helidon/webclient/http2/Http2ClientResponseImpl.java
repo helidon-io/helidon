@@ -25,14 +25,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
 
 class Http2ClientResponseImpl implements Http2ClientResponse {
-    private final Http.Status responseStatus;
+    private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
     private final CompletableFuture<Void> complete;
@@ -43,7 +43,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    Http2ClientResponseImpl(Http.Status status,
+    Http2ClientResponseImpl(Status status,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
                             InputStream inputStream, // input stream is nullable - no response entity
@@ -62,7 +62,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     }
 
     @Override
-    public Http.Status status() {
+    public Status status() {
         return responseStatus;
     }
 

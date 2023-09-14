@@ -18,11 +18,11 @@ package io.helidon.webserver.tests;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.http.Http;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.Method;
+import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.webserver.http.HttpRules;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -72,9 +72,9 @@ class HttpPipelineTest {
      */
     //@RepeatedTest(10)
     void testPipelining() {
-        socketHttpClient.request(Http.Method.PUT, "/");        // reset server
-        socketHttpClient.request(Http.Method.GET, null);        // request_0
-        socketHttpClient.request(Http.Method.GET, null);        // request_1
+        socketHttpClient.request(Method.PUT, "/");        // reset server
+        socketHttpClient.request(Method.GET, null);        // request_0
+        socketHttpClient.request(Method.GET, null);        // request_1
         log("put client");
         String reset = socketHttpClient.receive();
         assertThat(reset, notNullValue());

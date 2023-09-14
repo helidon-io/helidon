@@ -19,8 +19,8 @@ package io.helidon.webserver.http;
 import java.util.Arrays;
 
 import io.helidon.http.ForbiddenException;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.http.UnauthorizedException;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -32,7 +32,7 @@ class DefaultServerSecurity implements HttpSecurity {
     public boolean authenticate(ServerRequest request, ServerResponse response, boolean requiredHint)
             throws UnauthorizedException {
         if (requiredHint) {
-            throw new HttpException("Not Authenticated", Http.Status.UNAUTHORIZED_401);
+            throw new HttpException("Not Authenticated", Status.UNAUTHORIZED_401);
         }
         return true;
     }

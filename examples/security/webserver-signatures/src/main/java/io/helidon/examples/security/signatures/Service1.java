@@ -17,8 +17,8 @@ package io.helidon.examples.security.signatures;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Status;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -57,7 +57,7 @@ class Service1 implements HttpService {
                 .get(SecurityContext.class)
                 .ifPresentOrElse(context -> {
                     try (Http1ClientResponse clientRes = client.get().get(path).request()) {
-                        if (clientRes.status() == Http.Status.OK_200) {
+                        if (clientRes.status() == Status.OK_200) {
                             res.send(clientRes.entity().as(String.class));
                         } else {
                             res.send("Request failed, status: " + clientRes.status());

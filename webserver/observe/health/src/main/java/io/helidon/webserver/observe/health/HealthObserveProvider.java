@@ -17,7 +17,7 @@
 package io.helidon.webserver.observe.health;
 
 import io.helidon.common.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 
@@ -84,7 +84,7 @@ public class HealthObserveProvider implements ObserveProvider {
             observer.context(componentPath);
             routing.addFeature(observer);
         } else {
-            routing.get(componentPath + "/*", (req, res) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503)
+            routing.get(componentPath + "/*", (req, res) -> res.status(Status.SERVICE_UNAVAILABLE_503)
                     .send());
         }
     }

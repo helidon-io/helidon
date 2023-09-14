@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.tests;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.security.EndpointConfig;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -41,7 +41,7 @@ class ContextCheckTest extends TestParent {
                 .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
                 .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
-            assertThat(r.status().code(), is(Http.Status.OK_200.code()));
+            assertThat(r.status().code(), is(Status.OK_200.code()));
         }
     }
 }

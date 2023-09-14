@@ -18,7 +18,7 @@ package io.helidon.tests.integration.security.gh2297;
 
 import java.util.Base64;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.server.Server;
 
 import jakarta.ws.rs.client.Client;
@@ -27,7 +27,6 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -36,8 +35,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for gh2297.
  */
-// TODO metrics
-@Disabled
 class ProtectedMetricsTest {
     private static Server server;
     private static Client client;
@@ -81,17 +78,16 @@ class ProtectedMetricsTest {
         Response response = metricTarget.request()
                 .get();
 
-        assertThat(response.getStatus(), is(Http.Status.UNAUTHORIZED_401.code()));
+        assertThat(response.getStatus(), is(Status.UNAUTHORIZED_401.code()));
     }
 
-    // TODO metrics
     @Test
     void testMetricEndpointSuccess() {
         Response response = metricTarget.request()
                 .header("Authorization", basic("success"))
                 .get();
 
-        assertThat(response.getStatus(), is(Http.Status.OK_200.code()));
+        assertThat(response.getStatus(), is(Status.OK_200.code()));
     }
 
     @Test
@@ -100,7 +96,7 @@ class ProtectedMetricsTest {
                 .header("Authorization", basic("fail"))
                 .get();
 
-        assertThat(response.getStatus(), is(Http.Status.FORBIDDEN_403.code()));
+        assertThat(response.getStatus(), is(Status.FORBIDDEN_403.code()));
     }
 
     private String basic(String user) {

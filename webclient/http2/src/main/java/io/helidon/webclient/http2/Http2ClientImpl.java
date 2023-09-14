@@ -17,7 +17,7 @@
 package io.helidon.webclient.http2;
 
 import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
@@ -43,7 +43,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
     }
 
     @Override
-    public Http2ClientRequest method(Http.Method method) {
+    public Http2ClientRequest method(Method method) {
         ClientUri clientUri = clientConfig.baseUri()
                 .map(ClientUri::create) // create from base config
                 .orElseGet(ClientUri::create); // create as empty

@@ -25,12 +25,13 @@ import java.util.concurrent.Semaphore;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DirectHandler;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.ConnectionFlowControl;
@@ -297,7 +298,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
             ServerResponseHeaders headers = response.headers();
             byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
             if (message.length != 0) {
-                headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
+                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
             }
             Http2Headers http2Headers = Http2Headers.create(headers);
             if (message.length == 0) {
@@ -355,7 +356,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
 
     private void handle() {
         Headers httpHeaders = headers.httpHeaders();
-        if (httpHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+        if (httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
         }
 
@@ -382,14 +383,14 @@ public class Http2ServerStream implements Runnable, Http2Stream {
             ContentEncodingContext contentEncodingContext = ctx.listenerContext().contentEncodingContext();
             ContentDecoder decoder;
             if (contentEncodingContext.contentDecodingEnabled()) {
-                if (httpHeaders.contains(Http.HeaderNames.CONTENT_ENCODING)) {
-                    String contentEncoding = httpHeaders.get(Http.HeaderNames.CONTENT_ENCODING).get();
+                if (httpHeaders.contains(HeaderNames.CONTENT_ENCODING)) {
+                    String contentEncoding = httpHeaders.get(HeaderNames.CONTENT_ENCODING).get();
                     if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
                         decoder = contentEncodingContext.decoder(contentEncoding);
                     } else {
                         throw RequestException.builder()
                                 .type(DirectHandler.EventType.OTHER)
-                                .status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415)
+                                .status(Status.UNSUPPORTED_MEDIA_TYPE_415)
                                 .message("Unsupported content encoding")
                                 .build();
                     }
@@ -414,7 +415,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                     routing.route(ctx, request, response);
                 } else {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
-                    response.status(Http.Status.SERVICE_UNAVAILABLE_503)
+                    response.status(Status.SERVICE_UNAVAILABLE_503)
                             .send("Too Many Concurrent Requests");
                     response.commit();
                 }

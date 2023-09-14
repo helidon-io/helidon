@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.webclient.api.WebClientServiceRequest;
@@ -77,15 +77,15 @@ abstract class WebClientMetric implements WebClientService {
         return errors;
     }
 
-    boolean shouldContinueOnSuccess(Http.Method method, int status) {
+    boolean shouldContinueOnSuccess(Method method, int status) {
         return handlesMethod(method) && measureSuccess() && status < ERROR_STATUS_CODE;
     }
 
-    boolean shouldContinueOnError(Http.Method method) {
+    boolean shouldContinueOnError(Method method) {
         return handlesMethod(method) && measureErrors();
     }
 
-    boolean shouldContinueOnError(Http.Method method, int status) {
+    boolean shouldContinueOnError(Method method, int status) {
         if (status >= ERROR_STATUS_CODE) {
             return shouldContinueOnError(method);
         }
@@ -114,7 +114,7 @@ abstract class WebClientMetric implements WebClientService {
         return String.format(nameFormat(), request.method().text(), request.uri().host());
     }
 
-    boolean handlesMethod(Http.Method method) {
+    boolean handlesMethod(Method method) {
         return methods().isEmpty() || methods().contains(method.text());
     }
 
@@ -151,9 +151,9 @@ abstract class WebClientMetric implements WebClientService {
          * @param methods metric supported methods
          * @return updated builder instance
          */
-        public Builder methods(Http.Method... methods) {
+        public Builder methods(Method... methods) {
             this.methods = Arrays.stream(methods)
-                                 .map(Http.Method::text)
+                                 .map(Method::text)
                                  .map(String::toUpperCase)
                                  .collect(Collectors.toSet());
             return this;

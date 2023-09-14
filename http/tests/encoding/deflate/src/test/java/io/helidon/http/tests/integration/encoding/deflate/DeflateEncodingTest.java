@@ -31,15 +31,19 @@ import java.util.Optional;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -53,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class DeflateEncodingTest {
     private static final String ENTITY = "Some arbitrary text we want to try to compress";
     private static final byte[] DEFLATED_ENTITY;
-    private static final Http.Header CONTENT_ENCODING_DEFLATE = Http.Headers.create(Http.HeaderNames.CONTENT_ENCODING, "deflate");
+    private static final Header CONTENT_ENCODING_DEFLATE = HeaderValues.create(HeaderNames.CONTENT_ENCODING, "deflate");
 
     static {
         ByteArrayOutputStream baos;
@@ -85,22 +89,22 @@ class DeflateEncodingTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        builder.route(Http1Route.route(Http.Method.PUT,
+        builder.route(Http1Route.route(Method.PUT,
                                        "/http1",
                                        (req, res) -> {
                                            String entity = req.content().as(String.class);
                                            if (!ENTITY.equals(entity)) {
-                                               res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
+                                               res.status(Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
                                            } else {
                                                res.send(entity);
                                            }
                                        }))
-                .route(Http2Route.route(Http.Method.PUT,
+                .route(Http2Route.route(Method.PUT,
                                         "/http2",
                                         (req, res) -> {
                                             String entity = req.content().as(String.class);
                                             if (!ENTITY.equals(entity)) {
-                                                res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
+                                                res.status(Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
                                             } else {
                                                 res.send(entity);
                                             }
@@ -139,12 +143,12 @@ class DeflateEncodingTest {
 
     void testIt(io.helidon.webclient.api.HttpClient<?> client, String path, String acceptEncodingValue) {
         ClientResponseTyped<String> response = client.put(path)
-                .header(Http.HeaderNames.ACCEPT_ENCODING, acceptEncodingValue)
+                .header(HeaderNames.ACCEPT_ENCODING, acceptEncodingValue)
                 .header(CONTENT_ENCODING_DEFLATE)
                 .submit(DEFLATED_ENTITY, String.class);
 
         Assertions.assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat(response.entity(), is(ENTITY)),
                 () -> assertThat(response.headers(), hasHeader(CONTENT_ENCODING_DEFLATE))
         );

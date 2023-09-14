@@ -19,8 +19,6 @@ package io.helidon.http;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.http.Http.HeaderName;
-
 class HeaderValueArray extends HeaderValueBase {
     private final String[] originalValues;
     private List<String> values;
@@ -32,7 +30,7 @@ class HeaderValueArray extends HeaderValueBase {
     }
 
     @Override
-    public Http.HeaderValueWriteable addValue(String value) {
+    public HeaderWriteable addValue(String value) {
         if (values == null) {
             values = new ArrayList<>(originalValues.length + 1);
             values.addAll(List.of(originalValues));

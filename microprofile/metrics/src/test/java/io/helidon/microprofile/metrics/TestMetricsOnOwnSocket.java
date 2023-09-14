@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -28,7 +28,6 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -39,15 +38,13 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
-// TODO metrics
-@Disabled
 @HelidonTest()
 // Set up the metrics endpoint on its own socket
 @AddConfig(key = "server.sockets.0.name", value = "metrics")
 // No port setting, so use any available one
 @AddConfig(key = "server.sockets.0.bind-address", value = "0.0.0.0")
 @AddConfig(key = "metrics.routing", value = "metrics")
-@AddConfig(key = "metrics.key-performance-indicators.isExtended", value = "true")
+@AddConfig(key = "metrics.key-performance-indicators.extended", value = "true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestMetricsOnOwnSocket {
 
@@ -89,7 +86,7 @@ public class TestMetricsOnOwnSocket {
                 .request(MediaType.TEXT_PLAIN_TYPE)
                 .get()) {
 
-            assertThat("Response code getting greeting", r.getStatus(), is(Http.Status.OK_200.code()));
+            assertThat("Response code getting greeting", r.getStatus(), is(Status.OK_200.code()));
         }
     }
 
@@ -103,7 +100,7 @@ public class TestMetricsOnOwnSocket {
 
     private int getRequestsLoadCount(String descr) {
         try (Response r = metricsInvocation().invoke()) {
-            assertThat(descr + " metrics sampling response", r.getStatus(), is(Http.Status.OK_200.code()));
+            assertThat(descr + " metrics sampling response", r.getStatus(), is(Status.OK_200.code()));
 
             JsonObject metrics = r.readEntity(JsonObject.class);
             assertThat("Check for requests.load", metrics.containsKey("requests.load"), is(true));

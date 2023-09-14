@@ -17,7 +17,7 @@
 package io.helidon.http;
 
 /**
- * A runtime exception indicating a {@link Http.Status#NOT_FOUND_404 not found}.
+ * A runtime exception indicating a {@link Status#NOT_FOUND_404 not found}.
  */
 public class NotFoundException extends HttpException {
 
@@ -27,7 +27,7 @@ public class NotFoundException extends HttpException {
      * @param message the message
      */
     public NotFoundException(String message) {
-        super(message, Http.Status.NOT_FOUND_404, null, true);
+        super(message, Status.NOT_FOUND_404, null, true);
     }
 
     /**
@@ -37,6 +37,6 @@ public class NotFoundException extends HttpException {
      * @param cause the cause of this exception
      */
     public NotFoundException(String message, Throwable cause) {
-        super(message, Http.Status.NOT_FOUND_404, cause, true);
+        super(message, Status.NOT_FOUND_404, cause, true);
     }
 }

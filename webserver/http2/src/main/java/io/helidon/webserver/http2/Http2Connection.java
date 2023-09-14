@@ -31,9 +31,11 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.DateTime;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
@@ -64,7 +66,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
 
-import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static io.helidon.http.http2.Http2Util.PREFACE_LENGTH;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -142,7 +144,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 .blockTimeout(http2Config.flowControlTimeout())
                 .maxFrameSize(http2Config.maxFrameSize())
                 .build();
-        this.lastRequestTimestamp = Http.DateTime.timestamp();
+        this.lastRequestTimestamp = DateTime.timestamp();
         this.connectionHeaders = WritableHeaders.create();
         this.initConnectionHeaders = true;
     }
@@ -281,7 +283,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     @Override
     public Duration idleTime() {
-        return Duration.between(lastRequestTimestamp, Http.DateTime.timestamp());
+        return Duration.between(lastRequestTimestamp, DateTime.timestamp());
     }
 
     @Override
@@ -525,7 +527,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             // initial request from outside
             io.helidon.http.Headers httpHeaders = upgradeHeaders.httpHeaders();
             boolean hasEntity = httpHeaders.contains(HeaderNames.CONTENT_LENGTH)
-                    || httpHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                    || httpHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             // we now have all information needed to execute
             Http2ServerStream stream = stream(1).stream();
             stream.prologue(upgradePrologue);
@@ -633,7 +635,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         receiveFrameListener.headers(ctx, streamId, headers);
         headers.validateRequest();
         String path = headers.path();
-        Http.Method method = headers.method();
+        Method method = headers.method();
         HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
                                                         PROTOCOL,
                                                         PROTOCOL_VERSION,
@@ -645,7 +647,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         stream.headers(headers, endOfStream);
         state = State.READ_FRAME;
 
-        this.lastRequestTimestamp = Http.DateTime.timestamp();
+        this.lastRequestTimestamp = DateTime.timestamp();
         // we now have all information needed to execute
         ctx.executor()
                 .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
@@ -798,7 +800,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
         // any request for a specific stream is now considered a valid update of connection (ignoring management messages
         // on stream 0)
-        this.lastRequestTimestamp = Http.DateTime.timestamp();
+        this.lastRequestTimestamp = DateTime.timestamp();
         return streamContext;
     }
 

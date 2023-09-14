@@ -56,7 +56,7 @@ public final class Http1HeadersParser {
                 return headers;
             }
 
-            Http.HeaderName header = readHeaderName(reader, maxLength, validate);
+            HeaderName header = readHeaderName(reader, maxLength, validate);
             maxLength -= header.defaultCase().length() + 2;
             int eol = reader.findNewLine(maxLength);
             if (eol == maxLength) {
@@ -67,7 +67,7 @@ public final class Http1HeadersParser {
             reader.skip(2);
             maxLength -= eol + 1;
 
-            Http.Header headerValue = Http.Headers.create(header, value);
+            Header headerValue = HeaderValues.create(header, value);
             headers.add(headerValue);
             if (validate) {
                 headerValue.validate();
@@ -78,9 +78,9 @@ public final class Http1HeadersParser {
         }
     }
 
-    private static Http.HeaderName readHeaderName(DataReader reader,
-                                                  int maxLength,
-                                                  boolean validate) {
+    private static HeaderName readHeaderName(DataReader reader,
+                                             int maxLength,
+                                             boolean validate) {
         switch (reader.lookup()) {
         case (byte) 'H' -> {
             if (reader.startsWith(HD_HOST)) {
@@ -117,7 +117,7 @@ public final class Http1HeadersParser {
         }
 
         String headerName = reader.readAsciiString(col);
-        Http.HeaderName header = Http.HeaderNames.create(headerName);
+        HeaderName header = HeaderNames.create(headerName);
         reader.skip(1); // skip the colon character
 
         return header;
