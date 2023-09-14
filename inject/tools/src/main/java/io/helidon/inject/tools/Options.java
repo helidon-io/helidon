@@ -19,6 +19,7 @@ package io.helidon.inject.tools;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -36,6 +37,10 @@ public class Options {
      * Tag for putting Injection's annotation processing into debug mode.
      */
     public static final String TAG_DEBUG = InjectionServices.TAG_DEBUG;
+    /**
+     * Tag to accept this is a preview feature (so no warning is printed).
+     */
+    public static final String TAG_ACCEPT_PREVIEW = "inject.acceptPreview";
     /**
      * Treat all super types as a contract for a given service type being added.
      */
@@ -84,6 +89,7 @@ public class Options {
      * @param processingEnv the processing env
      */
     public static void init(ProcessingEnvironment processingEnv) {
+        Objects.requireNonNull(processingEnv);
         if (OPTS.isEmpty()) {
             OPTS.put(TAG_DEBUG,
                      String.valueOf(isOptionEnabled(TAG_DEBUG, processingEnv)));
@@ -105,6 +111,7 @@ public class Options {
                      getOption(TAG_IGNORE_UNSUPPORTED_ANNOTATIONS, null, processingEnv));
             OPTS.put(TAG_IGNORE_MODULE_USAGE,
                      getOption(TAG_IGNORE_MODULE_USAGE, null, processingEnv));
+            OPTS.put(TAG_ACCEPT_PREVIEW, getOption(TAG_ACCEPT_PREVIEW, null, processingEnv));
         }
     }
 
@@ -146,7 +153,7 @@ public class Options {
     /**
      * This only supports the subset of options that Injection cares about, and should not be generally used for options.
      *
-     * @param option the key (assumed to be meaningful to this class)
+     * @param option     the key (assumed to be meaningful to this class)
      * @param defaultVal the default value used if the associated value is null.
      * @return the option value
      */
@@ -158,11 +165,10 @@ public class Options {
 
     private static boolean isOptionEnabled(String option,
                                            ProcessingEnvironment processingEnv) {
-        if (processingEnv != null) {
-            String val = processingEnv.getOptions().get(option);
-            if (val != null) {
-                return Boolean.parseBoolean(val);
-            }
+
+        String val = processingEnv.getOptions().get(option);
+        if (val != null) {
+            return Boolean.parseBoolean(val);
         }
 
         return getOption(option, "", processingEnv).equals("true");
@@ -171,11 +177,9 @@ public class Options {
     private static String getOption(String option,
                                     String defaultVal,
                                     ProcessingEnvironment processingEnv) {
-        if (processingEnv != null) {
-            String val = processingEnv.getOptions().get(option);
-            if (val != null) {
-                return val;
-            }
+        String val = processingEnv.getOptions().get(option);
+        if (val != null) {
+            return val;
         }
 
         return defaultVal;

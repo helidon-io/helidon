@@ -48,12 +48,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-processor</artifactId>
-            <scope>provided</scope> <!-- reactor dependency ordering only -->
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-maven-plugin</artifactId>
             <scope>provided</scope> <!-- reactor dependency ordering only -->
             <optional>true</optional>
@@ -104,6 +98,7 @@
 <!--                        <arg>-XprintProcessorInfo</arg>-->
 <!--                        <arg>-XprintRounds</arg>-->
 <!--                        <arg>-verbose</arg>-->
+                        <arg>-Ainject.acceptPreview=true</arg>
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
@@ -130,6 +125,11 @@
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-processor</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
 				    <dependency>
                         <groupId>io.helidon.common.processor</groupId>
                         <artifactId>helidon-common-processor-helidon-copyright</artifactId>
