@@ -76,38 +76,4 @@ public class CipherSuiteTest {
         assertThat(exception.getCause().getMessage(), is("Received fatal alert: handshake_failure"));
     }
 
-
-
-
-//    @Test
-//    void testSupportedAlgorithm() {
-//        String response = (String)clientOne.get().request(String.class).await(TIMEOUT);
-//        MatcherAssert.assertThat(response, CoreMatchers.is("It works!"));
-//        response = (String)clientTwo.get().uri("https://localhost:" + webServer.port("second")).request(String.class).await(TIMEOUT);
-//        MatcherAssert.assertThat(response, CoreMatchers.is("It works! Second!"));
-//    }
-//
-//    @Test
-//    void testUnsupportedAlgorithm() {
-//        Throwable cause = ((CompletionException) Assertions.assertThrows(CompletionException.class, () -> {
-//            clientOne.get().uri("https://localhost:" + webServer.port("second")).request().await(TIMEOUT);
-//        })).getCause();
-//        this.checkCause(cause);
-//        cause = ((CompletionException)Assertions.assertThrows(CompletionException.class, () -> {
-//            clientTwo.get().request().await(TIMEOUT);
-//        })).getCause();
-//        this.checkCause(cause);
-//    }
-//
-//    private void checkCause(Throwable cause) {
-//        if (cause instanceof IllegalStateException ise) {
-//            MatcherAssert.assertThat(ise.getMessage(), CoreMatchers.containsString("Connection reset by the host"));
-//        } else {
-//            MatcherAssert.assertThat(cause, CoreMatchers.instanceOf(SSLHandshakeException.class));
-//            MatcherAssert.assertThat(cause.getMessage(), CoreMatchers.is("Received fatal alert: handshake_failure"));
-//        }
-//
-//    }
-
-
 }
