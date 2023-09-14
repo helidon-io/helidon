@@ -119,6 +119,7 @@ class NonJaxRsResource {
         }
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber") // all parameters required, no benefit using a record wrapper
     private void handleRequest(ServerRequest req,
                                ServerResponse res,
                                String type,

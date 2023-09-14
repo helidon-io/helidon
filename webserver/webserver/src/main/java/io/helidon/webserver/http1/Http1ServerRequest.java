@@ -81,6 +81,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     /*
      * Create a new request with an entity.
      */
+    @SuppressWarnings("checkstyle:ParameterNumber") // all parameters are always needed, record would not bring any benefit
     static Http1ServerRequest create(ConnectionContext ctx,
                                      Http1Connection connection,
                                      Http1Config http1Config,
