@@ -58,7 +58,7 @@
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.classfilewriter>1.2.4.Final</version.lib.classfilewriter>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
+        <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.jsch>0.1.55</version.lib.jsch>
         <version.lib.netty.tcnative>2.0.54.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
