@@ -372,10 +372,10 @@ public class CorsSupportHelper<Q, R> {
     private boolean isRequestTypeNormal(CorsRequestAdapter<Q> requestAdapter, boolean silent) {
         // If no origin header or same as host, then just normal
         Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
-        Optional<String> hostOpt = requestAdapter.firstHeader(HeaderNames.HOST);
+        String host = requestAdapter.requestedUri().host();
 
-        boolean result = originOpt.isEmpty() || (hostOpt.isPresent() && originOpt.get().contains("://" + hostOpt.get()));
-        LogHelper.logIsRequestTypeNormal(result, silent, requestAdapter, originOpt, hostOpt);
+        boolean result = originOpt.isEmpty() || originOpt.get().contains("://" + host);
+        LogHelper.logIsRequestTypeNormal(result, silent, requestAdapter, originOpt, host);
         return result;
     }
 

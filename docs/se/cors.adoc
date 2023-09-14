@@ -248,6 +248,11 @@ For a complete example, see {helidon-github-tree-url}/examples/cors[Helidon SE C
 
 == Additional Information
 
+include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-intro]
+You can configure how the Helidon server handles these headers as described in the documentation for xref:{rootdir}/se/webserver.adoc#_requested_uri_discovery[requested URI discovery].
+
+include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-wrapup]
+
 include::{rootdir}/includes/cors.adoc[tag=understanding-cors-support-in-services]
 include::{rootdir}/includes/cors.adoc[tag=builtin-getting-started]
 

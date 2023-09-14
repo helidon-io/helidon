@@ -69,7 +69,7 @@ class LogHelper {
     }
 
     static <T> void logIsRequestTypeNormal(boolean result, boolean silent, CorsRequestAdapter<T> requestAdapter,
-            Optional<String> originOpt, Optional<String> hostOpt) {
+            Optional<String> originOpt, String host) {
         if (silent || !CorsSupportHelper.LOGGER.isLoggable(DECISION_LEVEL)) {
             return;
         }
@@ -84,21 +84,21 @@ class LogHelper {
             factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.ORIGIN, originOpt.get()));
         }
 
-        if (hostOpt.isEmpty()) {
+        if (host.isEmpty()) {
             reasonsWhyNormal.add("header " + HeaderNames.HOST + " is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.HOST, hostOpt.get()));
+            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.HOST, host));
         }
 
-        if (hostOpt.isPresent() && originOpt.isPresent()) {
-            String partOfOriginMatchingHost = "://" + hostOpt.get();
+        if (originOpt.isPresent()) {
+            String partOfOriginMatchingHost = "://" + host;
             if (originOpt.get()
                     .contains(partOfOriginMatchingHost)) {
                 reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", HeaderNames.ORIGIN,
-                                                   originOpt.get(), HeaderNames.HOST, hostOpt.get()));
+                                                   originOpt.get(), HeaderNames.HOST, host));
             } else {
                 factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", HeaderNames.ORIGIN,
-                                                      originOpt.get(), HeaderNames.HOST, hostOpt.get()));
+                                                      originOpt.get(), HeaderNames.HOST, host));
             }
         }
 

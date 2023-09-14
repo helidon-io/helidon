@@ -20,12 +20,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.cors.CorsRequestAdapter;
 import io.helidon.cors.CorsResponseAdapter;
 import io.helidon.cors.CorsSupportBase;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.HeaderName;
-import io.helidon.http.HeaderNames;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -104,15 +105,17 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
     static class RequestAdapterMp implements CorsRequestAdapter<ContainerRequestContext> {
 
         private final ContainerRequestContext requestContext;
+        private final LazyValue<UriInfo> uriInfo;
 
+        @SuppressWarnings("unchecked")
         RequestAdapterMp(ContainerRequestContext requestContext) {
             this.requestContext = requestContext;
+            uriInfo = LazyValue.create(() -> ((Supplier<UriInfo>) requestContext.getProperty(UriInfo.class.getName())).get());
         }
 
         @Override
-        public String authority() {
-            // TODO we want authority - we should set it in integration with WebServer as request property
-            return firstHeader(HeaderNames.HOST).orElse("localhost");
+        public UriInfo requestedUri() {
+            return uriInfo.get();
         }
 
         @Override
