@@ -19,84 +19,37 @@
 
 <!DOCTYPE suppressions PUBLIC
         "-//Puppy Crawl//DTD Suppressions 1.1//EN"
-        "http://checkstyle.sourceforge.net/dtds/suppressions_1_1.dtd">
+        "https://checkstyle.sourceforge.net/dtds/suppressions_1_1.dtd">
 
+<!--
+Use in Helidon:
+This file is used when running the aggregate report (and configuration in modules is ignored in that case).
+This file SHOULD ONLY contain exclusions for whole modules where appropriate.
+Single check exclusions should be handled through @SuppressWarning("checkstyle:....") annotation.
+
+Only exceptional cases that cannot be handled through annotations may be provided here.
+This is to keep the checkstyle exclusions co-located with the code, so if the code changes, we do not leave an outdated
+record here.
+-->
 <suppressions>
-    <!-- to do comment suppression for to do project -->
-    <suppress checks="TodoComment"
-            files="examples/todo-app/.*"/>
-
-    <suppress checks="FileLength"
-            files="config/config/src/main/java/io/helidon/config/Config.java|integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java|security/providers/oidc-common/src/main/java/io/helidon/security/providers/oidc/common/OidcConfig\.java"
-            lines="1"/>
-
-    <!-- Java comments with AsciiDoc tag:: and end:: in import section incorrectly flagged
-         as unacceptable blank lines within a package's imports. -->
-    <suppress checks="ImportOrder"
-            files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/Main.java"/>
-    <suppress checks="ImportOrder"
-            files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/GreetService.java"/>
-    <suppress checks="NoWhitespaceBefore|SeparatorWrap"
-            files="examples/guides/mp-restful-webservice/src/main/java/io/helidon/guides/mp/restfulwebservice/GreetApplication.java"/>
     <!--
-     The following files are work taken over from other projects,
-        where we want to keep the author tag untouched
+    - File exclusions (exceptions)
+    - FileLength cannot be excluded using a @SuppressWarnings
     -->
-    <!-- Common HTTP project -->
-    <suppress id="Javadoc.javadocNoAuthor"
-            files="common/http/Preconditions\.java|common/http/Ascii\.java|common/http/CharMatcher\.java"/>
-    <!-- Webserver project -->
-    <suppress id="Javadoc.javadocNoAuthor"
-            files="webserver/UriComponent\.java"/>
-
-    <!-- Building a Graph involves a lot of instanceof checks and state manipulation.  -->
-    <suppress checks="MethodLength"
-              files="HelidonReactiveStreamsEngine\.java"/>
-
-    <!-- PKCS#1 private keys - required for OCI Instance Principal Authentication -->
-    <suppress checks="IllegalImport"
-            files="DerUtils\.java"/>
-
-    <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
-    <suppress files="webserver/http2/src/main/java/io/helidon/webserver/http2/spi/Http2SubProtocolSelector.java"
-            checks="ParameterNumber"/>
-
-    <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
-    <suppress files="webserver/webserver/src/main/java/io/helidon/webserver/ConnectionContext.java"
-            checks="ParameterNumber"/>
-
-    <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
-    <suppress files="webserver/webserver/src/main/java/io/helidon/webserver/http1/Http1ServerRequest.java"
-            checks="ParameterNumber"/>
-
     <!-- the huffman constants are long, but this is not actual code, just a set of constants -->
-    <suppress files="http/http2/src/main/java/io/helidon/http/http2/Http2HuffmanConstants.java"
+    <suppress files="http/http2/src/main/java/io/helidon/http/http2/Http2HuffmanConstants\.java"
             checks="FileLength"/>
 
+    <suppress files="integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"
+            checks="FileLength"/>
+
+    <!--
+    - Module exclusions
+    -->
+
+    <!-- JMH benchmark is not required to follow code style -->
     <suppress files="webserver/benchmark/"
             checks=".*"/>
-
-    <!-- builder brings no benefit, all parameters always needed -->
-    <suppress files="webserver/http2/webserver/src/main/java/io/helidon/webserver/http2/spi/Http2SubProtocolProvider.java"
-            checks="ParameterNumber"/>
-
-    <!-- builder brings no benefit, all parameters always needed, and a private method -->
-    <suppress files="src/main/java/io/helidon/metrics/serviceapi/PrometheusFormat.java"
-            checks="ParameterNumber"/>
-
-    <!-- builder brings no benefit, all parameters always needed, and a private method -->
-    <suppress files="microprofile/lra/jax-rs/src/main/java/io/helidon/microprofile/lra/NonJaxRsResource.java"
-            checks="ParameterNumber"/>
-
-    <!-- builder exclusions -->
-    <suppress files="builder/tests/builder/src/main/java/io/helidon/builder/test/testsubjects/.*"
-            checks=".*"/>
-
-    <!-- interfaces implemented by generated code, ensuring methods don't interfere with the interlaced methods from the user -->
-    <suppress files="builder/builder-config/src/main/java/io/helidon/builder/config/spi/GeneratedConfig.*.java"
-            checks="MethodName"/>
-    <suppress files="builder/builder-config/src/main/java/io/helidon/builder/config/spi/ConfigProvider.java"
-            checks="MethodName"/>
 
     <!-- injection tests need to violate to check different user scenarios -->
     <suppress files="builder/tests/"
