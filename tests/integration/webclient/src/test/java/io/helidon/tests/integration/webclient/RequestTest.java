@@ -163,11 +163,11 @@ public class RequestTest extends TestParent {
                 .path("/greeting")
                 .submit(JSON_OLD_GREETING).get();
 
-        WebClientResponse secondResponce = webClient.put()
+        WebClientResponse secondResponse = webClient.put()
                 .path("/greeting")
                 .submit(JSON_OLD_GREETING)
                 .get();
-        assertThat(secondResponce.status().code(), is(204));
+        assertThat(secondResponse.status().code(), is(204));
     }
 
 
