@@ -62,8 +62,8 @@ abstract class BaseAnnotationProcessor extends AbstractProcessor {
                 && LOGGED_WARNING.compareAndSet(false, true)) {
             processingEnv.getMessager()
                     .printMessage(Diagnostic.Kind.WARNING,
-                                  "Helidon Inject is a preview feature, and may introduce backward incompatible changes. "
-                                          + "It is a production quality code, but we may need to do fine tuning of APIs and SPIs."
+                                  "Helidon Inject is preview feature, and the API and SPI may be modified in a future"
+                                          + " revision. It is considered a production feature."
                                           + " This warning can be disabled by compiler argument -Ainject.acceptPreview=true");
         }
     }
