@@ -33,9 +33,9 @@ include::{rootdir}/includes/attributes.adoc[]
 
 == What is Helidon?
 
-link:https://helidon.io[Helidon] is a collection of Java libraries for writing microservices that run on a fast web core powered by link:https://netty.io[Netty]. It's small, fast, and fun to use.
+link:https://helidon.io[Helidon] is a collection of Java libraries for writing microservices.
 
-Helidon is open source under the Apache 2.0 license. Sources are available on link:{helidon-github-tree-url}[GitHub].
+Helidon is open source under the Apache license. Sources are available on link:{helidon-github-tree-url}[GitHub].
 
 Helidon is cloud-native ready. It provides fast start-up time and has low memory consumption and a small disk footprint. It also comes with a full observability stack out of the box including health checks, metrics, tracing and logging.
 
@@ -55,7 +55,7 @@ Helidon comes in two flavors: *Helidon SE* and *Helidon MP*. Think about these f
 |Microframework model with a very small footprint and limited functionality (~7 MB).
 | https://projects.eclipse.org/proposals/eclipse-microprofile[MicroProfile] implementation; slightly larger footprint than SE (~13 MB).
 
-|Functional style, reactive, non-blocking.
+|Helidon SE is Helidon’s foundational set of APIs. Virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand..
 |Declarative style with dependency injection.
 
 |Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections.
@@ -95,7 +95,6 @@ public class HelloWorld {
 Use Helidon SE if
 
 - Performance is your main goal.
-- You are familiar with reactive programming.
 - Your application is heavily using concurrency.
 - You are not planning to use any CDI-based components.
 - You want to use a minimum number of third-party dependencies.
@@ -132,15 +131,27 @@ We also strongly suggest installing the xref:cli.adoc[Helidon CLI] (command line
 
 In case you need to upgrade the version of Helidon, follow the `Migration Guides`.
 
-For migration from Helidon 1.x to 2.x:
+For migration from Helidon 3.x to 4.x:
 
-* xref:{rootdir}/se/guides/migration.adoc[Helidon SE 2x Migration Guide]
-* xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
+* link to SE 4x migration guide [tbd]
+* link to MP 4x migration guide [tbd]
+
 
 For migration from Helidon 2.x to 3.x:
 
 * xref:{rootdir}/se/guides/migration_3x.adoc[Helidon SE 3x Migration Guide]
 * xref:{rootdir}/mp/guides/migration_3x.adoc[Helidon MP 3x Migration Guide]
+
+For migration from Helidon 1.x to 2.x:
+
+* xref:{rootdir}/se/guides/migration.adoc[Helidon SE 2x Migration Guide]
+* xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
+
+
+
+
+
+
 
 == Next Steps
 
