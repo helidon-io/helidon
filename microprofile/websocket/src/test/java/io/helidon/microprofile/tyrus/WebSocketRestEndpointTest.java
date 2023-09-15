@@ -16,7 +16,8 @@
 
 package io.helidon.microprofile.tyrus;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddBean;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;

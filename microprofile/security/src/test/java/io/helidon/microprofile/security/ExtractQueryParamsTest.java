@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.security;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddBeans;
-import io.helidon.microprofile.tests.junit5.Configuration;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddBeans;
+import io.helidon.microprofile.testing.junit5.Configuration;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;

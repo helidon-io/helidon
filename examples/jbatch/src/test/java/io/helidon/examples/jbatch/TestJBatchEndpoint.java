@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 package io.helidon.examples.jbatch;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import org.junit.jupiter.api.Test;
-
-import jakarta.inject.Inject;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
 
 import java.util.Collections;
 
-import static org.hamcrest.CoreMatchers.*;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
+
+import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest

@@ -17,7 +17,7 @@
 package io.helidon.tests.functional.requestscopecdi;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;

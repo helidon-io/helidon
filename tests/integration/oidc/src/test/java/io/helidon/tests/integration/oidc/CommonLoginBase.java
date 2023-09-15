@@ -19,8 +19,8 @@ package io.helidon.tests.integration.oidc;
 import io.helidon.config.Config;
 import io.helidon.jersey.connector.HelidonConnectorProvider;
 import io.helidon.jersey.connector.HelidonProperties;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.client.Client;

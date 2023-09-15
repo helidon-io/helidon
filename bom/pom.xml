@@ -964,13 +964,13 @@
             </dependency>
             <!-- Testing -->
             <dependency>
-                <groupId>io.helidon.microprofile.tests</groupId>
-                <artifactId>helidon-microprofile-tests-junit5</artifactId>
+                <groupId>io.helidon.microprofile.testing</groupId>
+                <artifactId>helidon-microprofile-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.tests</groupId>
-                <artifactId>helidon-microprofile-tests-testng</artifactId>
+                <groupId>io.helidon.microprofile.testing</groupId>
+                <artifactId>helidon-microprofile-testing-testng</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

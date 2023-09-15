@@ -24,7 +24,7 @@ import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.queries.MapQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithMap;
-import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddBean;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

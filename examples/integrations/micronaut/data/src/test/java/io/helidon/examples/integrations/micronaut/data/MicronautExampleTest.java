@@ -17,7 +17,7 @@
 package io.helidon.examples.integrations.micronaut.data;
 
 import io.helidon.examples.integrations.micronaut.data.model.Pet;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.json.JsonArray;

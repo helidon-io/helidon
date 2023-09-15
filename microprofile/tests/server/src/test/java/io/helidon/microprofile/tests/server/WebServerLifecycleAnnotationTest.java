@@ -17,9 +17,9 @@
 package io.helidon.microprofile.tests.server;
 
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.AfterStop;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.AfterStop;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

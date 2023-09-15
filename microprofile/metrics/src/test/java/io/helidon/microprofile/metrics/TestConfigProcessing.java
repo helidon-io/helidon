@@ -16,7 +16,7 @@
 package io.helidon.microprofile.metrics;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.api.Test;

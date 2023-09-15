@@ -18,9 +18,9 @@ package io.helidon.microprofile.telemetry;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import jakarta.enterprise.inject.spi.CDI;

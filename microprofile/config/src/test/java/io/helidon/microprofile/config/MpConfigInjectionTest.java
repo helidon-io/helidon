@@ -24,9 +24,9 @@ import io.helidon.microprofile.config.Converters.Ctor;
 import io.helidon.microprofile.config.Converters.Of;
 import io.helidon.microprofile.config.Converters.Parse;
 import io.helidon.microprofile.config.Converters.ValueOf;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;

@@ -20,8 +20,9 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.microprofile.tests.junit5.Socket;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.Socket;
+
 import jakarta.inject.Inject;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.Endpoint;
