@@ -35,6 +35,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
             <scope>test</scope>
@@ -43,14 +48,6 @@
             <groupId>io.helidon.microprofile.testing</groupId>
             <artifactId>helidon-microprofile-testing-testng</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml-mp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
