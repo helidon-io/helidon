@@ -19,18 +19,22 @@ package io.helidon.inject.processor;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.tools.Options;
 
 /**
  * Abstract base for all Helidon annotation processing.
  */
 abstract class BaseAnnotationProcessor extends AbstractProcessor {
+    private static final AtomicBoolean LOGGED_WARNING = new AtomicBoolean();
     private final System.Logger logger = System.getLogger(getClass().getName());
 
     private ActiveProcessorUtils utils;
@@ -53,6 +57,15 @@ abstract class BaseAnnotationProcessor extends AbstractProcessor {
     public void init(ProcessingEnvironment processingEnv) {
         this.utils = new ActiveProcessorUtils(this, processingEnv);
         super.init(processingEnv);
+
+        if (!Options.isOptionEnabled(Options.TAG_ACCEPT_PREVIEW)
+                && LOGGED_WARNING.compareAndSet(false, true)) {
+            processingEnv.getMessager()
+                    .printMessage(Diagnostic.Kind.WARNING,
+                                  "Helidon Inject is preview feature, and the API and SPI may be modified in a future"
+                                          + " revision. It is considered a production feature."
+                                          + " This warning can be disabled by compiler argument -Ainject.acceptPreview=true");
+        }
     }
 
     @Override
