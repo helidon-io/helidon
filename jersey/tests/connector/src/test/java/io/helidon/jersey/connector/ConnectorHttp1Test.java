@@ -26,12 +26,12 @@ import org.glassfish.jersey.client.ClientConfig;
  * WebClient to execute HTTP requests.
  */
 @ServerTest
-class JerseyConnectorHttp1Test extends JerseyConnectorBase {
+class ConnectorHttp1Test extends ConnectorBase {
 
-    JerseyConnectorHttp1Test(WebServer webServer) {
-        baseURI = "http://localhost:" + webServer.port();
+    ConnectorHttp1Test(WebServer webServer) {
+        baseURI("http://localhost:" + webServer.port());
         ClientConfig config = new ClientConfig();
         config.connectorProvider(new HelidonConnectorProvider());       // use Helidon's provider
-        client = ClientBuilder.newClient(config);
+        client(ClientBuilder.newClient(config));
     }
 }

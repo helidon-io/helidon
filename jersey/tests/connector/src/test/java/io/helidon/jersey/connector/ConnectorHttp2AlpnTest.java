@@ -16,13 +16,10 @@
 
 package io.helidon.jersey.connector;
 
-import java.util.List;
-
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.webclient.http2.Http2Client;
-import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http2.Http2Config;
@@ -31,16 +28,12 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientConfig;
 
-import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_CONFIG;
-import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_PREFERENCE;
-import static io.helidon.jersey.connector.HelidonProperties.TLS;
-
 /**
  * Tests HTTP/2 integration of Jakarta REST client with the Helidon connector that uses
- * WebClient to execute HTTP requests. Assumes prior knowledge.
+ * WebClient to execute HTTP requests. Uses ALPN extension for negotiation.
  */
 @ServerTest
-class JerseyConnectorHttp2PriorTest extends JerseyConnectorBase {
+class ConnectorHttp2AlpnTest extends ConnectorBase {
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
@@ -48,7 +41,7 @@ class JerseyConnectorHttp2PriorTest extends JerseyConnectorBase {
                 .keystore(keystore -> keystore
                         .keystore(Resource.create("certificate.p12"))
                         .keystorePassphrase("helidon"))
-                .build();
+                        .build();
 
         Tls tls = Tls.builder()
                 .privateKey(privateKeyConfig.privateKey().orElseThrow())
@@ -59,22 +52,20 @@ class JerseyConnectorHttp2PriorTest extends JerseyConnectorBase {
         serverBuilder.addProtocol(Http2Config.create());
     }
 
-    JerseyConnectorHttp2PriorTest(WebServer server) {
+    ConnectorHttp2AlpnTest(WebServer server) {
         int port = server.port("https");
 
         Tls tls = Tls.builder()
                 .trustAll(true)
+                .addApplicationProtocol(Http2Client.PROTOCOL_ID)        // h2 support ALPN
                 .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
                 .build();
 
         ClientConfig config = new ClientConfig();
         config.connectorProvider(new HelidonConnectorProvider());       // use Helidon's provider
-        config.property(TLS, tls);
-        config.property(PROTOCOL_PREFERENCE, List.of(Http2Client.PROTOCOL_ID));
-        config.property(PROTOCOL_CONFIG, List.of(Http2ClientProtocolConfig.builder()
-                .priorKnowledge(true)
-                .build()));
-        client = ClientBuilder.newClient(config);
-        baseURI = "https://localhost:" + port;
+        config.property(HelidonProperties.TLS, tls);
+
+        client(ClientBuilder.newClient(config));
+        baseURI("https://localhost:" + port);
     }
 }

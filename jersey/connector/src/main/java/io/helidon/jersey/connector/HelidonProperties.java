@@ -17,6 +17,7 @@
 package io.helidon.jersey.connector;
 
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
@@ -47,21 +48,28 @@ public final class HelidonProperties {
     public static final String TLS = "jersey.connector.helidon.tls";
 
     /**
-     * Property name to set a {@code List<String>} instance with a list of protocol preferences
-     * to be used by underlying {@link WebClient}.
-     * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
-     *
-     * @see io.helidon.webclient.api.WebClientConfig.Builder#addProtocolPreference(List)
-     */
-    public static final String PROTOCOL_PREFERENCE = "jersey.connector.helidon.protocolPreference";
-
-    /**
      * Property name to set a {@code List<? extends  ProtocolConfig>} instance with a list of
      * protocol configs to be used by underlying {@link WebClient}.
      * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
      * 
      * @see io.helidon.webclient.api.WebClientConfig.Builder#protocolConfigs(List) 
      */
-    public static final String PROTOCOL_CONFIG = "jersey.connector.helidon.protocolConfig";
+    public static final String PROTOCOL_CONFIGS = "jersey.connector.helidon.protocolConfigs";
 
+    /**
+     * Property name to set a {@code Map<String, String>} instance with a list of
+     * default headers to be used by underlying {@link WebClient}.
+     * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
+     *
+     * @see io.helidon.webclient.api.WebClientConfig.Builder#defaultHeadersMap(Map)
+     */
+    public static final String DEFAULT_HEADERS = "jersey.connector.helidon.defaultHeaders";
+
+    /**
+     * Property name to set a protocol ID for each request. You can use this property
+     * to request an HTTP/2 upgrade from HTTP/1.1 by setting its value to {@code "h2"}.
+     * 
+     * @see io.helidon.webclient.api.HttpClientRequest#protocolId(String) 
+     */
+    public static final String PROTOCOL_ID = "jersey.connector.helidon.protocolId";
 }

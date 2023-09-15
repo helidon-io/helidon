@@ -53,8 +53,9 @@ import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
 import org.glassfish.jersey.client.spi.Connector;
 import org.glassfish.jersey.internal.util.PropertiesHelper;
 
-import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_CONFIG;
-import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_PREFERENCE;
+import static io.helidon.jersey.connector.HelidonProperties.DEFAULT_HEADERS;
+import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_CONFIGS;
+import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_ID;
 import static io.helidon.jersey.connector.HelidonProperties.TLS;
 import static org.glassfish.jersey.client.ClientProperties.CONNECT_TIMEOUT;
 import static org.glassfish.jersey.client.ClientProperties.FOLLOW_REDIRECTS;
@@ -65,6 +66,7 @@ class HelidonConnector implements Connector {
     static final Logger LOGGER = Logger.getLogger(HelidonConnector.class.getName());
 
     private static final int DEFAULT_TIMEOUT = 10000;
+    private static final Map<String, String> EMPTY_MAP_LIST = Map.of("", "");
 
     private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
             + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";
@@ -105,15 +107,15 @@ class HelidonConnector implements Connector {
             builder.tls(getValue(properties, TLS, Tls.class));
             hasTls = true;
         }
-        if (properties.containsKey(PROTOCOL_PREFERENCE)) {
-            builder.addProtocolPreference(getValue(properties, PROTOCOL_PREFERENCE, List.of("")));
-        }
-        if (properties.containsKey(PROTOCOL_CONFIG)) {
+        if (properties.containsKey(PROTOCOL_CONFIGS)) {
             List<? extends ProtocolConfig> protocolConfigs =
-                    (List<? extends ProtocolConfig>) properties.get(PROTOCOL_CONFIG);
+                    (List<? extends ProtocolConfig>) properties.get(PROTOCOL_CONFIGS);
             if (protocolConfigs != null) {
                 builder.addProtocolConfigs(protocolConfigs);
             }
+        }
+        if (properties.containsKey(DEFAULT_HEADERS)) {
+            builder.defaultHeadersMap(getValue(properties, DEFAULT_HEADERS, EMPTY_MAP_LIST));
         }
         webClient = builder.build();
     }
@@ -159,11 +161,17 @@ class HelidonConnector implements Connector {
         }
 
         // request config
-        if (request.hasProperty(FOLLOW_REDIRECTS)) {
-            httpRequest.followRedirects(request.resolveProperty(FOLLOW_REDIRECTS, true));
+        Boolean followRedirects = request.resolveProperty(FOLLOW_REDIRECTS, Boolean.class);
+        if (followRedirects != null) {
+            httpRequest.followRedirects(followRedirects);
         }
-        if (request.hasProperty(READ_TIMEOUT)) {
-            httpRequest.readTimeout(Duration.ofMillis(request.resolveProperty(READ_TIMEOUT, DEFAULT_TIMEOUT)));
+        Duration readTimeout = request.resolveProperty(READ_TIMEOUT, Duration.class);
+        if (readTimeout != null) {
+            httpRequest.readTimeout(readTimeout);
+        }
+        String protocolId = request.resolveProperty(PROTOCOL_ID, String.class);
+        if (protocolId != null) {
+            httpRequest.protocolId(protocolId);
         }
 
         // copy properties

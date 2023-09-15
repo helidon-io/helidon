@@ -36,21 +36,39 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 
-class JerseyConnectorBase {
+class ConnectorBase {
 
-    protected String baseURI;
-    protected Client client;
+    private String baseURI;
+    private Client client;
+    private String protocolId;
+
+
+    public void baseURI(String baseURI) {
+        this.baseURI = baseURI;
+    }
+
+    public void client(Client client) {
+        this.client = client;
+    }
+
+    public void protocolId(String protocolId) {
+        this.protocolId = protocolId;
+    }
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.get("/basic/get", JerseyConnectorBase::basicGet)
-             .post("/basic/post", JerseyConnectorBase::basicPost)
-             .get("/basic/getquery", JerseyConnectorBase::basicGetQuery)
-             .get("/basic/headers", JerseyConnectorBase::basicHeaders);
+        rules.get("/basic/get", ConnectorBase::basicGet)
+             .post("/basic/post", ConnectorBase::basicPost)
+             .get("/basic/getquery", ConnectorBase::basicGetQuery)
+             .get("/basic/headers", ConnectorBase::basicHeaders);
     }
 
     private WebTarget target(String uri) {
-        return client.target(baseURI).path(uri);
+        WebTarget webTarget = client.target(baseURI).path(uri);
+        if (protocolId != null) {
+            webTarget.property(HelidonProperties.PROTOCOL_ID, Http2Client.PROTOCOL_ID);
+        }
+        return webTarget;
     }
 
     static void basicGet(ServerRequest request, ServerResponse response) {
