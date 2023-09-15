@@ -143,51 +143,56 @@ public class RequestTest extends TestParent {
                     fail(throwable);
                     return null;
                 })
-                .toCompletableFuture()
-                .get();
+                .await();
     }
 
     @Test
     public void testPermanentRedirect() throws Exception {
-        webClient.put()
-                .path("/redirect/permanent")
+        WebClientResponse response = webClient.put()
+                .path("/greeting")
                 .submit(JSON_NEW_GREETING)
-                .thenAccept(response -> assertThat(response.status().code(), is(204)))
-                .thenCompose(nothing -> webClient.get()
-                        .request(JsonObject.class))
-                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hola World!")))
-                .thenCompose(nothing -> webClient.put()
-                        .path("/greeting")
-                        .submit(JSON_OLD_GREETING))
-                .thenAccept(response -> assertThat(response.status().code(), is(204)))
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
                 .get();
+        assertThat(response.status().code(), is(204));
+
+        JsonObject jsonObject = webClient.get()
+                .request(JsonObject.class).await();
+        assertThat(jsonObject.getString("message"), is("Hola World!"));
+
+
+        webClient.put()
+                .path("/greeting")
+                .submit(JSON_OLD_GREETING).get();
+
+        WebClientResponse secondResponce = webClient.put()
+                .path("/greeting")
+                .submit(JSON_OLD_GREETING)
+                .get();
+        assertThat(secondResponce.status().code(), is(204));
     }
 
 
     @Test
     public void testPut() throws Exception {
-        webClient.put()
+        WebClientResponse response = webClient.put()
                 .path("/greeting")
                 .submit(JSON_NEW_GREETING)
-                .thenAccept(response -> assertThat(response.status().code(), is(204)))
-                .thenCompose(nothing -> webClient.get()
-                        .request(JsonObject.class))
-                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hola World!")))
-                .thenCompose(nothing -> webClient.put()
-                        .path("/greeting")
-                        .submit(JSON_OLD_GREETING))
-                .thenAccept(response -> assertThat(response.status().code(), is(204)))
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
                 .get();
+        assertThat(response.status().code(), is(204));
+
+        JsonObject jsonObject = webClient.get()
+                .request(JsonObject.class).await();
+        assertThat(jsonObject.getString("message"), is("Hola World!"));
+
+
+        webClient.put()
+                .path("/greeting")
+                .submit(JSON_OLD_GREETING).get();
+
+        WebClientResponse secondResponce = webClient.put()
+                .path("/greeting")
+                .submit(JSON_OLD_GREETING)
+                .get();
+        assertThat(secondResponce.status().code(), is(204));
     }
 
     @Test
