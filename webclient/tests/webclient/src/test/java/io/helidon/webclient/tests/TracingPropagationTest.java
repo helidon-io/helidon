@@ -64,7 +64,7 @@ class TracingPropagationTest {
     private final URI uri;
 
     TracingPropagationTest(URI uri) {
-        Tracer tracer = OpenTracing.create(this.tracer);
+        Tracer tracer = OpenTracing.create(TracingPropagationTest.tracer);
         this.uri = uri.resolve("/greet");
         this.client = Http1Client.builder()
                 .baseUri(this.uri)
@@ -111,7 +111,8 @@ class TracingPropagationTest {
 
         // the server traces asynchronously, some spans may be written after we receive the response.
         // we need to try to wait for such spans
-        assertThat("There should be 2 spans reported", tracer.finishedSpans(), hasSize(2));
+        // re-introduced content-write span
+        assertThat("There should be 3 spans reported", tracer.finishedSpans(), hasSize(3));
 
 
         // we need the first span - parentId 0
