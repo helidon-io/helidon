@@ -26,7 +26,6 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
@@ -37,8 +36,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Main tests of the application done here.
  */
-@Disabled("3.0.0-JAKARTA") // OpenAPI
-// Caused by: java.lang.NoSuchMethodError: 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
 class MainTest {
     private static Server server;
     private static Neo4j embeddedDatabaseServer;
@@ -70,11 +67,11 @@ class MainTest {
 
         Client client = ClientBuilder.newClient();
 
-        JsonArray jsorArray = client
+        JsonArray jsonArray = client
                 .target(getConnectionString("/movies"))
                 .request()
                 .get(JsonArray.class);
-        JsonObject first = jsorArray.getJsonObject(0);
+        JsonObject first = jsonArray.getJsonObject(0);
         assertThat(first.getString("title"), is("The Matrix"));
 
     }
