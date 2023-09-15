@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.http;
 
+import java.io.InputStream;
+import java.util.function.UnaryOperator;
+
 import io.helidon.common.context.Context;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.media.ReadableEntity;
@@ -100,4 +103,11 @@ public interface ServerRequest extends HttpRequest {
      * @return whether 100-Continue was sent back to client
      */
     boolean continueSent();
+
+    /**
+     * Configure a custom input stream to wrap the input stream of the request.
+     *
+     * @param filterFunction the function to replace input stream of this request with a user provided one
+     */
+    void streamFilter(UnaryOperator<InputStream> filterFunction);
 }

@@ -18,6 +18,7 @@ package io.helidon.webserver.http;
 
 import java.io.OutputStream;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.uri.UriQuery;
@@ -218,4 +219,11 @@ public interface ServerResponse {
     default <T extends Sink<?>> T sink(GenericType<T> sinkType) {
         throw new UnsupportedOperationException("No sink available for type " + sinkType);
     }
+
+    /**
+     * Configure a custom output stream to wrap the output stream of the response.
+     *
+     * @param filterFunction the function to replace output stream of this response with a user provided one
+     */
+    void streamFilter(UnaryOperator<OutputStream> filterFunction);
 }

@@ -87,7 +87,7 @@ public class GzipEncoding implements ContentEncoding {
     public ContentEncoder encoder() {
         return new ContentEncoder() {
             @Override
-            public OutputStream encode(OutputStream network) {
+            public OutputStream apply(OutputStream network) {
                 try {
                     return new GZIPOutputStream(network);
                 } catch (IOException e) {

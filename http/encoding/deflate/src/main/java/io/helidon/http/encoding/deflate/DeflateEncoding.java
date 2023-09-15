@@ -87,7 +87,7 @@ public class DeflateEncoding implements ContentEncoding {
     public ContentEncoder encoder() {
         return new ContentEncoder() {
             @Override
-            public OutputStream encode(OutputStream network) {
+            public OutputStream apply(OutputStream network) {
                 return new DeflaterOutputStream(network);
             }
 

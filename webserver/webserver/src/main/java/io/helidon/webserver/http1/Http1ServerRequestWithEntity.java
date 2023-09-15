@@ -16,8 +16,11 @@
 
 package io.helidon.webserver.http1;
 
+import java.io.InputStream;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
@@ -39,6 +42,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     private final boolean expectContinue;
     private final boolean continueImmediately;
     private boolean continueSent;
+    private UnaryOperator<InputStream> streamFilter = UnaryOperator.identity();
 
     Http1ServerRequestWithEntity(ConnectionContext ctx,
                                  Http1Connection connection,
@@ -62,6 +66,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         this.continueSent = continueImmediately || !expectContinue;
         // we need the same entity instance every time the entity() method is called
         this.entity = LazyValue.create(() -> ServerRequestEntity.create(this::trySend100,
+                                                                        streamFilter,
                                                                         decoder,
                                                                         it -> readEntityFromPipeline.get(),
                                                                         entityReadLatch::countDown,
@@ -84,6 +89,13 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     @Override
     public boolean continueSent() {
         return continueSent;
+    }
+
+    @Override
+    public void streamFilter(UnaryOperator<InputStream> filterFunction) {
+        Objects.requireNonNull(filterFunction);
+        UnaryOperator<InputStream> current = this.streamFilter;
+        this.streamFilter = it -> filterFunction.apply(current.apply(it));
     }
 
     private void trySend100(boolean drain) {

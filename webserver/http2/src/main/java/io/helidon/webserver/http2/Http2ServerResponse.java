@@ -19,6 +19,8 @@ package io.helidon.webserver.http2;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.DateTime;
@@ -51,6 +53,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private boolean streamingEntity;
     private long bytesWritten;
     private BlockingOutputStream outputStream;
+    private UnaryOperator<OutputStream> outputStreamFilter;
 
     Http2ServerResponse(ConnectionContext ctx,
                         Http2ServerRequest request,
@@ -73,6 +76,16 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public void send(byte[] entityBytes) {
+        if (outputStreamFilter != null) {
+            // in this case we must honor user's request to filter the stream
+            try (OutputStream os = outputStream()) {
+                os.write(entityBytes);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return;
+        }
+
         if (isSent) {
             throw new IllegalStateException("Response already sent");
         }
@@ -132,7 +145,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             this.isSent = true;
             afterSend();
         });
-        return contentEncode(outputStream);
+        if (outputStreamFilter == null) {
+            return contentEncode(outputStream);
+        } else {
+            return outputStreamFilter.apply(contentEncode(outputStream));
+        }
     }
 
     @Override
@@ -170,6 +187,24 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
+        }
+    }
+
+    @Override
+    public void streamFilter(UnaryOperator<OutputStream> filterFunction) {
+        if (isSent) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (streamingEntity) {
+            throw new IllegalStateException("OutputStream already obtained");
+        }
+        Objects.requireNonNull(filterFunction);
+
+        UnaryOperator<OutputStream> current = this.outputStreamFilter;
+        if (current == null) {
+            this.outputStreamFilter = filterFunction;
+        } else {
+            this.outputStreamFilter = it -> filterFunction.apply(current.apply(it));
         }
     }
 

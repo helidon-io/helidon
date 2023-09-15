@@ -18,11 +18,11 @@ package io.helidon.webserver.http2;
 
 import java.io.InputStream;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.http.media.ReadableEntityBase;
@@ -33,15 +33,18 @@ import io.helidon.http.media.ReadableEntityBase;
 public final class Http2ServerRequestEntity extends ReadableEntityBase implements ReadableEntity {
     private final ServerRequestHeaders requestHeaders;
     private final MediaContext mediaContext;
-    private final Function<InputStream, InputStream> decoder;
+    private final UnaryOperator<InputStream> decoder;
+    private final UnaryOperator<InputStream> streamFilter;
 
-    private Http2ServerRequestEntity(Function<InputStream, InputStream> decoder,
+    private Http2ServerRequestEntity(UnaryOperator<InputStream> streamFilter,
+                                     UnaryOperator<InputStream> decoder,
                                      Function<Integer, BufferData> readEntityFunction,
                                      Runnable entityProcessedRunnable,
                                      ServerRequestHeaders requestHeaders,
                                      MediaContext mediaContext) {
         super(readEntityFunction, entityProcessedRunnable);
 
+        this.streamFilter = streamFilter;
         this.decoder = decoder;
         this.requestHeaders = requestHeaders;
         this.mediaContext = mediaContext;
@@ -50,6 +53,7 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
     /**
      * Create a new entity.
      *
+     * @param streamFilter            stream filter to apply to the stream, provided by user
      * @param decoder                 content decoder
      * @param readEntityFunction      function to read buffer from entity (int is an estimated number of bytes needed, buffer
      *                                will contain at least 1 byte)
@@ -58,17 +62,24 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
      * @param mediaContext            media context to map to correct types
      * @return a new entity
      */
-    public static Http2ServerRequestEntity create(ContentDecoder decoder,
+    public static Http2ServerRequestEntity create(UnaryOperator<InputStream> streamFilter,
+                                                  UnaryOperator<InputStream> decoder,
                                                   Function<Integer, BufferData> readEntityFunction,
                                                   Runnable entityProcessedRunnable,
                                                   ServerRequestHeaders requestHeaders,
                                                   MediaContext mediaContext) {
-        return new Http2ServerRequestEntity(decoder, readEntityFunction, entityProcessedRunnable, requestHeaders, mediaContext);
+        return new Http2ServerRequestEntity(streamFilter,
+                                            decoder,
+                                            readEntityFunction,
+                                            entityProcessedRunnable,
+                                            requestHeaders,
+                                            mediaContext);
     }
 
     @Override
     public ReadableEntity copy(Runnable entityProcessedRunnable) {
-        return new Http2ServerRequestEntity(decoder,
+        return new Http2ServerRequestEntity(streamFilter,
+                                            decoder,
                                             readEntityFunction(), () -> {
             entityProcessedRunnable.run();
             entityProcessedRunnable().run();
@@ -79,7 +90,7 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
 
     @Override
     public InputStream inputStream() {
-        return decoder.apply(super.inputStream());
+        return streamFilter.apply(decoder.apply(super.inputStream()));
     }
 
     @Override
