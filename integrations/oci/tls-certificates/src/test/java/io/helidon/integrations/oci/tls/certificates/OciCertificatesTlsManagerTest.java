@@ -47,9 +47,6 @@ class OciCertificatesTlsManagerTest {
     }
 
     @Test
-    // left here since the repeat ensured the integrity the async code where container startup & shutdown showed some side affects
-    // that were tricky to reproduce.
-    //    @RepeatedTest(10)
     void serverRuntime() throws Exception {
         Services services = InjectionServices.realizedServices();
         LifecycleHook lifecycleHook = services.lookupFirst(LifecycleHook.class).get();
