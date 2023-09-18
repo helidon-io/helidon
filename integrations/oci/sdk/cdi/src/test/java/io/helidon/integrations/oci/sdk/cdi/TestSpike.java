@@ -19,29 +19,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 
-import jakarta.enterprise.context.Dependent;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.Instance;
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
+import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.DisableDiscovery;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import com.oracle.bmc.ConfigFileReader;
-// Arbitrary
-//
-// If the tests work for this, they will work for all.  (Feel free
-// to substitute other OCI service imports.)
 import com.oracle.bmc.ailanguage.AIServiceLanguage;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsync;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsyncClient;
 import com.oracle.bmc.ailanguage.AIServiceLanguageClient;
-// End Arbitrary
-//
-// Special
-//
-// Streaming is a strange case where they didn't really do builders
-// the same way as for every other service in the portfolio for no
-// particular reason (some builders are top-level classes, not nested
-// classes). We test this single outlier explicitly here.
 import com.oracle.bmc.streaming.Stream;
 import com.oracle.bmc.streaming.StreamAdmin;
 import com.oracle.bmc.streaming.StreamAdminClient;
@@ -50,17 +38,14 @@ import com.oracle.bmc.streaming.StreamAsyncClient;
 import com.oracle.bmc.streaming.StreamAsyncClientBuilder;
 import com.oracle.bmc.streaming.StreamClient;
 import com.oracle.bmc.streaming.StreamClientBuilder;
-// End Special
-import io.helidon.microprofile.config.ConfigCdiExtension;
-
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 

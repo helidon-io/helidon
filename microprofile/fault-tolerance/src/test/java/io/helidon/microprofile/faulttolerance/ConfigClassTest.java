@@ -16,8 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

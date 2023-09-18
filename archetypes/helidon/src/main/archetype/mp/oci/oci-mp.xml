@@ -213,8 +213,8 @@ ocimetrics:
                     <value key="scope">test</value>
                 </map>
                 <map order="0">
-                    <value key="groupId">io.helidon.microprofile.tests</value>
-                    <value key="artifactId">helidon-microprofile-tests-junit5</value>
+                    <value key="groupId">io.helidon.microprofile.testing</value>
+                    <value key="artifactId">helidon-microprofile-testing-junit5</value>
                     <value key="scope">test</value>
                 </map>
                 <map order="0">

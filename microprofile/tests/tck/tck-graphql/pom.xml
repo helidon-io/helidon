@@ -20,9 +20,10 @@
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile.tests</groupId>
-        <artifactId>tck-project</artifactId>
+        <groupId>io.helidon.microprofile.tests.tck</groupId>
+        <artifactId>helidon-microprofile-tests-tck-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tck-graphql</artifactId>
     <name>Helidon Microprofile Tests TCK GraphQL</name>

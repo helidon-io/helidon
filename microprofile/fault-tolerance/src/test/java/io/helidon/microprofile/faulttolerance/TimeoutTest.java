@@ -18,7 +18,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddBean;
 
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;

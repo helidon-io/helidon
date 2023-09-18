@@ -17,19 +17,15 @@ package io.helidon.microprofile.metrics;
 
 import java.time.Duration;
 
-import io.helidon.inject.api.Helidon;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
-import io.micrometer.core.instrument.noop.NoopMeter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 
 @HelidonTest
 @AddConfig(key = "metrics.enabled", value = "false")

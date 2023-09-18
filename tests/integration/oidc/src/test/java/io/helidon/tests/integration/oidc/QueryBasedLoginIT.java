@@ -16,7 +16,7 @@
 
 package io.helidon.tests.integration.oidc;
 
-import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddConfig;
 
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;

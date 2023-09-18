@@ -22,7 +22,7 @@ import java.io.IOException;
 import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
-import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddBean;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

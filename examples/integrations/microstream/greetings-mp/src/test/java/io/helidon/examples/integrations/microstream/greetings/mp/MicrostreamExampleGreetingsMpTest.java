@@ -18,7 +18,7 @@ package io.helidon.examples.integrations.microstream.greetings.mp;
 
 import java.nio.file.Path;
 
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;

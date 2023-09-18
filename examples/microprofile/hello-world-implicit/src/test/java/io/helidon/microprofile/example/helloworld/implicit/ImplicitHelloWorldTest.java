@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.example.helloworld.implicit;
 
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;

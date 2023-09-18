@@ -58,5 +58,6 @@
         <module>bean-validation</module>
         <module>service-common</module>
         <module>telemetry</module>
+        <module>testing</module>
     </modules>
 </project>

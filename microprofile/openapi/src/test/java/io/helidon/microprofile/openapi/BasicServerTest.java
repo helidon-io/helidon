@@ -18,8 +18,8 @@ package io.helidon.microprofile.openapi;
 import java.util.Map;
 
 import io.helidon.http.Status;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.openapi.OpenApiFeature;
 
 import jakarta.inject.Inject;

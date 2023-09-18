@@ -27,11 +27,11 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.DisableDiscovery;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import com.oracle.bmc.Region;
 import com.oracle.bmc.monitoring.Monitoring;
@@ -65,7 +65,6 @@ import com.oracle.bmc.monitoring.responses.RemoveAlarmSuppressionResponse;
 import com.oracle.bmc.monitoring.responses.RetrieveDimensionStatesResponse;
 import com.oracle.bmc.monitoring.responses.SummarizeMetricsDataResponse;
 import com.oracle.bmc.monitoring.responses.UpdateAlarmResponse;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 

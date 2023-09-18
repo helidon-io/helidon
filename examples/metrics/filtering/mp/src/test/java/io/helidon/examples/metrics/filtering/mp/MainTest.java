@@ -17,7 +17,7 @@ package io.helidon.examples.metrics.filtering.mp;
 
 import java.time.Duration;
 
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;

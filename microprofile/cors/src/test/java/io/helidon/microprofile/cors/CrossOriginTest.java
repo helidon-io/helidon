@@ -16,8 +16,8 @@
 
 package io.helidon.microprofile.cors;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;

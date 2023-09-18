@@ -16,8 +16,8 @@
 package io.helidon.microprofile.openapi;
 
 import io.helidon.microprofile.openapi.test.MyModelReader;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.json.JsonException;

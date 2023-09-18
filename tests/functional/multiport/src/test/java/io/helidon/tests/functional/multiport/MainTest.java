@@ -19,7 +19,7 @@ package io.helidon.tests.functional.multiport;
 import java.util.stream.Stream;
 
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Client;

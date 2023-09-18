@@ -63,7 +63,7 @@
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.microprofile-core-profile>10.0.1</version.lib.microprofile-core-profile>
         <version.lib.microprofile-cdi-tck>4.0.10</version.lib.microprofile-cdi-tck>
-        <version.lib.microprofile-restfull-tck>3.1.3</version.lib.microprofile-restfull-tck>
+        <version.lib.microprofile-restful-tck>3.1.3</version.lib.microprofile-restful-tck>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.jsoup>1.15.3</version.lib.jsoup>
@@ -80,7 +80,7 @@
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.surefire.testng>3.1.2</version.lib.surefire.testng>
-        <version.lib.testng>7.5</version.lib.testng>
+        <version.lib.testng>7.8.0</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>7.0.1</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
@@ -970,7 +970,7 @@
             <dependency>
                 <groupId>jakarta.ws.rs</groupId>
                 <artifactId>jakarta-restful-ws-tck</artifactId>
-                <version>${version.lib.microprofile-restfull-tck}</version>
+                <version>${version.lib.microprofile-restful-tck}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.akarnokd</groupId>

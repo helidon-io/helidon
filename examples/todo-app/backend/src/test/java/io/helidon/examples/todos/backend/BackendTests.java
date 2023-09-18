@@ -23,8 +23,8 @@ import java.util.Properties;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import io.helidon.http.HeaderNames;
-import io.helidon.microprofile.tests.junit5.Configuration;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.Configuration;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;

@@ -22,13 +22,15 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
-        <artifactId>tests-project</artifactId>
+        <artifactId>helidon-microprofile-tests-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
-    <artifactId>tck-project</artifactId>
-    <name>Helidon Microprofile Tests TCK</name>
+    <groupId>io.helidon.microprofile.tests.tck</groupId>
+    <artifactId>helidon-microprofile-tests-tck-project</artifactId>
+    <name>Helidon Microprofile Tests TCK Project</name>
 
     <modules>
         <module>tck-config</module>
@@ -45,7 +47,7 @@
         <module>tck-telemetry</module>
         <module>tck-core-profile</module>
         <module>tck-cdi</module>
-        <module>tck-restfull</module>
+        <module>tck-restful</module>
         <module>tck-jsonb</module>
         <module>tck-jsonp</module>
         <module>tck-inject</module>
