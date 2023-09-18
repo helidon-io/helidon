@@ -161,9 +161,9 @@ class HelidonConnector implements Connector {
         if (followRedirects != null) {
             httpRequest.followRedirects(followRedirects);
         }
-        Duration readTimeout = request.resolveProperty(READ_TIMEOUT, Duration.class);
+        Integer readTimeout = request.resolveProperty(READ_TIMEOUT, Integer.class);
         if (readTimeout != null) {
-            httpRequest.readTimeout(readTimeout);
+            httpRequest.readTimeout(Duration.ofMillis(readTimeout));
         }
         String protocolId = request.resolveProperty(PROTOCOL_ID, String.class);
         if (protocolId != null) {
