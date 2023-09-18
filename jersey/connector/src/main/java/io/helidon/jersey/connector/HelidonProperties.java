@@ -68,6 +68,8 @@ public final class HelidonProperties {
     /**
      * Property name to set a protocol ID for each request. You can use this property
      * to request an HTTP/2 upgrade from HTTP/1.1 by setting its value to {@code "h2"}.
+     * When using TLS, Helidon uses negotiation via the ALPN extension instead of this
+     * property.
      * 
      * @see io.helidon.webclient.api.HttpClientRequest#protocolId(String) 
      */

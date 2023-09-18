@@ -26,8 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
-import javax.net.ssl.SSLContext;
-
 import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
 import io.helidon.common.tls.Tls;
@@ -75,14 +73,10 @@ class HelidonConnector implements Connector {
             LazyValue.create(() -> Executors.newThreadPerTaskExecutor(
                     Thread.ofVirtual().name("helidon-connector-", 0).factory()));
 
-    private final Client client;
     private final WebClient webClient;
     private final Proxy proxy;
-    private boolean hasTls;
 
     HelidonConnector(Client client, Configuration config) {
-        this.client = client;
-
         // create underlying HTTP client
         Map<String, Object> properties = config.getProperties();
         var builder = WebClientConfig.builder();
@@ -103,10 +97,15 @@ class HelidonConnector implements Connector {
         if (properties.containsKey(FOLLOW_REDIRECTS)) {
             builder.followRedirects(getValue(properties, FOLLOW_REDIRECTS, true));
         }
+
+        // prefer Tls over SSLContext
         if (properties.containsKey(TLS)) {
             builder.tls(getValue(properties, TLS, Tls.class));
-            hasTls = true;
+        } else if (client.getSslContext() != null){
+            builder.tls(Tls.builder().sslContext(client.getSslContext()).build());
         }
+
+        // protocol configs
         if (properties.containsKey(PROTOCOL_CONFIGS)) {
             List<? extends ProtocolConfig> protocolConfigs =
                     (List<? extends ProtocolConfig>) properties.get(PROTOCOL_CONFIGS);
@@ -114,9 +113,12 @@ class HelidonConnector implements Connector {
                 builder.addProtocolConfigs(protocolConfigs);
             }
         }
+
+        // default headers
         if (properties.containsKey(DEFAULT_HEADERS)) {
             builder.defaultHeadersMap(getValue(properties, DEFAULT_HEADERS, EMPTY_MAP_LIST));
         }
+
         webClient = builder.build();
     }
 
@@ -153,12 +155,6 @@ class HelidonConnector implements Connector {
             String[] values = value.toArray(new String[0]);
             httpRequest.header(HeaderNames.create(key), values);
         });
-
-        // SSL context
-        if (!hasTls) {
-            SSLContext sslContext = client.getSslContext();
-            httpRequest.tls(Tls.builder().sslContext(sslContext).build());
-        }
 
         // request config
         Boolean followRedirects = request.resolveProperty(FOLLOW_REDIRECTS, Boolean.class);
