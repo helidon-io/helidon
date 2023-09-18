@@ -886,7 +886,8 @@ link:{javadoc-base-url}/io.helidon.grpc/GrpcServerConfiguration.html[here].
 
 You can also define the gRPC server configuration in a file.
 
-include::{rootdir}/config/io_helidon_grpc_server_GrpcServerConfiguration.adoc[leveloffset=1, tag=config]
+// grpc now shares the same server instance
+// include::{rootdir}/config/io_helidon_grpc_server_GrpcServerConfiguration.adoc[leveloffset=1, tag=config]
 
 .GrpcServer configuration file example using  `application.yaml`
 [source,yaml]

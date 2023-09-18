@@ -103,7 +103,7 @@ just use `Config.create()`
 
 === Configuration Options
 
-include::{rootdir}/config/io_helidon_reactive_webserver_WebServer.adoc[leveloffset=+2,tag=config]
+include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+2,tag=config]
 
 == Routing
 
@@ -1028,7 +1028,7 @@ server:
 
 === Configuration Options
 
-include::{rootdir}/config/io_helidon_reactive_webserver_WebServerTls.adoc[leveloffset=+2,tag=config]
+include::{rootdir}/config/io_helidon_common_tls_Tls.adoc[leveloffset=+2,tag=config]
 
 
 == HTTP Compression

@@ -24,6 +24,8 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckType;
 import io.helidon.health.spi.HealthCheckProvider;
@@ -131,6 +133,7 @@ public class HealthFeature extends HelidonFeatureSupport {
     /**
      * Fluent API builder for {@link HealthFeature}.
      */
+    @Configured(root = true, prefix = "health")
     public static class Builder extends HelidonFeatureSupport.Builder<Builder, HealthFeature> {
         private final HelidonServiceLoader.Builder<HealthCheckProvider> providers =
                 HelidonServiceLoader.builder(ServiceLoader.load(HealthCheckProvider.class));
@@ -166,6 +169,7 @@ public class HealthFeature extends HelidonFeatureSupport {
          * @param enabled set to {@code false} to disable health observer
          * @return updated builder
          */
+        @ConfiguredOption("true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             return this;
@@ -183,6 +187,7 @@ public class HealthFeature extends HelidonFeatureSupport {
          * @param details set to {@code true} to enable details
          * @return updated builder
          */
+        @ConfiguredOption("false")
         public Builder details(boolean details) {
             this.details = details;
             return this;

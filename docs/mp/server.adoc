@@ -108,7 +108,7 @@ By default, the server uses the MicroProfile Config, but you may also want to us
 
 In this example, the configuration is in a file, and it includes Helidon configuration options.
 
-include::{rootdir}/config/io_helidon_reactive_webserver_WebServer.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+1,tag=config]
 
 == Examples
 

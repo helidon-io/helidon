@@ -20,12 +20,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.config.metadata.processor.TypeHandlerBase.UNCONFIGURED_OPTION;
+import static io.helidon.config.metadata.processor.TypeHandlerBase.javadoc;
 import static io.helidon.config.metadata.processor.UsedTypes.DEPRECATED;
 import static io.helidon.config.metadata.processor.UsedTypes.DESCRIPTION;
 import static io.helidon.config.metadata.processor.UsedTypes.OPTION_ALLOWED_VALUE;
@@ -58,7 +66,7 @@ final class ConfiguredOptionData {
     private String kind = "VALUE";
 
     // create from @ConfiguredOption in config-metadata
-    static ConfiguredOptionData createMeta(Annotation option) {
+    static ConfiguredOptionData createMeta(ProcessingEnvironment aptEnv, Annotation option) {
         ConfiguredOptionData result = new ConfiguredOptionData();
 
         option.booleanValue("configured").ifPresent(result::configured);
@@ -79,7 +87,28 @@ final class ConfiguredOptionData {
                 .map(AllowedValue::create)
                 .forEach(result::addAllowedValue);
 
+        if (result.allowedValues.isEmpty()) {
+            // if enum, fill this in
+            Elements aptElements = aptEnv.getElementUtils();
+            TypeElement typeElement = aptElements
+                    .getTypeElement(option.typeValue("type").orElse(TypeNames.STRING).fqName());
+            if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
+                result.allowedValues.addAll(allowedValues(aptElements, typeElement));
+            }
+        }
+
         return result;
+    }
+
+    private static List<AllowedValue> allowedValues(Elements aptElements, TypeElement typeElement) {
+        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
+            return typeElement.getEnclosedElements()
+                    .stream()
+                    .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
+                    .map(element -> new AllowedValue(element.toString(), javadoc(aptElements.getDocComment(element))))
+                    .collect(Collectors.toList());
+        }
+        return List.of();
     }
 
     // create from Option annotations in builder-api

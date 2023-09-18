@@ -17,36 +17,23 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.openapi.SeOpenApiFeature
-:keywords: helidon, config, io.helidon.openapi.SeOpenApiFeature
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.openapi.SeOpenApiFeature
+:description: Configuration of io.helidon.metrics.api.Tag
+:keywords: helidon, config, io.helidon.metrics.api.Tag
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.metrics.api.Tag
 include::{rootdir}/includes/attributes.adoc[]
 
-= SeOpenApiFeature (openapi) Configuration
+= Tag (metrics.api) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/SeOpenApiFeature.html[io.helidon.openapi.SeOpenApiFeature]
+Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/Tag.html[io.helidon.metrics.api.Tag]
 
-
-This is a standalone configuration type, prefix from configuration root: `openapi`
 
 
 
 == Configuration options
 
 
-
-.Optional configuration options
-[cols="3,3a,2,5a"]
-
-|===
-|key |type |default value |description
-
-|`cross-origin-config` |xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Set the CORS config from the specified `CrossOriginConfig` object.
-|`web-context` |string |{nbsp} |Set the root context for the REST API of the service.
-
-|===
 
 // end::config[]

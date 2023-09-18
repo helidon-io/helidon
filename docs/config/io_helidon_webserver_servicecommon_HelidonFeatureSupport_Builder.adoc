@@ -17,17 +17,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.webserver.servicecommon.RestServiceSettings
-:keywords: helidon, config, io.helidon.webserver.servicecommon.RestServiceSettings
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.servicecommon.RestServiceSettings
+:description: Configuration of io.helidon.webserver.servicecommon.HelidonFeatureSupport.Builder
+:keywords: helidon, config, io.helidon.webserver.servicecommon.HelidonFeatureSupport.Builder
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.servicecommon.HelidonFeatureSupport.Builder
 include::{rootdir}/includes/attributes.adoc[]
 
-= RestServiceSettings (webserver.servicecommon) Configuration
+= Builder (webserver.servicecommon.HelidonFeatureSupport) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.webserver.servicecommon/io/helidon/webserver/servicecommon/RestServiceSettings.html[io.helidon.webserver.servicecommon.RestServiceSettings]
+Type: link:{javadoc-base-url}/io.helidon.webserver.servicecommon.HelidonFeatureSupport/io/helidon/webserver/servicecommon/HelidonFeatureSupport/Builder.html[io.helidon.webserver.servicecommon.HelidonFeatureSupport.Builder]
 
 
 
@@ -42,10 +42,8 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.servicecommon/io/helidon/webs
 |===
 |key |type |default value |description
 
-|`cors` |xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[Map&lt;string, CrossOriginConfig&gt;] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
-|`enabled` |boolean |`true` |Is this service enabled or not.
-|`routing` |string |{nbsp} |Sets the routing name to use for setting up the service's endpoint.
-|`web-context` |string |{nbsp} |Sets the web context to use for the service's endpoint.
+|`cross-origin-config` |xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Set the CORS config from the specified `CrossOriginConfig` object.
+|`web-context` |string |{nbsp} |Set the root context for the REST API of the service.
 
 |===
 

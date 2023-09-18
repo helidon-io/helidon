@@ -45,7 +45,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Configuring Jaeger
 
-include::{rootdir}/config/io_helidon_tracing_jaeger_JaegerTracerBuilder.adoc[tag=config,levelOffset=1]
+include::{rootdir}/config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder.adoc[tag=config,levelOffset=1]
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
 [source,yaml]

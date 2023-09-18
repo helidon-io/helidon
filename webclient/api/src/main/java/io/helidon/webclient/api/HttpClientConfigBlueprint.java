@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriFragment;
@@ -49,11 +51,22 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
+     * Config method to get {@link io.helidon.webclient.api.ClientUri}.
+     *
+     * @param config configuration instance
+     * @return client URI for the config node
+     */
+    @Prototype.FactoryMethod
+    static ClientUri createBaseUri(Config config) {
+        return config.as(URI.class).map(ClientUri::create).orElseThrow();
+    }
+
+    /**
      * Base uri used by the client in all requests.
      *
      * @return base uri of the client requests
      */
-    @ConfiguredOption
+    @ConfiguredOption(type = String.class)
     Optional<ClientUri> baseUri();
 
     /**

@@ -51,7 +51,7 @@ This is a standalone configuration type, prefix from configuration root: `tracin
 |`max-export-batch-size` |int |`512` |Maximum Export Batch Size of exporter requests.
 |`max-queue-size` |int |`2048` |Maximum Queue Size of exporter requests.
 |`private-key-pem` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Private key in PEM format.
-|`propagation` |xref:{rootdir}/config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.adoc[PropagationFormat[&#93;] |`JAEGER` |Add propagation format to use.
+|`propagation` |PropagationFormat[&#93; (B3, B3_SINGLE, JAEGER, W3C) |`JAEGER` |Add propagation format to use.
 |`sampler-param` |Number |`1` |The sampler parameter (number).
 |`sampler-type` |SamplerType (CONSTANT, RATIO) |`CONSTANT` |Sampler type.
 

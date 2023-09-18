@@ -44,7 +44,7 @@ This is a standalone configuration type, prefix from configuration root: `client
 |===
 |key |type |default value |description
 
-|`base-uri` |xref:{rootdir}/config/io_helidon_webclient_api_ClientUri.adoc[ClientUri] |{nbsp} |Base uri used by the client in all requests.
+|`base-uri` |string |{nbsp} |Base uri used by the client in all requests.
 
  @return base uri of the client requests
 |`connect-timeout` |Duration |{nbsp} |Connect timeout.

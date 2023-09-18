@@ -72,11 +72,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse</groupId>
             <artifactId>yasson</artifactId>
             <scope>runtime</scope>
