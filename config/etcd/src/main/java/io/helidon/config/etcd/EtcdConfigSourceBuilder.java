@@ -59,9 +59,9 @@ public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<E
                    Builder<EtcdConfigSourceBuilder, EtcdConfigSource> {
 
     /**
-     * Default Etcd API version ({@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi#v2}).
+     * Default Etcd API version ({@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi#v3}).
      */
-    public static final EtcdApi DEFAULT_VERSION = EtcdApi.v2;
+    public static final EtcdApi DEFAULT_VERSION = EtcdApi.v3;
     /**
      * Default Etcd endpoint ({@code http://localhost:2379}).
      */
@@ -195,12 +195,15 @@ public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<E
      * {@code EtcdApi} determines which etcd API version will be used.
      * <p>
      * There are two API versions: {@code v2} and {@code v3}.
+     *
+     * Support for v2 of the API is deprecated
      */
     public enum EtcdApi {
 
         /**
          * Etcd API v2 version.
          */
+        @Deprecated(since = "4.0.0", forRemoval = true)
         v2(new EtcdV2ClientFactory()),
 
         /**

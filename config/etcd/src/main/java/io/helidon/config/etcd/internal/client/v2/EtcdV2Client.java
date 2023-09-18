@@ -41,6 +41,8 @@ import mousio.etcd4j.responses.EtcdKeysResponse;
 /**
  * Etcd API v2 client.
  */
+@Deprecated(since = "4.0.0", forRemoval = true)
+
 public class EtcdV2Client implements EtcdClient {
 
     private static final Logger LOGGER = Logger.getLogger(EtcdV2Client.class.getName());
@@ -52,6 +54,8 @@ public class EtcdV2Client implements EtcdClient {
      * Init client with specified target Etcd uri.
      *
      * @param uris target Etcd uris
+     *
+     * @deprecated
      */
     EtcdV2Client(URI... uris) {
         etcd = new mousio.etcd4j.EtcdClient(uris);
