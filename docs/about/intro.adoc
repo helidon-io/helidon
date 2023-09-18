@@ -32,7 +32,7 @@
 
 * Converted other reactive API modules with blocking style APIs. The `io.helidon.common.reactive` APIs will stay as general purpose reactive utilities and operators. Learn more: <<Helidon SE, Helidon SE>>
 
-* Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the Níma WebServer. Learn more: <<Helidon MP, Helidon MP>>
+* Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the N&iacute;ma WebServer. Learn more: <<Helidon MP, Helidon MP>>
 
 * Java 21 is required to use Heldon 4.
 
@@ -45,9 +45,9 @@ Before Helidon 4, the Helidon WebServer was built on Netty and had a reactive AP
 Because each request runs in its own dedicated thread, it is free to perform blocking operations -- like calling a database, or another service. And it can do so in a simple synchronous way with no fear of blocking a platform thread and starving other requests. You no longer need to resort to complicated asynchronous code to implement a low-overhead, highly concurrent service.
 
 == Helidon SE
-Helidon SE is Helidon’s foundational set of APIs. The big change in Helidon 4 is that the use of virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Existing Helidon 3 SE code will require modification to run on these new APIs, but the effort is well worth the improved performance and simplicity of the resulting code.
+Helidon SE is Helidon's foundational set of APIs. The big change in Helidon 4 is that the use of virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Existing Helidon 3 SE code will require modification to run on these new APIs, but the effort is well worth the improved performance and simplicity of the resulting code.
 
-To give a very simple example of the differences between Helidon 3 SE and Helidon 4 SE, let’s take a look at extracting a JSON body from an HTTP request and doing something with it:
+To give a very simple example of the differences between Helidon 3 SE and Helidon 4 SE, let's take a look at extracting a JSON body from an HTTP request and doing something with it:
 
 .Helidon 3
 [source,java]
@@ -68,7 +68,7 @@ doSomething(request.content().as(JsonObject.class), response);
 
 
 == Helidon MP
-Helidon MP is Helidon’s MicroProfile implementation and in Helidon 4 it supports MicroProfile 6 and the Jakarta EE 10 Core Profile. Your Helidon 3 MicroProfile application should migrate to Helidon 4 fairly easily (the most significant changes are in MicroProfile Metrics 5.0), and since Helidon’s MicroProfile server is based on the new Helidon Níma WebServer, you get all the benefits of running on virtual threads.
+Helidon MP is Helidon's MicroProfile implementation and in Helidon 4 it supports MicroProfile 6 and the Jakarta EE 10 Core Profile. Your Helidon 3 MicroProfile application should migrate to Helidon 4 fairly easily (the most significant changes are in MicroProfile Metrics 5.0), and since Helidon's MicroProfile server is based on the new Helidon N&iacute;ma WebServer, you get all the benefits of running on virtual threads.
 
 
 
