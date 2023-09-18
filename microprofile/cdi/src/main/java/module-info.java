@@ -52,6 +52,9 @@ module io.helidon.microprofile.cdi {
     requires weld.environment.common;
     requires weld.se.core;
 
+    // Need by weld
+    requires org.jboss.logging;
+
     exports io.helidon.microprofile.cdi;
 
     uses jakarta.enterprise.inject.spi.Extension;
