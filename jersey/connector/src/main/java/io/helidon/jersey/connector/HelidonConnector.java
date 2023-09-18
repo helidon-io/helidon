@@ -38,10 +38,10 @@ import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
-
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.spi.ProtocolConfig;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.Response;
