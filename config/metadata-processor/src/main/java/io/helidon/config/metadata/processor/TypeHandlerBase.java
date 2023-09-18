@@ -94,6 +94,24 @@ abstract class TypeHandlerBase {
         return result.toString();
     }
 
+    static String javadoc(String docComment) {
+        if (docComment == null) {
+            return "";
+        }
+
+        String javadoc = docComment;
+        int index = javadoc.indexOf("@param");
+        if (index > -1) {
+            javadoc = docComment.substring(0, index);
+        }
+        // replace all {@code xxx} with 'xxx'
+        javadoc = JAVADOC_CODE.matcher(javadoc).replaceAll(it -> '`' + it.group(1) + '`');
+        // replace all {@link ...} with just the name
+        javadoc = JAVADOC_LINK.matcher(javadoc).replaceAll(it -> it.group(1));
+
+        return javadoc.trim();
+    }
+
     String key(TypedElementInfo elementInfo, ConfiguredOptionData configuredOption) {
         String name = configuredOption.name();
         if (name == null || name.isBlank()) {
@@ -177,24 +195,6 @@ abstract class TypeHandlerBase {
             }
             superClass = foundSuperType.get();
         }
-    }
-
-    private static String javadoc(String docComment) {
-        if (docComment == null) {
-            return "";
-        }
-
-        String javadoc = docComment;
-        int index = javadoc.indexOf("@param");
-        if (index > -1) {
-            javadoc = docComment.substring(0, index);
-        }
-        // replace all {@code xxx} with 'xxx'
-        javadoc = JAVADOC_CODE.matcher(javadoc).replaceAll(it -> '`' + it.group(1) + '`');
-        // replace all {@link ...} with just the name
-        javadoc = JAVADOC_LINK.matcher(javadoc).replaceAll(it -> it.group(1));
-
-        return javadoc.trim();
     }
 
     private List<ConfiguredOptionData.AllowedValue> allowedValues(TypeName type) {

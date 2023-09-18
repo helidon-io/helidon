@@ -60,7 +60,7 @@ class TypeHandlerMetaApiBlueprint extends TypeHandlerMetaApiBase implements Type
         ConfiguredAnnotation configured = ConfiguredAnnotation.createMeta(blueprint.annotation(META_CONFIGURED));
 
         ConfiguredType type = new ConfiguredType(configured,
-                                                 builderType,
+                                                 prototype,
                                                  targetType,
                                                  true);
 

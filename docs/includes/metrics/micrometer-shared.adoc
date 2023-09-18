@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ endif::[]
 == Configuration
 You can configure the Helidon Micrometer REST service as you can other built-in Helidon services by adding configuration settings under the `micrometer` top-level key.
 
-include::{rootdir}/config/io_helidon_integrations_micrometer_MicrometerSupport.adoc[tag=config,leveloffset=+1]
+include::{rootdir}/config/io_helidon_integrations_micrometer_MicrometerFeature.adoc[tag=config,leveloffset=+1]
 
 By default, Helidon Micrometer integration exposes the `/micrometer` endpoint.
 You can override the path using

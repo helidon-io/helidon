@@ -109,7 +109,7 @@ Single<String> response = client.get()
 
 The class responsible for WebClient configuration is:
 
-include::{rootdir}/config/io_helidon_reactive_webclient_WebClientConfiguration.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_webclient_api_WebClient.adoc[leveloffset=+1,tag=config]
 
 
 

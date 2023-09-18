@@ -41,7 +41,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Configuring Zipkin
 
-include::{rootdir}/config/io_helidon_tracing_zipkin_ZipkinTracerBuilder.adoc[tag=config,levelOffset=+1]
+include::{rootdir}/config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder.adoc[tag=config,levelOffset=+1]
 
 The following is an example of a Zipkin configuration, specified in the YAML format.
 [source,yaml]

@@ -18,6 +18,8 @@ package io.helidon.webserver.servicecommon;
 import java.util.Objects;
 
 import io.helidon.common.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.http.HttpRouting;
@@ -134,6 +136,7 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
      * @param <T> type of the concrete service
      * @param <B> type of the concrete builder for the service
      */
+    @Configured
     public abstract static class Builder<B extends Builder<B, T>, T extends HelidonFeatureSupport>
             implements io.helidon.common.Builder<B, T> {
 
@@ -187,6 +190,7 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
          * @param path context to use
          * @return updated builder instance
          */
+        @ConfiguredOption
         public B webContext(String path) {
             String context;
             if (path.startsWith("/")) {
@@ -204,6 +208,7 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
          * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
          * @return updated builder instance
          */
+        @ConfiguredOption
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             restServiceSettingsBuilder.crossOriginConfig(crossOriginConfig);

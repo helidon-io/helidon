@@ -15,6 +15,8 @@
  */
 package io.helidon.openapi;
 
+import io.helidon.config.metadata.Configured;
+
 /**
  * SE implementation of {@link OpenApiFeature}.
  */
@@ -43,6 +45,7 @@ class SeOpenApiFeature extends OpenApiFeature {
     /**
      * Builder class for the SE OpenAPI feature.
      */
+    @Configured(root = true, prefix = "openapi")
     public static class Builder extends OpenApiFeature.Builder<Builder, SeOpenApiFeature> {
 
         private static final System.Logger LOGGER = System.getLogger(Builder.class.getName());

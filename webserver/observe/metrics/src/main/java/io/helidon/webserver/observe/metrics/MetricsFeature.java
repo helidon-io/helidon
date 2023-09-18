@@ -27,6 +27,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -391,7 +392,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
     /**
      * A fluent API builder to build instances of {@link MetricsFeature}.
      */
-    //public static final class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature> {
+    @Configured(root = true, prefix = "metrics")
     public static class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature> {
         private LazyValue<MeterRegistry> meterRegistry;
         private MetricsConfig.Builder metricsSettingsBuilder = MetricsConfig.builder();

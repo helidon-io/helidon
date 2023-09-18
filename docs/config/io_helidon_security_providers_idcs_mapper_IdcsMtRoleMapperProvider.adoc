@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider
 include::{rootdir}/includes/attributes.adoc[]
 
-= IdcsMtRoleMapperRxProvider (security.providers.idcs.mapper) Configuration
+= IdcsMtRoleMapperProvider (security.providers.idcs.mapper) Configuration
 
 // tag::config[]
 
 Multitenant IDCS role mapping provider
 
 
-Type: link:{javadoc-base-url}/io.helidon.security.providers.idcs.mapper/io/helidon/security/providers/idcs/mapper/IdcsMtRoleMapperRxProvider.html[io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider]
+Type: link:{javadoc-base-url}/io.helidon.security.providers.idcs.mapper/io/helidon/security/providers/idcs/mapper/IdcsMtRoleMapperProvider.html[io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider]
 
 
 [source,text]
@@ -60,9 +60,9 @@ This type provides the following service implementations:
  Can be either #IDCS_SUBJECT_TYPE_USER or #IDCS_SUBJECT_TYPE_CLIENT.
  Defaults to #IDCS_SUBJECT_TYPE_USER.
 |`idcs-app-name-handler` |xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[TokenHandler] |{nbsp} |Configure token handler for IDCS Application name.
- By default the header `IdcsMtRoleMapperRxProvider#IDCS_APP_HEADER` is used.
+ By default the header `IdcsMtRoleMapperProvider#IDCS_APP_HEADER` is used.
 |`idcs-tenant-handler` |xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[TokenHandler] |{nbsp} |Configure token handler for IDCS Tenant ID.
- By default the header `IdcsMtRoleMapperRxProvider#IDCS_TENANT_HEADER` is used.
+ By default the header `IdcsMtRoleMapperProvider#IDCS_TENANT_HEADER` is used.
 |`oidc-config` |xref:{rootdir}/config/io_helidon_security_providers_oidc_common_OidcConfig.adoc[OidcConfig] |{nbsp} |Use explicit io.helidon.security.providers.oidc.common.OidcConfig instance, e.g. when using it also for OIDC
  provider.
 |`subject-types` |SubjectType[&#93; (USER, SERVICE) |`USER` |Add a supported subject type.

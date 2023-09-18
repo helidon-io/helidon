@@ -34,6 +34,7 @@ module io.helidon.webserver.observe.health {
     requires java.management;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.health;

@@ -40,13 +40,13 @@ abstract class TypeHandlerMetaApiBase extends TypeHandlerBase {
             return metaOptions.annotationValues()
                     .stream()
                     .flatMap(List::stream)
-                    .map(ConfiguredOptionData::createMeta)
+                    .map(it -> ConfiguredOptionData.createMeta(aptEnv(), it))
                     .toList();
         }
 
         if (elementInfo.hasAnnotation(META_OPTION)) {
             Annotation metaOption = elementInfo.annotation(META_OPTION);
-            return List.of(ConfiguredOptionData.createMeta(metaOption));
+            return List.of(ConfiguredOptionData.createMeta(aptEnv(), metaOption));
         }
 
         return List.of();

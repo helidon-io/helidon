@@ -15,9 +15,13 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+
 /**
  * Behavior of a tag for further identifying meters.
  */
+@Configured
 public interface Tag extends Wrapper {
 
     /**
@@ -36,6 +40,7 @@ public interface Tag extends Wrapper {
      *
      * @return the tag's key
      */
+    @ConfiguredOption
     String key();
 
     /**
@@ -43,5 +48,6 @@ public interface Tag extends Wrapper {
      *
      * @return the tag's value
      */
+    @ConfiguredOption
     String value();
 }

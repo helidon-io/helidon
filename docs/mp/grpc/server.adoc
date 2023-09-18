@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -330,7 +330,8 @@ Configure the gRPC server using the Helidon microprofile configuration framework
 Refer to xref:{rootdir}/mp/config/introduction.adoc[MicroProfile Config] for more details about the different options for
 ConfigSources.
 
-include::{rootdir}/config/io_helidon_grpc_server_GrpcServerConfiguration.adoc[leveloffset=1, tag=config]
+// grpc now shares the same server instance
+// include::{rootdir}/config/io_helidon_grpc_server_GrpcServerConfiguration.adoc[leveloffset=1, tag=config]
 
 .GrpcServer configuration file example using `application.yaml`
 [source,yaml]
