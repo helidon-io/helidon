@@ -20,12 +20,6 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
-        <templates engine="mustache" transformations="mustache,packaged" if="${metrics}">
-            <directory>files</directory>
-            <includes>
-                <include>**/MetricsService.java.mustache</include>
-            </includes>
-        </templates>
         <model if="${health} || ${metrics} || ${tracing}">
             <list key="Main-helidon-imports">
                 <value>io.helidon.webserver.observe.ObserveFeature</value>
