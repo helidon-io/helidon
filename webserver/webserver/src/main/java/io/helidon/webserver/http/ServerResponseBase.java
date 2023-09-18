@@ -91,7 +91,6 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         send(BufferData.EMPTY_BYTES);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public void send(Object entity) {
         if (entity instanceof byte[] bytes) {
@@ -193,7 +192,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             // we want to preserve optimization here, let's create a new byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream(entity.length);
-            OutputStream os = encoder.encode(baos);
+            OutputStream os = encoder.apply(baos);
             try {
                 os.write(entity);
                 os.close();
@@ -217,7 +216,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             encoder.headers(headers());
 
-            return encoder.encode(outputStream);
+            return encoder.apply(outputStream);
         }
         return outputStream;
     }

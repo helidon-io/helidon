@@ -17,13 +17,14 @@
 package io.helidon.http.encoding;
 
 import java.io.OutputStream;
+import java.util.function.UnaryOperator;
 
 import io.helidon.http.WritableHeaders;
 
 /**
  * Content encoder.
  */
-public interface ContentEncoder {
+public interface ContentEncoder extends UnaryOperator<OutputStream> {
     /**
      * No-op content encoder.
      */
@@ -35,7 +36,8 @@ public interface ContentEncoder {
      * @param network output stream to be written over the network
      * @return output stream to write plain data (to compress, encrypt)
      */
-    OutputStream encode(OutputStream network);
+    @Override
+    OutputStream apply(OutputStream network);
 
     /**
      * Update headers.

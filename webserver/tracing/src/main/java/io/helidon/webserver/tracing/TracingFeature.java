@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.tracing;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +88,7 @@ public class TracingFeature implements HttpFeature, Weighted {
     /**
      * Create a new tracing support base on {@link io.helidon.tracing.config.TracingConfig}.
      *
-     * @param tracer tracer to use for tracing spans created by this feature
+     * @param tracer        tracer to use for tracing spans created by this feature
      * @param configuration traced system configuration
      * @return a new tracing support to register with web server routing
      */
@@ -309,6 +311,14 @@ public class TracingFeature implements HttpFeature, Weighted {
             context.register(span.context());
             context.register(TracingConfig.class, span.context());
 
+            /*
+            Register an output stream filter to correctly handle content write span
+             */
+            res.streamFilter(os -> {
+                // this is invoked when the user requests output stream, we just replace it with our own delegate
+                return new TracingStreamDelegate(tracer, span, os);
+            });
+
             try (Scope ignored = span.activate()) {
                 span.tag(Tag.COMPONENT.create("helidon-webserver"));
                 span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
@@ -388,6 +398,98 @@ public class TracingFeature implements HttpFeature, Weighted {
         @Override
         public boolean contains(String key) {
             return request.headers().contains(HeaderNames.create(key));
+        }
+    }
+
+    private static final class TracingStreamDelegate extends OutputStream {
+        private final Tracer tracer;
+        private final Span requestSpan;
+        private final OutputStream delegate;
+
+        private boolean started;
+        private boolean stopped;
+        private Span span;
+        private Throwable thrown;
+
+        private TracingStreamDelegate(Tracer tracer, Span requestSpan, OutputStream delegate) {
+            this.tracer = tracer;
+            this.requestSpan = requestSpan;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            start();
+            try {
+                this.delegate.write(b);
+            } catch (IOException e) {
+                thrown = e;
+                throw e;
+            }
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            start();
+            try {
+                this.delegate.write(b);
+            } catch (IOException e) {
+                thrown = e;
+                throw e;
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            start();
+            try {
+                this.delegate.write(b, off, len);
+            } catch (IOException e) {
+                thrown = e;
+                throw e;
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            try {
+                this.delegate.flush();
+            } catch (IOException e) {
+                thrown = e;
+                throw e;
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                this.delegate.close();
+            } catch (IOException e) {
+                thrown = e;
+                throw e;
+            } finally {
+                stop();
+            }
+        }
+
+        private void start() {
+            if (!started) {
+                started = true;
+                span = tracer.spanBuilder("content-write")
+                        .parent(requestSpan.context())
+                        .start();
+            }
+        }
+
+        private void stop() {
+            if (started && !stopped) {
+                stopped = true;
+                if (thrown == null) {
+                    span.end();
+                } else {
+                    span.end(thrown);
+                }
+            }
         }
     }
 }

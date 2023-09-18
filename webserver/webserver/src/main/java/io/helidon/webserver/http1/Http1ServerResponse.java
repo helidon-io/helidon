@@ -22,8 +22,10 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
@@ -80,6 +82,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private long bytesWritten;
     private String streamResult = "";
     private final boolean validateHeaders;
+
+    private UnaryOperator<OutputStream> outputStreamFilter;
 
     Http1ServerResponse(ConnectionContext ctx,
                         Http1ConnectionListener sendListener,
@@ -146,13 +150,21 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     // actually send the response over the wire
     @Override
     public void send(byte[] bytes) {
-        byte[] entity = entityBytes(bytes);
-        BufferData bufferData = responseBuffer(entity);
-        bytesWritten = bufferData.available();
-        isSent = true;
-        request.reset();
-        dataWriter.write(bufferData);
-        afterSend();
+        if (outputStreamFilter == null) {
+            byte[] entity = entityBytes(bytes);
+            BufferData bufferData = responseBuffer(entity);
+            bytesWritten = bufferData.available();
+            isSent = true;
+            request.reset();
+            dataWriter.write(bufferData);
+            afterSend();
+        } else {
+            try (OutputStream os = outputStream()) {
+                os.write(bytes);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
     @Override
@@ -188,7 +200,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
-        return contentEncode(outputStream);
+        if (outputStreamFilter == null) {
+            return contentEncode(outputStream);
+        } else {
+            return outputStreamFilter.apply(contentEncode(outputStream));
+        }
     }
 
     @Override
@@ -246,6 +262,23 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         // Request not acceptable if provider not found
         throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
+    }
+
+    @Override
+    public void streamFilter(UnaryOperator<OutputStream> filterFunction) {
+        if (isSent) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (streamingEntity) {
+            throw new IllegalStateException("OutputStream already obtained");
+        }
+        Objects.requireNonNull(filterFunction);
+        UnaryOperator<OutputStream> current = this.outputStreamFilter;
+        if (current == null) {
+            this.outputStreamFilter = filterFunction;
+        } else {
+            this.outputStreamFilter = it -> filterFunction.apply(current.apply(it));
+        }
     }
 
     private void handleSinkData(Object data, MediaType mediaType) {

@@ -17,13 +17,13 @@
 package io.helidon.http.encoding;
 
 import java.io.InputStream;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Content decoder.
  */
 @FunctionalInterface
-public interface ContentDecoder extends Function<InputStream, InputStream> {
+public interface ContentDecoder extends UnaryOperator<InputStream> {
     /**
      * No op content decoder.
      */
