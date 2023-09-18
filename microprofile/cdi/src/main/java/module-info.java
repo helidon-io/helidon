@@ -39,6 +39,9 @@ module io.helidon.microprofile.cdi {
     requires jakarta.inject;
     requires microprofile.config.api;
 
+    // Needed by weld
+    requires org.jboss.logging;
+
     exports io.helidon.microprofile.cdi;
 
     uses jakarta.enterprise.inject.spi.Extension;
