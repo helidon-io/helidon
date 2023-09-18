@@ -561,6 +561,11 @@ public abstract class OpenAPISupport implements Service {
     private static class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
 
         @Override
+        public Object parseValue(String value) {
+            return parseExtension(null, value);
+        }
+
+        @Override
         public Object parseExtension(String key, String value) {
 
             // Inspired by SmallRye's JsonUtil#parseValue method.
