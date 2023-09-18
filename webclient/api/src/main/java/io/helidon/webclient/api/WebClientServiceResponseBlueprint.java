@@ -22,12 +22,13 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
 
 /**
  * Response which is created upon receiving of server response.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = WebClientServiceResponseDecorator.class)
 interface WebClientServiceResponseBlueprint {
 
     /**
@@ -36,6 +37,13 @@ interface WebClientServiceResponseBlueprint {
      * @return immutable response headers
      */
     ClientResponseHeaders headers();
+
+    /**
+     * Received response trailer headers.
+     *
+     * @return immutable response trailer headers
+     */
+    CompletableFuture<ClientResponseTrailers> trailers();
 
     /**
      * Status of the response.

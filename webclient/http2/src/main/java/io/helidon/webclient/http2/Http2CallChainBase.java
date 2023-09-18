@@ -27,6 +27,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -161,6 +162,13 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
             ContentDecoder decoder = contentDecoder(responseHeaders);
             builder.inputStream(decoder.apply(new RequestingInputStream(stream, whenComplete, response)));
         }
+
+        if (responseHeaders.contains(HeaderNames.TRAILER)) {
+            builder.trailers(stream.trailers().thenApply(ClientResponseTrailers::create));
+        } else {
+            builder.trailers(CompletableFuture.failedFuture(new IllegalStateException("No trailers are expected.")));
+        }
+
         WebClientServiceResponse serviceResponse = builder
                 .serviceRequest(serviceRequest)
                 .whenComplete(whenComplete)

@@ -90,7 +90,7 @@ public class HeadersTest {
                     String joinedHeaders = req.headers()
                             .stream()
                             .filter(h -> h.name().startsWith("test-header-"))
-                            .map(h -> h.name() + "=" + h.value())
+                            .map(h -> h.name() + "=" + h.get())
                             .collect(Collectors.joining("\n"));
                     res.send(joinedHeaders);
                 }

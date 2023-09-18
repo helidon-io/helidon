@@ -232,6 +232,11 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     @Override
+    public void trailers(Http2Headers headers, boolean endOfStream) {
+        // server side trailers
+    }
+
+    @Override
     public void data(Http2FrameHeader header, BufferData data) {
         // todo check number of queued items and modify flow control if we seem to be collecting messages
         if (expectedLength != -1 && expectedLength < header.length()) {

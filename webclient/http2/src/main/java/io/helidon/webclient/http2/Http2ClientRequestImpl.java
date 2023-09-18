@@ -225,9 +225,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                 });
 
         // if this was an HTTP/1.1 response, do something different (just re-use response)
-        return new Http2ClientResponseImpl(callChain.responseStatus(),
+        return new Http2ClientResponseImpl(clientConfig(),
+                                           callChain.responseStatus(),
                                            callChain.requestHeaders(),
                                            serviceResponse.headers(),
+                                           serviceResponse.trailers(),
                                            serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
                                            resolvedUri,
