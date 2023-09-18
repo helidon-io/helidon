@@ -30,7 +30,6 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -90,7 +89,7 @@ class ConnectorBase {
     static void basicHeaders(ServerRequest request, ServerResponse response) {
         request.headers()
                 .stream()
-                .filter(h -> h.name().startsWith("X-TEST"))
+                .filter(h -> h.name().startsWith("x-test"))
                 .forEach(response::header);
         response.status(Status.OK_200).send("ok");
     }
@@ -123,11 +122,16 @@ class ConnectorBase {
         }
     }
 
-    @Test @Disabled
+    @Test
     public void testHeaders() {
-        String[][] headers = new String[][]{{"X-TEST-ONE", "ONE"}, {"X-TEST-TWO", "TWO"}, {"X-TEST-THREE", "THREE"}};
+        String[][] headers = new String[][]{
+                {"x-test-one", "one"},
+                {"x-test-two", "two"},
+                {"x-test-three", "three"}
+        };
         MultivaluedHashMap<String, Object> map = new MultivaluedHashMap<>();
         Arrays.stream(headers).forEach(a -> map.add(a[0], a[1]));
+
         try (Response response = target("basic").path("headers").request().headers(map).get()) {
             assertThat(response.getStatus(), is(200));
             assertThat(response.readEntity(String.class), is("ok"));

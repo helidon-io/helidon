@@ -101,7 +101,7 @@ class HelidonConnector implements Connector {
         // prefer Tls over SSLContext
         if (properties.containsKey(TLS)) {
             builder.tls(getValue(properties, TLS, Tls.class));
-        } else if (client.getSslContext() != null){
+        } else if (client.getSslContext() != null) {
             builder.tls(Tls.builder().sslContext(client.getSslContext()).build());
         }
 
