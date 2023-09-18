@@ -15,8 +15,12 @@
  */
 package io.helidon.webclient.tests;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.SocketException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.net.ssl.SSLHandshakeException;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
@@ -37,12 +41,13 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test is testing ability to set mutual TLS on WebClient and WebServer.
  */
 @ServerTest
-public class MutualTlsTest {
+class MutualTlsTest {
 
     private static final Config CONFIG = Config.just(() -> ConfigSources.classpath("application-test.yaml").build());
 
@@ -86,8 +91,22 @@ public class MutualTlsTest {
     public void testNoClientCert() {
         Http1Client client = createWebClient(CONFIG.get("no-client-cert"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> exec(client, "https", server.port("secured")));
-        assertThat(ex.getMessage(), containsString("Received fatal alert: bad_certificate"));
+        // as the client does not have client certificate configured, it is not aware it should wait for the application
+        // data from server during SSL handshake, as a result, handshake is OK, but we fail when we try to communicate
+        // (as the client becomes aware of the problem only when it tries to read data from TLS, and by that time the
+        // server may have terminated the connection)
+        // so sometimes we get correct fatal alert about certificate, sometimes connection closed (Broken pipe or similar)
+        // it just must always fail with a socket exception or SSLHandshakeException
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class, () -> exec(client, "https", server.port("secured")));
+
+        IOException cause = ex.getCause();
+        if (cause instanceof SSLHandshakeException) {
+            assertThat(cause.getMessage(), containsString("Received fatal alert: bad_certificate"));
+        } else {
+            if (!(cause instanceof SocketException)) {
+                fail("Call must fail with either SSLHandshakeException or SocketException", cause);
+            }
+        }
     }
 
     @Test
