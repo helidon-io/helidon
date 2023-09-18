@@ -19,6 +19,7 @@ package io.helidon.jersey.connector;
 import java.util.Arrays;
 
 import io.helidon.http.Status;
+import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
