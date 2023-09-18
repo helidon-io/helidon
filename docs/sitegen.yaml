@@ -269,7 +269,7 @@ backend:
                 source: "telemetry.adoc"
                 glyph: 
                   type: "icon"
-                  value: "monitoring"
+                  value: "analytics"
               - type: "MENU"
                 title: "Testing"
                 glyph:
