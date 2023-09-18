@@ -264,6 +264,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "settings_ethernet"
+              - type: "PAGE"
+                title: "Telemetry"
+                source: "telemetry.adoc"
+                glyph: 
+                  type: "icon"
+                  value: "monitoring"
               - type: "MENU"
                 title: "Testing"
                 glyph:
@@ -471,7 +477,7 @@ backend:
                 source: "websocket.adoc"
                 glyph:
                   type: "icon"
-                  value: "timeline"
+                  value: "sync_alt"
         - type: "HEADER"
           title: "Additional resources"
         - type: "LINK"
