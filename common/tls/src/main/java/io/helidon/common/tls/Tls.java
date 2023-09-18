@@ -185,24 +185,6 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     }
 
     /**
-     * Create a socket for the chosen protocol.
-     *
-     * @param alpnProtocol protocol to use
-     * @return a new socket ready for TLS communication
-     */
-    public SSLSocket createSocket(String alpnProtocol) {
-        checkEnabled();
-        try {
-            SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket();
-            sslParameters.setApplicationProtocols(new String[] {alpnProtocol});
-            socket.setSSLParameters(sslParameters);
-            return socket;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    /**
      * Create a SSLSocket for the chosen protocol and the given socket.
      *
      * @param alpnProtocols protocol(s) to use (order is significant)
@@ -215,7 +197,24 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         try {
             SSLSocket sslSocket = (SSLSocket) sslSocketFactory
                     .createSocket(socket, address.getHostName(), address.getPort(), true);
-            sslParameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
+
+            // create a copy of SSLParameters, as otherwise we may overwrite alpnProtocols of requests in parallel
+            SSLParameters parameters = new SSLParameters();
+            parameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
+            parameters.setServerNames(this.sslParameters.getServerNames());
+            parameters.setCipherSuites(this.sslParameters.getCipherSuites());
+            parameters.setAlgorithmConstraints(this.sslParameters.getAlgorithmConstraints());
+            parameters.setEnableRetransmissions(this.sslParameters.getEnableRetransmissions());
+            parameters.setEndpointIdentificationAlgorithm(this.sslParameters.getEndpointIdentificationAlgorithm());
+            parameters.setMaximumPacketSize(this.sslParameters.getMaximumPacketSize());
+            parameters.setNamedGroups(this.sslParameters.getNamedGroups());
+            parameters.setNeedClientAuth(this.sslParameters.getNeedClientAuth());
+            parameters.setProtocols(this.sslParameters.getProtocols());
+            parameters.setSignatureSchemes(this.sslParameters.getSignatureSchemes());
+            parameters.setSNIMatchers(this.sslParameters.getSNIMatchers());
+            parameters.setUseCipherSuitesOrder(this.sslParameters.getUseCipherSuitesOrder());
+            parameters.setWantClientAuth(this.sslParameters.getWantClientAuth());
+
             sslSocket.setSSLParameters(sslParameters);
             return sslSocket;
         } catch (IOException e) {
@@ -270,12 +269,6 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         return tlsManager.trustManager();
     }
 
-    private void checkEnabled() {
-        if (sslContext == null) {
-            throw new IllegalStateException("TLS config is disabled, SSL related methods cannot be called.");
-        }
-    }
-
     private static int hashCode(SSLParameters first) {
         int result = Objects.hash(first.getAlgorithmConstraints(),
                                   first.getEnableRetransmissions(),
@@ -306,5 +299,11 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
                 && (first.getWantClientAuth() == second.getWantClientAuth())
                 && first.getServerNames().equals(second.getServerNames())
                 && first.getSNIMatchers().equals(second.getSNIMatchers());
+    }
+
+    private void checkEnabled() {
+        if (sslContext == null) {
+            throw new IllegalStateException("TLS config is disabled, SSL related methods cannot be called.");
+        }
     }
 }
