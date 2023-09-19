@@ -19,8 +19,10 @@ package io.helidon.microprofile.server;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.reactive.Multi;
@@ -39,16 +41,15 @@ import jakarta.ws.rs.sse.SseEventSink;
 import jakarta.ws.rs.sse.SseEventSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for {@link ServerImpl} SSE.
  */
-@Disabled
 class ServerSseTest {
     private static Client client;
 
@@ -70,7 +71,7 @@ class ServerSseTest {
         innerTest("test1", connClosedFuture, 4);
     }
 
-    @Test
+    @Test // succeeds
     void testSseMulti() throws Exception {
         innerTest("test2", multiTestFuture, 4);
     }
@@ -80,34 +81,58 @@ class ServerSseTest {
         innerTest("test3", null, 1);
     }
 
-    private void innerTest(String endpoint, CompletableFuture<Void> future, int eventNum) throws InterruptedException {
+    private void innerTest(String endpoint, CompletableFuture<Void> future, int eventNum) {
         Server server = Server.builder()
                 .addApplication("/", new TestApplication1())
                 .port(0)
                 .build();
-        server.start();
 
+        server.start();
         try {
             // Set up SSE event source
             WebTarget target = client.target("http://localhost:" + server.port()).path(endpoint).path("sse");
             SseEventSource sseEventSource = SseEventSource.target(target).build();
             CountDownLatch count = new CountDownLatch(eventNum);
             sseEventSource.register(event -> {
-                event.readData(String.class);
-                count.countDown();
-            });
+                    try {
+                        event.readData(String.class);
+                    } finally {
+                        count.countDown();
+                    }
+                },
+                exception -> {
+                    count.countDown();
+                }
+                );
 
             // Open SSE source for a few millis and then close it
-            sseEventSource.open();
-            assertThat("Await method should have not timeout", count.await(250, TimeUnit.MILLISECONDS));
-            sseEventSource.close();
+            assertThat(sseEventSource.isOpen(), is(false));
+            try {
+                sseEventSource.open(); // hangs indefinitely for test3?
+            } catch (IllegalStateException e) {
+                fail("sseEventSource.open() should have worked", e);
+            }
+            try {
+                assertThat(count.await(250, TimeUnit.MILLISECONDS), is(true));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                fail("Await method should not have timed out", e);
+            } finally {
+                assertThat(sseEventSource.close(5, TimeUnit.SECONDS), is(true));
+            }
+            assertThat(count.getCount(), is(0L));
 
             // Wait for server to detect connection closed
             if (future != null) {
                 try {
                     future.get(2000, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    fail("Closing of SSE connection not detected!");
+                } catch (RuntimeException | Error e) {
+                    fail("Closing of SSE connection not detected!", e);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    fail("Closing of SSE connection not detected!", e);
+                } catch (ExecutionException | TimeoutException e) {
+                    fail("Closing of SSE connection not detected!", e);
                 }
             }
         } finally {
@@ -137,11 +162,12 @@ class ServerSseTest {
                         }
                     });
                     TimeUnit.MILLISECONDS.sleep(5);
-                } catch (InterruptedException e) {
-                    // falls through
-                } catch (IllegalStateException e) {
+                } catch (RuntimeException | Error e) {
                     //https://github.com/oracle/helidon/issues/1290
                     connClosedFuture.complete(null);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    // falls through
                 }
             }
         }
@@ -162,15 +188,13 @@ class ServerSseTest {
 
     @Path("/test3")
     public final class TestResource3 {
-
-        SseEventSink eventSink;
-
         @GET
         @Path("sse")
         @Produces(MediaType.SERVER_SENT_EVENTS)
         public void listenToEvents(@Context SseEventSink eventSink, @Context Sse sse) {
-            this.eventSink = eventSink;
-            eventSink.send(sse.newEvent("hello"));
+            eventSink.send(sse.newEvent("hello"))
+                .exceptionally(e -> fail(e))
+                .thenRun(eventSink::close); // critical
         }
     }
 }
