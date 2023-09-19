@@ -32,14 +32,12 @@ class StreamBuffer {
     private final Semaphore dequeSemaphore = new Semaphore(1);
     private final Queue<Http2FrameData> buffer = new ArrayDeque<>();
     private final int streamId;
-    private final Duration timeout;
 
-    StreamBuffer(int streamId, Duration timeout) {
+    StreamBuffer(int streamId) {
         this.streamId = streamId;
-        this.timeout = timeout;
     }
 
-    Http2FrameData poll() {
+    Http2FrameData poll(Duration timeout) {
         try {
             // Block deque thread when queue is empty
             // avoid CPU burning

@@ -22,10 +22,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -37,10 +39,16 @@ import io.helidon.webclient.http2.Http2ClientResponse;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -53,14 +61,17 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HeadersTest {
+
+    private static final System.Logger LOGGER = System.getLogger(HeadersTest.class.getName());
     private static final Header BEFORE_HEADER = HeaderValues.create("test", "before");
     private static final Header TRAILER_HEADER = HeaderValues.create("Trailer-header", "trailer-test");
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
-    private static final Vertx VERTX = Vertx.vertx();
+    private static final Vertx VERTX = Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1000*60*60));
     private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private static HttpServer SERVER;
     private static Http2Client CLIENT;
+    private static HttpClient VERTX_CLIENT;
 
     @BeforeAll
     static void beforeAll() throws ExecutionException, InterruptedException, TimeoutException {
@@ -73,6 +84,7 @@ class HeadersTest {
                 .requestHandler(req -> {
                     HttpServerResponse res = req.response();
                     switch (req.path()) {
+                        case "/upgrade" -> res.end();
                         case "/trailer" -> {
                             res.putHeader(BEFORE_HEADER.name(), BEFORE_HEADER.get());
                             res.putHeader(HeaderNames.TRAILER.defaultCase(), "Trailer-header");
@@ -116,6 +128,35 @@ class HeadersTest {
                             res.trailers().addAll(trailers);
                             res.end();
                         }
+                        case "/100-continue" -> {
+                            AtomicBoolean continueSent = new AtomicBoolean(false);
+                            req.body(event -> {
+                                if(continueSent.get()) {
+                                    res.putHeader(HeaderNames.CONTENT_LENGTH.defaultCase(),
+                                                  String.valueOf(event.result().length()));
+                                    res.write(event.result().toString());
+                                } else {
+                                    res.setStatusCode(500);
+                                    res.write("Got data before 100 continue!");
+                                }
+                                res.end();
+                            });
+                            res.putHeader("before_100", "test");
+                            req.end();
+                            VERTX.executeBlocking(future -> {
+                                try {
+                                    Thread.sleep(200);
+                                } catch (InterruptedException e) {
+                                    LOGGER.log(System.Logger.Level.INFO, "100 test interrupted", e);
+                                }
+                                continueSent.set(true);
+                                if (!"true".equals(req.getHeader("no-continue"))) {
+                                    res.writeContinue();
+                                }
+                                res.putHeader("after_100", "test");
+                                future.complete();
+                            });
+                        }
                         default -> res.setStatusCode(404).end();
                     }
                 })
@@ -127,7 +168,12 @@ class HeadersTest {
         int port = SERVER.actualPort();
         CLIENT = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
+                .readContinueTimeout(Duration.ofSeconds(2))
                 .build();
+
+        HttpClientOptions clientOptions = new HttpClientOptions()
+                .setProtocolVersion(HttpVersion.HTTP_2);
+        VERTX_CLIENT = VERTX.createHttpClient(clientOptions);
     }
 
     @AfterAll
@@ -155,6 +201,68 @@ class HeadersTest {
             assertThrows(IllegalStateException.class, res::trailers);
             assertThat(res.as(String.class), is(DATA));
             assertThat(res.trailers(), hasHeader(TRAILER_HEADER));
+        }
+    }
+
+    @Test
+    void continue100Vertx() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<String> finished = new CompletableFuture<>();
+
+        VERTX_CLIENT.request(HttpMethod.GET, SERVER.actualPort(), "localhost", "/upgrade")
+                .onSuccess(HttpClientRequest::end)
+                .toCompletionStage().toCompletableFuture().join();
+        VERTX_CLIENT.request(HttpMethod.PUT, SERVER.actualPort(), "localhost", "/100-continue")
+                .onSuccess(request -> {
+                    request.response().onSuccess(response -> {
+                        response.end();
+                        response.body().onSuccess(event -> finished.complete(event.toString()));
+                    }).onFailure(finished::completeExceptionally);
+
+                    request.putHeader("Expect", "100-Continue");
+
+                    request.continueHandler(v -> {
+                        // OK to send rest of body
+                        request.putHeader(HeaderNames.CONTENT_LENGTH.defaultCase(), String.valueOf(DATA.length()));
+                        request.write(DATA);
+                        request.end();
+                    });
+
+                    request.sendHead();
+                });
+
+        assertThat(finished.get(TIMEOUT.toMillis(), MILLISECONDS), is(DATA));
+    }
+
+    @Test
+    void continue100() {
+        try (Http2ClientResponse res = CLIENT
+                .method(Method.PUT)
+                .path("/100-continue")
+                .priorKnowledge(true)
+                .header(HeaderValues.EXPECT_100)
+                .submit(DATA)) {
+            assertThat(res.as(String.class), is(DATA));
+            Header before100Header = HeaderValues.create("before_100", "test");
+            Header after100Header = HeaderValues.create("after_100", "test");
+            assertThat(res.headers(), hasHeader(before100Header));
+            assertThat(res.headers(), hasHeader(after100Header));
+        }
+    }
+
+    @Test
+    void continue100Timeout() {
+        try (Http2ClientResponse res = CLIENT
+                .method(Method.PUT)
+                .path("/100-continue")
+                .priorKnowledge(true)
+                .header(HeaderValues.EXPECT_100)
+                .header(HeaderValues.create("no-continue", "true"))
+                .submit(DATA)) {
+            assertThat(res.as(String.class), is(DATA));
+            Header before100Header = HeaderValues.create("before_100", "test");
+            Header after100Header = HeaderValues.create("after_100", "test");
+            assertThat(res.headers(), hasHeader(before100Header));
+            assertThat(res.headers(), hasHeader(after100Header));
         }
     }
 

@@ -156,6 +156,8 @@ class HeadersTest {
             Headers h = res.headers();
             // Raw protocol data value
             assertThat(res.headers(), hasHeader(INVALID_CONTENT_TYPE_TEXT));
+            Header rawContentType = h.get(HeaderNames.CONTENT_TYPE);
+            assertThat(rawContentType.get(), is(INVALID_CONTENT_TYPE_TEXT.get()));
             // Media type parsed value is invalid, IllegalArgumentException shall be thrown
             var ex = assertThrows(IllegalArgumentException.class, h::contentType);
             assertThat(ex.getMessage(), is("Cannot parse media type: text"));
