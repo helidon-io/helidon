@@ -82,7 +82,7 @@ public class MainTest {
                 .request(JsonArray.class)
                 .await();
 
-        assertThat(result.getJsonObject(0).getString("title"), is("The Matrix Reloaded"));
+        assertThat(result.getJsonObject(0).getString("title"), is("The Matrix"));
     }
 
     @Test
