@@ -16,9 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.health.spi.HealthCheckProvider;
-import io.helidon.webserver.observe.health.HealthObserveProvider;
-import io.helidon.webserver.observe.spi.ObserveProvider;
 
 /**
  * Helidon WebServer Observability Health Support.
@@ -42,8 +39,8 @@ module io.helidon.webserver.observe.health {
 
     exports io.helidon.webserver.observe.health;
 
-    provides ObserveProvider with HealthObserveProvider;
+    provides io.helidon.webserver.observe.spi.ObserveProvider with io.helidon.webserver.observe.health.HealthObserveProvider;
 
-    uses HealthCheckProvider;
+    uses io.helidon.health.spi.HealthCheckProvider;
 	
 }

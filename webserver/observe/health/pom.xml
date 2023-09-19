@@ -101,6 +101,16 @@
                             <artifactId>helidon-config-metadata-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.common.processor</groupId>
+                            <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
@@ -112,6 +122,16 @@
                     <dependency>
                         <groupId>io.helidon.config</groupId>
                         <artifactId>helidon-config-metadata-processor</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-processor</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.common.processor</groupId>
+                        <artifactId>helidon-common-processor-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
