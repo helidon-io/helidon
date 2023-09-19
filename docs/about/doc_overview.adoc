@@ -38,13 +38,13 @@ New to Helidon? Start here to learn how Helidon's open-source set of Java librar
 
 xref:{rootdir}/about/introduction.adoc[What is Helidon?]
 
-xref:{rootdir}/about/benefits.adoc[Features and Benefits]
+xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
 
 xref:{rootdir}/about/archetype.adoc[Helidon Archetypes]
 
 xref:{rootdir}/about/additional_info.adoc[Helidon Community and Support]
 
-xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
+
 
 
 --
@@ -58,8 +58,6 @@ There are several ways to generate your first Helidon project. In a hurry? Try t
 xref:{rootdir}/about/prerequisites.adoc[Prerequisites and System Requirements]
 
 xref:{rootdir}/about/cli.adoc[Using the Helidon CLI]
-
-xref:{rootdir}/about/generating_project.adoc[Using Project Starter]
 
 xref:{rootdir}/mp/guides/quickstart.adoc[Using the MP Quickstart Guide]
 
