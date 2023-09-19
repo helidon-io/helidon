@@ -74,4 +74,14 @@ public final class HelidonProperties {
      * @see io.helidon.webclient.api.HttpClientRequest#protocolId(String)
      */
     public static final String PROTOCOL_ID = "jersey.connector.helidon.protocolId";
+
+    /**
+     * Property name to enable or disable connection caching in the underlying {@link WebClient}.
+     * The default for the Helidon connector is {@code false}, or no sharing (which is the
+     * opposite of {@link WebClient}). Set this property to {@code true} to enable connection
+     * caching.
+     *
+     * @see io.helidon.webclient.api.WebClientConfig.Builder#shareConnectionCache(boolean)
+     */
+    public static final String SHARE_CONNECTION_CACHE = "jersey.connector.helidon.shareConnectionCache";
 }

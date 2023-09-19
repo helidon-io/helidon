@@ -54,6 +54,7 @@ import org.glassfish.jersey.internal.util.PropertiesHelper;
 import static io.helidon.jersey.connector.HelidonProperties.DEFAULT_HEADERS;
 import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_CONFIGS;
 import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_ID;
+import static io.helidon.jersey.connector.HelidonProperties.SHARE_CONNECTION_CACHE;
 import static io.helidon.jersey.connector.HelidonProperties.TLS;
 import static org.glassfish.jersey.client.ClientProperties.CONNECT_TIMEOUT;
 import static org.glassfish.jersey.client.ClientProperties.FOLLOW_REDIRECTS;
@@ -117,6 +118,11 @@ class HelidonConnector implements Connector {
         // default headers
         if (properties.containsKey(DEFAULT_HEADERS)) {
             builder.defaultHeadersMap(getValue(properties, DEFAULT_HEADERS, EMPTY_MAP_LIST));
+        }
+
+        // connection sharing defaults to false in this connector
+        if (properties.containsKey(SHARE_CONNECTION_CACHE)) {
+            builder.shareConnectionCache(getValue(properties, SHARE_CONNECTION_CACHE, false));
         }
 
         webClient = builder.build();
