@@ -62,7 +62,7 @@ class ConnectorHttp2AlpnTest extends ConnectorBase {
                 .build();
 
         ClientConfig config = new ClientConfig();
-        config.connectorProvider(new HelidonConnectorProvider());       // use Helidon's provider
+        config.connectorProvider(HelidonConnectorProvider.create());       // use Helidon's provider
         config.property(HelidonProperties.TLS, tls);
 
         client(ClientBuilder.newClient(config));

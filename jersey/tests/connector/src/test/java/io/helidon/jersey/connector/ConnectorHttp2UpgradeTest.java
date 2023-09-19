@@ -41,7 +41,7 @@ class ConnectorHttp2UpgradeTest extends ConnectorBase {
         int port = server.port();
 
         ClientConfig config = new ClientConfig();
-        config.connectorProvider(new HelidonConnectorProvider());       // use Helidon's provider
+        config.connectorProvider(HelidonConnectorProvider.create());       // use Helidon's provider
 
         client(ClientBuilder.newClient(config));
         baseURI("http://localhost:" + port);

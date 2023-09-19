@@ -31,7 +31,7 @@ class ConnectorHttp1Test extends ConnectorBase {
     ConnectorHttp1Test(WebServer webServer) {
         baseURI("http://localhost:" + webServer.port());
         ClientConfig config = new ClientConfig();
-        config.connectorProvider(new HelidonConnectorProvider());       // use Helidon's provider
+        config.connectorProvider(HelidonConnectorProvider.create());       // use Helidon's provider
         client(ClientBuilder.newClient(config));
     }
 }
