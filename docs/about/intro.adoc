@@ -30,9 +30,9 @@
 * Removed Helidon's Reactive WebServer and WebClient that were based on Netty. Our new implementations are based on virtual threads that have a blocking style API (Helidon N&iacute;ma). Learn more: <<Helidon 4 WebServer, Helidon 4 WebServer.>>
 
 
-* Converted other reactive API modules with blocking style APIs. The `io.helidon.common.reactive` APIs will stay as general purpose reactive utilities and operators. Learn more: <<Helidon SE, Helidon SE>>
+* Converted other _reactive_ API modules to _blocking_ style APIs. The `io.helidon.common.reactive` APIs will stay as general purpose reactive utilities and operators. Learn more: <<Helidon SE, Helidon SE>>
 
-* Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the N&iacute;ma WebServer. Learn more: <<Helidon MP, Helidon MP>>
+* Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the Helidon N&iacute;ma WebServer. Learn more: <<Helidon MP, Helidon MP>>
 
 * Java 21 is required to use Heldon 4.
 
