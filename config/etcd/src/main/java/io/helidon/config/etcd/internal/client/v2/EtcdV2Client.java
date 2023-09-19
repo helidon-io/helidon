@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import mousio.etcd4j.responses.EtcdKeysResponse;
 /**
  * Etcd API v2 client.
  */
+@Deprecated(since = "4.0.0", forRemoval = true)
+
 public class EtcdV2Client implements EtcdClient {
 
     private static final Logger LOGGER = Logger.getLogger(EtcdV2Client.class.getName());
@@ -52,6 +54,8 @@ public class EtcdV2Client implements EtcdClient {
      * Init client with specified target Etcd uri.
      *
      * @param uris target Etcd uris
+     *
+     * @deprecated
      */
     EtcdV2Client(URI... uris) {
         etcd = new mousio.etcd4j.EtcdClient(uris);

@@ -269,7 +269,7 @@ Config config = Config.create(
 <1> Use the factory method `EtcdConfigSourceBuilder.create` to initialize the builder.
 <2> Specify the Etcd endpoint address.
 <3> Specify the Etcd key of the configuration document.
-<4> Version of the Etcd API to use; `v2` and `v3` are supported.
+<4> Version of the Etcd API to use; `v3` is supported. `v2` is deprecated.
 
 The config system will use the <<Config-ModuleYaml,YAML parser>> automatically in this example
 because the file type of the key is `.yaml`.
@@ -304,7 +304,7 @@ for the source:
 * `uri` (type `URI`) - Etcd endpoint URI.
 * `key` (type `String`) - Etcd key that is associated with the configuration.
 * `api` (type `EtcdConfigSourceBuilder.EtcdApi`, i.e. `v2` or `v3`) - Etcd API
- version.
+ version. `v2` is deprecated.
 
 Other optional `properties` are inherited from
  `AbstractParsableConfigSource.Builder`. (see
