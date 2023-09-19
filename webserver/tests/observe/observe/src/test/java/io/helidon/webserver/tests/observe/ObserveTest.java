@@ -41,4 +41,15 @@ class ObserveTest {
                                    .config(config.get("observe"))
                                    .build());
     }
+
+    @SetUpRoute("alternative")
+    static void justHealth(HttpRouting.Builder routing) {
+        HealthObserver health = HealthObserver.builder()
+                .addCheck(healthCheck)
+                .endpoint("/admin/health")
+                .build();
+
+        routing.get("/", (req, res) -> res.send("hello"))
+                .update(health::register);
+    }
 }
