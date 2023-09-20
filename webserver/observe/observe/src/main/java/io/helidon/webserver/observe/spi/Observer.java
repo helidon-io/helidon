@@ -1,9 +1,35 @@
+/*
+ * Copyright (c) 2023 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.webserver.observe.spi;
 
 import io.helidon.common.config.NamedService;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserverConfigBase;
 
+/**
+ * An observer adds observability feature to Helidon {@link io.helidon.webserver.observe.ObserveFeature},
+ * such as health, metrics.
+ * <p>
+ * An observer may register features, services, filters on routing, or do some other magic that is related to
+ * observability. Some observers may expose endpoints, some may use a push approach.
+ * <p>
+ * Configuration of an observer is located under {@code observe.observer} root configuration node, with
+ * {@link io.helidon.webserver.observe.spi.ObserveProvider#configKey()} key below it.
+ */
 public interface Observer extends NamedService {
     /**
      * Configuration of this observer.

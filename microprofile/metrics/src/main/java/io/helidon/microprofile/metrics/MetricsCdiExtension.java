@@ -854,9 +854,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                 if (scopeAnnotation != ApplicationScoped.class && type.getAnnotation(Singleton.class) == null) {
                     if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
                         LOGGER.log(Level.WARNING, String.format("""
-                                                                        @Gauge is configured on a bean %s that is neither ApplicationScoped nor \
-                                                                        Singleton. This is most likely a bug. You may set 'metrics.warn-dependent' \
-                                                                        configuration option to 'false' to remove this warning.""",
+                                               @Gauge is configured on a bean %s that is neither ApplicationScoped nor \
+                                               Singleton. This is most likely a bug. You may set 'metrics.warn-dependent' \
+                                               configuration option to 'false' to remove this warning.""",
                                                                 clazz.getName()));
                     }
                 }

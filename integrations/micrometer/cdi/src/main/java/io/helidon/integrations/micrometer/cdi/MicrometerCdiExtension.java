@@ -84,7 +84,6 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension {
      * @param event  app-scoped initialization event
      * @param bm     BeanManager
      * @param server server CDI extension
-     * @return default routing
      */
     public void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
                                 Object event,

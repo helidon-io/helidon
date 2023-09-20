@@ -183,10 +183,24 @@ public class ServerCdiExtension implements Extension {
                 .addRouting(routing);
     }
 
+    /**
+     * Add an observer, probably from an observer specific CDI extension.
+     * Observers are also discovered using a service loader, so if no customization in CDI is needed, the extension
+     * is not needed either.
+     *
+     * @param observer observer to add
+     */
     public void addObserver(Observer observer) {
         observeBuilder.addObserver(observer);
     }
 
+    /**
+     * Name of the routing the observe feature will be registered on.
+     * Observe feature can only be registered on a single routing (which is usually served on a dedicated listener of
+     * the same name). Various observers may register additional components on other routings if required.
+     *
+     * @return name of the observe feature routing, may be {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME}
+     */
     public String observeRouting() {
         return observeRouting == null ? DEFAULT_SOCKET_NAME : observeRouting;
     }
