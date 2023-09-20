@@ -201,7 +201,7 @@ class HelidonConnector implements Connector {
      * @return the mapped response
      */
     private ClientResponse mapResponse(HttpClientResponse httpResponse, ClientRequest request) {
-        ClientResponse response = new ClientResponse(new Response.StatusType() {
+        Response.StatusType statusType = new Response.StatusType() {
             @Override
             public int getStatusCode() {
                 return httpResponse.status().code();
@@ -216,7 +216,14 @@ class HelidonConnector implements Connector {
             public String getReasonPhrase() {
                 return httpResponse.status().reasonPhrase();
             }
-        }, request);
+        };
+        ClientResponse response = new ClientResponse(statusType, request) {
+            @Override
+            public void close() {
+                super.close();
+                httpResponse.close();       // closes WebClient's response
+            }
+        };
 
         // copy headers
         for (Header header : httpResponse.headers()) {
