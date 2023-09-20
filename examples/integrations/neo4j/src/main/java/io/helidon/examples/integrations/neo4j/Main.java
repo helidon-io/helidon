@@ -27,8 +27,7 @@ import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.health.HealthObserveProvider;
+import io.helidon.webserver.observe.health.HealthObserver;
 
 import org.neo4j.driver.Driver;
 
@@ -82,15 +81,13 @@ public class Main {
 
         MovieService movieService = new MovieService(new MovieRepository(neo4jDriver));
 
-        ObserveFeature observe = ObserveFeature.builder()
-                .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+        ObserveFeature observe = ObserveFeature.create(HealthObserver.builder()
                                                                   .useSystemServices(false)
                                                                   .addCheck(HeapMemoryHealthCheck.create())
                                                                   .addCheck(DiskSpaceHealthCheck.create())
                                                                   .addCheck(DeadlockHealthCheck.create())
                                                                   .addCheck(healthCheck)
-                                                                  .build()))
-                .build();
+                                                                  .build());
 
         routing.register(movieService)
                 .addFeature(observe);

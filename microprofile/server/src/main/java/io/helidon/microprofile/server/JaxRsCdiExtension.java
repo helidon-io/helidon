@@ -34,6 +34,7 @@ import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Application;
@@ -291,6 +292,10 @@ public class JaxRsCdiExtension implements Extension {
         @Override
         public Response toResponse(Exception exception) {
             serverRequest.context().register("unmappedException", exception);
+            // for 404, we must re-throw it, to next the request
+            if (exception instanceof NotFoundException || exception instanceof io.helidon.http.NotFoundException) {
+                return Response.status(404).build();
+            }
             if (exception instanceof WebApplicationException) {
                 return ((WebApplicationException) exception).getResponse();
             } else {
