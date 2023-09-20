@@ -1,0 +1,258 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon Connector
+:feature-name: Helidon Connector
+:description: Helidon Connector for Jakarta REST Client
+:keywords: helidon, rest, jax-rs, client, microprofile, micro-profile, connector
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
+
+Helidon uses Jersey as the Jakarta REST (JAX-RS) implementation. Jersey supports the concept of _connectors_
+which is an SPI to handle low-level HTTP connections when using the Jakarta REST Client API. Helidon provides a
+connector that is based on its `WebClient` implementation and that has a few benefits,
+most notably, configuration using Config and support for HTTP/2.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+ <dependency>
+     <groupId>io.helidon.jersey</groupId>
+     <artifactId>helidon-jersey-connector</artifactId>
+ </dependency>
+----
+
+== API
+
+Enabling the Helidon connector is possible at creation time using Jersey's `ClientConfig` instance
+as shown below:
+
+[source,java]
+----
+  ClientConfig clientConfig = new ClientConfig();
+  clientConfig.connectorProvider(HelidonConnectorProvider.create());       // Helidon connector
+  Client client = ClientBuilder.newClient(clientConfig);
+----
+
+Any subsequent requests using a `Client` instance configured this way will defer to the
+Helidon connector to handle the underlying HTTP connection.
+
+== Configuration
+
+The Helidon connector implementation is based on `WebClient`, so it can be configured
+using config in the same way as any other instance of that class.
+The config root used by the Helidon connector to initialize all instances of `WebClient` is
+rooted at `jersey.connector.helidon.config`. Thus, if using a properties file,
+use this prefix for all the properties that you want to set in the connector.
+
+For example, suppose you need to enable automatic storage for server cookies and to
+turn off redirects, you can add the following lines to your `microprofile-config.properties` file:
+
+[source, properties]
+----
+  jersey.connector.helidon.config.cookie-manager.automatic-store-enabled=true
+  jersey.connector.helidon.config.follow-redirects=false
+----
+
+Alternatively, assuming the root of the `WebClient` configuration is located at
+`my.webclient`, this can be done programmatically when building the `ClientConfig`
+instance as follows:
+
+[source,java]
+----
+  clientConfig.property(HelidonProperties.CONFIG, config.get("my.webclient"));
+----
+
+There are additional properties that can be set programmatically and that shall
+override any related property set via config. The following table lists all the
+properties supported by the connector, their types, scopes and default values.
+
+|===
+|Property Name |Type |Scope |Default
+
+|jersey.config.client.connectTimeout
+|`Integer`
+|client
+|10000 (millis)
+
+|jersey.config.client.readTimeout
+|`Integer`
+|client, invocation
+|10000 (millis)
+
+|jersey.config.client.followRedirects
+|`Boolean`
+|client, invocation
+|true
+
+|jersey.connector.helidon.config
+|`io.helidon.config.Config`
+|client
+|(none)
+
+|jersey.connector.helidon.tls
+|`io.helidon.common.tls.Tls`
+|client
+|(none)
+
+|jersey.connector.helidon.protocolConfigs
+|`List<? extends ProtocolConfig>`
+|client
+|(none)
+
+|jersey.connector.helidon.defaultHeaders
+|`Map<String, String>`
+|client
+|(none)
+
+|jersey.connector.helidon.protocolId
+|`String`
+|invocation
+|(none)
+
+|jersey.connector.helidon.shareConnectionCache
+|`Boolean`
+|client
+|false
+|===
+
+
+=== HTTP/2 support
+
+One clear advantage of using the Helidon connector, as opposed to the default one
+provided by Jersey, is the ability to issue HTTP/2 requests. There are three ways
+to enable HTTP/2:
+
+1. Via content negotiation from HTTP/1.1, where the initial request is HTTP/1.1 (text)
+and the first response is HTTP/2 (binary), assuming the negotiation is successful.
+2. Similar to (1) except that a TLS extension called ALPN is used to convey the
+upgrade negotiation. Naturally, this only works with secure connections, so TLS
+is a requirement here.
+3. Using prior knowledge, where the client simply sends an HTTP/2 request knowing
+_a priori_ that the server is capable of handling it. This option always requires TLS.
+
+== Examples
+
+=== HTTP/2 negotiation without TLS
+
+Without TLS, HTTP/2 negotiation is accomplished by setting a single property. In the
+example below, the property is set on the correspoding `WebTarget`, which indicates
+that it applies to all requests created from it.
+
+[source,java]
+----
+  ClientConfig clientConfig = new ClientConfig();
+  clientConfig.connectorProvider(HelidonConnectorProvider.create());
+  Client client = ClientBuilder.newClient(clientConfig);
+
+  WebTarget webTarget = client.target(...).path(...)
+      .property(HelidonProperties.PROTOCOL_ID, Http2Client.PROTOCOL_ID);      // HTTP/2 upgrade
+  try (Response response = webTarget.request().get()) {
+      // ...
+  }
+----
+
+NOTE: Properties in the Jakarta REST Client API can be set on `Client`, `WebTarget` and
+`Invocation`  and are inherited accordingly.
+
+The request invocation in the example above will include an HTTP/2 protocol upgrade
+request which may be granted by the server if HTTP/2 support is enabled.
+
+=== HTTP/2 negotiation with TLS/ALPN
+
+ALPN is a TLS extension that can be used for HTTP/2 negotiation. The Helidon connector
+accepts a `Tls` instance to enable protocol security and also to
+negotiate an HTTP/2 upgrade as shown below.
+
+[source,java]
+----
+  Tls tls = Tls.builder()
+               .trustAll(true)
+               .addApplicationProtocol(Http2Client.PROTOCOL_ID)        // HTTP/2 upgrade
+               .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+               .build();
+
+  ClientConfig clientConfig = new ClientConfig();
+  clientConfig.connectorProvider(HelidonConnectorProvider.create());
+  config.property(HelidonProperties.TLS, tls);
+  Client client = ClientBuilder.newClient(clientConfig);
+
+  WebTarget webTarget = client.target(...).path(...);
+  try (Response response = webTarget.request().get()) {
+      // ...
+  }
+----
+
+The call to `addApplicationProtocol()` indicates the desire to negotiate a protocol upgrade. Naturally,
+ALPN only works on secure connections, so TLS is always configured at the same time.
+
+=== HTTP/2 prior knowledge
+
+The last example shows how to enable HTTP/2 when prior knowledge of the server's capabilities is
+known ahead of time. In order to force HTTP/2 for the initial request, we must provide an
+`Http2ClientProtocolConfig` instance that is properly configured for that purpose. Passing
+protocol configurations is a general mechanism supported by the connector; in this example,
+we take advantage of this mechanism to pre-configure the desired HTTP/2 support as shown next.
+
+[source,java]
+----
+  Tls tls = Tls.builder()
+               .trustAll(true)
+               .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+               .build();
+
+  ClientConfig clientConfig = new ClientConfig();
+  clientConfig.connectorProvider(HelidonConnectorProvider.create());
+  clientConfig.property(HelidonProperties.TLS, tls);
+  clientConfig.property(HelidonProperties.PROTOCOL_CONFIGS,
+                        List.of(Http2ClientProtocolConfig.builder()
+                                                   .priorKnowledge(true)    // HTTP/2 knowlege
+                                                   .build()));
+  Client client = ClientBuilder.newClient(clientConfig);
+
+  WebTarget webTarget = client.target(...).path(...);
+  try (Response response = webTarget.request().get()) {
+      // ...
+  }
+----
+
+The property `HelidonProperties.PROTOCOL_CONFIGS` accepts a list of protocol configurations
+that are passed directly to the underlying `WebClient` layer.
+
+== Additional Information
+
+For additional information, see the link:{jakarta-jaxrs-javadoc-url}[Jakarta REST Javadocs].
+
+== Reference
+
+* link:{jakarta-jaxrs-spec-url}#client_api[Jakarta REST Client Specification]
+* https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest31x/index.html[Jersey User Guide]
