@@ -29,6 +29,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
@@ -112,14 +113,6 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.currentHeaders = headers;
         this.hasEntity = !endOfStream;
     }
-
-    @Override
-    public void trailers(Http2Headers headers, boolean endOfStream) {
-        this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
-        readState = readState.check(ReadState.END);
-        this.trailers.complete(headers.httpHeaders());
-    }
-
     @Override
     public void rstStream(Http2RstStream rstStream) {
         if (state == Http2StreamState.IDLE) {
@@ -182,6 +175,12 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     @Override
     public void closeResource() {
         close();
+    }
+
+    void trailers(Http2Headers headers, boolean endOfStream) {
+        this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
+        readState = readState.check(ReadState.END);
+        this.trailers.complete(headers.httpHeaders());
     }
 
     CompletableFuture<Headers> trailers() {
@@ -401,7 +400,15 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     private void continue100(Http2Headers headers, boolean endOfStream) {
         // no stream state check as 100 continues are an exception
         this.currentHeaders = headers;
-        readState = readState.check(ReadState.HEADERS);
+        if (endOfStream) {
+            readState = readState.check(ReadState.END);
+        } else if (headers.status() == Status.CONTINUE_100) {
+            // After 100 continue normal headers are expected
+            readState = readState.check(ReadState.HEADERS);
+        } else {
+            // Some headers already came, but not 100 continue
+            readState = readState.check(ReadState.DATA);
+        }
         this.hasEntity = !endOfStream;
     }
 
@@ -472,7 +479,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         TRAILERS(END),
         DATA(TRAILERS, END),
         HEADERS(DATA, TRAILERS),
-        CONTINUE_100_HEADERS(HEADERS),
+        CONTINUE_100_HEADERS(HEADERS, DATA, END),
         INIT(CONTINUE_100_HEADERS, HEADERS);
 
         private final Set<ReadState> allowedTransitions;

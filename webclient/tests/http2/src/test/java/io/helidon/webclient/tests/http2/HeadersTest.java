@@ -33,6 +33,7 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
@@ -127,6 +128,9 @@ class HeadersTest {
                             res.write(DATA);
                             res.trailers().addAll(trailers);
                             res.end();
+                        }
+                        case "/100-continue-not" -> {
+                            res.setStatusCode(418).send();
                         }
                         case "/100-continue" -> {
                             AtomicBoolean continueSent = new AtomicBoolean(false);
@@ -246,6 +250,18 @@ class HeadersTest {
             Header after100Header = HeaderValues.create("after_100", "test");
             assertThat(res.headers(), hasHeader(before100Header));
             assertThat(res.headers(), hasHeader(after100Header));
+        }
+    }
+
+    @Test
+    void continue100not() {
+        try (Http2ClientResponse res = CLIENT
+                .method(Method.PUT)
+                .path("/100-continue-not")
+                .priorKnowledge(true)
+                .header(HeaderValues.EXPECT_100)
+                .submit(DATA)) {
+            assertThat(res.status(), is(Status.I_AM_A_TEAPOT_418));
         }
     }
 

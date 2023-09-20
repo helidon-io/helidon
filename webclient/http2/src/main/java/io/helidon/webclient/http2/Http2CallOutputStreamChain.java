@@ -56,6 +56,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         stream.write(http2Headers, false);
         whenSent.complete(serviceRequest);
 
+        stream.waitFor100Continue();
+
         Http2ClientStream.ClientOutputStream outputStream;
         try {
             outputStream = stream.outputStream();
