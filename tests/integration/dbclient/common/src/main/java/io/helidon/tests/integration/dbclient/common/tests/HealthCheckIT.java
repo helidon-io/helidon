@@ -19,9 +19,9 @@ import java.lang.System.Logger.Level;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.dbclient.health.DbClientHealthCheck;
 
 import org.junit.jupiter.api.Test;
 

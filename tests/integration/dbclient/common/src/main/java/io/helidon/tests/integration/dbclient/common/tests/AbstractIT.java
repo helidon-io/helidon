@@ -15,10 +15,6 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
-
 /**
  * Common testing code.
  */
@@ -27,5 +23,5 @@ public abstract class AbstractIT {
     /**
      * Last used id in {@code Pokemon} table.
      */
-    public static final int LAST_POKEMON_ID = 5;
+    public static final int LAST_POKEMON_ID = 1000;
 }

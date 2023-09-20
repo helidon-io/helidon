@@ -34,7 +34,7 @@
 
     <modules>
         <module>common</module>
-<!--        <module>h2</module>-->
+        <module>h2</module>
         <module>app</module>
     </modules>
 

@@ -23,6 +23,7 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 import io.helidon.tests.integration.harness.SetUp;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
@@ -39,7 +40,6 @@ public class SimpleDmlIT extends AbstractIT {
     private static final System.Logger LOGGER = System.getLogger(SimpleDmlIT.class.getName());
     private static final int BASE_ID = LAST_POKEMON_ID + 40;
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
-
     private final DbClient dbClient;
     private final Config config;
 

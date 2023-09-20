@@ -20,8 +20,8 @@ import java.util.concurrent.CompletionException;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientException;
-
 import io.helidon.dbclient.DbTransaction;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.model.Pokemon.POKEMONS;

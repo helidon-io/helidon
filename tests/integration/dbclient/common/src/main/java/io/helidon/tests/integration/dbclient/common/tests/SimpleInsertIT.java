@@ -18,6 +18,7 @@ package io.helidon.tests.integration.dbclient.common.tests;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;

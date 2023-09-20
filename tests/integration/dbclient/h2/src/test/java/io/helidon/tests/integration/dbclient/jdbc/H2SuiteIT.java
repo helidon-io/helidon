@@ -15,6 +15,14 @@
  */
 package io.helidon.tests.integration.dbclient.jdbc;
 
+import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
@@ -25,18 +33,11 @@ import io.helidon.tests.integration.dbclient.common.model.Type;
 import io.helidon.tests.integration.dbclient.common.tests.MapperIT;
 import io.helidon.tests.integration.harness.AfterSuite;
 import io.helidon.tests.integration.harness.BeforeSuite;
+
 import org.h2.tools.Server;
 import org.junit.platform.suite.api.IncludeClassNamePatterns;
 import org.junit.platform.suite.api.SelectPackages;
 import org.junit.platform.suite.api.Suite;
-
-import java.nio.file.Paths;
-import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
 
 import static io.helidon.tests.integration.dbclient.common.model.Pokemon.POKEMONS;
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
@@ -48,7 +49,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 /**
- * Test Database Client MongoDB.
+ * Test JDBC Database Client with H2 database.
  */
 @Suite
 @SelectPackages("io.helidon.tests.integration.dbclient.common.tests")
@@ -70,9 +71,8 @@ class H2SuiteIT {
         testListTypes(dbClient);
         testListPokemons(dbClient);
         testListPokemonTypes(dbClient);
-        return Map.of(
-                "dbClient", dbClient,
-                "config", config);
+        return Map.of("config", config,
+                      "dbClient", dbClient);
     }
 
     @AfterSuite
@@ -108,7 +108,7 @@ class H2SuiteIT {
     private static void ping(DbClient dbClient) {
         DbExecute exec = dbClient.execute();
         DbRow row = exec.namedQuery("ping").findFirst().orElseThrow();
-        Double ok = row.column("ok").as(Double.class);
+        Double ok = row.column("ok").as(Double.class).get();
         assertThat(ok, equalTo(1.0));
         LOGGER.log(System.Logger.Level.DEBUG, () -> String.format("Command ping row: %s", row));
     }
@@ -148,8 +148,8 @@ class H2SuiteIT {
 
         Set<Integer> ids = new HashSet<>(TYPES.keySet());
         for (DbRow row : rows) {
-            Integer id = row.column(1).as(Integer.class);
-            String name = row.column(2).as(String.class);
+            Integer id = row.column(1).as(Integer.class).get();
+            String name = row.column(2).as(String.class).get();
             assertThat(ids, hasItem(id));
             assertThat(name, TYPES.get(id).name().equals(name));
         }
@@ -163,8 +163,8 @@ class H2SuiteIT {
 
         Set<Integer> ids = new HashSet<>(POKEMONS.keySet());
         for (DbRow row : rowsList) {
-            Integer id = row.column(1).as(Integer.class);
-            String name = row.column(2).as(String.class);
+            Integer id = row.column(1).as(Integer.class).get();
+            String name = row.column(2).as(String.class).get();
             assertThat(ids, hasItem(id));
             assertThat(name, POKEMONS.get(id).getName().equals(name));
         }
@@ -177,8 +177,8 @@ class H2SuiteIT {
         assertThat(rows, not(empty()));
 
         for (DbRow row : rows) {
-            Integer pokemonId = row.column(1).as(Integer.class);
-            String pokemonName = row.column(2).as(String.class);
+            Integer pokemonId = row.column(1).as(Integer.class).get();
+            String pokemonName = row.column(2).as(String.class).get();
             Pokemon pokemon = POKEMONS.get(pokemonId);
             assertThat(pokemonName, POKEMONS.get(pokemonId).getName().equals(pokemonName));
             Stream<DbRow> typeRows = exec.namedQuery("select-poketypes", pokemonId);
@@ -186,7 +186,7 @@ class H2SuiteIT {
             List<DbRow> typeRowsList = typeRows.toList();
             assertThat(typeRowsList.size(), equalTo(pokemon.getTypes().size()));
             for (DbRow typeRow : typeRowsList) {
-                Integer typeId = typeRow.column(2).as(Integer.class);
+                Integer typeId = typeRow.column(2).as(Integer.class).get();
                 assertThat(pokemon.getTypes(), hasItem(TYPES.get(typeId)));
             }
         }

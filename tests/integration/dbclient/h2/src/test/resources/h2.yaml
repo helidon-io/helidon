@@ -26,6 +26,7 @@ db:
     statement: "SELECT 0"
   statements:
     ping: "SELECT 0"
+    ping-query: "SELECT 0"
     create-types: "CREATE TABLE Types (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     create-poketypes: "CREATE TABLE PokemonTypes (id_pokemon INTEGER NOT NULL REFERENCES Pokemons(id), id_type INTEGER NOT NULL REFERENCES Types(id))"

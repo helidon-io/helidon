@@ -26,9 +26,10 @@ import java.net.http.HttpResponse;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.health.HealthCheck;
+import io.helidon.http.Status;
 import io.helidon.tests.integration.harness.SetUp;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthObserver;
 
@@ -63,23 +64,42 @@ public class ServerHealthCheckIT {
     @SetUp
     public static void setup(DbClient dbClient, Config config) {
         SERVER = WebServer.builder()
-                .routing(routing -> {
-                    HealthCheck check = DbClientHealthCheck.create(dbClient, config.get("db.health-check"));
-                    HealthObserver health = HealthObserver.builder()
-                            .addCheck(check)
-                            .build();
-
-                    routing.addFeature(ObserveFeature.just(health));
-                })
+                .routing(builder -> routing(dbClient, config, builder))
                 .config(config.get("server"))
-                .build();
+                .build()
+                .start();
         URL = "http://localhost:" + SERVER.port();
-        System.out.println("WEB server is running at " + URL);
+        LOGGER.log(Level.TRACE, () -> "WEB server is running at " + URL);
+    }
+
+    // Add 2 endpoints:
+    // - HealthCheck /observe/healthNoDetails with details turned off
+    // - HealthCheck /observe/healthDetails with details turned on
+    private static void routing(DbClient dbClient, Config config, HttpRouting.Builder router) {
+        router.addFeature(
+                createObserveFeature(dbClient, config, "healthNoDetails", "noDetails", false));
+        router.addFeature(
+                createObserveFeature(dbClient, config, "healthDetails", "details", true));
+    }
+
+    private static ObserveFeature createObserveFeature(DbClient dbClient, Config config, String name, String endpoint, boolean details) {
+        return ObserveFeature.builder()
+                .observersDiscoverServices(false)
+                .endpoint(endpoint)
+                .addObserver(HealthObserver.builder()
+                                     .addCheck(DbClientHealthCheck.builder(dbClient)
+                                                       .config(config.get("db.health-check"))
+                                                       .name(name)
+                                                       .build())
+                                     .details(details)
+                                     .build())
+                .build();
     }
 
     @AfterAll
     public static void shutdown() {
         SERVER.stop();
+        LOGGER.log(Level.TRACE, () -> "WEB server stopped");
     }
 
     /**
@@ -90,14 +110,16 @@ public class ServerHealthCheckIT {
      * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
      * @throws InterruptedException if the current thread was interrupted
      */
-    private static String get(String url) throws IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Accept", "application/json")
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return response.body();
+    private static HttpResponse<String> get(String url) throws IOException, InterruptedException {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .build();
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+        return response;
     }
 
     /**
@@ -107,24 +129,44 @@ public class ServerHealthCheckIT {
      * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
      */
     @Test
-    void testHttpHealth() throws IOException, InterruptedException {
+    void testHttpHealthNoDetails() throws IOException, InterruptedException {
         // Call select-pokemons to warm up server
         dbClient.execute().namedQuery("select-pokemons").forEach(it -> {});
-
+        String url = URL + "/noDetails/health";
         // Read and process health check response
-        String response = get(URL + "/health");
-        LOGGER.log(Level.DEBUG, () -> String.format("RESPONSE: %s", response));
-        JsonStructure jsonResponse = null;
-        try (JsonReader jr = Json.createReader(new StringReader(response))) {
-            jsonResponse = jr.read();
-        } catch (JsonParsingException | IllegalStateException ex) {
-            fail(String.format("Error parsing response: %s", ex.getMessage()));
-        }
-        JsonArray checks = jsonResponse.asJsonObject().getJsonArray("checks");
-        assertThat(checks.size(), greaterThan(0));
-        checks.forEach((check) -> {
-            String status = check.asJsonObject().getString("status");
-            assertThat(status, equalTo("UP"));
-        });
+        HttpResponse<String> response = get(url);
+        LOGGER.log(Level.TRACE, () -> String.format("%s RESPONSE: %d", response.statusCode()));
+        assertThat(response.statusCode(), equalTo(Status.NO_CONTENT_204.code()));
     }
+
+    /**
+     * Read and check Database Client health status from Helidon Web Server.
+     *
+     * @throws InterruptedException if the current thread was interrupted
+     * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
+     */
+    @Test
+    void testHttpHealthDetails() throws IOException, InterruptedException {
+        // Call select-pokemons to warm up server
+        dbClient.execute().namedQuery("select-pokemons").forEach(it -> {});
+        String url = URL + "/details/health";
+        // Read and process health check response
+        HttpResponse<String> response = get(url);
+        assertThat(response.statusCode(), equalTo(Status.OK_200.code()));
+            String jsonSrc = response.body();
+            LOGGER.log(Level.TRACE, () -> String.format("%s RESPONSE: %s", url, jsonSrc));
+            JsonStructure jsonResponse = null;
+            try (JsonReader jr = Json.createReader(new StringReader(jsonSrc))) {
+                jsonResponse = jr.read();
+            } catch (JsonParsingException | IllegalStateException ex) {
+                fail(String.format("Error parsing response: %s", ex.getMessage()));
+            }
+            JsonArray checks = jsonResponse.asJsonObject().getJsonArray("checks");
+            assertThat(checks.size(), greaterThan(0));
+            checks.forEach((check) -> {
+                String status = check.asJsonObject().getString("status");
+                assertThat(status, equalTo("UP"));
+            });
+    }
+
 }

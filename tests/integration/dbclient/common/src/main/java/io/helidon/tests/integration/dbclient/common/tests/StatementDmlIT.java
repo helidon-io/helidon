@@ -24,6 +24,7 @@ import java.util.Map;
 import io.helidon.dbclient.DbClient;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 import io.helidon.tests.integration.harness.SetUp;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
