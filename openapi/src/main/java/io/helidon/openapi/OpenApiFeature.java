@@ -80,6 +80,16 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
     }
 
     /**
+     * Create a new instance of an Open API feature from configuration.
+     *
+     * @param config configuration to use
+     * @return a new Open API feature
+     */
+    public static OpenApiFeature create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
      * URL query parameter for specifying the requested format when retrieving the OpenAPI document.
      */
     static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";
