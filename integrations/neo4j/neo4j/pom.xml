@@ -33,7 +33,7 @@
     <dependencies>
         <dependency>
             <groupId>org.neo4j.driver</groupId>
-            <artifactId>neo4j-java-driver-slim</artifactId>
+            <artifactId>neo4j-java-driver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>

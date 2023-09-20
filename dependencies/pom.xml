@@ -127,7 +127,7 @@
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.13.1.Final</version.lib.narayana>
-        <version.lib.neo4j>4.4.11</version.lib.neo4j>
+        <version.lib.neo4j>5.12.0</version.lib.neo4j>
         <version.lib.netty>4.1.94.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci>3.21.0</version.lib.oci>
@@ -1081,7 +1081,7 @@
             <!-- Neo4j -->
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
-                <artifactId>neo4j-java-driver-slim</artifactId>
+                <artifactId>neo4j-java-driver</artifactId>
                 <version>${version.lib.neo4j}</version>
             </dependency>
             <!-- Cron utils -->
