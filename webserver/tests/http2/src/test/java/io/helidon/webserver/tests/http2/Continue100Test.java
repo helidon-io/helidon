@@ -65,7 +65,7 @@ class Continue100Test {
     private static final AtomicBoolean CLIEN_SENT_DATA = new AtomicBoolean(false);
     private final Http2Client webClient;
 
-    public Continue100Test(WebServer server) {
+    Continue100Test(WebServer server) {
         webClient = Http2Client.builder()
                 .baseUri(URI.create("http://localhost:" + server.port()))
                 .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(true).build())
