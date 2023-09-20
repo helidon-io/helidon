@@ -100,6 +100,9 @@
                                             </templates>
                                         </archive>
                                     </archives>
+                                    <files>
+                                        <file target="cli-data/latest">${project.version}</file>
+                                    </files>
                                     <templates>
                                         <template source="src/main/cli/versions.xml.mustache" target="cli-data/versions.xml">
                                             <variables>
