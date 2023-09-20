@@ -63,8 +63,9 @@ final class ProvidedUtil {
      * Discover service from configuration.
      * This method looks for a single provider only.
      *
-     * @param config           configuration located at the node of the service providers
-     *                         (either a list node, or object, where each child is one service)
+     * @param config               configuration located at the parent node of the service providers
+     * @param configKey            configuration key of the provider list
+     *                             (either a list node, or object, where each child is one service)
      * @param serviceLoader    helidon service loader for the expected type
      * @param providerType     service provider interface type
      * @param configType       configured service type
@@ -75,48 +76,32 @@ final class ProvidedUtil {
      */
     static <T extends NamedService> Optional<T>
     discoverService(Config config,
+                    String configKey,
                     HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
                     Class<? extends ConfiguredProvider<T>> providerType,
                     Class<T> configType,
                     boolean discoverServices) {
-        /*
-        - if we find more than one using service loader, we will use one with higher weight, unless a provider is configured
-        in config
-        - if we find more than one in config, it is an error
-         */
-        List<ConfiguredService> configuredServices = new ArrayList<>();
 
         // all child nodes of the current node
-        List<Config> serviceConfigList = config.asNodeList()
+        List<Config> serviceConfigList = config.get(configKey).asNodeList()
                 .orElseGet(List::of);
 
+        // if more than one is configured in config, fail
+        // if more than one exists in service loader, use the first one
         if (serviceConfigList.size() > 1) {
             throw new ConfigException("There can only be one provider configured for " + config.key());
         }
 
-        boolean isList = config.isList();
+        List<T> services = discoverServices(config, configKey, serviceLoader, providerType, configType, discoverServices);
 
-        for (Config serviceConfig : serviceConfigList) {
-            configuredServices.add(configuredService(serviceConfig, isList));
-        }
-
-        List<T> result;
-        // now we have all service configurations, we can start building up instances
-        if (config.isList()) {
-            // driven by order of declaration in config
-            result = servicesFromList(serviceLoader, providerType, configType, configuredServices, discoverServices);
-        } else {
-            // driven by service loader order
-            result = servicesFromObject(serviceLoader, providerType, configType, configuredServices, discoverServices);
-        }
-
-        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
+        return services.isEmpty() ? Optional.empty() : Optional.of(services.get(0));
     }
 
     /**
      * Discover services from configuration.
      *
-     * @param config               configuration located at the node of the service providers
+     * @param config               configuration located at the parent node of the service providers
+     * @param configKey            configuration key of the provider list
      *                             (either a list node, or object, where each child is one service)
      * @param serviceLoader        helidon service loader for the expected type
      * @param providerType         service provider interface type
@@ -127,13 +112,14 @@ final class ProvidedUtil {
      * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight first)
      */
     static <T extends NamedService> List<T> discoverServices(Config config,
+                                                             String configKey,
                                                              HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
                                                              Class<? extends ConfiguredProvider<T>> providerType,
                                                              Class<T> configType,
                                                              boolean allFromServiceLoader) {
 
-        boolean discoverServices = config.get("discover-services").asBoolean().orElse(allFromServiceLoader);
-        Config providersConfig = config.get("providers");
+        boolean discoverServices = config.get(configKey + "-discover-services").asBoolean().orElse(allFromServiceLoader);
+        Config providersConfig = config.get(configKey);
 
         List<ConfiguredService> configuredServices = new ArrayList<>();
 
@@ -147,7 +133,7 @@ final class ProvidedUtil {
         }
 
         // now we have all service configurations, we can start building up instances
-        if (config.isList()) {
+        if (providersConfig.isList()) {
             // driven by order of declaration in config
             return servicesFromList(serviceLoader, providerType, configType, configuredServices, discoverServices);
         } else {

@@ -15,7 +15,7 @@
 #
 
 observe:
-  observers.providers:
+  observers:
     log:
       permit-all: true
     config:

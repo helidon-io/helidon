@@ -19,11 +19,10 @@ server:
   host: 127.0.0.1
 
   protocols:
-    providers:
-      http_2:
-        max-frame-size: 8192
-        max-header-list-size: 4096
-        max-concurrent-streams: 16384
-        initial-window-size: 8192
-        flow-control-timeout: PT0.7S
-        validate-path: false
+    http_2:
+      max-frame-size: 8192
+      max-header-list-size: 4096
+      max-concurrent-streams: 16384
+      initial-window-size: 8192
+      flow-control-timeout: PT0.7S
+      validate-path: false
