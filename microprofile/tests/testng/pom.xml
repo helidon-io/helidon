@@ -18,12 +18,14 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>tests-project</artifactId>
-        <groupId>io.helidon.microprofile.tests</groupId>
+        <groupId>io.helidon.microprofile</groupId>
+        <artifactId>helidon-microprofile-project</artifactId>
         <version>3.2.3-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    
+
+    <groupId>io.helidon.microprofile.tests</groupId>
     <artifactId>helidon-microprofile-tests-testng</artifactId>
     <name>Helidon Microprofile Tests TestNG</name>
 

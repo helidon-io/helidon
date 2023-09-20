@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public @interface Configuration {
      * If set to {@code true}, the existing (or default) MicroProfile configuration would be used.
      * By default uses a configuration constructed using all {@link AddConfig}
      * annotations and {@link #configSources()}.
-     * When set to false and a {@link org.junit.jupiter.api.BeforeAll} method registers a custom configuration
+     * When set to false and a {@link org.testng.annotations.BeforeClass} method registers a custom configuration
      * with {@link org.eclipse.microprofile.config.spi.ConfigProviderResolver}, the result is undefined, though
      * tests have shown that the registered config may be used (as BeforeAll ordering is undefined by
      * JUnit, it may be called after our extension)
