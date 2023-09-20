@@ -26,14 +26,10 @@ import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.dbclient.metrics.DbClientMetrics;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.health.HealthObserveProvider;
-import io.helidon.webserver.WebServer;
+import io.helidon.tests.integration.dbclient.app.tests.FlowControlService;
 import io.helidon.tests.integration.dbclient.app.tests.HealthCheckService;
 import io.helidon.tests.integration.dbclient.app.tests.InterceptorService;
 import io.helidon.tests.integration.dbclient.app.tests.MapperService;
-import io.helidon.tests.integration.dbclient.app.tests.FlowControlService;
 import io.helidon.tests.integration.dbclient.app.tests.SimpleDeleteService;
 import io.helidon.tests.integration.dbclient.app.tests.SimpleGetService;
 import io.helidon.tests.integration.dbclient.app.tests.SimpleInsertService;
@@ -42,13 +38,16 @@ import io.helidon.tests.integration.dbclient.app.tests.SimpleUpdateService;
 import io.helidon.tests.integration.dbclient.app.tests.StatementDmlService;
 import io.helidon.tests.integration.dbclient.app.tests.StatementGetService;
 import io.helidon.tests.integration.dbclient.app.tests.StatementQueryService;
-import io.helidon.tests.integration.dbclient.app.tools.ExitService;
 import io.helidon.tests.integration.dbclient.app.tests.TransactionDeleteService;
 import io.helidon.tests.integration.dbclient.app.tests.TransactionGetService;
 import io.helidon.tests.integration.dbclient.app.tests.TransactionInsertService;
 import io.helidon.tests.integration.dbclient.app.tests.TransactionQueryService;
 import io.helidon.tests.integration.dbclient.app.tests.TransactionUpdateService;
+import io.helidon.tests.integration.dbclient.app.tools.ExitService;
 import io.helidon.tests.integration.harness.RemoteTestException;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
 
 /**
  * Main class.
@@ -81,13 +80,10 @@ public class Main {
                 .addService(DbClientMetrics.timer().statementTypes(DbStatementType.GET))
                 .build();
 
-        HealthFeature health = HealthFeature.builder()
+        HealthObserver health = HealthObserver.builder()
                 .addCheck(DbClientHealthCheck.builder(dbClient)
                         .statementName("ping-query")
                         .build())
-                .build();
-        ObserveFeature observe = ObserveFeature.builder()
-                .addProvider(HealthObserveProvider.create(health))
                 .build();
 
         Map<String, String> statements = dbConfig.get("statements")
@@ -102,7 +98,7 @@ public class Main {
         // Prepare routing for the server
         WebServer server = WebServer.builder()
                 .routing(routing -> routing
-                        .addFeature(observe)
+                        .addFeature(ObserveFeature.create(health))
                         .register("/Init", new InitService(dbClient, dbConfig))
                         .register("/Exit", exitResource)
                         .register("/Verify", new VerifyService(dbClient, config))

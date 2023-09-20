@@ -21,8 +21,9 @@ import io.helidon.health.checks.HealthChecks;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.metrics.MetricsFeature;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
+import io.helidon.webserver.observe.metrics.MetricsObserver;
 
 /**
  * In memory Lra coordinator.
@@ -60,12 +61,7 @@ public class Main {
     }
 
     private static void updateRouting(HttpRouting.Builder routing, Config config, CoordinatorService coordinatorService) {
-
-        MetricsFeature metrics = MetricsFeature.create();
-        HealthFeature health = HealthFeature.create(HealthChecks.healthChecks());
-
-        routing.addFeature(metrics)
-                .addFeature(health)
+        routing.addFeature(ObserveFeature.create(MetricsObserver.create(), HealthObserver.create(HealthChecks.healthChecks())))
                 .register(config.get("mp.lra.coordinator.context.path")
                         .asString()
                         .orElse("/lra-coordinator"), coordinatorService)

@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer Observability Config Support.
  */
+@Feature(value = "Config",
+         description = "WebServer Config observability support",
+         in = HelidonFlavor.SE,
+         path = {"Observe", "Config"})
 module io.helidon.webserver.observe.config {
+    requires static io.helidon.common.features.api;
 
     requires io.helidon.http.media.jsonp;
     requires io.helidon.webserver;

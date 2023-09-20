@@ -98,7 +98,8 @@ class TypeHandlerMap extends TypeHandler {
     void generateFromConfig(Method.Builder method,
                             AnnotationDataOption configured,
                             FactoryMethods factoryMethods) {
-        method.addLine("config.get(\"" + configured.configKey() + "\").asNodeList().ifPresent(nodes -> nodes.forEach"
+        method.addLine(configGet(configured)
+                               + ".asNodeList().ifPresent(nodes -> nodes.forEach"
                                + "(node -> "
                                + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node"
                                + generateFromConfig(factoryMethods)
@@ -242,6 +243,28 @@ class TypeHandlerMap extends TypeHandler {
         }
     }
 
+    @Override
+    protected void declaredSetter(InnerClass.Builder classBuilder,
+                                  AnnotationDataOption configured,
+                                  TypeName returnType,
+                                  Javadoc blueprintJavadoc) {
+        // declared type (such as Map<String, String>) - replace content
+        classBuilder.addMethod(builder -> builder.name(setterName())
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addDescriptionLine("This method replaces all values with the new ones.")
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(name())
+                        .type(argumentTypeName())
+                        .description(blueprintJavadoc.returnDescription()))
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(" + name() + ");")
+                .addLine("this." + name() + ".clear();")
+                .addLine("this." + name() + ".putAll(" + name() + ");")
+                .addLine("return self();"));
+    }
+
     private void sameGenericArgs(Method.Builder method,
                                  TypeName keyType,
                                  String value,
@@ -290,10 +313,10 @@ class TypeHandlerMap extends TypeHandler {
         }
 
         method.addGenericArgument(TypeArgument.builder()
-                                           .token("TYPE")
-                                           .bound(genericTypeBase)
-                                           .description("Type to correctly map key and value")
-                                           .build());
+                                          .token("TYPE")
+                                          .bound(genericTypeBase)
+                                          .description("Type to correctly map key and value")
+                                          .build());
 
         // now resolve value
         if (valueType.typeArguments().isEmpty()) {
@@ -369,11 +392,11 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     private void setterAddValuesToCollection(InnerClass.Builder classBuilder,
-                                                        AnnotationDataOption configured,
-                                                        String methodName,
-                                                        TypeName keyType,
-                                                        TypeName returnType,
-                                                        Javadoc blueprintJavadoc) {
+                                             AnnotationDataOption configured,
+                                             String methodName,
+                                             TypeName keyType,
+                                             TypeName returnType,
+                                             Javadoc blueprintJavadoc) {
         TypeName implType = collectionImplType(actualType());
         String name = name();
 
@@ -421,28 +444,6 @@ class TypeHandlerMap extends TypeHandler {
                 .accessModifier(setterAccessModifier(configured))
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(" + name() + ");")
-                .addLine("this." + name() + ".putAll(" + name() + ");")
-                .addLine("return self();"));
-    }
-
-    @Override
-    protected void declaredSetter(InnerClass.Builder classBuilder,
-                                AnnotationDataOption configured,
-                                TypeName returnType,
-                                Javadoc blueprintJavadoc) {
-        // declared type (such as Map<String, String>) - replace content
-        classBuilder.addMethod(builder -> builder.name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addDescriptionLine("This method replaces all values with the new ones.")
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .addParameter(param -> param.name(name())
-                        .type(argumentTypeName())
-                        .description(blueprintJavadoc.returnDescription()))
-                .accessModifier(setterAccessModifier(configured))
-                .typeName(Objects.class)
-                .addLine(".requireNonNull(" + name() + ");")
-                .addLine("this." + name() + ".clear();")
                 .addLine("this." + name() + ".putAll(" + name() + ");")
                 .addLine("return self();"));
     }

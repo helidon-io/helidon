@@ -21,7 +21,7 @@ interface ObserveConfigBlueprint extends Prototype.Factory<ObserveFeature> {
      * @return cors support to use
      */
     @Option.Configured
-    @Option.DefaultCode("@io.helidon.webserver.cors.CrossOriginConfig@.create()")
+    @Option.DefaultCode("@io.helidon.cors.CrossOriginConfig@.create()")
     CrossOriginConfig cors();
 
     /**

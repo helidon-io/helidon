@@ -51,6 +51,7 @@ import static io.helidon.common.types.TypeNames.SET;
 record AnnotationDataOption(Javadoc javadoc,
                             boolean configured,
                             String configKey,
+                            Boolean configMerge,
                             AccessModifier accessModifier,
                             boolean required,
                             boolean validateNotNull,
@@ -74,6 +75,7 @@ record AnnotationDataOption(Javadoc javadoc,
         Javadoc javadoc = null;
         Boolean configured = null;
         String configKey = null;
+        Boolean configMerge = null;
         AccessModifier accessModifier;
         Boolean required = null;
         Boolean providerBased = null;
@@ -103,6 +105,8 @@ record AnnotationDataOption(Javadoc javadoc,
             configKey = annotation.stringValue()
                     .filter(Predicate.not(String::isBlank))
                     .orElseGet(() -> toConfigKey(handler.name()));
+            configMerge = annotation.booleanValue("merge")
+                    .orElse(false);
         }
         accessModifier = element.findAnnotation(OPTION_ACCESS_TYPE)
                 .flatMap(Annotation::stringValue)
@@ -211,6 +215,8 @@ record AnnotationDataOption(Javadoc javadoc,
                 configKey = annotation.stringValue("key")
                         .filter(Predicate.not(String::isBlank))
                         .orElseGet(() -> toConfigKey(handler.name()));
+                configMerge = annotation.booleanValue("mergeWithParent")
+                        .orElse(false);
             }
             if (required == null) {
                 required = annotation.getValue("required").map(Boolean::parseBoolean).orElse(false);
@@ -285,6 +291,7 @@ record AnnotationDataOption(Javadoc javadoc,
         return new AnnotationDataOption(javadoc,
                                         configured,
                                         configKey,
+                                        configMerge,
                                         accessModifier,
                                         required,
                                         validateNotNull,

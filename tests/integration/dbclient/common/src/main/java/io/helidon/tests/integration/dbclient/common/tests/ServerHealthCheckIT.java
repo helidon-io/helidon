@@ -25,14 +25,13 @@ import java.net.http.HttpResponse;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
-import io.helidon.health.HealthCheck;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.health.HealthObserveProvider;
-import io.helidon.webserver.WebServer;
-
+import io.helidon.health.HealthCheck;
 import io.helidon.tests.integration.harness.SetUp;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
+
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonReader;
@@ -66,14 +65,11 @@ public class ServerHealthCheckIT {
         SERVER = WebServer.builder()
                 .routing(routing -> {
                     HealthCheck check = DbClientHealthCheck.create(dbClient, config.get("db.health-check"));
-                    HealthFeature health = HealthFeature.builder()
+                    HealthObserver health = HealthObserver.builder()
                             .addCheck(check)
                             .build();
-                    ObserveFeature observe = ObserveFeature.builder()
-                            .addProvider(HealthObserveProvider.create(health))
-                            .build();
 
-                    routing.addFeature(observe);
+                    routing.addFeature(ObserveFeature.create(health));
                 })
                 .config(config.get("server"))
                 .build();

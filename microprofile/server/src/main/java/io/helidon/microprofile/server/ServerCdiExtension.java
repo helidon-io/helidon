@@ -51,6 +51,9 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.observe.ObserveConfig;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
 import jakarta.annotation.Priority;
@@ -79,6 +82,7 @@ import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.inject.Injections;
 
+import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
@@ -96,6 +100,7 @@ public class ServerCdiExtension implements Extension {
     private WebServerConfig.Builder serverBuilder = WebServer.builder()
             .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
             .port(7001);
+    private ObserveConfig.Builder observeBuilder = ObserveFeature.builder();
     private HttpRouting.Builder routingBuilder = HttpRouting.builder();
     private Map<String, HttpRouting.Builder> namedRoutings = new HashMap<>();
     private Map<String, Router.Builder> namedRouters = new HashMap<>();
@@ -111,6 +116,7 @@ public class ServerCdiExtension implements Extension {
     private volatile boolean started;
 
     private Context context;
+    private String observeRouting;
 
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.
@@ -135,6 +141,9 @@ public class ServerCdiExtension implements Extension {
      * @return builder for routing of the named route
      */
     public HttpRouting.Builder serverNamedRoutingBuilder(String name) {
+        if (DEFAULT_SOCKET_NAME.equals(name)) {
+            return serverRoutingBuilder();
+        }
         return namedRoutings.computeIfAbsent(name, routeName -> HttpRouting.builder());
     }
 
@@ -145,7 +154,7 @@ public class ServerCdiExtension implements Extension {
      * @param routing routing to add, such as WebSocket routing
      */
     public void addRouting(Routing routing) {
-        addRouting(routing, WebServer.DEFAULT_SOCKET_NAME, false, null);
+        addRouting(routing, DEFAULT_SOCKET_NAME, false, null);
     }
 
     /**
@@ -166,12 +175,20 @@ public class ServerCdiExtension implements Extension {
                                                     + " to exist, yet such a socket is not configured for web server"
                                                     + " for app: " + appName);
         }
-        if (!hasRouting && !WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+        if (!hasRouting && !DEFAULT_SOCKET_NAME.equals(socketName)) {
             LOGGER.log(Level.INFO, "Routing " + socketName + " does not exist, using default routing instead for " + appName);
         }
 
         namedRouters.computeIfAbsent(socketName, it -> Router.builder())
                 .addRouting(routing);
+    }
+
+    public void addObserver(Observer observer) {
+        observeBuilder.addObserver(observer);
+    }
+
+    public String observeRouting() {
+        return observeRouting == null ? DEFAULT_SOCKET_NAME : observeRouting;
     }
 
     /**
@@ -299,7 +316,9 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
-        serverBuilder.config(config.get("server"));
+        this.serverBuilder.config(config.get("server"));
+        this.observeBuilder.config(config.get("observe"));
+        this.observeRouting = config.get("observe").get("routing").asString().orElse(DEFAULT_SOCKET_NAME);
         this.config = config;
     }
 
@@ -371,6 +390,10 @@ public class ServerCdiExtension implements Extension {
         routingBuilder.addFeature(ContextFeature.create());
         namedRoutings.forEach((name, value) -> value.addFeature(ContextFeature.create()));
 
+        serverNamedRoutingBuilder(observeRouting)
+                .addFeature(observeBuilder.build());
+
+
         // start the webserver
         serverBuilder.routing(routingBuilder.build());
 
@@ -414,6 +437,7 @@ public class ServerCdiExtension implements Extension {
 
         // this is not needed at runtime, collect garbage
         serverBuilder = null;
+        observeBuilder = null;
         routingBuilder = null;
         namedRoutings = null;
         namedRouters = null;

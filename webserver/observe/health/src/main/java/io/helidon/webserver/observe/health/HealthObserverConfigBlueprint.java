@@ -6,12 +6,11 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.health.HealthCheck;
 import io.helidon.webserver.observe.ObserverConfigBase;
 
 @Prototype.Blueprint
-@Prototype.Configured
+@Prototype.Configured("health")
 @Prototype.CustomMethods(HealthObserverSupport.CustomMethods.class)
 interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<HealthObserver> {
     @Option.Configured
@@ -34,7 +33,7 @@ interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
      *
      * @return set to {@code true} to enable details
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.DefaultBoolean(false)
     boolean details();
 
@@ -52,6 +51,7 @@ interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
      *
      * @return set to {@code false} to disable discovery
      */
+    @Option.Configured
     boolean useSystemServices();
 
     /**

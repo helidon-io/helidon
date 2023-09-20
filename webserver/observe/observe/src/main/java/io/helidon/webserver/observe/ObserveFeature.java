@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
@@ -29,6 +28,7 @@ import io.helidon.common.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.Observer;
@@ -101,7 +101,7 @@ public class ObserveFeature implements HttpFeature, Weighted, RuntimeType.Api<Ob
         for (Observer observer : uniqueObservers) {
             CrossOriginConfig cors = observer.prototype().cors().orElse(config.cors());
             boolean enabled = observer.prototype().enabled();
-            observerSetups.add(new ObserverSetup(it -> endpoint(observeEndpoint, it),
+            observerSetups.add(new ObserverSetup(endpoint(observeEndpoint, observer.prototype().endpoint()),
                                                  enabled,
                                                  cors,
                                                  observer));
@@ -156,12 +156,31 @@ public class ObserveFeature implements HttpFeature, Weighted, RuntimeType.Api<Ob
     @Override
     public void setup(HttpRouting.Builder routing) {
         if (enabled) {
-            for (ObserverSetup provider : providers) {
-                provider.observer().register(routing, provider.endpointFn(), provider.cors);
+            for (ObserverSetup observer : providers) {
+                registerObserver(routing, observer);
             }
         } else {
             routing.get(endpoint, (req, res) -> {
                 throw new HttpException("Observe endpoint is disabled", Status.SERVICE_UNAVAILABLE_503, true);
+            });
+        }
+    }
+
+    private void registerObserver(HttpRouting.Builder routing, ObserverSetup observerSetup) {
+        Observer observer = observerSetup.observer();
+        String endpoint = observerSetup.endpoint();
+        if (observerSetup.enabled()) {
+            // configure CORS
+            routing.register(endpoint + "/*", CorsSupport.builder()
+                    .name(observer.type() + "/" + observer.name())
+                    .addCrossOrigin(observerSetup.cors)
+                    .build());
+            // and service
+            observer.register(routing, endpoint);
+        } else {
+            // not available
+            routing.get(endpoint + "/*", (req, res) -> {
+                throw new HttpException("Observer endpoint is disabled", Status.SERVICE_UNAVAILABLE_503, true);
             });
         }
     }
@@ -181,7 +200,7 @@ public class ObserveFeature implements HttpFeature, Weighted, RuntimeType.Api<Ob
         return observeEndpoint + "/" + observerEndpoint;
     }
 
-    private record ObserverSetup(UnaryOperator<String> endpointFn,
+    private record ObserverSetup(String endpoint,
                                  boolean enabled,
                                  CrossOriginConfig cors,
                                  Observer observer) {

@@ -17,8 +17,8 @@
 package io.helidon.webserver.observe.log;
 
 import io.helidon.common.config.Config;
-import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.ObserveProvider;
+import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for logging observe provider.
@@ -27,20 +27,30 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
  *  so changing a log level for a logger may be temporary (in case a garbage collector runs and the reference is not kept
  *  anywhere).
  * In Helidon, most loggers are referenced for the duration of the application, so this should not impact Helidon components.
+ *
+ * @deprecated only for {@link java.util.ServiceLoader}
  */
+@Deprecated
 public class LogObserveProvider implements ObserveProvider {
+    /**
+     * Required for {@link java.util.ServiceLoader}.
+     *
+     * @deprecated only for {@link java.util.ServiceLoader}
+     */
+    @Deprecated
+    public LogObserveProvider() {
+    }
+
     @Override
     public String configKey() {
         return "log";
     }
 
     @Override
-    public String defaultEndpoint() {
-        return "log";
-    }
-
-    @Override
-    public void register(Config config, String componentPath, HttpRouting.Builder routing) {
-        routing.register(componentPath, LogService.create(config));
+    public Observer create(Config config, String name) {
+        return LogObserver.builder()
+                .config(config)
+                .name(name)
+                .build();
     }
 }

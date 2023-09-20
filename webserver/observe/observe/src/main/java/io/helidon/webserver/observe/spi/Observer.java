@@ -1,9 +1,6 @@
 package io.helidon.webserver.observe.spi;
 
-import java.util.function.UnaryOperator;
-
 import io.helidon.common.config.NamedService;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserverConfigBase;
 
@@ -31,25 +28,21 @@ public interface Observer extends NamedService {
     }
 
     /**
-     * Register the provider's services and handlers to the routing builder.
-     *
-     * @param routing routing builder
-     */
-    default void register(HttpRouting.Builder routing) {
-        register(routing,
-                 UnaryOperator.identity(),
-                 prototype().cors().orElseGet(CrossOriginConfig::create));
-    }
-
-    /**
-     * Register the observer features, CORS, services, and/or filters.
+     * Register the observer features, services, and/or filters.
      * This is used by the observe feature.
+     * Do NOT use this method directly, kindly start with {@link io.helidon.webserver.observe.ObserveFeature} and register
+     * it with the routing.
+     * <p>
+     * If this method is used directly, it will NOT do the following (as this is handled by
+     * {@link io.helidon.webserver.observe.ObserveFeature}):
+     * <ul>
+     *     <li>It will NOT register CORS</li>
+     *     <li>It will NOT honor enabled configuration</li>
+     * </ul>
      *
-     * @param routing          routing builder
-     * @param endpointFunction to obtain component path based on the configured observer endpoint
-     * @param cors             cors to use when setting up the endpoint
+     * @param routing  routing builder
+     * @param endpoint observer endpoint, combined with observability feature endpoint if needed
      */
     void register(HttpRouting.Builder routing,
-                  UnaryOperator<String> endpointFunction,
-                  CrossOriginConfig cors);
+                  String endpoint);
 }

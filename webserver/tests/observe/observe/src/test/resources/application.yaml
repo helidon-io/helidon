@@ -15,8 +15,16 @@
 #
 
 observe:
-  config:
-    secrets: "app.some-secret-text"
+  observers.providers:
+    log:
+      permit-all: true
+    config:
+      permit-all: true
+      endpoint: "myConfig"
+      # as config replaces list values, we need to configure it here again
+      secrets: ["app.some-secret-text", ".*password"]
 
 app:
   some-secret-text: "should not be seen"
+  some-password: "should not be seen"
+  text: "should be seen"

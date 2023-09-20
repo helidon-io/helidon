@@ -15,12 +15,10 @@
  */
 package io.helidon.microprofile.openapi;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Function;
 
-import io.helidon.config.Config;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
 import io.helidon.openapi.OpenApiFeature;
 
@@ -32,6 +30,7 @@ import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
@@ -39,7 +38,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
  * SmallRye OpenAPI) from CDI if no {@code META-INF/jandex.idx} file exists on
  * the class path.
  */
-public class OpenApiCdiExtension extends HelidonRestCdiExtension<MpOpenApiFeature> {
+public class OpenApiCdiExtension extends HelidonRestCdiExtension {
 
     private static final System.Logger LOGGER = System.getLogger(OpenApiCdiExtension.class.getName());
 
@@ -48,33 +47,23 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension<MpOpenApiFeatur
      */
     static final String INDEX_PATH = "META-INF/jandex.idx";
 
-
-    private static Function<Config, MpOpenApiFeature> featureFactory(String... indexPaths) {
-        return (Config helidonConfig) -> {
-
-            org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
-
-            MPOpenAPIBuilder builder = MpOpenApiFeature.builder()
-                    .config(helidonConfig)
-                    .indexPaths(indexPaths)
-                    .config(mpConfig);
-            return builder.build();
-        };
-    }
+    private final String[] paths;
 
     private final Set<Class<?>> annotatedTypes = new HashSet<>();
+
+    private volatile MpOpenApiFeature openApiFeature;
 
     /**
      * Creates a new instance of the index builder.
      *
-     * @throws java.io.IOException in case of error checking for the Jandex index files
      */
-    public OpenApiCdiExtension() throws IOException {
+    public OpenApiCdiExtension() {
         this(INDEX_PATH);
     }
 
-    OpenApiCdiExtension(String... indexPaths) throws IOException {
-        super(LOGGER, featureFactory(indexPaths), OpenApiFeature.Builder.CONFIG_KEY);
+    OpenApiCdiExtension(String... indexPaths) {
+        super(LOGGER, OpenApiFeature.Builder.CONFIG_KEY);
+        this.paths = indexPaths;
     }
 
     @Override
@@ -83,14 +72,36 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension<MpOpenApiFeatur
     }
 
 
+    /**
+     * Register the Health observer with server observer feature.
+     * This is a CDI observer method invoked by CDI machinery.
+     *
+     * @param event  event object
+     * @param server Server CDI extension
+     */
+    public void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+                                Object event,
+                                ServerCdiExtension server) {
+
+        org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
+
+        this.openApiFeature = MpOpenApiFeature.builder()
+                .config(componentConfig())
+                .indexPaths(paths)
+                .config(mpConfig)
+                .build();
+
+        this.openApiFeature.setup(server.serverRoutingBuilder(), super.routingBuilder(server));
+    }
+
     // Must run after the server has created the Application instances.
     void buildModel(@Observes @Priority(PLATFORM_AFTER + 100 + 10) @Initialized(ApplicationScoped.class) Object event) {
-        serviceSupport().prepareModel();
+        this.openApiFeature.prepareModel();
     }
 
     // For testing
-     MpOpenApiFeature feature() {
-        return serviceSupport();
+    MpOpenApiFeature feature() {
+        return openApiFeature;
     }
 
 

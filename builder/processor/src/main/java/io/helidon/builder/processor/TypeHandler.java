@@ -261,6 +261,9 @@ class TypeHandler {
     }
 
     String configGet(AnnotationDataOption configured) {
+        if (configured.configMerge()) {
+            return "config";
+        }
         return "config.get(\"" + configured.configKey() + "\")";
     }
 

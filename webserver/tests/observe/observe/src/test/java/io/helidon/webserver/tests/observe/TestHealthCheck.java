@@ -26,4 +26,12 @@ class TestHealthCheck implements HealthCheck {
                 .status(true)
                 .build();
     }
+
+    int calls() {
+        return calls.get();
+    }
+
+    void reset() {
+        calls.set(0);
+    }
 }

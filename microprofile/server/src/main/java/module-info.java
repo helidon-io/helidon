@@ -44,6 +44,7 @@ module io.helidon.microprofile.server {
     requires transitive io.helidon.microprofile.cdi;
     requires transitive io.helidon.webserver.context;
     requires transitive io.helidon.webserver;
+    requires transitive io.helidon.webserver.observe;
     requires transitive jakarta.cdi;
     requires transitive jakarta.json;
     requires transitive jakarta.ws.rs;

@@ -112,9 +112,13 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
         Field.Builder builder = super.fieldDeclaration(configured, isBuilder, true);
         if (isBuilder && !configured.hasDefault()) {
-            builder.defaultValue("new " + TYPE_TOKEN + collectionImplType.fqName() + TYPE_TOKEN + "<>()");
+            builder.defaultValue(newCollectionInstanceWithouParams() + "()");
         }
         return builder;
+    }
+
+    private String newCollectionInstanceWithouParams() {
+        return "new " + TYPE_TOKEN + collectionImplType.fqName() + TYPE_TOKEN + "<>";
     }
 
     @Override
@@ -128,7 +132,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
             String defaults = defaultValues.stream()
                     .map(super::toDefaultValue)
                     .collect(Collectors.joining(", "));
-            return collectionType.fqName() + ".of(" + defaults + ")";
+            return newCollectionInstanceWithouParams() + "(" + collectionType.fqName() + ".of(" + defaults + "))";
         }
 
         if (defaultInts != null) {
@@ -139,7 +143,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                     .map(String::valueOf)
                     .map(it -> it + "L")
                     .collect(Collectors.joining(", "));
-            return collectionType.fqName() + ".of(" + defaults + ")";
+            return newCollectionInstanceWithouParams() + "(" + collectionType.fqName() + ".of(" + defaults + "))";
         }
         if (defaultDoubles != null) {
             return defaultCollection(defaultDoubles);
@@ -228,7 +232,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         String defaults = list.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(", "));
-        return collectionType.fqName() + ".of(" + defaults + ")";
+        return newCollectionInstanceWithouParams() + "(" + collectionType.fqName() + ".of(" + defaults + "))";
     }
 
     private void discoverServicesSetter(InnerClass.Builder classBuilder,

@@ -22,10 +22,15 @@ import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for health observe provider.
+ *
+ * @deprecated this type is only to be used from {@link java.util.ServiceLoader}
  */
+@Deprecated
 public class HealthObserveProvider implements ObserveProvider {
     /**
      * Default constructor required by {@link java.util.ServiceLoader}. Do not use.
+     *
+     * @deprecated this constructor must be public for {@link java.util.ServiceLoader}
      */
     @Deprecated
     public HealthObserveProvider() {

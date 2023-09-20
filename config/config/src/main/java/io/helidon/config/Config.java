@@ -250,7 +250,7 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @return empty instance of {@code Config}.
      */
-    static Supplier<? extends io.helidon.common.config.Config> empty() {
+    static Config empty() {
         return BuilderImpl.EmptyConfigHolder.EMPTY;
     }
 

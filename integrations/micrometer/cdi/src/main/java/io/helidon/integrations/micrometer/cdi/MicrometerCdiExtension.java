@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 import io.helidon.integrations.micrometer.MicrometerFeature;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
-import io.helidon.webserver.http.HttpRules;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
@@ -59,7 +58,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * CDI extension for handling Micrometer artifacts.
  */
-public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFeature> {
+public class MicrometerCdiExtension extends HelidonRestCdiExtension {
 
     private static final System.Logger LOGGER = System.getLogger(MicrometerCdiExtension.class.getName());
 
@@ -69,16 +68,71 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFe
     private final List<DeferredMeterCreation> annotationsForMeters = new ArrayList<>();
 
     private final WorkItemsManager<MeterWorkItem> workItemsManager = WorkItemsManager.create();
+    private volatile MicrometerFeature feature;
 
     /**
      * Creates new extension instance.
      */
     public MicrometerCdiExtension() {
-        super(LOGGER, MicrometerFeature::create, "micrometer");
+        super(LOGGER, "micrometer");
     }
 
+    /**
+     * Registers the service-related endpoint, after security and as CDI initializes the app scope, returning the default routing
+     * for optional use by the caller.
+     *
+     * @param event  app-scoped initialization event
+     * @param bm     BeanManager
+     * @param server server CDI extension
+     * @return default routing
+     */
+    public void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+                                Object event,
+                                BeanManager bm,
+                                ServerCdiExtension server) {
+
+        feature = MicrometerFeature.create(componentConfig());
+        MeterRegistry meterRegistry = feature.registry();
+
+        feature.setup(server.serverRoutingBuilder(), routingBuilder(server));
+
+        annotationsForMeters.forEach(deferredAnnotation -> {
+            Annotation annotation = deferredAnnotation.annotation;
+            AnnotatedCallable<?> annotatedCallable = deferredAnnotation.annotatedCallable;
+            Meter newMeter;
+            boolean isOnlyOnException = false;
+
+            if (annotation instanceof Counted) {
+                Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
+                LOGGER.log(Level.DEBUG, () -> "Registered counter " + counter.getId()
+                        .toString());
+                newMeter = counter;
+                isOnlyOnException = ((Counted) annotation).recordFailuresOnly();
+            } else {
+                Timed timed = (Timed) annotation;
+                if (timed.longTask()) {
+                    LongTaskTimer longTaskTimer =
+                            MeterProducer.produceLongTaskTimer(meterRegistry, timed);
+                    LOGGER.log(Level.DEBUG, () -> "Registered long task timer " + longTaskTimer.getId()
+                            .toString());
+                    newMeter = longTaskTimer;
+                } else {
+                    Timer timer = MeterProducer.produceTimer(meterRegistry, timed);
+                    LOGGER.log(Level.DEBUG, () -> "Registered timer " + timer.getId()
+                            .toString());
+                    newMeter = timer;
+                }
+            }
+            workItemsManager.put(Executable.class.cast(annotatedCallable.getJavaMember()),
+                                 annotation.annotationType(),
+                                 MeterWorkItem.create(newMeter, isOnlyOnException));
+        });
+    }
     MeterRegistry meterRegistry() {
-        return serviceSupport().registry();
+        if (feature == null) {
+            throw new IllegalStateException("Micrometer extension is not yet initialized");
+        }
+        return feature.registry();
     }
 
     @Override
@@ -111,58 +165,6 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFe
                                             .forEach(annotation -> recordMeterToCreate(annotation, annotatedCallable));
                                 }));
     }
-
-    /**
-     * Registers the service-related endpoint, after security and as CDI initializes the app scope, returning the default routing
-     * for optional use by the caller.
-     *
-     * @param adv    app-scoped initialization event
-     * @param bm     BeanManager
-     * @return default routing
-     */
-    @Override
-    public HttpRules registerService(
-            @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
-            BeanManager bm, ServerCdiExtension serverCdiExtension) {
-        HttpRules result = super.registerService(adv, bm, serverCdiExtension);
-
-        MeterRegistry meterRegistry = serviceSupport().registry();
-
-        annotationsForMeters.forEach(deferredAnnotation -> {
-
-            Annotation annotation = deferredAnnotation.annotation;
-            AnnotatedCallable<?> annotatedCallable = deferredAnnotation.annotatedCallable;
-            Meter newMeter;
-            boolean isOnlyOnException = false;
-
-            if (annotation instanceof Counted) {
-                Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
-                LOGGER.log(Level.DEBUG, () -> "Registered counter " + counter.getId()
-                        .toString());
-                newMeter = counter;
-                isOnlyOnException = ((Counted) annotation).recordFailuresOnly();
-            } else {
-                Timed timed = (Timed) annotation;
-                if (timed.longTask()) {
-                    LongTaskTimer longTaskTimer =
-                            MeterProducer.produceLongTaskTimer(meterRegistry, timed);
-                    LOGGER.log(Level.DEBUG, () -> "Registered long task timer " + longTaskTimer.getId()
-                            .toString());
-                    newMeter = longTaskTimer;
-                } else {
-                    Timer timer = MeterProducer.produceTimer(meterRegistry, timed);
-                    LOGGER.log(Level.DEBUG, () -> "Registered timer " + timer.getId()
-                            .toString());
-                    newMeter = timer;
-                }
-            }
-            workItemsManager.put(Executable.class.cast(annotatedCallable.getJavaMember()),
-                    annotation.annotationType(),
-                    MeterWorkItem.create(newMeter, isOnlyOnException));
-        });
-        return result;
-    }
-
 
     /**
      * Initializes the extension prior to bean discovery.

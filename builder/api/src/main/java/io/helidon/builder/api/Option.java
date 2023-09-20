@@ -44,6 +44,14 @@ public final class Option {
          * @return custom configuration key
          */
         String value() default "";
+
+        /**
+         * If set to {@code true}, the nested configurable object will not have its own config key,
+         * but will use the config of the current configurable object.
+         *
+         * @return whether to merge the nested object into this object
+         */
+        boolean merge() default false;
     }
 
     /**

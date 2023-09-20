@@ -17,7 +17,6 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
-
 /**
  * Helidon WebServer Observability Metrics Support.
  */
@@ -34,7 +33,6 @@ module io.helidon.webserver.observe.metrics {
     requires java.management;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.webserver.observe;

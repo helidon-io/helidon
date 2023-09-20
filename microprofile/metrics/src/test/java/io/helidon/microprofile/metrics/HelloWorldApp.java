@@ -22,7 +22,7 @@ import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 
 @ApplicationScoped
-@ApplicationPath("/")
+@ApplicationPath("/helloworld")
 public class HelloWorldApp extends Application {
 
     @Override

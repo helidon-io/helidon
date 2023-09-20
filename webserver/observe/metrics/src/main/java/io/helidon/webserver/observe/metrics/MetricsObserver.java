@@ -1,0 +1,120 @@
+package io.helidon.webserver.observe.metrics;
+
+import java.util.function.Consumer;
+
+import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.config.Config;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.spi.Observer;
+
+/**
+ * Support for metrics for Helidon WebServer.
+ *
+ * <p>
+ * By default, creates the {@code /metrics} endpoint with three sub-paths: application,
+ * vendor and base.
+ * <p>
+ * To register with web server, discovered from classpath:
+ * <pre>{@code
+ * Routing.builder()
+ *        .register(ObserveFeature.create())
+ * }</pre>
+ *
+ * See {@link io.helidon.webserver.observe.ObserveFeature#create(io.helidon.webserver.observe.spi.Observer...)}
+ * to customize observer setup.
+ * <p>
+ * This class supports finer grained configuration using Helidon Config:
+ * {@link #create(io.helidon.common.config.Config)}.
+ * <p>
+ * The application metrics registry is then available as follows:
+ * <pre>{@code
+ *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
+ * }</pre>
+ */
+@RuntimeType.PrototypedBy(MetricsObserverConfig.class)
+public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserverConfig> {
+    private final MetricsObserverConfig config;
+    private MetricsFeature metricsFeature;
+
+    private MetricsObserver(MetricsObserverConfig config) {
+        this.config = config;
+        this.metricsFeature = new MetricsFeature(config);
+    }
+
+    /**
+     * Create a new builder to configure Metrics observer.
+     *
+     * @return a new builder
+     */
+    public static MetricsObserverConfig.Builder builder() {
+        return MetricsObserverConfig.builder();
+    }
+
+    /**
+     * Create a new Metrics observer using the provided configuration.
+     *
+     * @param config configuration
+     * @return a new observer
+     */
+    public static MetricsObserver create(MetricsObserverConfig config) {
+        return new MetricsObserver(config);
+    }
+
+    /**
+     * Create a new Metrics observer customizing its configuration.
+     *
+     * @param consumer configuration consumer
+     * @return a new observer
+     */
+    public static MetricsObserver create(Consumer<MetricsObserverConfig.Builder> consumer) {
+        return builder()
+                .update(consumer)
+                .build();
+    }
+
+    /**
+     * Create a new Metrics observer with default configuration.
+     *
+     * @return a new observer
+     */
+    public static MetricsObserver create() {
+        return builder()
+                .build();
+    }
+
+    /**
+     * Create a new Metrics observer from configuration.
+     *
+     * @return a new observer
+     */
+    public static MetricsObserver create(Config config) {
+        return builder()
+                .config(config)
+                .build();
+    }
+
+    @Override
+    public MetricsObserverConfig prototype() {
+        return config;
+    }
+
+    @Override
+    public String type() {
+        return "log";
+    }
+
+    @Override
+    public void register(HttpRouting.Builder routing, String endpoint) {
+        // register the service itself
+        metricsFeature.register(routing, endpoint);
+    }
+
+    /**
+     * Configure Helidon specific metrics.
+     *
+     * @param rules rules to use
+     */
+    public void configureVendorMetrics(HttpRouting.Builder rules) {
+        metricsFeature.configureVendorMetrics(rules);
+    }
+}
