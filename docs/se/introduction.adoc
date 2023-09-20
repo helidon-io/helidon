@@ -149,7 +149,7 @@ A programmatic HTTP API with reactive features, powered by Netty.
 //WebSocket
 [CARD]
 .WebSocket
-[icon=timeline,link=websocket.adoc]
+[icon=sync_alt,link=websocket.adoc]
 --
 Enables Java applications to participate in WebSocket interactions as both servers and clients.
 --
