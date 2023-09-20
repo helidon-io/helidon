@@ -1028,6 +1028,11 @@
                 <version>${version.lib.vertx-core}</version>
             </dependency>
             <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-web-client</artifactId>
+                <version>${version.lib.vertx-core}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-provider-api</artifactId>
                 <version>${version.lib.maven-wagon}</version>

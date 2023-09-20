@@ -46,14 +46,6 @@ public interface Http2Stream {
     void headers(Http2Headers headers, boolean endOfStream);
 
     /**
-     * Trailers received.
-     *
-     * @param headers     trailer headers
-     * @param endOfStream whether these headers are the last data that would be received
-     */
-    void trailers(Http2Headers headers, boolean endOfStream);
-
-    /**
      * Data frame.
      *
      * @param header frame header

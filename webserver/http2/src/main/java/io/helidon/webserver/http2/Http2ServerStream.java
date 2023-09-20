@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DirectHandler;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
@@ -32,6 +34,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.ConnectionFlowControl;
@@ -83,6 +86,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     private final Router router;
     private final ArrayBlockingQueue<DataFrame> inboundData = new ArrayBlockingQueue<>(32);
     private final StreamFlowControl flowControl;
+    private final AtomicBoolean send100Continue = new AtomicBoolean(false);
 
     private boolean wasLastDataFrame = false;
     private volatile Http2Headers headers;
@@ -232,13 +236,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     @Override
-    public void trailers(Http2Headers headers, boolean endOfStream) {
-        // server side trailers
-    }
-
-    @Override
     public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
-        // todo check number of queued items and modify flow control if we seem to be collecting messages
         if (expectedLength != -1 && expectedLength < header.length()) {
             state = Http2StreamState.CLOSED;
             Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
@@ -331,6 +329,17 @@ public class Http2ServerStream implements Runnable, Http2Stream {
         }
     }
 
+    void send100Continue() {
+        if (send100Continue.getAndSet(false)) {
+            Header status = HeaderValues.createCached(Http2Headers.STATUS_NAME, 100);
+            Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create().add(status));
+            writer.writeHeaders(http2Headers,
+                                streamId,
+                                Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                flowControl.outbound());
+        }
+    }
+
     void requestSemaphore(Semaphore requestSemaphore) {
         this.requestSemaphore = requestSemaphore;
     }
@@ -340,6 +349,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private BufferData readEntityFromPipeline() {
+        send100Continue();
         if (wasLastDataFrame) {
             return BufferData.empty();
         }
@@ -363,6 +373,9 @@ public class Http2ServerStream implements Runnable, Http2Stream {
         Headers httpHeaders = headers.httpHeaders();
         if (httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
+        }
+        if (headers.httpHeaders().contains(HeaderValues.EXPECT_100)) {
+            this.send100Continue.set(true);
         }
 
         subProtocolHandler = null;
