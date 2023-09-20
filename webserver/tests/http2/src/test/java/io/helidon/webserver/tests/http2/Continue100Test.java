@@ -51,7 +51,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @ServerTest
-public class Continue100Test {
+class Continue100Test {
     private static final System.Logger LOGGER = System.getLogger(Continue100Test.class.getName());
     private static final long TIMEOUT_MILLIS = Duration.ofSeconds(10).toMillis();
     private static final String DATA = "Helidon!!!".repeat(10);
