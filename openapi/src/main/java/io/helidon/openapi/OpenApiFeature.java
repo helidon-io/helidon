@@ -69,6 +69,31 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
      * Default web context for the endpoint.
      */
     public static final String DEFAULT_CONTEXT = "/openapi";
+    /**
+     * URL query parameter for specifying the requested format when retrieving the OpenAPI document.
+     */
+    static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";
+    private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
+    private static final String OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using specified OpenAPI static file %s";
+    private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
+    private final OpenApiStaticFile openApiStaticFile;
+    private final OpenApiUi ui;
+    private final MediaType[] preferredMediaTypeOrdering;
+    private final MediaType[] mediaTypesSupportedByUi;
+    private final ConcurrentMap<OpenAPIMediaType, String> cachedDocuments = new ConcurrentHashMap<>();
+    /**
+     * Constructor for the feature.
+     *
+     * @param logger  logger to use for the feature
+     * @param builder builder to use for initializing the feature
+     */
+    protected OpenApiFeature(System.Logger logger, Builder<?, ?> builder) {
+        super(logger, builder, FEATURE_NAME);
+        openApiStaticFile = builder.staticFile();
+        ui = prepareUi(builder);
+        mediaTypesSupportedByUi = ui.supportedMediaTypes();
+        preferredMediaTypeOrdering = preparePreferredMediaTypeOrdering(mediaTypesSupportedByUi);
+    }
 
     /**
      * Returns a new builder for preparing an SE variant of {@code OpenApiFeature}.
@@ -89,10 +114,161 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
         return builder().config(config).build();
     }
 
+    @Override
+    public Optional<HttpService> service() {
+        return enabled()
+                ? Optional.of(this::configureRoutes)
+                : Optional.empty();
+    }
+
     /**
-     * URL query parameter for specifying the requested format when retrieving the OpenAPI document.
+     * Returns the OpenAPI document content in {@code String} form given the requested media type.
+     *
+     * @param openApiMediaType which OpenAPI media type to use for formatting
+     * @return {@code String} containing the formatted OpenAPI document
      */
-    static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";
+    protected abstract String openApiContent(OpenAPIMediaType openApiMediaType);
+
+    /**
+     * Returns the explicitly-assigned or default static content (if any).
+     * <p>
+     * Most likely invoked by the concrete implementations of {@link #openApiContent(OpenAPIMediaType)} as needed
+     * to find static content as needed.
+     * </p>
+     *
+     * @return an {@code Optional} of the static content
+     */
+    protected Optional<OpenApiStaticFile> staticContent() {
+        return Optional.ofNullable(openApiStaticFile);
+    }
+
+    private static MediaType[] preparePreferredMediaTypeOrdering(MediaType[] uiTypesSupported) {
+        int nonTextLength = OpenAPIMediaType.preferredOrdering().length;
+
+        MediaType[] result = Arrays.copyOf(OpenAPIMediaType.preferredOrdering(),
+                                           nonTextLength + uiTypesSupported.length);
+        System.arraycopy(uiTypesSupported, 0, result, nonTextLength, uiTypesSupported.length);
+        return result;
+    }
+
+    private static ClassLoader getContextClassLoader() {
+        return Thread.currentThread().getContextClassLoader();
+    }
+
+    private static String typeFromPath(String staticFileNamePath) {
+        if (staticFileNamePath == null) {
+            throw new IllegalArgumentException("File path does not seem to have a file name value but one is expected");
+        }
+        return staticFileNamePath.substring(staticFileNamePath.lastIndexOf(".") + 1);
+    }
+
+    private OpenApiUi prepareUi(Builder<?, ?> builder) {
+        return builder.uiBuilder.build(this::prepareDocument, context());
+    }
+
+    private void configureRoutes(HttpRules rules) {
+        rules.get("/", this::prepareResponse);
+    }
+
+    private void prepareResponse(ServerRequest req, ServerResponse resp) {
+
+        try {
+            Optional<MediaType> requestedMediaType = chooseResponseMediaType(req);
+
+            // Give the UI a chance to respond first if it claims to support the chosen media type.
+            if (requestedMediaType.isPresent()
+                    && uiSupportsMediaType(requestedMediaType.get())) {
+                if (ui.prepareTextResponseFromMainEndpoint(req, resp)) {
+                    return;
+                }
+            }
+
+            if (requestedMediaType.isEmpty()) {
+                logger().log(System.Logger.Level.TRACE,
+                             () -> String.format("Did not recognize requested media type %s; passing the request on",
+                                                 req.headers().acceptedTypes()));
+                return;
+            }
+
+            MediaType resultMediaType = requestedMediaType.get();
+            final String openAPIDocument = prepareDocument(resultMediaType);
+            resp.status(Status.OK_200);
+            resp.headers().contentType(resultMediaType);
+            resp.send(openAPIDocument);
+        } catch (Exception ex) {
+            resp.status(Status.INTERNAL_SERVER_ERROR_500);
+            resp.send("Error serializing OpenAPI document; " + ex.getMessage());
+            logger().log(System.Logger.Level.ERROR, "Error serializing OpenAPI document", ex);
+        }
+    }
+
+    private boolean uiSupportsMediaType(MediaType mediaType) {
+        HttpMediaType httpMediaType = HttpMediaType.create(mediaType);
+        // The UI supports a very short list of media types, hence the sequential search.
+        for (MediaType uiSupportedMediaType : mediaTypesSupportedByUi) {
+            if (httpMediaType.test(uiSupportedMediaType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the OpenAPI document in the requested format.
+     *
+     * @param resultMediaType requested media type
+     * @return String containing the formatted OpenAPI document
+     *         from its underlying data
+     */
+    private String prepareDocument(MediaType resultMediaType) {
+        OpenAPIMediaType matchingOpenApiMediaType
+                = OpenAPIMediaType.byMediaType(resultMediaType)
+                .orElseGet(() -> {
+                    logger().log(System.Logger.Level.TRACE,
+                                 () -> String.format(
+                                         "Requested media type %s not supported; using default",
+                                         resultMediaType.toString()));
+                    return OpenAPIMediaType.DEFAULT_TYPE;
+                });
+
+        return cachedDocuments.computeIfAbsent(matchingOpenApiMediaType,
+                                               fmt -> {
+                                                   String r = openApiContent(fmt);
+                                                   logger().log(System.Logger.Level.TRACE,
+                                                                "Created and cached OpenAPI document in {0} format",
+                                                                fmt.toString());
+                                                   return r;
+                                               });
+    }
+
+    private Optional<MediaType> chooseResponseMediaType(ServerRequest req) {
+        /*
+         * Response media type default is application/vnd.oai.openapi (YAML)
+         * unless otherwise specified.
+         */
+        OptionalValue<String> queryParameterFormat = req.query()
+                .first(OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER);
+        if (queryParameterFormat.isPresent()) {
+            String queryParameterFormatValue = queryParameterFormat.get();
+            try {
+                return Optional.of(QueryParameterRequestedFormat.chooseFormat(queryParameterFormatValue).mediaType());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                        "Query parameter 'format' had value '"
+                                + queryParameterFormatValue
+                                + "' but expected " + Arrays.toString(QueryParameterRequestedFormat.values()));
+            }
+        }
+
+        ServerRequestHeaders headersToCheck = req.headers();
+        if (headersToCheck.acceptedTypes().isEmpty()) {
+            WritableHeaders<?> writableHeaders = WritableHeaders.create(headersToCheck);
+            writableHeaders.add(HeaderNames.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
+            headersToCheck = ServerRequestHeaders.create(writableHeaders);
+        }
+        return headersToCheck
+                .bestAccepted(preferredMediaTypeOrdering);
+    }
 
     /**
      * Abstraction of the different representations of a static OpenAPI document
@@ -137,14 +313,6 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
         }
 
         /**
-         * File types matching this media type.
-         * @return file types
-         */
-        public List<String> matchingTypes() {
-            return fileTypes;
-        }
-
-        /**
          * Find media type by file suffix.
          *
          * @param fileType file suffix
@@ -161,6 +329,7 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
 
         /**
          * Find OpenAPI media type by media type.
+         *
          * @param mt media type
          * @return OpenAPI media type or empty if not supported
          */
@@ -204,6 +373,15 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
                     MediaTypes.TEXT_PLAIN
             };
         }
+
+        /**
+         * File types matching this media type.
+         *
+         * @return file types
+         */
+        public List<String> matchingTypes() {
+            return fileTypes;
+        }
     }
 
     /**
@@ -213,202 +391,20 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
     enum QueryParameterRequestedFormat {
         JSON(MediaTypes.APPLICATION_JSON), YAML(MediaTypes.APPLICATION_OPENAPI_YAML);
 
-        static QueryParameterRequestedFormat chooseFormat(String format) {
-            return QueryParameterRequestedFormat.valueOf(format);
-        }
-
         private final MediaType mt;
 
         QueryParameterRequestedFormat(MediaType mt) {
             this.mt = mt;
         }
 
+        static QueryParameterRequestedFormat chooseFormat(String format) {
+            return QueryParameterRequestedFormat.valueOf(format);
+        }
+
         MediaType mediaType() {
             return mt;
         }
     }
-
-    private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
-    private static final String OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using specified OpenAPI static file %s";
-    private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
-
-    private final OpenApiStaticFile openApiStaticFile;
-    private final OpenApiUi ui;
-    private final MediaType[] preferredMediaTypeOrdering;
-    private final MediaType[] mediaTypesSupportedByUi;
-    private final ConcurrentMap<OpenAPIMediaType, String> cachedDocuments = new ConcurrentHashMap<>();
-
-    /**
-     * Constructor for the feature.
-     *
-     * @param logger logger to use for the feature
-     * @param builder builder to use for initializing the feature
-     */
-    protected OpenApiFeature(System.Logger logger, Builder<?, ?> builder) {
-        super(logger, builder, FEATURE_NAME);
-        openApiStaticFile = builder.staticFile();
-        ui = prepareUi(builder);
-        mediaTypesSupportedByUi = ui.supportedMediaTypes();
-        preferredMediaTypeOrdering = preparePreferredMediaTypeOrdering(mediaTypesSupportedByUi);
-    }
-
-    @Override
-    public Optional<HttpService> service() {
-        return enabled()
-                ? Optional.of(this::configureRoutes)
-                : Optional.empty();
-    }
-
-    /**
-     * Returns the OpenAPI document content in {@code String} form given the requested media type.
-     *
-     * @param openApiMediaType which OpenAPI media type to use for formatting
-     * @return {@code String} containing the formatted OpenAPI document
-     */
-    protected abstract String openApiContent(OpenAPIMediaType openApiMediaType);
-
-    /**
-     * Returns the explicitly-assigned or default static content (if any).
-     * <p>
-     *     Most likely invoked by the concrete implementations of {@link #openApiContent(OpenAPIMediaType)} as needed
-     *     to find static content as needed.
-     * </p>
-     *
-     * @return an {@code Optional} of the static content
-     */
-    protected Optional<OpenApiStaticFile> staticContent() {
-        return Optional.ofNullable(openApiStaticFile);
-    }
-
-    private OpenApiUi prepareUi(Builder<?, ?> builder) {
-        return builder.uiBuilder.build(this::prepareDocument, context());
-    }
-
-    private static MediaType[] preparePreferredMediaTypeOrdering(MediaType[] uiTypesSupported) {
-        int nonTextLength = OpenAPIMediaType.preferredOrdering().length;
-
-        MediaType[] result = Arrays.copyOf(OpenAPIMediaType.preferredOrdering(),
-                                           nonTextLength + uiTypesSupported.length);
-        System.arraycopy(uiTypesSupported, 0, result, nonTextLength, uiTypesSupported.length);
-        return result;
-    }
-
-    private void configureRoutes(HttpRules rules) {
-        rules.get("/", this::prepareResponse);
-    }
-
-    private static ClassLoader getContextClassLoader() {
-        return Thread.currentThread().getContextClassLoader();
-    }
-
-    private static String typeFromPath(String staticFileNamePath) {
-        if (staticFileNamePath == null) {
-            throw new IllegalArgumentException("File path does not seem to have a file name value but one is expected");
-        }
-        return staticFileNamePath.substring(staticFileNamePath.lastIndexOf(".") + 1);
-    }
-
-    private void prepareResponse(ServerRequest req, ServerResponse resp) {
-
-        try {
-            Optional<MediaType> requestedMediaType = chooseResponseMediaType(req);
-
-            // Give the UI a chance to respond first if it claims to support the chosen media type.
-            if (requestedMediaType.isPresent()
-                    && uiSupportsMediaType(requestedMediaType.get())) {
-                if (ui.prepareTextResponseFromMainEndpoint(req, resp)) {
-                    return;
-                }
-            }
-
-            if (requestedMediaType.isEmpty()) {
-                logger().log(System.Logger.Level.TRACE,
-                           () -> String.format("Did not recognize requested media type %s; passing the request on",
-                                               req.headers().acceptedTypes()));
-                return;
-            }
-
-            MediaType resultMediaType = requestedMediaType.get();
-            final String openAPIDocument = prepareDocument(resultMediaType);
-            resp.status(Status.OK_200);
-            resp.headers().contentType(resultMediaType);
-            resp.send(openAPIDocument);
-        } catch (Exception ex) {
-            resp.status(Status.INTERNAL_SERVER_ERROR_500);
-            resp.send("Error serializing OpenAPI document; " + ex.getMessage());
-            logger().log(System.Logger.Level.ERROR, "Error serializing OpenAPI document", ex);
-        }
-    }
-
-    private boolean uiSupportsMediaType(MediaType mediaType) {
-        HttpMediaType httpMediaType = HttpMediaType.create(mediaType);
-        // The UI supports a very short list of media types, hence the sequential search.
-        for (MediaType uiSupportedMediaType : mediaTypesSupportedByUi) {
-            if (httpMediaType.test(uiSupportedMediaType)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns the OpenAPI document in the requested format.
-     *
-     * @param resultMediaType requested media type
-     * @return String containing the formatted OpenAPI document
-     * from its underlying data
-     */
-    private String prepareDocument(MediaType resultMediaType) {
-        OpenAPIMediaType matchingOpenApiMediaType
-                = OpenAPIMediaType.byMediaType(resultMediaType)
-                .orElseGet(() -> {
-                    logger().log(System.Logger.Level.TRACE,
-                                 () -> String.format(
-                                       "Requested media type %s not supported; using default",
-                                       resultMediaType.toString()));
-                    return OpenAPIMediaType.DEFAULT_TYPE;
-                });
-
-
-        return cachedDocuments.computeIfAbsent(matchingOpenApiMediaType,
-                                                        fmt -> {
-                                                            String r = openApiContent(fmt);
-                                                            logger().log(System.Logger.Level.TRACE,
-                                                                       "Created and cached OpenAPI document in {0} format",
-                                                                       fmt.toString());
-                                                            return r;
-                                                        });
-    }
-
-    private Optional<MediaType> chooseResponseMediaType(ServerRequest req) {
-        /*
-         * Response media type default is application/vnd.oai.openapi (YAML)
-         * unless otherwise specified.
-         */
-        OptionalValue<String> queryParameterFormat = req.query()
-                .first(OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER);
-        if (queryParameterFormat.isPresent()) {
-            String queryParameterFormatValue = queryParameterFormat.get();
-            try {
-                return Optional.of(QueryParameterRequestedFormat.chooseFormat(queryParameterFormatValue).mediaType());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "Query parameter 'format' had value '"
-                                + queryParameterFormatValue
-                                + "' but expected " + Arrays.toString(QueryParameterRequestedFormat.values()));
-            }
-        }
-
-        ServerRequestHeaders headersToCheck = req.headers();
-        if (headersToCheck.acceptedTypes().isEmpty()) {
-            WritableHeaders<?> writableHeaders = WritableHeaders.create(headersToCheck);
-            writableHeaders.add(HeaderNames.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
-            headersToCheck = ServerRequestHeaders.create(writableHeaders);
-        }
-        return headersToCheck
-                .bestAccepted(preferredMediaTypeOrdering);
-    }
-
 
     /**
      * Behavior shared between the SE and MP OpenAPI feature builders.
@@ -434,13 +430,6 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
         protected Builder() {
             super(DEFAULT_CONTEXT);
         }
-
-        /**
-         * Returns the logger for the OpenAPI feature instance.
-         *
-         * @return logger
-         */
-        protected abstract System.Logger logger();
 
         /**
          * Apply configuration settings to the builder.
@@ -494,13 +483,20 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
          * or one of the default files.
          *
          * @return the OpenAPI static file instance for the static file if such
-         * a file exists, null otherwise
+         *         a file exists, null otherwise
          */
         public OpenApiStaticFile staticFile() {
             return staticFile == null
                     ? getDefaultStaticFile()
                     : staticFile;
         }
+
+        /**
+         * Returns the logger for the OpenAPI feature instance.
+         *
+         * @return logger
+         */
+        protected abstract System.Logger logger();
 
         private OpenApiStaticFile getDefaultStaticFile() {
             OpenApiStaticFile result = null;
@@ -519,11 +515,11 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
             }
             if (candidatePaths != null) {
                 logger().log(System.Logger.Level.TRACE,
-                           candidatePaths.stream()
-                                   .collect(Collectors.joining(
-                                           ",",
-                                           "No default static OpenAPI description file found; checked [",
-                                           "]")));
+                             candidatePaths.stream()
+                                     .collect(Collectors.joining(
+                                             ",",
+                                             "No default static OpenAPI description file found; checked [",
+                                             "]")));
             }
             return result;
         }
