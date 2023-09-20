@@ -44,13 +44,13 @@ class MainTest {
                 .request()
                 .get(GreetingMessage.class);
         assertThat("default message", message.getMessage(),
-                is("Hello World!"));
+                   is("Hello World!"));
 
         message = target.path("/greet/Joe")
                 .request()
                 .get(GreetingMessage.class);
         assertThat("hello Joe message", message.getMessage(),
-                is("Hello Joe!"));
+                   is("Hello Joe!"));
 
         try (Response r = target.path("/greet/greeting")
                 .request()
@@ -62,14 +62,19 @@ class MainTest {
                 .request()
                 .get(GreetingMessage.class);
         assertThat("hola Jose message", message.getMessage(),
-                is("Hola Jose!"));
-
+                   is("Hola Jose!"));
+    }
+    @Test
+    void testMetrics() {
         try (Response r = target.path("/metrics")
                 .request()
                 .get()) {
             assertThat("GET metrics status code", r.getStatus(), is(200));
         }
+    }
 
+    @Test
+    void testHealth() {
         try (Response r = target.path("/health")
                 .request()
                 .get()) {
