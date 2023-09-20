@@ -19,54 +19,56 @@ package io.helidon.jersey.connector;
 import java.util.Arrays;
 
 import io.helidon.http.Status;
-import io.helidon.webserver.WebServer;
+import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-
 import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.client.ClientConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 
-/**
- * Tests integration of Jakarta REST client with the Helidon connector that uses
- * WebClient to execute HTTP requests.
- */
-@ServerTest
-class JerseyConnectorTest {
+class ConnectorBase {
 
-    private final String baseURI;
-    private final Client client;
+    private String baseURI;
+    private Client client;
+    private String protocolId;
 
-    JerseyConnectorTest(WebServer webServer) {
-        baseURI = "http://localhost:" + webServer.port();
-        ClientConfig config = new ClientConfig();
-        config.connectorProvider(new HelidonConnectorProvider());       // use Helidon's provider
-        client = ClientBuilder.newClient(config);
+
+    public void baseURI(String baseURI) {
+        this.baseURI = baseURI;
+    }
+
+    public void client(Client client) {
+        this.client = client;
+    }
+
+    public void protocolId(String protocolId) {
+        this.protocolId = protocolId;
     }
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.get("/basic/get", JerseyConnectorTest::basicGet)
-             .post("/basic/post", JerseyConnectorTest::basicPost)
-             .get("/basic/getquery", JerseyConnectorTest::basicGetQuery)
-             .get("/basic/headers", JerseyConnectorTest::basicHeaders);
+        rules.get("/basic/get", ConnectorBase::basicGet)
+             .post("/basic/post", ConnectorBase::basicPost)
+             .get("/basic/getquery", ConnectorBase::basicGetQuery)
+             .get("/basic/headers", ConnectorBase::basicHeaders);
     }
 
     private WebTarget target(String uri) {
-        return client.target(baseURI).path(uri);
+        WebTarget webTarget = client.target(baseURI).path(uri);
+        if (protocolId != null) {
+            webTarget.property(HelidonProperties.PROTOCOL_ID, Http2Client.PROTOCOL_ID);
+        }
+        return webTarget;
     }
 
     static void basicGet(ServerRequest request, ServerResponse response) {
@@ -87,7 +89,7 @@ class JerseyConnectorTest {
     static void basicHeaders(ServerRequest request, ServerResponse response) {
         request.headers()
                 .stream()
-                .filter(h -> h.name().startsWith("X-TEST"))
+                .filter(h -> h.name().startsWith("x-test"))
                 .forEach(response::header);
         response.status(Status.OK_200).send("ok");
     }
@@ -122,9 +124,14 @@ class JerseyConnectorTest {
 
     @Test
     public void testHeaders() {
-        String[][] headers = new String[][]{{"X-TEST-ONE", "ONE"}, {"X-TEST-TWO", "TWO"}, {"X-TEST-THREE", "THREE"}};
+        String[][] headers = new String[][]{
+                {"x-test-one", "one"},
+                {"x-test-two", "two"},
+                {"x-test-three", "three"}
+        };
         MultivaluedHashMap<String, Object> map = new MultivaluedHashMap<>();
         Arrays.stream(headers).forEach(a -> map.add(a[0], a[1]));
+
         try (Response response = target("basic").path("headers").request().headers(map).get()) {
             assertThat(response.getStatus(), is(200));
             assertThat(response.readEntity(String.class), is("ok"));

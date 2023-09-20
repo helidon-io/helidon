@@ -16,24 +16,31 @@
 
 package io.helidon.jersey.connector;
 
-import java.io.OutputStream;
-
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
 import org.glassfish.jersey.client.spi.Connector;
 import org.glassfish.jersey.client.spi.ConnectorProvider;
 
 /**
- * Provider for Helidon WebClient {@link Connector} that utilizes the Helidon HTTP Client to send and receive
- * HTTP request and responses.
+ * A Jersey {@link ConnectorProvider} that uses a {@link io.helidon.webclient.api.WebClient}
+ * instance to executed HTTP requests on behalf of a Jakarta REST {@link Client}.
  * <p>
- * The following properties are only supported at construction of this class:
+ * An instance of this class can be specified during the creation of a {@link Client}
+ * using the method {@link org.glassfish.jersey.client.ClientConfig#connectorProvider}.
+ * It is recommended to use the static method {@link #create()} for obtain an
+ * instance of this class.
+ * <p>
+ * Configuration of a connector is driven by properties set on a {@link Client}
+ * instance, including possibly a config tree. There is a combination of Jersey
+ * and Helidon properties that can be specified for that purpose. Jersey properties
+ * are defined in class {@link org.glassfish.jersey.client.ClientProperties} and Helidon
+ * properties are defined in {@link HelidonProperties}.
+ * <p>
+ * Only the following properties from {@link org.glassfish.jersey.client.ClientProperties}
+ * are supported:
  * <ul>
  * <li>{@link org.glassfish.jersey.client.ClientProperties#CONNECT_TIMEOUT}</li>
  * <li>{@link org.glassfish.jersey.client.ClientProperties#FOLLOW_REDIRECTS}</li>
- * <li>{@link org.glassfish.jersey.client.ClientProperties#PROXY_URI}</li>
- * <li>{@link org.glassfish.jersey.client.ClientProperties#PROXY_USERNAME}</li>
- * <li>{@link org.glassfish.jersey.client.ClientProperties#PROXY_PASSWORD}</li>
  * <li>{@link org.glassfish.jersey.client.ClientProperties#READ_TIMEOUT}</li>
  * </ul>
  * <p>
@@ -41,24 +48,13 @@ import org.glassfish.jersey.client.spi.ConnectorProvider;
  * entity is not read from the response then
  * {@link org.glassfish.jersey.client.ClientResponse#close()} MUST be called
  * after processing the response to release connection-based resources.
- * </p>
  * <p>
- * Client operations are thread safe, the HTTP connection may
- * be shared between different threads.
- * </p>
+ * Client operations are thread safe, the HTTP connection may be shared between
+ * different threads.
  * <p>
  * If a response entity is obtained that is an instance of {@link java.io.Closeable}
  * then the instance MUST be closed after processing the entity to release
  * connection-based resources.
- * </p>
- * <p>
- * This connector uses {@link org.glassfish.jersey.client.ClientProperties#OUTBOUND_CONTENT_LENGTH_BUFFER} to buffer the entity
- * written for instance by {@link jakarta.ws.rs.core.StreamingOutput}. Should the buffer be small and
- * {@link jakarta.ws.rs.core.StreamingOutput#write(OutputStream)} be called many times, the performance can drop. The Content-Length
- * or the Content_Encoding header is set by the underlaying Helidon WebClient regardless of the
- * {@link org.glassfish.jersey.client.ClientProperties#OUTBOUND_CONTENT_LENGTH_BUFFER} size, however.
- * </p>
- *
  */
 public class HelidonConnectorProvider implements ConnectorProvider {
     /**
@@ -70,5 +66,14 @@ public class HelidonConnectorProvider implements ConnectorProvider {
     @Override
     public Connector getConnector(Client client, Configuration runtimeConfig) {
         return new HelidonConnector(client, runtimeConfig);
+    }
+
+    /**
+     * Create a new instance of {@link HelidonConnectorProvider}.
+     *
+     * @return new instance of this class
+     */
+    public static HelidonConnectorProvider create() {
+        return new HelidonConnectorProvider();
     }
 }

@@ -63,5 +63,10 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-http2</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
