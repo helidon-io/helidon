@@ -9,4 +9,3 @@ Suggested path to follow:
 2. [providers](./providers)
 3. [configdriven](./configdriven)
 4. [interceptors](./interceptors)
-5. [application](./application)
