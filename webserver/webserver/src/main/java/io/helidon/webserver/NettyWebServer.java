@@ -163,6 +163,9 @@ class NettyWebServer implements WebServer {
                      .childHandler(childHandler);
 
             bootstraps.put(name, bootstrap);
+
+            // subscribe to updates
+            soConfig.tls().ifPresent((tlsConfig) -> updateTls(tlsConfig, name));
         }
 
         // Log entry that also initializes NettyInitializer class
@@ -172,24 +175,32 @@ class NettyWebServer implements WebServer {
     }
 
     private SslContext createSslContext(WebServerTls webServerTls) {
+        // initialize the manager
+        webServerTls.manager().init(webServerTls);
+
         // Transform java SSLContext into Netty SslContext
         SSLContext context = webServerTls.sslContext();
         if (context != null) {
-            Collection<String> enabledProtocols = webServerTls.enabledTlsProtocols();
-            String[] protocols;
-            if (enabledProtocols.isEmpty()) {
-                protocols = null;
-            } else {
-                protocols = enabledProtocols.toArray(new String[0]);
-            }
-
-            Set<String> cipherSuite = webServerTls.cipherSuite();
-            return new JdkSslContext(
-                    context, false, cipherSuite.isEmpty() ? null : cipherSuite,
-                    IdentityCipherSuiteFilter.INSTANCE, UpgradeManager.alpnConfig(),
-                    webServerTls.clientAuth().nettyClientAuth(), protocols, false);
+            return createSslContext(webServerTls, context);
         }
         return null;
+    }
+
+    private SslContext createSslContext(WebServerTls webServerTls,
+                                        SSLContext context) {
+        Collection<String> enabledProtocols = webServerTls.enabledTlsProtocols();
+        String[] protocols;
+        if (enabledProtocols.isEmpty()) {
+            protocols = null;
+        } else {
+            protocols = enabledProtocols.toArray(new String[0]);
+        }
+
+        Set<String> cipherSuite = webServerTls.cipherSuite();
+        return new JdkSslContext(
+                context, false, cipherSuite.isEmpty() ? null : cipherSuite,
+                IdentityCipherSuiteFilter.INSTANCE, UpgradeManager.alpnConfig(),
+                webServerTls.clientAuth().nettyClientAuth(), protocols, false);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,12 +45,16 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.webserver.spi.TlsManagerProvider;
 
 /**
  * A class wrapping transport layer security (TLS) configuration for
  * WebServer sockets.
  */
 public final class WebServerTls {
+    /**
+     * The default protocol is set to {@value}.
+     */
     private static final String PROTOCOL = "TLS";
     // secure random cannot be stored in native image, it must
     // be initialized at runtime
@@ -62,18 +66,22 @@ public final class WebServerTls {
      */
     public static final String CLIENT_X509_CERTIFICATE = WebServerTls.class.getName() + ".client-x509-certificate";
 
+    private final TlsManager tlsManager;
     private final Set<String> enabledTlsProtocols;
     private final Set<String> cipherSuite;
     private final SSLContext sslContext;
     private final boolean enabled;
     private final ClientAuthentication clientAuth;
+    private final boolean trustAll;
 
     private WebServerTls(Builder builder) {
+        this.tlsManager = builder.tlsManager;
         this.enabledTlsProtocols = Set.copyOf(builder.enabledTlsProtocols);
         this.cipherSuite = builder.cipherSuite;
         this.sslContext = builder.sslContext;
-        this.enabled = (null != sslContext);
+        this.enabled = (builder.enabled && null != sslContext);
         this.clientAuth = builder.clientAuth;
+        this.trustAll = builder.trustAll;
     }
 
     /**
@@ -95,6 +103,16 @@ public final class WebServerTls {
         return builder().config(config).build();
     }
 
+    /**
+     * The Tls manager. If one is not explicitly defined in the config then a default manager will be created.
+     *
+     * @return the tls manager of the tls instance
+     * @see ConfiguredTlsManager
+     */
+    public TlsManager manager() {
+        return tlsManager;
+    }
+
     Collection<String> enabledTlsProtocols() {
         return enabledTlsProtocols;
     }
@@ -105,6 +123,10 @@ public final class WebServerTls {
 
     ClientAuthentication clientAuth() {
         return clientAuth;
+    }
+
+    boolean trustAll() {
+        return trustAll;
     }
 
     Set<String> cipherSuite() {
@@ -128,6 +150,7 @@ public final class WebServerTls {
     public static class Builder implements io.helidon.common.Builder<Builder, WebServerTls> {
         private final Set<String> enabledTlsProtocols = new HashSet<>();
 
+        private TlsManager tlsManager;
         private SSLContext sslContext;
         private KeyConfig privateKeyConfig;
         private KeyConfig trustConfig;
@@ -138,6 +161,7 @@ public final class WebServerTls {
         private Boolean explicitEnabled;
         private ClientAuthentication clientAuth;
         private Set<String> cipherSuite = Set.of();
+        private boolean trustAll;
 
         private Builder() {
             clientAuth = ClientAuthentication.NONE;
@@ -151,6 +175,10 @@ public final class WebServerTls {
                 enabled = this.enabled;
             } else {
                 enabled = explicitEnabled;
+            }
+
+            if (tlsManager == null) {
+                tlsManager = new ConfiguredTlsManager();
             }
 
             if (!enabled) {
@@ -194,6 +222,40 @@ public final class WebServerTls {
                     .asLong()
                     .ifPresent(this::sessionTimeoutSeconds);
 
+            config.get("manager")
+                    .ifExists(it -> tlsManager(TlsManagerProvider.create(it)));
+            config.get("trust-all")
+                    .asBoolean()
+                    .ifPresent(this::trustAll);
+
+            return this;
+        }
+
+        /**
+         * The Tls manager. If one is not explicitly defined in the config then a default manager will be created.
+         *
+         * @return the tls manager of the tls instance
+         * @see ConfiguredTlsManager
+         * @see TlsManagerProvider
+         */
+        @ConfiguredOption(provider = true)
+        public Builder tlsManager(TlsManager tlsManager) {
+            this.tlsManager = Objects.requireNonNull(tlsManager);
+            return this;
+        }
+
+        /**
+         * Trust any certificate provided by the other side of communication.
+         * <p>
+         * <b>This is a dangerous setting: </b> if set to {@code true}, any certificate will be accepted, throwing away
+         * most of the security advantages of TLS. <b>NEVER</b> do this in production.
+         *
+         * @param trustAll flag indicating whether to trust all certificates
+         * @return whether to trust all certificates, do not use in production
+         */
+        @ConfiguredOption("false")
+        public Builder trustAll(boolean trustAll) {
+            this.trustAll = trustAll;
             return this;
         }
 
