@@ -57,11 +57,11 @@ public final class WebServerTls {
     private final SSLContext explicitSslContext;
     private KeyConfig privateKeyConfig;
     private KeyConfig trustConfig;
-    private final boolean enabled;
-    private final ClientAuthentication clientAuth;
     private final boolean trustAll;
     private final int sessionCacheSize;
     private final int sessionTimeoutSeconds;
+    private final boolean enabled;
+    private final ClientAuthentication clientAuth;
 
     private WebServerTls(Builder builder) {
         this.tlsManager = builder.tlsManager;
@@ -70,12 +70,11 @@ public final class WebServerTls {
         this.explicitSslContext = builder.explicitSslContext;
         this.privateKeyConfig = builder.privateKeyConfig;
         this.trustConfig = builder.trustConfig;
-        this.enabled = builder.enabled;
-        this.clientAuth = builder.clientAuth;
         this.trustAll = builder.trustAll;
         this.sessionCacheSize = (int) builder.sessionCacheSize;
         this.sessionTimeoutSeconds = (int) builder.sessionTimeoutSeconds;
-
+        this.enabled = builder.enabled;
+        this.clientAuth = builder.clientAuth;
     }
 
     /**
@@ -178,12 +177,12 @@ public final class WebServerTls {
         private KeyConfig trustConfig;
         private long sessionCacheSize;
         private long sessionTimeoutSeconds;
+        private boolean trustAll;
 
         private boolean enabled;
         private Boolean explicitEnabled;
         private ClientAuthentication clientAuth;
         private Set<String> cipherSuite = Set.of();
-        private boolean trustAll;
 
         private Builder() {
             clientAuth = ClientAuthentication.NONE;
@@ -297,7 +296,7 @@ public final class WebServerTls {
 
         /**
          * Explicitly configures a {@link SSLContext} to use with the server socket. If not {@code null} then
-         * the server enforces an SSL communication and will override the usage of any {@link TlsManager} configured.
+         * the server enforces an SSL communication, and will override the usage of any {@link TlsManager}.
          *
          * @param context a SSL context to use
          * @return this builder

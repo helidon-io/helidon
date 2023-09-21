@@ -73,7 +73,6 @@
 
     <Match>
         <!--
-        This is used in an implementation of an HTTP client, where a user may decide to trust all certs.
         This trust manager is NOT enabled by default and requires an explicit step from the user to trust all.
          -->
         <Class name="io.helidon.webserver.TrustAllManagerFactory$TrustAllManager"/>
