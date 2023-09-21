@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.ConfigException;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
@@ -395,6 +396,38 @@ public interface Config extends io.helidon.common.config.Config {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
+    }
+
+    /**
+     * Either return the registered global config, or create a new config using {@link #create()} and register
+     * it as global.
+     * The instance returned may differ from {@link io.helidon.common.config.GlobalConfig#config()} in case the
+     * global config registered in not an instance of this type.
+     *
+     * @return global config instance, creates one if not yet registered
+     */
+    static Config global() {
+        if (GlobalConfig.configured()) {
+            io.helidon.common.config.Config global = GlobalConfig.config();
+            if (global instanceof Config cfg) {
+                return cfg;
+            }
+            return BuilderImpl.GlobalConfigHolder.get();
+        }
+        Config config = Config.create();
+        GlobalConfig.config(() -> config, true);
+        return config;
+    }
+
+    /**
+     * Configure the provided configuration as the global configuration.
+     * This method registers also {@link io.helidon.common.config.GlobalConfig} instance.
+     *
+     * @param config to configure as global
+     */
+    static void global(Config config) {
+        GlobalConfig.config(() -> config, true);
+        BuilderImpl.GlobalConfigHolder.set(config);
     }
 
     /**

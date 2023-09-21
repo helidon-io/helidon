@@ -16,8 +16,7 @@
 
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webserver.WebServer;
@@ -45,7 +44,7 @@ public final class Main {
         LogConfig.configureRuntime();
 
         WebServer server = WebServer.builder()
-                .config(GlobalConfig.config().get("server"))
+                .config(Config.global().get("server"))
                 .routing(Main::routing)
                 .build()
                 .start();
@@ -57,7 +56,7 @@ public final class Main {
      * Updates HTTP Routing and registers observe providers.
      */
     static void routing(HttpRouting.Builder routing) {
-        Config config = GlobalConfig.config();
+        Config config = Config.global();
 
         OpenApiFeature openApi = OpenApiFeature.create(config.get("openapi"));
         GreetService greetService = new GreetService(config.get("app"));
