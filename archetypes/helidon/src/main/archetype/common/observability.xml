@@ -31,13 +31,14 @@
                     <enum id="provider"
                           name="Select a Metrics Provider"
                           default="microprofile"
-                          optional="true">
+                          optional="true"
+                          if="${flavor} == 'mp'">
                         <option value="microprofile"
                                 name="MicroProfile"
                                 description="Expose metrics using the MicroProfile API">
                             <output>
                                 <model>
-                                    <list key="readme-sections" if="${flavor} == 'mp'">
+                                    <list key="readme-sections">
                                         <value><![CDATA[
 ## Try metrics
 
@@ -61,33 +62,29 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                             <value key="artifactId">helidon-metrics</value>
                                             <value key="scope">runtime</value>
                                         </map>
-                                        <map if="${flavor} == 'mp'">
+                                        <map>
                                             <value key="groupId">org.eclipse.microprofile.metrics</value>
                                             <value key="artifactId">microprofile-metrics-api</value>
                                         </map>
-                                        <map if="${flavor} == 'mp'">
+                                        <map>
                                             <value key="groupId">io.helidon.microprofile.metrics</value>
                                             <value key="artifactId">helidon-microprofile-metrics</value>
                                         </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.webserver.observe</value>
-                                            <value key="artifactId">helidon-webserver-observe-metrics</value>
-                                        </map>
                                     </list>
-                                    <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
+                                    <list key="SimpleGreetService-imports">
                                         <value>org.eclipse.microprofile.metrics.MetricUnits</value>
                                         <value>org.eclipse.microprofile.metrics.annotation.Counted</value>
                                         <value>org.eclipse.microprofile.metrics.annotation.Timed</value>
                                         <value>jakarta.ws.rs.PathParam</value>
                                     </list>
-                                    <list key="SimpleGreetResource-static-fields" if="${flavor} == 'mp'">
+                                    <list key="SimpleGreetResource-static-fields">
                                         <value><![CDATA[
     private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
     private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
     private static final String GETS_TIMER_NAME = "allGets";
     private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";]]></value>
                                     </list>
-                                    <list key="SimpleGreetService-methods" if="${flavor} == 'mp'">
+                                    <list key="SimpleGreetService-methods">
                                         <value><![CDATA[
     @Path("/{name}")
     @GET
@@ -103,7 +100,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         return String.format("Hello %s", name);
     }]]></value>
                                     </list>
-                                    <list key="MainTest-java-imports" if="${flavor} == 'mp'">
+                                    <list key="MainTest-java-imports">
                                         <value>org.eclipse.microprofile.metrics.Counter</value>
                                         <value>org.eclipse.microprofile.metrics.MetricRegistry</value>
                                     </list>
@@ -113,7 +110,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <list key="MainTest-other-imports">
                                         <value>org.junit.jupiter.api.BeforeAll</value>
                                     </list>
-                                    <list key="MainTest-static-imports" if="${flavor} == 'mp'">
+                                    <list key="MainTest-static-imports">
                                         <value>static org.junit.jupiter.api.Assertions.assertEquals</value>
                                     </list>
                                     <list key="MainTest-methods" order="999">
@@ -124,7 +121,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     }
 ]]></value>
                                     </list>
-                                    <list key="MainTest-methods" if="${flavor} == 'mp'">
+                                    <list key="MainTest-methods">
                                         <value><![CDATA[
     @Test
     void testMicroprofileMetrics() {
@@ -145,79 +142,12 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         assertEquals(1d, after - before, "Difference in personalized greeting counter between successive calls");
     }]]></value>
                                     </list>
-                                    <list key="MainTest-static-fields" if="${flavor} == 'mp'">
+                                    <list key="MainTest-static-fields">
                                         <value><![CDATA[
     @Inject
     private MetricRegistry registry;]]></value>
                                     </list>
-                                    <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                        <value>io.helidon.metrics.api.MeterRegistry</value>
-                                        <value>io.helidon.webserver.observe.metrics.MetricsObserver</value>
-                                    </list>
-                                    <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                        <value><![CDATA[.addFeature(ObserveFeature.create(MetricsObserver.create()))]]></value>
-                                    </list>
-                                    <list key="GreetService-imports" if="${flavor} == 'se'">
-                                        <value>io.helidon.metrics.api.Metrics</value>
-                                        <value>io.helidon.metrics.api.MeterRegistry</value>
-                                        <value>io.helidon.metrics.api.Counter</value>
-                                    </list>
-                                    <list key="MainTest-java-imports" if="${flavor} == 'se'">
-                                        <value>java.util.Arrays</value>
-                                    </list>
-                                    <list key="GreetService-fields" if="${flavor} == 'se'">
-                                        <value><![CDATA[
-    static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
-
-    private final Counter personalizedGetCounter;]]></value>
-                                    </list>
-                                    <list key="GreetService-constructor" if="${flavor} == 'se'">
-                                        <value><![CDATA[
-        MeterRegistry appRegistry = Metrics.globalRegistry();
-        this.personalizedGetCounter = appRegistry.getOrCreate(
-                Counter.builder(PERSONALIZED_GETS_COUNTER_NAME)
-                       .description("Counts the number of HTTP responses to /{name} query"));
-]]></value>
-                                    </list>
-                                    <list key="GreetService-routing" if="${flavor} == 'se'">
-                                        <value><![CDATA[
-        .get("/{name}",
-                (req, resp) -> {
-                        personalizedGetCounter.increment();
-                        resp.next();
-                    })]]></value>
-                                    </list>
-                                    <list key="Abstract-tests" if="${flavor} == 'se'">
-                                        <value><![CDATA[
-    @Test
-    void testMicroprofileMetrics() {
-        Http1ClientResponse response = client.get("/observe/metrics").request();
-
-        double before = parseGetCounter(response.as(String.class));
-
-        response = client.get()
-                .path("/greet/Joe")
-                .request();
-        assertThat(response.status().code(), is(200));
-
-        response = client.get("/observe/metrics").request();
-
-        double after = parseGetCounter(response.as(String.class));
-
-        assertThat("Difference in personalized greeting counter between successive calls", 1d, is(after - before));
-        response.close();
-    }
-
-    private double parseGetCounter(String metrics) {
-        return Arrays.stream(metrics.split(System.lineSeparator()))
-                .filter(line -> line.startsWith(GreetService.PERSONALIZED_GETS_COUNTER_NAME))
-                .map(line -> Double.parseDouble(line.split(" ")[1]))
-                .findFirst()
-                .orElseThrow();
-    }
-]]></value>
-                                    </list>
-                                    <list key="modules" if="${flavor} == 'mp'">
+                                    <list key="modules">
                                         <value>io.helidon.microprofile.metrics</value>
                                     </list>
                                 </model>
@@ -232,36 +162,31 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <map>
                                             <value key="groupId">io.helidon.metrics</value>
                                             <value key="artifactId">helidon-metrics-api</value>
-                                            <value key="scope" if="${flavor} == 'mp'">runtime</value>
-                                            <value key="scope" if="${flavor} == 'se'">compile</value>
+                                            <value key="scope">runtime</value>
                                         </map>
                                         <map>
                                             <value key="groupId">io.helidon.metrics</value>
                                             <value key="artifactId">helidon-metrics</value>
                                             <value key="scope">runtime</value>
                                         </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.webserver.observe</value>
-                                            <value key="artifactId">helidon-webserver-observe-metrics</value>
-                                        </map>
-                                        <map if="${flavor} == 'mp'">
+                                        <map>
                                             <value key="groupId">org.eclipse.microprofile.metrics</value>
                                             <value key="artifactId">microprofile-metrics-api</value>
                                         </map>
                                     </list>
-                                    <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
+                                    <list key="SimpleGreetService-imports">
                                         <value>org.eclipse.microprofile.metrics.annotation.Counted</value>
                                         <value>org.eclipse.microprofile.metrics.annotation.Timed</value>
                                         <value>jakarta.ws.rs.PathParam</value>
                                     </list>
-                                    <list key="SimpleGreetResource-static-fields" if="${flavor} == 'mp'">
+                                    <list key="SimpleGreetResource-static-fields">
                                         <value><![CDATA[
     private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
     private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
     private static final String GETS_TIMER_NAME = "allGets";
     private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";]]></value>
                                     </list>
-                                    <list key="SimpleGreetService-methods" if="${flavor} == 'mp'">
+                                    <list key="SimpleGreetService-methods">
                                         <value><![CDATA[
     @Path("/{name}")
     @GET
@@ -272,7 +197,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         return String.format("Hello %s", name);
     }]]></value>
                                     </list>
-                                    <list key="MainTest-java-imports" if="${flavor} == 'mp'">
+                                    <list key="MainTest-java-imports">
                                         <value>org.eclipse.microprofile.metrics.Counter</value>
                                         <value>org.eclipse.microprofile.metrics.MetricRegistry</value>
                                     </list>
@@ -282,7 +207,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <list key="MainTest-other-imports">
                                         <value>org.junit.jupiter.api.BeforeAll</value>
                                     </list>
-                                    <list key="MainTest-static-fields" if="${flavor} == 'mp'">
+                                    <list key="MainTest-static-fields">
                                         <value><![CDATA[
     @Inject
     private MetricRegistry registry;]]></value>
@@ -295,7 +220,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     }
 ]]></value>
                                     </list>
-                                    <list key="MainTest-methods" if="${flavor} == 'mp'">
+                                    <list key="MainTest-methods">
                                         <value><![CDATA[
     @Test
     void testMicrometerMetrics() {
@@ -316,104 +241,10 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         assertEquals(1d, after - before, "Difference in personalized greeting counter between successive calls");
     }]]></value>
                                     </list>
-                                    <list key="MainTest-static-imports" if="${flavor} == 'mp'">
+                                    <list key="MainTest-static-imports">
                                         <value>static org.junit.jupiter.api.Assertions.assertEquals</value>
                                     </list>
-                                    <list key="readme-sections" if="${flavor} == 'se'">
-                                        <value><![CDATA[
-## Using Micrometer
-
-Access the `/observe/metrics` endpoint which reports the newly-added timer and counter.
-
-```bash
-curl http://localhost:8080/observe/metrics
-```
-`SimpleGreetService` has a micrometer counter that is incremented each time a GET request is made at
-`http://localhost:8080/greet-count`. The counter name is `allRequests` and is shown in the console
-with the number of time it was triggered.
-
-```
-curl http://localhost:8080/observe/metrics
-# HELP allRequests_total
-# TYPE allRequests_total counter
-allRequests_total 0.0
-```
-]]></value>
-                                    </list>
-                                    <list key="GreetService-imports">
-                                        <value>io.helidon.metrics.api.Counter</value>
-                                        <value>io.helidon.metrics.api.Metrics</value>
-                                        <value>io.helidon.metrics.api.MeterRegistry</value>
-                                        <value>io.helidon.metrics.api.Timer</value>
-                                    </list>
-                                    <list key="GreetService-routing">
-                                        <value><![CDATA[
-        .get((req, res) -> getTimer.record((Runnable) res::next))
-        .get("/{name}",
-                (req, res) -> {
-                        personalizedGetCounter.increment();
-                        res.next();
-                    })]]></value>
-                                    </list>
-                                    <list key="GreetService-fields">
-                                        <value><![CDATA[
-    static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
-    static final String ALL_GETS_TIMER_NAME = "allGets";
-
-    private final Timer getTimer;
-    private final Counter personalizedGetCounter;]]></value>
-                                    </list>
-                                    <list key="GreetService-constructor">
-                                        <value><![CDATA[
-        MeterRegistry registry = Metrics.globalRegistry();
-        this.personalizedGetCounter = registry.getOrCreate(Counter.builder(PERSONALIZED_GETS_COUNTER_NAME));
-        this.getTimer = registry.getOrCreate(Timer.builder(ALL_GETS_TIMER_NAME));]]></value>
-                                    </list>
-                                    <list key="MainTest-static-imports">
-                                        <value if="${flavor} == 'se'">org.hamcrest.CoreMatchers.containsString</value>
-                                    </list>
-                                    <list key="MainTest-java-imports" if="${flavor} == 'se'">
-                                        <value>java.util.Arrays</value>
-                                    </list>
-                                    <list key="Abstract-tests">
-                                        <value><![CDATA[
-    @Test
-    void testMicrometer() {
-        Http1ClientResponse response = client.get("/observe/metrics").request();
-
-        double before = parseGetCounter(response.as(String.class));
-
-        response = client.get()
-                .path("/greet")
-                .request();
-        assertThat(response.status().code(), is(200));
-
-        response = client.get()
-                .path("/greet/Joe")
-                .request();
-        assertThat(response.status().code(), is(200));
-
-        response = client.get()
-                .path("/observe/metrics")
-                .request();
-        assertThat(response.status().code(), is(200));
-
-        double after = parseGetCounter(response.as(String.class));
-
-        assertThat("Difference in personalized greeting counter between successive calls",1d, is(after - before));
-        response.close();
-    }
-
-    private double parseGetCounter(String metrics) {
-        return Arrays.stream(metrics.split(System.lineSeparator()))
-                .filter(line -> line.startsWith(GreetService.PERSONALIZED_GETS_COUNTER_NAME))
-                .map(line -> Double.parseDouble(line.split(" ")[1]))
-                .findFirst()
-                .orElseThrow();
-    }
-]]></value>
-                                    </list>
-                                    <list key="modules" if="${flavor} == 'mp'">
+                                    <list key="modules">
                                         <value>io.helidon.microprofile.metrics</value>
                                     </list>
                                 </model>
@@ -427,7 +258,42 @@ allRequests_total 0.0
                              optional="true">
                         <output>
                             <model>
-                                <list key="readme-sections" if="!(${metrics.provider} == 'microprofile') &amp;&amp; ${flavor} != 'se'">
+                                <list key="Main-helidon-imports" if="${flavor} == 'se'">
+                                    <value>io.helidon.webserver.observe.ObserveFeature</value>
+                                </list>
+                                <list key="Main-routing-builder" if="${flavor} == 'se'">
+                                    <value>.addFeature(ObserveFeature.create())</value>
+                                </list>
+                                <list key="dependencies">
+                                    <map if="${flavor} == 'se'">
+                                        <value key="groupId">io.helidon.webserver.observe</value>
+                                        <value key="artifactId">helidon-webserver-observe-metrics</value>
+                                    </map>
+                                    <map if="${flavor} == 'se'">
+                                        <value key="groupId">io.helidon.metrics</value>
+                                        <value key="artifactId">helidon-metrics-system-meters</value>
+                                        <value key="scope">runtime</value>
+                                    </map>
+                                    <map if="${flavor} == 'mp'">
+                                        <value key="groupId">io.helidon.metrics</value>
+                                        <value key="artifactId">helidon-metrics</value>
+                                    </map>
+                                </list>
+                                <list key="Abstract-tests" if="${flavor} == 'se'">
+                                    <value><![CDATA[
+    @Test
+    void testMetricsObserver() {
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+    }
+]]></value>
+                                </list>
+                                <list key="modules">
+                                    <value if="${flavor} == 'se'">io.helidon.webserver.observe.metrics</value>
+                                    <value if="${flavor} == 'se'">io.helidon.metrics.api</value>
+                                </list>
+                                <list key="readme-sections">
                                     <value><![CDATA[
 ## Try metrics
 
@@ -642,7 +508,7 @@ curl -X GET http://localhost:8080/observe/observe/health/ready
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/609 -->
             <model>
                 <value key="metrics" if="${metrics}">true</value>
-                <value key="metrics.provider" if="${metrics}">${metrics.provider}</value>
+                <value key="metrics.provider" if="${metrics} &amp;&amp; ${flavor} == 'mp'">${metrics.provider}</value>
                 <value key="metrics.builtin" if="${metrics}">${metrics.builtin}</value>
                 <value key="health" if="${health}">true</value>
                 <value key="health.builtin" if="${health}">${health.builtin}</value>
