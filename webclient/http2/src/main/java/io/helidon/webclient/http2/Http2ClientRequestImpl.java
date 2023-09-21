@@ -192,7 +192,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                            serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
                                            resolvedUri,
-                                           (Http2ClientStream) serviceResponse.connection(),
+                                           serviceResponse.connection(),
                                            complete,
                                            callChain::closeResponse);
 
