@@ -191,6 +191,14 @@ public interface ServerResponse {
     ServerResponseHeaders headers();
 
     /**
+     * Response trailers (mutable).
+     * @return trailers
+     * @throws java.lang.IllegalStateException if client didn't ask for trailers with {@code TE: trailers} header in request
+     * or response doesn't contain trailer declaration headers {@code Trailer: <trailer-name>}
+     */
+    ServerResponseHeaders trailers();
+
+    /**
      * Description of the result of output stream processing.
      * In case an output stream was used, calling this method will immediately close the stream and return this
      * message as the reason for closing the response.

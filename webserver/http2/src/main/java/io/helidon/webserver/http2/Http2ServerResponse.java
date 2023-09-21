@@ -47,13 +47,16 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private final Http2StreamWriter writer;
     private final int streamId;
     private final ServerResponseHeaders headers;
+    private final ServerResponseHeaders trailers;
     private final FlowControl.Outbound flowControl;
+    private final Http2ServerRequest request;
 
     private boolean isSent;
     private boolean streamingEntity;
     private long bytesWritten;
     private BlockingOutputStream outputStream;
     private UnaryOperator<OutputStream> outputStreamFilter;
+    private String streamResult = null;
 
     Http2ServerResponse(ConnectionContext ctx,
                         Http2ServerRequest request,
@@ -62,10 +65,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                         FlowControl.Outbound flowControl) {
         super(ctx, request);
         this.ctx = ctx;
+        this.request = request;
         this.writer = writer;
         this.streamId = streamId;
         this.flowControl = flowControl;
         this.headers = ServerResponseHeaders.create();
+        this.trailers = ServerResponseHeaders.create();
     }
 
     @Override
@@ -111,17 +116,29 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                                "Status must be configured on response, "
                                                                        + "do not set HTTP/2 pseudo headers"));
 
-        Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(bytes.length,
-                                                                              Http2FrameTypes.DATA,
-                                                                              DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                              streamId),
-                                                      BufferData.create(bytes));
+        boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
+
+        Http2FrameData frameData =
+                new Http2FrameData(Http2FrameHeader.create(bytes.length,
+                                                           Http2FrameTypes.DATA,
+                                                           DataFlags.create(sendTrailers ? 0 : Http2Flag.END_OF_STREAM),
+                                                           streamId),
+                                   BufferData.create(bytes));
 
         http2Headers.validateResponse();
         bytesWritten = writer.writeHeaders(http2Headers,
                                            streamId,
                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
                                            frameData, flowControl);
+
+        if (sendTrailers) {
+            Http2Headers http2trailers = Http2Headers.create(trailers);
+            int written = writer.writeHeaders(http2trailers,
+                                              streamId,
+                                              Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                              flowControl);
+            bytesWritten += written;
+        }
 
         afterSend();
     }
@@ -141,7 +158,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         streamingEntity = true;
 
-        outputStream = new BlockingOutputStream(headers, writer, streamId, flowControl, status(), () -> {
+        if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+            headers.add(STREAM_TRAILERS);
+        }
+
+        outputStream = new BlockingOutputStream(request, this, () -> {
             this.isSent = true;
             afterSend();
         });
@@ -161,10 +182,19 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     public ServerResponseHeaders headers() {
         return headers;
     }
+    @Override
+    public ServerResponseHeaders trailers() {
+        if (request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
+            return trailers;
+        }
+        throw new IllegalStateException(
+                "Trailers are supported only when request came with 'TE: trailers' header or "
+                        + "response headers have trailer names definition 'Trailer: <trailer-name>'");
+    }
 
     @Override
     public void streamResult(String result) {
-        // TODO use this when closing the stream
+        this.streamResult = result;
     }
 
     @Override
@@ -210,30 +240,32 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     private static class BlockingOutputStream extends OutputStream {
 
+        private final Http2ServerRequest request;
         private final ServerResponseHeaders headers;
+        private final ServerResponseHeaders trailers;
         private final Http2StreamWriter writer;
         private final int streamId;
         private final FlowControl.Outbound flowControl;
         private final Status status;
         private final Runnable responseCloseRunnable;
+        private final Http2ServerResponse response;
 
         private BufferData firstBuffer;
         private boolean closed;
         private boolean firstByte = true;
         private long bytesWritten;
 
-        private BlockingOutputStream(ServerResponseHeaders headers,
-                                     Http2StreamWriter writer,
-                                     int streamId,
-                                     FlowControl.Outbound flowControl,
-                                     Status status,
+        private BlockingOutputStream(Http2ServerRequest request,
+                                     Http2ServerResponse response,
                                      Runnable responseCloseRunnable) {
-
-            this.headers = headers;
-            this.writer = writer;
-            this.streamId = streamId;
-            this.flowControl = flowControl;
-            this.status = status;
+            this.request = request;
+            this.response = response;
+            this.headers = response.headers;
+            this.trailers = response.trailers;
+            this.writer = response.writer;
+            this.streamId = response.streamId;
+            this.flowControl = response.flowControl;
+            this.status = response.status();
             this.responseCloseRunnable = responseCloseRunnable;
         }
 
@@ -269,8 +301,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 return;
             }
             this.closed = true;
+            boolean sendTrailers =
+                    request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
             if (firstByte) {
-                sendFirstChunkOnly();
+                sendFirstChunkOnly(sendTrailers);
+            } else if (sendTrailers) {
+                sendTrailers();
             } else {
                 sendEndOfStream();
             }
@@ -301,7 +337,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             }
         }
 
-        private void sendFirstChunkOnly() {
+        private void sendFirstChunkOnly(boolean sendTrailers) {
             int contentLength;
             if (firstBuffer == null) {
                 headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
@@ -323,16 +359,21 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             if (contentLength == 0) {
                 int written = writer.writeHeaders(http2Headers,
                                                   streamId,
-                                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
-                                                                                       | Http2Flag.END_OF_STREAM),
+                                                  Http2Flag.HeaderFlags.create(
+                                                          sendTrailers
+                                                                  ? Http2Flag.END_OF_HEADERS
+                                                                  : Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
                                                   flowControl);
                 bytesWritten += written;
             } else {
-                Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(contentLength,
-                                                                                      Http2FrameTypes.DATA,
-                                                                                      DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                                      streamId),
-                                                              firstBuffer);
+                Http2FrameData frameData =
+                        new Http2FrameData(Http2FrameHeader.create(contentLength,
+                                                                   Http2FrameTypes.DATA,
+                                                                   DataFlags.create(sendTrailers
+                                                                                            ? 0
+                                                                                            : Http2Flag.END_OF_STREAM),
+                                                                   streamId),
+                                           firstBuffer);
                 int written = writer.writeHeaders(http2Headers,
                                                   streamId,
                                                   Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
@@ -378,6 +419,21 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             bytesWritten += frameData.header().length();
             bytesWritten += Http2FrameHeader.LENGTH;
             writer.writeData(frameData, flowControl);
+        }
+
+        private void sendTrailers(){
+            if (response.streamResult != null) {
+                trailers.set(STREAM_RESULT_NAME, response.streamResult);
+            }
+            trailers.set(STREAM_STATUS_NAME, status.code());
+
+            Http2Headers http2Headers = Http2Headers.create(trailers);
+            int written = writer.writeHeaders(http2Headers,
+                                              streamId,
+                                              Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
+                                                                                   | Http2Flag.END_OF_STREAM),
+                                              flowControl);
+            bytesWritten += written;
         }
     }
 }

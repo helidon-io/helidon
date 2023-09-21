@@ -35,7 +35,6 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
-import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -57,11 +56,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-    private static final HeaderName STREAM_STATUS_NAME = HeaderNames.create("stream-status");
-    private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
-    private static final Header STREAM_TRAILERS =
-            HeaderValues.create(HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
-                    + "," + STREAM_RESULT_NAME.defaultCase());
+    private static final byte[] TERMINATING_CHUNK_TRAILERS = "0\r\n".getBytes(StandardCharsets.UTF_8);
 
     @SuppressWarnings("rawtypes")
     private static final List<SinkProvider> SINK_PROVIDERS
@@ -73,7 +68,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private final DataWriter dataWriter;
     private final Http1ServerRequest request;
     private final ServerResponseHeaders headers;
-    private final WritableHeaders<?> trailers = WritableHeaders.create();
+    private final ServerResponseHeaders trailers;
     private final boolean keepAlive;
 
     private boolean streamingEntity;
@@ -98,6 +93,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         this.dataWriter = dataWriter;
         this.request = request;
         this.headers = ServerResponseHeaders.create();
+        this.trailers = ServerResponseHeaders.create();
         this.keepAlive = keepAlive;
         this.validateHeaders = validateHeaders;
     }
@@ -150,7 +146,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     // actually send the response over the wire
     @Override
     public void send(byte[] bytes) {
-        if (outputStreamFilter == null) {
+        if (outputStreamFilter == null && !headers.contains(HeaderNames.TRAILER)) {
             byte[] entity = entityBytes(bytes);
             BufferData bufferData = responseBuffer(entity);
             bytesWritten = bufferData.available();
@@ -219,6 +215,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     @Override
     public ServerResponseHeaders headers() {
         return headers;
+    }
+
+    @Override
+    public ServerResponseHeaders trailers() {
+        if (request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
+            return trailers;
+        }
+        throw new IllegalStateException(
+                "Trailers are supported only when request came with 'TE: trailers' header or "
+                        + "response headers have trailer names definition 'Trailer: <trailer-name>'");
     }
 
     @Override
@@ -411,7 +417,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.contentLength = headers.contentLength().orElse(-1);
             this.request = request;
             this.keepAlive = keepAlive;
-            this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)
+                    || headers.contains(HeaderNames.TRAILER);
             this.validateHeaders = validateHeaders;
         }
 
@@ -468,21 +475,25 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 return;
             }
             this.closed = true;
+            boolean sendTrailers =
+                    (isChunked || forcedChunked)
+                    && (request.headers().contains(HeaderValues.TE_TRAILERS)
+                                || headers.contains(HeaderNames.TRAILER));
+
             if (firstByte) {
                 if (forcedChunked && firstBuffer != null) {
                     // no sense in sending no data, only do this if chunked requested through a header
                     sendHeadersAndPrepare();
                     writeChunked(firstBuffer);
-                    terminatingChunk();
+                    terminatingChunk(sendTrailers);
                 } else {
                     sendFirstChunkOnly();
                 }
             } else if (isChunked) {
-                terminatingChunk();
+                terminatingChunk(sendTrailers);
             }
 
-            if (isChunked || forcedChunked) {
-                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+            if (sendTrailers) {
                     // not optimized, trailers enabled: we need to write trailers
                     trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
                     trailers.set(STREAM_RESULT_NAME, streamResult.get());
@@ -491,7 +502,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     buffer.write('\r');        // "\r\n" - empty line after headers
                     buffer.write('\n');
                     dataWriter.write(buffer);
-                }
             }
 
             responseCloseRunnable.run();
@@ -506,8 +516,26 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             return responseBytesTotal;
         }
 
-        private void terminatingChunk() {
-            BufferData terminatingChunk = BufferData.create(TERMINATING_CHUNK);
+        /**
+         * Send terminating chunk without trailers {@code  "0\r\n\r\n"} or when trailers are expected {@code  "0\r\n"}.
+         *
+         * <pre>{@code
+         *   chunked-body    = *chunk
+         *                     last-chunk
+         *                     trailer-section
+         *                     CRLF
+         *
+         *   chunk           = chunk-size [ chunk-ext ] CRLF
+         *                     chunk-data CRLF
+         *   last-chunk      = 1*("0") [ chunk-ext ] CRLF
+         *   trailer-section = *( field-line CRLF )
+         *   }</pre>
+         *
+         * @param trailers whether trailers are expected or not
+         * @see <a href="https://www.rfc-editor.org/rfc/rfc9112#section-7.1">rfc9112 §7.1</a>
+         */
+        private void terminatingChunk(boolean trailers) {
+            BufferData terminatingChunk = BufferData.create(trailers ? TERMINATING_CHUNK_TRAILERS : TERMINATING_CHUNK);
             sendListener.data(ctx, terminatingChunk);
             dataWriter.write(terminatingChunk);
         }
