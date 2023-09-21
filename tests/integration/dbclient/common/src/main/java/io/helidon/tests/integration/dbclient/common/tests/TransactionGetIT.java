@@ -23,6 +23,7 @@ import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbTransaction;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Pokemon.POKEMONS;
 import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.verifyPokemon;
@@ -30,7 +31,8 @@ import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.veri
 /**
  * Test set of basic JDBC get calls in transaction.
  */
-public class TransactionGetIT extends AbstractIT {
+@ExtendWith(DbClientParameterResolver.class)
+public class TransactionGetIT {
 
     private final DbClient dbClient;
     private final Config config;

@@ -24,6 +24,7 @@ import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -33,6 +34,7 @@ import static org.hamcrest.Matchers.equalTo;
 /**
  * Verify that health check works.
  */
+@ExtendWith(DbClientParameterResolver.class)
 public class HealthCheckIT {
 
     private static final System.Logger LOGGER = System.getLogger(HealthCheckIT.class.getName());

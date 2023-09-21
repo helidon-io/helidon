@@ -28,7 +28,7 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.metrics.DbClientMetrics;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
-import io.helidon.tests.integration.harness.SetUp;
+import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.observe.ObserveFeature;
 
@@ -38,10 +38,11 @@ import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonParsingException;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
-import static io.helidon.tests.integration.dbclient.common.tests.AbstractIT.LAST_POKEMON_ID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -52,10 +53,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Verify metrics check in web server environment.
  */
 @SuppressWarnings("SpellCheckingInspection")
+@ExtendWith(DbClientParameterResolver.class)
 public class ServerMetricsCheckIT {
 
     private static final System.Logger LOGGER = System.getLogger(ServerMetricsCheckIT.class.getName());
-    private static final int BASE_ID = LAST_POKEMON_ID + 300;
+    private static final int BASE_ID = TestConfig.LAST_POKEMON_ID + 300;
 
     private static DbClient DB_CLIENT;
     private static WebServer SERVER;
@@ -73,7 +75,7 @@ public class ServerMetricsCheckIT {
                 .build();
     }
 
-    @SetUp
+    @BeforeAll
     public static void startup(Config config) {
         DB_CLIENT = initDbClient(config);
         SERVER = WebServer.builder()

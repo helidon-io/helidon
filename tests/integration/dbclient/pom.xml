@@ -38,6 +38,18 @@
         <module>app</module>
     </modules>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-services-plugin</artifactId>
+                <configuration>
+                    <skip>false</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <profiles>
         <profile>
             <id>testcontainers</id>
@@ -46,4 +58,5 @@
             </modules>
         </profile>
     </profiles>
+
 </project>

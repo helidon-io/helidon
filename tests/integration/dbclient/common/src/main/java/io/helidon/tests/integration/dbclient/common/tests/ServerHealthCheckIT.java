@@ -27,7 +27,6 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.http.Status;
-import io.helidon.tests.integration.harness.SetUp;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
@@ -39,7 +38,9 @@ import jakarta.json.JsonReader;
 import jakarta.json.JsonStructure;
 import jakarta.json.stream.JsonParsingException;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -49,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Verify health check in web server environment.
  */
+@ExtendWith(DbClientParameterResolver.class)
 public class ServerHealthCheckIT {
 
     private static final System.Logger LOGGER = System.getLogger(ServerHealthCheckIT.class.getName());
@@ -61,7 +63,7 @@ public class ServerHealthCheckIT {
         this.dbClient = dbClient;
     }
 
-    @SetUp
+    @BeforeAll
     public static void setup(DbClient dbClient, Config config) {
         SERVER = WebServer.builder()
                 .routing(builder -> routing(dbClient, config, builder))

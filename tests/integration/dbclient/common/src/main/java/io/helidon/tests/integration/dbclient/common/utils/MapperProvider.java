@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.common.spi;
+package io.helidon.tests.integration.dbclient.common.utils;
 
 import java.util.Optional;
 
@@ -21,7 +21,6 @@ import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.spi.DbMapperProvider;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon.PokemonMapper;
-import io.helidon.tests.integration.dbclient.common.utils.RangePoJo;
 
 /**
  * Mapper provider used in integration tests.
