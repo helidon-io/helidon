@@ -16,8 +16,6 @@
 
 package io.helidon.webclient.http2;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -91,7 +89,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.connection = connection;
         this.serverSettings = serverSettings;
         this.ctx = ctx;
-        this.timeout = http2StreamConfig.timeout();
+        this.timeout = http2StreamConfig.readTimeout();
         this.http2ClientConfig = http2ClientConfig;
         this.streamIdSeq = streamIdSeq;
     }
@@ -238,8 +236,9 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         return BufferData.empty();
     }
 
-    void waitFor100Continue() {
+    Status waitFor100Continue() {
         Duration readContinueTimeout = http2ClientConfig.readContinueTimeout();
+        boolean expected100Continue = readState == ReadState.CONTINUE_100_HEADERS;
         try {
             while (readState == ReadState.CONTINUE_100_HEADERS) {
                 readOne(readContinueTimeout);
@@ -250,7 +249,12 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
             LOGGER.log(DEBUG, "Server didn't respond within 100 Continue timeout in "
                     + readContinueTimeout
                     + ", sending data.");
+            return Status.CONTINUE_100;
         }
+        if (expected100Continue && currentHeaders != null) {
+            return currentHeaders.status();
+        }
+        return null;
     }
 
     void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
@@ -271,7 +275,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
             //          greater than all streams that the initiating endpoint has opened or reserved.
             this.streamId = streamIdSeq.lockAndNext();
             this.connection.updateLastStreamId(streamId);
-            this.buffer = new StreamBuffer(streamId);
+            this.buffer = new StreamBuffer(this, streamId);
 
             // fixme Configurable initial win size, max frame size
             this.flowControl = connection.flowControl().createStreamFlowControl(
@@ -310,8 +314,8 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         return currentHeaders;
     }
 
-    ClientOutputStream outputStream() {
-        return new ClientOutputStream();
+    SocketContext ctx() {
+        return ctx;
     }
 
     private Http2FrameData readOne(Duration pollTimeout) {
@@ -442,36 +446,6 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                        false);
         connection.writer().writeData(frameData,
                                       flowControl().outbound());
-    }
-
-    class ClientOutputStream extends OutputStream {
-        private volatile boolean isClosed;
-
-        @Override
-        public void write(int b) throws IOException {
-            write(0, 1, (byte) b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            write(off, len, b);
-        }
-
-        @Override
-        public void close() throws IOException {
-            // todo optimize - send last buffer together with end of stream
-            writeData(BufferData.empty(), true);
-            this.isClosed = true;
-            super.close();
-        }
-
-        public boolean closed() {
-            return isClosed;
-        }
-
-        private void write(int off, int len, byte... bytes) {
-            writeData(BufferData.create(bytes, off, len), false);
-        }
     }
 
     private enum ReadState {

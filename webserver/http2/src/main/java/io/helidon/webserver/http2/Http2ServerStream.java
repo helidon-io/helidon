@@ -495,7 +495,11 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                 }
             } finally {
                 request.content().consume();
-                this.state = Http2StreamState.CLOSED;
+                if (this.state == Http2StreamState.HALF_CLOSED_REMOTE) {
+                    this.state = Http2StreamState.CLOSED;
+                } else {
+                    this.state = Http2StreamState.HALF_CLOSED_LOCAL;
+                }
             }
         } else {
             subProtocolHandler.init();

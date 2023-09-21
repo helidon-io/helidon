@@ -16,15 +16,11 @@
 
 package io.helidon.webclient.http2;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.common.buffers.BufferData;
-import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
-import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -35,11 +31,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         implements Http2ClientRequest, Http2StreamConfig, FullClientRequest<Http2ClientRequest> {
 
     private final Http2ClientImpl http2Client;
-    private int priority;
+    private int priority = 16;
     private boolean priorKnowledge;
     private int requestPrefetch = 0;
     private Duration flowControlTimeout = Duration.ofMillis(100);
-    private Duration timeout = Duration.ofSeconds(10);
+    private boolean outputStreamRedirect = false;
 
     Http2ClientRequestImpl(Http2ClientImpl http2Client,
                            Method method,
@@ -71,13 +67,14 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.priorKnowledge(request.priorKnowledge);
         this.flowControlTimeout(request.flowControlTimeout);
         this.requestPrefetch(request.requestPrefetch);
-        this.timeout(request.timeout);
+        this.readTimeout(request.readTimeout());
+        this.outputStreamRedirect(request.outputStreamRedirect);
     }
 
     @Override
     public Http2ClientRequest priority(int priority) {
         if (priority < 1 || priority > 256) {
-            throw new IllegalArgumentException("Priority must be between 1 and 256 (inclusive)");
+            throw new IllegalArgumentException("Priority must be between 1 and 256 (inclusive), but is " + priority);
         }
         this.priority = priority;
         return this;
@@ -96,12 +93,6 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     }
 
     @Override
-    public Http2ClientRequest timeout(Duration timeout) {
-        this.timeout = timeout;
-        return this;
-    }
-
-    @Override
     public Http2ClientRequest flowControlTimeout(Duration timeout) {
         this.flowControlTimeout = timeout;
         return this;
@@ -110,7 +101,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     @Override
     public Http2ClientResponse doSubmit(Object entity) {
         if (followRedirects()) {
-            return invokeEntityFollowRedirects(entity);
+            return RedirectionProcessor.invokeWithFollowRedirects(this, 0, entity);
         }
         return invokeEntity(entity);
     }
@@ -138,11 +129,6 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         return priority;
     }
 
-    @Override
-    public Duration timeout() {
-        return timeout;
-    }
-
     // this is currently not used - if it is to be used, it must be per stream configuration, not connection wide
     int requestPrefetch() {
         return requestPrefetch;
@@ -153,50 +139,23 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         return flowControlTimeout;
     }
 
-    private Http2ClientResponse invokeEntityFollowRedirects(Object entity) {
-        //Request object which should be used for invoking the next request. This will change in case of any redirection.
-        Http2ClientRequestImpl clientRequest = this;
-        //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
-        Object entityToBeSent = entity;
-        for (int i = 0; i < maxRedirects(); i++) {
-            Http2ClientResponseImpl clientResponse = clientRequest.invokeEntity(entityToBeSent);
-            int code = clientResponse.status().code();
-            if (code < 300 || code >= 400) {
-                return clientResponse;
-            } else if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
-                throw new IllegalStateException("There is no " + HeaderNames.LOCATION + " header present in the response! "
-                                                        + "It is not clear where to redirect.");
-            }
-            String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).value();
-            URI newUri = URI.create(redirectedUri);
-            ClientUri redirectUri = ClientUri.create(newUri);
-
-            if (newUri.getHost() == null) {
-                //To keep the information about the latest host, we need to use uri from the last performed request
-                //Example:
-                //request -> my-test.com -> response redirect -> my-example.com
-                //new request -> my-example.com -> response redirect -> /login
-                //with using the last request uri host etc, we prevent my-test.com/login from happening
-                ClientUri resolvedUri = clientRequest.resolvedUri();
-                redirectUri.scheme(resolvedUri.scheme());
-                redirectUri.host(resolvedUri.host());
-                redirectUri.port(resolvedUri.port());
-            }
-            //Method and entity is required to be the same as with original request with 307 and 308 requests
-            if (clientResponse.status() == Status.TEMPORARY_REDIRECT_307
-                    || clientResponse.status() == Status.PERMANENT_REDIRECT_308) {
-                clientRequest = new Http2ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, properties());
-            } else {
-                //It is possible to change to GET and send no entity with all other redirect codes
-                entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                clientRequest = new Http2ClientRequestImpl(clientRequest, Method.GET, redirectUri, properties());
-            }
-        }
-        throw new IllegalStateException("Maximum number of request redirections ("
-                                                + clientConfig().maxRedirects() + ") reached.");
+    /**
+     * Whether this request is part of output stream redirection
+     * Default is {@code false}.
+     *
+     * @param outputStreamRedirect whether this request is part of output stream redirection
+     * @return updated request
+     */
+    Http2ClientRequestImpl outputStreamRedirect(boolean outputStreamRedirect) {
+        this.outputStreamRedirect = outputStreamRedirect;
+        return this;
     }
 
-    private Http2ClientResponseImpl invokeEntity(Object entity) {
+    boolean outputStreamRedirect() {
+        return outputStreamRedirect;
+    }
+
+    Http2ClientResponseImpl invokeEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         Http2CallChainBase httpCall = new Http2CallEntityChain(http2Client,
@@ -226,13 +185,14 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
 
         // if this was an HTTP/1.1 response, do something different (just re-use response)
         return new Http2ClientResponseImpl(clientConfig(),
-                                           callChain.responseStatus(),
+                                           serviceResponse.status(),
                                            callChain.requestHeaders(),
                                            serviceResponse.headers(),
                                            serviceResponse.trailers(),
                                            serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
                                            resolvedUri,
+                                           (Http2ClientStream) serviceResponse.connection(),
                                            complete,
                                            callChain::closeResponse);
 

@@ -16,12 +16,6 @@
 
 package io.helidon.webclient.http2;
 
-import java.time.Duration;
+class OutputStreamInterruptedException extends RuntimeException {
 
-interface Http2StreamConfig {
-    boolean priorKnowledge();
-
-    int priority();
-
-    Duration readTimeout();
 }

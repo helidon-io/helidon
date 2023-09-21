@@ -42,6 +42,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
+    private final Http2ClientStream stream;
     private final CompletableFuture<Void> complete;
     private final Runnable closeResponseRunnable;
     private final CompletableFuture<ClientResponseTrailers> responseTrailers;
@@ -59,6 +60,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                             InputStream inputStream, // input stream is nullable - no response entity
                             MediaContext mediaContext,
                             ClientUri lastEndpointUri,
+                            Http2ClientStream stream,
                             CompletableFuture<Void> complete,
                             Runnable closeResponseRunnable) {
         this.httpClientConfig = httpClientConfig;
@@ -69,6 +71,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         this.inputStream = inputStream;
         this.mediaContext = mediaContext;
         this.lastEndpointUri = lastEndpointUri;
+        this.stream = stream;
         this.complete = complete;
         this.closeResponseRunnable = closeResponseRunnable;
     }
@@ -123,6 +126,10 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                 responseHeaders,
                 mediaContext
         );
+    }
+
+    Http2ClientStream stream() {
+        return stream;
     }
 
     private BufferData readBytes(int estimate) {

@@ -53,14 +53,6 @@ public interface Http2ClientRequest extends ClientRequest<Http2ClientRequest> {
     Http2ClientRequest requestPrefetch(int requestPrefetch);
 
     /**
-     * Maximum timeout for the data reception from request stream.
-     *
-     * @param timeout timeout duration
-     * @return updated request
-     */
-    Http2ClientRequest timeout(Duration timeout);
-
-    /**
      * Outbound flow control blocking timeout.
      *
      * @param timeout duration
