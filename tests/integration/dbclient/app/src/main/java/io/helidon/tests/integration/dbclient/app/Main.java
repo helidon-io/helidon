@@ -98,7 +98,7 @@ public class Main {
         // Prepare routing for the server
         WebServer server = WebServer.builder()
                 .routing(routing -> routing
-                        .addFeature(ObserveFeature.create(health))
+                        .addFeature(ObserveFeature.builder().addObserver(health))
                         .register("/Init", new InitService(dbClient, dbConfig))
                         .register("/Exit", exitResource)
                         .register("/Verify", new VerifyService(dbClient, config))

@@ -74,6 +74,7 @@ interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
      * @return set to {@code false} to disable discovery
      */
     @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean useSystemServices();
 
     /**

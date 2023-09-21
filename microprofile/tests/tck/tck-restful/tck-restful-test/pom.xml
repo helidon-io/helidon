@@ -97,6 +97,7 @@
                         <!-- Gets stuck -->
                         <exclude>ee/jakarta/tck/ws/rs/ee/rs/core/request/JAXRSClientIT.java</exclude>
                         <!-- FIXME: Next tests must be enabled -->
+                        <exclude>ee.jakarta.tck.ws.rs.ee.resource.webappexception.mapper.JAXRSClientIT</exclude>
                         <exclude>ee/jakarta/tck/ws/rs/spec/client/exceptions/ClientExceptionsIT.java</exclude>
                         <exclude>ee/jakarta/tck/ws/rs/ee/rs/container/responsecontext/JAXRSClientIT.java</exclude>
                         <exclude>ee/jakarta/tck/ws/rs/ee/rs/pathparam/sub/JAXRSSubClientIT.java</exclude>

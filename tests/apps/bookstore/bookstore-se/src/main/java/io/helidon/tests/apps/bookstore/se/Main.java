@@ -160,11 +160,15 @@ public final class Main {
                 .addCheck(DiskSpaceHealthCheck.create())
                 .addCheck(DeadlockHealthCheck.create())
                 .details(true)
+                .endpoint("/health")
+                .build();
+        MetricsObserver metrics = MetricsObserver.builder()
+                .endpoint("/metrics")
                 .build();
 
         HttpRouting.Builder builder = HttpRouting.builder()
-                // Health at "/observe/health", and metrics at "/observe/metrics"
-                .addFeature(ObserveFeature.create(health, MetricsObserver.create()))
+                // Health at "/health", and metrics at "/metrics"
+                .addFeature(ObserveFeature.create(health, metrics))
                 .register(SERVICE_PATH, new BookService(config));
 
         return builder.build();
