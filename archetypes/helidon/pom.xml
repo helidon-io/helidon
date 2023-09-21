@@ -103,6 +103,13 @@
                                     <files>
                                         <file target="cli-data/latest">${project.version}</file>
                                     </files>
+                                    <templates>
+                                        <template source="src/main/cli/versions.xml.mustache" target="cli-data/versions.xml">
+                                            <variables>
+                                                <variable name="version" value="${project.version}"/>
+                                            </variables>
+                                        </template>
+                                    </templates>
                                 </directory>
                             </directories>
                         </configuration>
