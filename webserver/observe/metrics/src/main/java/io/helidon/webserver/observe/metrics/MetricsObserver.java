@@ -36,7 +36,7 @@ import io.helidon.webserver.observe.spi.Observer;
  *        .register(ObserveFeature.create())
  * }</pre>
  *
- * See {@link io.helidon.webserver.observe.ObserveFeature#create(io.helidon.webserver.observe.spi.Observer...)}
+ * See {@link io.helidon.webserver.observe.ObserveFeature#just(io.helidon.webserver.observe.spi.Observer...)}
  * to customize observer setup.
  * <p>
  * This class supports finer grained configuration using Helidon Config:

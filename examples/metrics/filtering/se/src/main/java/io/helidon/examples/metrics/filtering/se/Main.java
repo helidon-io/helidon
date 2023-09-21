@@ -102,7 +102,7 @@ public final class Main {
                 .build();
         GreetService greetService = new GreetService(config, meterRegistry);
 
-        routing.addFeature(ObserveFeature.create(metrics))
+        routing.addFeature(ObserveFeature.just(metrics))
                 .register("/greet", greetService);
     }
 }

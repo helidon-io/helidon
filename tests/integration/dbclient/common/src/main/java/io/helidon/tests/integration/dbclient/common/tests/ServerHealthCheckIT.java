@@ -69,7 +69,7 @@ public class ServerHealthCheckIT {
                             .addCheck(check)
                             .build();
 
-                    routing.addFeature(ObserveFeature.create(health));
+                    routing.addFeature(ObserveFeature.just(health));
                 })
                 .config(config.get("server"))
                 .build();

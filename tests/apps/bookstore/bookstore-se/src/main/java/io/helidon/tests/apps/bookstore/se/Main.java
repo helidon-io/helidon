@@ -168,7 +168,7 @@ public final class Main {
 
         HttpRouting.Builder builder = HttpRouting.builder()
                 // Health at "/health", and metrics at "/metrics"
-                .addFeature(ObserveFeature.create(health, metrics))
+                .addFeature(ObserveFeature.just(health, metrics))
                 .register(SERVICE_PATH, new BookService(config));
 
         return builder.build();

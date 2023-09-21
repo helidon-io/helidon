@@ -45,6 +45,19 @@ final class HealthObserverSupport {
                 builder.addCheck(new TypedCheck(check, type));
             }
         }
+
+        /**
+         * Add the provided health checks.
+         *
+         * @param builder required for the custom method
+         * @param checks  health checks to add
+         */
+        @Prototype.BuilderMethod
+        static void addChecks(HealthObserverConfig.BuilderBase<?, ?> builder, HealthCheck[] checks) {
+            for (HealthCheck healthCheck : checks) {
+                builder.addCheck(healthCheck);
+            }
+        }
     }
 
     private static final class TypedCheck implements HealthCheck {

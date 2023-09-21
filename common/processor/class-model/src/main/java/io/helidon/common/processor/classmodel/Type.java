@@ -33,7 +33,7 @@ abstract class Type extends ModelComponent {
             if (typeName.array()
                     || Optional.class.getName().equals(typeName.declaredName())) {
                 return ConcreteType.builder()
-                        .type(TypeName.create(typeName.declaredName()))
+                        .type(typeName)
                         .build();
             } else if (typeName.wildcard()) {
                 boolean isObject = typeName.name().equals("?") || Object.class.getName().equals(typeName.name());

@@ -33,7 +33,7 @@
             <list key="Main-routing">
                 <value template="mustache"><![CDATA[
         ObserveFeature observe = ObserveFeature.builder()
-                                               .useSystemServices(false)
+                                               .observersDiscoverServices(false)
                                                {{#Observe-feature-builder}}
                                                {{.}}
                                                {{/Observe-feature-builder}}
@@ -57,12 +57,10 @@
                 <value>io.helidon.health.checks.DeadlockHealthCheck</value>
                 <value>io.helidon.health.checks.DiskSpaceHealthCheck</value>
                 <value>io.helidon.health.checks.HeapMemoryHealthCheck</value>
-                <value>io.helidon.webserver.observe.health.HealthFeature</value>
-                <value>io.helidon.webserver.observe.health.HealthObserveProvider</value>
+                <value>io.helidon.webserver.observe.health.HealthObserver</value>
             </list>
             <list key="Main-helidon-imports" if="${metrics}">
-                <value>io.helidon.webserver.observe.metrics.MetricsFeature</value>
-                <value>io.helidon.webserver.observe.metrics.MetricsObserveProvider</value>
+                <value>io.helidon.webserver.observe.metrics.MetricsObserver</value>
             </list>
             <list key="Main-helidon-imports" if="${tracing}">
                 <value>io.helidon.webserver.http2.Http2Route</value>
@@ -113,7 +111,7 @@
 ]]></value>
             </list>
             <list key="Observe-feature-builder">
-                <value if="${metrics}"><![CDATA[                    .addProvider(MetricsObserveProvider.create())]]></value>
+                <value if="${metrics}"><![CDATA[                    .addObserver(MetricsObserver.create())]]></value>
             </list>
             <list key="Abstract-tests">
                 <value if="${metrics}"><![CDATA[

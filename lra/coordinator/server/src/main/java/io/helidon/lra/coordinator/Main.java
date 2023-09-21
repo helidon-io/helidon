@@ -61,7 +61,7 @@ public class Main {
     }
 
     private static void updateRouting(HttpRouting.Builder routing, Config config, CoordinatorService coordinatorService) {
-        routing.addFeature(ObserveFeature.create(MetricsObserver.create(), HealthObserver.create(HealthChecks.healthChecks())))
+        routing.addFeature(ObserveFeature.just(MetricsObserver.create(), HealthObserver.create(HealthChecks.healthChecks())))
                 .register(config.get("mp.lra.coordinator.context.path")
                         .asString()
                         .orElse("/lra-coordinator"), coordinatorService)

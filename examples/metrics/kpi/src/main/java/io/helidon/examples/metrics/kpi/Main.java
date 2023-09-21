@@ -91,7 +91,7 @@ public final class Main {
 
         GreetService greetService = new GreetService(config);
 
-        routing.addFeature(ObserveFeature.create(metricsSupport))
+        routing.addFeature(ObserveFeature.just(metricsSupport))
                 .register("/greet", greetService);
     }
 

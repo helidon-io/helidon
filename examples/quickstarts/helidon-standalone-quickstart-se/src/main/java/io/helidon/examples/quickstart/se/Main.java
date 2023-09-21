@@ -16,6 +16,7 @@
 
 package io.helidon.examples.quickstart.se;
 
+import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
@@ -42,6 +43,7 @@ public final class Main {
         LogConfig.configureRuntime();
 
         WebServer server = WebServer.builder()
+                .config(Config.global().get("server"))
                 .routing(Main::routing)
                 .build()
                 .start();
@@ -53,8 +55,10 @@ public final class Main {
      * Updates HTTP Routing and registers observe providers.
      */
     static void routing(HttpRouting.Builder routing) {
-        GreetService greetService = new GreetService();
+        Config config = Config.global();
+
+        GreetService greetService = new GreetService(config.get("app"));
         routing.register("/greet", greetService)
-                .addFeature(ObserveFeature.create());
+                .addFeature(ObserveFeature.create(config.get("observe")));
     }
 }

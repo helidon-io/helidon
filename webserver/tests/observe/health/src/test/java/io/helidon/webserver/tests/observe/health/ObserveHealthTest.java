@@ -48,7 +48,7 @@ class ObserveHealthTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
         healthCheck = new MyHealthCheck();
-        routing.addFeature(ObserveFeature.create(HealthObserver.create(healthCheck)));
+        routing.addFeature(ObserveFeature.just(HealthObserver.create(healthCheck)));
     }
 
     @BeforeEach

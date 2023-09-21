@@ -107,7 +107,7 @@ public final class Se1Main {
                                 System.currentTimeMillis())
                         .build())
                 .build();
-        ObserveFeature observe = ObserveFeature.create(health);
+        ObserveFeature observe = ObserveFeature.just(health);
 
         return HttpRouting.builder()
                 .addFeature(observe)

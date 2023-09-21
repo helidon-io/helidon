@@ -81,7 +81,7 @@ public class Main {
 
         MovieService movieService = new MovieService(new MovieRepository(neo4jDriver));
 
-        ObserveFeature observe = ObserveFeature.create(HealthObserver.builder()
+        ObserveFeature observe = ObserveFeature.just(HealthObserver.builder()
                                                                   .useSystemServices(false)
                                                                   .addCheck(HeapMemoryHealthCheck.create())
                                                                   .addCheck(DiskSpaceHealthCheck.create())

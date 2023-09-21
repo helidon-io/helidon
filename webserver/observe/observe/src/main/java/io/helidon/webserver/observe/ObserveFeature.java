@@ -117,9 +117,26 @@ public class ObserveFeature implements HttpFeature, Weighted, RuntimeType.Api<Ob
      * @param observers observer to use
      * @return a new observe support
      */
-    public static ObserveFeature create(Observer... observers) {
+    public static ObserveFeature just(Observer... observers) {
         return builder()
                 .observersDiscoverServices(false)
+                .update(it -> {
+                    for (Observer observer : observers) {
+                        it.addObserver(observer);
+                    }
+                })
+                .build();
+    }
+
+    /**
+     * Create a new support with default configuration and an explicit list of observers.
+     * This will use providers discovered by {@link java.util.ServiceLoader}.
+     *
+     * @param observers observer to use
+     * @return a new observe support
+     */
+    public static ObserveFeature create(Observer... observers) {
+        return builder()
                 .update(it -> {
                     for (Observer observer : observers) {
                         it.addObserver(observer);
