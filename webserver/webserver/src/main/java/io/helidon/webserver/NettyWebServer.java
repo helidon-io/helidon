@@ -165,7 +165,7 @@ class NettyWebServer implements WebServer {
             bootstraps.put(name, bootstrap);
 
             // subscribe to updates
-            soConfig.tls().ifPresent((tlsConfig) -> updateTls(tlsConfig, name));
+            soConfig.tls().ifPresent(tlsConfig -> updateTls(tlsConfig, name));
         }
 
         // Log entry that also initializes NettyInitializer class
@@ -175,9 +175,6 @@ class NettyWebServer implements WebServer {
     }
 
     private SslContext createSslContext(WebServerTls webServerTls) {
-        // initialize the manager
-        webServerTls.manager().init(webServerTls);
-
         // Transform java SSLContext into Netty SslContext
         SSLContext context = webServerTls.sslContext();
         if (context != null) {

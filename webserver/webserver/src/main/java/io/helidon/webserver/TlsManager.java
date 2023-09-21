@@ -32,7 +32,8 @@ import javax.net.ssl.X509TrustManager;
 public interface TlsManager {
 
     /**
-     * Always called before any other method on this type. This method is only called when TLS is enabled.
+     * Always called before any other method on this type. This method is only called when TLS is enabled and no explicit
+     * SSLContext was passed to the builder.
      * In case the TLS is disabled, none of the methods on this type can be called.
      *
      * @param tls TLS configuration
@@ -48,7 +49,7 @@ public interface TlsManager {
 
     /**
      * SSL context created by this manager.
-     * This method is called only after {@link #init(WebServerTls, Consumer)} and only if {@link WebServerTls#enabled()} is
+     * This method is called only after {@link #init(WebServerTls)} and only if {@link WebServerTls#enabled()} is
      * {@code true}.
      *
      * @return the SSL context to use
@@ -56,14 +57,14 @@ public interface TlsManager {
     SSLContext sslContext();
 
     /**
-     * The key manager in use.
+     * The key manager in use, if available.
      *
      * @return key manager
      */
     Optional<X509KeyManager> keyManager();
 
     /**
-     * The trust manager in use.
+     * The trust manager in use, if available.
      *
      * @return trust manager
      */
