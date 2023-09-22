@@ -19,7 +19,7 @@ package io.helidon.examples.metrics.filtering.se;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -63,7 +63,8 @@ public class GreetService implements HttpService {
     private final Timer timerForGets;
     private final Counter personalizedGreetingsCounter;
 
-    GreetService(Config config, MeterRegistry meterRegistry) {
+    GreetService(MeterRegistry meterRegistry) {
+        Config config = Config.global();
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
         timerForGets = meterRegistry.getOrCreate(Timer.builder(TIMER_FOR_GETS));
         personalizedGreetingsCounter = meterRegistry.getOrCreate(Counter.builder(COUNTER_FOR_PERSONALIZED_GREETINGS));

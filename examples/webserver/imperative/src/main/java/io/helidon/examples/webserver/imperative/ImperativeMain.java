@@ -16,8 +16,7 @@
 
 package io.helidon.examples.webserver.imperative;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.Config;
 import io.helidon.http.Method;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
@@ -35,7 +34,8 @@ public final class ImperativeMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        Config config = GlobalConfig.config();
+        Config config = Config.create();
+        Config.global(config);
 
         WebServer server = WebServer.create(ws -> ws.config(config.get("server"))
                         .routing(ImperativeMain::routing))

@@ -61,7 +61,8 @@ public class ClientMainTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        ServerMain.setup(server, Config.create());
+        Config.global(Config.create());
+        ServerMain.setup(server);
     }
 
     @AfterEach

@@ -47,14 +47,15 @@ public final class Main {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default, this will pick up application.yaml from the classpath
+        // initialize global config from default configuration
         Config config = Config.create();
+        Config.global(config);
 
         // Get webserver config from the "server" section of application.yaml
         WebServerConfig.Builder builder = WebServer.builder();
         WebServer server = builder
                 .config(config.get("server"))
-                .routing(it -> routing(it, config))
+                .routing(Main::routing)
                 .build()
                 .start();
 
@@ -65,14 +66,12 @@ public final class Main {
      * Setup routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    static void routing(HttpRouting.Builder routing, Config config) {
-
-        GreetService greetService = new GreetService(config);
+    static void routing(HttpRouting.Builder routing) {
+        Config config = Config.global();
 
         // Note: Add the CORS routing *before* registering the GreetService routing.
-        routing.register("/greet", corsSupportForGreeting(config), greetService)
+        routing.register("/greet", corsSupportForGreeting(config), new GreetService())
                 .addFeature(ObserveFeature.create());
     }
 

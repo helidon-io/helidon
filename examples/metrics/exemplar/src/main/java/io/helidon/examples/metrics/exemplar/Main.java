@@ -60,8 +60,9 @@ public final class Main {
 
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
+        Config.global(config);
 
-        server.routing(r -> routing(r, config))
+        server.routing(Main::routing)
                 .config(config.get("server"));
 
     }
@@ -70,12 +71,12 @@ public final class Main {
      * Setup routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    static void routing(HttpRouting.Builder routing, Config config) {
+    static void routing(HttpRouting.Builder routing) {
+        Config config = Config.global();
         Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
         routing.addFeature(ObserveFeature.create())
                 .addFeature(TracingFeature.create(tracer))
-                .register("/greet", new GreetService(config));
+                .register("/greet", new GreetService());
     }
 }

@@ -36,7 +36,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
 @ServerTest
-@Disabled
 public class MainTest {
 
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
@@ -79,6 +78,7 @@ public class MainTest {
     }
 
     @Test
+    @Disabled // application metrics returns 404
     public void testMetrics() {
         try (Http1ClientResponse response = client.get("/greet").request()) {
             assertThat(response.as(String.class), containsString("Hello World!"));

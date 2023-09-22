@@ -49,7 +49,8 @@ public class SimpleGreetService implements HttpService {
 
     private final String greeting;
 
-    SimpleGreetService(Config config) {
+    SimpleGreetService() {
+        Config config = Config.global();
         greeting = config.get("app.greeting").asString().orElse("Ciao");
     }
 

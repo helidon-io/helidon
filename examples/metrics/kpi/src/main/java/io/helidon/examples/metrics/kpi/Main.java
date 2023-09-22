@@ -66,8 +66,9 @@ public final class Main {
 
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
+        Config.global(config);
 
-        server.routing(r -> routing(r, config))
+        server.routing(Main::routing)
                 .config(config.get("server"));
 
     }
@@ -76,9 +77,10 @@ public final class Main {
      * Setup routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    private static void routing(HttpRouting.Builder routing, Config config) {
+    private static void routing(HttpRouting.Builder routing) {
+        Config config = Config.global();
+
         /*
          * For purposes of illustration, the key performance indicator settings for the
          * MetricsSupport instance are set up according to a system property, so you can see,
@@ -89,10 +91,8 @@ public final class Main {
                 ? metricsSupportWithConfig(config.get("metrics"))
                 : metricsSupportWithoutConfig();
 
-        GreetService greetService = new GreetService(config);
-
         routing.addFeature(ObserveFeature.just(metricsSupport))
-                .register("/greet", greetService);
+                .register("/greet", new GreetService());
     }
 
     /**
