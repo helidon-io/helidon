@@ -23,6 +23,9 @@
 :feature-name: SSE
 :rootdir: {docdir}/../..
 
+
+include::{rootdir}/includes/se.adoc[]
+
 == Contents
 
 - <<Overview, Overview>>

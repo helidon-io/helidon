@@ -24,13 +24,11 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-Helidon SE is a compact toolkit that embraces the latest Java SE features:
-reactive streams, asynchronous and functional programming, and fluent-style
-APIs.
+Helidon SE is Helidon's foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking. 
 
 == Components
 
-The REST framework for Helidon SE is the Helidon WebServer. It is built on top of Netty and uses a straight forward request routing API.
+The REST framework for Helidon SE is the Helidon WebServer. It was built from the ground up to take full advantage of Java 21's virtual threads.
 
 Helidon SE supports a number of additional Helidon features:
 
@@ -144,12 +142,14 @@ HTTP client that handles responses to the HTTP requests in a reactive way.
 .WebServer
 [icon=settings_ethernet,link=webserver.adoc]
 --
-A programmatic HTTP API with reactive features, powered by Netty.
+A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests. 
+// Each request runs in its own dedicated thread so it is free to perform blocking operations in a simple synchronous way without blocking a platform thread or starving other requests.
+
 --
 //WebSocket
 [CARD]
 .WebSocket
-[icon=timeline,link=websocket.adoc]
+[icon=sync_alt,link=websocket.adoc]
 --
 Enables Java applications to participate in WebSocket interactions as both servers and clients.
 --
