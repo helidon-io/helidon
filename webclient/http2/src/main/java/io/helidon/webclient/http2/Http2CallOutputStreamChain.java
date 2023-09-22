@@ -53,7 +53,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         ClientUri uri = serviceRequest.uri();
         Http2Headers http2Headers = prepareHeaders(serviceRequest.method(), headers, uri);
 
-        stream.write(http2Headers, false);
+        stream.writeHeaders(http2Headers, false);
         whenSent.complete(serviceRequest);
 
         stream.waitFor100Continue();

@@ -30,14 +30,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
-import io.helidon.http.http2.FlowControl;
-import io.helidon.http.http2.Http2Flag;
-import io.helidon.http.http2.Http2Flag.DataFlags;
-import io.helidon.http.http2.Http2FrameData;
-import io.helidon.http.http2.Http2FrameHeader;
-import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http.ServerResponseBase;
 
@@ -45,12 +38,10 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
 
     private final ConnectionContext ctx;
-    private final Http2StreamWriter writer;
-    private final int streamId;
     private final ServerResponseHeaders headers;
     private final ServerResponseTrailers trailers;
-    private final FlowControl.Outbound flowControl;
     private final Http2ServerRequest request;
+    private final Http2ServerStream stream;
 
     private boolean isSent;
     private boolean streamingEntity;
@@ -59,17 +50,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private UnaryOperator<OutputStream> outputStreamFilter;
     private String streamResult = null;
 
-    Http2ServerResponse(ConnectionContext ctx,
-                        Http2ServerRequest request,
-                        Http2StreamWriter writer,
-                        int streamId,
-                        FlowControl.Outbound flowControl) {
-        super(ctx, request);
-        this.ctx = ctx;
+    Http2ServerResponse(Http2ServerStream stream,
+                        Http2ServerRequest request) {
+        super(stream.connectionContext(), request);
+        this.ctx = stream.connectionContext();
         this.request = request;
-        this.writer = writer;
-        this.streamId = streamId;
-        this.flowControl = flowControl;
+        this.stream = stream;
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
     }
@@ -119,26 +105,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
         boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
 
-        Http2FrameData frameData =
-                new Http2FrameData(Http2FrameHeader.create(bytes.length,
-                                                           Http2FrameTypes.DATA,
-                                                           DataFlags.create(sendTrailers ? 0 : Http2Flag.END_OF_STREAM),
-                                                           streamId),
-                                   BufferData.create(bytes));
-
         http2Headers.validateResponse();
-        bytesWritten = writer.writeHeaders(http2Headers,
-                                           streamId,
-                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                           frameData, flowControl);
+        bytesWritten += stream.writeHeadersWithData(http2Headers, bytes.length, BufferData.create(bytes), !sendTrailers);
 
         if (sendTrailers) {
-            Http2Headers http2trailers = Http2Headers.create(trailers);
-            int written = writer.writeHeaders(http2trailers,
-                                              streamId,
-                                              Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                              flowControl);
-            bytesWritten += written;
+            bytesWritten += stream.writeTrailers(Http2Headers.create(trailers));
         }
 
         afterSend();
@@ -244,12 +215,10 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private final Http2ServerRequest request;
         private final ServerResponseHeaders headers;
         private final ServerResponseTrailers trailers;
-        private final Http2StreamWriter writer;
-        private final int streamId;
-        private final FlowControl.Outbound flowControl;
         private final Status status;
         private final Runnable responseCloseRunnable;
         private final Http2ServerResponse response;
+        private final Http2ServerStream stream;
 
         private BufferData firstBuffer;
         private boolean closed;
@@ -263,9 +232,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             this.response = response;
             this.headers = response.headers;
             this.trailers = response.trailers;
-            this.writer = response.writer;
-            this.streamId = response.streamId;
-            this.flowControl = response.flowControl;
+            this.stream = response.stream;
             this.status = response.status();
             this.responseCloseRunnable = responseCloseRunnable;
         }
@@ -309,7 +276,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             } else if (sendTrailers) {
                 sendTrailers();
             } else {
-                sendEndOfStream();
+                bytesWritten += stream.writeData(BufferData.empty(), true);
             }
             responseCloseRunnable.run();
             try {
@@ -332,9 +299,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             if (firstByte) {
                 sendHeadersAndPrepare();
                 firstByte = false;
-                writeChunk(BufferData.create(firstBuffer, buffer));
+                bytesWritten += stream.writeData(BufferData.create(firstBuffer, buffer), false);
             } else {
-                writeChunk(buffer);
+                bytesWritten += stream.writeData(buffer, false);
             }
         }
 
@@ -358,29 +325,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
             // at this moment, we must send headers
             if (contentLength == 0) {
-                int written = writer.writeHeaders(http2Headers,
-                                                  streamId,
-                                                  Http2Flag.HeaderFlags.create(
-                                                          sendTrailers
-                                                                  ? Http2Flag.END_OF_HEADERS
-                                                                  : Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                                  flowControl);
-                bytesWritten += written;
+                bytesWritten += stream.writeHeaders(http2Headers, !sendTrailers);
             } else {
-                Http2FrameData frameData =
-                        new Http2FrameData(Http2FrameHeader.create(contentLength,
-                                                                   Http2FrameTypes.DATA,
-                                                                   DataFlags.create(sendTrailers
-                                                                                            ? 0
-                                                                                            : Http2Flag.END_OF_STREAM),
-                                                                   streamId),
-                                           firstBuffer);
-                int written = writer.writeHeaders(http2Headers,
-                                                  streamId,
-                                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                                  frameData, flowControl);
-
-                bytesWritten += written;
+                bytesWritten += stream.writeHeadersWithData(http2Headers, contentLength, firstBuffer, !sendTrailers);
             }
         }
 
@@ -390,36 +337,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);
             http2Headers.validateResponse();
-            int written = writer.writeHeaders(http2Headers,
-                                              streamId,
-                                              Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                              flowControl);
 
-            bytesWritten += written;
-        }
-
-        private void writeChunk(BufferData buffer) {
-            Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(buffer.available(),
-                                                                                  Http2FrameTypes.DATA,
-                                                                                  DataFlags.create(0),
-                                                                                  streamId),
-                                                          buffer);
-            bytesWritten += frameData.header().length();
-            bytesWritten += Http2FrameHeader.LENGTH;
-
-            writer.writeData(frameData, flowControl);
-        }
-
-        private void sendEndOfStream() {
-            Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(0,
-                                                                                  Http2FrameTypes.DATA,
-                                                                                  DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                                  streamId),
-                                                          BufferData.empty());
-
-            bytesWritten += frameData.header().length();
-            bytesWritten += Http2FrameHeader.LENGTH;
-            writer.writeData(frameData, flowControl);
+            bytesWritten += stream.writeHeaders(http2Headers, false);
         }
 
         private void sendTrailers(){
@@ -429,12 +348,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             trailers.set(STREAM_STATUS_NAME, response.status().code());
 
             Http2Headers http2Headers = Http2Headers.create(trailers);
-            int written = writer.writeHeaders(http2Headers,
-                                              streamId,
-                                              Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
-                                                                                   | Http2Flag.END_OF_STREAM),
-                                              flowControl);
-            bytesWritten += written;
+            bytesWritten += stream.writeTrailers(http2Headers);
         }
     }
 }

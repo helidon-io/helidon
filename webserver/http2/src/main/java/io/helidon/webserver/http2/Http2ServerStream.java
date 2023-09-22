@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketWriterException;
@@ -86,13 +85,13 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     private final Router router;
     private final ArrayBlockingQueue<DataFrame> inboundData = new ArrayBlockingQueue<>(32);
     private final StreamFlowControl flowControl;
-    private final AtomicBoolean send100Continue = new AtomicBoolean(false);
 
     private boolean wasLastDataFrame = false;
     private volatile Http2Headers headers;
     private volatile Http2Priority priority;
     // used from this instance and from connection
     private volatile Http2StreamState state = Http2StreamState.IDLE;
+    private WriteState writeState = WriteState.INIT;
     private Http2SubProtocolSelector.SubProtocolHandler subProtocolHandler;
     private long expectedLength = -1;
     private HttpRouting routing;
@@ -329,8 +328,61 @@ public class Http2ServerStream implements Runnable, Http2Stream {
         }
     }
 
-    void send100Continue() {
-        if (send100Continue.getAndSet(false)) {
+    int writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
+        writeState = writeState.check(endOfStream ? WriteState.END : WriteState.HEADERS_SENT);
+
+        Http2Flag.HeaderFlags flags;
+        if (endOfStream) {
+            flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
+        } else {
+            flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS);
+        }
+        return writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+    }
+
+    int writeHeadersWithData(Http2Headers http2Headers, int contentLength, BufferData bufferData, boolean endOfStream) {
+        writeState = writeState.check(WriteState.HEADERS_SENT);
+        writeState = writeState.check(endOfStream ? WriteState.END : WriteState.DATA_SENT);
+
+        Http2FrameData frameData =
+                new Http2FrameData(Http2FrameHeader.create(contentLength,
+                                                           Http2FrameTypes.DATA,
+                                                           Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0),
+                                                           streamId),
+                                   bufferData);
+        return writer.writeHeaders(http2Headers, streamId,
+                                   Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                   frameData,
+                                   flowControl.outbound());
+    }
+
+    int writeData(BufferData bufferData, boolean endOfStream) {
+        writeState = writeState.check(endOfStream ? WriteState.END : WriteState.DATA_SENT);
+
+        Http2FrameData frameData =
+                new Http2FrameData(Http2FrameHeader.create(bufferData.available(),
+                                                           Http2FrameTypes.DATA,
+                                                           Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0),
+                                                           streamId),
+                                   bufferData);
+
+        writer.writeData(frameData, flowControl.outbound());
+        return frameData.header().length() + Http2FrameHeader.LENGTH;
+    }
+
+    int writeTrailers(Http2Headers http2trailers) {
+        writeState = writeState.check(WriteState.TRAILERS_SENT);
+
+        return writer.writeHeaders(http2trailers,
+                                          streamId,
+                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                          flowControl.outbound());
+    }
+
+    void write100Continue() {
+        if (writeState == WriteState.EXPECTED_100) {
+            writeState = writeState.check(WriteState.CONTINUE_100_SENT);
+
             Header status = HeaderValues.createCached(Http2Headers.STATUS_NAME, 100);
             Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create().add(status));
             writer.writeHeaders(http2Headers,
@@ -348,8 +400,12 @@ public class Http2ServerStream implements Runnable, Http2Stream {
         this.prologue = prologue;
     }
 
+    ConnectionContext connectionContext() {
+        return this.ctx;
+    }
+
     private BufferData readEntityFromPipeline() {
-        send100Continue();
+        write100Continue();
         if (wasLastDataFrame) {
             return BufferData.empty();
         }
@@ -375,7 +431,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
             this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
         }
         if (headers.httpHeaders().contains(HeaderValues.EXPECT_100)) {
-            this.send100Continue.set(true);
+            writeState = writeState.check(WriteState.EXPECTED_100);
         }
 
         subProtocolHandler = null;
@@ -426,7 +482,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                                                                    decoder,
                                                                    streamId,
                                                                    this::readEntityFromPipeline);
-            Http2ServerResponse response = new Http2ServerResponse(ctx, request, writer, streamId, flowControl.outbound());
+            Http2ServerResponse response = new Http2ServerResponse(this, request);
             semaphoreAcquired = requestSemaphore.tryAcquire();
             try {
                 if (semaphoreAcquired) {
@@ -438,6 +494,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                     response.commit();
                 }
             } finally {
+                request.content().consume();
                 this.state = Http2StreamState.CLOSED;
             }
         } else {
@@ -461,4 +518,27 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private record DataFrame(Http2FrameHeader header, BufferData data) { }
+
+    private enum WriteState {
+        END,
+        TRAILERS_SENT(END),
+        DATA_SENT(TRAILERS_SENT, END),
+        HEADERS_SENT(DATA_SENT, TRAILERS_SENT, END),
+        CONTINUE_100_SENT(HEADERS_SENT),
+        EXPECTED_100(CONTINUE_100_SENT, HEADERS_SENT),
+        INIT(EXPECTED_100, HEADERS_SENT);
+
+        private final Set<WriteState> allowedTransitions;
+
+        WriteState(WriteState... allowedTransitions){
+            this.allowedTransitions = Set.of(allowedTransitions);
+        }
+
+        WriteState check(WriteState newState) {
+            if (this == newState || allowedTransitions.contains(newState)) {
+                return newState;
+            }
+            throw new IllegalStateException("Transition from " + this + " to " + newState + " is not allowed!");
+        }
+    }
 }
