@@ -55,8 +55,8 @@ public final class WebServerTls {
     private final Set<String> enabledTlsProtocols;
     private final Set<String> cipherSuite;
     private final SSLContext explicitSslContext;
-    private KeyConfig privateKeyConfig;
-    private KeyConfig trustConfig;
+    private final KeyConfig privateKeyConfig;
+    private final KeyConfig trustConfig;
     private final boolean trustAll;
     private final int sessionCacheSize;
     private final int sessionTimeoutSeconds;

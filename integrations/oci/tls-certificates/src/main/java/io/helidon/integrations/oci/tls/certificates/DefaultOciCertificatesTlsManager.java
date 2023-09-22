@@ -67,8 +67,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     private ScheduledExecutorService asyncExecutor;
     private Async async;
     private WebServerTls tlsConfig;
-    private volatile X509KeyManager keyManager;
-    private volatile X509TrustManager trustManager;
 
     DefaultOciCertificatesTlsManager(OciCertificatesTlsManagerConfig cfg) {
         this(cfg, "@default", null);
@@ -114,16 +112,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                 OciCertificatesTlsManagerConfig.class.getSimpleName() + " scheduled: " + taskIntervalDescription);
     }
 
-    @Override // TlsManager
-    public Optional<X509KeyManager> keyManager() {
-        return Optional.ofNullable(keyManager);
-    }
-
-    @Override // TlsManager
-    public Optional<X509TrustManager> trustManager() {
-        return Optional.ofNullable(trustManager);
-    }
-
     private void shutdown(Object event) {
         try {
             LOGGER.log(System.Logger.Level.DEBUG, "Shutting down");
@@ -131,11 +119,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
         } catch (Exception e) {
             LOGGER.log(System.Logger.Level.WARNING, "Shut down failed", e);
         }
-    }
-
-//    @Override // RuntimeType
-    OciCertificatesTlsManagerConfig prototype() {
-        return cfg;
     }
 
     // ConfiguredTlsManager
@@ -205,9 +188,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             if (trustManager.isEmpty()) {
                 throw new RuntimeException("Unable to find X.509 trust manager in download: " + cfg.certOcid());
             }
-
-            this.keyManager = keyManager.get();
-            this.trustManager = trustManager.get();
 
             if (initialLoad) {
                 initSslContext(tlsConfig, kmf.getKeyManagers(), tmf.getTrustManagers());

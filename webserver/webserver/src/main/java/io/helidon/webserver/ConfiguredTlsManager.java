@@ -27,7 +27,6 @@ import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -37,8 +36,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.pki.KeyConfig;
@@ -103,16 +100,6 @@ public class ConfiguredTlsManager implements TlsManager {
     }
 
     @Override // TlsManager
-    public Optional<X509KeyManager> keyManager() {
-        return Optional.empty();
-    }
-
-    @Override // TlsManager
-    public Optional<X509TrustManager> trustManager() {
-        return Optional.empty();
-    }
-
-    @Override // TlsManager
     public void init(WebServerTls tlsConfig) {
         SSLContext explicitSslContext = tlsConfig.explicitSslContext().orElse(null);
         if (explicitSslContext != null) {
@@ -120,7 +107,7 @@ public class ConfiguredTlsManager implements TlsManager {
             return;
         }
 
-        if (null == tlsConfig.privateKeyConfig()) {
+        if (tlsConfig.privateKeyConfig() == null) {
             throw new IllegalStateException("Private key must be configured when SSL is enabled.");
         }
 

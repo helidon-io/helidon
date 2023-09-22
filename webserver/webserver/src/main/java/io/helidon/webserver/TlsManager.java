@@ -16,12 +16,9 @@
 
 package io.helidon.webserver;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
 
 /**
  * Implementors of this contract are responsible for managing the {@link javax.net.ssl.SSLContext} instance lifecycle. When the
@@ -57,19 +54,5 @@ public interface TlsManager {
      * @return the SSL context to use
      */
     SSLContext sslContext();
-
-    /**
-     * The key manager in use, if available.
-     *
-     * @return key manager
-     */
-    Optional<X509KeyManager> keyManager();
-
-    /**
-     * The trust manager in use, if available.
-     *
-     * @return trust manager
-     */
-    Optional<X509TrustManager> trustManager();
 
 }
