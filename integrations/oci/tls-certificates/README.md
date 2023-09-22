@@ -27,6 +27,3 @@ In your application.yaml configuration, include a reference to the oci-certifica
         key-pass: TODO
 ...
 ```
-
-## Example
-* See [examples/microprofile/tls-certificates](../../../examples/microprofile/oci-tls-certificates) for more.
