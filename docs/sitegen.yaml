@@ -162,7 +162,6 @@ backend:
                 sources:
                   - "oci.adoc"
                   - "hcv.adoc"
-                  - "jedis.adoc"
                   - "neo4j.adoc"
               - type: "MENU"
                 title: "JAX-RS/Jersey"
