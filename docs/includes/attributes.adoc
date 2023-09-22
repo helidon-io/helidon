@@ -69,7 +69,6 @@ endif::[]
 
 // 3rd party
 :version-lib-jaeger: 1.22
-:version-lib-jedis: 3.6.3
 :version-lib-hikaricp: 5.0.1
 :version-lib-eclipselink: 4.0.2
 :version-lib-hibernate: 6.1.7.Final
@@ -237,7 +236,6 @@ endif::[]
 :hibernate-doc-jboss-url: https://docs.jboss.org/hibernate/orm/{version-lib-hibernate}
 :hibernate-javadoc-base-url: {hibernate-doc-jboss-url}/javadocs
 :jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
-:jedis-base-url: {javadoc-io-base-url}/static/redis.clients/jedis/{version-lib-jedis}/redis/clients
 :kafka-client-base-url: https://kafka.apache.org/28/documentation.html
 :openapi-version: 3.0.0
 :openapi-spec-base-url: https://github.com/OAI/OpenAPI-Specification/blob/master/versions

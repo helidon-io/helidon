@@ -1913,7 +1913,6 @@ Fourth Party Dependencies
                 <consumer>helidon-integrations-cdi-delegates</consumer>
                 <consumer>helidon-integrations-cdi-eclipselink</consumer>
                 <consumer>helidon-integrations-cdi-hibernate</consumer>
-                <consumer>helidon-integrations-cdi-jedis</consumer>
                 <consumer>helidon-integrations-cdi-jpa</consumer>
                 <consumer>helidon-integrations-cdi-jta</consumer>
                 <consumer>helidon-integrations-cdi-jta-weld</consumer>
@@ -2391,84 +2390,6 @@ Fourth Party Dependencies
 </attribution>
         </dependency>
         <dependency>
-            <id>106820</id>
-            <name>Jedis</name>
-            <version>3.6.3</version>
-            <licensor>Jonathan Leibiusky</licensor>
-            <licenseName>MIT</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-cdi-jedis</consumer>
-            </consumers>
-            <attribution>Copyright (c) 2010 Jonathan Leibiusky
-
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without
-restriction, including without limitation the rights to use,
-copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-############### 4th Party Dependencies ###############
-
-
-slf4j-api-1.7.30 (MIT)
-
-Copyright (c) 2004-2017 QOS.ch
-All rights reserved.
-
-Permission is hereby granted, free  of charge, to any person obtaining
-a  copy  of this  software  and  associated  documentation files  (the
-"Software"), to  deal in  the Software without  restriction, including
-without limitation  the rights to  use, copy, modify,  merge, publish,
-distribute,  sublicense, and/or sell  copies of  the Software,  and to
-permit persons to whom the Software  is furnished to do so, subject to
-the following conditions:
-
-The  above  copyright  notice  and  this permission  notice  shall  be
-included in all copies or substantial portions of the Software.
-
-THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
-EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
-MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-###################################################
-commons-pool2-2.9.0 (Apache 2.0)
-See full text at the bottom of this document for license: Apache-2.0
-APACHE COMMONS POOL DERIVATIVE WORKS:
-   
-   The LinkedBlockingDeque implementation is based on an implementation written by
-   Doug Lea with assistance from members of JCP JSR-166 Expert Group and released
-   to the public domain, as explained at
-   http://creativecommons.org/licenses/publicdomain
-   
-   
--- Notice file content
-Apache Commons Pool
-Copyright 2001-2021 The Apache Software Foundation
-
-This product includes software developed at
-The Apache Software Foundation (https://www.apache.org/).
-</attribution>
-        </dependency>
-        <dependency>
             <id>116743</id>
             <name>MicroProfile Config API</name>
             <version>3.0.1</version>
@@ -2482,7 +2403,6 @@ The Apache Software Foundation (https://www.apache.org/).
                 <consumer>helidon-integrations-cdi-datasource</consumer>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>
-                <consumer>helidon-integrations-cdi-jedis</consumer>
                 <consumer>helidon-integrations-micronaut-cdi</consumer>
                 <consumer>helidon-integrations-vault-cdi</consumer>
                 <consumer>helidon-messaging-mock</consumer>
@@ -5086,7 +5006,6 @@ limitations under the License.
                 <consumer>helidon-integrations-cdi-delegates</consumer>
                 <consumer>helidon-integrations-cdi-eclipselink</consumer>
                 <consumer>helidon-integrations-cdi-hibernate</consumer>
-                <consumer>helidon-integrations-cdi-jedis</consumer>
                 <consumer>helidon-integrations-cdi-jpa</consumer>
                 <consumer>helidon-integrations-cdi-jta</consumer>
                 <consumer>helidon-integrations-cdi-reference-counted-context</consumer>
