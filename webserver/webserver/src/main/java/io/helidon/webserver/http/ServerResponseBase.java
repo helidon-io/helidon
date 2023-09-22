@@ -92,6 +92,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
     @Override
     public T status(Status status) {
+        if (isSent()) {
+            throw new IllegalStateException("Response already sent");
+        }
         this.status = status;
         return (T) this;
     }

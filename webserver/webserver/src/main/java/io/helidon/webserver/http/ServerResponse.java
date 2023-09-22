@@ -28,6 +28,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.spi.Sink;
 
@@ -196,7 +197,7 @@ public interface ServerResponse {
      * @throws java.lang.IllegalStateException if client didn't ask for trailers with {@code TE: trailers} header in request
      * or response doesn't contain trailer declaration headers {@code Trailer: <trailer-name>}
      */
-    ServerResponseHeaders trailers();
+    ServerResponseTrailers trailers();
 
     /**
      * Description of the result of output stream processing.

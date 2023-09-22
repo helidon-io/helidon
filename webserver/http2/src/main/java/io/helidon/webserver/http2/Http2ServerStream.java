@@ -438,7 +438,6 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                     response.commit();
                 }
             } finally {
-                request.content().consume();
                 this.state = Http2StreamState.CLOSED;
             }
         } else {

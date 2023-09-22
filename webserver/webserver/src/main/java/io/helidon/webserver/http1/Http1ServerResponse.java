@@ -39,6 +39,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
@@ -68,7 +69,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private final DataWriter dataWriter;
     private final Http1ServerRequest request;
     private final ServerResponseHeaders headers;
-    private final ServerResponseHeaders trailers;
+    private final ServerResponseTrailers trailers;
     private final boolean keepAlive;
 
     private boolean streamingEntity;
@@ -93,7 +94,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         this.dataWriter = dataWriter;
         this.request = request;
         this.headers = ServerResponseHeaders.create();
-        this.trailers = ServerResponseHeaders.create();
+        this.trailers = ServerResponseTrailers.create();
         this.keepAlive = keepAlive;
         this.validateHeaders = validateHeaders;
     }
@@ -218,7 +219,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
-    public ServerResponseHeaders trailers() {
+    public ServerResponseTrailers trailers() {
         if (request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
             return trailers;
         }

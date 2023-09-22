@@ -61,9 +61,9 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class HeadersTest {
+class HeadersClientTest {
 
-    private static final System.Logger LOGGER = System.getLogger(HeadersTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HeadersClientTest.class.getName());
     private static final Header BEFORE_HEADER = HeaderValues.create("test", "before");
     private static final Header TRAILER_HEADER = HeaderValues.create("Trailer-header", "trailer-test");
     private static final Duration TIMEOUT = Duration.ofSeconds(10);

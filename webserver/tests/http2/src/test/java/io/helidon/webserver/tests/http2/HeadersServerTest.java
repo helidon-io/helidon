@@ -58,7 +58,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-public class HeadersTest {
+public class HeadersServerTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
@@ -143,7 +143,7 @@ public class HeadersTest {
         ));
     }
 
-    HeadersTest(WebServer server) {
+    HeadersServerTest(WebServer server) {
         client = Http2Client.builder()
                 .baseUri("http://localhost:" + server.port())
                 .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(true).build())

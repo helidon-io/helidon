@@ -28,6 +28,7 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2Flag;
@@ -47,7 +48,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private final Http2StreamWriter writer;
     private final int streamId;
     private final ServerResponseHeaders headers;
-    private final ServerResponseHeaders trailers;
+    private final ServerResponseTrailers trailers;
     private final FlowControl.Outbound flowControl;
     private final Http2ServerRequest request;
 
@@ -70,7 +71,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         this.streamId = streamId;
         this.flowControl = flowControl;
         this.headers = ServerResponseHeaders.create();
-        this.trailers = ServerResponseHeaders.create();
+        this.trailers = ServerResponseTrailers.create();
     }
 
     @Override
@@ -183,7 +184,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         return headers;
     }
     @Override
-    public ServerResponseHeaders trailers() {
+    public ServerResponseTrailers trailers() {
         if (request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
             return trailers;
         }
@@ -242,7 +243,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
         private final Http2ServerRequest request;
         private final ServerResponseHeaders headers;
-        private final ServerResponseHeaders trailers;
+        private final ServerResponseTrailers trailers;
         private final Http2StreamWriter writer;
         private final int streamId;
         private final FlowControl.Outbound flowControl;
@@ -425,7 +426,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             if (response.streamResult != null) {
                 trailers.set(STREAM_RESULT_NAME, response.streamResult);
             }
-            trailers.set(STREAM_STATUS_NAME, status.code());
+            trailers.set(STREAM_STATUS_NAME, response.status().code());
 
             Http2Headers http2Headers = Http2Headers.create(trailers);
             int written = writer.writeHeaders(http2Headers,

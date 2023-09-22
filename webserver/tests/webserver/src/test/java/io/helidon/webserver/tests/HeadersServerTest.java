@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @ServerTest
-class HeadersTest {
+class HeadersServerTest {
 
     private static final String DATA = "Helidon!!!".repeat(10);
     private static final Header TEST_TRAILER_HEADER = HeaderValues.create("test-trailer", "trailer-value");
