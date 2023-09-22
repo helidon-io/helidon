@@ -922,12 +922,11 @@
                 <artifactId>helidon-integrations-oci-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- TODO -->
-<!--            <dependency>-->
-<!--                <groupId>io.helidon.integrations.oci</groupId>-->
-<!--                <artifactId>helidon-integrations-oci-tls-certificates</artifactId>-->
-<!--                <version>${helidon.version}</version>-->
-<!--            </dependency>-->
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-tls-certificates</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.oci.metrics</groupId>
                 <artifactId>helidon-integrations-oci-metrics-cdi</artifactId>

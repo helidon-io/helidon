@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.Prioritized;
 import io.helidon.common.pki.PemReader;
 import io.helidon.integrations.oci.sdk.runtime.OciExtension;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
@@ -43,7 +44,16 @@ import static io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDo
  * Implementation of the {@link OciCertificatesDownloader} that will use OCI's Certificates Service to download certs.
  */
 @Singleton
-class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
+public class DefaultOciCertificatesDownloader implements OciCertificatesDownloader, Prioritized {
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
+     */
+    @Deprecated
+    public DefaultOciCertificatesDownloader() {
+    }
 
     @Override
     public Certificates loadCertificates(String certOcid) {
@@ -120,5 +130,10 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
 
         return String.valueOf(Arrays.hashCode(certs));
+    }
+
+    @Override
+    public int priority() {
+        return DEFAULT_PRIORITY;
     }
 }

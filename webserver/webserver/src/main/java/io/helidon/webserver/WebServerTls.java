@@ -106,6 +106,18 @@ public final class WebServerTls {
         return tlsManager;
     }
 
+    /**
+     * Trust any certificate provided by the other side of communication.
+     * <p>
+     * <b>This is a dangerous setting: </b> if set to {@code true}, any certificate will be accepted, throwing away
+     * most of the security advantages of TLS. <b>NEVER</b> do this in production.
+     *
+     * @return whether to trust all certificates, do not use in production
+     */
+    public boolean trustAll() {
+        return trustAll;
+    }
+
     Collection<String> enabledTlsProtocols() {
         return enabledTlsProtocols;
     }
@@ -120,10 +132,6 @@ public final class WebServerTls {
         }
 
         return manager().sslContext();
-    }
-
-    boolean trustAll() {
-        return trustAll;
     }
 
     KeyConfig privateKeyConfig() {
@@ -259,6 +267,7 @@ public final class WebServerTls {
          */
         @ConfiguredOption(provider = true)
         public Builder tlsManager(TlsManager tlsManager) {
+            this.enabled = true;
             this.tlsManager = Objects.requireNonNull(tlsManager);
             return this;
         }

@@ -23,19 +23,33 @@ import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 
 import jakarta.inject.Singleton;
 
+/**
+ * For testing.
+ */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT + 1)
-class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
+public class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
     static String version = "1";
 
     static int callCount_loadCertificates;
     static int callCount_loadCACertificate;
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
+     */
+    @Deprecated
+    public TestOciCertificatesDownloader() {
+    }
+
+    @Override
+    public int priority() {
+        return DEFAULT_PRIORITY - 1;
+    }
 
     @Override
     public Certificates loadCertificates(String certOcid) {

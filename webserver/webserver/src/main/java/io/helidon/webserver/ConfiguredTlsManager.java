@@ -125,12 +125,10 @@ public class ConfiguredTlsManager implements TlsManager {
         }
 
         try {
-            SecureRandom secureRandom = secureRandom(tlsConfig);
             KeyManagerFactory kmf = buildKmf(tlsConfig.privateKeyConfig());
             TrustManagerFactory tmf = buildTmf(tlsConfig);
 
             initSslContext(tlsConfig,
-                           secureRandom,
                            kmf.getKeyManagers(),
                            tmf.getTrustManagers());
         } catch (IOException | GeneralSecurityException e) {
@@ -142,35 +140,39 @@ public class ConfiguredTlsManager implements TlsManager {
      * Initialize and set the SSL context given the provided configuration.
      *
      * @param tlsConfig     the tls config
-     * @param secureRandom  the secure random instance
      * @param keyManagers   the key managers
      * @param trustManagers the trust managers
      */
     protected void initSslContext(WebServerTls tlsConfig,
-                                  SecureRandom secureRandom,
                                   KeyManager[] keyManagers,
                                   TrustManager[] trustManagers) {
         try {
             // Initialize the SSLContext to work with our key managers.
             SSLContext sslContext = SSLContext.getInstance(tlsConfig.protocol());
-            sslContext.init(keyManagers, trustManagers, secureRandom);
+            sslContext.init(keyManagers, trustManagers, secureRandom(tlsConfig));
 
-            SSLSessionContext serverSessionContext = sslContext.getServerSessionContext();
-            if (serverSessionContext != null) {
-                int sessionCacheSize = tlsConfig.sessionCacheSize();
-                if (sessionCacheSize > 0) {
-                    serverSessionContext.setSessionCacheSize(sessionCacheSize);
-                }
-                int sessionTimeoutSecs = tlsConfig.sessionTimeoutSeconds();
-                if (sessionTimeoutSecs > 0) {
-                    serverSessionContext.setSessionTimeout(sessionTimeoutSecs);
-                }
-            }
-
-            this.sslContext = sslContext;
+            configureAndSet(tlsConfig, sslContext);
         } catch (GeneralSecurityException e) {
             throw new IllegalArgumentException("Failed to create SSLContext", e);
         }
+    }
+
+    /**
+     * Called when there is a new {@link SSLContext}.
+     *
+     * @param tlsConfig     the tls config
+     * @param keyManagers   the key managers
+     * @param trustManagers the trust managers
+     * @deprecated this method will removed in a future release.
+     */
+    @Deprecated
+    protected void reload(WebServerTls tlsConfig,
+                          KeyManager[] keyManagers,
+                          TrustManager[] trustManagers) {
+        initSslContext(tlsConfig, keyManagers, trustManagers);
+
+        // notify subscribers
+        sslContextConsumers.forEach(c -> c.accept(sslContext));
     }
 
     /**
@@ -190,6 +192,36 @@ public class ConfiguredTlsManager implements TlsManager {
      */
     protected TrustManagerFactory trustAllTmf() {
         return new TrustAllManagerFactory();
+    }
+
+    /**
+     * Create a new trust manager factory based on the configuration (i.e., the algorithm and provider).
+     *
+     * @param tlsConfig TLS config
+     * @return a new trust manager factory
+     */
+    protected TrustManagerFactory createTmf(WebServerTls tlsConfig) {
+        try {
+            return TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Unable to create trust manager factory", e);
+        }
+    }
+
+    private void configureAndSet(WebServerTls tlsConfig,
+                                 SSLContext sslContext) {
+        SSLSessionContext serverSessionContext = sslContext.getServerSessionContext();
+        if (serverSessionContext != null) {
+            int sessionCacheSize = tlsConfig.sessionCacheSize();
+            if (sessionCacheSize > 0) {
+                serverSessionContext.setSessionCacheSize(sessionCacheSize);
+            }
+            int sessionTimeoutSecs = tlsConfig.sessionTimeoutSeconds();
+            if (sessionTimeoutSecs > 0) {
+                serverSessionContext.setSessionTimeout(sessionTimeoutSecs);
+            }
+        }
+        this.sslContext = sslContext;
     }
 
     private KeyManagerFactory buildKmf(KeyConfig privateKeyConfig) throws IOException, GeneralSecurityException {
@@ -239,7 +271,7 @@ public class ConfiguredTlsManager implements TlsManager {
             i++;
         }
 
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory tmf = createTmf(tlsConfig);
         tmf.init(ks);
         return tmf;
     }

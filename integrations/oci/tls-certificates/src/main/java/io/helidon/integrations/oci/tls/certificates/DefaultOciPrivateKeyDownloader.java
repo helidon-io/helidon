@@ -34,6 +34,7 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.helidon.common.Prioritized;
 import io.helidon.integrations.oci.sdk.runtime.OciExtension;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
 
@@ -47,11 +48,17 @@ import jakarta.inject.Singleton;
  * Implementation of the {@link OciPrivateKeyDownloader} that will use OCI's KMS to export a key.
  */
 @Singleton
-class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
+public class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader, Prioritized {
     private final PrivateKey wrappingPrivateKey;
     private final String wrappingPublicKeyPem;
 
-    DefaultOciPrivateKeyDownloader() {
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
+     */
+    @Deprecated
+    public DefaultOciPrivateKeyDownloader() {
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
             generator.initialize(2048);
@@ -123,4 +130,8 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
         return decrypt.doFinal(in);
     }
 
+    @Override
+    public int priority() {
+        return DEFAULT_PRIORITY;
+    }
 }

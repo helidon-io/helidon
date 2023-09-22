@@ -16,9 +16,9 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.tls.TlsManager;
-import io.helidon.common.tls.spi.TlsManagerProvider;
+import io.helidon.config.Config;
+import io.helidon.webserver.TlsManager;
+import io.helidon.webserver.spi.TlsManagerProvider;
 
 /**
  * The service provider for {@link OciCertificatesTlsManager}.

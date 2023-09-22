@@ -34,7 +34,6 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 @Singleton
 @SuppressWarnings("unused")
-// consider relocating this to somewhere under inject
 public class TestingCdiExtension implements Extension, LifecycleHook {
     static volatile boolean shutdownCalled;
     static final AtomicInteger running = new AtomicInteger();

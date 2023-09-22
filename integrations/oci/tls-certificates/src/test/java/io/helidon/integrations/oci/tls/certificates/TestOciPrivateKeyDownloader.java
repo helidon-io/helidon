@@ -20,18 +20,32 @@ import java.net.URI;
 import java.security.PrivateKey;
 import java.util.Objects;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
-import io.helidon.common.pki.Keys;
+import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
 import jakarta.inject.Singleton;
 
+/**
+ * For testing.
+ */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT + 1)
-class TestOciPrivateKeyDownloader extends DefaultOciPrivateKeyDownloader {
+public class TestOciPrivateKeyDownloader extends DefaultOciPrivateKeyDownloader {
 
     static int callCount;
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
+     */
+    @Deprecated
+    public TestOciPrivateKeyDownloader() {
+    }
+
+    @Override
+    public int priority() {
+        return DEFAULT_PRIORITY - 1;
+    }
 
     @Override
     public PrivateKey loadKey(String keyOcid,
@@ -45,7 +59,7 @@ class TestOciPrivateKeyDownloader extends DefaultOciPrivateKeyDownloader {
                 Objects.requireNonNull(keyOcid);
                 Objects.requireNonNull(vaultCryptoEndpoint);
 
-                Keys keys = Keys.builder()
+                KeyConfig keys = KeyConfig.fullBuilder()
                         .config(Config.create().get("test-keys"))
                         .build();
                 return keys.privateKey().orElseThrow();

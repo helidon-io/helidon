@@ -20,20 +20,17 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Blueprint configuration for {@link OciCertificatesTlsManager}.
  */
-@Prototype.Blueprint
-@Configured
-interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<OciCertificatesTlsManager> {
+//@Prototype.Blueprint
+//@Configured
+interface OciCertificatesTlsManagerConfigBlueprint /*extends Prototype.Factory<OciCertificatesTlsManager>*/ {
 
     /**
-     * The schedule for trigger a reload check, testing whether there is a new {@link io.helidon.common.tls.Tls} instance
-     * available.
+     * The schedule for trigger a reload check, testing whether there is a new certificate available.
      *
      * @return the schedule for reload
      */

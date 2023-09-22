@@ -18,17 +18,16 @@ package io.helidon.integrations.oci.tls.certificates;
 
 import java.util.function.Consumer;
 
-import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
-import io.helidon.common.tls.TlsManager;
+import io.helidon.config.Config;
+import io.helidon.webserver.TlsManager;
 
 /**
- * The OCI Certificates contract of {@link io.helidon.common.tls.TlsManager}. The implementation should load/create
- * {@link io.helidon.common.tls.Tls} instances from integrating to the certificates stored remotely in OCI's
+ * The OCI Certificates contract of {@link io.helidon.webserver.TlsManager}. The implementation should load/create
+ * {@link javax.net.ssl.SSLContext} instances from integrating to the certificates stored remotely in OCI's
  * Certificates Service, and then allow for a scheduled update check of the Tls instance for changes.
  */
-@RuntimeType.PrototypedBy(OciCertificatesTlsManagerConfig.class)
-public interface OciCertificatesTlsManager extends TlsManager, RuntimeType.Api<OciCertificatesTlsManagerConfig> {
+//@RuntimeType.PrototypedBy(OciCertificatesTlsManagerConfig.class)
+public interface OciCertificatesTlsManager extends TlsManager /*, RuntimeType.Api<OciCertificatesTlsManagerConfig>*/ {
 
     /**
      * Creates a default {@link OciCertificatesTlsManager} instance.

@@ -20,16 +20,16 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Services;
 import io.helidon.microprofile.server.Server;
+import io.helidon.webserver.WebServerTls;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.oci.tls.certificates.InjectionServices.Services;
+import static io.helidon.integrations.oci.tls.certificates.InjectionServices.realizedServices;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -47,11 +47,8 @@ class OciCertificatesTlsManagerTest {
     }
 
     @Test
-    // left here since the repeat ensured the integrity the async code where container startup & shutdown showed some side affects
-    // that were tricky to reproduce.
-    //    @RepeatedTest(10)
     void serverRuntime() throws Exception {
-        Services services = InjectionServices.realizedServices();
+        Services services = realizedServices();
         LifecycleHook lifecycleHook = services.lookupFirst(LifecycleHook.class).get();
         CountDownLatch startup = new CountDownLatch(1);
 
@@ -122,8 +119,8 @@ class OciCertificatesTlsManagerTest {
                    pkDownloadCountBaseLine0,
                    equalTo(0));
 
-        Tls tls = Tls.create(tlsConfig);
-        assertThat(tls.prototype().manager(),
+        WebServerTls tls = WebServerTls.create(tlsConfig);
+        assertThat(tls.manager(),
                    instanceOf(DefaultOciCertificatesTlsManager.class));
 
         int certDownloadCountBaseline = TestOciCertificatesDownloader.callCount_loadCertificates;
