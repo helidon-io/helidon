@@ -95,7 +95,8 @@ public final class Prototype {
         /**
          * Discover services from configuration.
          *
-         * @param config               configuration located at the node of the service providers
+         * @param config               configuration located at the parent node of the service providers
+         * @param configKey            configuration key of the provider list
          *                             (either a list node, or object, where each child is one service)
          * @param serviceLoader        helidon service loader for the expected type
          * @param providerType         type of the service provider interface
@@ -108,19 +109,26 @@ public final class Prototype {
          */
         default <S extends NamedService, T extends ConfiguredProvider<S>> List<S>
         discoverServices(Config config,
+                         String configKey,
                          HelidonServiceLoader<T> serviceLoader,
                          Class<T> providerType,
                          Class<S> configType,
                          boolean allFromServiceLoader) {
-            return ProvidedUtil.discoverServices(config, serviceLoader, providerType, configType, allFromServiceLoader);
+            return ProvidedUtil.discoverServices(config,
+                                                 configKey,
+                                                 serviceLoader,
+                                                 providerType,
+                                                 configType,
+                                                 allFromServiceLoader);
         }
 
         /**
          * Discover service from configuration.
          *
-         * @param config               configuration located at the node of the service providers
+         * @param config               configuration located at the parent node of the service providers
+         * @param configKey            configuration key of the provider list
          *                             (either a list node, or object, where each child is one service - this method requires
-         *                             zero to one configured services)
+         *                             *                             zero to one configured services)
          * @param serviceLoader        helidon service loader for the expected type
          * @param providerType         type of the service provider interface
          * @param configType           type of the configured service
@@ -129,15 +137,16 @@ public final class Prototype {
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
          * @return the first service (ordered by {@link io.helidon.common.Weight} that is discovered, or empty optional if none
-         *                             is found
+         *         is found
          */
         default <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
         discoverService(Config config,
-                         HelidonServiceLoader<T> serviceLoader,
-                         Class<T> providerType,
-                         Class<S> configType,
-                         boolean allFromServiceLoader) {
-            return ProvidedUtil.discoverService(config, serviceLoader, providerType, configType, allFromServiceLoader);
+                        String configKey,
+                        HelidonServiceLoader<T> serviceLoader,
+                        Class<T> providerType,
+                        Class<S> configType,
+                        boolean allFromServiceLoader) {
+            return ProvidedUtil.discoverService(config, configKey, serviceLoader, providerType, configType, allFromServiceLoader);
         }
     }
 
@@ -185,6 +194,7 @@ public final class Prototype {
         /**
          * The generated interface is public by default. We can switch it to package local
          * by setting this property to {@code false}-
+         *
          * @return whether the generated interface should be public
          */
         boolean isPublic() default true;
@@ -235,7 +245,6 @@ public final class Prototype {
      * A blueprint annotated with this annotation will create a prototype that can be created from a
      * {@link io.helidon.common.config.Config} instance. The builder will also have a method {@code config(Config)} that
      * reads all options annotated with {@link io.helidon.builder.api.Option.Configured} from the config.
-     *
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)

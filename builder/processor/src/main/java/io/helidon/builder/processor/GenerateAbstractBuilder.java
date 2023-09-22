@@ -483,9 +483,9 @@ final class GenerateAbstractBuilder {
                         if (typeName.isList() || typeName.isSet()) {
                             preBuildBuilder.add("this.add")
                                     .add(capitalize(property.name()))
-                                    .add("(discoverServices(config.get(\"")
+                                    .add("(discoverServices(config, \"")
                                     .add(configuredOption.configKey())
-                                    .add("\"), serviceLoader, ")
+                                    .add("\", serviceLoader, ")
                                     .typeName(providerType)
                                     .add(".class, ")
                                     .typeName(property.typeHandler().actualType())
@@ -494,9 +494,9 @@ final class GenerateAbstractBuilder {
                                     .add("DiscoverServices")
                                     .addLine("));");
                         } else {
-                            preBuildBuilder.add("discoverService(config.get(\"")
+                            preBuildBuilder.add("discoverService(config, \"")
                                     .add(configuredOption.configKey())
-                                    .add("\"), serviceLoader, ")
+                                    .add("\", serviceLoader, ")
                                     .typeName(providerType)
                                     .add(".class, ")
                                     .typeName(property.typeHandler().actualType())

@@ -17,22 +17,21 @@ server:
   port: 7001
   host: "localhost"
   sockets:
-    - name: "health"
+    - name: "observe"
       port: 8001
-    - name: "metrics"
-      port: 8002
     - name: "nothing"
       port: 8003
 
+observe:
+  routing: "observe"
+
 health:
   # endpoint will be exposed on this named route
-  routing: "health"
-  web-context: "/myhealth"
+  endpoint: "/myhealth"
 
 metrics:
   # endpoint will be exposed on this named route
-  routing: "metrics"
-  web-context: "/mymetrics"
+  endpoint: "/mymetrics"
   # if we want to add vendor metrics to additional named routes
   # default is added automatically
   vendor-metrics-routings: ["metrics", "health"]

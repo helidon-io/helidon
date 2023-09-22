@@ -17,40 +17,43 @@
 package io.helidon.webserver.observe.spi;
 
 import io.helidon.common.config.Config;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.common.config.ConfiguredProvider;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for observability services.
  */
-public interface ObserveProvider {
+public interface ObserveProvider extends ConfiguredProvider<Observer> {
     /**
      * Configuration key of this provider.
-     * The following keys are reserved by Observe support:
+     * The following keys must be honored by Observe support:
      * <ul>
      *     <li>{@code enabled} - enable/disable the service</li>
      *     <li>{@code endpoint} - endpoint, if starts with {@code /} then absolute, otherwise relative to observe endpoint</li>
+     *     <li>{@code cors} - CORS setup for this endpoint</li>
      * </ul>
      *
      * @return configuration key of this provider (such as {@code health})
      */
+    @Override
     String configKey();
 
     /**
-     * Default endpoint of this provider. To define a relative path, do not include forward slash (such as {@code health}
-     * would resolve into {@code /observe/health}).
+     * Type of this observe provider, to map to {@link io.helidon.webserver.observe.spi.Observer} when explicitly configured
+     * by user (so we do not duplicate observers).
      *
-     * @return default endpoint under {@code /observe}
+     * @return type of this observer, defaults to {@link #configKey()}
      */
-    String defaultEndpoint();
+    default String type() {
+        return configKey();
+    }
 
     /**
-     * Register the provider's services and handlers to the routing builder.
-     * The component MUST honor the provided component path.
+     * Create a new observer from the provided configuration.
      *
-     * @param config        configuration of this provider
-     * @param componentPath component path to register under (such as {@code /observe/health}, based on configured
-     *                      endpoint and {@link #defaultEndpoint()})
-     * @param routing       routing builder
+     * @param config configuration of this provider
+     * @param name name of the instance
+     * @return a new observer to be registered with routing
      */
-    void register(Config config, String componentPath, HttpRouting.Builder routing);
+    @Override
+    Observer create(Config config, String name);
 }

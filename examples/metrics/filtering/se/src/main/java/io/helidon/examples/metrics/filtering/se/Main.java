@@ -31,8 +31,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.metrics.MetricsFeature;
-import io.helidon.webserver.observe.metrics.MetricsObserveProvider;
+import io.helidon.webserver.observe.metrics.MetricsObserver;
 
 /**
  * The application main class.
@@ -98,12 +97,12 @@ public final class Main {
     static void routing(HttpRouting.Builder routing, Config config, MetricsConfig.Builder metricsConfigBuilder) {
         MeterRegistry meterRegistry = MetricsFactory.getInstance(config).globalRegistry();
 
-        MetricsFeature metrics = MetricsFeature.builder()
+        MetricsObserver metrics = MetricsObserver.builder()
                 .metricsConfig(metricsConfigBuilder)
                 .build();
         GreetService greetService = new GreetService(config, meterRegistry);
 
-        routing.addFeature(ObserveFeature.create(MetricsObserveProvider.create(metrics)))
+        routing.addFeature(ObserveFeature.just(metrics))
                 .register("/greet", greetService);
     }
 }

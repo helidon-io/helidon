@@ -61,7 +61,7 @@ class HelloWorldAsyncResponseWithRestRequestTest {
     private MetricRegistry baseRegistry;
 
     @Test
-    void checkForAsyncMethodRESTRequestMetric() throws NoSuchMethodException, IOException {
+    void checkForAsyncMethodRESTRequestMetric() throws NoSuchMethodException {
 
         MetricID idForRestRequestTimer = MetricsCdiExtension.restEndpointTimerMetricID(
                 HelloWorldResource.class.getMethod("getAsync", AsyncResponse.class));

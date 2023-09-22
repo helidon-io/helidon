@@ -46,6 +46,7 @@ import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.Injectio
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -248,6 +249,17 @@ class JaxRsService implements HttpService {
             kpiMetricsContext.ifPresent(KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
             appHandler.handle(requestContext);
             writer.await();
+            if (res.status() == Status.NOT_FOUND_404 && requestContext.getUriInfo().getMatchedResourceMethod() == null) {
+                // Jersey will not throw an exception, it will complete the request - but we must
+                // continue looking for the next route
+                // this is a tricky piece of code - the next can only be called if reset was successful
+                // reset may be impossible if data has already been written over the network
+                if (res instanceof RoutingResponse routing) {
+                    if (routing.reset()) {
+                        routing.next();
+                    }
+                }
+            }
         } catch (UncheckedIOException e) {
             throw e;
         } catch (io.helidon.http.NotFoundException | NotFoundException e) {

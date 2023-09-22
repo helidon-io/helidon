@@ -44,6 +44,14 @@ public final class Option {
          * @return custom configuration key
          */
         String value() default "";
+
+        /**
+         * If set to {@code true}, the nested configurable object will not have its own config key,
+         * but will use the config of the current configurable object.
+         *
+         * @return whether to merge the nested object into this object
+         */
+        boolean merge() default false;
     }
 
     /**
@@ -90,10 +98,14 @@ public final class Option {
      * Mark option as sourced from a {@link java.util.ServiceLoader}.
      * Use if the configuration may be provided by another module not known to us.
      * <p>
+     * To control whether to discover services or not, you can specify a key {@code config-key-discover-services}
+     * on the same level as the section for the provider based property. This is aligned with the generated methods on the
+     * builder, and allows for the shallowest possible configuration tree (this would  override {@link #discoverServices()}
+     * defined on this annotation).
+     * <p>
+     * Also there is no difference regardless whether we return a single value, or a list of values.
      * If the method returns a list, the provider configuration must be under config key {@code providers} under
      * the configured option. On the same level as {@code providers}, there can be {@code discover-services} boolean
-     * defining whether to look for services from service loader even if not configured in the configuration (this would
-     * override {@link #discoverServices()} defined on this annotation.
      * <p>
      * Option called {@code myProvider} that returns a single provider, or an {@link java.util.Optional} provider example
      * in configuration:
@@ -108,14 +120,13 @@ public final class Option {
      * Option called {@code myProviders} that returns a list of providers in configuration:
      * <pre>
      * my-type:
+     *   my-providers-discover-services: true # default of this value is controlled by annotation
      *   my-providers:
-     *     discover-services: true # default of this value is controlled by annotation
-     *     providers:
-     *       provider-id:
-     *         provider-key1: "providerValue"
-     *         provider-key2: "providerValue"
-     *       provider2-id:
-     *         provider2-key1: "provider2Value"
+     *     provider-id:
+     *       provider-key1: "providerValue"
+     *       provider-key2: "providerValue"
+     *     provider2-id:
+     *       provider2-key1: "provider2Value"
      * </pre>
      */
     @Target(ElementType.METHOD)

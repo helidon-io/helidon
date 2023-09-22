@@ -33,27 +33,23 @@ all-defined:
     some-1:
       prop: "config"
   list-discover:
-    providers:
-      some-1:
-        prop: "config"
-      some-2:
-        prop: "config2"
+    some-1:
+      prop: "config"
+    some-2:
+      prop: "config2"
   list-not-discover:
-    providers:
-      some-1:
-        prop: "config"
-      some-2:
-        prop: "config2"
+    some-1:
+      prop: "config"
+    some-2:
+      prop: "config2"
 fail:
 single-list:
   one-not-discover:
     some-2:
       prop: "config2"
   list-discover:
-    providers:
-      some-1:
-        prop: "config"
+    some-1:
+      prop: "config"
   list-not-discover:
-    providers:
-      some-2:
-        prop: "config2"
+    some-2:
+      prop: "config2"

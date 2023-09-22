@@ -23,11 +23,10 @@ import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.health.HealthObserveProvider;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
 import io.helidon.webserver.staticcontent.StaticContentService;
 import io.helidon.webserver.websocket.WsRouting;
 
@@ -102,13 +101,13 @@ public final class Se1Main {
         GreetService greetService = new GreetService(config);
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
-        HealthFeature health = HealthFeature.builder()
+        HealthObserver health = HealthObserver.builder()
                 .addCheck(() -> HealthCheckResponse.builder()
                         .detail("timestamp",
                                 System.currentTimeMillis())
                         .build())
                 .build();
-        ObserveFeature observe = ObserveFeature.create(HealthObserveProvider.create(health));
+        ObserveFeature observe = ObserveFeature.just(health);
 
         return HttpRouting.builder()
                 .addFeature(observe)

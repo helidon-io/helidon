@@ -22,8 +22,7 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.health.HealthObserveProvider;
+import io.helidon.webserver.observe.health.HealthObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
@@ -49,7 +48,7 @@ class ObserveHealthTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
         healthCheck = new MyHealthCheck();
-        routing.addFeature(ObserveFeature.create(HealthObserveProvider.create(HealthFeature.create(healthCheck))));
+        routing.addFeature(ObserveFeature.just(HealthObserver.create(healthCheck)));
     }
 
     @BeforeEach

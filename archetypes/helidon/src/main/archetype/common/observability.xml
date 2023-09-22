@@ -152,8 +152,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     </list>
                                     <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                         <value>io.helidon.metrics.api.MeterRegistry</value>
-                                        <value>io.helidon.webserver.observe.metrics.MetricsFeature</value>
-                                        <value>io.helidon.webserver.observe.metrics.MetricsObserveProvider</value>
+                                        <value>io.helidon.webserver.observe.metrics.MetricsObserver</value>
                                     </list>
                                     <list key="Main-routing" if="${flavor} == 'se'">
                                         <value><![CDATA[
@@ -161,7 +160,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ]]></value>
                                     </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                        <value><![CDATA[.addFeature(ObserveFeature.create(MetricsObserveProvider.create(MetricsFeature.create())))]]></value>
+                                        <value><![CDATA[.addFeature(ObserveFeature.create(MetricsObserver.create()))]]></value>
                                         <value><![CDATA[.register("/metrics-greet", metricsService)]]></value>
                                     </list>
                                     <list key="MetricsService-imports" if="${flavor} == 'se'">
@@ -463,8 +462,8 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                 </list>
                                 <list key="Main-createRouting" if="${flavor} == 'mp'">
                                     <value template="mustache" order="0"><![CDATA[
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks()) // Adds a convenient set of checks
+        HealthObserver health = HealthObserver.builder()
+                .addChecks(HealthChecks.healthChecks()) // Adds a convenient set of checks
 {{#Main-healthBuilder}}
 {{.}}
 {{/Main-healthBuilder}}
@@ -487,7 +486,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ## Try health
 
 ```
-curl -s -X GET http://localhost:8080/health
+curl -s -X GET http://localhost:8080/observe/health
 {"outcome":"UP",...
 
 ```
@@ -504,7 +503,7 @@ curl -s -X GET http://localhost:8080/health
                                     </map>
                                 </list>
                                 <list key="Observe-feature-builder" if="${flavor} == 'se'">
-                                    <value><![CDATA[.addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                                    <value><![CDATA[.addObserver(HealthObserver.builder()
                             .details(true)
                             .useSystemServices(false)
                             .addCheck(() -> HealthCheckResponse.builder()
@@ -515,13 +514,12 @@ curl -s -X GET http://localhost:8080/health
                                     .status(isStarted())
                                     .detail("time", System.currentTimeMillis())
                                     .build(), HealthCheckType.STARTUP)
-                            .build()))]]></value>
+                            .build())]]></value>
                                 </list>
                                 <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                     <value>io.helidon.health.HealthCheckResponse</value>
                                     <value>io.helidon.health.HealthCheckType</value>
-                                    <value>io.helidon.webserver.observe.health.HealthFeature</value>
-                                    <value>io.helidon.webserver.observe.health.HealthObserveProvider</value>
+                                    <value>io.helidon.webserver.observe.health.HealthObserver</value>
                                 </list>
                                 <list key="MainTest-static-imports" if="${flavor} == 'se'">
                                     <value>org.hamcrest.CoreMatchers.containsString</value>
@@ -566,8 +564,8 @@ Note the port number reported by the application.
 Probe the health endpoints:
 
 ```bash
-curl -X GET http://localhost:8080/observe/health/
-curl -X GET http://localhost:8080/observe/health/ready
+curl -X GET http://localhost:8080/observe/observe/health/
+curl -X GET http://localhost:8080/observe/observe/health/ready
 ```
 
 ]]></value>

@@ -14,16 +14,27 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer Observability Support.
  */
+@Feature(value = "Observe",
+         description = "Observability support",
+         in = HelidonFlavor.SE,
+         path = "Observe"
+)
 module io.helidon.webserver.observe {
+
+    requires static io.helidon.common.features.api;
 
     requires io.helidon.http;
     requires io.helidon.webserver;
 
+    requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.config;
+    requires transitive io.helidon.cors;
     requires transitive io.helidon.webserver.cors;
 
     exports io.helidon.webserver.observe;

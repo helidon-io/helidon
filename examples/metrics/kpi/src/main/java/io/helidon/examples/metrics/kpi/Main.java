@@ -26,8 +26,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.metrics.MetricsFeature;
-import io.helidon.webserver.observe.metrics.MetricsObserveProvider;
+import io.helidon.webserver.observe.metrics.MetricsObserver;
 
 /**
  * The application main class.
@@ -86,38 +85,37 @@ public final class Main {
          * in one example, how to code each approach. Normally, you would choose one
          * approach to use in an application.
          */
-        MetricsFeature metricsSupport = USE_CONFIG
+        MetricsObserver metricsSupport = USE_CONFIG
                 ? metricsSupportWithConfig(config.get("metrics"))
                 : metricsSupportWithoutConfig();
 
         GreetService greetService = new GreetService(config);
 
-        routing.addFeature(ObserveFeature.create(
-                        MetricsObserveProvider.create(metricsSupport)))
+        routing.addFeature(ObserveFeature.just(metricsSupport))
                 .register("/greet", greetService);
     }
 
     /**
-     * Creates a {@link MetricsFeature} instance using a "metrics" configuration node.
+     * Creates a {@link MetricsObserver} instance using a "metrics" configuration node.
      *
      * @param metricsConfig {@link Config} node with key "metrics" if present; an empty node otherwise
      * @return {@code MetricsSupport} object with metrics (including KPI) set up using the config node
      */
-    private static MetricsFeature metricsSupportWithConfig(Config metricsConfig) {
-        return MetricsFeature.create(metricsConfig);
+    private static MetricsObserver metricsSupportWithConfig(Config metricsConfig) {
+        return MetricsObserver.create(metricsConfig);
     }
 
     /**
-     * Creates a {@link MetricsFeature} instance explicitly turning on extended KPI metrics.
+     * Creates a {@link MetricsObserver} instance explicitly turning on extended KPI metrics.
      *
      * @return {@code MetricsSupport} object with extended KPI metrics enabled
      */
-    private static MetricsFeature metricsSupportWithoutConfig() {
+    private static MetricsObserver metricsSupportWithoutConfig() {
         KeyPerformanceIndicatorMetricsConfig.Builder configBuilder =
                 KeyPerformanceIndicatorMetricsConfig.builder()
                         .extended(true)
                         .longRunningRequestThreshold(Duration.ofSeconds(2));
-        return MetricsFeature.builder()
+        return MetricsObserver.builder()
                 .metricsConfig(MetricsConfig.builder()
                         .keyPerformanceIndicatorMetricsConfig(configBuilder))
                 .build();

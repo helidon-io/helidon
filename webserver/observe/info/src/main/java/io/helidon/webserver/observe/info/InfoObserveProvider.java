@@ -17,16 +17,22 @@
 package io.helidon.webserver.observe.info;
 
 import io.helidon.common.config.Config;
-import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.ObserveProvider;
+import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for application information observe provider.
+ *
+ * @deprecated only for {@link java.util.ServiceLoader}
  */
+@Deprecated
 public class InfoObserveProvider implements ObserveProvider {
     /**
-     * Required by {@link java.util.ServiceLoader}.
+     * Required for {@link java.util.ServiceLoader}.
+     *
+     * @deprecated only for {@link java.util.ServiceLoader}
      */
+    @Deprecated
     public InfoObserveProvider() {
     }
 
@@ -36,12 +42,10 @@ public class InfoObserveProvider implements ObserveProvider {
     }
 
     @Override
-    public String defaultEndpoint() {
-        return "info";
-    }
-
-    @Override
-    public void register(Config config, String componentPath, HttpRouting.Builder routing) {
-        routing.register(componentPath, InfoService.create(config));
+    public Observer create(Config config, String name) {
+        return InfoObserver.builder()
+                .config(config)
+                .name(name)
+                .build();
     }
 }

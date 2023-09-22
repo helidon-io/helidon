@@ -17,50 +17,23 @@
 package io.helidon.webserver.observe.health;
 
 import io.helidon.common.config.Config;
-import io.helidon.http.Status;
-import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.ObserveProvider;
+import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for health observe provider.
+ *
+ * @deprecated this type is only to be used from {@link java.util.ServiceLoader}
  */
+@Deprecated
 public class HealthObserveProvider implements ObserveProvider {
-    private final HealthFeature explicitService;
-
     /**
      * Default constructor required by {@link java.util.ServiceLoader}. Do not use.
      *
-     * @deprecated use {@link #create(HealthFeature)} or
-     *         {@link #create()} instead.
+     * @deprecated this constructor must be public for {@link java.util.ServiceLoader}
      */
     @Deprecated
     public HealthObserveProvider() {
-        this(null);
-    }
-
-    private HealthObserveProvider(HealthFeature explicitService) {
-        this.explicitService = explicitService;
-    }
-
-    /**
-     * Create a new instance with health checks discovered through {@link java.util.ServiceLoader}.
-     *
-     * @return a new provider
-     */
-    public static ObserveProvider create() {
-        return create(HealthFeature.create());
-    }
-
-    /**
-     * Create using a configured observer.
-     * In this case configuration provided by the {@link io.helidon.webserver.observe.ObserveFeature} is ignored except for
-     * the reserved option {@code endpoint}).
-     *
-     * @param service service to use
-     * @return a new provider based on the observer
-     */
-    public static ObserveProvider create(HealthFeature service) {
-        return new HealthObserveProvider(service);
     }
 
     @Override
@@ -69,23 +42,10 @@ public class HealthObserveProvider implements ObserveProvider {
     }
 
     @Override
-    public String defaultEndpoint() {
-        return explicitService == null ? "health" : explicitService.configuredContext();
-    }
-
-    @Override
-    public void register(Config config, String componentPath, HttpRouting.Builder routing) {
-        HealthFeature observer = explicitService == null
-                ? HealthFeature.builder().webContext(componentPath).config(config).build()
-                : explicitService;
-
-        if (observer.enabled()) {
-            // when created as part of observer, we need to use component path
-            observer.context(componentPath);
-            routing.addFeature(observer);
-        } else {
-            routing.get(componentPath + "/*", (req, res) -> res.status(Status.SERVICE_UNAVAILABLE_503)
-                    .send());
-        }
+    public Observer create(Config config, String name) {
+        return HealthObserverConfig.builder()
+                .config(config)
+                .name(name)
+                .build();
     }
 }

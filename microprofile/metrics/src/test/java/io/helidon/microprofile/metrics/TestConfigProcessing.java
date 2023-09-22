@@ -30,7 +30,7 @@ class TestConfigProcessing {
     @Test
     void checkTopLeveTagsIgnoredForMetrics() {
         MetricsCdiExtension extension = CDI.current().getBeanManager().getExtension(MetricsCdiExtension.class);
-        Config seConfig = extension.seComponentConfig();
+        Config seConfig = extension.componentConfig();
         Config metricsTags = seConfig.get("tags");
         assertThat("Tags setting is present", metricsTags.asString().isPresent(), is(false));
     }

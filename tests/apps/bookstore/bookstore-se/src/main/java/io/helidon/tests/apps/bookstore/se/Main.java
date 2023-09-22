@@ -18,21 +18,22 @@ package io.helidon.tests.apps.bookstore.se;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
+import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.health.checks.DeadlockHealthCheck;
 import io.helidon.health.checks.DiskSpaceHealthCheck;
 import io.helidon.health.checks.HeapMemoryHealthCheck;
-import io.helidon.logging.common.LogConfig;
-import io.helidon.common.tls.Tls;
 import io.helidon.http.media.jackson.JacksonSupport;
 import io.helidon.http.media.jsonb.JsonbSupport;
 import io.helidon.http.media.jsonp.JsonpSupport;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.metrics.MetricsFeature;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
+import io.helidon.webserver.observe.metrics.MetricsObserver;
 
 /**
  * Simple Hello World rest application.
@@ -153,17 +154,21 @@ public final class Main {
      */
     private static Routing createRouting(Config config) {
 
-        HealthFeature health = HealthFeature.builder()
+        HealthObserver health = HealthObserver.builder()
                 .useSystemServices(false)
                 .addCheck(HeapMemoryHealthCheck.create())
                 .addCheck(DiskSpaceHealthCheck.create())
                 .addCheck(DeadlockHealthCheck.create())
                 .details(true)
+                .endpoint("/health")
+                .build();
+        MetricsObserver metrics = MetricsObserver.builder()
+                .endpoint("/metrics")
                 .build();
 
         HttpRouting.Builder builder = HttpRouting.builder()
-                .addFeature(health)                   // Health at "/health"
-                .addFeature(MetricsFeature.builder().build())  // Metrics at "/metrics"
+                // Health at "/health", and metrics at "/metrics"
+                .addFeature(ObserveFeature.just(health, metrics))
                 .register(SERVICE_PATH, new BookService(config));
 
         return builder.build();

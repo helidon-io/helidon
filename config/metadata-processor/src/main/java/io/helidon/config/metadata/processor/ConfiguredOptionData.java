@@ -100,23 +100,16 @@ final class ConfiguredOptionData {
         return result;
     }
 
-    private static List<AllowedValue> allowedValues(Elements aptElements, TypeElement typeElement) {
-        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
-            return typeElement.getEnclosedElements()
-                    .stream()
-                    .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
-                    .map(element -> new AllowedValue(element.toString(), javadoc(aptElements.getDocComment(element))))
-                    .collect(Collectors.toList());
-        }
-        return List.of();
-    }
-
     // create from Option annotations in builder-api
     static ConfiguredOptionData createBuilder(TypedElementInfo element) {
         ConfiguredOptionData result = new ConfiguredOptionData();
 
-        element.findAnnotation(OPTION_CONFIGURED).flatMap(Annotation::stringValue).filter(not(String::isBlank))
+        Optional<Annotation> optionConfigured = element.findAnnotation(OPTION_CONFIGURED);
+        optionConfigured.flatMap(Annotation::stringValue).filter(not(String::isBlank))
                 .ifPresent(result::name);
+        optionConfigured.flatMap(it -> it.booleanValue("merge"))
+                .ifPresent(result::merge);
+
         element.findAnnotation(DESCRIPTION).flatMap(Annotation::stringValue).ifPresent(result::description);
         element.findAnnotation(OPTION_REQUIRED).ifPresent(it -> result.required(true));
         element.findAnnotation(OPTION_PROVIDER).ifPresent(it -> result.provider(true));
@@ -253,6 +246,17 @@ final class ConfiguredOptionData {
 
     void configured(boolean configured) {
         this.configured = configured;
+    }
+
+    private static List<AllowedValue> allowedValues(Elements aptElements, TypeElement typeElement) {
+        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
+            return typeElement.getEnclosedElements()
+                    .stream()
+                    .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
+                    .map(element -> new AllowedValue(element.toString(), javadoc(aptElements.getDocComment(element))))
+                    .collect(Collectors.toList());
+        }
+        return List.of();
     }
 
     static final class AllowedValue {

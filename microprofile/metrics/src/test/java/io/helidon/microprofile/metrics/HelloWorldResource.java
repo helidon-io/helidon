@@ -46,7 +46,7 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 /**
  * HelloWorldResource class.
  */
-@Path("helloworld")
+@Path("/")
 @RequestScoped
 @Counted
 public class HelloWorldResource {

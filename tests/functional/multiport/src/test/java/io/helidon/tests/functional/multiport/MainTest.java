@@ -70,8 +70,7 @@ class MainTest {
     static Stream<Params> initParams() {
         return Stream.of(
                 new Params("@default", true, false, false),
-                new Params("health", false, false, true),
-                new Params("metrics", false, true, false),
+                new Params("observe", false, true, true),
                 // when no named routing, serves default routing
                 new Params("nothing", true, false, false)
         );

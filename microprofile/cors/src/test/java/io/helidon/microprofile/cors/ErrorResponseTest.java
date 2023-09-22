@@ -27,7 +27,6 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HeaderNames.ORIGIN;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -55,8 +54,10 @@ class ErrorResponseTest {
                 .header(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "GET")
                 .get();
         assertThat("Status from missing endpoint request", res.getStatusInfo(), is(Response.Status.NOT_FOUND));
-        assertThat("With CORS enabled, headers in 404 response",
-                   res.getHeaders().keySet(),
-                   hasItem(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()));
+        // the 404 is returned from Helidon WebServer, not from Jersey, so the CORS is not present
+        // as we may route to additional services after Jersey is resolved
+//        assertThat("With CORS enabled, headers in 404 response",
+//                   res.getHeaders().keySet(),
+//                   hasItem(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()));
     }
 }
