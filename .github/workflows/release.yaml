@@ -9,7 +9,7 @@ on:
       - 'test-release-*'
 env:
   JAVA_VERSION: '21'
-  JAVA_DISTRO: 'oracle'
+  JAVA_DISTRO: 'oracle.com'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
 
 concurrency:
@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1.3.1
+        uses: oracle-actions/setup-java@v1.3.2
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
@@ -42,7 +42,7 @@ jobs:
           token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
           fetch-depth: '0'
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1.3.1
+        uses: oracle-actions/setup-java@v1.3.2
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
