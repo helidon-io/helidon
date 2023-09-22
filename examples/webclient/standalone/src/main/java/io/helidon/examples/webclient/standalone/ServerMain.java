@@ -66,8 +66,7 @@ public final class ServerMain {
      * @param routing routing builder
      */
     private static void routing(HttpRouting.Builder routing) {
-        Config config = Config.global();
         routing.addFeature(ObserveFeature.create())
-               .register("/greet", new GreetService(config));
+               .register("/greet", new GreetService());
     }
 }
