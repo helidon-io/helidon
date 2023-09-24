@@ -68,14 +68,14 @@ public final class Main {
      * @param routing routing builder
      */
     static void routing(HttpRouting.Builder routing) {
-        Config config = Config.global();
 
         // Note: Add the CORS routing *before* registering the GreetService routing.
-        routing.register("/greet", corsSupportForGreeting(config), new GreetService())
+        routing.register("/greet", corsSupportForGreeting(), new GreetService())
                 .addFeature(ObserveFeature.create());
     }
 
-    private static CorsSupport corsSupportForGreeting(Config config) {
+    private static CorsSupport corsSupportForGreeting() {
+        Config config = Config.global();
 
         // The default CorsSupport object (obtained using CorsSupport.create()) allows sharing for any HTTP method and with any
         // origin. Using CorsSupport.create(Config) with a missing config node yields a default CorsSupport, which might not be

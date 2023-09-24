@@ -85,16 +85,17 @@ public final class Main {
                                  .putScope(Meter.Scope.APPLICATION, scopeConfig));
 
         server.config(config.get("server"))
-              .routing(r -> routing(r, config, metricsConfigBuilder));
+              .routing(r -> routing(r, metricsConfigBuilder));
     }
 
     /**
      * Set up routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    static void routing(HttpRouting.Builder routing, Config config, MetricsConfig.Builder metricsConfigBuilder) {
+    static void routing(HttpRouting.Builder routing, MetricsConfig.Builder metricsConfigBuilder) {
+        Config config = Config.global();
+
         MeterRegistry meterRegistry = MetricsFactory.getInstance(config).globalRegistry();
 
         MetricsObserver metrics = MetricsObserver.builder()
