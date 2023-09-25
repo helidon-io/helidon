@@ -43,11 +43,13 @@ public final class Main {
         {{.}}
         {{/Main-main}}
 
+        // initialize global config from default configuration
         Config config = Config.create();
+        Config.global(config);
 
         WebServer server = WebServer.builder()
-                .config(config.get("server"))
-                .routing(r -> routing(r, config))
+                .config(Config.global().get("server"))
+                .routing(Main::routing)
                 .build()
                 .start();
 
@@ -57,7 +59,8 @@ public final class Main {
     /**
      * Updates HTTP Routing.
      */
-    static void routing(HttpRouting.Builder routing, Config config) {
+    static void routing(HttpRouting.Builder routing) {
+        Config config = Config.global();
         {{#Main-routing}}
         {{.}}
         {{/Main-routing}}

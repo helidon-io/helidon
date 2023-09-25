@@ -156,7 +156,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     </list>
                                     <list key="Main-routing" if="${flavor} == 'se'">
                                         <value><![CDATA[
-        MetricsService metricsService = new MetricsService(config);
+        MetricsService metricsService = new MetricsService();
 ]]></value>
                                     </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'se'">
@@ -399,7 +399,7 @@ allRequests_total 0.0
 ]]></value>
                                     </list>
                                     <list key="Main-routing" if="${flavor} == 'se'">
-                                        <value><![CDATA[MetricsService metricsService = new MetricsService(config);
+                                        <value><![CDATA[MetricsService metricsService = new MetricsService();
 ]]></value>
                                     </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'se'">

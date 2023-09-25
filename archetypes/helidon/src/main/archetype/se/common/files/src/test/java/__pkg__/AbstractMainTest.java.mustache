@@ -25,7 +25,7 @@ abstract class AbstractMainTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        Main.routing(builder, Config.create());
+        Main.routing(builder);
     }
 
     {{#Abstract-tests}}
