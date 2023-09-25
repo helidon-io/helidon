@@ -126,8 +126,10 @@ class UriPathNoParam implements UriPath {
         }
 
         if (doubleSlash == 0) {
-            // RFC2396 net_path
-            // URI.create("//foo/bar").getPath() --> "/bar"
+            /*
+            RFC2396 - net_path starts with //, that would lead to loosing first path segment.
+            example: URI.create("//foo/bar").getPath() --> "/bar"
+            */
             rawPath = rawPath.substring(1);
         }
 
