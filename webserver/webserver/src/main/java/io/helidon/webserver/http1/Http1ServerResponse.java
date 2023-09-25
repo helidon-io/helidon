@@ -496,7 +496,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
             if (sendTrailers) {
                     // not optimized, trailers enabled: we need to write trailers
-                    trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
                     trailers.set(STREAM_RESULT_NAME, streamResult.get());
                     BufferData buffer = BufferData.growing(128);
                     writeHeaders(trailers, buffer, this.validateHeaders);

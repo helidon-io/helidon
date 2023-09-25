@@ -345,7 +345,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             if (response.streamResult != null) {
                 trailers.set(STREAM_RESULT_NAME, response.streamResult);
             }
-            trailers.set(STREAM_STATUS_NAME, response.status().code());
 
             Http2Headers http2Headers = Http2Headers.create(trailers);
             bytesWritten += stream.writeTrailers(http2Headers);

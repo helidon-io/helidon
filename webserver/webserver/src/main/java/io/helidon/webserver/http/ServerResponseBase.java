@@ -52,10 +52,6 @@ import io.helidon.webserver.ConnectionContext;
 public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implements RoutingResponse {
 
     /**
-     * Stream status trailer name.
-     */
-    protected static final HeaderName STREAM_STATUS_NAME = HeaderNames.create("stream-status");
-    /**
      * Stream result trailer name.
      */
     protected static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
@@ -63,8 +59,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * Stream status trailers.
      */
     protected static final Header STREAM_TRAILERS =
-            HeaderValues.create(HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
-                    + "," + STREAM_RESULT_NAME.defaultCase());
+            HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;

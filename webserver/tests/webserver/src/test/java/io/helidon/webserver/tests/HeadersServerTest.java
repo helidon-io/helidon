@@ -76,18 +76,6 @@ class HeadersServerTest {
                          }
                      }
         );
-        router.route(GET, "/stream-status",
-                     (req, res) -> {
-                         res.header(HeaderNames.TRAILER, TEST_TRAILER_HEADER.name());
-                         try (var os = res.outputStream()) {
-                             os.write(DATA.getBytes());
-                             os.write(DATA.getBytes());
-                             os.flush();
-                             res.status(Status.I_AM_A_TEAPOT_418);
-                             os.write(DATA.getBytes());
-                         }
-                     }
-        );
         router.route(GET, "/trailers-forced",
                      (req, res) -> {
                          res.header(HeaderNames.TRAILER, TEST_TRAILER_HEADER.name());
@@ -145,21 +133,7 @@ class HeadersServerTest {
         try (var ins = res.entity()) {
             assertThat(ins.readAllBytes(), is(DATA.repeat(3).getBytes()));
         }
-        assertThat(res.trailers(), hasHeader(HeaderValues.create("Stream-Status", 200)));
         assertThat(res.trailers(), hasHeader(HeaderValues.create("Stream-Result", "Kaboom!")));
-        checkCachedConnection(res.headers());
-    }
-
-    @Test
-    void streamStatus(WebClient client) throws IOException {
-        ClientResponseTyped<InputStream> res = client
-                .get("/stream-status")
-                .header(HeaderValues.create("TE", "trailers"))
-                .request(InputStream.class);
-        try (var ins = res.entity()) {
-            ins.readAllBytes();
-        }
-        assertThat(res.trailers(), hasHeader(HeaderValues.create("Stream-Status", Status.I_AM_A_TEAPOT_418.code())));
         checkCachedConnection(res.headers());
     }
 
