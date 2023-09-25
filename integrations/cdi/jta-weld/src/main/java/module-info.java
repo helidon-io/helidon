@@ -30,7 +30,7 @@ module io.helidon.integrations.jta.weld {
     requires jakarta.transaction;
     requires java.logging;
     requires java.rmi;
-    requires narayana.jta.jakarta;
+    requires narayana.jta;
 
     requires transitive weld.spi;
 

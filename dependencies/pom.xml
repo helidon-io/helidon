@@ -89,7 +89,6 @@
         <version.lib.jaxb-impl>4.0.3</version.lib.jaxb-impl>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
-        <version.lib.jboss.transaction-spi>7.6.1.Final</version.lib.jboss.transaction-spi>
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>4.0.3</version.lib.jaxb-runtime>
         <version.lib.jersey>3.1.3</version.lib.jersey>
@@ -125,7 +124,7 @@
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
-        <version.lib.narayana>5.13.1.Final</version.lib.narayana>
+        <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
         <version.lib.netty>4.1.94.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
@@ -329,6 +328,11 @@
             <dependency>
                 <groupId>jakarta.enterprise</groupId>
                 <artifactId>jakarta.enterprise.cdi-api</artifactId>
+                <version>${version.lib.jakarta.cdi-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.enterprise</groupId>
+                <artifactId>jakarta.enterprise.lang-model</artifactId>
                 <version>${version.lib.jakarta.cdi-api}</version>
             </dependency>
             <dependency>
@@ -845,23 +849,13 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
-                <artifactId>narayana-jta-jakarta</artifactId>
+                <artifactId>narayana-jta</artifactId>
                 <version>${version.lib.narayana}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
                 <artifactId>cdi</artifactId>
                 <version>${version.lib.narayana}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.resource</groupId>
-                        <artifactId>jboss-connector-api_1.7_spec</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>sun.jdk</groupId>
-                        <artifactId>jconsole</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>
@@ -903,11 +897,6 @@
                         <artifactId>weld-core-impl</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-transaction-spi-jakarta</artifactId>
-                <version>${version.lib.jboss.transaction-spi}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld.environment</groupId>

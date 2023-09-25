@@ -867,11 +867,11 @@ class JtaConnection extends ConditionallyCloseableConnection {
         Enlistment enlistment = this.enlistment; // volatile read
         if (enlistment == null) {
             return false;
-        } else if (enlistment.threadId() != Thread.currentThread().getId()) {
+        } else if (enlistment.threadId() != Thread.currentThread().threadId()) {
             // We're enlisted in a Transaction on thread 1, and a caller from thread 2 is trying to do something with
             // us. This could have unintended side effects. Throw.
             throw new SQLTransientException("Already enlisted (" + enlistment + "); current thread id: "
-                                            + Thread.currentThread().getId(), INVALID_TRANSACTION_STATE_NO_SUBCLASS);
+                                            + Thread.currentThread().threadId(), INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
 
         // We are, or were, enlisted. Let's see in what way.
@@ -1049,7 +1049,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             throw new SQLTransientException("xaResourceSupplier.get() == null");
         }
 
-        Enlistment enlistment = new Enlistment(Thread.currentThread().getId(), t, xar);
+        Enlistment enlistment = new Enlistment(Thread.currentThread().threadId(), t, xar);
         if (!ENLISTMENT.compareAndSet(this, null, enlistment)) { // atomic volatile write
             // Setting this.enlistment could conceivably fail if another thread already enlisted this JtaConnection.
             // That would be bad.
@@ -1058,7 +1058,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // call above we know it is non-null.)
             throw new SQLTransientException("Already enlisted (" + this.enlistment
                                             + "); current transaction: " + t
-                                            + "; current thread id: " + Thread.currentThread().getId(),
+                                            + "; current thread id: " + Thread.currentThread().threadId(),
                                             INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
 
