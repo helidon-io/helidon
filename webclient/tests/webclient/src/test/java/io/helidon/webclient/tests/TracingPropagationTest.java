@@ -59,6 +59,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 class TracingPropagationTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
     private static final AtomicReference<CountDownLatch> SPAN_COUNT_LATCH = new AtomicReference<>();
+    // 2+1 after re-introduction of content-write span
+    private static final int EXPECTED_NUMBER_OF_SPANS = 3;
     private static MockTracer tracer;
     private final Http1Client client;
     private final URI uri;
@@ -92,7 +94,7 @@ class TracingPropagationTest {
 
     @Test
     void testTracingSuccess() throws InterruptedException {
-        SPAN_COUNT_LATCH.set(new CountDownLatch(2));
+        SPAN_COUNT_LATCH.set(new CountDownLatch(EXPECTED_NUMBER_OF_SPANS));
         Context context = Context.builder().id("tracing-unit-test").build();
         context.register(tracer);
 
@@ -110,10 +112,7 @@ class TracingPropagationTest {
         List<MockSpan> mockSpans = tracer.finishedSpans();
 
         // the server traces asynchronously, some spans may be written after we receive the response.
-        // we need to try to wait for such spans
-        // re-introduced content-write span
-        assertThat("There should be 3 spans reported", tracer.finishedSpans(), hasSize(3));
-
+        assertThat("There should be 3 spans reported", tracer.finishedSpans(), hasSize(EXPECTED_NUMBER_OF_SPANS));
 
         // we need the first span - parentId 0
         MockSpan clientSpan = findSpanWithParentId(mockSpans, 0);
