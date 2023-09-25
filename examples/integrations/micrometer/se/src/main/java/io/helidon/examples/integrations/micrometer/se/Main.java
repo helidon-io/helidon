@@ -57,11 +57,13 @@ public final class Main {
         LogConfig.configureRuntime();
 
         // By default, this will pick up application.yaml from the classpath
+        // and initialize global config
         Config config = Config.create();
+        Config.global(config);
 
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
-                .routing(r -> setupRouting(r, config))
+                .routing(Main::setupRouting)
                 .build()
                 .start();
 
@@ -73,9 +75,11 @@ public final class Main {
      * Setup routing.
      *
      * @param routing routing builder
-     * @param config  config
      */
-    static void setupRouting(HttpRouting.Builder routing, Config config) {
+    static void setupRouting(HttpRouting.Builder routing) {
+
+        Config config = Config.global();
+
         MicrometerFeature micrometerSupport = MicrometerFeature.create(config);
         Counter personalizedGetCounter = micrometerSupport.registry()
                 .counter(PERSONALIZED_GETS_COUNTER_NAME);
@@ -83,7 +87,7 @@ public final class Main {
                 .publishPercentileHistogram()
                 .register(micrometerSupport.registry());
 
-        GreetService greetService = new GreetService(config, getTimer, personalizedGetCounter);
+        GreetService greetService = new GreetService(getTimer, personalizedGetCounter);
 
         routing.register("/greet", greetService)
                 .addFeature(micrometerSupport);

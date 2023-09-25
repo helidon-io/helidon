@@ -19,7 +19,7 @@ package io.helidon.examples.quickstart.se;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -52,6 +52,10 @@ public class GreetService implements HttpService {
      * The config value for the key {@code greeting}.
      */
     private final AtomicReference<String> greeting = new AtomicReference<>();
+
+    GreetService() {
+        this(Config.global().get("app"));
+    }
 
     GreetService(Config appConfig) {
         greeting.set(appConfig.get("greeting").asString().orElse("Ciao"));

@@ -43,8 +43,12 @@ public final class Main {
         // load logging configuration
         LogConfig.configureRuntime();
 
+        // initialize global config from default configuration
+        Config config = Config.create();
+        Config.global(config);
+
         WebServer server = WebServer.builder()
-                .config(Config.global().get("server"))
+                .config(config.get("server"))
                 .routing(Main::routing)
                 .build()
                 .start();
@@ -58,10 +62,8 @@ public final class Main {
     static void routing(HttpRouting.Builder routing) {
         Config config = Config.global();
 
-        OpenApiFeature openApi = OpenApiFeature.create(config.get("openapi"));
-        GreetService greetService = new GreetService(config.get("app"));
-        routing.addFeature(openApi)
-                .register("/greet", greetService)
+        routing.register("/greet", new GreetService())
+                .addFeature(OpenApiFeature.create(config.get("openapi")))
                 .addFeature(ObserveFeature.create(config.get("observe")));
     }
 }

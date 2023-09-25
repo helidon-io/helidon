@@ -56,7 +56,8 @@ public class MainTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        server.routing(it -> Main.routing(it, Config.create()));
+        Config.global(Config.create());
+        server.routing(Main::routing);
     }
 
     @Test

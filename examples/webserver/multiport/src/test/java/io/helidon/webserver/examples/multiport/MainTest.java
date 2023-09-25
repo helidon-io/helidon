@@ -61,8 +61,9 @@ public class MainTest {
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
         // Use test configuration so we can have ports allocated dynamically
-        Config config = Config.builder().addSource(ConfigSources.classpath("application-test.yaml")).build();
-        Main.setup(server, config);
+        Config config = Config.just(ConfigSources.classpath("application-test.yaml"));
+        server.config(config.get("server"))
+                .update(Main::setup);
     }
 
     static Stream<Params> initParams() {

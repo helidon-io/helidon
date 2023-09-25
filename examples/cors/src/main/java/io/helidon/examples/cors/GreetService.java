@@ -53,7 +53,8 @@ public class GreetService implements HttpService {
 
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
 
-    GreetService(Config config) {
+    GreetService() {
+        Config config = Config.global();
         this.greeting = config.get("app.greeting").asString().orElse("Ciao");
     }
 

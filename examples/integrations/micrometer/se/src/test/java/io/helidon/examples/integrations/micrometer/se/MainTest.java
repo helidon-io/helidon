@@ -62,7 +62,7 @@ public class MainTest {
 
     @SetUpServer
     public static void setup(Builder builder) {
-        builder.routing(r -> Main.setupRouting(r, Config.create()));
+        builder.routing(Main::setupRouting);
     }
 
     @Test

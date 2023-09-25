@@ -66,7 +66,8 @@ public class GreetService implements HttpService {
 
     private final Counter personalizedGreetingsCounter;
 
-    GreetService(Config config) {
+    GreetService() {
+        Config config = Config.global();
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
         MeterRegistry meterRegistry = Metrics.globalRegistry();
         timerForGets = meterRegistry.getOrCreate(Timer.builder(TIMER_FOR_GETS)

@@ -43,7 +43,6 @@ import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
-@Disabled
 public class StatusTest {
 
     private final Counter[] STATUS_COUNTERS = new Counter[6];
@@ -55,8 +54,9 @@ public class StatusTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
+        Config.global(Config.create());
         server.routing(r -> {
-            Main.routing(r, Config.create());
+            Main.routing(r);
             r.register("/status", new StatusService());
         });
     }
@@ -71,6 +71,7 @@ public class StatusTest {
     }
 
     @Test
+    @Disabled
     void checkStatusMetrics() throws InterruptedException {
         checkAfterStatus(Status.create(171));
         checkAfterStatus(Status.OK_200);

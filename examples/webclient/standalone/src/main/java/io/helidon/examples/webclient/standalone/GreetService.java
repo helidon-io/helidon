@@ -55,7 +55,8 @@ public class GreetService implements HttpService {
      */
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
-    GreetService(Config config) {
+    GreetService() {
+        Config config = Config.global();
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
     }
 

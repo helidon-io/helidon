@@ -18,8 +18,7 @@ package io.helidon.examples.metrics.filtering.se;
 
 import java.util.regex.Pattern;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -67,7 +66,8 @@ public final class Main {
         LogConfig.configureRuntime();
 
         // By default, this will pick up application.yaml from the classpath
-        Config config = GlobalConfig.config();
+        Config config = Config.create();
+        Config.global(config);
 
         // Programmatically (not through config), tell the metrics feature to ignore the "gets" timer.
         // To do so, create the scope config, then add it to the metrics config that ultimately
@@ -85,22 +85,23 @@ public final class Main {
                                  .putScope(Meter.Scope.APPLICATION, scopeConfig));
 
         server.config(config.get("server"))
-              .routing(r -> routing(r, config, metricsConfigBuilder));
+              .routing(r -> routing(r, metricsConfigBuilder));
     }
 
     /**
      * Set up routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    static void routing(HttpRouting.Builder routing, Config config, MetricsConfig.Builder metricsConfigBuilder) {
+    static void routing(HttpRouting.Builder routing, MetricsConfig.Builder metricsConfigBuilder) {
+        Config config = Config.global();
+
         MeterRegistry meterRegistry = MetricsFactory.getInstance(config).globalRegistry();
 
         MetricsObserver metrics = MetricsObserver.builder()
                 .metricsConfig(metricsConfigBuilder)
                 .build();
-        GreetService greetService = new GreetService(config, meterRegistry);
+        GreetService greetService = new GreetService(meterRegistry);
 
         routing.addFeature(ObserveFeature.just(metrics))
                 .register("/greet", greetService);
