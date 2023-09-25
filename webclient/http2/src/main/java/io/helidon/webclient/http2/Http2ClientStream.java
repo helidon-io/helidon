@@ -69,6 +69,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final Http2Settings settings = Http2Settings.create();
     private final List<Http2FrameData> continuationData = new ArrayList<>();
+    private final CompletableFuture<Headers> trailers = new CompletableFuture<>();
 
     private Http2StreamState state = Http2StreamState.IDLE;
     private ReadState readState = ReadState.INIT;
@@ -80,7 +81,6 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     // streamId and buffer can only be created when we are locked in the stream id sequence
     private int streamId;
     private StreamBuffer buffer;
-    private final CompletableFuture<Headers> trailers = new CompletableFuture<>();
 
     Http2ClientStream(Http2ClientConnection connection,
                       Http2Settings serverSettings,
@@ -253,7 +253,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         }
     }
 
-    void write(Http2Headers http2Headers, boolean endOfStream) {
+    void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
         this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true);
         this.readState = readState.check(http2Headers.httpHeaders().contains(HeaderValues.EXPECT_100)
                                                  ? ReadState.CONTINUE_100_HEADERS

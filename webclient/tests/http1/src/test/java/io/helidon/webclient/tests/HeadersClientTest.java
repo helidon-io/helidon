@@ -53,7 +53,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class HeadersTest {
+class HeadersClientTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final Header INVALID_CONTENT_TYPE_VALUE =
@@ -168,7 +168,7 @@ class HeadersTest {
     @Test
     public void testInvalidTextContentTypeRelaxed() {
         WebClient client = WebClient.builder()
-                .from(HeadersTest.CLIENT.prototype())
+                .from(HeadersClientTest.CLIENT.prototype())
                 .mediaTypeParserMode(ParserMode.RELAXED)
                 .build();
         try (HttpClientResponse res = client.method(Method.GET)

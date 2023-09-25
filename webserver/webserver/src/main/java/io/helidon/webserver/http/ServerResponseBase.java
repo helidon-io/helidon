@@ -27,6 +27,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
@@ -47,6 +51,15 @@ import io.helidon.webserver.ConnectionContext;
 @SuppressWarnings("unchecked")
 public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implements RoutingResponse {
 
+    /**
+     * Stream result trailer name.
+     */
+    protected static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
+    /**
+     * Stream status trailers.
+     */
+    protected static final Header STREAM_TRAILERS =
+            HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;
@@ -74,6 +87,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
     @Override
     public T status(Status status) {
+        if (isSent()) {
+            throw new IllegalStateException("Response already sent");
+        }
         this.status = status;
         return (T) this;
     }

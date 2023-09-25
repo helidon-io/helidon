@@ -62,7 +62,7 @@ class Http2CallEntityChain extends Http2CallChainBase {
 
         Http2Headers http2Headers = prepareHeaders(serviceRequest.method(), headers, uri);
 
-        stream.write(http2Headers, entityBytes.length == 0);
+        stream.writeHeaders(http2Headers, entityBytes.length == 0);
         stream.flowControl().inbound().incrementWindowSize(clientRequest().requestPrefetch());
         whenSent.complete(serviceRequest);
 

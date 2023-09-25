@@ -17,6 +17,7 @@
 package io.helidon.webserver.tests.http2;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -27,6 +28,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
@@ -44,15 +52,18 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-public class HeadersTest {
+public class HeadersServerTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
+    private static final Header TEST_TRAILER_HEADER = HeaderValues.create("test-trailer", "trailer-value");
+    private final Http2Client client;
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
@@ -76,25 +87,67 @@ public class HeadersTest {
 
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
+        router.error(IllegalStateException.class, (req, res, t) -> res.status(500).send(t.getMessage()));
         router.route(Http2Route.route(GET, "/ping", (req, res) -> res.send("pong")));
         router.route(Http2Route.route(GET, "/cont-out",
-                (req, res) -> {
-                    for (int i = 0; i < 500; i++) {
-                        res.header("test-header-" + i, DATA + i);
-                    }
-                    res.send();
-                }
+                                      (req, res) -> {
+                                          for (int i = 0; i < 500; i++) {
+                                              res.header("test-header-" + i, DATA + i);
+                                          }
+                                          res.send();
+                                      }
         ));
         router.route(Http2Route.route(GET, "/cont-in",
-                (req, res) -> {
-                    String joinedHeaders = req.headers()
-                            .stream()
-                            .filter(h -> h.name().startsWith("test-header-"))
-                            .map(h -> h.name() + "=" + h.get())
-                            .collect(Collectors.joining("\n"));
-                    res.send(joinedHeaders);
-                }
+                                      (req, res) -> {
+                                          String joinedHeaders = req.headers()
+                                                  .stream()
+                                                  .filter(h -> h.name().startsWith("test-header-"))
+                                                  .map(h -> h.name() + "=" + h.get())
+                                                  .collect(Collectors.joining("\n"));
+                                          res.send(joinedHeaders);
+                                      }
         ));
+        router.route(Http2Route.route(GET, "/trailers-stream",
+                                      (req, res) -> {
+                                          res.header(HeaderNames.TRAILER, TEST_TRAILER_HEADER.name());
+                                          try (var os = res.outputStream()) {
+                                              os.write(DATA.getBytes());
+                                              os.write(DATA.getBytes());
+                                              os.write(DATA.getBytes());
+                                              res.trailers().add(TEST_TRAILER_HEADER);
+                                          }
+                                      }
+        ));
+        router.route(Http2Route.route(GET, "/trailers-stream-result",
+                                      (req, res) -> {
+                                          try (var os = res.outputStream()) {
+                                              os.write(DATA.getBytes());
+                                              os.write(DATA.getBytes());
+                                              os.write(DATA.getBytes());
+                                              res.streamResult("Kaboom!");
+                                          }
+                                      }
+        ));
+        router.route(Http2Route.route(GET, "/trailers",
+                                      (req, res) -> {
+                                          res.header(HeaderNames.TRAILER, TEST_TRAILER_HEADER.name());
+                                          res.trailers().add(TEST_TRAILER_HEADER);
+                                          res.send(DATA.repeat(3));
+                                      }
+        ));
+        router.route(Http2Route.route(GET, "/trailers-no-trailers",
+                                      (req, res) -> {
+                                          res.trailers().add(TEST_TRAILER_HEADER);
+                                          res.send(DATA);
+                                      }
+        ));
+    }
+
+    HeadersServerTest(WebServer server) {
+        client = Http2Client.builder()
+                .baseUri("http://localhost:" + server.port())
+                .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(true).build())
+                .build();
     }
 
     @Test
@@ -164,6 +217,52 @@ public class HeadersTest {
         Assertions.assertThrows(IOException.class,
                 () -> client.send(req.uri(base.resolve("/cont-in")).build(),
                         HttpResponse.BodyHandlers.ofString()));
+    }
+
+    @Test
+    void trailersEntity() throws IOException {
+        ClientResponseTyped<InputStream> res = client
+                .get("/trailers")
+                .request(InputStream.class);
+        try (var is = res.entity()) {
+            is.readAllBytes();
+        }
+        assertThat(res.trailers(), hasHeader(TEST_TRAILER_HEADER));
+    }
+
+    @Test
+    void trailersStream() throws IOException {
+        ClientResponseTyped<InputStream> res = client
+                .get("/trailers-stream")
+                .request(InputStream.class);
+        try (var is = res.entity()) {
+            is.readAllBytes();
+        }
+        assertThat(res.trailers(), hasHeader(TEST_TRAILER_HEADER));
+    }
+
+    @Test
+    void trailersStreamResult() throws IOException {
+        ClientResponseTyped<InputStream> res = client
+                .get("/trailers-stream-result")
+                .header(HeaderValues.TE_TRAILERS)
+                .request(InputStream.class);
+        try (var is = res.entity()) {
+            is.readAllBytes();
+        }
+        assertThat(res.trailers(), hasHeader(HeaderValues.create("stream-result", "Kaboom!")));
+    }
+
+    @Test
+    void trailersNoTrailers() {
+        ClientResponseTyped<String> res = client
+                .get("/trailers-no-trailers")
+                .request(String.class);
+
+        assertThat(res.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+        assertThat(res.entity(), is(
+                "Trailers are supported only when request came with 'TE: trailers' header or "
+                        + "response headers have trailer names definition 'Trailer: <trailer-name>'"));
     }
 
     private HttpClient http2Client(URI base) throws IOException, InterruptedException {

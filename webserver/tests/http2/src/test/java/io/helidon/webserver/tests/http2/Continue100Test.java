@@ -62,7 +62,7 @@ class Continue100Test {
                                            .setHttp2ClearTextUpgrade(false)
                                            .setSsl(false));
 
-    private static final AtomicBoolean CLIEN_SENT_DATA = new AtomicBoolean(false);
+    private static final AtomicBoolean CLIENT_SENT_DATA = new AtomicBoolean(false);
     private final Http2Client webClient;
 
     Continue100Test(WebServer server) {
@@ -83,7 +83,7 @@ class Continue100Test {
                                           } catch (InterruptedException e) {
                                               LOGGER.log(System.Logger.Level.INFO, "100 test interrupted", e);
                                           }
-                                          if (CLIEN_SENT_DATA.get()) {
+                                          if (CLIENT_SENT_DATA.get()) {
                                               res.send("Client didn't wait for server's 100 continue!");
                                               return;
                                           }
@@ -97,7 +97,7 @@ class Continue100Test {
 
     @BeforeEach
     void beforeEach() {
-        CLIEN_SENT_DATA.set(false);
+        CLIENT_SENT_DATA.set(false);
     }
 
     @Test
@@ -115,7 +115,7 @@ class Continue100Test {
                     request.continueHandler(v -> {
                         // OK to send rest of body
                         request.putHeader(HeaderNames.CONTENT_LENGTH.defaultCase(), String.valueOf(DATA.length()));
-                        CLIEN_SENT_DATA.set(true);
+                        CLIENT_SENT_DATA.set(true);
                         request.write(DATA);
                         request.end();
                     });
@@ -142,7 +142,7 @@ class Continue100Test {
                     request.continueHandler(v -> {
                         // OK to send rest of body
                         request.putHeader(HeaderNames.CONTENT_LENGTH.defaultCase(), String.valueOf(DATA.length()));
-                        CLIEN_SENT_DATA.set(true);
+                        CLIENT_SENT_DATA.set(true);
                         request.write(DATA);
                         request.end();
                     });
@@ -159,7 +159,7 @@ class Continue100Test {
                 .post("/100-continue")
                 .header(HeaderValues.EXPECT_100)
                 .outputStream(out -> {
-                    CLIEN_SENT_DATA.set(true);
+                    CLIENT_SENT_DATA.set(true);
                     out.write(DATA.getBytes());
                     out.close();
                 })) {
@@ -187,7 +187,7 @@ class Continue100Test {
                 .post("/100-continue-not")
                 .header(HeaderValues.EXPECT_100)
                 .outputStream(out -> {
-                    CLIEN_SENT_DATA.set(true);
+                    CLIENT_SENT_DATA.set(true);
                     out.write(DATA.getBytes());
                     out.close();
                 })) {
