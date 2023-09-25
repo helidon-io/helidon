@@ -156,7 +156,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'se'">
                                         <value><![CDATA[.addFeature(ObserveFeature.create(MetricsObserver.create()))]]></value>
-                                        <value><![CDATA[.register("/metrics-greet", metricsService)]]></value>
                                     </list>
                                     <list key="GreetService-imports" if="${flavor} == 'se'">
                                         <value>io.helidon.metrics.api.Metrics</value>
@@ -292,7 +291,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value><![CDATA[
     @BeforeAll
     static void clear() {
-        //MetricsFactory.closeAll();
+        MetricsFactory.closeAll();
     }
 ]]></value>
                                     </list>
@@ -413,13 +412,6 @@ allRequests_total 0.0
                 .orElseThrow();
     }
 ]]></value>
-                                    </list>
-                                    <list key="Main-routing" if="${flavor} == 'se'">
-                                        <value><![CDATA[MetricsService metricsService = new MetricsService();
-]]></value>
-                                    </list>
-                                    <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                        <value><![CDATA[.register("/metrics-greet", metricsService)]]></value>
                                     </list>
                                     <list key="modules" if="${flavor} == 'mp'">
                                         <value>io.helidon.microprofile.metrics</value>
