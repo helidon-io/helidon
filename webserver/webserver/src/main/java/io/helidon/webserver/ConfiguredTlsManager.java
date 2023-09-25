@@ -50,7 +50,7 @@ public class ConfiguredTlsManager implements TlsManager {
 
     private final String name;
     private final String type;
-    private final Set<Consumer<SSLContext>> sslContextConsumers = new LinkedHashSet<>();
+    private final Set<Consumer<SSLContext>> subscribers = new LinkedHashSet<>();
     private volatile SSLContext sslContext;
 
     ConfiguredTlsManager() {
@@ -96,7 +96,7 @@ public class ConfiguredTlsManager implements TlsManager {
 
     @Override // TlsManager
     public void subscribe(Consumer<SSLContext> sslContextConsumer) {
-        sslContextConsumers.add(Objects.requireNonNull(sslContextConsumer));
+        subscribers.add(Objects.requireNonNull(sslContextConsumer));
     }
 
     @Override // TlsManager
@@ -129,7 +129,9 @@ public class ConfiguredTlsManager implements TlsManager {
      * @param tlsConfig     the tls config
      * @param keyManagers   the key managers
      * @param trustManagers the trust managers
+     * @deprecated this method will removed in a future release.
      */
+    @Deprecated
     protected void initSslContext(WebServerTls tlsConfig,
                                   KeyManager[] keyManagers,
                                   TrustManager[] trustManagers) {
@@ -159,7 +161,7 @@ public class ConfiguredTlsManager implements TlsManager {
         initSslContext(tlsConfig, keyManagers, trustManagers);
 
         // notify subscribers
-        sslContextConsumers.forEach(c -> c.accept(sslContext));
+        subscribers.forEach(c -> c.accept(sslContext));
     }
 
     /**
@@ -186,7 +188,9 @@ public class ConfiguredTlsManager implements TlsManager {
      *
      * @param tlsConfig TLS config
      * @return a new trust manager factory
+     * @deprecated this method will removed in a future release.
      */
+    @Deprecated
     protected TrustManagerFactory createTmf(WebServerTls tlsConfig) {
         try {
             return TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -195,8 +199,16 @@ public class ConfiguredTlsManager implements TlsManager {
         }
     }
 
-    private void configureAndSet(WebServerTls tlsConfig,
-                                 SSLContext sslContext) {
+    /**
+     * Configure the {@link SSLContext} based upon configuration, and then store the instance.
+     *
+     * @param tlsConfig  TLS config
+     * @param sslContext ssl context to store
+     * @deprecated this method will removed in a future release.
+     */
+    @Deprecated
+    protected void configureAndSet(WebServerTls tlsConfig,
+                                   SSLContext sslContext) {
         SSLSessionContext serverSessionContext = sslContext.getServerSessionContext();
         if (serverSessionContext != null) {
             int sessionCacheSize = tlsConfig.sessionCacheSize();

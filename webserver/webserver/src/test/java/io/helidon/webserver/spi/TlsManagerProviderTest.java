@@ -83,7 +83,7 @@ class TlsManagerProviderTest {
         assertThat(configuredTlsManager.name(),
                    equalTo("fake"));
         assertThat(configuredTlsManager.type(),
-                   equalTo("fake"));
+                   equalTo("fake-type"));
     }
 
 }

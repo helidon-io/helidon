@@ -17,11 +17,11 @@
 package io.helidon.webserver.spi;
 
 import io.helidon.config.Config;
-import io.helidon.webserver.ConfiguredTlsManager;
 import io.helidon.webserver.TlsManager;
 
 /**
  * Testing only - service loaded.
+ *
  * @deprecated
  */
 @Deprecated
@@ -40,7 +40,7 @@ public class FakeTlsManagerProvider implements TlsManagerProvider {
 
     @Override
     public TlsManager create(Config config, String name) {
-        return new ConfiguredTlsManager(name, name) {};
+        return new FakeReloadableTlsManager(name);
     }
 
 }

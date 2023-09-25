@@ -165,7 +165,13 @@ class NettyWebServer implements WebServer {
             bootstraps.put(name, bootstrap);
 
             // subscribe to updates
-            soConfig.tls().ifPresent(tlsConfig -> updateTls(tlsConfig, name));
+            Optional<WebServerTls> webServerTls = soConfig.tls();
+            webServerTls
+                    .map(WebServerTls::manager)
+                    .ifPresent(manager -> manager.subscribe(newCtx -> {
+                        SslContext newSslCts = createSslContext(webServerTls.get(), newCtx);
+                        childHandler.updateSslContext(newSslCts);
+                    }));
         }
 
         // Log entry that also initializes NettyInitializer class
