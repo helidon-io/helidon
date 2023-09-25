@@ -125,7 +125,7 @@
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
-        <version.lib.narayana>5.13.1.Final</version.lib.narayana>
+        <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
         <version.lib.netty>4.1.94.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
@@ -329,6 +329,11 @@
             <dependency>
                 <groupId>jakarta.enterprise</groupId>
                 <artifactId>jakarta.enterprise.cdi-api</artifactId>
+                <version>${version.lib.jakarta.cdi-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.enterprise</groupId>
+                <artifactId>jakarta.enterprise.lang-model</artifactId>
                 <version>${version.lib.jakarta.cdi-api}</version>
             </dependency>
             <dependency>
@@ -845,14 +850,15 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
-                <artifactId>narayana-jta-jakarta</artifactId>
+                <artifactId>narayana-jta</artifactId>
                 <version>${version.lib.narayana}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
                 <artifactId>cdi</artifactId>
                 <version>${version.lib.narayana}</version>
-                <exclusions>
+                <!--
+                <exclusions>                  
                     <exclusion>
                         <groupId>org.jboss.spec.javax.resource</groupId>
                         <artifactId>jboss-connector-api_1.7_spec</artifactId>
@@ -862,6 +868,7 @@
                         <artifactId>jconsole</artifactId>
                     </exclusion>
                 </exclusions>
+                -->
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>
