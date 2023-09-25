@@ -58,13 +58,6 @@
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jboss-transaction-spi-jakarta</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        -->
 
         <!-- Provided-scoped dependencies. -->
         <dependency>

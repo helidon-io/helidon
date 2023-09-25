@@ -857,18 +857,6 @@
                 <groupId>org.jboss.narayana.jta</groupId>
                 <artifactId>cdi</artifactId>
                 <version>${version.lib.narayana}</version>
-                <!--
-                <exclusions>                  
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.resource</groupId>
-                        <artifactId>jboss-connector-api_1.7_spec</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>sun.jdk</groupId>
-                        <artifactId>jconsole</artifactId>
-                    </exclusion>
-                </exclusions>
-                -->
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>
@@ -910,11 +898,6 @@
                         <artifactId>weld-core-impl</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-transaction-spi-jakarta</artifactId>
-                <version>${version.lib.jboss.transaction-spi}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld.environment</groupId>
