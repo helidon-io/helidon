@@ -81,7 +81,7 @@ class TestCORS {
                 .header(HeaderNames.HOST.defaultCase(), "here.com");
 
         Response r = putResponse("Ahoy", builder);
-        boolean isOverriding = Config.create().get("cors").exists();
+        boolean isOverriding = Config.global().get("cors").exists();
         assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 204 : 403));
     }
 

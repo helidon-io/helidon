@@ -3,7 +3,7 @@ package {{package}};
 import java.util.concurrent.atomic.AtomicReference;
 
 {{#GreetService-imports}}
-{{.}}
+import {{.}};
 {{/GreetService-imports}}
 import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
@@ -23,12 +23,15 @@ public class GreetService implements HttpService {
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
     GreetService() {
-        greeting.set("Hello");
+        this(Config.global().get("app"));
     }
 
-{{#GreetService-constructor}}
-{{.}}
-{{/GreetService-constructor}}
+    GreetService(Config appConfig) {
+        {{#GreetService-constructor}}
+        {{.}}
+        {{/GreetService-constructor}}
+        greeting.set(appConfig.get("greeting").asString().orElse("Ciao"));
+    }
 
     /**
      * A service registers itself by updating the routing rules.

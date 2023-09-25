@@ -71,6 +71,9 @@
                 <value>org.hamcrest.MatcherAssert.assertThat</value>
                 <value>org.hamcrest.Matchers.is</value>
             </list>
+            <list key="GreetService-imports">
+                <value>io.helidon.config.Config</value>
+            </list>
             <list key="modules">
                 <value>io.helidon.webserver</value>
                 <value>io.helidon.http</value>
@@ -78,6 +81,16 @@
             </list>
             <list key="Main-routing-builder">
                 <value><![CDATA[.register("/greet", new GreetService())]]></value>
+            </list>
+            <list key="application-yaml-entries">
+                <value><![CDATA[
+app:
+    greeting: "Hello"]]></value>
+            </list>
+            <list key="config-test">
+                <value><![CDATA[
+app:
+    greeting: "Hello"]]></value>
             </list>
         </model>
     </output>

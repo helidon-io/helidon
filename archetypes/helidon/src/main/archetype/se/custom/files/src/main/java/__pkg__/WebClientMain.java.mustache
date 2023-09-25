@@ -33,7 +33,7 @@ public class WebClientMain {
      * @param args main method
      */
     public static void main(String[] args) {
-        Config config = Config.create();
+        Config config = Config.global();
         String url;
         if (args.length == 0) {
             ConfigValue<Integer> port = config.get("server.port").asInt();
