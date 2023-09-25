@@ -203,7 +203,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 
         String output = response.as(String.class);
 
-        String expected = MetricsService.PERSONALIZED_GETS_COUNTER_NAME + "_total 1.0";
+        String expected = MetricsService.PERSONALIZED_GETS_COUNTER_NAME + "_total{scope=\"application\",} 1.0";
         assertThat("Unable to find expected counter result " + expected + "; output is " + output,
                 output, containsString(expected));
         response.close();
