@@ -385,13 +385,13 @@ allRequests_total 0.0
         assertThat(response.status().code(), is(200));
 
         String output = response.as(String.class);
-        String expected = MetricsService.ALL_GETS_TIMER_NAME + "_seconds_count " + 2;
+        String expected = MetricsService.ALL_GETS_TIMER_NAME + "_seconds_count{scope=\"application\",} " + 2;
         assertThat("Unable to find expected all-gets timer count " + expected + "; output is " + output,
                 output, containsString(expected));
 
         assertThat("Unable to find expected all-gets timer sum", output,
                 containsString(MetricsService.ALL_GETS_TIMER_NAME + "_seconds_sum"));
-        expected = MetricsService.PERSONALIZED_GETS_COUNTER_NAME + "_total " + 1;
+        expected = MetricsService.PERSONALIZED_GETS_COUNTER_NAME + "_total{scope=\"application\",} " + 1;
         assertThat("Unable to find expected counter result " + expected + "; output is " + output,
                 output, containsString(expected));
         response.close();
