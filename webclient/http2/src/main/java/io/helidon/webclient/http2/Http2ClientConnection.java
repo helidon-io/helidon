@@ -237,13 +237,15 @@ class Http2ClientConnection {
             sendListener.frame(ctx, 0, http2Settings);
             writer.write(frameData);
         }
-        // First connection window update, with prefetch increment
-        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(config.prefetch());
-        Http2Flag.NoFlags flags = Http2Flag.NoFlags.create();
-        Http2FrameData frameData = windowUpdate.toFrameData(null, 0, flags);
-        sendListener.frameHeader(ctx, 0, frameData.header());
-        sendListener.frame(ctx, 0, windowUpdate);
-        writer.write(frameData);
+        // Initial window size for connection is not configurable, subsequent update win update is needed
+        int connectionWinSizeUpd = config.initialWindowSize() - WindowSize.DEFAULT_WIN_SIZE;
+        if (connectionWinSizeUpd > 0) {
+            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(connectionWinSizeUpd);
+            Http2FrameData frameData = windowUpdate.toFrameData(null, 0, Http2Flag.NoFlags.create());
+            sendListener.frameHeader(ctx, 0, frameData.header());
+            sendListener.frame(ctx, 0, windowUpdate);
+            writer.write(frameData);
+        }
     }
 
     private void start(Http2ClientProtocolConfig protocolConfig,

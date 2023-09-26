@@ -85,15 +85,6 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     int initialWindowSize();
 
     /**
-     * First connection window update increment sent right after the connection is established.
-     * Defaults to {@code 33_554_432}.
-     *
-     * @return number of bytes the client is prepared to receive as data from all the streams combined
-     */
-    @ConfiguredOption("33554432")
-    int prefetch();
-
-    /**
      * Timeout for blocking between windows size check iterations.
      *
      * @return timeout

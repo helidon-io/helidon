@@ -99,7 +99,6 @@ class ClientFlowControlTest {
 
         client = Http2Client.builder()
                 .baseUri("http://localhost:" + server.actualPort() + "/")
-                .protocolConfig(it -> it.prefetch(10000))
                 .build();
     }
 
