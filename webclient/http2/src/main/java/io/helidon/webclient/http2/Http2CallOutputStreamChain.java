@@ -138,12 +138,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         private final CompletableFuture<WebClientServiceResponse> whenComplete;
         private final HttpClientConfig clientConfig;
         private final WritableHeaders<?> headers;
+        private final long contentLength;
 
-        //Whether it has multiple chunks to send
-        private boolean shouldStream;
-        private BufferData firstPacket;
         private long bytesWritten;
-        private long contentLength;
         private boolean noData = true;
         private boolean closed;
         private boolean interrupted;
@@ -164,7 +161,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             this.headers = headers;
             this.clientConfig = clientConfig;
             this.contentLength = headers.contentLength().orElse(-1);
-            this.shouldStream = contentLength == -1;
             this.request = request;
             this.originalRequest = originalRequest;
             this.lastRequest = originalRequest;
@@ -190,23 +186,11 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
             BufferData data = BufferData.create(b, off, len);
 
-            if (!shouldStream) {
-                if (firstPacket == null) {
-                    firstPacket = data;
-                } else {
-                    shouldStream = true;
-                    sendFirstChunk();
-                }
+            if (noData) {
                 noData = false;
+                sendPrologueAndHeader();
             }
-
-            if (shouldStream) {
-                if (noData) {
-                    noData = false;
-                    sendPrologueAndHeader();
-                }
-                writeChunked(data);
-            }
+            writeContent(data);
         }
 
         @Override
@@ -215,28 +199,13 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 return;
             }
             this.closed = true;
-            if (shouldStream) {
-                if (firstPacket != null) {
-                    sendFirstChunk();
-                } else if (noData) {
-                    sendPrologueAndHeader();
-                }
-                if (LOGGER.isLoggable(TRACE)) {
-                    stream.ctx().log(LOGGER, System.Logger.Level.TRACE, "send data%n%s", TERMINATING.debugDataHex());
-                }
-                stream.writeData(BufferData.empty(), true);
-            } else {
-                if (noData) {
-                    headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-                    contentLength = 0;
-                }
-                if (noData || firstPacket != null) {
-                    sendPrologueAndHeader();
-                }
-                if (firstPacket != null) {
-                    writeContent(firstPacket);
-                }
+            if (noData) {
+                sendPrologueAndHeader();
             }
+            if (LOGGER.isLoggable(TRACE)) {
+                stream.ctx().log(LOGGER, System.Logger.Level.TRACE, "send data%n%s", TERMINATING.debugDataHex());
+            }
+            stream.writeData(TERMINATING, true);
             super.close();
         }
 
@@ -259,13 +228,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
         boolean interrupted() {
             return interrupted;
-        }
-
-        private void writeChunked(BufferData buffer) {
-            if (LOGGER.isLoggable(TRACE)) {
-                stream.ctx().log(LOGGER, System.Logger.Level.TRACE, "send data:%n%s", buffer.debugDataHex());
-            }
-            stream.writeData(buffer, false);
         }
 
         private void writeContent(BufferData buffer) throws IOException {
@@ -398,11 +360,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                     + clientConfig.maxRedirects() + ") reached.");
         }
 
-        private void sendFirstChunk() {
-            sendPrologueAndHeader();
-            writeChunked(firstPacket);
-            firstPacket = null;
-        }
     }
 
 
