@@ -67,12 +67,12 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                  Http2ClientStream stream) {
         boolean interrupted = false;
         ClientOutputStream outputStream = new ClientOutputStream(stream,
-                                              headers,
-                                              clientConfig(),
-                                              serviceRequest,
-                                              clientRequest(),
-                                              whenSent,
-                                              whenComplete());
+                                                                 headers,
+                                                                 clientConfig(),
+                                                                 serviceRequest,
+                                                                 clientRequest(),
+                                                                 whenSent,
+                                                                 whenComplete());
         try {
             streamHandler.handle(outputStream);
         } catch (IOException e) {
@@ -140,7 +140,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         private final WritableHeaders<?> headers;
 
         //Whether it has multiple chunks to send
-        private boolean chunked;
+        private boolean shouldStream;
         private BufferData firstPacket;
         private long bytesWritten;
         private long contentLength;
@@ -164,7 +164,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             this.headers = headers;
             this.clientConfig = clientConfig;
             this.contentLength = headers.contentLength().orElse(-1);
-            this.chunked = contentLength == -1;
+            this.shouldStream = contentLength == -1;
             this.request = request;
             this.originalRequest = originalRequest;
             this.lastRequest = originalRequest;
@@ -190,17 +190,17 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
             BufferData data = BufferData.create(b, off, len);
 
-            if (!chunked) {
+            if (!shouldStream) {
                 if (firstPacket == null) {
                     firstPacket = data;
                 } else {
-                    chunked = true;
+                    shouldStream = true;
                     sendFirstChunk();
                 }
                 noData = false;
             }
 
-            if (chunked) {
+            if (shouldStream) {
                 if (noData) {
                     noData = false;
                     sendPrologueAndHeader();
@@ -215,7 +215,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 return;
             }
             this.closed = true;
-            if (chunked) {
+            if (shouldStream) {
                 if (firstPacket != null) {
                     sendFirstChunk();
                 } else if (noData) {
@@ -226,7 +226,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 }
                 stream.writeData(BufferData.empty(), true);
             } else {
-                headers.remove(HeaderNames.TRANSFER_ENCODING);
                 if (noData) {
                     headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                     contentLength = 0;
