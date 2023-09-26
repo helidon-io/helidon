@@ -188,7 +188,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
             if (noData) {
                 noData = false;
-                sendPrologueAndHeader();
+                sendHeader();
             }
             writeContent(data);
         }
@@ -200,7 +200,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             }
             this.closed = true;
             if (noData) {
-                sendPrologueAndHeader();
+                sendHeader();
             }
             if (LOGGER.isLoggable(TRACE)) {
                 stream.ctx().log(LOGGER, System.Logger.Level.TRACE, "send data%n%s", TERMINATING.debugDataHex());
@@ -243,11 +243,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             stream.writeData(buffer, false);
         }
 
-        private void sendPrologueAndHeader() {
-            boolean userSet100Continue = headers.contains(HeaderValues.EXPECT_100);
-            boolean expects100Continue = clientConfig.sendExpectContinue() && !noData;
-            if (expects100Continue && !userSet100Continue) {
-                headers.add(HeaderValues.EXPECT_100);
+        private void sendHeader() {
+            if (clientConfig.sendExpectContinue() && !noData) {
+                headers.set(HeaderValues.EXPECT_100);
             }
 
             if (LOGGER.isLoggable(TRACE)) {
@@ -259,7 +257,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             stream.writeHeaders(http2Headers, false);
             whenSent.complete(request);
 
-            if (expects100Continue || userSet100Continue) {
+            if (headers.contains(HeaderValues.EXPECT_100)) {
                 Status status = stream.waitFor100Continue();
 
                 if (status != Status.CONTINUE_100) {
