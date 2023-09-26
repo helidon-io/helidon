@@ -294,7 +294,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             Http2Headers http2Headers = prepareHeaders(request.method(),
                                                        ClientRequestHeaders.create(headers),
                                                        request.uri());
-            stream.write(http2Headers, false);
+            stream.writeHeaders(http2Headers, false);
             whenSent.complete(request);
 
             if (expects100Continue) {
