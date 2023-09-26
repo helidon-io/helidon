@@ -284,7 +284,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
         private void sendPrologueAndHeader() {
             boolean expects100Continue = clientConfig.sendExpectContinue() && !noData;
-            if (expects100Continue) {
+            if (expects100Continue && !headers.contains(HeaderValues.EXPECT_100)) {
                 headers.add(HeaderValues.EXPECT_100);
             }
 

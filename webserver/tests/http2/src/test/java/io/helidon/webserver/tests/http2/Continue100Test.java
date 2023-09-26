@@ -159,8 +159,9 @@ class Continue100Test {
                 .post("/100-continue")
                 .header(HeaderValues.EXPECT_100)
                 .outputStream(out -> {
+                    out.write("Helidon!!!".repeat(5).getBytes());
                     CLIENT_SENT_DATA.set(true);
-                    out.write(DATA.getBytes());
+                    out.write("Helidon!!!".repeat(5).getBytes());
                     out.close();
                 })) {
             assertThat(res.status(), is(Status.OK_200));
