@@ -247,9 +247,10 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
+        String effectiveScope = scope.orElse(SystemTagsManager.instance().effectiveScope(scope)
+                                                     .orElse(io.helidon.metrics.api.Meter.Scope.DEFAULT));
         return metricsConfig.enabled()
-                && (scope.isEmpty()
-                    || metricsConfig.isMeterEnabled(name, scope.get()));
+                && metricsConfig.isMeterEnabled(name, effectiveScope);
     }
 
     @Override
