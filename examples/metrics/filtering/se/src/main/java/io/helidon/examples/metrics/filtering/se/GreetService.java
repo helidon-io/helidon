@@ -77,7 +77,7 @@ public class GreetService implements HttpService {
      */
     @Override
     public void routing(HttpRules rules) {
-        rules.get("/", this::timeGet, this::getDefaultMessageHandler)
+        rules.get("/", this::timeGet)
                 .get("/{name}", this::countPersonalized, this::getMessageHandler)
                 .put("/greeting", this::updateGreetingHandler);
     }
@@ -142,7 +142,7 @@ public class GreetService implements HttpService {
     }
 
     private void timeGet(ServerRequest request, ServerResponse response) {
-        timerForGets.record((Runnable) response::next);
+        timerForGets.record(() -> getDefaultMessageHandler(request, response));
     }
 
     private void countPersonalized(ServerRequest request, ServerResponse response) {

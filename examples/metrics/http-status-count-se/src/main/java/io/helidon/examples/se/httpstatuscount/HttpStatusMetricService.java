@@ -74,11 +74,10 @@ public class HttpStatusMetricService implements HttpService {
         return IN_PROGRESS.get() != 0;
     }
 
-    // Edited to adopt Ciaran's fix later in the thread.
     private void updateRange(ServerRequest request, ServerResponse response) {
         IN_PROGRESS.incrementAndGet();
+        response.whenSent(() -> logMetric(response));
         response.next();
-        logMetric(response);
     }
 
     private void logMetric(ServerResponse response) {

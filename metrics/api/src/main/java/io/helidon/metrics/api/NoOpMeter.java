@@ -563,22 +563,22 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         @Override
         public <T> T record(Callable<T> f) throws Exception {
-            return null;
+            return f.call();
         }
 
         @Override
         public void record(Runnable f) {
-
+            f.run();
         }
 
         @Override
         public Runnable wrap(Runnable f) {
-            return null;
+            return f;
         }
 
         @Override
         public <T> Callable<T> wrap(Callable<T> f) {
-            return null;
+            return f;
         }
 
         @Override

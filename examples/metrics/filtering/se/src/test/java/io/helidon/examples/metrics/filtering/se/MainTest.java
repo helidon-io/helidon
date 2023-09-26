@@ -28,7 +28,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -78,7 +77,6 @@ public class MainTest {
     }
 
     @Test
-    @Disabled // application metrics returns 404
     public void testMetrics() {
         try (Http1ClientResponse response = client.get("/greet").request()) {
             assertThat(response.as(String.class), containsString("Hello World!"));

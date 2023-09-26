@@ -19,21 +19,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 class TestScopeManagement {
@@ -42,7 +46,8 @@ class TestScopeManagement {
     @ValueSource(booleans = {true, false})
     void testExplicitScopeOnMetersWithNoDefaultScope(boolean scopeTagEnabled) {
         MetricsConfig metricsConfig = MetricsConfig.builder()
-                .scoping(ScopingConfig.builder())
+                .scoping(ScopingConfig.builder()
+                                 .clearDefaultValue())
                 .build();
         MeterRegistry reg = MetricsFactory.getInstance().globalRegistry();
         SystemTagsManager.instance(metricsConfig);
@@ -126,5 +131,15 @@ class TestScopeManagement {
                            hasItem((Meter) c1),
                            hasItem((Meter) t1)
                    ));
+    }
+
+    @Test
+    void checkDefaultScope() {
+        MetricsConfig metricsConfig = MetricsConfig.create(); // Make sure to use the defaults, not leftovers from earlier tests
+        MetricsFactory.getInstance().globalRegistry(metricsConfig);
+        SystemTagsManager.instance(metricsConfig);
+
+        Counter counter = Metrics.getOrCreate(Counter.builder("defaultScopedCounter"));
+        assertThat("Unspecified scope", counter.scope(), OptionalMatcher.optionalValue(is(Meter.Scope.DEFAULT)));
     }
 }

@@ -34,11 +34,11 @@ interface ScopingConfigBlueprint {
 
     /**
      * Default scope value to associate with meters that are registered without an explicit setting; no setting means meters
-     * receive no default scope value.
+     * are assigned scope {@value io.helidon.metrics.api.Meter.Scope#DEFAULT}.
      *
      * @return default scope value
      */
-    @ConfiguredOption(key = "default")
+    @ConfiguredOption(key = "default", value = Meter.Scope.DEFAULT)
     Optional<String> defaultValue();
 
     /**
