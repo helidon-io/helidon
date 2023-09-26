@@ -15,8 +15,6 @@
  */
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.openapi.spi.OpenApiServiceProvider;
-import io.helidon.openapi.ui.OpenApiUiProvider;
 
 @Feature(value = "OpenAPI UI",
          description = "OpenAPI UI support",
@@ -32,5 +30,6 @@ module io.helidon.openapi.ui {
 
     requires smallrye.open.api.ui;
 
-    provides OpenApiServiceProvider with OpenApiUiProvider;
+    provides io.helidon.openapi.spi.OpenApiServiceProvider with
+            io.helidon.openapi.ui.OpenApiUiProvider;
 }
