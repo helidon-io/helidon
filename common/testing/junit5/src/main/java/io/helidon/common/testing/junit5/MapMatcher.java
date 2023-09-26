@@ -32,15 +32,15 @@ public final class MapMatcher {
     }
 
     /**
-     * A matcher for an {@link java.util.Map} that performs a deep equality.
+     * A matcher that performs {@link java.util.Map} deep equality.
      * <p>
      * Usage example:
      * <pre>
-     *     assertThat(actualMap, isMapEqualTo(expectedMap));
+     *     assertThat(actualMap, mapEqualTo(expectedMap));
      * </pre>
      *
      * This method targets trees implemented using {@link java.util.Map} where values of type {@link java.util.Map}
-     * are considered tree nodes, and values with other types are considered leaf nodes.
+     * are considered tree nodes, and values of any other type are considered leaf nodes.
      * <p>
      * The deep-equality is performed by diffing a flat string representation of each map. If the diff yields no differences,
      * the maps are considered deeply equal.
