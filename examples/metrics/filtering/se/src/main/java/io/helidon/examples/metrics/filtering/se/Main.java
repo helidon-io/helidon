@@ -96,7 +96,7 @@ public final class Main {
     static void routing(HttpRouting.Builder routing, MetricsConfig.Builder metricsConfigBuilder) {
         Config config = Config.global();
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance(config).globalRegistry();
+        MeterRegistry meterRegistry = MetricsFactory.getInstance(config).globalRegistry(metricsConfigBuilder.build());
 
         MetricsObserver metrics = MetricsObserver.builder()
                 .metricsConfig(metricsConfigBuilder)
