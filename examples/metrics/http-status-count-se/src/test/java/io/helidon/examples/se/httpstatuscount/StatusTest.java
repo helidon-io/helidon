@@ -103,6 +103,7 @@ public class StatusTest {
         }
         try (Http1ClientResponse response = client.get("/status/" + status.code())
                 .accept(MediaTypes.APPLICATION_JSON)
+                .followRedirects(false)
                 .request()) {
             assertThat("Response status", response.status().code(), is(status.code()));
             checkCounters(status, before);
@@ -111,7 +112,7 @@ public class StatusTest {
 
     @SuppressWarnings("BusyWait")
     private void checkCounters(Status status, long[] before) throws InterruptedException {
-        // first make sure we do not have a request in progress
+        // Make sure the server has updated the counter(s).
         long now = System.currentTimeMillis();
 
         while (HttpStatusMetricService.isInProgress()) {
