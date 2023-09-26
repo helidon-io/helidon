@@ -22,8 +22,11 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
-import io.helidon.tests.integration.harness.SetUp;
+import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
+
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.verifyInsertPokemon;
@@ -33,10 +36,11 @@ import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.veri
  * Test set of basic JDBC updates.
  */
 @SuppressWarnings("SpellCheckingInspection")
-public class SimpleUpdateIT extends AbstractIT {
+@ExtendWith(DbClientParameterResolver.class)
+public class SimpleUpdateIT {
 
     private static final System.Logger LOGGER = System.getLogger(SimpleUpdateIT.class.getName());
-    private static final int BASE_ID = LAST_POKEMON_ID + 20;
+    private static final int BASE_ID = TestConfig.LAST_POKEMON_ID + 20;
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
 
     private final DbClient dbClient;
@@ -57,7 +61,7 @@ public class SimpleUpdateIT extends AbstractIT {
     /**
      * Initialize tests of basic JDBC updates.
      */
-    @SetUp
+    @BeforeAll
     public static void setup(DbClient dbClient) {
         try {
             int curId = BASE_ID;

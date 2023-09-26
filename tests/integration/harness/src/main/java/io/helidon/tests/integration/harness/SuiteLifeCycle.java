@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,9 +58,11 @@ public class SuiteLifeCycle implements BeforeAllCallback {
                 invokeBeforeSuite(suiteContext);
                 suiteContext.future().thenRun(() -> invokeAfterSuite(suiteContext));
             }
-            context.getTestClass()
-                    .filter(clazz -> clazz.getAnnotation(SetUp.class) != null)
-                    .ifPresent(clazz -> invokeSetUp(suiteContext));
+            context.getTestClass().ifPresent(
+                    clazz -> Arrays.stream(clazz.getMethods())
+                            .filter(method -> method.isAnnotationPresent(SetUp.class))
+                            .forEach(method -> handleSetUp(suiteContext, method))
+            );
         });
     }
 

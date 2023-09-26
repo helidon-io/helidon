@@ -21,6 +21,7 @@ import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbClientServiceContext;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Pokemon.POKEMONS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,6 +30,7 @@ import static org.hamcrest.Matchers.equalTo;
 /**
  * Verify services handling.
  */
+@ExtendWith(DbClientParameterResolver.class)
 public class InterceptorIT {
 
     private final Config config;

@@ -23,8 +23,11 @@ import java.util.Map;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
-import io.helidon.tests.integration.harness.SetUp;
+import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
+
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.verifyInsertPokemon;
@@ -34,10 +37,11 @@ import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.veri
  * Test DbStatementDml methods.
  */
 @SuppressWarnings("SpellCheckingInspection")
-public class StatementDmlIT extends AbstractIT {
+@ExtendWith(DbClientParameterResolver.class)
+public class StatementDmlIT {
 
     private static final System.Logger LOGGER = System.getLogger(StatementDmlIT.class.getName());
-    private static final int BASE_ID = LAST_POKEMON_ID + 100;
+    private static final int BASE_ID = TestConfig.LAST_POKEMON_ID + 100;
 
     private final DbClient dbClient;
 
@@ -54,7 +58,7 @@ public class StatementDmlIT extends AbstractIT {
     /**
      * Initialize DbStatementDml methods tests.
      */
-    @SetUp
+    @BeforeAll
     public static void setup(DbClient dbClient) {
         try {
             addPokemon(dbClient, new Pokemon(BASE_ID, "Shinx", TYPES.get(13)));                      // BASE_ID+0

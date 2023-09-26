@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.dbclient.common.tests;
-
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
 
 /**
- * Common testing code.
+ * Helidon Tests Integration Harness.
  */
-public abstract class AbstractIT {
+module io.helidon.tests.integration.harness {
 
-    /**
-     * Last used id in {@code Pokemon} table.
-     */
-    public static final int LAST_POKEMON_ID = 5;
+    requires jakarta.json;
+
+    requires org.junit.platform.suite.api;
+    requires org.junit.jupiter.api;
+    requires org.junit.platform.engine;
+    requires org.junit.platform.launcher;
+
+    requires io.helidon.common.media.type;
+    requires io.helidon.http.media.jsonp;
+    requires io.helidon.webclient.http1;
+
+    exports io.helidon.tests.integration.harness;
+
 }
