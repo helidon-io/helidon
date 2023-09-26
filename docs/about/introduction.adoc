@@ -55,7 +55,7 @@ Helidon comes in two flavors: *Helidon SE* and *Helidon MP*. Think about these f
 |Microframework model with a very small footprint and limited functionality (~7 MB).
 | https://projects.eclipse.org/proposals/eclipse-microprofile[MicroProfile] implementation; slightly larger footprint than SE (~13 MB).
 
-|Helidon SE is Helidon’s foundational set of APIs. Virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand..
+|Helidon SE is Helidon’s foundational set of APIs. As of Helidon 4, virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand..
 |Declarative style with dependency injection.
 
 |Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections.
@@ -129,9 +129,11 @@ We also strongly suggest installing the xref:cli.adoc[Helidon CLI] (command line
 
 == Migration
 
-In case you need to upgrade the version of Helidon, follow the `Migration Guides`.
+To upgrade your current version of Helidon, follow the `Migration Guides`:
 
 For migration from Helidon 3.x to 4.x:
+
+//Mitia to create these guides for 4x
 
 * link to SE 4x migration guide [tbd]
 * link to MP 4x migration guide [tbd]
