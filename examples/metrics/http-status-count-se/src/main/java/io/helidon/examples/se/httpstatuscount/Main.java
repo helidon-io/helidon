@@ -67,10 +67,8 @@ public final class Main {
      * Set up routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
     static void routing(HttpRouting.Builder routing) {
-        Config config = Config.global();
         routing.addFeature(ObserveFeature.create())
                 .register(HttpStatusMetricService.create()) // no endpoint, just metrics updates
                 .register("/simple-greet", new SimpleGreetService())

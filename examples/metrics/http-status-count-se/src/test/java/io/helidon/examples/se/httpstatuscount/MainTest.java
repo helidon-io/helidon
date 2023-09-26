@@ -26,7 +26,6 @@ import io.helidon.webserver.WebServerConfig;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -56,14 +55,13 @@ public class MainTest {
     }
 
     @Test
-    @Disabled
     public void testMicroprofileMetrics() {
         try (Http1ClientResponse response = client.get("/simple-greet/greet-count").request()) {
             assertThat(response.as(String.class), containsString("Hello World!"));
         }
 
         try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
-            assertThat("Metrics output", response.as(String.class), containsString("application_accessctr_total"));
+            assertThat("Metrics output", response.as(String.class), containsString("accessctr_total"));
         }
     }
 

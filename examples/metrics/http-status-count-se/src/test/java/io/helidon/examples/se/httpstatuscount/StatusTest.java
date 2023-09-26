@@ -31,7 +31,6 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.examples.se.httpstatuscount.HttpStatusMetricService.STATUS_COUNTER_NAME;
@@ -71,7 +70,6 @@ public class StatusTest {
     }
 
     @Test
-    @Disabled
     void checkStatusMetrics() throws InterruptedException {
         checkAfterStatus(Status.create(171));
         checkAfterStatus(Status.OK_200);
@@ -106,7 +104,7 @@ public class StatusTest {
         try (Http1ClientResponse response = client.get("/status/" + status.code())
                 .accept(MediaTypes.APPLICATION_JSON)
                 .request()) {
-            assertThat("Response status", response.status(), is(status));
+            assertThat("Response status", response.status().code(), is(status.code()));
             checkCounters(status, before);
         }
     }
