@@ -65,7 +65,8 @@ public final class Main {
         {{.}}
         {{/Main-routing}}
 
-        routing{{#Main-routing-builder}}
+        routing
+               {{#Main-routing-builder}}
                {{.}}{{#last}}; {{/last}}
                {{/Main-routing-builder}}
     }

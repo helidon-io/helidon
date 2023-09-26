@@ -111,7 +111,7 @@
 ]]></value>
             </list>
             <list key="Observe-feature-builder">
-                <value if="${metrics}"><![CDATA[                    .addObserver(MetricsObserver.create())]]></value>
+                <value if="${metrics}"><![CDATA[.addObserver(MetricsObserver.create())]]></value>
             </list>
             <list key="Abstract-tests">
                 <value if="${metrics}"><![CDATA[

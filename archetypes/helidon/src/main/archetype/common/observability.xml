@@ -504,17 +504,17 @@ curl -s -X GET http://localhost:8080/observe/health
                                 </list>
                                 <list key="Observe-feature-builder" if="${flavor} == 'se'">
                                     <value><![CDATA[.addObserver(HealthObserver.builder()
-                            .details(true)
-                            .useSystemServices(false)
-                            .addCheck(() -> HealthCheckResponse.builder()
-                                    .status(HealthCheckResponse.Status.UP)
-                                    .detail("time", System.currentTimeMillis())
-                                    .build(), HealthCheckType.READINESS)
-                            .addCheck(() -> HealthCheckResponse.builder()
-                                    .status(isStarted())
-                                    .detail("time", System.currentTimeMillis())
-                                    .build(), HealthCheckType.STARTUP)
-                            .build())]]></value>
+                                               .details(true)
+                                               .useSystemServices(false)
+                                               .addCheck(() -> HealthCheckResponse.builder()
+                                                        .status(HealthCheckResponse.Status.UP)
+                                                        .detail("time", System.currentTimeMillis())
+                                                        .build(), HealthCheckType.READINESS)
+                                               .addCheck(() -> HealthCheckResponse.builder()
+                                                        .status(isStarted())
+                                                        .detail("time", System.currentTimeMillis())
+                                                        .build(), HealthCheckType.STARTUP)
+                                               .build())]]></value>
                                 </list>
                                 <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                     <value>io.helidon.health.HealthCheckResponse</value>
