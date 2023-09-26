@@ -75,8 +75,8 @@ public class ServerHealthCheckIT {
     }
 
     // Add 2 endpoints:
-    // - HealthCheck /observe/healthNoDetails with details turned off
-    // - HealthCheck /observe/healthDetails with details turned on
+    // - HealthCheck /noDetails/health with details turned off
+    // - HealthCheck /details/health with details turned on
     private static void routing(DbClient dbClient, Config config, HttpRouting.Builder router) {
         router.addFeature(
                 createObserveFeature(dbClient, config, "healthNoDetails", "noDetails", false));
