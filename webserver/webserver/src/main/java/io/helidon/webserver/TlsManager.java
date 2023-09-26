@@ -41,7 +41,7 @@ public interface TlsManager {
      * Callers can subscribe to updates to be notified when the SSL context changes.
      *
      * @param sslContextConsumer the consumer that will receive the new/update context after it has been reloaded by the manager
-     * @deprecated this method will removed in a future release.
+     * @deprecated this method will be removed in a future release.
      */
     @Deprecated
     void subscribe(Consumer<SSLContext> sslContextConsumer);

@@ -74,7 +74,6 @@ public class ConfiguredTlsManager implements TlsManager {
      *
      * @return manager name
      */
-    // @Override // NamedService
     public String name() {
         return name;
     }
@@ -84,7 +83,6 @@ public class ConfiguredTlsManager implements TlsManager {
      *
      * @return manager type
      */
-    // @Override // NamedService
     public String type() {
         return type;
     }
@@ -129,7 +127,7 @@ public class ConfiguredTlsManager implements TlsManager {
      * @param tlsConfig     the tls config
      * @param keyManagers   the key managers
      * @param trustManagers the trust managers
-     * @deprecated this method will removed in a future release.
+     * @deprecated this method will be removed in a future release.
      */
     @Deprecated
     protected void initSslContext(WebServerTls tlsConfig,
@@ -152,7 +150,7 @@ public class ConfiguredTlsManager implements TlsManager {
      * @param tlsConfig     the tls config
      * @param keyManagers   the key managers
      * @param trustManagers the trust managers
-     * @deprecated this method will removed in a future release.
+     * @deprecated this method will be removed in a future release.
      */
     @Deprecated
     protected void reload(WebServerTls tlsConfig,
@@ -188,7 +186,7 @@ public class ConfiguredTlsManager implements TlsManager {
      *
      * @param tlsConfig TLS config
      * @return a new trust manager factory
-     * @deprecated this method will removed in a future release.
+     * @deprecated this method will be removed in a future release.
      */
     @Deprecated
     protected TrustManagerFactory createTmf(WebServerTls tlsConfig) {
@@ -204,7 +202,7 @@ public class ConfiguredTlsManager implements TlsManager {
      *
      * @param tlsConfig  TLS config
      * @param sslContext ssl context to store
-     * @deprecated this method will removed in a future release.
+     * @deprecated this method will be removed in a future release.
      */
     @Deprecated
     protected void configureAndSet(WebServerTls tlsConfig,
