@@ -39,6 +39,7 @@ import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -194,6 +195,9 @@ class MetricsFeature {
     }
 
     private void setUpEndpoints(HttpRules rules) {
+        if (!metricsConfig.permitAll()) {
+            rules.any(SecureHandler.authorize(metricsConfig.roles().toArray(new String[0])));
+        }
         // routing to root of metrics
         // As of Helidon 4, this is the only path we should need because scope-based or metric-name-based
         // selection should use query parameters instead of paths.
