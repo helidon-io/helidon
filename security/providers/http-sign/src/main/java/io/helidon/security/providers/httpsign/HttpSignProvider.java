@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -78,7 +79,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     private final Map<String, InboundClientDefinition> inboundKeys;
     private final OutboundConfig outboundConfig;
     // cache of target name to a signature configuration for outbound calls
-    private final Map<String, OutboundTargetDefinition> targetKeys = new HashMap<>();
+    private final Map<String, OutboundTargetDefinition> targetKeys = new ConcurrentHashMap<>();
     private final boolean backwardCompatibleEol;
 
     private HttpSignProvider(Builder builder) {
