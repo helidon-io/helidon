@@ -29,8 +29,8 @@ module io.helidon.integrations.common.rest {
     requires io.helidon.config;
     requires io.helidon.faulttolerance;
     requires io.helidon.http.media.jsonp;
+    requires io.helidon.tracing;
     requires io.helidon.webclient;
-    requires io.opentracing.api;
     requires java.logging;
 
     requires transitive io.helidon.common;
