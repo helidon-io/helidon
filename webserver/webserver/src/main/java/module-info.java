@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.webserver.spi.UpgradeCodecProvider;
-
 /**
  * Reactive web server.
  */
@@ -45,5 +43,6 @@ module io.helidon.webserver {
     exports io.helidon.webserver;
     exports io.helidon.webserver.spi;
 
-    uses UpgradeCodecProvider;
+    uses io.helidon.webserver.spi.UpgradeCodecProvider;
+    uses io.helidon.webserver.spi.TlsManagerProvider;
 }

@@ -71,6 +71,12 @@
         <Bug pattern = "VA_FORMAT_STRING_USES_NEWLINE"/>
     </Match>
 
-
+    <Match>
+        <!--
+        This trust manager is NOT enabled by default and requires an explicit step from the user to trust all.
+         -->
+        <Class name="io.helidon.webserver.TrustAllManagerFactory$TrustAllManager"/>
+        <Bug pattern="WEAK_TRUST_MANAGER"/>
+    </Match>
 
 </FindBugsFilter>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,45 +16,34 @@
 
 package io.helidon.webserver;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSessionContext;
-import javax.net.ssl.TrustManagerFactory;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.webserver.spi.TlsManagerProvider;
 
 /**
  * A class wrapping transport layer security (TLS) configuration for
  * WebServer sockets.
  */
 public final class WebServerTls {
+    /**
+     * The default protocol is set to {@value}.
+     */
     private static final String PROTOCOL = "TLS";
-    // secure random cannot be stored in native image, it must
-    // be initialized at runtime
-    private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
 
     /**
      * This constant is a context classifier for the x509 client certificate if it is present. Callers may use this
@@ -62,17 +51,29 @@ public final class WebServerTls {
      */
     public static final String CLIENT_X509_CERTIFICATE = WebServerTls.class.getName() + ".client-x509-certificate";
 
+    private final TlsManager tlsManager;
     private final Set<String> enabledTlsProtocols;
     private final Set<String> cipherSuite;
-    private final SSLContext sslContext;
+    private final SSLContext explicitSslContext;
+    private final KeyConfig privateKeyConfig;
+    private final KeyConfig trustConfig;
+    private final boolean trustAll;
+    private final int sessionCacheSize;
+    private final int sessionTimeoutSeconds;
     private final boolean enabled;
     private final ClientAuthentication clientAuth;
 
     private WebServerTls(Builder builder) {
+        this.tlsManager = builder.tlsManager;
         this.enabledTlsProtocols = Set.copyOf(builder.enabledTlsProtocols);
         this.cipherSuite = builder.cipherSuite;
-        this.sslContext = builder.sslContext;
-        this.enabled = (null != sslContext);
+        this.explicitSslContext = builder.explicitSslContext;
+        this.privateKeyConfig = builder.privateKeyConfig;
+        this.trustConfig = builder.trustConfig;
+        this.trustAll = builder.trustAll;
+        this.sessionCacheSize = (int) builder.sessionCacheSize;
+        this.sessionTimeoutSeconds = (int) builder.sessionTimeoutSeconds;
+        this.enabled = builder.enabled;
         this.clientAuth = builder.clientAuth;
     }
 
@@ -95,12 +96,62 @@ public final class WebServerTls {
         return builder().config(config).build();
     }
 
+    /**
+     * The Tls manager. If one is not explicitly defined in the config then a default manager will be created.
+     *
+     * @return the tls manager of the tls instance
+     * @see ConfiguredTlsManager
+     */
+    public TlsManager manager() {
+        return tlsManager;
+    }
+
+    /**
+     * Trust any certificate provided by the other side of communication.
+     * <p>
+     * <b>This is a dangerous setting: </b> if set to {@code true}, any certificate will be accepted, throwing away
+     * most of the security advantages of TLS. <b>NEVER</b> do this in production.
+     *
+     * @return whether to trust all certificates, do not use in production
+     */
+    public boolean trustAll() {
+        return trustAll;
+    }
+
     Collection<String> enabledTlsProtocols() {
         return enabledTlsProtocols;
     }
 
+    Optional<SSLContext> explicitSslContext() {
+        return Optional.ofNullable(explicitSslContext);
+    }
+
     SSLContext sslContext() {
-        return sslContext;
+        if (explicitSslContext != null) {
+            return explicitSslContext;
+        }
+
+        return manager().sslContext();
+    }
+
+    KeyConfig privateKeyConfig() {
+        return privateKeyConfig;
+    }
+
+    KeyConfig trustConfig() {
+        return trustConfig;
+    }
+
+    String protocol() {
+        return PROTOCOL;
+    }
+
+    int sessionCacheSize() {
+        return sessionCacheSize;
+    }
+
+    int sessionTimeoutSeconds() {
+        return sessionTimeoutSeconds;
     }
 
     ClientAuthentication clientAuth() {
@@ -128,11 +179,13 @@ public final class WebServerTls {
     public static class Builder implements io.helidon.common.Builder<Builder, WebServerTls> {
         private final Set<String> enabledTlsProtocols = new HashSet<>();
 
-        private SSLContext sslContext;
+        private TlsManager tlsManager;
+        private SSLContext explicitSslContext;
         private KeyConfig privateKeyConfig;
         private KeyConfig trustConfig;
         private long sessionCacheSize;
         private long sessionTimeoutSeconds;
+        private boolean trustAll;
 
         private boolean enabled;
         private Boolean explicitEnabled;
@@ -153,18 +206,19 @@ public final class WebServerTls {
                 enabled = explicitEnabled;
             }
 
+            if (tlsManager == null) {
+                tlsManager = new ConfiguredTlsManager();
+            }
+
             if (!enabled) {
-                this.sslContext = null;
+                this.explicitSslContext = null;
                 // ssl is disabled
                 return new WebServerTls(this);
             }
 
-            if (null == sslContext) {
-                // no explicit ssl context, build it using private key and trust store
-                sslContext = newSSLContext();
-            }
-
-            return new WebServerTls(this);
+            WebServerTls tls = new WebServerTls(this);
+            tlsManager.init(tls);
+            return tls;
         }
 
         /**
@@ -194,6 +248,42 @@ public final class WebServerTls {
                     .asLong()
                     .ifPresent(this::sessionTimeoutSeconds);
 
+            config.get("manager")
+                    .ifExists(it -> tlsManager(TlsManagerProvider.create(it)));
+            config.get("trust-all")
+                    .asBoolean()
+                    .ifPresent(this::trustAll);
+
+            return this;
+        }
+
+        /**
+         * The Tls manager. If one is not explicitly defined in the config then a default manager will be created.
+         *
+         * @param tlsManager the Tls manager
+         * @return the tls manager of the tls instance
+         * @see ConfiguredTlsManager
+         * @see TlsManagerProvider
+         */
+        @ConfiguredOption(provider = true)
+        public Builder tlsManager(TlsManager tlsManager) {
+            this.enabled = true;
+            this.tlsManager = Objects.requireNonNull(tlsManager);
+            return this;
+        }
+
+        /**
+         * Trust any certificate provided by the other side of communication.
+         * <p>
+         * <b>This is a dangerous setting: </b> if set to {@code true}, any certificate will be accepted, throwing away
+         * most of the security advantages of TLS. <b>NEVER</b> do this in production.
+         *
+         * @param trustAll flag indicating whether to trust all certificates
+         * @return whether to trust all certificates, do not use in production
+         */
+        @ConfiguredOption("false")
+        public Builder trustAll(boolean trustAll) {
+            this.trustAll = trustAll;
             return this;
         }
 
@@ -214,15 +304,15 @@ public final class WebServerTls {
         }
 
         /**
-         * Configures a {@link SSLContext} to use with the server socket. If not {@code null} then
-         * the server enforces an SSL communication.
+         * Explicitly configures a {@link SSLContext} to use with the server socket. If not {@code null} then
+         * the server enforces an SSL communication, and will override the usage of any {@link TlsManager}.
          *
          * @param context a SSL context to use
          * @return this builder
          */
         public Builder sslContext(SSLContext context) {
             this.enabled = true;
-            this.sslContext = context;
+            this.explicitSslContext = context;
             return this;
         }
 
@@ -263,7 +353,7 @@ public final class WebServerTls {
         public Builder privateKey(KeyConfig privateKeyConfig) {
             // setting private key, need to reset ssl context
             this.enabled = true;
-            this.sslContext = null;
+            this.explicitSslContext = null;
             this.privateKeyConfig = Objects.requireNonNull(privateKeyConfig);
             return this;
         }
@@ -288,7 +378,7 @@ public final class WebServerTls {
         public Builder trust(KeyConfig trustConfig) {
             // setting explicit trust, need to reset ssl context
             this.enabled = true;
-            this.sslContext = null;
+            this.explicitSslContext = null;
             this.trustConfig = Objects.requireNonNull(trustConfig);
             return this;
         }
@@ -370,78 +460,6 @@ public final class WebServerTls {
             this.enabled = enabled;
             this.explicitEnabled = enabled;
             return this;
-        }
-
-        private SSLContext newSSLContext() {
-            try {
-                if (null == privateKeyConfig) {
-                    throw new IllegalStateException("Private key must be configured when SSL is enabled.");
-                }
-                KeyManagerFactory kmf = buildKmf(this.privateKeyConfig);
-                TrustManagerFactory tmf = buildTmf(this.trustConfig);
-
-                // Initialize the SSLContext to work with our key managers.
-                SSLContext ctx = SSLContext.getInstance(PROTOCOL);
-                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-                SSLSessionContext sessCtx = ctx.getServerSessionContext();
-                if (sessionCacheSize > 0) {
-                    sessCtx.setSessionCacheSize((int) Math.min(sessionCacheSize, Integer.MAX_VALUE));
-                }
-                if (this.sessionTimeoutSeconds > 0) {
-                    sessCtx.setSessionTimeout((int) Math.min(sessionTimeoutSeconds, Integer.MAX_VALUE));
-                }
-                return ctx;
-            } catch (IOException | GeneralSecurityException e) {
-                throw new IllegalStateException("Failed to build server SSL Context!", e);
-            }
-        }
-
-        private static KeyManagerFactory buildKmf(KeyConfig privateKeyConfig) throws IOException, GeneralSecurityException {
-            String algorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
-            if (algorithm == null) {
-                algorithm = "SunX509";
-            }
-
-            byte[] passwordBytes = new byte[64];
-            RANDOM.get().nextBytes(passwordBytes);
-            char[] password = Base64.getEncoder().encodeToString(passwordBytes).toCharArray();
-
-            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(null, null);
-            ks.setKeyEntry("key",
-                           privateKeyConfig.privateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
-                           password,
-                           privateKeyConfig.certChain().toArray(new Certificate[0]));
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
-            kmf.init(ks, password);
-
-            return kmf;
-        }
-
-        private static TrustManagerFactory buildTmf(KeyConfig trustConfig)
-                throws IOException, GeneralSecurityException {
-            List<X509Certificate> certs;
-
-            if (trustConfig == null) {
-                certs = List.of();
-            } else {
-                certs = trustConfig.certs();
-            }
-
-            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(null, null);
-
-            int i = 1;
-            for (X509Certificate cert : certs) {
-                ks.setCertificateEntry(String.valueOf(i), cert);
-                i++;
-            }
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(ks);
-            return tmf;
         }
     }
 

@@ -17,15 +17,23 @@
 package io.helidon.webserver;
 
 import java.net.InetAddress;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.net.ssl.SSLContext;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.webserver.spi.FakeReloadableTlsManager;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
@@ -126,4 +134,44 @@ public class ServerConfigurationTest {
         assertThat(sc.socket("secure").enabledSslProtocols(), contains("TLSv1.2"));
         assertThat(sc.socket("secure").ssl(), notNullValue());
     }
+
+    @Test
+    @SuppressWarnings({"deprecation", "removal"})
+    public void tlsManagerWithConsumerSubscriptionsOnReload() {
+        Config config = Config.builder().sources(ConfigSources.classpath("config-with-ssl-and-tls-manager.conf")).build();
+        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::create).get();
+        SocketConfiguration sockCfg = sc.socket("secure");
+        SSLContext sslCtx = sockCfg.ssl();
+
+        assertThat(sockCfg.port(), is(8443));
+        assertThat(sockCfg.enabledSslProtocols(), contains("TLSv1.2"));
+        assertThat(sslCtx, notNullValue());
+
+        WebServerTls secureConfig = sc.socket("secure").tls().orElseThrow();
+        assertThat(secureConfig.trustAll(), is(true));
+
+        TlsManager manager = secureConfig.manager();
+        assertThat(manager, instanceOf(FakeReloadableTlsManager.class));
+
+        FakeReloadableTlsManager fake = (FakeReloadableTlsManager) manager;
+        assertThat(fake.tlsConfig(), sameInstance(secureConfig));
+        assertThat(fake.sslContext(), sameInstance(sockCfg.ssl()));
+        assertThat(fake.subscribers().size(), is(0));
+
+        AtomicInteger counter = new AtomicInteger();
+        AtomicReference<SSLContext> sslCtxRef = new AtomicReference<>();
+        fake.subscribe(sslContext -> {
+            assertThat(sslContext, notNullValue());
+            sslCtxRef.set(sslContext);
+            counter.incrementAndGet();
+        });
+        assertThat(fake.subscribers().size(), is(1));
+        assertThat(counter.get(), is(0));
+
+        fake.reload(secureConfig, null, null);
+        assertThat(counter.get(), is(1));
+        assertThat(sslCtxRef, notNullValue());
+        assertThat(sslCtxRef, not(sameInstance(sslCtx)));
+    }
+
 }

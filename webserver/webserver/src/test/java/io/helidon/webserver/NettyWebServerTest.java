@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,17 +30,24 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLContext;
+
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.webserver.spi.FakeReloadableTlsManager;
 
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.testing.OptionalMatcher.present;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.AllOf.allOf;
@@ -272,4 +279,32 @@ public class NettyWebServerTest {
 
         assertThat(webServer.configuration().namedSocket("matched"), present());
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void tlsManagerReloadability() {
+        Config config = Config.builder().sources(ConfigSources.classpath("config-with-ssl-and-tls-manager.conf")).build();
+        Config webServerConfig = config.get("webserver");
+        assertThat(webServerConfig.exists(), is(true));
+
+        WebServer webServer = WebServer.builder().config(webServerConfig).build();
+        assertThat(webServer.hasTls("secure"), is(true));
+
+        WebServerTls tlsConfig = webServer.configuration().namedSocket("secure").orElseThrow().tls().orElseThrow();
+        assertThat(tlsConfig.manager(), instanceOf(FakeReloadableTlsManager.class));
+        FakeReloadableTlsManager fake = (FakeReloadableTlsManager) tlsConfig.manager();
+        assertThat(fake.subscribers().size(), is(1));
+
+        SSLContext sslContext = fake.sslContext();
+        assertThat(sslContext, notNullValue());
+        assertThat("should only change after reload", sslContext, sameInstance(fake.sslContext()));
+
+        fake.reload(tlsConfig, null, null);
+        assertThat("sanity", fake.subscribers().size(), is(1));
+
+        SSLContext sslContextAfter = fake.sslContext();
+        assertThat(sslContextAfter, notNullValue());
+        assertThat("should be changed after reload", sslContextAfter, not(sameInstance(sslContext)));
+    }
+
 }

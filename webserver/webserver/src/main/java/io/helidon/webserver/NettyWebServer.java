@@ -163,6 +163,15 @@ class NettyWebServer implements WebServer {
                      .childHandler(childHandler);
 
             bootstraps.put(name, bootstrap);
+
+            // subscribe to updates
+            Optional<WebServerTls> webServerTls = soConfig.tls();
+            webServerTls
+                    .map(WebServerTls::manager)
+                    .ifPresent(manager -> manager.subscribe(newCtx -> {
+                        SslContext newSslCtx = createSslContext(webServerTls.get(), newCtx);
+                        childHandler.updateSslContext(newSslCtx);
+                    }));
         }
 
         // Log entry that also initializes NettyInitializer class
@@ -175,21 +184,26 @@ class NettyWebServer implements WebServer {
         // Transform java SSLContext into Netty SslContext
         SSLContext context = webServerTls.sslContext();
         if (context != null) {
-            Collection<String> enabledProtocols = webServerTls.enabledTlsProtocols();
-            String[] protocols;
-            if (enabledProtocols.isEmpty()) {
-                protocols = null;
-            } else {
-                protocols = enabledProtocols.toArray(new String[0]);
-            }
-
-            Set<String> cipherSuite = webServerTls.cipherSuite();
-            return new JdkSslContext(
-                    context, false, cipherSuite.isEmpty() ? null : cipherSuite,
-                    IdentityCipherSuiteFilter.INSTANCE, UpgradeManager.alpnConfig(),
-                    webServerTls.clientAuth().nettyClientAuth(), protocols, false);
+            return createSslContext(webServerTls, context);
         }
         return null;
+    }
+
+    private SslContext createSslContext(WebServerTls webServerTls,
+                                        SSLContext context) {
+        Collection<String> enabledProtocols = webServerTls.enabledTlsProtocols();
+        String[] protocols;
+        if (enabledProtocols.isEmpty()) {
+            protocols = null;
+        } else {
+            protocols = enabledProtocols.toArray(new String[0]);
+        }
+
+        Set<String> cipherSuite = webServerTls.cipherSuite();
+        return new JdkSslContext(
+                context, false, cipherSuite.isEmpty() ? null : cipherSuite,
+                IdentityCipherSuiteFilter.INSTANCE, UpgradeManager.alpnConfig(),
+                webServerTls.clientAuth().nettyClientAuth(), protocols, false);
     }
 
     @Override
