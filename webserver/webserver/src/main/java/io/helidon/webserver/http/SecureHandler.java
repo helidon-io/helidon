@@ -50,7 +50,7 @@ public final class SecureHandler implements Handler {
      * Create a security handler that enforces authorization.
      *
      * @param roleHint optional hint for role names the user is expected to be in
-     * @return a new handler that requires authroization
+     * @return a new handler that requires authorization
      */
     public static SecureHandler authorize(String... roleHint) {
         return new SecureHandler(false, true, roleHint);

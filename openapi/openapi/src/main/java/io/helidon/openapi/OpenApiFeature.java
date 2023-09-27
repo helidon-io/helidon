@@ -38,6 +38,7 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.servicecommon.FeatureSupport;
@@ -160,6 +161,9 @@ public final class OpenApiFeature implements FeatureSupport, RuntimeType.Api<Ope
     @Override
     public void setup(HttpRouting.Builder routing, HttpRouting.Builder featureRouting) {
         String path = prototype().webContext();
+        if (!config.permitAll()) {
+            routing.any(path, SecureHandler.authorize(config.roles().toArray(new String[0])));
+        }
         routing.any(path, corsService.processor())
                 .get(path, this::handle);
         config.services().forEach(service -> service.setup(routing, path, this::content));

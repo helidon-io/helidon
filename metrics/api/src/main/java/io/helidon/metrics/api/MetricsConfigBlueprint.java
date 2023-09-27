@@ -130,6 +130,22 @@ interface MetricsConfigBlueprint {
     boolean enabled();
 
     /**
+     * Whether metrics endpoint should be authorized.
+     *
+     * @return if metrics are configured to be authorized
+     */
+    @ConfiguredOption
+    boolean permitAll();
+
+    /**
+     * Hints for role names the user is expected to be in.
+     *
+     * @return list of hints
+     */
+    @ConfiguredOption
+    List<String> roles();
+
+    /**
      * Key performance indicator metrics settings.
      *
      * @return key performance indicator metrics settings

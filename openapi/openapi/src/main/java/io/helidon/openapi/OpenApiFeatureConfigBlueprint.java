@@ -82,4 +82,20 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      */
     @ConfiguredOption(provider = true, providerType = OpenApiManagerProvider.class, providerDiscoverServices = false)
     Optional<OpenApiManager<?>> manager();
+
+    /**
+     * Whether endpoint should be authorized.
+     *
+     * @return if endpoint is configured to be authorized
+     */
+    @ConfiguredOption
+    boolean permitAll();
+
+    /**
+     * Hints for role names the user is expected to be in.
+     *
+     * @return list of hints
+     */
+    @ConfiguredOption
+    List<String> roles();
 }
