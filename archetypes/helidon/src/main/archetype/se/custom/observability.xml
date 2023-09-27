@@ -20,18 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
-        <templates engine="mustache" transformations="mustache,packaged" if="${metrics}">
-            <directory>files</directory>
-            <includes>
-                <include>**/MetricsService.java.mustache</include>
-            </includes>
-        </templates>
         <model if="${health} || ${metrics} || ${tracing}">
             <list key="Main-helidon-imports">
                 <value>io.helidon.webserver.observe.ObserveFeature</value>
             </list>
             <list key="Main-routing">
-                <value template="mustache"><![CDATA[
+                <value template="mustache" if="${health}"><![CDATA[
         ObserveFeature observe = ObserveFeature.builder()
                                                .observersDiscoverServices(false)
                                                {{#Observe-feature-builder}}
@@ -58,9 +52,6 @@
                 <value>io.helidon.health.checks.DiskSpaceHealthCheck</value>
                 <value>io.helidon.health.checks.HeapMemoryHealthCheck</value>
                 <value>io.helidon.webserver.observe.health.HealthObserver</value>
-            </list>
-            <list key="Main-helidon-imports" if="${metrics}">
-                <value>io.helidon.webserver.observe.metrics.MetricsObserver</value>
             </list>
             <list key="Main-helidon-imports" if="${tracing}">
                 <value>io.helidon.webserver.http2.Http2Route</value>
@@ -110,41 +101,8 @@
     }
 ]]></value>
             </list>
-            <list key="Observe-feature-builder">
-                <value if="${metrics}"><![CDATA[.addObserver(MetricsObserver.create())]]></value>
-            </list>
-            <list key="Abstract-tests">
-                <value if="${metrics}"><![CDATA[
-    @Test
-    void testMetricsObserver() {
-        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
-            assertThat(response.status(), is(Status.OK_200));
-        }
-    }
-]]></value>
-            </list>
-            <list key="readme-sections" if="${metrics}">
-                <value><![CDATA[
-## Try metrics
-
-```
-# Prometheus Format
-curl -s -X GET http://localhost:8080/observe/metrics
-# TYPE base:gc_g1_young_generation_count gauge
-. . .
-
-# JSON Format
-curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
-{"base":...
-. . .
-```
-
-]]></value>
-            </list>
             <list key="modules">
                 <value>io.helidon.webserver.observe</value>
-                <value if="${metrics}">io.helidon.webserver.observe.metrics</value>
-                <value if="${metrics}">io.helidon.metrics.api</value>
                 <value if="${tracing}">io.helidon.webserver.http2</value>
                 <value if="${tracing}">io.helidon.webserver.tracing</value>
                 <value if="${tracing}">io.helidon.tracing</value>
