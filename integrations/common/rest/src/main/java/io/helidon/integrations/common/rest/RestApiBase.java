@@ -35,11 +35,11 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
+import io.helidon.tracing.SpanContext;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 
-import io.opentracing.SpanContext;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReaderFactory;
@@ -903,7 +903,7 @@ public abstract class RestApiBase implements RestApi {
         return request.requestId()
                       .or(() -> Contexts.context()
                                         .flatMap(it -> it.get(SpanContext.class))
-                                        .map(SpanContext::toTraceId))
+                                        .map(SpanContext::traceId))
                       .orElseGet(UUID.randomUUID()::toString);
     }
 
