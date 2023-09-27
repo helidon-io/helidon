@@ -7,8 +7,8 @@ name: "Validate"
 on: [pull_request, push]
 
 env:
-  JAVA_RELEASE: '21'
-  JAVA_DISTRO: 'oracle.com'
+  JAVA_VERSION: '21'
+  JAVA_DISTRO: 'oracle'
   HELIDON_PIPELINES: 'true'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
 
@@ -28,7 +28,7 @@ jobs:
        uses: actions/setup-java@v3.13.0
        with:
          distribution: ${{ env.JAVA_DISTRO }}
-         java-version: ${{ env.JAVA_RELEASE }}
+         java-version: ${{ env.JAVA_VERSION }}
          cache: maven
      - name: Copyright
        run: etc/scripts/copyright.sh
@@ -41,7 +41,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
@@ -54,7 +54,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Spotbugs
         run: etc/scripts/spotbugs.sh
@@ -67,7 +67,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Docs
         run: etc/scripts/site.sh
@@ -83,7 +83,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Maven build
         run: etc/scripts/github-build.sh
@@ -99,7 +99,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Maven build
         run: |
@@ -119,7 +119,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Maven build
         run: etc/scripts/mp-tck.sh
@@ -135,7 +135,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Test archetypes
         run: etc/scripts/test-archetypes.sh
@@ -151,7 +151,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Build Helidon
         run: etc/scripts/github-compile.sh

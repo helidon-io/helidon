@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Copyright
         run: etc/scripts/copyright.sh
@@ -45,7 +45,7 @@ jobs:
         uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Release
         env:
