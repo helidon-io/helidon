@@ -160,10 +160,10 @@ public final class OpenApiFeature implements FeatureSupport, RuntimeType.Api<Ope
 
     @Override
     public void setup(HttpRouting.Builder routing, HttpRouting.Builder featureRouting) {
-        if (!config.permitAll()) {
-            routing.any(SecureHandler.authorize(config.roles().toArray(new String[0])));
-        }
         String path = prototype().webContext();
+        if (!config.permitAll()) {
+            routing.any(path, SecureHandler.authorize(config.roles().toArray(new String[0])));
+        }
         routing.any(path, corsService.processor())
                 .get(path, this::handle);
         config.services().forEach(service -> service.setup(routing, path, this::content));
