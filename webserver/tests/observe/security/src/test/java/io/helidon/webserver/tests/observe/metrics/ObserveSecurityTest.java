@@ -70,7 +70,7 @@ class ObserveSecurityTest {
     static void setup(WebServerConfig.Builder server) {
         server.routing(routing -> routing
                 .addFeature(ObserveFeature.create())
-                .addFeature(OpenApiFeature.builder().build())
+                .addFeature(OpenApiFeature.create())
                 .addFeature(ContextFeature.create())
                 .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
                 .get("/observe/metrics", SecurityFeature.rolesAllowed("user"))
@@ -96,7 +96,6 @@ class ObserveSecurityTest {
                 .uri(uri)
                 .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
                 .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
-                .accept(MediaTypes.TEXT_PLAIN)
                 .request()) {
             assertThat(response.status(), is(Status.OK_200));
         }
