@@ -35,7 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class PathMatchersTest {
     @Test
-    public void testNormalization() throws Exception {
+    public void testNormalization() {
         assertThat("/a/./b", pathMatcherMatches("/a/b"));
         assertThat("/a/b/../c", pathMatcherMatches("/a/c"));
     }
@@ -86,6 +86,18 @@ class PathMatchersTest {
         assertThat("/a//b", pathMatcherMatches("/a//b"));
         // prefixed works with resolved (decoded and normalized) path
         assertThat("/a//b", not(pathMatcherMatches("/a//*")));
+    }
+
+    @Test
+    public void testOptionals() {
+        assertThat("/foo/bar", pathMatcherMatches("/foo[/bar]"));
+        assertThat("/foo", pathMatcherMatches("/foo[/bar]"));
+        assertThat("/foo/ba", not(pathMatcherMatches("/foo[/bar]")));
+        assertThat("/foo/bar", pathMatcherMatches("/foo[/{var}]"));
+        assertThat("/foo", pathMatcherMatches("/foo[/{var}]"));
+        assertThat("/foo/bar/baz", not(pathMatcherMatches("/foo[/{var}]")));
+        assertThat("/foo/bar/baz", pathMatcherMatches("/foo[/{var}]/baz"));
+        assertThat("/foo/baz", pathMatcherMatches("/foo[/{var}]/baz"));
     }
 
     private static org.hamcrest.Matcher<String> pathMatcherMatches(String pattern) {

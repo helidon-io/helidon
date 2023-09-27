@@ -22,7 +22,7 @@
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
-    <!-- We need the following because of SpotBugs issue 493 
+    <!-- We need the following because of SpotBugs issue 493
          https://github.com/spotbugs/spotbugs/issues/493 (false positives with
          try-with-resource blocks).
     -->
@@ -36,12 +36,12 @@
          https://github.com/spotbugs/spotbugs/issues/1877 (false positive with text blocks)
     -->
     <Match>
-        <Class name="io.helidon.microprofile.openapi.MPOpenAPIBuilder"/>
+        <Class name="io.helidon.microprofile.openapi.FilteredIndexViewsBuilder"/>
         <Method name="filteredIndexView" />
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE" />
     </Match>
     <Match>
-        <Class name="io.helidon.microprofile.openapi.MPOpenAPIBuilder" />
+        <Class name="io.helidon.microprofile.openapi.FilteredIndexViewsBuilder" />
         <Method name="build" />
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE" />
     </Match>

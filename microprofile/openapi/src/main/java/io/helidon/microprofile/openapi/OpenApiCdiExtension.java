@@ -42,35 +42,15 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension {
 
     private static final System.Logger LOGGER = System.getLogger(OpenApiCdiExtension.class.getName());
 
-    /**
-     * Normal location of Jandex index files.
-     */
-    static final String INDEX_PATH = "META-INF/jandex.idx";
-
-    private final String[] paths;
-
     private final Set<Class<?>> annotatedTypes = new HashSet<>();
-
-    private volatile MpOpenApiFeature openApiFeature;
+    private volatile OpenApiFeature feature;
 
     /**
-     * Creates a new instance of the index builder.
-     *
+     * Creates a new instance.
      */
     public OpenApiCdiExtension() {
-        this(INDEX_PATH);
+        super(LOGGER, "openapi", "mp.openapi");
     }
-
-    OpenApiCdiExtension(String... indexPaths) {
-        super(LOGGER, OpenApiFeature.Builder.CONFIG_KEY);
-        this.paths = indexPaths;
-    }
-
-    @Override
-    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
-        // SmallRye handles annotation processing. We have this method because the abstract superclass requires it.
-    }
-
 
     /**
      * Register the Health observer with server observer feature.
@@ -83,41 +63,34 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension {
                                 Object event,
                                 ServerCdiExtension server) {
 
-        org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
-
-        this.openApiFeature = MpOpenApiFeature.builder()
+        feature = OpenApiFeature.builder()
                 .config(componentConfig())
-                .indexPaths(paths)
-                .config(mpConfig)
+                .manager(new MpOpenApiManager(ConfigProvider.getConfig()))
                 .build();
-
-        this.openApiFeature.setup(server.serverRoutingBuilder(), super.routingBuilder(server));
+        feature.setup(server.serverRoutingBuilder(), routingBuilder(server));
     }
 
-    // Must run after the server has created the Application instances.
-    void buildModel(@Observes @Priority(PLATFORM_AFTER + 100 + 10) @Initialized(ApplicationScoped.class) Object event) {
-        this.openApiFeature.prepareModel();
+    @Override
+    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
+        // SmallRye handles annotation processing. We have this method because the abstract superclass requires it.
     }
 
-    // For testing
-    MpOpenApiFeature feature() {
-        return openApiFeature;
-    }
-
-
+    /**
+     * Get the annotated types.
+     *
+     * @return annotated types
+     */
     Set<Class<?>> annotatedTypes() {
         return annotatedTypes;
     }
 
-    /**
-     * Records each type that is annotated.
-     *
-     * @param <X> annotated type
-     * @param event {@code ProcessAnnotatedType} event
-     */
+    // Must run after the server has created the Application instances.
+    private void buildModel(@Observes @Priority(PLATFORM_AFTER + 100 + 10) @Initialized(ApplicationScoped.class) Object event) {
+        feature.initialize();
+    }
+
+    // Records each type that is annotated
     private <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> event) {
-        Class<?> c = event.getAnnotatedType()
-                .getJavaClass();
-        annotatedTypes.add(c);
+        annotatedTypes.add(event.getAnnotatedType().getJavaClass());
     }
 }

@@ -30,13 +30,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
-/**
- * Test JAX-RS app for MP OpenAPI testing.
- */
-
-public class TestApp extends Application {
+class TestApp extends Application {
 
     static final String GO_SUMMARY = "Returns a fixed string";
+
     @Override
     public Set<Class<?>> getClasses() {
         return Set.of(TestResources.class);
@@ -48,10 +45,9 @@ public class TestApp extends Application {
         @Path("/go")
         @GET
         @Operation(summary = GO_SUMMARY,
-            description = "Provides a single, fixed string as the response")
+                   description = "Provides a single, fixed string as the response")
         @APIResponse(description = "Simple text string",
-            content = @Content(mediaType = "text/plain")
-                )
+                     content = @Content(mediaType = "text/plain"))
         @Produces(MediaType.TEXT_PLAIN)
         public Response go() {
             return Response.ok("Test").build();
@@ -60,15 +56,12 @@ public class TestApp extends Application {
         @Path("/send")
         @PUT
         @Operation(summary = "Sends a simple string",
-               description = "Permits the client to send a string to the server"
-              )
+                   description = "Permits the client to send a string to the server")
         @RequestBody(
-            name = "message",
-            description = "Conveys the simple string message",
-            content = @Content(
-                        mediaType = "text/plain"
-                        )
-            )
+                name = "message",
+                description = "Conveys the simple string message",
+                content = @Content(mediaType = "text/plain")
+        )
         @Consumes(MediaType.TEXT_PLAIN)
         @Produces(MediaType.TEXT_PLAIN)
         public Response send(String message) {

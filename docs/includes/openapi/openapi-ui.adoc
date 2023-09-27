@@ -59,8 +59,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml,subs=+macros]
 ----
 <dependency>
-    <groupId>io.helidon.integrations.openapi-ui</groupId>
-    <artifactId>helidon-integrations-openapi-ui</artifactId>
+    <groupId>io.helidon.openapi</groupId>
+    <artifactId>helidon-openapi-ui</artifactId>
 ifdef::mp-flavor[    <scope>runtime</scope>]
 </dependency>
 ----

@@ -27,9 +27,10 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
-public class TestApp3 extends Application {
+class TestApp3 extends Application {
 
     static final String GO_SUMMARY = "Returns a fixed string 3";
+
     @Override
     public Set<Class<?>> getClasses() {
         return Set.of(TestResources.class);
@@ -41,10 +42,9 @@ public class TestApp3 extends Application {
         @Path("/go3")
         @GET
         @Operation(summary = GO_SUMMARY,
-                description = "Provides a single, fixed string as the response")
+                   description = "Provides a single, fixed string as the response")
         @APIResponse(description = "Simple text string",
-                content = @Content(mediaType = "text/plain")
-        )
+                     content = @Content(mediaType = "text/plain"))
         @Produces(MediaType.TEXT_PLAIN)
         public Response go() {
             return Response.ok("Test").build();
