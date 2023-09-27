@@ -6,7 +6,7 @@ name: "Release"
 on:
   push:
     branches:
-      - 'test-release-*'
+      - 'release-*'
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRO: 'oracle.com'
