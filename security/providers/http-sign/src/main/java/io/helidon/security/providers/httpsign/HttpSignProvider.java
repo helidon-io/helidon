@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -76,7 +77,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     private final Map<String, InboundClientDefinition> inboundKeys;
     private final OutboundConfig outboundConfig;
     // cache of target name to a signature configuration for outbound calls
-    private final Map<String, OutboundTargetDefinition> targetKeys = new HashMap<>();
+    private final Map<String, OutboundTargetDefinition> targetKeys = new ConcurrentHashMap<>();
     private final boolean backwardCompatibleEol;
 
     private HttpSignProvider(Builder builder) {
