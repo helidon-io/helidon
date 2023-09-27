@@ -75,6 +75,33 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         this.http1EntityHandler = http1EntityHandler;
     }
 
+    static WebClientServiceResponse createServiceResponse(WebClientServiceRequest serviceRequest,
+                                                          HttpClientConfig clientConfig,
+                                                          Http2ClientStream stream,
+                                                          CompletableFuture<WebClientServiceResponse> whenComplete,
+                                                          Status responseStatus,
+                                                          ClientResponseHeaders clientResponseHeaders) {
+        WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
+
+        // we need an instance to create it, so let's just use a reference
+        AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
+        if (stream.hasEntity()) {
+            ContentDecoder decoder = contentDecoder(clientResponseHeaders, clientConfig);
+            builder.inputStream(decoder.apply(new RequestingInputStream(stream, whenComplete, response)));
+        }
+        WebClientServiceResponse serviceResponse = builder
+                .serviceRequest(serviceRequest)
+                .whenComplete(whenComplete)
+                .connection(stream)
+                .status(responseStatus)
+                .headers(clientResponseHeaders)
+                .connection(stream)
+                .build();
+
+        response.set(serviceResponse);
+        return serviceResponse;
+    }
+
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         ClientUri uri = serviceRequest.uri();
@@ -100,7 +127,11 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                 return doProceed(serviceRequest, result.response());
             }
         } catch (StreamTimeoutException e){
-            http2Client.connectionCache().remove(connectionKey);
+            //This request was waiting for 100 Continue, but it was very likely not supported by the server.
+            //Do not remove connection from the cache in that case.
+            if (!clientRequest().outputStreamRedirect()) {
+                http2Client.connectionCache().remove(connectionKey);
+            }
             throw e;
         }
     }
@@ -111,6 +142,10 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
 
     Status responseStatus() {
         return responseStatus;
+    }
+
+    CompletableFuture<WebClientServiceResponse> whenComplete() {
+        return whenComplete;
     }
 
     /**
@@ -159,7 +194,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         // we need an instance to create it, so let's just use a reference
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
         if (stream.hasEntity()) {
-            ContentDecoder decoder = contentDecoder(responseHeaders);
+            ContentDecoder decoder = contentDecoder(responseHeaders, clientConfig);
             builder.inputStream(decoder.apply(new RequestingInputStream(stream, whenComplete, response)));
         }
 
@@ -181,10 +216,10 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return serviceResponse;
     }
 
-    private ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders) {
+    private static ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders, HttpClientConfig clientConfig) {
         ContentEncodingContext encodingSupport = clientConfig.contentEncoding();
         if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(CONTENT_ENCODING)) {
-            String contentEncoding = responseHeaders.get(CONTENT_ENCODING).value();
+            String contentEncoding = responseHeaders.get(CONTENT_ENCODING).get();
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 return encodingSupport.decoder(contentEncoding);
             } else {
@@ -196,7 +231,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return ContentDecoder.NO_OP;
     }
 
-    protected Http2Headers prepareHeaders(Method method, ClientRequestHeaders headers, ClientUri uri) {
+    protected static Http2Headers prepareHeaders(Method method, ClientRequestHeaders headers, ClientUri uri) {
         Http2Headers h2Headers = Http2Headers.create(headers);
         h2Headers.method(method);
         h2Headers.path(uri.pathWithQueryAndFragment());

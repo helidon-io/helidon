@@ -274,6 +274,10 @@ public enum Http2StreamState {
             if (current == HALF_CLOSED_LOCAL) {
                 return HALF_CLOSED_LOCAL;
             }
+
+            if (current == OPEN) {
+                return endOfStream ? HALF_CLOSED_REMOTE : OPEN;
+            }
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received " + type + " in invalid state: " + current);
         }
     }

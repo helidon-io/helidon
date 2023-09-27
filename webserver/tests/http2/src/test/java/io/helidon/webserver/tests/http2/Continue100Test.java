@@ -159,12 +159,13 @@ class Continue100Test {
                 .post("/100-continue")
                 .header(HeaderValues.EXPECT_100)
                 .outputStream(out -> {
+                    out.write(DATA.getBytes());
                     CLIENT_SENT_DATA.set(true);
                     out.write(DATA.getBytes());
                     out.close();
                 })) {
             assertThat(res.status(), is(Status.OK_200));
-            assertThat(res.entity().as(String.class), is(DATA));
+            assertThat(res.entity().as(String.class), is(DATA.repeat(2)));
         }
     }
 

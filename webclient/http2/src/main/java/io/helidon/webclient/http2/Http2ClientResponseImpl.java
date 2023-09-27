@@ -36,12 +36,14 @@ import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
+import io.helidon.webclient.api.ReleasableResource;
 
 class Http2ClientResponseImpl implements Http2ClientResponse {
     private final HttpClientConfig httpClientConfig;
     private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
+    private final ReleasableResource stream;
     private final CompletableFuture<Void> complete;
     private final Runnable closeResponseRunnable;
     private final CompletableFuture<ClientResponseTrailers> responseTrailers;
@@ -59,6 +61,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                             InputStream inputStream, // input stream is nullable - no response entity
                             MediaContext mediaContext,
                             ClientUri lastEndpointUri,
+                            ReleasableResource stream,
                             CompletableFuture<Void> complete,
                             Runnable closeResponseRunnable) {
         this.httpClientConfig = httpClientConfig;
@@ -69,6 +72,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         this.inputStream = inputStream;
         this.mediaContext = mediaContext;
         this.lastEndpointUri = lastEndpointUri;
+        this.stream = stream;
         this.complete = complete;
         this.closeResponseRunnable = closeResponseRunnable;
     }
@@ -123,6 +127,10 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                 responseHeaders,
                 mediaContext
         );
+    }
+
+    Http2ClientStream stream() {
+        return (Http2ClientStream) stream;
     }
 
     private BufferData readBytes(int estimate) {

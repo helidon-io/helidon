@@ -56,13 +56,15 @@ class Http2CallEntityChain extends Http2CallChainBase {
             entityBytes = entityBytes(entity, headers);
         }
 
-        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entityBytes.length));
+        if (!clientRequest().outputStreamRedirect()) {
+            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entityBytes.length));
+        }
 
         ClientUri uri = serviceRequest.uri();
 
         Http2Headers http2Headers = prepareHeaders(serviceRequest.method(), headers, uri);
 
-        stream.writeHeaders(http2Headers, entityBytes.length == 0);
+        stream.writeHeaders(http2Headers, !clientRequest().outputStreamRedirect() && entityBytes.length == 0);
         stream.flowControl().inbound().incrementWindowSize(clientRequest().requestPrefetch());
         whenSent.complete(serviceRequest);
 
