@@ -6,10 +6,10 @@ name: "Release"
 on:
   push:
     branches:
-      - 'test-release-*'
+      - 'release-*'
 env:
   JAVA_VERSION: '21'
-  JAVA_DISTRO: 'oracle.com'
+  JAVA_DISTRO: 'oracle'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
 
 concurrency:
@@ -25,10 +25,10 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1.3.2
+        uses: actions/setup-java@v3.13.0
         with:
-          website: ${{ env.JAVA_DISTRO }}
-          release: ${{ env.JAVA_RELEASE }}
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Copyright
         run: etc/scripts/copyright.sh
@@ -42,10 +42,10 @@ jobs:
           token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
           fetch-depth: '0'
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1.3.2
+        uses: actions/setup-java@v3.13.0
         with:
-          website: ${{ env.JAVA_DISTRO }}
-          release: ${{ env.JAVA_RELEASE }}
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Release
         env:
