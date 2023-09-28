@@ -78,8 +78,7 @@ public class TracingFeature implements HttpFeature, Weighted {
      *
      * @param tracer tracer to use for tracing spans created by this feature
      * @return tracing configuration to register with
-     *         {@link
-     *         io.helidon.webserver.http.HttpRouting.Builder#register(java.util.function.Supplier[])}
+     *         {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)}
      */
     public static TracingFeature create(Tracer tracer) {
         return create(tracer, TracingConfig.ENABLED);
