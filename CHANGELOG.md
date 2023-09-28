@@ -11,6 +11,74 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.0-RC1]
+
+This is the first RC build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental.
+
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a ground up webserver implementation based on JDK Project Loom virtual threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
+
+Java 21 is required to use Helidon 4.0.0-RC1.
+
+Notable Changes
+
+* Major refactoring of APIs is complete.
+* HTTP/2 support complete and other WebServer and WebClient features complete.
+
+### CHANGES
+
+- CORS: Use requested URI info in CORS decision-making [7585](https://github.com/helidon-io/helidon/pull/7585)
+- Config: Deprecate support for etcd v2 [7623](https://github.com/helidon-io/helidon/pull/7623)
+- DBClient: Fixed DbClient H2 tests. [7639](https://github.com/helidon-io/helidon/pull/7639)
+- Inject: Mark inject processor as preview (warning when executed). [7590](https://github.com/helidon-io/helidon/pull/7590)
+- Integrations: Removes Jedis integration to reduce technical debt [7654](https://github.com/helidon-io/helidon/pull/7654)
+- JPA: Adds zero-argument non-private constructors to NonTransactionalEntityManager and ExtendedEntityManager [7561](https://github.com/helidon-io/helidon/pull/7561)
+- Metrics: Make SE metrics default scope application instead of nothing [7666](https://github.com/helidon-io/helidon/pull/7666)
+- Metrics: Metrics followup [7547](https://github.com/helidon-io/helidon/pull/7547)
+- OCI: Adjusts CDI OciExtension to use runtime OciExtension for certain authentication tasks [7373](https://github.com/helidon-io/helidon/pull/7373)
+- OCI: Introduces OciSecretsMpMetaConfigProvider, which adapts OciSecretsConfigSourceProvider to the MpMetaConfigProvider contract [7520](https://github.com/helidon-io/helidon/pull/7520)
+- OCI: OciExtension refinements [7563](https://github.com/helidon-io/helidon/pull/7563)
+- Observability: metrics and openapi endpoints should be authorized by default [7572](https://github.com/helidon-io/helidon/pull/7572)
+- Observability: update APIs [7625](https://github.com/helidon-io/helidon/pull/7625)
+- OpenAPI: OpenAPI updates [7669](https://github.com/helidon-io/helidon/pull/7669)
+- RestClient: Modifies Helidon Connector to use WebClient and also support HTTP/2 [7582](https://github.com/helidon-io/helidon/pull/7582)
+- Security: TargetKeys Map changed to ConcurrentHashMap [7603](https://github.com/helidon-io/helidon/pull/7603)
+- Tracing: Move Opentracing to Helidon Tracing API [7678](https://github.com/helidon-io/helidon/pull/7678)
+- WebClient: HTTP/2 Client 100 continue [7604](https://github.com/helidon-io/helidon/pull/7604)
+- WebClient: HTTP/2.0 Client trailers support #6544 [7516](https://github.com/helidon-io/helidon/pull/7516)
+- WebClient: Remove prefetch #7663 [7676](https://github.com/helidon-io/helidon/pull/7676)
+- WebClient: double-slash URI issue #7474 [7657](https://github.com/helidon-io/helidon/pull/7657)
+- WebClient: Http2 OutputStream redirect support [7637](https://github.com/helidon-io/helidon/pull/7637)
+- WebServer: HTTP/2 server 100-continue [7633](https://github.com/helidon-io/helidon/pull/7633)
+- WebServer: Introducing request and response stream filters to server. [7608](https://github.com/helidon-io/helidon/pull/7608)
+- WebServer: Refactor Http class [7570](https://github.com/helidon-io/helidon/pull/7570)
+- WebServer: Server side trailers #7647 [7649](https://github.com/helidon-io/helidon/pull/7649)
+- Build: Checkstyle suppression in code [7588](https://github.com/helidon-io/helidon/pull/7588)
+- Build: Update workflows to Oracle JDK 21 LTS [7653](https://github.com/helidon-io/helidon/pull/7653)
+- Build: release workflow [7569](https://github.com/helidon-io/helidon/pull/7569)
+- Dependencies: Updates version of Micronaut libraries [7553](https://github.com/helidon-io/helidon/pull/7553)
+- Dependencies: Upgrade Neo4j to v.5 [7636](https://github.com/helidon-io/helidon/pull/7636)
+- Dependencies: Upgrade io.dropwizard.metrics:metrics-core to 4.1.36 [7624](https://github.com/helidon-io/helidon/pull/7624)
+- Dependencies: Upgrade jboss logging to 3.5.3.Final [7595](https://github.com/helidon-io/helidon/pull/7595)
+- Dependencies: Upgrade jgit to 6.7.0 [7586](https://github.com/helidon-io/helidon/pull/7586)
+- Dependencies: Upgrade mongodb driver to 4.10.2 [7651](https://github.com/helidon-io/helidon/pull/7651)
+- Dependencies: Upgrade zipkin-sender-urlconnection to 2.16.4 [7621](https://github.com/helidon-io/helidon/pull/7621)
+- Dependencies: Upgrades Narayana to version 7.0.0.Final [7662](https://github.com/helidon-io/helidon/pull/7662)
+- Docs: 4x overview and general intro doc updates [7571](https://github.com/helidon-io/helidon/pull/7571)
+- Docs: Config metadata docs [7581](https://github.com/helidon-io/helidon/pull/7581)
+- Docs: SE Diffs 3.x to Main .adoc  [7515](https://github.com/helidon-io/helidon/pull/7515)
+- Examples: Move archetype metrics under `GreetService` [7612](https://github.com/helidon-io/helidon/pull/7612)
+- Examples: Refactor archetype metrics [7556](https://github.com/helidon-io/helidon/pull/7556)
+- Examples: Update examples to use Config.global(config) [7655](https://github.com/helidon-io/helidon/pull/7655)
+- Examples: demonstrate proper use of GlobalConfig in archetypes [7664](https://github.com/helidon-io/helidon/pull/7664)
+- Examples: fix archetypes code formatting [7670](https://github.com/helidon-io/helidon/pull/7670)
+- Tests: Allowed cipher suite test added [7587](https://github.com/helidon-io/helidon/pull/7587)
+- Tests: Fix MutualTlsTest and related issues [7622](https://github.com/helidon-io/helidon/pull/7622)
+- Tests: Intermittent OciCertificatesTlsManagerTest fix [7607](https://github.com/helidon-io/helidon/pull/7607)
+- Tests: MP testing refactoring [7548](https://github.com/helidon-io/helidon/pull/7548)
+- Tests: Re-enables microprofile/server/ServerSseTest.java [7626](https://github.com/helidon-io/helidon/pull/7626)
+- Tests: Restore test of model reader and filter [7579](https://github.com/helidon-io/helidon/pull/7579)
+
+
 ## [4.0.0-M2]
 
 
@@ -670,7 +738,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
-[4.0.0-M2]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA6...4.0.0-M2
+[4.0.0-RC1]: https://github.com/oracle/helidon/compare/4.0.0-M2...4.0.0-RC1
+[4.0.0-M2]: https://github.com/oracle/helidon/compare/4.0.0-M1...4.0.0-M2
 [4.0.0-M1]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA6...4.0.0-M1
 [4.0.0-ALPHA6]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA5...4.0.0-ALPHA6
 [4.0.0-ALPHA5]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA4...4.0.0-ALPHA5
