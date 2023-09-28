@@ -128,9 +128,9 @@ This replaces `Routing.builder().register(JsonSupport.create())...`
 
 The new JSON MediaSupport classes are:
 
-* `io.helidon.reactive.media.jsonp.JsonpSupport` in module `io.helidon.reactive.media:helidon-reactive-media-jsonp`
-* `io.helidon.reactive.media.jsonb.JsonbSupport` in module `io.helidon.reactive.media:helidon-reactive-media-jsonb`
-* `io.helidon.reactive.media.jackson.JacksonSupport` in module `io.helidon.reactive.media:helidon-reactive-media-jackson`
+* `io.helidon.http.media.jsonp.JsonpSupport` in module `io.helidon.http.media:helidon-media-jsonp`
+* `io.helidon.http.media.jsonb.JsonbSupport` in module `io.helidon.http.media:helidon-media-jsonb`
+* `io.helidon.http.media.jackson.JacksonSupport` in module `io.helidon.http.media:helidon-media-jackson`
 
 
 == Reactive
@@ -203,9 +203,9 @@ Configuration has been updated to use the new `Resource` approach:
 == WebServer Configuration
 
 === SSL/TLS
-There is a new class `io.helidon.reactive.webserver.WebServerTls` that can be used
+There is a new class `io.helidon.webserver.WebServerTls` that can be used
 to configure TLS for a WebServer socket.
-Class `io.helidon.reactive.webserver.SSLContextBuilder` has been deprecated and will
+Class `io.helidon.webserver.SSLContextBuilder` has been deprecated and will
 be removed.
 
 The class uses a `Builder` pattern:
@@ -265,7 +265,7 @@ together, to remove mapping through a name.
 
 === Deprecation of ServerConfiguration
 
-`io.helidon.reactive.webserver.ServerConfiguration.Builder` is no longer used
+`io.helidon.webserver.ServerConfiguration.Builder` is no longer used
 to configure `WebServer`.
 
 Most methods from this class have been moved to `WebServer.Builder` or deprecated.
@@ -283,14 +283,14 @@ WebServer.builder()
 
 === Other Significant WebServer Deprecations
 
-- `io.helidon.reactive.webserver.WebServer.Builder` - all methods that accept `ServerConfiguration` or its builder are deprecated, please use
+- `io.helidon.webserver.WebServer.Builder` - all methods that accept `ServerConfiguration` or its builder are deprecated, please use
       methods on `WebServer.Builder` instead
-- `io.helidon.reactive.webserver.WebServer.Builder` - all methods for socket configuration that accept a name
+- `io.helidon.webserver.WebServer.Builder` - all methods for socket configuration that accept a name
       and socket are deprecated, socket name is now part of socket configuration itself
-- `io.helidon.reactive.webserver.ResponseHeaders.whenSend()` - please use `whenSent()`
-- `io.helidon.reactive.webserver.Routing.createServer(ServerConfiguration)` - please use `WebServer.builder()`
-- `io.helidon.reactive.webserver.Routing.createServer()` - please use `WebServer.builder()`
-- `io.helidon.reactive.webserver.SocketConfiguration.DEFAULT` - use a builder to create a named configuration
-- `io.helidon.reactive.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use `WebServerTls` instead
-- `io.helidon.reactive.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...) - use `WebServerTls` instead
+- `io.helidon.webserver.ResponseHeaders.whenSend()` - please use `whenSent()`
+- `io.helidon.webserver.Routing.createServer(ServerConfiguration)` - please use `WebServer.builder()`
+- `io.helidon.webserver.Routing.createServer()` - please use `WebServer.builder()`
+- `io.helidon.webserver.SocketConfiguration.DEFAULT` - use a builder to create a named configuration
+- `io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use `WebServerTls` instead
+- `io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...) - use `WebServerTls` instead
 

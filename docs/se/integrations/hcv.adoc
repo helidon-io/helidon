@@ -35,7 +35,8 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using reactive client.
+HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using
+xref:{webclient-page}[WebClient].
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -188,17 +189,16 @@ Then `WebService` has to be configured with endpoints routing registered:
 
 [source,java]
 ----
-SysRx sys = tokenVault.sys(SysRx.API);
+Sys sys = tokenVault.sys(Sys.API);
 WebServer webServer = WebServer.builder()
-        .config(config.get("server"))
-        .routing(Routing.builder()
-                         .register("/cubbyhole", new CubbyholeService(sys, tokenVault.secrets(CubbyholeSecretsRx.ENGINE)))
-                         .register("/kv1", new Kv1Service(sys, tokenVault.secrets(Kv1SecretsRx.ENGINE)))
-                         .register("/kv2", new Kv2Service(sys, tokenVault.secrets(Kv2SecretsRx.ENGINE)))
-                         .register("/transit", new TransitService(sys, tokenVault.secrets(TransitSecretsRx.ENGINE))))
-        .build()
-        .start()
-        .await();
+    .config(config.get("server"))
+    .routing(routing -> routing
+        .register("/cubbyhole", new CubbyholeService(sys, tokenVault.secrets(CubbyholeSecrets.ENGINE)))
+        .register("/kv1", new Kv1Service(sys, tokenVault.secrets(Kv1Secrets.ENGINE)))
+        .register("/kv2", new Kv2Service(sys, tokenVault.secrets(Kv2Secrets.ENGINE)))
+        .register("/transit", new TransitService(sys, tokenVault.secrets(TransitSecrets.ENGINE))))
+    .build()
+    .start();
 ----
 
 AppRole-based and Kubernetes authentications are available.
@@ -210,31 +210,26 @@ Cubbyhole secrets engine operations:
 [source,java]
 ----
 @Override
-public void update(Routing.Rules rules) {
+public void routing(HttpRules rules) {
     rules.get("/create", this::createSecrets)
-            .get("/secrets/{path:.*}", this::getSecret);
+         .get("/secrets/{path:.*}", this::getSecret);
 }
 
-private void createSecrets(ServerRequest req, ServerResponse res) { <1>
-    secrets.create("first/secret", Map.of("key", "secretValue"))
-            .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
-            .exceptionally(res::send);
+private void createSecrets(ServerRequest req, ServerResponse res) { // <1>
+    secrets.create("first/secret", Map.of("key", "secretValue"));
+    res.send("Created secret on path /first/secret");
 }
 
-private void getSecret(ServerRequest req, ServerResponse res) { <2>
-    String path = req.path().param("path");
-
-    secrets.get(path)
-            .thenAccept(secret -> {
-                if (secret.isPresent()) {
-                    // using toString so we do not need to depend on JSON-B
-                    res.send(secret.get().values().toString());
-                } else {
-                    res.status(Http.Status.NOT_FOUND_404);
-                    res.send();
-                }
-            })
-            .exceptionally(res::send);
+private void getSecret(ServerRequest req, ServerResponse res) { // <2>
+    String path = req.path().pathParameters().get("path");
+    Optional<Secret> secret = secrets.get(path);
+    if (secret.isPresent()) {
+        // using toString so we do not need to depend on JSON-B
+        res.send(secret.get().values().toString());
+    } else {
+        res.status(Status.NOT_FOUND_404);
+        res.send();
+    }
 }
 ----
 
@@ -248,53 +243,46 @@ Key/Value version 1 secrets engine operations:
 [source,java]
 ----
 @Override
-public void update(Routing.Rules rules) {
+public void routing(HttpRules rules) {
     rules.get("/enable", this::enableEngine)
-            .get("/create", this::createSecrets)
-            .get("/secrets/{path:.*}", this::getSecret)
-            .delete("/secrets/{path:.*}", this::deleteSecret)
-            .get("/disable", this::disableEngine);
+         .get("/create", this::createSecrets)
+         .get("/secrets/{path:.*}", this::getSecret)
+         .delete("/secrets/{path:.*}", this::deleteSecret)
+         .get("/disable", this::disableEngine);
 }
 
-private void disableEngine(ServerRequest req, ServerResponse res) { <1>
-    sys.disableEngine(Kv1SecretsRx.ENGINE)
-            .thenAccept(ignored -> res.send("KV1 Secret engine disabled"))
-            .exceptionally(res::send);
+private void disableEngine(ServerRequest req, ServerResponse res) { // <1>
+    sys.disableEngine(Kv1Secrets.ENGINE);
+    res.send("KV1 Secret engine disabled");
 }
 
-private void enableEngine(ServerRequest req, ServerResponse res) { <2>
-    sys.enableEngine(Kv1SecretsRx.ENGINE)
-            .thenAccept(ignored -> res.send("KV1 Secret engine enabled"))
-            .exceptionally(res::send);
+private void enableEngine(ServerRequest req, ServerResponse res) { // <2>
+    sys.enableEngine(Kv1Secrets.ENGINE);
+    res.send("KV1 Secret engine enabled");
 }
 
-private void createSecrets(ServerRequest req, ServerResponse res) { <3>
-    secrets.create("first/secret", Map.of("key", "secretValue"))
-            .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
-            .exceptionally(res::send);
+private void createSecrets(ServerRequest req, ServerResponse res) { // <3>
+    secrets.create("first/secret", Map.of("key", "secretValue"));
+    res.send("Created secret on path /first/secret");
 }
 
-private void deleteSecret(ServerRequest req, ServerResponse res) { <4>
-    String path = req.path().param("path");
-
-    secrets.delete(path)
-            .thenAccept(ignored -> res.send("Deleted secret on path " + path));
+private void deleteSecret(ServerRequest req, ServerResponse res) { // <4>
+    String path = req.path().pathParameters().get("path");
+    secrets.delete(path);
+    res.send("Deleted secret on path " + path);
 }
 
-private void getSecret(ServerRequest req, ServerResponse res) { <5>
-    String path = req.path().param("path");
+private void getSecret(ServerRequest req, ServerResponse res) { // <5>
+    String path = req.path().pathParameters().get("path");
 
-    secrets.get(path)
-            .thenAccept(secret -> {
-                if (secret.isPresent()) {
-                    // using toString so we do not need to depend on JSON-B
-                    res.send(secret.get().values().toString());
-                } else {
-                    res.status(Http.Status.NOT_FOUND_404);
-                    res.send();
-                }
-            })
-            .exceptionally(res::send);
+    Optional<Secret> secret = secrets.get(path);
+    if (secret.isPresent()) {
+        // using toString so we do not need to depend on JSON-B
+        res.send(secret.get().values().toString());
+    } else {
+        res.status(Status.NOT_FOUND_404);
+        res.send();
+    }
 }
 ----
 
@@ -311,40 +299,35 @@ Key/Value version 2 secrets engine operations:
 [source,java]
 ----
 @Override
-public void update(Routing.Rules rules) {
+public void routing(HttpRules rules) {
     rules.get("/create", this::createSecrets)
-            .get("/secrets/{path:.*}", this::getSecret)
-            .delete("/secrets/{path:.*}", this::deleteSecret);
+         .get("/secrets/{path:.*}", this::getSecret)
+         .delete("/secrets/{path:.*}", this::deleteSecret);
 }
 
-private void createSecrets(ServerRequest req, ServerResponse res) { <1>
-    secrets.create("first/secret", Map.of("key", "secretValue"))
-            .thenAccept(ignored -> res.send("Created secret on path /first/secret"))
-            .exceptionally(res::send);
+private void createSecrets(ServerRequest req, ServerResponse res) { // <1>
+    secrets.create("first/secret", Map.of("key", "secretValue"));
+    res.send("Created secret on path /first/secret");
 }
 
-private void deleteSecret(ServerRequest req, ServerResponse res) { <2>
-    String path = req.path().param("path");
-
-    secrets.deleteAll(path)
-            .thenAccept(ignored -> res.send("Deleted secret on path " + path));
+private void deleteSecret(ServerRequest req, ServerResponse res) { // <2>
+    String path = req.path().pathParameters().get("path");
+    secrets.deleteAll(path);
+    res.send("Deleted secret on path " + path);
 }
 
-private void getSecret(ServerRequest req, ServerResponse res) { <3>
-    String path = req.path().param("path");
+private void getSecret(ServerRequest req, ServerResponse res) { // <3>
+    String path = req.path().pathParameters().get("path");
 
-    secrets.get(path)
-            .thenAccept(secret -> {
-                if (secret.isPresent()) {
-                    // using toString so we do not need to depend on JSON-B
-                    Kv2Secret kv2Secret = secret.get();
-                    res.send("Version " + kv2Secret.metadata().version() + ", secret: " + kv2Secret.values().toString());
-                } else {
-                    res.status(Http.Status.NOT_FOUND_404);
-                    res.send();
-                }
-            })
-            .exceptionally(res::send);
+    Optional<Kv2Secret> secret = secrets.get(path);
+    if (secret.isPresent()) {
+        // using toString so we do not need to depend on JSON-B
+        Kv2Secret kv2Secret = secret.get();
+        res.send("Version " + kv2Secret.metadata().version() + ", secret: " + kv2Secret.values().toString());
+    } else {
+        res.status(Status.NOT_FOUND_404);
+        res.send();
+    }
 }
 ----
 
@@ -356,114 +339,113 @@ private void getSecret(ServerRequest req, ServerResponse res) { <3>
 
 Transit secrets engine operations:
 
-[source,bash]
+[source,java]
 ----
 @Override
-public void update(Routing.Rules rules) {
+public void routing(HttpRules rules) {
     rules.get("/enable", this::enableEngine)
-            .get("/keys", this::createKeys)
-            .delete("/keys", this::deleteKeys)
-            .get("/batch", this::batch)
-            .get("/encrypt/{text:.*}", this::encryptSecret)
-            .get("/decrypt/{text:.*}", this::decryptSecret)
-            .get("/sign", this::sign)
-            .get("/hmac", this::hmac)
-            .get("/verify/sign/{text:.*}", this::verify)
-            .get("/verify/hmac/{text:.*}", this::verifyHmac)
-            .get("/disable", this::disableEngine);
+         .get("/keys", this::createKeys)
+         .delete("/keys", this::deleteKeys)
+         .get("/batch", this::batch)
+         .get("/encrypt/{text:.*}", this::encryptSecret)
+         .get("/decrypt/{text:.*}", this::decryptSecret)
+         .get("/sign", this::sign)
+         .get("/hmac", this::hmac)
+         .get("/verify/sign/{text:.*}", this::verify)
+         .get("/verify/hmac/{text:.*}", this::verifyHmac)
+         .get("/disable", this::disableEngine);
 }
 
-private void enableEngine(ServerRequest req, ServerResponse res) { <1>
-    sys.enableEngine(TransitSecretsRx.ENGINE)
-            .thenAccept(ignored -> res.send("Transit Secret engine enabled"))
-            .exceptionally(res::send);
+private void enableEngine(ServerRequest req, ServerResponse res) { // <1>
+    sys.enableEngine(TransitSecrets.ENGINE);
+    res.send("Transit Secret engine enabled");
 }
 
-private void disableEngine(ServerRequest req, ServerResponse res) { <2>
-    sys.disableEngine(TransitSecretsRx.ENGINE)
-            .thenAccept(ignored -> res.send("Transit Secret engine disabled"))
-            .exceptionally(res::send);
+private void disableEngine(ServerRequest req, ServerResponse res) { // <2>
+    sys.disableEngine(TransitSecrets.ENGINE);
+    res.send("Transit Secret engine disabled");
 }
 
-private void createKeys(ServerRequest req, ServerResponse res) { <3>
+private void createKeys(ServerRequest req, ServerResponse res) { // <3>
     CreateKey.Request request = CreateKey.Request.builder()
-            .name(ENCRYPTION_KEY);
+                                                 .name(ENCRYPTION_KEY);
 
-    secrets.createKey(request)
-            .flatMapSingle(ignored -> secrets.createKey(CreateKey.Request.builder()
-                                                                .name(SIGNATURE_KEY)
-                                                                .type("rsa-2048")))
-            .forSingle(ignored -> res.send("Created keys"))
-            .exceptionally(res::send);
+    secrets.createKey(request);
+    secrets.createKey(CreateKey.Request.builder()
+                                       .name(SIGNATURE_KEY)
+                                       .type("rsa-2048"));
+
+    res.send("Created keys");
 }
 
-private void deleteKeys(ServerRequest req, ServerResponse res) { <4>
-
+private void deleteKeys(ServerRequest req, ServerResponse res) { // <4>
     secrets.updateKeyConfig(UpdateKeyConfig.Request.builder()
-                                    .name(ENCRYPTION_KEY)
-                                    .allowDeletion(true))
-            .peek(ignored -> System.out.println("Updated key config"))
-            .flatMapSingle(ignored -> secrets.deleteKey(DeleteKey.Request.create(ENCRYPTION_KEY)))
-            .forSingle(ignored -> res.send("Deleted key."))
-            .exceptionally(res::send);
+                                                   .name(ENCRYPTION_KEY)
+                                                   .allowDeletion(true));
+    System.out.println("Updated key config");
+
+    secrets.deleteKey(DeleteKey.Request.create(ENCRYPTION_KEY));
+
+    res.send("Deleted key.");
 }
 
-private void encryptSecret(ServerRequest req, ServerResponse res) { <5>
-    String secret = req.path().param("text");
 
-    secrets.encrypt(Encrypt.Request.builder()
-                            .encryptionKeyName(ENCRYPTION_KEY)
-                            .data(Base64Value.create(secret)))
-            .forSingle(response -> res.send(response.encrypted().cipherText()))
-            .exceptionally(res::send);
+private void encryptSecret(ServerRequest req, ServerResponse res) { // <5>
+    String secret = req.path().pathParameters().get("text");
+
+    Encrypt.Response encryptResponse = secrets.encrypt(Encrypt.Request.builder()
+                                                                      .encryptionKeyName(ENCRYPTION_KEY)
+                                                                      .data(Base64Value.create(secret)));
+
+    res.send(encryptResponse.encrypted().cipherText());
 }
 
-private void decryptSecret(ServerRequest req, ServerResponse res) { <6>
-    String encrypted = req.path().param("text");
+private void decryptSecret(ServerRequest req, ServerResponse res) { // <6>
+    String encrypted = req.path().pathParameters().get("text");
 
-    secrets.decrypt(Decrypt.Request.builder()
-                            .encryptionKeyName(ENCRYPTION_KEY)
-                            .cipherText(encrypted))
-            .forSingle(response -> res.send(String.valueOf(response.decrypted().toDecodedString())))
-            .exceptionally(res::send);
+    Decrypt.Response decryptResponse = secrets.decrypt(Decrypt.Request.builder()
+                                                                      .encryptionKeyName(ENCRYPTION_KEY)
+                                                                      .cipherText(encrypted));
+
+    res.send(String.valueOf(decryptResponse.decrypted().toDecodedString()));
 }
 
-private void hmac(ServerRequest req, ServerResponse res) { <7>
-    secrets.hmac(Hmac.Request.builder()
-                         .hmacKeyName(ENCRYPTION_KEY)
-                         .data(SECRET_STRING))
-            .forSingle(response -> res.send(response.hmac()))
-            .exceptionally(res::send);
+private void hmac(ServerRequest req, ServerResponse res) { // <7>
+    Hmac.Response hmacResponse = secrets.hmac(Hmac.Request.builder()
+                                                          .hmacKeyName(ENCRYPTION_KEY)
+                                                          .data(SECRET_STRING));
+
+    res.send(hmacResponse.hmac());
 }
 
-private void sign(ServerRequest req, ServerResponse res) { <8>
-    secrets.sign(Sign.Request.builder()
-                         .signatureKeyName(SIGNATURE_KEY)
-                         .data(SECRET_STRING))
-            .forSingle(response -> res.send(response.signature()))
-            .exceptionally(res::send);
+private void sign(ServerRequest req, ServerResponse res) { // <8>
+    Sign.Response signResponse = secrets.sign(Sign.Request.builder()
+                                                          .signatureKeyName(SIGNATURE_KEY)
+                                                          .data(SECRET_STRING));
+
+    res.send(signResponse.signature());
 }
 
-private void verifyHmac(ServerRequest req, ServerResponse res) { <9>
-    String hmac = req.path().param("text");
+private void verifyHmac(ServerRequest req, ServerResponse res) { // <9>
+    String hmac = req.path().pathParameters().get("text");
 
-    secrets.verify(Verify.Request.builder()
-                           .digestKeyName(ENCRYPTION_KEY)
-                           .data(SECRET_STRING)
-                           .hmac(hmac))
-            .forSingle(response -> res.send("Valid: " + response.isValid()))
-            .exceptionally(res::send);
+    Verify.Response verifyResponse = secrets.verify(Verify.Request.builder()
+                                                          .digestKeyName(ENCRYPTION_KEY)
+                                                          .data(SECRET_STRING)
+                                                          .hmac(hmac));
+
+    res.send("Valid: " + verifyResponse.isValid());
 }
 
-private void verify(ServerRequest req, ServerResponse res) { <10>
-    String signature = req.path().param("text");
+private void verify(ServerRequest req, ServerResponse res) { // <10>
+    String signature = req.path().pathParameters().get("text");
 
-    secrets.verify(Verify.Request.builder()
-                           .digestKeyName(SIGNATURE_KEY)
-                           .data(SECRET_STRING)
-                           .signature(signature))
-            .forSingle(response -> res.send("Valid: " + response.isValid()))
-            .exceptionally(res::send);
+    Verify.Response verifyResponse = secrets.verify(Verify.Request.builder()
+                                                          .digestKeyName(SIGNATURE_KEY)
+                                                          .data(SECRET_STRING)
+                                                          .signature(signature));
+
+    res.send("Valid: " + verifyResponse.isValid());
 }
 ----
 
@@ -491,68 +473,66 @@ class K8sExample {
     private final Vault tokenVault;
     private final String k8sAddress;
     private final Config config;
-    private final SysRx sys;
+    private final Sys sys;
 
     private Vault k8sVault;
 
     K8sExample(Vault tokenVault, Config config) {
         this.tokenVault = tokenVault;
-        this.sys = tokenVault.sys(SysRx.API);
+        this.sys = tokenVault.sys(Sys.API);
         this.k8sAddress = config.get("cluster-address").asString().get();
         this.config = config;
     }
 
-    public Single<String> run() { <1>
+    public String run() { // <1>
         /*
          The following tasks must be run before we authenticate
          */
-        return enableK8sAuth()
-                // Now we can login using k8s - must run within a k8s cluster (or you need the k8s configuration files locally)
-                .flatMapSingle(ignored -> workWithSecrets())
-                // Now back to token based Vault, as we will clean up
-                .flatMapSingle(ignored -> disableK8sAuth())
-                .map(ignored -> "k8s example finished successfully.");
+        enableK8sAuth();
+        // Now we can login using k8s - must run within a k8s cluster (or you need the k8s configuration files locally)
+        workWithSecrets();
+        // Now back to token based Vault, as we will clean up
+        disableK8sAuth();
+        return "k8s example finished successfully.";
     }
 
-    private Single<ApiResponse> workWithSecrets() { <2>
-        Kv2SecretsRx secrets = k8sVault.secrets(Kv2SecretsRx.ENGINE);
+    private void workWithSecrets() { // <2>
+        Kv2Secrets secrets = k8sVault.secrets(Kv2Secrets.ENGINE);
 
-        return secrets.create(SECRET_PATH, Map.of("secret-key", "secretValue",
-                                                  "secret-user", "username"))
-                .flatMapSingle(ignored -> secrets.get(SECRET_PATH))
-                .peek(secret -> {
-                    if (secret.isPresent()) {
-                        Kv2Secret kv2Secret = secret.get();
-                        System.out.println("k8s first secret: " + kv2Secret.value("secret-key"));
-                        System.out.println("k8s second secret: " + kv2Secret.value("secret-user"));
-                    } else {
-                        System.out.println("k8s secret not found");
-                    }
-                }).flatMapSingle(ignored -> secrets.deleteAll(SECRET_PATH));
+        secrets.create(SECRET_PATH, Map.of("secret-key", "secretValue",
+                "secret-user", "username"));
+
+        Optional<Kv2Secret> secret = secrets.get(SECRET_PATH);
+        if (secret.isPresent()) {
+            Kv2Secret kv2Secret = secret.get();
+            System.out.println("k8s first secret: " + kv2Secret.value("secret-key"));
+            System.out.println("k8s second secret: " + kv2Secret.value("secret-user"));
+        } else {
+            System.out.println("k8s secret not found");
+        }
+        secrets.deleteAll(SECRET_PATH);
     }
 
-    private Single<ApiResponse> disableK8sAuth() { <3>
-        return sys.deletePolicy(POLICY_NAME)
-                .flatMapSingle(ignored -> sys.disableAuth(K8sAuthRx.AUTH_METHOD.defaultPath()));
+    private void disableK8sAuth() { // <3>
+        sys.deletePolicy(POLICY_NAME);
+        sys.disableAuth(K8sAuth.AUTH_METHOD.defaultPath());
     }
 
-    private Single<ApiResponse> enableK8sAuth() { <4>
+    private void enableK8sAuth() { // <4>
         // enable the method
-        return sys.enableAuth(K8sAuthRx.AUTH_METHOD)
-                // add policy
-                .flatMapSingle(ignored -> sys.createPolicy(POLICY_NAME, VaultPolicy.POLICY))
-                .flatMapSingle(ignored -> tokenVault.auth(K8sAuthRx.AUTH_METHOD)
-                        .configure(ConfigureK8s.Request.builder()
-                                           .address(k8sAddress)))
-                .flatMapSingle(ignored -> tokenVault.auth(K8sAuthRx.AUTH_METHOD)
-                        // this must be the same role name as is defined in application.yaml
-                        .createRole(CreateRole.Request.builder()
-                                            .roleName("my-role")
-                                            .addBoundServiceAccountName("*")
-                                            .addBoundServiceAccountNamespace("default")
-                                            .addTokenPolicy(POLICY_NAME)))
-                .peek(ignored -> k8sVault = Vault.create(config))
-                .map(Function.identity());
+        sys.enableAuth(K8sAuth.AUTH_METHOD);
+        sys.createPolicy(POLICY_NAME, VaultPolicy.POLICY);
+        tokenVault.auth(K8sAuth.AUTH_METHOD)
+                  .configure(ConfigureK8s.Request.builder()
+                                                 .address(k8sAddress));
+        tokenVault.auth(K8sAuth.AUTH_METHOD)
+                  // this must be the same role name as is defined in application.yaml
+                  .createRole(CreateRole.Request.builder()
+                                                .roleName("my-role")
+                                                .addBoundServiceAccountName("*")
+                                                .addBoundServiceAccountNamespace("default")
+                                                .addTokenPolicy(POLICY_NAME));
+        k8sVault = Vault.create(config);
     }
 }
 ----

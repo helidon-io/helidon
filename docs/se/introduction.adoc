@@ -24,7 +24,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-Helidon SE is Helidon's foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking. 
+Helidon SE is Helidon's foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking.
 
 == Components
 
@@ -62,7 +62,7 @@ Add support for CORS to your application using a Helidon module.
 .DB Client
 [icon=storage,link=dbclient.adoc]
 --
-Provides a unified, reactive API for working with databases in non-blocking way.
+Unified API for working with databases.
 --
 //GraphQL
 [CARD]
@@ -134,7 +134,7 @@ Profile and monitor your applications across multiple services.
 .WebClient
 [icon=http,link=webclient.adoc]
 --
-HTTP client that handles responses to the HTTP requests in a reactive way.
+A programmatic API to make HTTP requests.
 --
 
 //WebServer
@@ -142,7 +142,7 @@ HTTP client that handles responses to the HTTP requests in a reactive way.
 .WebServer
 [icon=settings_ethernet,link=webserver.adoc]
 --
-A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests. 
+A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests.
 // Each request runs in its own dedicated thread so it is free to perform blocking operations in a simple synchronous way without blocking a platform thread or starving other requests.
 
 --

@@ -17,8 +17,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = WebServer Introduction
-:description: Helidon Reactive WebServer Introduction
-:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver, tls
+:description: Helidon WebServer Introduction
+:keywords: helidon, java, webserver, tls
 :feature-name: WebServer
 :rootdir: {docdir}/..
 :requested-uri-discovery-inc: {rootdir}/includes/server/requested-uri-discovery.adoc
@@ -39,15 +39,13 @@ include::{rootdir}/includes/se.adoc[]
 - <<Supported Technologies, Supported Technologies>>
 ** <<HTTP/2 Support, HTTP/2 Support>>
 ** <<Static Content Support, Static Content Support>>
-** <<Jersey (JAX-RS) Support, Jersey (JAX-RS) Support>>
 ** <<JSON Support, JSON Support>>
 - <<Reference, Reference>>
 - <<Additional Information, Additional Information>>
 
 == Overview
 
-WebServer provides an asynchronous and reactive API for creating web applications.
-The API is inspired by popular NodeJS and Java frameworks.
+WebServer provides an API for creating HTTP servers. It uses virtual threads and can handle nearly unlimited concurrent requests.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -213,9 +211,9 @@ or more services, each with its own path prefix and set of handlers.
 [source,java]
 .Service implementation
 ----
-public class HelloService implements Service {
+public class HelloService implements HttpService {
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/subpath", this::getHandler);
     }
 
@@ -499,8 +497,8 @@ To enable Static Content Support add the following dependency to your project's 
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.webserver</groupId>
-    <artifactId>helidon-reactive-webserver-static-content</artifactId>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-static-content</artifactId>
 </dependency>
 ----
 
@@ -527,93 +525,6 @@ A `StaticContentSupport` object can be created using `create(...)` factory metho
 `builder`. The `builder` lets you provide more configuration values, including _welcome file-name_
 and mappings of filename extensions to media types.
 
-== Jersey (JAX-RS) Support
-
-=== Maven Coordinates
-
-To enable Jersey (JAX-RS) Support add the following dependency to your project's `pom.xml`.
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-jersey</artifactId>
-</dependency>
-----
-
-=== JAX-RS Support
-You can register a Jersey (JAX-RS) application at a _context root_ using the
-`JerseySupport` class.
-
-==== Registering a Jersey Application
-To register a *Jersey* application at a context root, use the
-`JerseySupport` class and its `JerseySupport.Builder` builder.
-
-`JerseySupport` can register the JAX-RS resources directly.
-[source,java]
-.Jersey (JAX-RS) `HelloWorld` resource
-----
-@Path("/")
-public class HelloWorld {
-
-    @GET
-    @Path("hello")
-    public Response hello() {
-        return Response.ok("Hello World!").build();
-    }
-}
-----
-
-[source,java]
-.Registering the `HelloWorld` resource
-----
-Routing.builder()
-       .register("/jersey", // <1>
-                 JerseySupport.builder()
-                              .register(HelloWorld.class) // <2>
-                              .build())
-       .build();
-----
-<1> Register the Jersey application at `/jersey` context root
-<2> The Jersey `Application` stays hidden and consists of a single `HelloWorld`
-resource class
-
-As a result, an HTTP GET request to `/jersey/hello` would yield a `Hello World!`
-response string.
-
-===== Registering a JAX-RS Application
-You can also register the JAX-RS `Application` object.
-[source,java]
-.Register the `HelloWorld` resource
-----
-Routing.builder()
-       .register("/jersey", // <1>
-                 JerseySupport.builder(new MyApplication()) // <2>
-                              .build())
-       .build();
-----
-<1> Register the Jersey application at `/jersey` context root
-<2> `MyApplication` handles requests made to /jersey context root.
-
-===== Accessing WebServer Internals from a JAX-RS Application
-
-You can inject WebServer request and response objects into your
-JAX-RS application using `@Context`.
-
-[source,java]
-.Injection of WebServer internal objects
-----
-@Path("/")
-@RequestScoped
-public class HelloWorld {
-    @Context
-    private ServerRequest request;
-
-    @Context
-    private ServerResponse response;
-}
-----
-
 == JSON Support
 The WebServer supports JSON-P. When enabled, you can send and
 receive JSON-P objects transparently.
@@ -625,28 +536,12 @@ To enable JSON Support add the following dependency to your project's `pom.xml`.
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.media</groupId>
-    <artifactId>helidon-reactive-media-jsonp</artifactId>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
 ----
 
 === Usage
-
-To enable JSON-P support, first register it with the web server.
-Then you can add routes that handle and return JSON.
-
-[source,java]
-.Configure JsonpSupport and use it for reading and writing of entities
-----
-JsonpSupport jsonbSupport = JsonpSupport.create(); // <1>
-WebServer webServer = WebServer.builder()
-    .addMediaSupport(jsonpSupport) // <2>
-    .build();
-----
-<1> Register JsonpSupport to enable transformation from and to `JsonObject` objects
-<2> Register that JsonpSupport instance to enable automatic
-deserialization of Java objects from and serialization of Java objects
-to JSON.
 
 [source,java]
 .Handler that receives and returns JSON objects
@@ -678,16 +573,6 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
 {"message":"Hello Joe"}
 ----
 
-=== Configuring Json Reader/Writer Factories
-To configure JSON-P `JsonReaderFactory` and `JsonWriterFactory` that are used by
-the `JsonpSupport` instance, create the `JsonpSupport` object:
-
-[source,java]
-.Create `JsonpSupport` with the provided configuration
-----
-JsonpSupport.create(Map.of(JsonGenerator.PRETTY_PRINTING, false));
-----
-
 == JSON-B Support
 The WebServer supports the http://json-b.net/[JSON-B
 specification]. When this support is enabled, Java objects will be
@@ -702,29 +587,12 @@ To enable JSON-B Support add the following dependency to your project's `pom.xml
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.media</groupId>
-    <artifactId>helidon-reactive-media-jsonp</artifactId>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jsonb</artifactId>
 </dependency>
 ----
 
 === Usage
-To enable JSON-B support, first create and register a
-link:{media-jsonb-javadoc-base-url}/io/helidon/reactive/media/jsonb/JsonbSupport.html[`JsonbSupport`] instance with a
-link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/WebServer.Builder.html[`WebServer.Builder`].
-
-[source,java]
-.Registration of the `JsonbSupport` via `WebServer`
-----
-JsonbSupport jsonbSupport = JsonbSupport.create(); // <1>
-WebServer webServer = WebServer.builder()
-    .addMediaSupport(jsonbSupport) // <2>
-    .build();
-----
-<1> Create a `JsonbSupport` instance.  This instance may be
-reused freely.
-<2> Register that `JsonbSupport` instance to enable automatic
-deserialization of Java objects from and serialization of Java objects
-to JSON.
 
 Now that automatic JSON serialization and deserialization facilities
 have been set up, you can register a `Handler` that works with Java
@@ -794,30 +662,12 @@ To enable Jackson Support add the following dependency to your project's `pom.xm
 [source,xml]
 ----
 <dependency>
-     <groupId>io.helidon.media</groupId>
-     <artifactId>helidon-media-jackson</artifactId>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jackson</artifactId>
 </dependency>
 ----
 
 === Usage
-To enable Jackson support, first create and register a
-link:{media-jackson-javadoc-base-url}/io/helidon/media/jackson/JacksonSupport.html[`JacksonSupport`]
-instance with a
-link:link:{webserver-javadoc-base-url}/io/helidon/webserver/WebServer.Builder.html[`WebServer.Builder`].
-
-[source,java]
-.Registration of the `JacksonSupport` via `WebServer`
-----
-JacksonSupport jacksonSupport = JacksonSupport.create(); // <1>
-WebServer webServer = WebServer.builder()
-    .addMediaSupport(jacksonSupport) // <2>
-    .build();
-----
-<1> Create a `JacksonSupport` instance.  This instance may be
-reused freely.
-<2> Register that `JacksonSupport` instance to enable automatic
-deserialization of Java objects from and serialization of Java objects
-to JSON.
 
 Now that automatic JSON serialization and deserialization facilities
 have been set up, you can register a `Handler` that works with Java

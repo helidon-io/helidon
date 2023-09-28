@@ -18,7 +18,7 @@
 
 = Helidon Injection
 :description: about Helidon Injection
-:keywords: helidon, inject, injection, java, microservices, reactive, virtual threads
+:keywords: helidon, inject, injection, java, microservices, virtual threads
 :feature-name: Helidon Injection
 :rootdir: {docdir}/..
 
@@ -37,11 +37,11 @@
 
 == Overview
 
-Helidon Injection is an optional feature in Helidon that provides service registry, a lifecycle engine and extensibility for customized code generation. 
+Helidon Injection is an optional feature in Helidon that provides service registry, a lifecycle engine and extensibility for customized code generation.
 
-NOTE: Helidon Injection provides a way to develop non Helidon-specific declarative code using standard Javax/Jakarta annotation types. 
+NOTE: Helidon Injection provides a way to develop non Helidon-specific declarative code using standard Javax/Jakarta annotation types.
 
-The Helidon Injection Framework provides a mix of declarative and programmatic ways to build your application. 
+The Helidon Injection Framework provides a mix of declarative and programmatic ways to build your application.
 Helidon Injection's minimalist, compile-time generated dependency injection (DI) framework and compile-time source code generation has a number of advantages, including:
 
 * enables declarative, Inversion of Control-style programming

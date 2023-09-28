@@ -86,14 +86,14 @@ Learn how to Upgrade your Helidon SE application
 .Helidon SE WebClient Guide
 [link=webclient.adoc]
 --
-Learn how to use the Helidon SE Reactive WebClient
+Learn how to use the Helidon SE WebClient
 --
 
 [CARD]
 .Helidon SE DB Client Guide
 [link=dbclient.adoc]
 --
-Learn how to use the Helidon SE Reactive DB Client
+Learn how to use the Helidon SE DB Client
 --
 
 [CARD]

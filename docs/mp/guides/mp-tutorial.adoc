@@ -660,15 +660,15 @@ Rebuild and run the application and notice the new logging format takes effect.
 .Log output
 ----
 // before
-Aug 22, 2019 11:10:11 AM io.helidon.reactive.webserver.NettyWebServer lambda$start$8
+Aug 22, 2019 11:10:11 AM io.helidon.webserver.LoomWebServer lambda$start$8
 INFO: Channel '@default' started: [id: 0xd0afba31, L:/0:0:0:0:0:0:0:0:8080]
 Aug 22, 2019 11:10:11 AM io.helidon.microprofile.server.ServerImpl lambda$start$10
 INFO: Server started on http://localhost:8080 (and all other host addresses) in 182 milliseconds.
 http://localhost:8080/greet
 
 // after
-2019.08.22 11:24:42 INFO io.helidon.reactive.webserver.NettyWebServer Thread[main,5,main]: Version: 1.2.0
-2019.08.22 11:24:42 INFO io.helidon.reactive.webserver.NettyWebServer Thread[nioEventLoopGroup-2-1,10,main]: Channel '@default' started: [id: 0x8f652dfe, L:/0:0:0:0:0:0:0:0:8080]
+2019.08.22 11:24:42 INFO io.helidon.webserver.LoomServer Thread[main,5,main]: Version: 1.2.0
+2019.08.22 11:24:42 INFO io.helidon.webserver.LoomServer Thread[nioEventLoopGroup-2-1,10,main]: Channel '@default' started: [id: 0x8f652dfe, L:/0:0:0:0:0:0:0:0:8080]
 2019.08.22 11:24:42 INFO io.helidon.microprofile.server.ServerImpl Thread[nioEventLoopGroup-2-1,10,main]: Server started on http://localhost:8080 (and all other host addresses) in 237 milliseconds.
 http://localhost:8080/greet
 ----

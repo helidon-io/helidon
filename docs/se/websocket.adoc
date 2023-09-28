@@ -73,22 +73,18 @@ looking at `MessageQueueService`:
 
 [source,java]
 ----
-public class MessageQueueService implements Service {
+public class MessageQueueService implements HttpService {
 
     private final MessageQueue messageQueue = MessageQueue.instance();
 
     @Override
-    public void update(Routing.Rules routingRules) {
+    public void routing(HttpRules routingRules) {
         routingRules.post("/board", this::handlePost);
     }
 
     private void handlePost(ServerRequest request, ServerResponse response) {
-        request.content()
-                .as(String.class)
-                .thenAccept(it -> {
-                    messageQueue.push(it);
-                    response.status(204).send();
-                });
+        messageQueue.push(request.content().as(String.class));
+        response.status(204).send();
     }
 }
 ----
@@ -102,34 +98,23 @@ connection served by `MessageBoardEndpoint`:
 
 [source,java]
 ----
-public class MessageBoardEndpoint extends Endpoint {
-
+public class MessageBoardEndpoint implements WsListener {
     private final MessageQueue messageQueue = MessageQueue.instance();
 
     @Override
-    public void onOpen(Session session, EndpointConfig endpointConfig) {
-        session.addMessageHandler(new MessageHandler.Whole<String>() {
-            @Override
-            public void onMessage(String message) {
-                try {
-                    // Send all messages in the queue
-                    if (message.equals("SEND")) {
-                        while (!messageQueue.isEmpty()) {
-                            session.getBasicRemote().sendObject(messageQueue.pop());
-                        }
-                    }
-                } catch (Exception e) {
-                    // handle exception
-                }
+    public void onMessage(WsSession session, String text, boolean last) {
+        // Send all messages in the queue
+        if (text.equals("send")) {
+            while (!messageQueue.isEmpty()) {
+                session.send(messageQueue.pop(), last);
             }
-        });
+        }
     }
 }
 ----
 
-This is an example of a programmatic endpoint that extends `Endpoint`. The method
-`onOpen` will be invoked for every new connection. In this example, the application
-registers a message handler for strings, and when the special `SEND` message
+This is an example of a programmatic endpoint that extends `WsListener`. The method
+`onMessage` will be invoked for every message. In this example, when the special `send` message
 is received, it empties the shared queue sending messages one at a time over
 the WebSocket connection.
 
@@ -138,39 +123,20 @@ the web server. This is accomplished via a `Routing` builder:
 
 [source,java]
 ----
-List<Class<? extends Encoder>> encoders =
-    Collections.singletonList(UppercaseEncoder.class);
-
-WebServer server = WebServer.builder()
-        .port(8080)
-        .routing(r -> r
-                .register("/web", StaticContentSupport.builder("/WEB")
-                        .welcomeFileName("index.html")
-                        .build())
-                .register("/rest", new MessageQueueService())
-        )
-        .addRouting(WebSocketRouting.builder()
-                .endpoint("/websocket", ServerEndpointConfig.Builder.create(MessageBoardEndpoint.class, "/board")
-                        .encoders(encoders)
-                        .build())
-                .build()
-        )
-        .build()
+StaticContentService staticContent = StaticContentService.builder("/WEB")
+                                                 .welcomeFileName("index.html")
+                                                 .build();
+MessageQueueService messageQueueService = new MessageQueueService();
+server.routing(routing -> routing
+               .register("/web", staticContent)
+               .register("/rest", messageQueueService))
+       .addRouting(WsRouting.builder()
+                            .endpoint("/websocket/board", new MessageBoardEndpoint())
+                            .build());
 ----
 
-This code snippet uses multiple builders for `Routing`, `WebSocketRouting` and `ServerEndpointConfig`.
-In particular, it registers `MessageBoardEndpoint.class` at `"/websocket/board"` and associates
-with it a _message encoder_. For more information on message encoders and decoders the
-reader see the {jakarta-websocket-spec-url}[websocket specification]; in this
- {helidon-github-tree-url}/examples/webserver/websocket[example], `UppercaseEncoder.class` simply uppercases every
- message sent from the server.
-
-Endpoint methods in Helidon SE are executed in Netty's worker thread pool. Threads in this
-pool are intended to be _non-blocking_, thus it is recommended for any blocking or
-long-running operation triggered by an endpoint method to be executed using a separate
-thread pool. See the documentation for `io.helidon.common.configurable.ThreadPoolSupplier`.
+This code snippet registers `MessageBoardEndpoint` at `"/websocket/board"` and associates.
 
 == Reference
 
-* link:{javadoc-base-url}/io.helidon.reactive.webserver.websocket/module-summary.html[Helidon WebSocket JavaDoc]
-* link:{jakarta-websocket-spec-url}[Jakarta WebSocket Specification]
+* link:{javadoc-base-url}/io.helidon.webserver.websocket/module-summary.html[Helidon WebSocket JavaDoc]

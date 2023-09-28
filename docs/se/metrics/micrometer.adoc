@@ -97,7 +97,7 @@ Routing.builder()
 ----
 import io.micrometer.core.instrument.Counter;
 
-public class MyService implements Service {
+public class MyService implements HttpService {
 
     private final Counter requestCounter;
 
@@ -106,7 +106,7 @@ public class MyService implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules
             .any(this::countRequests) // <2>
             .get("/", this::myGet);
