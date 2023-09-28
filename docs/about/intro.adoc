@@ -34,11 +34,11 @@
 
 * Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the Helidon N&iacute;ma WebServer. Learn more: <<Helidon MP, Helidon MP>>
 
-* Java 21 is required to use Heldon 4.
+* Java 21 is required to use Helidon 4.
 
 
 
-== Helidon 4 WebServer 
+== Helidon 4 WebServer
 
 Before Helidon 4, the Helidon WebServer was built on Netty and had a reactive API. In Helidon 4 we have replaced this with a new server implementation (Project N&iacute;ma) that is written from the ground up to take full advantage of Java 21's virtual threads. With virtual threads, threads are no longer a scarce resource to be carefully pooled and managed. Instead they are an abundant resource that can be created as needed to handle nearly unlimited concurrent requests.
 

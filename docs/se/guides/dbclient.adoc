@@ -34,20 +34,15 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
-The Helidon DB Client simplifies how you work with databases in reactive applications. It provides a unified,
-reactive API for working with databases in a non-blocking way. Helidon team constantly updates this API in order
-to make it more user-friendly and efficient. For this matter, it is recommended to use the latest helidon version.
+The Helidon DB Client provides a unified API for working with databases.
 
 === Main Features
 
 The main features of  Helidon DB Client are:
 
 * *Unified API for data access and query*:
-The API was implemented as a layer above JDBC or MongoDB Reactive Streams Java Driver, so any relational databases
+The API was implemented as a layer above JDBC or MongoDB Java Driver, so any relational databases
 with JDBC driver or MongoDB are supported.
-* *Reactive database access with non-reactive drivers*:
-Most JDBC drivers are blocking. Using them in a reactive application is problematic. Helidon DB Client allows the use
-of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service.
 * *Observability*:
 Support for health checks, metrics and tracing.
 * *Backpressure*:
@@ -120,9 +115,9 @@ A database stores the books from the library. H2 is a java SQL database that is 
 If H2 is not installed on your machine, here are few steps to quickly download and set it up:
 
  1. Download the latest H2 version from the official website: https://www.h2database.com/html/main.html
- 
+
 * Note: Windows operating system users can download the Windows Installer.
-    
+
  2. Unzip the downloaded file into your directory.
     * Only the h2-\{latest-version}.jar, located in the h2/bin folder, will be needed.
 
@@ -343,12 +338,12 @@ package io.helidon.examples.quickstart.se;
 
 import io.helidon.http.Http;     // <1>
 import io.helidon.dbclient.DbClient;
-import io.helidon.webserver.Routing;
+import io.helidon.webserver.HttpRules;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-public class LibraryService implements Service {
+public class LibraryService implements HttpService {
 
     private final DbClient dbClient;    // <2>
 
@@ -368,7 +363,7 @@ It defines application endpoints and Http request which can be reached by client
 .Add update method to LibraryService
 ----
 @Override
-public void update(Routing.Rules rules) {
+public void routing(HttpRules rules) {
     rules
         .get("/{name}", this::getBook)      // <1>
         .put("/{name}", this::addBook)      // <2>
@@ -381,7 +376,7 @@ public void update(Routing.Rules rules) {
 <3> Remove a book from the library.
 <4> Return the book information in Json format.
 
-To summarize, there is one endpoint that can manipulate books. 
+To summarize, there is one endpoint that can manipulate books.
 The number of endpoints and application
 features can be changed from these rules by creating or modifying methods. `\{name}` is a path parameter for the book
 name. The architecture of the application is defined, so the next step is to create these features.

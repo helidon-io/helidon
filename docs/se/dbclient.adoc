@@ -35,7 +35,7 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way.
+The Helidon SE DB Client provides a unified API for working with databases.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -87,13 +87,6 @@ different databases on different environments without changing code.
 +
 Thanks to the statement configuration abstraction, we can invoke a statement against a relational
 or non-relations databases (such as MySQL and MongoDB) without modifying source code
-
-* Reactive database access with backpressure
-+
-Current we support natively reactive driver for MongoDB, and an executor service wrapped
-support for any JDBC driver.
-This allows for seamless use of JDBC drivers in a reactive non-blocking environment, including support
-for backpressure (result set is processed as requested by the query subscriber)
 
 * Observability +
 +

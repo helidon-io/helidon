@@ -38,17 +38,12 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 === WebClient Features [[WebClient-features]]
 
-Helidon's WebClient is used to perform HTTP REST requests to target endpoints and handle their responses. Built on top of
-a reactive approach, you are no longer blocked while waiting for the data.
+Helidon's WebClient is used to perform HTTP REST requests to target endpoints and handle their responses.
 
 *Note*: WebClient is still experimental and not intended for production use. APIs and features are not yet fully tested
 and are subject to change.
 
 WebClient provides the following features:
-
-    * *Reactive*:
-As mentioned, the code execution is not blocked by waiting for server response when a request is performed. To avoid
-memory overflow, the client has built-in back-pressure support.
 
     * *User-friendly*:
 Every client and request is created by a builder pattern, so it improves readability and code maintenance.
@@ -129,8 +124,8 @@ specific settings and improves the readability and simplicity of the code.
 [source,java]
 .Add WebClient instance to the main method:
 ----
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
+import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.webclient.WebClient;
 
 WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:8080")   // <1>
@@ -147,18 +142,13 @@ Once built, the WebClient can be used to send a GET request to the greeting appl
 [source,java]
 .Send a GET request to the target endpoint:
 ----
-webClient.get()     // <1>
+String entity = webClient.get()     // <1>
     .path("/greet")     // <2>
-    .request(String.class)  // <3>
-    .peek(System.out::println)  // <4>
-    .await();   // <5>
+    .request(String.class);  // <3>
 ----
 <1> Create a HTTP GET request.
 <2> Target endpoint path.
-<3> Execute the request and return Single with response entity handled as a String.
-<4> Print the response in the console.
-<5> Wait for server response because of reactive approach.
-
+<3> Execute the request and return response entity handled as a String.
 
 
 The path method joins `/greet` to the WebClient base URI. The target URI for this request becomes
@@ -292,8 +282,8 @@ that can be used with any metric.
 ----
 import io.helidon.http.Http;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.reactive.webclient.metrics.WebClientMetrics;
-import io.helidon.reactive.webclient.spi.WebClientService;
+import io.helidon.webclient.metrics.WebClientMetrics;
+import io.helidon.webclient.spi.WebClientService;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics|.Counter;
                                        |.Meter;

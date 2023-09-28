@@ -456,10 +456,10 @@ package io.helidon.examples.quickstart.se;
 import io.helidon.http.Http;
 import io.helidon.config.Config;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.webserver.HttpRules;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 import io.opentracing.Span;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
@@ -471,7 +471,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 
-public class GreetService implements Service {
+public class GreetService implements HttpService {
 
   private final AtomicReference<String> greeting = new AtomicReference<>();
   private WebTarget webTarget;
@@ -486,7 +486,7 @@ public class GreetService implements Service {
   }
 
   @Override
-  public void update(Routing.Rules rules) {
+  public void routing(HttpRules rules) {
     rules
         .get("/", this::getDefaultMessageHandler)
         .get("/outbound", this::outboundMessageHandler) // <1>

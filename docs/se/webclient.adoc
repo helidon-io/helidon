@@ -18,7 +18,7 @@
 
 = WebClient Introduction
 :description: Helidon WebClient
-:keywords: helidon, se, rest, httpclient, webclient, reactive
+:keywords: helidon, se, rest, httpclient, webclient
 :feature-name: WebClient
 :rootdir: {docdir}/..
 
@@ -35,12 +35,9 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-WebClient is an HTTP client of Helidon SE. It handles the responses to the HTTP requests in a reactive way.
+WebClient is an HTTP client of Helidon SE. It handles the responses to the HTTP requests in a programmatic way.
 
 Helidon WebClient provides the following features:
-
-* *Reactive approach* +
-Allows you to execute HTTP requests and handle the responses without having to wait for the server response. When the response is received, the client requests only the amount of data that it can handle at that time. So, there is no overflow of memory.
 
 * *Builder-like setup and execution* +
 Creates every client and request as a builder pattern. This improves readability and code maintenance.

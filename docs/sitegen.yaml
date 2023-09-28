@@ -266,7 +266,7 @@ backend:
               - type: "PAGE"
                 title: "Telemetry"
                 source: "telemetry.adoc"
-                glyph: 
+                glyph:
                   type: "icon"
                   value: "analytics"
               - type: "MENU"
@@ -429,7 +429,7 @@ backend:
                   - "engine.adoc"
                   - "rsoperators.adoc"
               - type: "PAGE"
-                title: "Reactive Webserver"
+                title: "Webserver"
                 source: "webserver.adoc"
                 glyph:
                   type: "icon"
