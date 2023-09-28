@@ -1,0 +1,35 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon SE 4.x Upgrade Guide
+:description: Helidon SE 4.x Upgrade Guide
+:keywords: helidon, porting, migration, upgrade, incompatibilities
+:rootdir: {docdir}/../..
+
+In Helidon 4.x we have made some major changes to Helidon. Reactive engine has been removed. APIS and implementations rewritten in "blocking" paradigm.. This guide will help you upgrade a Helidon MP 3.x application to 4.x.
+
+
+== Java 21 Runtime
+
+Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
+
+Helidon 4 no more uses Netty. Helidon SE is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
+
+
+== Deprecations
+

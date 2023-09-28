@@ -1,0 +1,172 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP 4.x Upgrade Guide
+:description: Helidon MP 4.x Upgrade Guide
+:keywords: helidon, porting, migration, upgrade, incompatibilities, 3.x
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+
+In Helidon 4.x we have made some changes to APIs and runtime behavior. This guide
+will help you upgrade a Helidon MP 3.x application to 4.x.
+
+
+== Java 21 Runtime
+
+Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
+
+Helidon 4 no more uses Netty. Helidon MP is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
+
+
+== MicroProfile 6.0  support
+
+MicroProfile 6.0  enables MicroProfile APIs to be used together with Jakarta EE 10 Core Profile (Jakarta EE namespace).
+
+MicroProfile 6.0  lays the foundation for the rapid innovation of MicroProfile APIs for its 2023 releases.
+
+MicroProfile 6.0  is an umbrella for the following specifications and their corresponding versions:
+
+* Open Telemetry {version-lib-microprofile-telemetry}
+* MicroProfile Config {version-lib-microprofile-config}
+* MicroProfile Fault Tolerance {version-lib-microprofile-fault-tolerance-api}
+* MicroProfile Health {version-lib-microprofile-health}
+* MicroProfile JWT Authentication {version-lib-microprofile-jwt}
+* MicroProfile Metrics {version-lib-microprofile-metrics-api}
+* MicroProfile OpenAPI {version-lib-microprofile-openapi-api}
+* MicroProfile Rest Client {version-lib-microprofile-rest-client}
+
+Includes:
+
+* Jakarta EE Core Profile 10 {version-lib-jakarta-core}
+
+Helidon 4.x supports the following Jakarta EE specifications:
+
+* CDI (Jakarta Contexts and Dependency Injection) {version-lib-jakarta-cdi}
+* JAX-RS (Jakarta RESTful Web Services) {version-lib-jakarta-jaxrs-api}
+* JSON-B (Jakarta JSON Binding) {version-lib-jakarta-jsonb-api}
+* JSON-P (Jakarta JSON Processing) {version-lib-jakarta-jsonp-api}
+* Jakarta Annotations {version-lib-jakarta-annotations-api}
+* Jakarta Persistence API {version-lib-jakarta-persistence-api}
+* Jakarta Transactions API {version-lib-jakarta-transaction-api}
+* Jakarta WebSocket API {version-lib-jakarta-websockets-api}
+* Jakarta Bean Validation {version-lib-jakarta-bean-validation}
+
+Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
+
+=== Incompatible changes for each specification
+
+<...>
+
+==== MicroProfile specifications
+
+* *MicroProfile Config {version-lib-microprofile-config}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-config-3.0.1/microprofile-config-spec-3.0.1.html#_incompatible_changes[MicroProfile Config {version-lib-microprofile-config} Specification]
+
+* *MicroProfile Fault Tolerance {version-lib-microprofile-fault-tolerance-api}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html#_backward_incompatible_changes=[MicroProfile Fault Tolerance {version-lib-microprofile-fault-tolerance-api} Specification]
+
+* *MicroProfile Health {version-lib-microprofile-health}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html#_incompatible_changes[MicroProfile Health {version-lib-microprofile-health} Specification]
+
+* *MicroProfile JWT Authentication {version-lib-microprofile-jwt}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.0/microprofile-jwt-auth-spec-2.0.html#_incompatible_changes[MicroProfile JWT Authentication {version-lib-microprofile-jwt} Specification]
+
+* *MicroProfile Metrics {version-lib-microprofile-metrics-api}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-metrics-5.0/microprofile-metrics-spec-5.0.html#_incompatible_changes[MicroProfile Metrics {version-lib-microprofile-metrics-api} Specification]
+
+* *MicroProfile OpenAPI {version-lib-microprofile-openapi-api}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-open-api-3.1/microprofile-openapi-spec-3.1.html#incompatible_changes_30[MicroProfile OpenAPI {version-lib-microprofile-openapi-api} Specification]
+
+* *MicroProfile Rest Client {version-lib-microprofile-rest-client}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_incompatible_changes[MicroProfile Rest Client {version-lib-microprofile-rest-client} Specification]
+
+=== Supported Jakarta EE specifications
+
+* *CDI (Jakarta Contexts and Dependency Injection) {version-lib-jakarta-cdi}*:
++
+Changes described in link:https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html#architecture[CDI (Jakarta Contexts and Dependency Injection) {version-lib-jakarta-cdi} Specification]
+
+* *JAX-RS (Jakarta RESTful Web Services) {version-lib-jakarta-jaxrs-api}*:
++
+Changes described in link:https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_incompatible_changes[JAX-RS (Jakarta RESTful Web Services) {version-lib-jakarta-jaxrs-api}Specification]
+
+* *JSON-B (Jakarta JSON Binding) {version-lib-jakarta-jsonb-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/jsonb/2.0/jakarta-jsonb-spec-2.0.html#change-log[JSON-B (Jakarta JSON Binding) {version-lib-jakarta-jsonb-api} Specification]
+
+
+* *Jakarta Annotations {version-lib-jakarta-annotations-api}*:
++
+Full information in link:https://jakarta.ee/specifications/annotations/2.0/annotations-spec-2.0.html[Jakarta Annotations {version-lib-jakarta-annotations-api} Specification]
+
+* *Jakarta Persistence API {version-lib-jakarta-persistence-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#revision-history[Jakarta Persistence API {version-lib-jakarta-persistence-api} Specification]
+
+* *Jakarta Transactions API {version-lib-jakarta-transaction-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html#revision-history[Jakarta Transactions API {version-lib-jakarta-transaction-api} Specification]
+
+* *Jakarta WebSocket API {version-lib-jakarta-websockets-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/websocket/2.0/websocket-spec-2.0.html#changes[Jakarta WebSocket API {version-lib-jakarta-websockets-api} Specification]
+
+* *Jakarta Bean Validation {version-lib-jakarta-bean-validation}*:
++
+Changes described in link:https://jakarta.ee/specifications/bean-validation/2.0/bean-validation_2.0.html#changelog[Jakarta Bean Validation {version-lib-jakarta-bean-validation} Specification]
+
+NOTE: Please, read each specification carefully for incompatible changes!
+
+
+== Deprecations
+
+Helidon 4 no more uses Netty. Helidon MP is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
+
+=== Helidon Common
+
+=== Media Common
+
+=== Metrics
+
+=== Common Context
+
+=== GRPC core
+
+=== LRA
+
+=== MP Messaging
+
+=== JWT
+
+=== MP Metrics
+
+=== HTTP Signature Security Provider
+
+=== Service Common
+
+=== WebServer
+

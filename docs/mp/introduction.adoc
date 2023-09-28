@@ -156,6 +156,10 @@ For migration from Helidon 2.x to 3.x:
 
 * xref:{rootdir}/mp/guides/migration_3x.adoc[Helidon MP 3x Migration Guide]
 
+For migration from Helidon 3.x to 4.x:
+
+* xref:{rootdir}/mp/guides/migration_4x.adoc[Helidon MP 4x Migration Guide]
+
 == Next Steps
 
 - Try the xref:{rootdir}/mp/guides/overview.adoc[Helidon MP quickstart guides] to get your

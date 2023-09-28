@@ -135,8 +135,8 @@ To migrate from from Helidon 3.x to 4.x:
 
 //Mitia to create these guides for 4x
 
-* link to SE 4x migration guide [tbd]
-* link to MP 4x migration guide [tbd]
+* xref:{rootdir}/se/guides/migration_4x.adoc[Helidon SE 4x Migration Guide]
+* xref:{rootdir}/mp/guides/migration_4x.adoc[Helidon MP 4x Migration Guide]
 
 
 To migrate from Helidon 2.x to 3.x:
@@ -148,11 +148,6 @@ To migrate from Helidon 1.x to 2.x:
 
 * xref:{rootdir}/se/guides/migration.adoc[Helidon SE 2x Migration Guide]
 * xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
-
-
-
-
-
 
 
 == Next Steps
