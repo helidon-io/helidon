@@ -108,6 +108,24 @@ Config config = Config.create(); // <1>
 ----
 <1> The `Config` object is created with default settings.
 
+=== Global Configuration
+
+Global configuration is a singleton instance of `Config` that is implicitly used by some components of Helidon, plus it provides a convenient mechanism for your application to retrieve configuration from anywhere in your code.
+By default global configuration is initialized to the default `Config` object (as returned by `Config.create()`). But it is recommended that you initialize it explicitly. This is especially important if you define custom config sources.
+
+```
+Config config = Config.create(); // <1>
+Config.global(config); // <2>
+```
+<1> Create configuration. This shows creating the default config, but it could be created from custom config sources.
+<2> Assign it to the application's global configuration
+
+You can use global configuration to conveniently retrieve the application's configuration:
+
+```
+Config config = Config.global();
+```
+
 === Custom Config Sources
 
 Although the default configuration is very simple to use, your application can take full control of all configuration sources and precedence. You can do so by creating and invoking methods on a `Config.Builder` object to construct a `Config` instance.
