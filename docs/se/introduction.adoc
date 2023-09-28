@@ -160,7 +160,7 @@ Enables Java applications to participate in WebSocket interactions as both serve
 
 == Migration
 
-Use the Helidon migration guides to upgrade your current version of Helidon.
+In case you need to upgrade the version of Helidon, follow the `upgrade guides`.
 
 [PILLARS]
 ====
