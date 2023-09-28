@@ -131,7 +131,7 @@ We also strongly suggest installing the xref:cli.adoc[Helidon CLI] (command line
 
 To upgrade your current version of Helidon, follow the `Migration Guides`:
 
-For migration from Helidon 3.x to 4.x:
+To migrate from from Helidon 3.x to 4.x:
 
 //Mitia to create these guides for 4x
 
@@ -139,12 +139,12 @@ For migration from Helidon 3.x to 4.x:
 * link to MP 4x migration guide [tbd]
 
 
-For migration from Helidon 2.x to 3.x:
+To migrate from Helidon 2.x to 3.x:
 
 * xref:{rootdir}/se/guides/migration_3x.adoc[Helidon SE 3x Migration Guide]
 * xref:{rootdir}/mp/guides/migration_3x.adoc[Helidon MP 3x Migration Guide]
 
-For migration from Helidon 1.x to 2.x:
+To migrate from Helidon 1.x to 2.x:
 
 * xref:{rootdir}/se/guides/migration.adoc[Helidon SE 2x Migration Guide]
 * xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
