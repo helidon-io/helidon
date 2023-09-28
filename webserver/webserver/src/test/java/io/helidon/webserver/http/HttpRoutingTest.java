@@ -118,12 +118,12 @@ class HttpRoutingTest {
         }
 
         @Override
-        public HttpRouting.Builder register(Supplier<? extends HttpService>... service) {
+        public HttpRouting.Builder register(HttpService... service) {
             return null;
         }
 
         @Override
-        public HttpRouting.Builder register(String path, Supplier<? extends HttpService>... service) {
+        public HttpRouting.Builder register(String path, HttpService... service) {
             return null;
         }
 

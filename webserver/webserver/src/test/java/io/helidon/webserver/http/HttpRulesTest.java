@@ -17,7 +17,6 @@
 package io.helidon.webserver.http;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.http.Method;
@@ -119,12 +118,12 @@ class HttpRulesTest {
         }
 
         @Override
-        public HttpRules register(Supplier<? extends HttpService>... service) {
+        public HttpRules register(HttpService... service) {
             return null;
         }
 
         @Override
-        public HttpRules register(String pathPattern, Supplier<? extends HttpService>... service) {
+        public HttpRules register(String pathPattern, HttpService... service) {
             return null;
         }
 

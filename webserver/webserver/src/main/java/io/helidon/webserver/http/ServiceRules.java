@@ -19,7 +19,6 @@ package io.helidon.webserver.http;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
@@ -46,26 +45,22 @@ class ServiceRules implements HttpRules {
     }
 
     @Override
-    public HttpRules register(Supplier<? extends HttpService>... services) {
-        for (Supplier<? extends HttpService> service : services) {
-            HttpService theService = service.get();
-            ServiceRules subRules = new ServiceRules(theService, PathMatchers.any(), ALWAYS_PREDICATE);
-            theService.routing(subRules);
+    public HttpRules register(HttpService... services) {
+        for (HttpService service : services) {
+            ServiceRules subRules = new ServiceRules(service, PathMatchers.any(), ALWAYS_PREDICATE);
+            service.routing(subRules);
             routes.add(subRules.build());
         }
-
         return this;
     }
 
     @Override
-    public HttpRules register(String pathPattern, Supplier<? extends HttpService>... services) {
-        for (Supplier<? extends HttpService> service : services) {
-            HttpService theService = service.get();
-            ServiceRules subRules = new ServiceRules(theService, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
-            theService.routing(subRules);
+    public HttpRules register(String pathPattern, HttpService... services) {
+        for (HttpService service : services) {
+            ServiceRules subRules = new ServiceRules(service, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
+            service.routing(subRules);
             routes.add(subRules.build());
         }
-
         return this;
     }
 
