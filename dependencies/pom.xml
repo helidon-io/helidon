@@ -101,8 +101,8 @@
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>3.4.0</version.lib.kafka>
         <!-- Force upgrade of snappy. This should be removed once kafka-clients is upgraded -->
-        <!-- to 3.4.2 or newer. See https://issues.apache.org/jira/browse/KAFKA-15096 -->
-        <version.lib.snappy>1.1.10.1</version.lib.snappy>
+        <!-- See https://issues.apache.org/jira/browse/KAFKA-15498 -->
+        <version.lib.snappy>1.1.10.5</version.lib.snappy>
         <version.lib.log4j>2.17.1</version.lib.log4j>
         <version.lib.logback>1.2.10</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
