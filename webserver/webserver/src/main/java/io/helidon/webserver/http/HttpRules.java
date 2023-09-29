@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -36,7 +37,87 @@ public interface HttpRules {
      * @param service service to register
      * @return updated rules
      */
-    HttpRules register(Supplier<? extends HttpService>... service);
+    HttpRules register(HttpService... service);
+
+    /**
+     * Register a service on the current path.
+     *
+     * @param service service to register
+     * @return updated rules
+     */
+    default HttpRules register(Supplier<? extends HttpService> service) {
+        return register(service.get());
+    }
+
+    /**
+     * Register two services on the current path.
+     *
+     * @param service1 first service to register
+     * @param service2 second service to register
+     * @return updated rules
+     */
+    default HttpRules register(Supplier<? extends HttpService> service1,
+                               Supplier<? extends HttpService> service2) {
+        return register(service1.get(), service2.get());
+    }
+
+    /**
+     * Register three services on the current path.
+     *
+     * @param service1 first service to register
+     * @param service2 second service to register
+     * @param service3 third service to register
+     * @return updated rules
+     */
+    default HttpRules register(Supplier<? extends HttpService> service1,
+                               Supplier<? extends HttpService> service2,
+                               Supplier<? extends HttpService> service3) {
+        return register(service1.get(), service2.get(), service3.get());
+    }
+
+    /**
+     * Register four services on the current path.
+     *
+     * @param service1 first service to register
+     * @param service2 second service to register
+     * @param service3 third service to register
+     * @param service4 fourth service to register
+     * @return updated rules
+     */
+    default HttpRules register(Supplier<? extends HttpService> service1,
+                               Supplier<? extends HttpService> service2,
+                               Supplier<? extends HttpService> service3,
+                               Supplier<? extends HttpService> service4) {
+        return register(service1.get(), service2.get(), service3.get(), service4.get());
+    }
+
+    /**
+     * Register five services on the current path.
+     *
+     * @param service1 first service to register
+     * @param service2 second service to register
+     * @param service3 third service to register
+     * @param service4 fourth service to register
+     * @param service5 fifth service to register
+     * @return updated rules
+     */
+    default HttpRules register(Supplier<? extends HttpService> service1,
+                               Supplier<? extends HttpService> service2,
+                               Supplier<? extends HttpService> service3,
+                               Supplier<? extends HttpService> service4,
+                               Supplier<? extends HttpService> service5) {
+        return register(service1.get(), service2.get(), service3.get(), service4.get(), service5.get());
+    }
+
+    /**
+     * Register services on the current path.
+     *
+     * @param services services to register
+     * @return updated rules
+     */
+    default HttpRules register(List<Supplier<? extends HttpService>> services) {
+        return register(services.stream().map(Supplier::get).toArray(HttpService[]::new));
+    }
 
     /**
      * Register a service on sub-path of the current path.
@@ -45,7 +126,97 @@ public interface HttpRules {
      * @param service     service to register
      * @return updated rules
      */
-    HttpRules register(String pathPattern, Supplier<? extends HttpService>... service);
+    HttpRules register(String pathPattern, HttpService... service);
+
+    /**
+     * Register a service on sub-path of the current path.
+     *
+     * @param pathPattern URI path pattern
+     * @param service     service to register
+     * @return updated rules
+     */
+    default HttpRules register(String pathPattern, Supplier<? extends HttpService> service) {
+        return register(pathPattern, service.get());
+    }
+
+    /**
+     * Register two services on sub-path of the current path.
+     *
+     * @param pathPattern URI path pattern
+     * @param service1    first service to register
+     * @param service2    second service to register
+     * @return updated rules
+     */
+    default HttpRules register(String pathPattern,
+                               Supplier<? extends HttpService> service1,
+                               Supplier<? extends HttpService> service2) {
+        return register(pathPattern, service1.get(), service2.get());
+    }
+
+    /**
+     * Register three services on sub-path of the current path.
+     *
+     * @param pathPattern URI path pattern
+     * @param service1    first service to register
+     * @param service2    second service to register
+     * @param service3    third service to register
+     * @return updated rules
+     */
+    default HttpRules register(String pathPattern,
+                               Supplier<? extends HttpService> service1,
+                               Supplier<? extends HttpService> service2,
+                               Supplier<? extends HttpService> service3) {
+        return register(pathPattern, service1.get(), service2.get(), service3.get());
+    }
+
+    /**
+     * Register four services on sub-path of the current path.
+     *
+     * @param pathPattern URI path pattern
+     * @param service1    first service to register
+     * @param service2    second service to register
+     * @param service3    third service to register
+     * @param service4    fourth service to register
+     * @return updated rules
+     */
+    default HttpRules register(String pathPattern,
+                               Supplier<? extends HttpService> service1,
+                               Supplier<? extends HttpService> service2,
+                               Supplier<? extends HttpService> service3,
+                               Supplier<? extends HttpService> service4) {
+        return register(pathPattern, service1.get(), service2.get(), service3.get(), service4.get());
+    }
+
+    /**
+     * Register five services on sub-path of the current path.
+     *
+     * @param pathPattern URI path pattern
+     * @param service1    first service to register
+     * @param service2    second service to register
+     * @param service3    third service to register
+     * @param service4    fourth service to register
+     * @param service5    fifth service to register
+     * @return updated rules
+     */
+    default HttpRules register(String pathPattern,
+                               Supplier<? extends HttpService> service1,
+                               Supplier<? extends HttpService> service2,
+                               Supplier<? extends HttpService> service3,
+                               Supplier<? extends HttpService> service4,
+                               Supplier<? extends HttpService> service5) {
+        return register(pathPattern, service1.get(), service2.get(), service3.get(), service4.get(), service5.get());
+    }
+
+    /**
+     * Register services on sub-path of the current path.
+     *
+     * @param pathPattern URI path pattern
+     * @param services    services to register
+     * @return updated rules
+     */
+    default HttpRules register(String pathPattern, List<Supplier<? extends HttpService>> services) {
+        return register(pathPattern, services.stream().map(Supplier::get).toArray(HttpService[]::new));
+    }
 
     /**
      * Add a route. This allows also protocol version specific routing.

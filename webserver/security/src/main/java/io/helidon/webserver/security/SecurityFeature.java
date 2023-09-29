@@ -125,7 +125,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
 
     /**
      * Create a consumer of routing config to be
-     * {@link io.helidon.webserver.http.HttpRouting.Builder#register(java.util.function.Supplier[])}  registered} with
+     * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)   registered} with
      * web server routing to process security requests.
      * This method is to be used together with other routing methods to protect web resources programmatically.
      * Example:
@@ -143,7 +143,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
 
     /**
      * Create a consumer of routing config to be
-     * {@link io.helidon.webserver.http.HttpRouting.Builder#register(java.util.function.Supplier[])}  registered} with
+     * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)  registered} with
      * web server routing to process security requests.
      * This method configures security and web server integration from a config instance
      *
@@ -157,7 +157,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
 
     /**
      * Create a consumer of routing config to be
-     * {@link io.helidon.webserver.http.HttpRouting.Builder#register(java.util.function.Supplier[])}  registered} with
+     * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)  registered} with
      * web server routing to process security requests.
      * This method expects initialized security and creates web server integration from a config instance
      *

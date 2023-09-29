@@ -18,7 +18,6 @@ package io.helidon.webserver.http;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import io.helidon.common.Weighted;
 
@@ -42,14 +41,14 @@ class HttpRoutingFeature implements HttpFeature, Weighted {
     }
 
     <T extends Throwable> void error(Class<T> exceptionClass, ErrorHandler<? super T> handler) {
-        this.registrations.add(new ErrorReg<T>(exceptionClass, handler));
+        this.registrations.add(new ErrorReg<>(exceptionClass, handler));
     }
 
-    void service(Supplier<? extends HttpService>... services) {
+    void service(HttpService... services) {
         this.registrations.add(new ServiceReg(services));
     }
 
-    void service(String path, Supplier<? extends HttpService>... services) {
+    void service(String path, HttpService... services) {
         this.registrations.add(new ServicePathReg(path, services));
     }
 
@@ -78,14 +77,14 @@ class HttpRoutingFeature implements HttpFeature, Weighted {
         }
     }
 
-    private record ServiceReg(Supplier<? extends HttpService>[] services) implements Registration {
+    private record ServiceReg(HttpService[] services) implements Registration {
         @Override
         public void register(HttpRouting.Builder routing) {
             routing.register(services);
         }
     }
 
-    private record ServicePathReg(String path, Supplier<? extends HttpService>[] services) implements Registration {
+    private record ServicePathReg(String path, HttpService[] services) implements Registration {
         @Override
         public void register(HttpRouting.Builder routing) {
             routing.register(path, services);

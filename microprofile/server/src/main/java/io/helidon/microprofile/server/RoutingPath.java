@@ -27,7 +27,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Path of a {@link io.helidon.webserver.http.HttpService} to register with routing.
  * If a service is not annotated with this annotation, it would be registered without a path using
- * {@link io.helidon.webserver.http.HttpRules#register(java.util.function.Supplier[])}.
+ * {@link io.helidon.webserver.http.HttpRules#register(io.helidon.webserver.http.HttpService[])}.
  *
  * Configuration can be overridden using configuration:
  * <ul>

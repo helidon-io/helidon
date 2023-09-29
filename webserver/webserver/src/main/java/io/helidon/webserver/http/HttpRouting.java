@@ -143,10 +143,105 @@ public final class HttpRouting implements Routing, Prototype.Api {
      */
     public interface Builder extends HttpRules, io.helidon.common.Builder<Builder, HttpRouting> {
         @Override
-        Builder register(Supplier<? extends HttpService>... service);
+        Builder register(HttpService... service);
 
         @Override
-        Builder register(String path, Supplier<? extends HttpService>... service);
+        default Builder register(Supplier<? extends HttpService> service) {
+            HttpRules.super.register(service);
+            return this;
+        }
+
+        @Override
+        default Builder register(Supplier<? extends HttpService> service1, Supplier<? extends HttpService> service2) {
+            HttpRules.super.register(service1, service2);
+            return this;
+        }
+
+        @Override
+        default Builder register(Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3) {
+            HttpRules.super.register(service1, service2, service3);
+            return this;
+        }
+
+        @Override
+        default Builder register(Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3,
+                                 Supplier<? extends HttpService> service4) {
+            HttpRules.super.register(service1, service2, service3, service4);
+            return this;
+        }
+
+        @Override
+        default Builder register(Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3,
+                                 Supplier<? extends HttpService> service4,
+                                 Supplier<? extends HttpService> service5) {
+            HttpRules.super.register(service1, service2, service3, service4, service5);
+            return this;
+        }
+
+        @Override
+        default Builder register(List<Supplier<? extends HttpService>> services) {
+            HttpRules.super.register(services);
+            return this;
+        }
+
+        @Override
+        Builder register(String path, HttpService... service);
+
+        @Override
+        default Builder register(String pathPattern, Supplier<? extends HttpService> service) {
+            HttpRules.super.register(pathPattern, service);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern,
+                                 Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2) {
+            HttpRules.super.register(pathPattern, service1, service2);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern,
+                                 Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3) {
+            HttpRules.super.register(pathPattern, service1, service2, service3);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern,
+                                 Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3,
+                                 Supplier<? extends HttpService> service4) {
+            HttpRules.super.register(pathPattern, service1, service2, service3, service4);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern,
+                                 Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3,
+                                 Supplier<? extends HttpService> service4,
+                                 Supplier<? extends HttpService> service5) {
+            HttpRules.super.register(pathPattern, service1, service2, service3, service4, service5);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern, List<Supplier<? extends HttpService>> services) {
+            HttpRules.super.register(pathPattern, services);
+            return this;
+        }
 
         @Override
         Builder route(HttpRoute route);
@@ -438,13 +533,13 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        public Builder register(Supplier<? extends HttpService>... service) {
+        public Builder register(HttpService... service) {
             mainRouting.service(service);
             return this;
         }
 
         @Override
-        public Builder register(String path, Supplier<? extends HttpService>... service) {
+        public Builder register(String path, HttpService... service) {
             mainRouting.service(path, service);
             return this;
         }
@@ -620,13 +715,13 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        public Builder register(Supplier<? extends HttpService>... service) {
+        public Builder register(HttpService... service) {
             rootRules.register(service);
             return this;
         }
 
         @Override
-        public Builder register(String pathPattern, Supplier<? extends HttpService>... service) {
+        public Builder register(String pathPattern, HttpService... service) {
             rootRules.register(pathPattern, service);
             return this;
         }
