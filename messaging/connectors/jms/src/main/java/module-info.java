@@ -17,12 +17,10 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * Microprofile messaging JMS connector.
  */
-@Preview
 @Feature(value = "JMS Connector",
         description = "Reactive messaging connector for JMS",
         in = {HelidonFlavor.MP, HelidonFlavor.SE},

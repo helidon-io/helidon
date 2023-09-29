@@ -33,7 +33,7 @@ import io.helidon.common.features.api.Preview;
 @Feature(value = "GraphQL", 
         in = HelidonFlavor.SE, 
         invalidIn = {HelidonFlavor.MP})
-@Aot(description = "Incubating support, tested on limited use cases")
+@Aot(description = "Preview support, tested on limited use cases")
 module io.helidon.webserver.graphql {
     requires static io.helidon.common.features.api;
     // other module dependencies and configuration
