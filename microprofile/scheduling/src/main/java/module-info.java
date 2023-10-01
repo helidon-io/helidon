@@ -16,12 +16,10 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * CDI Scheduling implementation.
  */
-@Preview
 @Feature(value = "Scheduling",
         description = "Task scheduling",
         in = HelidonFlavor.MP,
