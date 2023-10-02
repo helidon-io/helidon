@@ -94,8 +94,7 @@ kubectl version --short
 
 
 [source,bash]
-.Setting JAVA_HOME
-----
+.Setting JAVA_HOME----
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 

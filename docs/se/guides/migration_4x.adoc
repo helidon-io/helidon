@@ -21,7 +21,7 @@
 :keywords: helidon, porting, migration, upgrade, incompatibilities
 :rootdir: {docdir}/../..
 
-In Helidon 4.x we have made some major changes to Helidon. Reactive engine has been removed. APIS and implementations rewritten in "blocking" paradigm.. This guide will help you upgrade a Helidon MP 3.x application to 4.x.
+In Helidon 4.x we have made some major changes to Helidon. Reactive engine has been removed. APIS and implementations rewritten in "blocking" paradigm. This guide will help you upgrade a Helidon MP 3.x application to 4.x.
 
 
 == Java 21 Runtime
@@ -33,3 +33,8 @@ Helidon 4 no more uses Netty. Helidon SE is now running on Helidon WebServer whi
 
 == Deprecations
 
+Helidon Reactive APIs are now removed from Helidon 4. Helidon Reactive Engine is deprecated. Objects `Single` and `Multi`, as well as all reactive operators are no longer used. All modules of Helidon SE have been redesigned and rewritten to use "Blocking" paradigm (coding style).
+
+There is no more backward compatibility with Helidon SE version 3 and earlier! All reactive code written using Reactive paradigm should be redesigned and rewritten in blocking paradigm.
+
+Please proceed to xref:../overview.adoc[Helidon SE Overview] to find more information and documentation about each module.
