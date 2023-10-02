@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 == Introduction
 
-https://www.graalvm.org/docs/reference-manual/aot-compilation/[Native images] are ahead-of-time compiled Java code
+{graalvm-doc-url}reference-manual/native-image/[Native images] are ahead-of-time compiled Java code
 that result in a self  contained native executable. When used appropriately native images have dramatically faster
 startup and lower runtime memory overhead compared to a Java VM.
 
@@ -36,13 +36,13 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-graal]
 
 == Install GraalVM and the Native Image Command
 
-After https://github.com/graalvm/graalvm-ce-builds/releases[downloading and installing] GraalVM,
+After {graalvm-doc-url}/docs/getting-started/[downloading and installing] GraalVM,
 set the `GRAALVM_HOME` environment variable to point at your GraalVM installation.
 
 [source,bash]
 ----
 # Your path might be different
-export GRAALVM_HOME=/usr/local/graalvm-ce-22.3.0/Contents/Home/
+export GRAALVM_HOME=/usr/local/graalvm-jdk-21+35.1/Contents/Home/
 ----
 
 Then install the optional `native-image` command:
@@ -173,7 +173,7 @@ Again, it starts fast. You can exercise the application's endpoints as before.
 Native images are ideal for applications with high horizontal scalability requirements where
 the ability to rapidly scale out to numerous instances is important.
 
-That said, native images do have some https://github.com/oracle/graal/blob/master/substratevm/Limitations.md[limitations],
+That said, native images do have some {graalvm-doc-url}reference-manual/native-image/metadata/Compatibility/[limitations],
 and for long running applications where startup and footprint are less of a priority, the Java SE
 HotSpot VM might be more appropriate.
 

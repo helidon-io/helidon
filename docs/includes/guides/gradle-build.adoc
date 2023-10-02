@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 == Introduction
 
 While most of Helidon's examples use Maven, you can also use Helidon
-with a Gradle project. We recommend Gradle 6+.
+with a Gradle project. We recommend Gradle 7+.
 
 == Gradle Example
 
@@ -54,4 +54,3 @@ dependencies {
     testCompileOnly 'org.junit.jupiter:junit-jupiter-api:'
 }
 ----
-
