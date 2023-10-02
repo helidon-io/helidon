@@ -144,7 +144,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 [role="flex, sm7"]
 |=======
 include::prerequisites.adoc[tag=prerequisites-table-contents]
-| https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.0.0[GraalVM CE 21.0.0]|
+| https://www.graalvm.org/release-notes/JDK_21/[GraalVM for JDK 21]|
 |=======
 
 

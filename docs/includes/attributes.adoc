@@ -273,6 +273,10 @@ endif::[]
 :openapi-generator-tool-generators-docs-url: {openapi-generator-tool-docs-url}/generators
 :openapi-generator-tool-site-url: https://openapi-generator.tech
 
+// GraalVM
+:graalvm-jdk-version: 21
+:graalvm-doc-url: https://www.graalvm.org/jdk{graalvm-jdk-version}/
+
 // OpenAPI UI
 :smallrye-openapi-ui-base-url: https://github.com/smallrye/smallrye-open-api/tree/{version-lib-smallrye-open-api}/ui/open-api-ui
 
