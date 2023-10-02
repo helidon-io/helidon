@@ -33,7 +33,6 @@
 
     <modules>
         <module>access-log</module>
-        <module>benchmark</module>
         <module>context</module>
         <module>cors</module>
         <module>graphql</module>

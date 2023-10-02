@@ -19,12 +19,12 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.webserver.benchmark</groupId>
-        <artifactId>helidon-webserver-benchmark-project</artifactId>
+        <groupId>io.helidon.tests.benchmark</groupId>
+        <artifactId>helidon-tests-benchmark-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-webserver-benchmark-jmh</artifactId>
+    <artifactId>helidon-tests-benchmark-jmh</artifactId>
     <name>Helidon WebServer Benchmarks JMH</name>
 
     <dependencies>

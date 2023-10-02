@@ -19,13 +19,13 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.webserver</groupId>
-        <artifactId>helidon-webserver-project</artifactId>
+        <groupId>io.helidon.tests</groupId>
+        <artifactId>helidon-tests-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.webserver.benchmark</groupId>
-    <artifactId>helidon-webserver-benchmark-project</artifactId>
+    <groupId>io.helidon.tests.benchmark</groupId>
+    <artifactId>helidon-tests-benchmark-project</artifactId>
     <name>Helidon WebServer Benchmark Project</name>
     <packaging>pom</packaging>
 
@@ -33,13 +33,4 @@
         <module>jmh</module>
     </modules>
 
-    <properties>
-        <helidon.services.skip>true</helidon.services.skip>
-        <javadoc.skip>true</javadoc.skip>
-        <checkstyle.skip>true</checkstyle.skip>
-        <spotbugs.skip>true</spotbugs.skip>
-        <maven.deploy.skip>true</maven.deploy.skip>
-        <maven.sources.skip>true</maven.sources.skip>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
-    </properties>
 </project>
