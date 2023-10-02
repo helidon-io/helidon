@@ -146,7 +146,7 @@ properties supported by the connector, their types, scopes and default values.
 |===
 
 
-=== HTTP/2 support
+=== HTTP/2 Support
 
 One clear advantage of using the Helidon connector, as opposed to the default one
 provided by Jersey, is the ability to issue HTTP/2 requests. There are three ways
@@ -162,7 +162,7 @@ _a priori_ that the server is capable of handling it. This option always require
 
 == Examples
 
-=== HTTP/2 negotiation without TLS
+=== HTTP/2 Negotiation Without TLS
 
 Without TLS, HTTP/2 negotiation is accomplished by setting a single property. In the
 example below, the property is set on the correspoding `WebTarget`, which indicates
@@ -187,7 +187,7 @@ NOTE: Properties in the Jakarta REST Client API can be set on `Client`, `WebTarg
 The request invocation in the example above will include an HTTP/2 protocol upgrade
 request which may be granted by the server if HTTP/2 support is enabled.
 
-=== HTTP/2 negotiation with TLS/ALPN
+=== HTTP/2 Negotiation With TLS/ALPN
 
 ALPN is a TLS extension that can be used for HTTP/2 negotiation. The Helidon connector
 accepts a `Tls` instance to enable protocol security and also to
@@ -215,7 +215,7 @@ negotiate an HTTP/2 upgrade as shown below.
 The call to `addApplicationProtocol()` indicates the desire to negotiate a protocol upgrade. Naturally,
 ALPN only works on secure connections, so TLS is always configured at the same time.
 
-=== HTTP/2 prior knowledge
+=== HTTP/2 Prior Knowledge
 
 The last example shows how to enable HTTP/2 when prior knowledge of the server's capabilities is
 known ahead of time. In order to force HTTP/2 for the initial request, we must provide an
