@@ -16,6 +16,10 @@
 
 package io.helidon.common.tls.spi;
 
+import java.util.Objects;
+import java.util.function.Function;
+
+import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfiguredProvider;
 import io.helidon.common.tls.TlsManager;
 
@@ -23,5 +27,23 @@ import io.helidon.common.tls.TlsManager;
  * {@link java.util.ServiceLoader} service provider for {@link io.helidon.common.tls.TlsManager}.
  */
 public interface TlsManagerProvider extends ConfiguredProvider<TlsManager> {
+
+    /**
+     * Provides the ability to have a unique {@link TlsManager} per unique {@link Config} instance provided.
+     *
+     * @param config     the raw config instance
+     * @param configBean the config bean instance
+     * @param name       the config bean instance name
+     * @param creator    the creator to apply if not already in cache, which takes the config bean instance
+     * @return the tls manager instance from cache, defaulting to creation from the {@code creator} if not in cache
+     */
+    static TlsManager getOrCreate(Config config,
+                                  String name,
+                                  Object configBean,
+                                  Function<Object, TlsManager> creator) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        return TlsManagerCache.getOrCreate(configBean, creator);
+    }
 
 }
