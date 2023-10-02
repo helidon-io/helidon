@@ -65,7 +65,7 @@ import static java.lang.System.Logger.Level.TRACE;
 /**
  * Server HTTP/2 stream implementation.
  */
-public class Http2ServerStream implements Runnable, Http2Stream {
+class Http2ServerStream implements Runnable, Http2Stream {
     private static final DataFrame TERMINATING_FRAME =
             new DataFrame(Http2FrameHeader.create(0,
                                                   Http2FrameTypes.DATA,
@@ -85,6 +85,8 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     private final Router router;
     private final ArrayBlockingQueue<DataFrame> inboundData = new ArrayBlockingQueue<>(32);
     private final StreamFlowControl flowControl;
+    private final Http2ConcurrentConnectionStreams streams;
+    private final HttpRouting routing;
 
     private boolean wasLastDataFrame = false;
     private volatile Http2Headers headers;
@@ -94,7 +96,6 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     private WriteState writeState = WriteState.INIT;
     private Http2SubProtocolSelector.SubProtocolHandler subProtocolHandler;
     private long expectedLength = -1;
-    private HttpRouting routing;
     private HttpPrologue prologue;
     // create a semaphore if accessed before we get the one from connection
     // must be volatile, as it is accessed both from connection thread and from stream thread
@@ -105,6 +106,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
      * A new HTTP/2 server stream.
      *
      * @param ctx                   connection context
+     * @param streams
      * @param routing               HTTP routing
      * @param http2Config           HTTP/2 configuration
      * @param subProviders          HTTP/2 sub protocol selectors
@@ -114,7 +116,8 @@ public class Http2ServerStream implements Runnable, Http2Stream {
      * @param writer                writer
      * @param connectionFlowControl connection flow control
      */
-    public Http2ServerStream(ConnectionContext ctx,
+    Http2ServerStream(ConnectionContext ctx,
+                             Http2ConcurrentConnectionStreams streams,
                              HttpRouting routing,
                              Http2Config http2Config,
                              List<Http2SubProtocolSelector> subProviders,
@@ -124,6 +127,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                              Http2StreamWriter writer,
                              ConnectionFlowControl connectionFlowControl) {
         this.ctx = ctx;
+        this.streams = streams;
         this.routing = routing;
         this.http2Config = http2Config;
         this.subProviders = subProviders;
@@ -137,20 +141,6 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                 http2Config.initialWindowSize(),
                 http2Config.maxFrameSize()
         );
-    }
-
-    /**
-     * Check this stream is not closed.
-     * This method is called from connection thread.
-     *
-     * @throws Http2Exception in case this stream is closed
-     */
-    public void checkNotClosed() throws Http2Exception {
-        if (state == Http2StreamState.HALF_CLOSED_REMOTE
-                || state == Http2StreamState.CLOSED) {
-            throw new Http2Exception(Http2ErrorCode.STREAM_CLOSED,
-                                     "Stream " + streamId + " is closed. State: " + state);
-        }
     }
 
     /**
@@ -329,20 +319,26 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     int writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
-        writeState = writeState.check(endOfStream ? WriteState.END : WriteState.HEADERS_SENT);
-
+        writeState = writeState.checkAndMove(WriteState.HEADERS_SENT);
         Http2Flag.HeaderFlags flags;
         if (endOfStream) {
+            writeState = writeState.checkAndMove(WriteState.END);
+            streams.remove(this.streamId);
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
         } else {
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS);
         }
+
         return writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
     }
 
     int writeHeadersWithData(Http2Headers http2Headers, int contentLength, BufferData bufferData, boolean endOfStream) {
-        writeState = writeState.check(WriteState.HEADERS_SENT);
-        writeState = writeState.check(endOfStream ? WriteState.END : WriteState.DATA_SENT);
+        writeState = writeState.checkAndMove(WriteState.HEADERS_SENT);
+        writeState = writeState.checkAndMove(WriteState.DATA_SENT);
+        if (endOfStream) {
+            writeState = writeState.checkAndMove(WriteState.END);
+            streams.remove(this.streamId);
+        }
 
         Http2FrameData frameData =
                 new Http2FrameData(Http2FrameHeader.create(contentLength,
@@ -357,7 +353,11 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     int writeData(BufferData bufferData, boolean endOfStream) {
-        writeState = writeState.check(endOfStream ? WriteState.END : WriteState.DATA_SENT);
+        writeState = writeState.checkAndMove(WriteState.DATA_SENT);
+        if (endOfStream) {
+            writeState = writeState.checkAndMove(WriteState.END);
+            streams.remove(this.streamId);
+        }
 
         Http2FrameData frameData =
                 new Http2FrameData(Http2FrameHeader.create(bufferData.available(),
@@ -371,7 +371,8 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     int writeTrailers(Http2Headers http2trailers) {
-        writeState = writeState.check(WriteState.TRAILERS_SENT);
+        writeState = writeState.checkAndMove(WriteState.TRAILERS_SENT);
+        streams.remove(this.streamId);
 
         return writer.writeHeaders(http2trailers,
                                           streamId,
@@ -381,7 +382,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
 
     void write100Continue() {
         if (writeState == WriteState.EXPECTED_100) {
-            writeState = writeState.check(WriteState.CONTINUE_100_SENT);
+            writeState = writeState.checkAndMove(WriteState.CONTINUE_100_SENT);
 
             Header status = HeaderValues.createCached(Http2Headers.STATUS_NAME, 100);
             Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create().add(status));
@@ -431,7 +432,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
             this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
         }
         if (headers.httpHeaders().contains(HeaderValues.EXPECT_100)) {
-            writeState = writeState.check(WriteState.EXPECTED_100);
+            writeState = writeState.checkAndMove(WriteState.EXPECTED_100);
         }
 
         subProtocolHandler = null;
@@ -534,7 +535,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
             this.allowedTransitions = Set.of(allowedTransitions);
         }
 
-        WriteState check(WriteState newState) {
+        WriteState checkAndMove(WriteState newState) {
             if (this == newState || allowedTransitions.contains(newState)) {
                 return newState;
             }

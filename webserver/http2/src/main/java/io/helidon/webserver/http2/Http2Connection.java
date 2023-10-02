@@ -21,9 +21,7 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
@@ -85,7 +83,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private static final int FRAME_HEADER_LENGTH = 9;
     private static final Set<Http2StreamState> REMOVABLE_STREAMS =
             Set.of(Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
-    private final Map<Integer, StreamContext> streams = new HashMap<>(1000);
+    private final Http2ConnectionStreams streams = new Http2ConnectionStreams();
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
     private final HttpRouting routing;
@@ -101,6 +99,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final ConnectionFlowControl flowControl;
     private final WritableHeaders<?> connectionHeaders;
 
+    private final long maxClientConcurrentStreams;
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
             .build();
@@ -113,7 +112,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private State state = State.WRITE_SERVER_SETTINGS;
     private int continuationExpectedStreamId;
     private int lastStreamId;
-    private long maxClientConcurrentStreams;
     private boolean initConnectionHeaders;
     private volatile ZonedDateTime lastRequestTimestamp;
     private volatile Thread myThread;
@@ -230,7 +228,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             //6.9.2/1 - SETTINGS frame can alter the initial flow-control
             //   window size for streams with active flow-control windows (that is,
             //   streams in the "open" or "half-closed (remote)" state)
-            for (StreamContext sctx : streams.values()) {
+            for (StreamContext sctx : streams.contexts()) {
                 Http2StreamState streamState = sctx.stream.streamState();
                 if (streamState == Http2StreamState.OPEN || streamState == Http2StreamState.HALF_CLOSED_REMOTE) {
                     sctx.stream.flowControl().outbound().resetStreamWindowSize(initialWindowSize.intValue());
@@ -766,12 +764,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         StreamContext streamContext = streams.get(streamId);
         if (streamContext == null) {
             if (same) {
-                throw new Http2Exception(Http2ErrorCode.STREAM_CLOSED,
-                                         "Stream closed");
+                throw new Http2Exception(Http2ErrorCode.STREAM_CLOSED, "Stream closed");
             }
             if (streamId < lastStreamId) {
                 // check if the newer streams are in idle state (if yes, this is OK)
-                for (StreamContext context : streams.values()) {
+                for (StreamContext context : streams.contexts()) {
                     if (context.streamId > streamId && context.stream().streamState() != Http2StreamState.IDLE) {
                         throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                                  "Stream " + streamId
@@ -789,6 +786,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             streamContext = new StreamContext(streamId,
                                               http2Config.maxHeaderListSize(),
                                               new Http2ServerStream(ctx,
+                                                                    streams,
                                                                     routing,
                                                                     http2Config,
                                                                     subProviders,
@@ -797,7 +795,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                                     clientSettings,
                                                                     connectionWriter,
                                                                     flowControl));
-            streams.put(streamId, streamContext);
+            streams.put(streamContext);
+            streams.doMaintenance(maxClientConcurrentStreams);
         }
         // any request for a specific stream is now considered a valid update of connection (ignoring management messages
         // on stream 0)
@@ -842,7 +841,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         UNKNOWN
     }
 
-    private record StreamRunnable(Map<Integer, StreamContext> streams,
+    private record StreamRunnable(Http2ConnectionStreams streams,
                                   Http2ServerStream stream,
                                   Thread handlerThread) implements Runnable {
 
@@ -868,7 +867,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
-    private static class StreamContext {
+    static class StreamContext {
         private final List<Http2FrameData> continuationData = new ArrayList<>();
         private final long maxHeaderListSize;
         private final int streamId;
