@@ -41,9 +41,31 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
         </dependency>
+        <!-- For dependency convergence of kotlin-stdlib -->
+        <!-- We force upgrade of okio because of CVE-2023-3635 -->
+        <!-- But okhttp3 depends on older version of kotlin-stdlib -->
+        <!-- we defer to version in okio, so must exclude it from okhttp3 -->
+        <!-- which is a transitive dependency of export-jaeger -->
+        <!-- Once okhttp3 4.12.0 is released we can remove this since it upgrades okio -->
+        <!-- https://github.com/square/okhttp/pull/7947 -->
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-jaeger</artifactId>
+            <exclusions>
+                <!-- For dependency convergence. See comment on okio -->
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
@@ -90,6 +112,7 @@
             <artifactId>helidon-config-metadata-processor</artifactId>
             <optional>true</optional>
         </dependency>
+
         <!--
          - Test dependencies
          -->
