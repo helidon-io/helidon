@@ -102,14 +102,24 @@ class LoomServer implements WebServer, Startable {
         if (routing.isEmpty() && routings.isEmpty()) {
             routerBuilder.addRouting(HttpRouting.create());
         }
+        Router router = routerBuilder.build();
 
         Timer idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
         Map<String, ServerListener> listenerMap = new HashMap<>();
         sockets.forEach((name, socketConfig) -> {
+            List<Routing> socketRoutings = serverConfig.namedRoutings().get(name);
+            Router socketRouter;
+            if (socketRoutings != null) {
+                socketRouter = Router.builder()
+                        .update(b -> socketRoutings.forEach(b::addRouting))
+                        .build();
+            } else {
+                socketRouter = router;
+            }
             listenerMap.put(name,
                             new ServerListener(name,
                                                socketConfig,
-                                               routerBuilder.build(),
+                                               socketRouter,
                                                context,
                                                idleConnectionTimer,
                                                serverConfig.mediaContext().orElseGet(MediaContext::create),

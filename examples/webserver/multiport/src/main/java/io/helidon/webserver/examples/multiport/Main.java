@@ -63,12 +63,8 @@ public final class Main {
         // Build server using three ports:
         // default public port, admin port, private port
         server.routing(Main::publicRouting)
-                // Add a set of routes on the named socket "admin"
-                .putSocket("admin", socket -> socket.from(server.sockets().get("admin"))
-                        .routing(Main::adminSocket))
-                // Add a set of routes on the named socket "private"
-                .putSocket("private", socket -> socket.from(server.sockets().get("admin"))
-                        .routing(Main::privateSocket));
+                .routing("admin", Main::adminSocket)
+                .routing("private", Main::privateSocket);
     }
 
     /**
