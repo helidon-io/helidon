@@ -37,11 +37,10 @@ build a native image from your application:
 3. Execute the native executable created in `target` directory of your project
 
 == Initialize at build time
-Due to restrictions of our current implementation of integration with native image for CDI,
-we must initialize a subset of types at build time.
-As a result, all beans created within CDI need to be also initialized at build time.
-Easiest approach to support such compilation is to:
-1. Create `src/main/resources/META-INF/native-image/groupId/artifactId/native-image.properties` file (`groupId` and `artifactId` of the module you are building should be used)
+Helidon MP requires the types of all beans created within CDI to be initialized at builder time, to achieve that:
+
+1. Create `src/main/resources/META-INF/native-image/groupId/artifactId/native-image.properties` file (`groupId` and `artifactId`
+        of the module you are building should be used)
 2. Add the following line to the file:
 ```properties
 Args=--initialize-at-build-time=your.application.package

@@ -53,11 +53,6 @@
                                     <goal>compile</goal>
                                 </goals>
                                 <phase>package</phase>
-                                <!-- configuration>
-                                    <buildArgs>
-                                        <arg>-strict-image-heap</arg>
-                                    </buildArgs>
-                                </configuration -->
                             </execution>
                         </executions>
                     </plugin>
