@@ -1,4 +1,12 @@
 {
+    "bundles": [
+        {
+            "name": "com.sun.org.apache.xerces.internal.impl.msg.XMLSchemaMessages"
+        },
+        {
+            "name": "io.helidon.integrations.cdi.jpa.Messages"
+        }
+    ],
     "resources": [
         {
             "pattern": "META-INF/persistence.xml"

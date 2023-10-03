@@ -254,7 +254,13 @@ public abstract class HelidonRestCdiExtension implements Extension {
                 : server.serverNamedRoutingBuilder(routingName);
     }
 
-    void prepareRuntime(@Observes @RuntimeStart Config config) {
+    /**
+     * Configure with runtime config.
+     *
+     * @param config config to use
+     */
+    public void prepareRuntime(@Observes @RuntimeStart Config config) {
+        // this method must be public, so it is registered for reflection by Helidon GraalVM feature
         this.rootConfig = config;
     }
 

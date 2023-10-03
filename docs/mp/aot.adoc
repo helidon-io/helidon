@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,9 +31,21 @@ application pom as a parent of your module, you can use the following steps to
 build a native image from your application:
 
 1. Create an environment variable `GRAALVM_HOME` pointing to your installation of
-    GraalVM with `native-image` installed
+    GraalVM, or use a GraalVM JDK to build your project
+2. Add configuration to initialize your packages at build time (see below)
 2. Run Maven command `mvn clean package -Pnative-image`
 3. Execute the native executable created in `target` directory of your project
+
+== Initialize at build time
+Due to restrictions of our current implementation of integration with native image for CDI,
+we must initialize a subset of types at build time.
+As a result, all beans created within CDI need to be also initialized at build time.
+Easiest approach to support such compilation is to:
+1. Create `src/main/resources/META-INF/native-image/groupId/artifactId/native-image.properties` file (`groupId` and `artifactId` of the module you are building should be used)
+2. Add the following line to the file:
+```properties
+Args=--initialize-at-build-time=your.application.package
+```
 
 == AOT supported modules
 

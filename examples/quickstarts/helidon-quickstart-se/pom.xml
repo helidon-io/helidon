@@ -106,6 +106,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-native-image</id>
+<!--                        <configuration>-->
+<!--                            <buildArgs>-->
+<!--                                <arg>-H:ReportAnalysisForbiddenType=java.io.ObjectInputStream</arg>-->
+<!--                            </buildArgs>-->
+<!--                        </configuration>-->
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

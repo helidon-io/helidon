@@ -1,10 +1,24 @@
 {
-  "bundles": [
-    {
-      "name": "sun.security.util.Resources"
-    },
-    {
-      "name": "sun.security.util.AuthResources"
-    }
-  ]
+    "bundles": [
+        {
+            "name": "sun.security.util.Resources"
+        },
+        {
+            "name": "sun.security.util.AuthResources"
+        }
+    ],
+    "resources": [
+        {
+            "pattern": ".*\\.so$"
+        },
+        {
+            "pattern": ".*\\.h$"
+        },
+        {
+            "pattern": ".*\\.dll$"
+        },
+        {
+            "pattern": ".*\\.dylib$"
+        }
+    ]
 }

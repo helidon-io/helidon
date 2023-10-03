@@ -17,11 +17,14 @@
  * Extension for Graal VM native image to correctly build Helidon MicroProfile applications.
  */
 module io.helidon.graal.nativeimage.mp {
-
+    requires io.github.classgraph;
+    requires io.helidon.config.mp;
+    requires io.helidon.logging.common;
     requires jakarta.cdi;
     requires jakarta.json;
-    requires org.graalvm.sdk;
+    requires org.graalvm.nativeimage;
     requires weld.core.impl;
+
 
     requires transitive io.helidon.graal.nativeimage;
 

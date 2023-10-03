@@ -21,13 +21,12 @@ module io.helidon.graal.nativeimage {
     requires io.github.classgraph;
     requires io.helidon.common.features.api;
     requires io.helidon.common.features;
-    requires io.helidon.config.mp;
     requires io.helidon.config;
     requires io.helidon.logging.common;
     requires io.helidon.logging.jul;
     requires jakarta.json;
 
-    requires transitive org.graalvm.sdk;
+    requires transitive org.graalvm.nativeimage;
 
     exports io.helidon.integrations.graal.nativeimage.extension;
 	

@@ -4,7 +4,50 @@
             "pattern": "application.properties"
         },
         {
+            "pattern": "application.yaml"
+        },
+        {
+            "pattern": "application.json"
+        },
+        {
+            "pattern": "application.conf"
+        },
+        {
+            "pattern": "application.yml"
+        },
+        {
             "pattern": "meta-config.properties"
+        },
+        {
+            "pattern": "meta-config.json"
+        },
+        {
+            "pattern": "meta-config.yaml"
+        },
+        {
+            "pattern": "meta-config.yml"
+        },
+        {
+            "pattern": "meta-config.conf"
+        },
+        {
+            "pattern": "config-profile.yaml"
+        },
+
+        {
+            "pattern": "config-profile.properties"
+        },
+
+        {
+            "pattern": "config-profile.json"
+        },
+
+        {
+            "pattern": "config-profile.conf"
+        },
+
+        {
+            "pattern": "config-profile.yml"
         }
     ]
 }

@@ -1,0 +1,11 @@
+[
+    {
+        "condition": {
+            "typeReachable": "io.helidon.security.SecurityContext"
+        },
+        "interfaces": [
+            "io.helidon.security.SecurityContext",
+            "org.glassfish.hk2.api.ProxyCtl"
+        ]
+    }
+]

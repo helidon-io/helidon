@@ -140,13 +140,22 @@ jobs:
       - name: Test archetypes
         run: etc/scripts/test-archetypes.sh
   packaging:
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       matrix:
         os: [ ubuntu-20.04, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          version: 23.1.0
+          java-version: 21
+          components: native-image
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: true
+          set-java-home: false
+          cache: maven
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.13.0
         with:
@@ -159,3 +168,5 @@ jobs:
         run: etc/scripts/test-packaging-jar.sh
       - name: JLink packaging
         run: etc/scripts/test-packaging-jlink.sh
+      - name: Native-Image packaging
+        run: etc/scripts/test-packaging-native.sh

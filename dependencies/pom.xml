@@ -54,7 +54,7 @@
         <version.lib.google-oauth-client>1.33.3</version.lib.google-oauth-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.google-protobuf>3.21.7</version.lib.google-protobuf>
-        <version.lib.graalvm>22.3.0</version.lib.graalvm>
+        <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>18.6</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>18.3</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
@@ -915,7 +915,7 @@
             </dependency>
             <dependency>
                 <groupId>org.graalvm.sdk</groupId>
-                <artifactId>graal-sdk</artifactId>
+                <artifactId>nativeimage</artifactId>
                 <version>${version.lib.graalvm}</version>
             </dependency>
             <dependency>

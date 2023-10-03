@@ -1,9 +1,6 @@
 
 # 1st stage, build the app
-FROM ghcr.io/graalvm/graalvm-ce:ol9-java21-22.3.1 as build
-
-# Install native-image
-RUN gu install native-image
+FROM ghcr.io/graalvm/graalvm-community:21.0.0-ol9 as build
 
 WORKDIR /usr/share
 

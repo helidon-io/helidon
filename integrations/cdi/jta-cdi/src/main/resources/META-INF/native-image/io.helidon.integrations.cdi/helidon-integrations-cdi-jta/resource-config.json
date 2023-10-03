@@ -1,4 +1,9 @@
 {
+    "bundles": [
+        {
+            "name": "io.helidon.integrations.jta.cdi.Messages"
+        }
+    ],
     "resources": [
         {
             "pattern": "io/helidon/integrations/jta/cdi/Messages.properties"

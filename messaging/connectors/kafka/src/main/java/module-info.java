@@ -42,7 +42,7 @@ module io.helidon.messaging.connectors.kafka {
     requires static jakarta.cdi;
     requires static jakarta.inject;
     requires static kafka.clients;
-    requires static org.graalvm.sdk;
+    requires static org.graalvm.nativeimage;
 
     requires transitive io.helidon.config;
     requires transitive microprofile.reactive.messaging.api;
