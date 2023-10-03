@@ -58,8 +58,12 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     </list>
                                     <list key="dependencies">
                                         <map>
+                                            <value key="groupId">io.helidon.webserver.observe</value>
+                                            <value key="artifactId">helidon-webserver-observe-metrics</value>
+                                        </map>
+                                        <map>
                                             <value key="groupId">io.helidon.metrics</value>
-                                            <value key="artifactId">helidon-metrics</value>
+                                            <value key="artifactId">helidon-metrics-system-meters</value>
                                             <value key="scope">runtime</value>
                                         </map>
                                         <map>
@@ -160,13 +164,12 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                 <model>
                                     <list key="dependencies">
                                         <map>
-                                            <value key="groupId">io.helidon.metrics</value>
-                                            <value key="artifactId">helidon-metrics-api</value>
-                                            <value key="scope">runtime</value>
+                                            <value key="groupId">io.helidon.webserver.observe</value>
+                                            <value key="artifactId">helidon-webserver-observe-metrics</value>
                                         </map>
                                         <map>
                                             <value key="groupId">io.helidon.metrics</value>
-                                            <value key="artifactId">helidon-metrics</value>
+                                            <value key="artifactId">helidon-metrics-system-meters</value>
                                             <value key="scope">runtime</value>
                                         </map>
                                         <map>
@@ -273,10 +276,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value key="groupId">io.helidon.metrics</value>
                                         <value key="artifactId">helidon-metrics-system-meters</value>
                                         <value key="scope">runtime</value>
-                                    </map>
-                                    <map if="${flavor} == 'mp'">
-                                        <value key="groupId">io.helidon.metrics</value>
-                                        <value key="artifactId">helidon-metrics</value>
                                     </map>
                                 </list>
                                 <list key="Abstract-tests" if="${flavor} == 'se'">
