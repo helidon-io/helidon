@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ module io.helidon.dbclient.tracing {
     requires io.helidon.dbclient;
     requires io.helidon.tracing.config;
 
-    requires io.opentracing.api;
-    requires io.opentracing.util;
+    requires io.helidon.tracing;
     requires io.helidon.dbclient.common;
+
 
     exports io.helidon.dbclient.tracing;
 
