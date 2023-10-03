@@ -345,10 +345,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="groupId">io.helidon.config</value>
                                 <value key="artifactId">helidon-config-yaml</value>
                             </map>
-                            <map>
-                                <value key="groupId">io.helidon.metrics</value>
-                                <value key="artifactId">helidon-metrics</value>
-                            </map>
                             <map if="${server} != 'h2'">
                                 <value key="groupId">com.h2database</value>
                                 <value key="artifactId">h2</value>
