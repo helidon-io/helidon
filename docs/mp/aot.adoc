@@ -33,8 +33,8 @@ build a native image from your application:
 1. Create an environment variable `GRAALVM_HOME` pointing to your installation of
     GraalVM, or use a GraalVM JDK to build your project
 2. Add configuration to initialize your packages at build time (see below)
-2. Run Maven command `mvn clean package -Pnative-image`
-3. Execute the native executable created in `target` directory of your project
+3. Run Maven command `mvn clean package -Pnative-image`
+4. Execute the native executable created in `target` directory of your project
 
 == Initialize at build time
 Helidon MP requires the types of all beans created within CDI to be initialized at builder time, to achieve that:
