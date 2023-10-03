@@ -23,7 +23,6 @@ import java.util.stream.Stream;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,7 +35,6 @@ import static org.hamcrest.Matchers.*;
  */
 @AddBean(RetryBean.class)
 @AddBean(SyntheticRetryBean.class)
-@Disabled("3.0.0-JAKARTA")
 public class RetryTest extends FaultToleranceTest {
 
     static Stream<Arguments> createBeans() {

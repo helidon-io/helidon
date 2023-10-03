@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,14 +32,11 @@ import jakarta.json.JsonPointer;
 import jakarta.json.JsonString;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled("3.0.0-JAKARTA") // OpenAPI: org.yaml.snakeyaml.constructor.ConstructorException:
-// Cannot create property=paths for JavaBean=io.smallrye.openapi.api.models.OpenAPIImpl@5dcd8c7a
 public class MainTest {
 
     private static WebServer webServer;

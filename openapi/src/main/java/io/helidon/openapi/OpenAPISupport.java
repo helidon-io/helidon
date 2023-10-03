@@ -561,8 +561,7 @@ public abstract class OpenAPISupport implements Service {
     private static class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
 
         @Override
-        public Object parseExtension(String key, String value) {
-
+        public Object parseValue(String value) {
             // Inspired by SmallRye's JsonUtil#parseValue method.
             if (value == null) {
                 return null;
@@ -594,16 +593,27 @@ public abstract class OpenAPISupport implements Service {
                         JsonValue jsonValue = reader.readValue();
                         return convertJsonValue(jsonValue);
                     } catch (Exception ex) {
-                        LOGGER.log(Level.SEVERE, String.format("Error parsing extension key: %s, value: %s", key, value), ex);
+                        LOGGER.log(Level.SEVERE, String.format("Error parsing value: %s", value), ex);
+                        throw ex;
                     }
-                    break;
-
                 default:
                     break;
             }
 
             // Treat as JSON string.
             return value;
+        }
+
+        @Override
+        public Object parseExtension(String key, String value) {
+            try {
+                return parseValue(value);
+            } catch (Exception ex) {
+                LOGGER.log(Level.SEVERE,
+                        String.format("Error parsing extension key: %s, value: %s", key, value),
+                        ex);
+                return null;
+            }
         }
 
         private static Object convertJsonValue(JsonValue jsonValue) {

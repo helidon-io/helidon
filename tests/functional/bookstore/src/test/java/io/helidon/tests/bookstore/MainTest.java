@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,6 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -255,13 +254,11 @@ class MainTest {
     }
 
     @Test
-    @Disabled("3.0.0-JAKARTA")
     void basicTestMetricsHealthSEModules() throws Exception {
         runMetricsAndHealthTest("se", "jsonp", true);
     }
 
     @Test
-    @Disabled("3.0.0-JAKARTA")
     void basicTestMetricsHealthMPModules() throws Exception {
         runMetricsAndHealthTest("mp", "", true);
     }
