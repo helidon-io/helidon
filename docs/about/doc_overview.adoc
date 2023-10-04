@@ -34,7 +34,7 @@ include::{rootdir}/includes/attributes.adoc[]
 .Introduction to Helidon
 [icon=lightbulb]
 --
-New to Helidon? Start here to learn how Helidon's open-source set of Java libraries can help you write cloud-native Java microservices.
+Start here to learn how Helidon's open-source set of Java libraries can help you write cloud-native Java microservices.
 
 xref:{rootdir}/about/introduction.adoc[What is Helidon?]
 
@@ -110,12 +110,16 @@ xref:{rootdir}/se/guides/overview.adoc[SE Guides]
 xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
-//Advanced Features
+//Advanced SE Features
 [CARD]
-.Advanced Features
+.Advanced SE Features
 [icon=hotel_class]
 --
+xref:{rootdir}/se/webserver.adoc[Helidon WebServer]
 
+xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics]
+
+xref:{rootdir}/se/config/introduction.adoc[Helidon Config]
 --
 
 
@@ -124,11 +128,18 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 .Training and Certification
 [icon=model_training]
 --
-Learn:  
+ 
+
+Training:  
  https://learn.oracle.com/ols/learning-path/become-a-helidon-microservices-developer-professional/88258/114512[Become a Helidon Microservices Developer Professional]
  
 Certification: 
   https://learn.oracle.com/ols/learning-path/become-a-helidon-microservices-developer-professional/88258/114512[Helidon Microservices Developer Professional (1Z0-1113)]
+  
+New to Helidon? Check out https://a.co/d/0niQnwC[Beginning Helidon] to learn more about building cloud-native microservices with Helidon.  
+
+
+  
 --
 
 //Get Involved
