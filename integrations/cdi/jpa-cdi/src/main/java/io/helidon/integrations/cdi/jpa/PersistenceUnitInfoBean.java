@@ -16,6 +16,7 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.AbstractList;
@@ -988,7 +989,11 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         final List<URL> jarFileUrls = new ArrayList<>();
         for (final String jarFile : jarFiles) {
             if (jarFile != null) {
-                jarFileUrls.add(createJarFileURL(rootUrl, jarFile));
+                try {
+                    jarFileUrls.add(createJarFileURL(rootUrl, jarFile));
+                } catch (URISyntaxException e) {
+                    throw (MalformedURLException) new MalformedURLException(e.getMessage()).initCause(e);
+                }
             }
         }
 
@@ -1095,12 +1100,9 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
     }
 
     private static URL createJarFileURL(final URL persistenceUnitRootUrl, final String jarFileUrlString)
-        throws MalformedURLException {
-        Objects.requireNonNull(persistenceUnitRootUrl);
-        Objects.requireNonNull(jarFileUrlString);
+        throws MalformedURLException, URISyntaxException {
         // Revisit: probably won't work if persistenceUnitRootUrl is, say, a jar URL
-        final URL returnValue = new URL(persistenceUnitRootUrl, jarFileUrlString);
-        return returnValue;
+        return persistenceUnitRootUrl.toURI().resolve(jarFileUrlString).toURL();
     }
 
 

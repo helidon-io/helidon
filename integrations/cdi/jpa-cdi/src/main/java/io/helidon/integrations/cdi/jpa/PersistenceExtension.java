@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
@@ -136,9 +137,10 @@ public final class PersistenceExtension implements Extension {
      *
      * <p>In such a case, the injection point will be effectively rewritten such that it will appear to the CDI
      * container as though there <em>were</em> a value specified for the {@link PersistenceContext#unitName() unitName}
-     * element&mdash;namely this field's value.  Additionally, a bean identical to the existing solitary {@link
-     * PersistenceUnitInfo}-typed bean will be added with this field's value as the {@linkplain Named#value() value of
-     * its <code>Named</code> qualifier}, thus serving as a kind of alias for the "real" bean.</p>
+     * element&mdash;namely this field's value ({@value #DEFAULT_PERSISTENCE_UNIT_NAME}).  Additionally, a bean
+     * identical to the existing solitary {@link PersistenceUnitInfo}-typed bean will be added with this field's value
+     * as the {@linkplain Named#value() value of its <code>Named</code> qualifier}, thus serving as a kind of alias for
+     * the "real" bean.</p>
      *
      * <p>This is necessary because the empty string ({@code ""}) as the value of the {@link Named#value()} element can
      * have <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#default_name">special
@@ -228,7 +230,7 @@ public final class PersistenceExtension implements Extension {
     /**
      * Indicates if JTA transactions can be supported.
      *
-     * @see #addAllocatorBeanAndInstallTransactionSupport(AfterTypeDiscovery)
+     * @see #addTypes(AfterTypeDiscovery)
      */
     private boolean transactionsSupported;
 
@@ -260,7 +262,7 @@ public final class PersistenceExtension implements Extension {
     @Deprecated // For invocation by CDI only.
     public PersistenceExtension() {
         super();
-        this.enabled = Boolean.parseBoolean(System.getProperty(this.getClass().getName() + ".enabled", "false"));
+        this.enabled = Boolean.parseBoolean(System.getProperty(this.getClass().getName() + ".enabled", "true"));
         this.containerManagedEntityManagerQualifiers = new HashSet<>();
         this.containerManagedEntityManagerFactoryQualifiers = new HashSet<>();
         this.entityManagerFactoryQualifiers = new HashSet<>();
@@ -452,8 +454,8 @@ public final class PersistenceExtension implements Extension {
      *
      * @exception NullPointerException if {@code e} is {@code null}
      */
-    @SuppressWarnings("checkstyle:LineLength")
-    private <T extends EntityManagerFactory> void saveContainerManagedEntityManagerFactoryQualifiers(@Observes ProcessInjectionPoint<?, T> e) {
+    private <T extends EntityManagerFactory> void
+        saveContainerManagedEntityManagerFactoryQualifiers(@Observes ProcessInjectionPoint<?, T> e) {
         if (!this.enabled) {
             return;
         }
@@ -529,7 +531,8 @@ public final class PersistenceExtension implements Extension {
      *
      * @see #addContainerManagedJpaBeans(AfterBeanDiscovery)
      */
-    private void addSyntheticBeans(@Observes @Priority(LIBRARY_AFTER) AfterBeanDiscovery event, BeanManager bm) {
+    private void addSyntheticBeans(@Observes @Priority(LIBRARY_AFTER) AfterBeanDiscovery event, BeanManager bm)
+        throws URISyntaxException {
         if (!this.enabled) {
             return;
         }
@@ -976,7 +979,8 @@ public final class PersistenceExtension implements Extension {
                                         ClassLoader classLoader,
                                         Enumeration<URL> persistenceXmlUrls,
                                         Iterable<? extends PersistenceProvider> providers,
-                                        boolean userSuppliedPuiBeans) {
+                                        boolean userSuppliedPuiBeans)
+        throws URISyntaxException {
         if (!persistenceXmlUrls.hasMoreElements()) {
             return;
         }
@@ -1021,7 +1025,7 @@ public final class PersistenceExtension implements Extension {
                         PersistenceUnitInfoBean.fromPersistenceUnit(pu,
                                                                     classLoader,
                                                                     tempClassLoaderSupplier,
-                                                                    new URL(persistenceXmlUrl, ".."), // i.e. META-INF/..
+                                                                    persistenceXmlUrl.toURI().resolve("..").toURL(),
                                                                     unlistedManagedClassesByUnitNames,
                                                                     dataSourceProviderSupplier);
                 } catch (MalformedURLException e) {
@@ -1505,17 +1509,12 @@ public final class PersistenceExtension implements Extension {
 
     private static final class SyntheticJpaQualifiers {
 
-        private static final Set<Annotation> INSTANCE;
-
-        static {
-            Set<Annotation> q = new HashSet<>();
-            q.add(ContainerManaged.Literal.INSTANCE);
-            q.add(Extended.Literal.INSTANCE);
-            q.add(JtaTransactionScoped.Literal.INSTANCE);
-            q.add(Synchronized.Literal.INSTANCE);
-            q.add(Unsynchronized.Literal.INSTANCE);
-            INSTANCE = Set.copyOf(q);
-        }
+        private static final Set<Annotation> INSTANCE =
+            Set.of(ContainerManaged.Literal.INSTANCE,
+                   Extended.Literal.INSTANCE,
+                   JtaTransactionScoped.Literal.INSTANCE,
+                   Synchronized.Literal.INSTANCE,
+                   Unsynchronized.Literal.INSTANCE);
 
     }
 
