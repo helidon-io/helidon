@@ -95,6 +95,7 @@
         <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.kafka>3.4.0</version.lib.kafka>
+        <version.lib.kotlin>1.8.0</version.lib.kotlin>
         <version.lib.log4j>2.18.0</version.lib.log4j>
         <version.lib.logback>1.4.0</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
@@ -952,6 +953,12 @@
                         <artifactId>snappy-java</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <!-- required transitively by okhttp (used in OpenTelemetry through Jaeger) -->
+                <artifactId>kotlin-stdlib</artifactId>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <version>${version.lib.kotlin}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
