@@ -128,9 +128,14 @@
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
-                <configuration>
-                    <quickBuild>true</quickBuild>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>build-native-image</id>
+                        <configuration>
+                            <quickBuild>true</quickBuild>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>io.smallrye</groupId>

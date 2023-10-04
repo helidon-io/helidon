@@ -54,7 +54,7 @@
         <version.lib.google-oauth-client>1.33.3</version.lib.google-oauth-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.google-protobuf>3.21.7</version.lib.google-protobuf>
-        <version.lib.graalvm>22.3.0</version.lib.graalvm>
+        <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>18.6</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>18.3</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
@@ -94,7 +94,8 @@
         <version.lib.jersey>3.1.3</version.lib.jersey>
         <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
-        <version.lib.kafka>3.4.0</version.lib.kafka>
+        <version.lib.kafka>3.5.1</version.lib.kafka>
+        <version.lib.kotlin>1.8.0</version.lib.kotlin>
         <version.lib.log4j>2.18.0</version.lib.log4j>
         <version.lib.logback>1.4.0</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
@@ -915,7 +916,7 @@
             </dependency>
             <dependency>
                 <groupId>org.graalvm.sdk</groupId>
-                <artifactId>graal-sdk</artifactId>
+                <artifactId>nativeimage</artifactId>
                 <version>${version.lib.graalvm}</version>
             </dependency>
             <dependency>
@@ -943,15 +944,12 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
-                <!-- Snip transitive dependency on Snappy (which should be optional anyways). -->
-                <!-- This can be removed once kafka-clients is upgraded -->
-                <!-- to 3.4.2 or newer. See https://issues.apache.org/jira/browse/KAFKA-15096 -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.xerial.snappy</groupId>
-                        <artifactId>snappy-java</artifactId>
-                    </exclusion>
-                </exclusions>
+            </dependency>
+            <dependency>
+                <!-- required transitively by okhttp (used in OpenTelemetry through Jaeger) -->
+                <artifactId>kotlin-stdlib</artifactId>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <version>${version.lib.kotlin}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>

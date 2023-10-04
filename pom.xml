@@ -112,7 +112,7 @@
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
-        <version.plugin.jar>3.1.1</version.plugin.jar>
+        <version.plugin.jar>3.3.0</version.plugin.jar>
         <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
         <version.plugin.jaxb>2.5.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>

@@ -75,6 +75,10 @@
             <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
+            <artifactId>helidon-webclient-tracing</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-reactive</artifactId>
         </dependency>

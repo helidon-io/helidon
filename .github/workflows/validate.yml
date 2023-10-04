@@ -140,18 +140,19 @@ jobs:
       - name: Test archetypes
         run: etc/scripts/test-archetypes.sh
   packaging:
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       matrix:
         os: [ ubuntu-20.04, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+      - uses: graalvm/setup-graalvm@v1
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: 21
+          distribution: graalvm-community
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: true
           cache: maven
       - name: Build Helidon
         run: etc/scripts/github-compile.sh
@@ -159,3 +160,5 @@ jobs:
         run: etc/scripts/test-packaging-jar.sh
       - name: JLink packaging
         run: etc/scripts/test-packaging-jlink.sh
+      - name: Native-Image packaging
+        run: etc/scripts/test-packaging-native.sh

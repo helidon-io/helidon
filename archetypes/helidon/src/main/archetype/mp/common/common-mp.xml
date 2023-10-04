@@ -25,6 +25,7 @@
     <source src="/common/sources.xml"/>
     <output>
         <model>
+            <value key="mainClass">${package}.Main</value>
             <value key="parent-artifactId">helidon-mp</value>
             <list key="dependencies">
                 <map>

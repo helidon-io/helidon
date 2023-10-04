@@ -26,7 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE,
         path = "Messaging"
 )
-@Aot(description = "Experimental support in native image")
+@Aot
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging {
 

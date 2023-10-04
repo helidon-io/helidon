@@ -47,7 +47,8 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     . ${WS_DIR}/etc/scripts/includes/error_handlers.sh
 
     if [ -z "${GRAALVM_HOME}" ]; then
-        export GRAALVM_HOME="/tools/graalvm-ce-java20-22.3.1"
+        # we must expect the current JDK is graal
+        export GRAALVM_HOME=$JAVA_HOME
     fi
 
     require_env() {

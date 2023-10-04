@@ -34,6 +34,9 @@ module io.helidon.tracing.providers.jaeger {
     requires io.opentelemetry.sdk.common;
     requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.sdk;
+    // this was missing from module path, need an explicit requires
+    // as kotlin is modularized
+    requires kotlin.stdlib;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;

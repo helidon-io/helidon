@@ -35,6 +35,7 @@ class SendingService implements HttpService {
 
         String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
         String topic = config.get("app.kafka.topic").asString().get();
+        String compression = config.get("app.kafka.compression").asString().orElse("none");
 
         // Prepare channel for connecting processor -> kafka connector with specific subscriber configuration,
         // channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
@@ -42,6 +43,7 @@ class SendingService implements HttpService {
                                          .subscriberConfig(KafkaConnector.configBuilder()
                                                                          .bootstrapServers(kafkaServer)
                                                                          .topic(topic)
+                                                                         .compressionType(compression)
                                                                          .keySerializer(StringSerializer.class)
                                                                          .valueSerializer(StringSerializer.class)
                                                                          .build())

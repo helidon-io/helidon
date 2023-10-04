@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,16 +32,27 @@ import jakarta.json.JsonReaderFactory;
 import jakarta.json.stream.JsonParsingException;
 import org.graalvm.nativeimage.hosted.Feature;
 
-final class HelidonReflectionConfiguration {
+/**
+ * Loads Helidon native image configuration.
+ */
+public final class HelidonReflectionConfiguration {
     private final Set<Class<?>> annotations = new LinkedHashSet<>();
     private final Set<Class<?>> hierarchy = new LinkedHashSet<>();
     private final Set<Class<?>> fullHierarchy = new LinkedHashSet<>();
     private final Set<Class<?>> classes = new LinkedHashSet<>();
     private final Set<Class<?>> excluded = new HashSet<>();
 
-    static HelidonReflectionConfiguration load(Feature.BeforeAnalysisAccess access,
-                                               ClassLoader cl,
-                                               NativeTrace tracer) {
+    /**
+     * Load configuration json files from classpath.
+     *
+     * @param access native image event
+     * @param cl     class loader
+     * @param tracer tracer to use
+     * @return a new configuration
+     */
+    public static HelidonReflectionConfiguration load(Feature.BeforeAnalysisAccess access,
+                                                      ClassLoader cl,
+                                                      NativeTrace tracer) {
         try {
             Enumeration<URL> resources = cl.getResources("META-INF/helidon/native-image/reflection-config.json");
             HelidonReflectionConfiguration config = new HelidonReflectionConfiguration();
@@ -74,6 +85,31 @@ final class HelidonReflectionConfiguration {
         }
     }
 
+    Set<Class<?>> annotations() {
+        return annotations;
+    }
+
+    Set<Class<?>> hierarchy() {
+        return hierarchy;
+    }
+
+    Set<Class<?>> fullHierarchy() {
+        return fullHierarchy;
+    }
+
+    Set<Class<?>> classes() {
+        return classes;
+    }
+
+    /**
+     * Set of excluded classes.
+     *
+     * @return set of classes to exclude from registration
+     */
+    public Set<Class<?>> excluded() {
+        return excluded;
+    }
+
     private static void jsonArray(NativeTrace tracer,
                                   Feature.BeforeAnalysisAccess access,
                                   Collection<Class<?>> classList,
@@ -104,25 +140,5 @@ final class HelidonReflectionConfiguration {
                 classList.add(anArray.getClass());
             }
         }
-    }
-
-    Set<Class<?>> annotations() {
-        return annotations;
-    }
-
-    Set<Class<?>> hierarchy() {
-        return hierarchy;
-    }
-
-    Set<Class<?>> fullHierarchy() {
-        return fullHierarchy;
-    }
-
-    Set<Class<?>> classes() {
-        return classes;
-    }
-
-    Set<Class<?>> excluded() {
-        return excluded;
     }
 }

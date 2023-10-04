@@ -1,0 +1,20 @@
+[
+    {
+        "condition": {
+            "typeReachable": "jakarta.ws.rs.core.UriInfo"
+        },
+        "interfaces": [
+            "jakarta.ws.rs.core.UriInfo",
+            "org.glassfish.hk2.api.ProxyCtl"
+        ]
+    },
+    {
+        "condition": {
+            "typeReachable": "io.helidon.webserver.http.ServerRequest"
+        },
+        "interfaces": [
+            "io.helidon.webserver.http.ServerRequest",
+            "org.glassfish.hk2.api.ProxyCtl"
+        ]
+    }
+]
