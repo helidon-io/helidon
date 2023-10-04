@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,11 @@
 app:
   kafka:
     bootstrap.servers: localhost:9092
-    topic: messaging-test-topic-1
+    compression: snappy
+#    compression: lz4
+#    compression: zstd
+#    compression: gzip
+    topic: messaging-test-topic-${app.kafka.compression}-compressed
 
 server:
   port: 7001
