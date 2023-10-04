@@ -8,13 +8,21 @@
         "org.apache.kafka.clients.producer.Partitioner",
         "org.apache.kafka.common.security.auth.AuthenticateCallbackHandler",
         "org.apache.kafka.common.security.auth.Login",
-        "javax.security.auth.spi.LoginModule"
+        "javax.security.auth.spi.LoginModule",
+        "net.jpountz.xxhash.StreamingXXHash32",
+        "net.jpountz.xxhash.StreamingXXHash32$Factory",
+        "net.jpountz.xxhash.StreamingXXHash64JavaSafe$Factory",
+        "net.jpountz.xxhash.XXHash32",
+        "net.jpountz.lz4.LZ4UnknownSizeDecompressor",
+        "net.jpountz.lz4.LZ4Compressor",
+        "net.jpountz.lz4.LZ4Decompressor"
     ],
     "classes": [
         "org.xerial.snappy.SnappyInputStream",
         "org.xerial.snappy.SnappyOutputStream",
         "com.github.luben.zstd.ZstdInputStream",
         "com.github.luben.zstd.ZstdOutputStream",
-        "com.github.luben.zstd.util.Native"
+        "com.github.luben.zstd.util.Native",
+        "net.jpountz.xxhash.XXHash64JavaSafe"
     ]
 }
