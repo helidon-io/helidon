@@ -87,7 +87,7 @@
         <version.lib.jandex>3.1.2</version.lib.jandex>
         <version.lib.jaxb-core>4.0.3</version.lib.jaxb-core>
         <version.lib.jaxb-impl>4.0.3</version.lib.jaxb-impl>
-        <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
+        <version.lib.jboss.classfilewriter>1.3.0.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>4.0.3</version.lib.jaxb-runtime>
@@ -152,7 +152,7 @@
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.4</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
-        <version.lib.weld>5.1.0.Final</version.lib.weld>
+        <version.lib.weld>5.1.1.SP2</version.lib.weld>
         <version.lib.yasson>2.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
