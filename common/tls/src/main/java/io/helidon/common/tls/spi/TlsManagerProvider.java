@@ -32,6 +32,7 @@ public interface TlsManagerProvider extends ConfiguredProvider<TlsManager> {
      *
      * @param configBean the config bean instance
      * @param creator    the creator to apply if not already in cache, which takes the config bean instance
+     * @param <T>        the type of the config bean
      * @return the tls manager instance from cache, defaulting to creation from the {@code creator} if not in cache
      */
     static <T> TlsManager getOrCreate(T configBean,
