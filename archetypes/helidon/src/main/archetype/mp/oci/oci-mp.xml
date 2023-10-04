@@ -198,15 +198,6 @@ ocimetrics:
                     <value key="scope">runtime</value>
                 </map>
                 <map order="0">
-                    <value key="groupId">io.helidon.metrics</value>
-                    <value key="artifactId">helidon-metrics-system-meters</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <map order="0">
-                    <value key="groupId">org.eclipse.microprofile.metrics</value>
-                    <value key="artifactId">microprofile-metrics-api</value>
-                </map>
-                <map order="0">
                     <value key="groupId">org.junit.jupiter</value>
                     <value key="artifactId">junit-jupiter-api</value>
                     <value key="scope">test</value>
