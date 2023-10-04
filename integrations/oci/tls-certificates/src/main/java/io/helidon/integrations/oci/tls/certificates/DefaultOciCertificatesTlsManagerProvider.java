@@ -43,9 +43,7 @@ public class DefaultOciCertificatesTlsManagerProvider implements TlsManagerProvi
     public TlsManager create(Config config,
                              String name) {
         OciCertificatesTlsManagerConfig cfg = OciCertificatesTlsManagerConfig.create(config);
-        return TlsManagerProvider.getOrCreate(config,
-                name,
-                cfg,
+        return TlsManagerProvider.getOrCreate(cfg,
                 (c) -> new DefaultOciCertificatesTlsManager(cfg, name, config));
     }
 
