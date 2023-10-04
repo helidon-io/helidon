@@ -39,12 +39,10 @@ module io.helidon.integrations.cdi.hibernate {
     requires transitive jakarta.cdi;
     requires transitive jakarta.inject;
     requires jakarta.persistence;
-    requires java.sql;
-
-    requires static io.helidon.common.features.api;
-
     requires transitive jakarta.transaction;
     requires transitive org.hibernate.orm.core;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.integrations.cdi.hibernate;
 

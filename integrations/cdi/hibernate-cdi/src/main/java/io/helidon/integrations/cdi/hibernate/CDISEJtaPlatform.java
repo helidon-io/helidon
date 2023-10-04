@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.cdi.hibernate;
 
+import java.lang.System.Logger;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -27,6 +28,7 @@ import jakarta.transaction.UserTransaction;
 import org.hibernate.engine.jndi.spi.JndiService;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 
+import static java.lang.System.Logger.Level.DEBUG;
 import static org.hibernate.cfg.AvailableSettings.CONNECTION_HANDLING;
 import static org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode.DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION;
 
@@ -41,6 +43,8 @@ import static org.hibernate.resource.jdbc.spi.PhysicalConnectionHandlingMode.DEL
  */
 @ApplicationScoped
 public class CDISEJtaPlatform extends AbstractJtaPlatform {
+
+    private static final Logger LOGGER = System.getLogger(CDISEJtaPlatform.class.getName());
 
     private static final long serialVersionUID = 1L;
 
@@ -145,6 +149,11 @@ public class CDISEJtaPlatform extends AbstractJtaPlatform {
     private static void customizePersistenceUnitInfo(@Observes PersistenceUnitInfo pui) {
         Properties p = pui.getProperties();
         if (p != null && p.getProperty(CONNECTION_HANDLING) == null && p.get(CONNECTION_HANDLING) == null) {
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, "Setting " + CONNECTION_HANDLING + " property to "
+                           + DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION
+                           + " on persistence unit " + pui.getPersistenceUnitName());
+            }
             p.setProperty(CONNECTION_HANDLING, DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION.toString());
         }
     }
