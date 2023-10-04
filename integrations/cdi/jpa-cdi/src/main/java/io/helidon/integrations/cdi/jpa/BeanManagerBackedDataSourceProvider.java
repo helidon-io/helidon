@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,12 @@ import jakarta.inject.Inject;
  * @see PersistenceUnitInfoBean.DataSourceProvider
  *
  * @see JtaDataSourceProvider
+ *
+ * @deprecated This is an internal class used by the now-deprecated {@link JpaExtension} class. Its replacement is an
+ * internal class, {@link JtaAbsentDataSourceProvider}, used by the {@link PersistenceExtension} class.
  */
 @ApplicationScoped
+@Deprecated(since = "4.0")
 class BeanManagerBackedDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
 
 

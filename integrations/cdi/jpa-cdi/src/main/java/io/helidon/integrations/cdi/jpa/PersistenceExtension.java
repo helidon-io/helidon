@@ -111,8 +111,8 @@ import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
 
 /**
  * An {@link Extension} that integrates <em>container-mode</em> <a
- * href="https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html">Jakarta Persistence
- * 3.0</a> into <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html">CDI SE 3.0</a>-based
+ * href="https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1.html">Jakarta Persistence
+ * 3.1</a> into <a href="https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html">CDI SE 4.0</a>-based
  * applications.
  */
 public final class PersistenceExtension implements Extension {
@@ -143,7 +143,7 @@ public final class PersistenceExtension implements Extension {
      * the "real" bean.</p>
      *
      * <p>This is necessary because the empty string ({@code ""}) as the value of the {@link Named#value()} element can
-     * have <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#default_name">special
+     * have <a href="https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html#default_name">special
      * semantics</a>, so cannot be used to designate an unnamed or otherwise default persistence unit.</p>
      *
      * <p>The value of this field is subject to change without prior notice at any point.  In general the mechanics
@@ -313,6 +313,7 @@ public final class PersistenceExtension implements Extension {
      *
      * @see JtaAdaptingDataSourceProvider
      */
+    @SuppressWarnings("deprecation")
     private void vetoDeprecatedJtaDataSourceProvider(@Observes ProcessBeanAttributes<JtaDataSourceProvider> event) {
         if (!this.enabled) {
             return;
@@ -326,6 +327,33 @@ public final class PersistenceExtension implements Extension {
                         + " replaces it", event.getBeanAttributes());
         }
         event.veto();
+    }
+
+    /**
+     * {@linkplain ProcessBeanAttributes#veto() Vetoes} any bean whose bean types includes the deprecated {@link
+     * BeanManagerBackedDataSourceProvider} class, since it is replaced by {@link JtaAbsentDataSourceProvider}.
+     *
+     * @param event the {@link ProcessBeanAttributes} event in question; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code event} is {@code null}
+     *
+     * @see JtaAbsentDataSourceProvider
+     */
+    @SuppressWarnings("deprecation")
+    private void vetoDeprecatedBeanManagerBackedDataSourceProvider(@Observes
+                                                                   ProcessBeanAttributes<BeanManagerBackedDataSourceProvider> e) {
+        if (!this.enabled) {
+            return;
+        }
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, this.getClass().getName(), "vetoDeprecatedBeanManagerBackedDataSourceProvider",
+                        "Vetoing BeanAttributes {0} representing "
+                        + BeanManagerBackedDataSourceProvider.class
+                        + " because it is deprecated and "
+                        + JtaAbsentDataSourceProvider.class
+                        + " replaces it", e.getBeanAttributes());
+        }
+        e.veto();
     }
 
     private <T> void rewriteJpaAnnotations(@Observes

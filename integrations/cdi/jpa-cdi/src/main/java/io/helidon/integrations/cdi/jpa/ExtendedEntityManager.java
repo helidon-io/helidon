@@ -30,7 +30,10 @@ import jakarta.persistence.EntityManager;
 /**
  * A {@link DelegatingEntityManager} created to support extended
  * persistence contexts.
+ *
+ * @deprecated This is an internal class used by the now-deprecated {@link JpaExtension} class.
  */
+@Deprecated(since = "4.0")
 class ExtendedEntityManager extends DelegatingEntityManager {
 
 

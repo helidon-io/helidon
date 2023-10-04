@@ -44,7 +44,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
  * #acquireDelegate()} method and only under appropriate
  * circumstances.</p>
  *
- * <p>This class is added as a synthetic bean by the {@link
+ * <p>This class is added as a synthetic bean by the (now-deprecated) {@link
  * JpaExtension} class.</p>
  *
  * <h2>Implementation Notes</h2>
@@ -60,7 +60,10 @@ import jakarta.persistence.criteria.CriteriaQuery;
  * this class are not safe for concurrent use by multiple threads.</p>
  *
  * @see JpaExtension
+ *
+ * @deprecated This is an internal class used only by the now-deprecated {@link JpaExtension} class.
  */
+@Deprecated(since = "4.0")
 @Vetoed
 class NonTransactionalEntityManager extends DelegatingEntityManager {
 
