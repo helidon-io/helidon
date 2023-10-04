@@ -70,6 +70,8 @@ static Single<WebServer> startServer() {
 <2> Wait for the Server to start and print the message in asynchronous way.
 <3> Gracefully handle exceptions if they occur during the initialization process.
 
+Since Helidon SE is reactive, during the start a `Single` object is returned, the server has been started in asynchronous way. We have to use reactive methods like `thenAccept` to wait for the server to start and the to perform the desired action. The exception handling should also be done in reactive way using the corresponding method.
+
 In Helidon there are no more Reactive APIs, so the Server is started much simpler:
 
 [source, java]
@@ -92,7 +94,9 @@ public static void main(String[] args) {
 <2> Start the Server. No reactive objects returned.
 <3> Print a message when the Server is started.
 
-If any exceptions occure they are handled the traditional way using available language constructions.
+Just create it, configure it, and wait for it to start. The "waiting" time is now managed by the Java Virtual Machine. If waiting time is too long since the app is waiting for some resource, another task may be assigned to the current thread, to do something useful. Then when server is ready, it will notify the scheduler, whit will mount it on a free carrier thread.
+If any exceptions happen they are handled the traditional way using available language constructions.
+
 
 === Routing configuration
 
@@ -121,6 +125,8 @@ private static Routing createRouting(Config config) {
 <3> Register `Metrics` and `Heath` support as Helidon Services.
 <4> Register the regular Greeting service.
 
+Services are created and assigned to the desired path. Observability and other features are being created as usual Helidon `services`, available as part of the framework. Uses defined services are also registered the same way.
+
 In Helidon 4 the routing is configured the following way:
 
 [source, java]
@@ -138,6 +144,7 @@ static void routing(HttpRouting.Builder routing) {
 
 
 `Feature` encapsulates a set of endpoints, services and/or filters. It is similar to `HttpService` but gives more freedom in setup. Main difference is that a feature can add `Filters` and it cannot be registered on a path. Features are not registered immediately - each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher weighted features are registered first. This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
+
 
 === Services
 
