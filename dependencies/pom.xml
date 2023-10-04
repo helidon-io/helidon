@@ -95,7 +95,6 @@
         <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.kafka>3.5.1</version.lib.kafka>
-        <version.lib.kotlin>1.8.0</version.lib.kotlin>
         <version.lib.log4j>2.18.0</version.lib.log4j>
         <version.lib.logback>1.4.0</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
@@ -131,7 +130,7 @@
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci>3.21.0</version.lib.oci>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
-        <!-- Force upgrade okio for CVE-2023-0833. When okhttp 4.12.0 is available we can remove this -->
+        <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
         <version.lib.okio>3.4.0</version.lib.okio>
         <!-- Force upgrade okhttp3 for CVE-2023-0833 -->
         <version.lib.okhttp3>4.11.0</version.lib.okhttp3>
@@ -947,12 +946,6 @@
                 <version>${version.lib.kafka}</version>
             </dependency>
             <dependency>
-                <!-- required transitively by okhttp (used in OpenTelemetry through Jaeger) -->
-                <artifactId>kotlin-stdlib</artifactId>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <version>${version.lib.kotlin}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-json-binding</artifactId>
                 <version>${version.lib.jersey}</version>
@@ -1253,7 +1246,7 @@
                 <version>${version.lib.okhttp3}</version>
             </dependency>
             <dependency>
-                <!-- Force upgrade okio for CVE-2023-0833. When okhttp 4.12.0 is available we can remove this -->
+                <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
                 <groupId>com.squareup.okio</groupId>
                 <artifactId>okio</artifactId>
                 <version>${version.lib.okio}</version>
