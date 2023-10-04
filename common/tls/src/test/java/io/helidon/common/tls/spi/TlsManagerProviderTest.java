@@ -16,15 +16,17 @@
 
 package io.helidon.common.tls.spi;
 
-import io.helidon.common.tls.ConfiguredTlsManager;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.helidon.common.tls.TlsManager;
-import io.helidon.config.Config;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class TlsManagerProviderTest {
@@ -32,25 +34,24 @@ class TlsManagerProviderTest {
     @Test
     void caching() {
         TlsManager mock = Mockito.mock(TlsManager.class);
-        Config config = Config.create();
         AtomicInteger count = new AtomicInteger();
 
         // we are using "1" and "2" here abstractly to stand in for Config beans, which would hash properly
-        TlsManager manager1 = TlsManagerProvider.getOrCreate(config, "test", "1", (c) -> {
+        TlsManager manager1 = TlsManagerProvider.getOrCreate("1", (c) -> {
             count.incrementAndGet();
             return mock;
         });
         assertThat(manager1, sameInstance(mock));
         assertThat(count.get(), is(1));
 
-        TlsManager manager2 = TlsManagerProvider.getOrCreate(config, "test", "1", (c) -> {
+        TlsManager manager2 = TlsManagerProvider.getOrCreate("1", (c) -> {
             count.incrementAndGet();
             return Mockito.mock(TlsManager.class);
         });
         assertThat(manager2, sameInstance(mock));
         assertThat(count.get(), is(1));
 
-        TlsManager manager3 = TlsManagerProvider.getOrCreate(config, "test", "2", (c) -> {
+        TlsManager manager3 = TlsManagerProvider.getOrCreate("2", (c) -> {
             count.incrementAndGet();
             return Mockito.mock(TlsManager.class);
         });
