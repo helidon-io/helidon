@@ -35,8 +35,10 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Aot(description = "Experimental support, tested on limited use cases")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.hibernate {
-    requires jakarta.cdi;
-    requires jakarta.inject;
+
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.inject;
+    requires jakarta.persistence;
     requires java.sql;
 
     requires static io.helidon.common.features.api;
