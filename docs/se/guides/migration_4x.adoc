@@ -37,11 +37,12 @@ Helidon Reactive APIs are now removed from Helidon 4. Helidon Reactive Engine is
 
 There is no more backward compatibility with Helidon SE version 3 and earlier! All reactive code written using Reactive paradigm should be redesigned and rewritten in blocking paradigm.
 
-=== Server initialization and start up
+== Server initialization and start up
 
 In Helidon 1.x-3.x to star a server the following actions should be done:
 
 [source, java]
+.Start Helidon SE 3.x Server
 ----
 static Single<WebServer> startServer() {
 
@@ -75,6 +76,7 @@ Since Helidon SE is reactive, during the start a `Single` object is returned, th
 In Helidon there are no more Reactive APIs, so the Server is started much simpler:
 
 [source, java]
+.Start Helidon SE 4.x Server
 ----
 public static void main(String[] args) {
 
@@ -98,11 +100,12 @@ Just create it, configure it, and wait for it to start. The "waiting" time is no
 If any exceptions happen they are handled the traditional way using available language constructions.
 
 
-=== Routing configuration
+== Routing configuration
 
 In Helidon 1.x-3.x the routing config was done the following way:
 
 [source, java]
+.Routing in Helidon SE 3.x Server
 ----
 private static Routing createRouting(Config config) {
 
@@ -130,6 +133,7 @@ Services are created and assigned to the desired path. Observability and other f
 In Helidon 4 the routing is configured the following way:
 
 [source, java]
+.Start Helidon SE 4.x Server
 ----
 static void routing(HttpRouting.Builder routing) {
     Config config = Config.global();
@@ -146,13 +150,14 @@ static void routing(HttpRouting.Builder routing) {
 `Feature` encapsulates a set of endpoints, services and/or filters. It is similar to `HttpService` but gives more freedom in setup. Main difference is that a feature can add `Filters` and it cannot be registered on a path. Features are not registered immediately - each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher weighted features are registered first. This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
 
 
-=== Services
+== Services
 
 There are also significant changes in Helidon `Service`.
 
 In prior versions a service look this way:
 
 [source, java]
+.Helidon SE 3.x Service
 ----
 public class GreetService implements Service {
 
@@ -177,6 +182,7 @@ public class GreetService implements Service {
 In Helidon 4 the same service:
 
 [source, java]
+.Helidon SE 4.x Service
 ----
 public class GreetService implements HttpService {  <1>
 
@@ -207,4 +213,4 @@ Learn more about `HttpService` and `Routing` at xref:../webserver.adoc[Helidon S
 
 == Conclusion
 
-Please proceed to xref:../overview.adoc[Helidon SE Overview] to find more information and documentation about each module.
+Please proceed to xref:../introduction.adoc[Helidon SE Introduction] to find more information and documentation about each module.

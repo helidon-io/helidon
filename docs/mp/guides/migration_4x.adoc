@@ -35,7 +35,7 @@ Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Pleas
 Helidon 4 no more uses Netty. Helidon MP is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
 
 
-== MicroProfile 6.0  support
+== MicroProfile 6.0 support
 
 MicroProfile 6.0  enables MicroProfile APIs to be used together with Jakarta EE 10 Core Profile (Jakarta EE namespace).
 
@@ -69,10 +69,6 @@ Helidon 4.x supports the following Jakarta EE specifications:
 * Jakarta Bean Validation {version-lib-jakarta-bean-validation}
 
 Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
-
-=== Incompatible changes for each specification
-
-<...>
 
 ==== MicroProfile specifications
 
@@ -145,28 +141,3 @@ NOTE: Please, read each specification carefully for incompatible changes!
 == Deprecations
 
 Helidon 4 no more uses Netty. Helidon MP is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
-
-=== Helidon Common
-
-=== Media Common
-
-=== Metrics
-
-=== Common Context
-
-=== GRPC core
-
-=== LRA
-
-=== MP Messaging
-
-=== JWT
-
-=== MP Metrics
-
-=== HTTP Signature Security Provider
-
-=== Service Common
-
-=== WebServer
-
