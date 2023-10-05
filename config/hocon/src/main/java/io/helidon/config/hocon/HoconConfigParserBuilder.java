@@ -30,7 +30,7 @@ import com.typesafe.config.ConfigResolveOptions;
  * <p>
  * {@link Config#resolve() HOCON resolving substitutions support} is by default enabled.
  * {@link ConfigResolveOptions#defaults()} is used to resolve loaded configuration.
- * It is possible to {@link #disableResolving() disable resolving} feature
+ * It is possible to {@link #resolvingEnabled(boolean)}} to disable this feature
  * or specify custom {@link #resolveOptions(ConfigResolveOptions) ConfigResolveOptions} instance.
  */
 public final class HoconConfigParserBuilder implements Builder<HoconConfigParserBuilder, ConfigParser> {
@@ -44,18 +44,6 @@ public final class HoconConfigParserBuilder implements Builder<HoconConfigParser
         resolvingEnabled = false;
         resolveOptions = ConfigResolveOptions.defaults();
         parseOptions = ConfigParseOptions.defaults();
-    }
-
-    /**
-     * Disables HOCON resolving substitutions support. Default is {@code false}.
-     *
-     * @return modified builder instance
-     * @see #resolvingEnabled
-     */
-    @Deprecated(since = "2.5.1", forRemoval = true)
-    public HoconConfigParserBuilder disableResolving() {
-        resolvingEnabled = false;
-        return this;
     }
 
     /**
