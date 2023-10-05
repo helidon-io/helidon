@@ -73,13 +73,9 @@ xref:{rootdir}/se/guides/quickstart.adoc[Using the SE Quick Start Guide]
 --
 Use the migration guides to help you upgrade your existing Helidon applications to the latest version of Helidon.
 
-xref:{rootdir}/mp/guides/migration_3x.adoc[Upgrade From Helidon MP 3.x]
+xref:{rootdir}/mp/guides/migration_4x.adoc[Upgrade From Helidon MP 4.x]
 
-xref:{rootdir}/mp/guides/migration.adoc[Upgrade From Helidon MP 2.x]
-
-xref:{rootdir}/se/guides/migration_3x.adoc[Upgrade From Helidon SE 3.x]
-
-xref:{rootdir}/se/guides/migration.adoc[Upgrade From Helidon SE 2.x]
+xref:{rootdir}/se/guides/migration_4x.adoc[Upgrade From Helidon SE 4.x]
 
 --
 

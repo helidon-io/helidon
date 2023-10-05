@@ -32,14 +32,12 @@ will help you upgrade a Helidon MP 3.x application to 4.x.
 
 Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
 
-Helidon 4 no more uses Netty. Helidon MP is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
+Helidon 4 no longer uses Netty. Helidon MP is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
 
 
 == MicroProfile 6.0 support
 
-MicroProfile 6.0  enables MicroProfile APIs to be used together with Jakarta EE 10 Core Profile (Jakarta EE namespace).
-
-MicroProfile 6.0  lays the foundation for the rapid innovation of MicroProfile APIs for its 2023 releases.
+MicroProfile 6.0  enables MicroProfile APIs to be used together with Jakarta EE 10 Core Profile.
 
 MicroProfile 6.0  is an umbrella for the following specifications and their corresponding versions:
 
@@ -54,7 +52,7 @@ MicroProfile 6.0  is an umbrella for the following specifications and their corr
 
 Includes:
 
-* Jakarta EE Core Profile 10 {version-lib-jakarta-core}
+* Jakarta EE Core Profile {version-lib-jakarta-core}
 
 Helidon 4.x supports the following Jakarta EE specifications:
 
@@ -70,7 +68,9 @@ Helidon 4.x supports the following Jakarta EE specifications:
 
 Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
 
-==== MicroProfile specifications
+=== MicroProfile specifications
+
+Most of the MicroProfile specifications had relatively minor changes. The exception is Metrics which had substantial changes.
 
 * *MicroProfile Config {version-lib-microprofile-config}*:
 +
@@ -137,7 +137,50 @@ Changes described in link:https://jakarta.ee/specifications/bean-validation/2.0/
 
 NOTE: Please, read each specification carefully for incompatible changes!
 
+=== Significant changes
 
-== Deprecations
+==== Smallrye
 
-Helidon 4 no more uses Netty. Helidon MP is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
+Smallrye group id was `org.jboss.jandex` and now is `io.smallrye`.
+
+==== Metrics and observability
+
+The correct work of observability in quickstarts now requires dependencies:
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-system-meters</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+==== Testing
+
+Testing is now in a new package. It was:
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.tests</groupId>
+    <artifactId>helidon-microprofile-tests-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+Now is:
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.testing</groupId>
+    <artifactId>helidon-microprofile-testing-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+----

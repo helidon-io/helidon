@@ -33,9 +33,7 @@ Helidon 4 no more uses Netty. Helidon SE is now running on Helidon WebServer whi
 
 == Deprecations
 
-Helidon Reactive APIs are now removed from Helidon 4. Helidon Reactive Engine is completely removed. Objects `Single` and `Multi`, as well as all reactive operators are no longer available. All modules of Helidon SE have been redesigned and rewritten to use "Blocking" paradigm (coding style).
-
-There is no more backward compatibility with Helidon SE version 3 and earlier! All reactive code written using Reactive paradigm should be redesigned and rewritten in blocking paradigm.
+Helidon SE has changed from an asynchronous style API to an imperative/blocking style API that is optimized for use with virtual threads. Currently, there is no compatibility API available
 
 == Server initialization and start up
 
@@ -71,9 +69,9 @@ static Single<WebServer> startServer() {
 <2> Wait for the Server to start and print the message in asynchronous way.
 <3> Gracefully handle exceptions if they occur during the initialization process.
 
-Since Helidon SE is reactive, during the start a `Single` object is returned, the server has been started in asynchronous way. We have to use reactive methods like `thenAccept` to wait for the server to start and the to perform the desired action. The exception handling should also be done in reactive way using the corresponding method.
+Since Helidon SE in 3.x was reactive, during the start a `Single` object is returned, the server has been started in asynchronous way. We have to use reactive methods like `thenAccept` to wait for the server to start and the to perform the desired action. The exception handling should also be done in reactive way using the corresponding method.
 
-In Helidon there are no more Reactive APIs, so the Server is started much simpler:
+In Helidon 4.x there are no more Reactive APIs, so the Server startup is much simpler:
 
 [source, java]
 .Start Helidon SE 4.x Server
@@ -96,8 +94,7 @@ public static void main(String[] args) {
 <2> Start the Server. No reactive objects returned.
 <3> Print a message when the Server is started.
 
-Just create it, configure it, and wait for it to start. The "waiting" time is now managed by the Java Virtual Machine. If waiting time is too long since the app is waiting for some resource, another task may be assigned to the current thread, to do something useful. Then when server is ready, it will notify the scheduler, whit will mount it on a free carrier thread.
-If any exceptions happen they are handled the traditional way using available language constructions.
+Just create it, configure it, and wait for it to start. If any exceptions happen they are handled the traditional way using available language constructions.
 
 
 == Routing configuration
@@ -210,6 +207,51 @@ Helidon 4 introduced `HttpService` that should be implemented in order to proces
 These changes make Helidon 4 incompatible with previous versions.
 
 Learn more about `HttpService` and `Routing` at xref:../webserver.adoc[Helidon SE WebServer]
+
+=== Significant changes
+
+==== Testing
+
+There a new testing framework for Helidon SE.
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.testing</groupId>
+    <artifactId>helidon-microprofile-testing-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+Find more information proceed to xref:../introduction.adoc[Helidon SE testing]
+
+==== Observability
+
+Observability features of Helidon have now moved to different package. For `Heath` and `Metrics` please use:
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-health</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId>
+</dependency>
+----
+
+Observability has new endpoints.
+
+For System Metrics please use:
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-system-meters</artifactId>
+</dependency>
+----
 
 == Conclusion
 
