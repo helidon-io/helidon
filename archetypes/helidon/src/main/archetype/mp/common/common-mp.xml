@@ -84,24 +84,27 @@
             <value key="main-class-javadoc"><![CDATA[
 /**
  * Main entry point of the application.
- * This class is registered as the main class in the jar manifest, as well as the main class of the module.
- */
-            ]]></value>
+ * This class is required when using modules with Helidon MP.
+ * Since version 3.1.2, the maven-jar-plugin set module attribute such as `ModuleMainClass`. The main class must be
+ * in a package that is either exported or opened by the module. This means we cannot reference a built-in class and
+ * therefore this Main class is created with a simple implementation that calls the built-in one.
+ * See the Documentation for `--main-class` option used by maven-jar-plugin:
+ * <a href="https://docs.oracle.com/en/java/javase/21/docs/specs/man/jar.html#operation-modifiers-valid-only-in-create-and-update-modes">documentation</a>
+ */]]></value>
             <value key="main-method-javadoc"><![CDATA[
-/**
- * Main method. Starts CDI (and the application).
- *
- * @param args ignored
- */
-            ]]></value>
+    /**
+     * Main method. Starts CDI (and the application).
+     *
+     * @param args ignored
+     */]]></value>
             <list key="main-class-fields">
                 <value><![CDATA[
-/**
-* Cannot be instantiated.
-*/
-private Main() {
-}
-                    ]]></value>
+    /**
+    * Cannot be instantiated.
+    */
+    private Main() {
+    }
+]]></value>
             </list>
             <list key="main-method-content">
                 <value><![CDATA[        io.helidon.Main.main(args);]]></value>

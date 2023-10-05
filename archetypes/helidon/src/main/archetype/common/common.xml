@@ -40,12 +40,16 @@
         <transformation id="multipart-mustache">
             <replace regex="\.multipart.mustache$" replacement=""/>
         </transformation>
-        <templates engine="mustache" transformations="mustache">
+        <transformation id="native-image">
+            <replace regex="groupid" replacement="${groupId/\./\/}"/>
+            <replace regex="artifactid" replacement="${artifactId/\./\/}"/>
+        </transformation>
+        <templates engine="mustache" transformations="mustache,packaged">
             <directory>files</directory>
             <includes>
                 <include>.helidon.mustache</include>
                 <include>README.md.mustache</include>
-                <include>src/main/java/*.java.mustache</include>
+                <include>src/main/java/**/*.java.mustache</include>
             </includes>
         </templates>
         <model>

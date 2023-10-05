@@ -94,20 +94,20 @@ app:
             </list>
             <value key="main-class-javadoc"><![CDATA[
 /**
-* The application main class.
-*/]]></value>
-            <value key="main-method-javadoc"><![CDATA[    /**
+ * The application main class.
+ */]]></value>
+            <value key="main-method-javadoc"><![CDATA[/**
      * Application main entry point.
      * @param args command line arguments.
      */]]></value>
             <list key="main-class-fields">
-                <value><![CDATA[
-/**
-* Cannot be instantiated.
-*/
-private Main() {
-}
-                    ]]></value>
+                <value order="0"><![CDATA[
+   /**
+     * Cannot be instantiated.
+     */
+   private Main() {
+   }
+]]></value>
             </list>
             <list key="main-method-content">
                 <value template="mustache"><![CDATA[
@@ -146,8 +146,7 @@ private Main() {
                {{#Main-routing-builder}}
                {{.}}{{#last}}; {{/last}}
                {{/Main-routing-builder}}
-    }
-                    ]]></value>
+    }]]></value>
             </list>
         </model>
     </output>
