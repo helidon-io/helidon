@@ -92,6 +92,63 @@ app:
 app:
     greeting: "Hello"]]></value>
             </list>
+            <value key="main-class-javadoc"><![CDATA[
+/**
+* The application main class.
+*/]]></value>
+            <value key="main-method-javadoc"><![CDATA[    /**
+     * Application main entry point.
+     * @param args command line arguments.
+     */]]></value>
+            <list key="main-class-fields">
+                <value><![CDATA[
+/**
+* Cannot be instantiated.
+*/
+private Main() {
+}
+                    ]]></value>
+            </list>
+            <list key="main-method-content">
+                <value template="mustache"><![CDATA[
+         // load logging configuration
+        LogConfig.configureRuntime();
+
+        {{#Main-main}}
+        {{.}}
+        {{/Main-main}}
+
+        // initialize global config from default configuration
+        Config config = Config.create();
+        Config.global(config);
+
+        WebServer server = WebServer.builder()
+                .config(Config.global().get("server"))
+                .routing(Main::routing)
+                .build()
+                .start();
+
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
+                    ]]></value>
+            </list>
+            <list key="main-class-content">
+                <value template="mustache"><![CDATA[
+    /**
+     * Updates HTTP Routing.
+     */
+    static void routing(HttpRouting.Builder routing) {
+        Config config = Config.global();
+        {{#Main-routing}}
+        {{.}}
+        {{/Main-routing}}
+
+        routing
+               {{#Main-routing-builder}}
+               {{.}}{{#last}}; {{/last}}
+               {{/Main-routing-builder}}
+    }
+                    ]]></value>
+            </list>
         </model>
     </output>
 </archetype-script>

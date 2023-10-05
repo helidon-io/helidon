@@ -289,7 +289,7 @@ restrictive-cors:
                                 <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(config), new GreetService())
 ]]></value>
                             </list>
-                            <list key="Main-content" if="${flavor} == 'se'">
+                            <list key="main-class-content" if="${flavor} == 'se'">
                                 <value><![CDATA[
     private static CorsSupport corsSupportForGreeting(Config config) {
         Config restrictiveConfig = config.get("restrictive-cors");

@@ -401,13 +401,13 @@ curl -s -X GET http://localhost:8080/health
                                 <list key="Main-java-imports" if="${flavor} == 'se'">
                                     <value>java.time.Duration</value>
                                 </list>
-                                <list key="Main-fields" if="${flavor} == 'se'">
+                                <list key="main-class-fields" if="${flavor} == 'se'">
                                     <value><![CDATA[    private static long serverStartTime;]]></value>
                                 </list>
                                 <list key="Main-main" if="${flavor} == 'se'">
                                     <value><![CDATA[serverStartTime = System.currentTimeMillis();]]></value>
                                 </list>
-                                <list key="Main-content" if="${flavor} == 'se'">
+                                <list key="main-class-content" if="${flavor} == 'se'">
                                     <value><![CDATA[
     private static boolean isStarted() {
         return Duration.ofMillis(System.currentTimeMillis() - serverStartTime).getSeconds() >= 8;

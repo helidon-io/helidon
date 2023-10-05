@@ -81,6 +81,31 @@
                 <value>static org.hamcrest.MatcherAssert.assertThat</value>
                 <value>static org.hamcrest.Matchers.is</value>
             </list>
+            <value key="main-class-javadoc"><![CDATA[
+/**
+ * Main entry point of the application.
+ * This class is registered as the main class in the jar manifest, as well as the main class of the module.
+ */
+            ]]></value>
+            <value key="main-method-javadoc"><![CDATA[
+/**
+ * Main method. Starts CDI (and the application).
+ *
+ * @param args ignored
+ */
+            ]]></value>
+            <list key="main-class-fields">
+                <value><![CDATA[
+/**
+* Cannot be instantiated.
+*/
+private Main() {
+}
+                    ]]></value>
+            </list>
+            <list key="main-method-content">
+                <value><![CDATA[        io.helidon.Main.main(args);]]></value>
+            </list>
         </model>
     </output>
 </archetype-script>

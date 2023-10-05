@@ -45,7 +45,7 @@
             <includes>
                 <include>.helidon.mustache</include>
                 <include>README.md.mustache</include>
-                <include>src/main/java/module-info.java.mustache</include>
+                <include>src/main/java/*.java.mustache</include>
             </includes>
         </templates>
         <model>
