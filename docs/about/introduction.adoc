@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -148,3 +148,21 @@ Choose a Helidon flavor to explore and start using it. Check out the following:
 
 - xref:{rootdir}/se/introduction.adoc[Helidon SE Documentation]
 - xref:{rootdir}/mp/introduction.adoc[Helidon MP Documentation]
+
+== Helidon Book
+
+The book *Beginning Helidon* is highly recommended for all Helidon 3.x users. Our colleagues Dmitry Kornilov, Daniel Kec, and Dmitry Aleksandrov authored it, while Tomas Langer and David Kral provided their reviews.
+
+This publication serves as a comprehensive manual for designing cloud-native microservices with Helidon. It offers a detailed exploration of how to maximize the advantages of the cloud by optimizing applications for swift startup times, minimal memory consumption, and a compact disk footprint, all attainable through Helidon. By utilizing Java 17, this framework provides access to cutting-edge code features while adhering to contemporary enterprise Java standards, such as those outlined by http://microprofile.io[MicroProfile].
+
+Throughout the book, you will gain insights into enhancing your microservices with observability and security, seamlessly working with databases, and interacting with other services. The content thoroughly covers the MicroProfile 5.0 platform specifications alongside independent specifications like Messaging and Long Running Actions.
+
+Furthermore, the book delves into how Helidon facilitates the creation of lightning-fast native executables through GraalVM integration and explains how to craft exceptionally responsive microservices using Helidon Reactive APIs.
+
+Each chapter adopts a practical, hands-on approach, introducing various Helidon concepts through real-world scenarios and practical examples.
+
+Beyond its instructional value, this book serves as an excellent study guide for the https://education.oracle.com/oracle-certified-professional-java-se-17-developer/trackp_OCPHDMD[Oracle Helidon certification].
+
+image::Helidon_book.png[Helidon book]
+
+Available from https://a.co/d/9RFS6tq[Amazon] and all other bookstores.
