@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ Java service loader service `io.helidon.security.providers.httpauth.spi.UserStor
  users to the provider, such as when validated against an internal database or LDAP server.
 The user store is defined so you never need the clear text password of the user.
 
-_Warning on security of HTTP Basic Authenticaton (or lack thereof)_
+_Warning on security of HTTP Basic Authentication (or lack thereof)_
 
 Basic authentication uses base64 encoded username and password and passes it over the network. Base64 is only encoding,
  not encryption - so anybody that gets hold of the header value can learn the actual username and password of the user.

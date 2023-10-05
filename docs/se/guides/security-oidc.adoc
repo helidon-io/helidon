@@ -306,30 +306,40 @@ frontend-uri: "http://localhost:{Your-new-port}"
 === Configure Web Server
 
 Once the properties are added, the web server must be setup.
-The `Main.createRouting` method gather all configuration properties.
+The `Main.routing` method gather all configuration properties.
 
 [source,java]
-.Add the following to `Main.createRouting` method
+.Add the following to `Main.routing` method
 ----
 import io.helidon.security.Security;
-import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.OidcFeature;
+import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.security.SecurityFeature;
 
 Security security = Security.create(config.get("security"));    // <1>
 
-return Routing.builder()
-                .addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(security, config.get("security"))) // <2>
-                .addFeature(OidcFeature.create(config))   // <3>
+routing.addFeature(ContextFeature.create())
+        .addFeature(SecurityFeature.create(security, config.get("security"))) // <2>
+        .addFeature(OidcFeature.create(config))   // <3>
 ----
 <1> Create the Helidon `Security` instance using configuration.
-<2> Register Helidon `WebSecurity` instance using security instance and configuration.
+<2> Register Helidon `SecurityFeature` instance using security instance and configuration.
 <3> Register Helidon `OidcFeature` instance.
 
+It is also needed to add the following lines to the `module-info.java` file:
+[source,java]
+.Add security related module requirements
+----
+requires io.helidon.security;
+requires io.helidon.security.providers.oidc;
+requires io.helidon.webserver.security;
+requires io.helidon.webserver.context;
+----
+
 That code is extracting security properties from application.yaml into two steps.
-First the Security instance is used to bootstrap security, so the WebSecurity instance
+First the Security instance is used to bootstrap security, so the SecurityFeature instance
 can integrate security into Web Server.
-Then, OidcSupport instance registers the endpoint to which OIDC redirects browser after a successful login.
+Then, OidcFeature instance registers the endpoint to which OIDC redirects browser after a successful login.
 
 Helidon sample is now setup and ready.
 
@@ -366,7 +376,7 @@ resources the user is allowed to access. Once expired, the refresh token allows 
 token. As these tokens contain sensitive information, they are valid for a very short period. It is possible to make them
 last longer in order to let you manipulate them with Postman. To do so:
 
-1. Open the Postman Console.
+1. Open the Keycloak Console.
 2. Click on the `Realm Setting` in the left menu.
 3. Navigate to the `Tokens` tab.
 
@@ -413,6 +423,9 @@ To use Postman to make this request on behalf of `myuser`, select the GET method
 `http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type`OAuth 2.0`. Under it, complete the
 sentence  `Add authorization data to` with `Request Headers`, and complete the required fields.
 
+Note:
+Make sure your Helidon application is running. If it is not, please start it.
+
 [source,json]
 .Enter the following information:
 ----
@@ -453,17 +466,7 @@ at the end of this guide, the application will be secured by oidc security provi
 </dependency>
 ----
 
-In the test folder `helidon-quickstart-se/src/test`:
-
-[source,bash]
-.Create a new directory and another one inside
-----
-mkdir resources
-cd resources
-touch application.yaml
-----
-
-Open the application.yaml file
+In the test folder open the application.yaml file: `helidon-quickstart-se/src/test/resources/application.yaml`
 
 [source,yaml]
 .Copy these properties into application.yaml
@@ -484,7 +487,7 @@ security:
           - login: "jack"
             password: "jackIsGreat"
     - oidc:
-        client-id: "Your client ID"  // <1>
+        client-id: "myClientID"  // <1>
         client-secret: "Your client secret" // <2>
         identity-uri: "http://localhost:8080/auth/realms/myRealm"
         audience: "account"
@@ -503,25 +506,24 @@ security:
 Add the `http-basic-auth` properties in the security -> providers property section. This configuration will be used
 by the tests instead of the `java/resources/application.yaml`.
 
-In the `MainTest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
+In the `AbstractMainTest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
 `GET` method.
 
 [source,java]
 .Import the following class:
 ----
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 ----
 
 [source,java]
-.Replace the first webclient call by this one into testHelloWorld method:
+.Replace the first webclient call by this one into testRootRoute method:
 ----
-webClient.get()
-                .path("/greet")
-                .request()
-                .thenAccept(response -> Assertions.assertEquals(401,response.status().code()))
-                .toCompletableFuture()
-                .get();
+try (HttpClientResponse response = webClient.get()
+        .path("/greet")
+        .request()) {
+    assertThat(response.status(), is(Status.UNAUTHORIZED_401));
+}
 ----
 
 This piece of code uses the webclient to access the application on `/greet` path with a `GET` method. The http basic
@@ -530,19 +532,16 @@ authentication security protects this path, so the client should receive an HTTP
 Only `jack` user has access to this part of the application.
 
 [source,java]
-.Add new check to the testHelloWorld method:
+.Add new check to the testRootRoute method:
 ----
-webClient.get()
-                .path("/greet")
-                .headers(headers ->  {
-                    String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
-                    headers.add(Http.Header.AUTHORIZATION, "Basic " + encoding);
-                    return headers;
-                })
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
-                .toCompletableFuture()
-                .get();
+JsonObject jsonObject = webClient.get()
+        .path("/greet")
+        .headers(headers -> {
+            String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
+            headers.add(HeaderNames.AUTHORIZATION, "Basic " + encoding);
+        })
+        .requestEntity(JsonObject.class);
+assertThat(jsonObject.getString("message"), is("Hello World!"));
 ----
 
 The username and password are encoded and placed inside the header in order to authenticate as jack to access the application.
@@ -567,13 +566,13 @@ Add a user and roles to the `helidon-quickstart-se/src/test/resources/applicatio
 .Add jack role and create a new user named john:
 ----
 - http-basic-auth:
-        users:
-          - login: "jack"
-            password: "jackIsGreat"
-            roles: [ "admin", "user" ]
-          - login: "john"
-            password: "johnPassword"
-            roles: [ "user" ]
+    users:
+      - login: "jack"
+        password: "jackIsGreat"
+        roles: [ "admin", "user" ]
+      - login: "john"
+        password: "johnPassword"
+        roles: [ "user" ]
 ----
 
 Into the `web-server` section, the `roles-allowed` parameter defines which roles have access
@@ -591,7 +590,7 @@ web-server:
         authenticate: true
 ----
 
-Now, only Jack has access to secure endpoint as he has an admin role. Jhon, as a simple user, can not access it.
+Now, only Jack has access to secure endpoint as he has an admin role. John, as a simple user, can not access it.
 Once it is done, go to the tests to check the application behavior.
 The test from previous section is still passing as jack has access.
 
@@ -600,17 +599,15 @@ The user `john` has only the `user` role so when accessing protected endpoint, a
 [source,java]
 .Check that john does not have access
 ----
-webClient.get()
-                .path("/greet")
-                .headers(headers ->  {
-                    String encoding = Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
-                    headers.add(Http.Header.AUTHORIZATION,"Basic " + encoding);
-                    return headers;
-                })
-                .request()
-                .thenAccept(response -> Assertions.assertEquals(403, response.status().code()))
-                .toCompletableFuture()
-                .get();
+HttpClientRequest request = webClient.get()
+        .path("/greet")
+        .headers(headers -> {
+            String encoding = Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
+            headers.add(HeaderNames.AUTHORIZATION, "Basic " + encoding);
+        });
+try (HttpClientResponse response = request.request()) {
+    assertThat(response.status(), is(Status.FORBIDDEN_403));
+}
 ----
 
 [source,bash]
