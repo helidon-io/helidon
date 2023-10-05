@@ -644,7 +644,7 @@ final class LocalXAResource implements XAResource {
             throw new UncheckedSQLException(e);
         }
         if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(Association.class.getName(), "preapre", a);
+            LOGGER.exiting(Association.class.getName(), "prepare", a);
         }
         return a;
     }
