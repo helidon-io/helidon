@@ -190,10 +190,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private void lock() {
         try {
             streamLock.lockInterruptibly();
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted", e);
         }
     }
 
