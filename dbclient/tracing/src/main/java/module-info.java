@@ -28,12 +28,12 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.dbclient.tracing {
 
     requires io.helidon.tracing.config;
-    requires io.opentracing.api;
-    requires io.opentracing.util;
+    requires io.helidon.tracing;
 
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.dbclient;
+
 
     exports io.helidon.dbclient.tracing;
 

@@ -21,20 +21,21 @@ import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tag;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
 
 /**
  * Tracing interceptor.
  * This interceptor is added through Java Service loader.
  */
 public class DbClientTracing extends DbClientServiceBase {
+
+    private static final Tag<? super String> DBCLIENT_TAG = Tag.COMPONENT.create("dbclient");
 
     private DbClientTracing(Builder builder) {
         super(builder);
@@ -76,42 +77,37 @@ public class DbClientTracing extends DbClientServiceBase {
         }
 
         Context context = serviceContext.context();
-        @SuppressWarnings("resource") Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
+        @SuppressWarnings("resource") Tracer tracer = context.get(Tracer.class).orElseGet(Tracer::global);
 
         // now if span context is missing, we build a span without a parent
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(serviceContext.statementName());
+        Span.Builder<?> spanBuilder = tracer.spanBuilder(serviceContext.statementName());
 
         context.get(SpanContext.class)
-                .ifPresent(spanBuilder::asChildOf);
+                .ifPresent(spanBuilder::parent);
 
         Span span = spanBuilder.start();
 
-        span.setTag("db.operation", serviceContext.statementType().toString());
+        span.tag("db.operation", serviceContext.statementType().toString());
         if (spanConfig.logEnabled("statement", true)) {
-            Tags.DB_STATEMENT.set(span, serviceContext.statement());
+            Tag.DB_STATEMENT.create(serviceContext.statement()).apply(span);
         }
-        Tags.COMPONENT.set(span, "dbclient");
-        Tags.DB_TYPE.set(span, serviceContext.dbType());
+        DBCLIENT_TAG.apply(span);
+        Tag.DB_TYPE.create(serviceContext.dbType()).apply(span);
 
         serviceContext.statementFuture().thenAccept(nothing -> {
             if (spanConfig.logEnabled("statement-finish", true)) {
-                span.log(Map.of("type", "statement"));
+                span.addEvent("log", Map.of("type", "statement"));
             }
         });
 
         serviceContext.resultFuture().thenAccept(count -> {
             if (spanConfig.logEnabled("result-finish", true)) {
-                span.log(Map.of("type", "result",
+                span.addEvent("log", Map.of("type", "result",
                         "count", count));
             }
-            span.finish();
+            span.end();
         }).exceptionally(throwable -> {
-            Tags.ERROR.set(span, Boolean.TRUE);
-            span.log(Map.of("event", "error",
-                    "error.kind", "Exception",
-                    "error.object", throwable,
-                    "message", throwable.getMessage()));
-            span.finish();
+            span.end(throwable);
             return null;
         });
 
