@@ -153,7 +153,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
     static final boolean DEFAULT_ENABLED = true;
     static final String DEFAULT_HTTP_HOST = "localhost";
-    static final int DEFAULT_SCHEDULE_DELAY = 30_000;
+    static final int DEFAULT_SCHEDULE_DELAY = 5_000;
     static final int DEFAULT_HTTP_PORT = 14250;
     static final int DEFAULT_MAX_QUEUE_SIZE = 2048;
     static final int DEFAULT_MAX_EXPORT_BATCH_SIZE = 512;

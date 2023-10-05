@@ -77,7 +77,7 @@ class JaegerTracerBuilderTest {
         assertThat("Span Processor type", jBuilder.spanProcessorType(), is(JaegerTracerBuilder.SpanProcessorType.BATCH));
         assertThat("Sampler param", jBuilder.samplerParam(), is(Integer.valueOf(1)));
         assertThat("Exporter timeout", jBuilder.exporterTimeout(), is(Duration.ofSeconds(10)));
-        assertThat("Schedule delay", jBuilder.scheduleDelay(), is(Duration.ofSeconds(30)));
+        assertThat("Schedule delay", jBuilder.scheduleDelay(), is(Duration.ofSeconds(5)));
         assertThat("Max Queue Size", jBuilder.maxQueueSize(), is(2048));
         assertThat("Max Export Batch Size", jBuilder.maxExportBatchSize(), is(512));
     }
