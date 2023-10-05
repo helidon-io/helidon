@@ -48,6 +48,12 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
                                             <value key="artifactId">h2</value>
                                         </map>
                                     </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">com.h2database</value>
+                                            <value key="artifactId">h2</value>
+                                        </map>
+                                    </list>
                                     <list key="db-connection">
                                         <value><![CDATA[    url: jdbc:h2:~/test
     # Server mode, run: docker run --rm --name h2 -p 9092:9082 -p 8082:8082 nemerosa/h2
