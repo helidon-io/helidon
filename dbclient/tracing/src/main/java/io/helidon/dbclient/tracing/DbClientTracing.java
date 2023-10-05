@@ -35,6 +35,8 @@ import io.helidon.tracing.config.TracingConfigUtil;
  */
 public class DbClientTracing extends DbClientServiceBase {
 
+    private static final Tag<? super String> DBCLIENT_TAG = Tag.COMPONENT.create("dbclient");
+
     private DbClientTracing(Builder builder) {
         super(builder);
     }
@@ -89,7 +91,7 @@ public class DbClientTracing extends DbClientServiceBase {
         if (spanConfig.logEnabled("statement", true)) {
             Tag.DB_STATEMENT.create(serviceContext.statement()).apply(span);
         }
-        Tag.COMPONENT.create("dbclient").apply(span);
+        DBCLIENT_TAG.apply(span);
         Tag.DB_TYPE.create(serviceContext.dbType()).apply(span);
 
         serviceContext.statementFuture().thenAccept(nothing -> {
@@ -105,12 +107,7 @@ public class DbClientTracing extends DbClientServiceBase {
             }
             span.end();
         }).exceptionally(throwable -> {
-            Tag.ERROR.create(Boolean.TRUE).apply(span);
-            span.addEvent("error", Map.of(
-                    "error.kind", "Exception",
-                    "error.object", throwable,
-                    "message", throwable.getMessage()));
-            span.end();
+            span.end(throwable);
             return null;
         });
 
