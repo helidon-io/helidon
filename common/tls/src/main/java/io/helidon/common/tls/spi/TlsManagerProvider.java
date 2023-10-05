@@ -36,7 +36,7 @@ public interface TlsManagerProvider extends ConfiguredProvider<TlsManager> {
      * @return the tls manager instance from cache, defaulting to creation from the {@code creator} if not in cache
      */
     static <T> TlsManager getOrCreate(T configBean,
-                                      Function<Object, TlsManager> creator) {
+                                      Function<T, TlsManager> creator) {
         return TlsManagerCache.getOrCreate(configBean, creator);
     }
 

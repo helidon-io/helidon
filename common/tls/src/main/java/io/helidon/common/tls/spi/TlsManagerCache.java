@@ -28,11 +28,12 @@ class TlsManagerCache {
     private TlsManagerCache() {
     }
 
+    @SuppressWarnings("unchecked")
     static <T> TlsManager getOrCreate(T configBean,
-                                      Function<Object, TlsManager> creator) {
+                                      Function<T, TlsManager> creator) {
         Objects.requireNonNull(configBean);
         Objects.requireNonNull(creator);
-        return CACHE.computeIfAbsent(configBean, creator);
+        return CACHE.computeIfAbsent(configBean, (Function<Object, TlsManager>) creator);
     }
 
 }
