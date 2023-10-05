@@ -38,6 +38,8 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.containers.CassandraContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -48,6 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testcontainers
 @HelidonTest
 @Configuration(useExisting = true)
+@EnabledOnOs(OS.LINUX) // due to usage of docker with testcontainers, only Linux is enabled by default
 class BackendTests {
     @Container
     static final CassandraContainer<?> CASSANDRA_CONTAINER = new CassandraContainer<>("cassandra:3.11.2")
