@@ -49,7 +49,7 @@ security:
             header: "X-Internal-Auth"
 ----
 
-=== How does it work?
+=== How does it work? [[oidc-workflow]]
 At Helidon startup, if OIDC provider is configured, the following will happen:
 
 1. `client-id`, `client-secret`, and `identityUri` are validated - these must provide values
@@ -78,6 +78,83 @@ introspection endpoint depending on configuration
 4. A subject is created from the JWT, including scopes from the token
 5. We validate that we have sufficient scopes to proceed, and return `403` if not
 6. Handling is returned to security to process other security providers
+
+=== OIDC Multitenancy
+Helidon OIDC provider offers also multitenancy support. It is possible to set different OIDC configuration for
+each tenant. It is important to note, that it is not needed to add any other dependency.
+
+==== Configuration example
+include::{rootdir}/config/io_helidon_security_providers_oidc_common_TenantConfig.adoc[leveloffset=+3,tag=config]
+
+[source,yaml]
+.Configuration example
+----
+security:
+  providers:
+  - oidc:
+      multi-tenant: true
+      tenant-id-style: "token-handler"
+      tenant-id-handler:
+        header: "tenant-name-header"
+      client-id: "client-id-of-this-service"
+      client-secret: "${CLEAR=client-secret-of-this-service}"
+      identity-uri: "http://your-default-tenant.identity-server.com"
+      frontend-uri: "http://my-service:8080"
+      audience: "http://my-service"
+      tenants:
+        - name: "your-tenant-name"
+          client-id: "tenant-client-id-this-service"
+          client-secret: "${CLEAR=tenant-client-secret-of-this-service}"
+          identity-uri: "http://your-tenant.identity-server.com"
+----
+
+==== How to enable [[tenant-enable]]
+. To enable this support, one does need to add `multi-tenant: true` to the root
+OIDC configuration
+. Set `tenant-id-style` property to either one of the values from the table below
+. Add `tenants` config list. Each list entry is required to have unique `name`
+
+.Tenant ID styles
+[cols="3,3,5a"]
+
+|===
+|style name |Description |Additional configuration
+|`host-header` | Tenant name will be matched to the value obtained from the `Host` header |
+|`token-handler` | Custom header, which will contain tenant name information. |
+We need to also set additional config option named `tenant-id-handler`. This option specifies desired header name.
+[source,yaml]
+----
+tenant-id-handler:
+  header: "<HEADER-CONTAINING-TENANT-NAME>"
+----
+|`domain` | This will obtain the tenant name from the domain |
+We need to also set addition config option named `tenant-id-domain-level`
+[source,yaml]
+----
+tenant-id-domain-level: 1
+----
+Specified number helps determine which part of the domain should be used as tenant name.
+
+Example: +
+tenant.oracle.com +
+domain level (1) = com +
+domain level (2) = oracle +
+domain level (3) = tenant
+|`none` | This setting will always use default tenant name "@default" |
+|===
+
+==== How does that work?
+Multitenant support requires to obtain tenant name from the incoming request. OIDC configuration is selected
+based on the received tenant name. The way this tenant name has to be provided is configured via `tenant-id-style`
+configuration. See <<tenant-enable, How to enable tenants>> for more information. After matching tenant configuration
+with the received name, the rest of the OIDC flow if exactly the same as in <<oidc-workflow, How does OIDC work>>.
+
+Base OIDC configuration is treated as a default tenant, which is used, if no tenant name is provided. This default
+tenant is having `@default` name specified.
+
+It is also important to note, that each tenant configuration is based on the default tenant configuration (base OIDC configuration),
+and therefore its configuration do not need to change all the properties, if they do not differ from the base OIDC
+configuration.
 
 [[cors]]
 == CORS Settings
