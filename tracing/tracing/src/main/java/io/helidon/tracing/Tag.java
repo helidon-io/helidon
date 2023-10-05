@@ -54,10 +54,6 @@ public abstract class Tag<T> {
      */
     public static final TagSource<String> DB_STATEMENT = new StringTagSource("db.statement");
 
-    /**
-     * Tag marking an Error.
-     */
-    public static final TagSource<Boolean> ERROR = new BooleanTagSource("error");
     private final String key;
     private final T value;
 
