@@ -139,7 +139,7 @@ public class MicrostreamHealthCheck implements HealthCheck {
          * @return updated builder instance
          * @deprecated use {@link #timeout(Duration)} instead
          */
-        @Deprecated(since = "4.0.0")
+        @Deprecated(since = "4.0.0", forRemoval = true)
         public Builder timeout(long duration, TimeUnit timeUnit) {
             this.timeoutDuration = duration;
             this.timeoutUnit = timeUnit;

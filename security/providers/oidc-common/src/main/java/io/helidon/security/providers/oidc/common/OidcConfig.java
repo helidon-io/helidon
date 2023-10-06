@@ -638,44 +638,6 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Cookie name.
-     *
-     * @return name of the cookie to use
-     * @see OidcConfig.Builder#cookieName(String)
-     * @deprecated use {@link #tokenCookieHandler()} instead
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public String cookieName() {
-        return tokenCookieHandler().cookieName();
-    }
-
-    /**
-     * Additional options of the cookie to use.
-     *
-     * @return cookie options to use in cookie string
-     * @see OidcConfig.Builder#cookieHttpOnly(Boolean)
-     * @see OidcConfig.Builder#cookieDomain(String)
-     * @deprecated please use {@link #tokenCookieHandler()} instead
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public String cookieOptions() {
-        return tokenCookieHandler().createCookieOptions();
-    }
-
-    /**
-     * Prefix of a cookie header formed by name and "=".
-     *
-     * @return prefix of cookie value
-     * @see OidcConfig.Builder#cookieName(String)
-     * @deprecated use {@link io.helidon.security.providers.oidc.common.OidcCookieHandler} instead, this method
-     * will no longer be avilable
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public String cookieValuePrefix() {
-        return tokenCookieHandler().cookieValuePrefix();
-    }
-
-    /**
      * Determines whether to force the use of relative URIs in all requests,
      * regardless of the presence or absence of proxies or no-proxy lists.
      *
