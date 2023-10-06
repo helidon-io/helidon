@@ -1012,8 +1012,7 @@ public final class PersistenceExtension implements Extension {
                                         ClassLoader classLoader,
                                         Enumeration<URL> persistenceXmlUrls,
                                         Iterable<? extends PersistenceProvider> providers,
-                                        boolean userSuppliedPuiBeans)
-    {
+                                        boolean userSuppliedPuiBeans) {
         if (!persistenceXmlUrls.hasMoreElements()) {
             return;
         }
