@@ -47,6 +47,7 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
+import io.helidon.integrations.jdbc.DelegatingConnection;
 import io.helidon.integrations.jdbc.SQLSupplier;
 import io.helidon.integrations.jdbc.UncheckedSQLException;
 
@@ -304,6 +305,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
             ? () -> new LocalXAResource(this::connectionFunction, exceptionConverter)
             : xaResourceSupplier;
         this.xidConsumer = xidConsumer == null ? JtaConnection::sink : xidConsumer;
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, this.getClass().getName(), "<init>",
+                        "Creating {0} using delegate {1} on thread {2}", new Object[] {this, delegate, Thread.currentThread()});
+        }
         if (immediateEnlistment) {
             this.enlist();
         }
@@ -317,10 +322,12 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final void setCloseable(boolean closeable) {
-        super.setCloseable(closeable);
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(this.getClass().getName(), "setCloseable", closeable);
+            super.setCloseable(closeable);
             LOGGER.exiting(this.getClass().getName(), "setCloseable");
+        } else {
+            super.setCloseable(closeable);
         }
     }
 
@@ -355,6 +362,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
     @Override // ConditionallyCloseableConnection
     public final void setAutoCommit(boolean autoCommit) throws SQLException {
         this.failWhenClosed();
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, this.getClass().getName(), "setAutoCommit",
+                        "Setting autoCommit on {0} to {1}", new Object[] {this, autoCommit});
+        }
         this.enlist();
         if (autoCommit && this.enlisted()) {
             // "SQLException...if...setAutoCommit(true) is called while participating in a distributed transaction"
@@ -367,7 +378,12 @@ class JtaConnection extends ConditionallyCloseableConnection {
     public final boolean getAutoCommit() throws SQLException {
         this.failWhenClosed();
         this.enlist();
-        return super.getAutoCommit();
+        boolean ac = super.getAutoCommit();
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, this.getClass().getName(), "getAutoCommit",
+                        "Getting autoCommit ({0}) on {1}", new Object[] {ac, this});
+        }
+        return ac;
     }
 
     @Override // ConditionallyCloseableConnection
@@ -1116,12 +1132,22 @@ class JtaConnection extends ConditionallyCloseableConnection {
     // Transaction#enlistResource(XAResource) in enlist() above.)
     private Connection connectionFunction(Xid xid) {
         this.xidConsumer.accept(xid);
-        return this.delegate();
+        return new DelegatingConnection(this.delegate()) {
+            @Override
+            public void setAutoCommit(boolean autoCommit) throws SQLException {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, "<anonymous DelegatingConnection>", "setAutoCommit",
+                                "Setting autoCommit on anonymous DelegatingConnection {0} to {1}",
+                                new Object[] {this, autoCommit});
+                }
+                super.setAutoCommit(autoCommit);
+            }
+        };
     }
 
     // (Used only by reference in enlist() above. Remember, this callback may be called by the TransactionManager on
     // any thread at any time for any reason.)
-    private void transactionCompleted(int commitedOrRolledBack) {
+    private void transactionCompleted(int committedOrRolledBack) {
         this.enlistment = null; // volatile write
         try {
             boolean closeWasPending = this.isClosePending();

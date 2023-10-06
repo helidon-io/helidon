@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -644,7 +644,7 @@ final class LocalXAResource implements XAResource {
             throw new UncheckedSQLException(e);
         }
         if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(Association.class.getName(), "preapre", a);
+            LOGGER.exiting(Association.class.getName(), "prepare", a);
         }
         return a;
     }
@@ -725,34 +725,40 @@ final class LocalXAResource implements XAResource {
         // S5: Heuristically Completed
 
         Association(BranchState branchState, Xid xid, Connection connection) {
-            this(branchState, xid, false, connection);
-        }
-
-        Association(BranchState branchState, Xid xid, boolean suspended, Connection connection) {
-            this(branchState, xid, suspended, connection, true /* JDBC default; will be set from connection anyway */);
+            this(branchState, xid, false, connection, autoCommit(connection));
         }
 
         Association {
             Objects.requireNonNull(xid, "xid");
+            boolean autoCommit = false;
             switch (branchState) {
             case IDLE:
                 break;
             case ACTIVE:
             case HEURISTICALLY_COMPLETED:
-            case NON_EXISTENT_TRANSACTION:
             case PREPARED:
             case ROLLBACK_ONLY:
                 if (suspended) {
                     throw new IllegalArgumentException("suspended");
                 }
                 break;
+            case NON_EXISTENT_TRANSACTION:
+                if (suspended) {
+                    throw new IllegalArgumentException("suspended");
+                }
+                autoCommit = priorAutoCommit;
+                break;
             default:
                 throw new IllegalArgumentException("branchState: " + branchState);
             }
             try {
-                priorAutoCommit = connection.getAutoCommit();
-                if (priorAutoCommit) {
-                    connection.setAutoCommit(false);
+                if (connection.getAutoCommit() != autoCommit) {
+                    if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.logp(Level.FINE, Association.class.getName(), "<init>",
+                                    "Setting autoCommit to {0} on connection {1}",
+                                    new Object[] {autoCommit, connection});
+                    }
+                    connection.setAutoCommit(autoCommit);
                 }
             } catch (SQLException sqlException) {
                 throw new UncheckedSQLException(sqlException);
@@ -984,20 +990,24 @@ final class LocalXAResource implements XAResource {
         }
 
         private Association reset() throws SQLException {
-            Connection connection = this.connection();
-            connection.setAutoCommit(this.priorAutoCommit());
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.logp(Level.FINE, this.getClass().getName(), "reset",
-                            "Resetting; restored autoCommit to {0} on connection {1}",
-                            new Object[] {this.priorAutoCommit(), connection});
-                LOGGER.logp(Level.FINE, this.getClass().getName(), "reset",
-                            "Transitioning Association {0} to NON_EXISTENT_TRANSACTION", this);
+                            "Transitioning Association {0} from state {1} to state NON_EXISTENT_TRANSACTION",
+                            new Object[] {this, this.branchState()});
             }
             return new Association(BranchState.NON_EXISTENT_TRANSACTION,
                                    this.xid(),
                                    false,
                                    connection,
                                    this.priorAutoCommit());
+        }
+
+        private static boolean autoCommit(Connection c) {
+            try {
+                return c.getAutoCommit();
+            } catch (SQLException e) {
+                throw new UncheckedSQLException(e);
+            }
         }
 
         // Transaction Branch States (XA specification, table 6-4):
