@@ -16,24 +16,40 @@
 
 package io.helidon.common.tls.spi;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import io.helidon.common.tls.TlsManager;
 
 class TlsManagerCache {
-    private static final ConcurrentHashMap<Object, TlsManager> CACHE = new ConcurrentHashMap<>();
+    private static final ReentrantLock LOCK = new ReentrantLock();
+    private static final Map<Object, TlsManager> CACHE = new HashMap<>();
 
     private TlsManagerCache() {
     }
 
-    @SuppressWarnings("unchecked")
     static <T> TlsManager getOrCreate(T configBean,
                                       Function<T, TlsManager> creator) {
         Objects.requireNonNull(configBean);
         Objects.requireNonNull(creator);
-        return CACHE.computeIfAbsent(configBean, (Function<Object, TlsManager>) creator);
+        LOCK.lock();
+        try {
+            TlsManager manager = CACHE.get(configBean);
+            if (manager != null) {
+                return manager;
+            }
+
+            manager = creator.apply(configBean);
+            Object existing = CACHE.put(configBean, manager);
+            assert (existing == null);
+
+            return manager;
+        } finally {
+            LOCK.unlock();
+        }
     }
 
 }
