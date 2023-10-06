@@ -33,17 +33,6 @@ Latest documentation and javadocs are available at <https://helidon.io/docs/late
 
 Helidon White Paper is available [here](https://www.oracle.com/a/ocom/docs/technical-brief--helidon-report.pdf).
 
-The book *Beginning Helidon* is highly recommended for all Helidon 3.x users:
-
-<p>
-    <a href="https://a.co/d/0niQnwC">
-       <img src="./etc/images/Helidon_book.png">
-    </a>
-</p>
-
-Available at [Amazon](https://a.co/d/9RFS6tq) and all other bookstores.
-
-
 ## Get Started
 
 See Getting Started at <https://helidon.io>.
@@ -75,6 +64,18 @@ PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/window
 ```
 
 See this [document](HELIDON-CLI.md) for more info.
+
+## Books
+
+The book *Beginning Helidon* is highly recommended for all Helidon 3.x users:
+
+<p>
+    <a href="https://a.co/d/0niQnwC">
+       <img src="./etc/images/Helidon_book.png">
+    </a>
+</p>
+
+Available at [Amazon](https://a.co/d/9RFS6tq) and all other bookstores.
 
 ## Build
 
