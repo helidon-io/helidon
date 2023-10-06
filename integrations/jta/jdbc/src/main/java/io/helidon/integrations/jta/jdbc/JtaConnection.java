@@ -47,6 +47,7 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
+import io.helidon.integrations.jdbc.DelegatingConnection;
 import io.helidon.integrations.jdbc.SQLSupplier;
 import io.helidon.integrations.jdbc.UncheckedSQLException;
 
@@ -89,6 +90,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
     // RollbackExceptions to SQLExceptions.
     private static final String TRANSACTION_ROLLBACK = "40000";
 
+    // A VarHandle to atomically and efficiently manipulate the enlistment instance field (see below).
     private static final VarHandle ENLISTMENT;
 
     static {
@@ -304,6 +306,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
             ? () -> new LocalXAResource(this::connectionFunction, exceptionConverter)
             : xaResourceSupplier;
         this.xidConsumer = xidConsumer == null ? JtaConnection::sink : xidConsumer;
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, this.getClass().getName(), "<init>",
+                        "Creating {0} using delegate {1} on thread {2}", new Object[] {this, delegate, Thread.currentThread()});
+        }
         if (immediateEnlistment) {
             this.enlist();
         }
@@ -317,10 +323,12 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final void setCloseable(boolean closeable) {
-        super.setCloseable(closeable);
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(this.getClass().getName(), "setCloseable", closeable);
+            super.setCloseable(closeable);
             LOGGER.exiting(this.getClass().getName(), "setCloseable");
+        } else {
+            super.setCloseable(closeable);
         }
     }
 
@@ -355,6 +363,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
     @Override // ConditionallyCloseableConnection
     public final void setAutoCommit(boolean autoCommit) throws SQLException {
         this.failWhenClosed();
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, this.getClass().getName(), "setAutoCommit",
+                        "Setting autoCommit on {0} to {1}", new Object[] {this, autoCommit});
+        }
         this.enlist();
         if (autoCommit && this.enlisted()) {
             // "SQLException...if...setAutoCommit(true) is called while participating in a distributed transaction"
@@ -367,7 +379,12 @@ class JtaConnection extends ConditionallyCloseableConnection {
     public final boolean getAutoCommit() throws SQLException {
         this.failWhenClosed();
         this.enlist();
-        return super.getAutoCommit();
+        boolean ac = super.getAutoCommit();
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, this.getClass().getName(), "getAutoCommit",
+                        "Getting autoCommit ({0}) on {1}", new Object[] {ac, this});
+        }
+        return ac;
     }
 
     @Override // ConditionallyCloseableConnection
@@ -788,10 +805,13 @@ class JtaConnection extends ConditionallyCloseableConnection {
             }
         }
         super.close();
-        if (LOGGER.isLoggable(Level.FINE) && !this.isClosePending()) {
-            // If a close is not pending then that means it actually happened.
-            LOGGER.logp(Level.FINE, this.getClass().getName(), "close",
-                        "Closed {0} on thread {1}", new Object[] {this, Thread.currentThread()});
+        if (LOGGER.isLoggable(Level.FINE)) {
+            if (!this.isClosePending()) {
+                // If a close is not pending then that means it actually happened.
+                LOGGER.logp(Level.FINE, this.getClass().getName(), "close",
+                            "Closed {0} on thread {1}", new Object[] {this, Thread.currentThread()});
+                assert this.delegate().isClosed();
+            }
         }
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(this.getClass().getName(), "close");
@@ -970,7 +990,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
         int currentThreadTransactionStatus = this.transactionStatus();
         switch (currentThreadTransactionStatus) {
         case Status.STATUS_ACTIVE:
-            // There is a global transaction currently active on the current thread. That's good. Keep going.
+            // There is a global transaction currently active on the current thread. That's good. Keep going. (Every
+            // other case in this switch statement will result in a return or a throw.)
             break;
         case Status.STATUS_COMMITTED:
         case Status.STATUS_NO_TRANSACTION:
@@ -996,10 +1017,11 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
         if (!super.getAutoCommit()) {
             // There is, as far as we can tell, an active global transaction on the current thread, and
-            // super.getAutoCommit() (super. on purpose, not this.) returned false, and we aren't (yet) enlisted with
-            // the active global transaction, so autoCommit must have been disabled on purpose by the caller, not by the
-            // transaction enlistment machinery. In such a case, we don't want to permit enlistment, because a local
-            // transaction may be in progress and we don't want to have its effects mixed in.
+            // super.getAutoCommit() (super. on purpose, not this., to prevent a circular call to enlist()) returned
+            // false, and we aren't (yet) enlisted with the active global transaction, so autoCommit must have been
+            // disabled on purpose by the caller, not by the transaction enlistment machinery. In such a case, we don't
+            // want to permit enlistment, because a local transaction may be in progress and we don't want to have its
+            // effects mixed in.
             throw new SQLTransientException("autoCommit was false during active transaction enlistment",
                                             INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
@@ -1116,25 +1138,47 @@ class JtaConnection extends ConditionallyCloseableConnection {
     // Transaction#enlistResource(XAResource) in enlist() above.)
     private Connection connectionFunction(Xid xid) {
         this.xidConsumer.accept(xid);
-        return this.delegate();
+        return new DelegatingConnection(this.delegate()) {
+            @Override
+            public void setAutoCommit(boolean autoCommit) throws SQLException {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, "<anonymous DelegatingConnection>", "setAutoCommit",
+                                "Setting autoCommit on anonymous DelegatingConnection {0} to {1}",
+                                new Object[] {this, autoCommit});
+                }
+                super.setAutoCommit(autoCommit);
+            }
+        };
     }
 
     // (Used only by reference in enlist() above. Remember, this callback may be called by the TransactionManager on
     // any thread at any time for any reason.)
-    private void transactionCompleted(int commitedOrRolledBack) {
+    private void transactionCompleted(int committedOrRolledBack) {
         this.enlistment = null; // volatile write
         try {
-            boolean closeWasPending = this.isClosePending();
-            this.setCloseable(true);
+            boolean closeWasPending = this.isClosePending(); // volatile state read
+
+            // This connection is now closeable "for real".
+            this.setCloseable(true); // volatile state write
             assert this.isCloseable();
+
+            // Becoming closeable "for real" resets the closePending state.
             assert !this.isClosePending();
+
             if (closeWasPending) {
+                // If a close was pending, then a real close did not ever happen.
                 assert !this.isClosed();
                 assert !this.delegate().isClosed();
+
+                // This connection is now closeable, so this will actually close it.
                 this.close();
                 assert this.isClosed();
                 assert this.delegate().isClosed();
+
+                // We are no longer closeable because we're actually closed.
                 assert !this.isCloseable();
+
+                // There is currently no close pending, and there cannot ever be again, because we are actually closed.
                 assert !this.isClosePending();
             }
         } catch (SQLException e) {

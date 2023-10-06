@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
@@ -114,7 +115,10 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * multiple threads.</p>
  *
  * @see PersistenceUnitInfoBean
+ *
+ * @deprecated Please use {@link PersistenceExtension} instead.
  */
+@Deprecated(since = "4.0")
 public class JpaExtension implements Extension {
 
 
@@ -158,7 +162,9 @@ public class JpaExtension implements Extension {
     /**
      * Whether or not this extension will do anything.
      *
-     * <p>This field's value is {@code true} by default.</p>
+     * <p>This field's value is {@code false} by default.</p>
+     *
+     * @see PersistenceExtension
      */
     private final boolean enabled;
 
@@ -309,7 +315,7 @@ public class JpaExtension implements Extension {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn);
         }
-        this.enabled = Boolean.parseBoolean(System.getProperty(this.getClass().getName() + ".enabled", "true"));
+        this.enabled = Boolean.parseBoolean(System.getProperty(this.getClass().getName() + ".enabled", "false"));
         if (LOGGER.isLoggable(Level.FINE) && !this.enabled) {
             LOGGER.logp(Level.FINE, cn, mn, "jpaExtensionDisabled", this.getClass().getName());
         }
@@ -812,7 +818,7 @@ public class JpaExtension implements Extension {
                                     @Priority(LIBRARY_AFTER)
                                     AfterBeanDiscovery event,
                                     BeanManager beanManager)
-        throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
+        throws IOException, JAXBException, ReflectiveOperationException, URISyntaxException, XMLStreamException {
         String cn = JpaExtension.class.getName();
         String mn = "afterBeanDiscovery";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1357,7 +1363,7 @@ public class JpaExtension implements Extension {
                                         Enumeration<URL> urls,
                                         Collection<? extends PersistenceProvider> providers,
                                         boolean userSuppliedPersistenceUnitInfoBeans)
-        throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
+        throws IOException, JAXBException, ReflectiveOperationException, URISyntaxException, XMLStreamException {
         String cn = JpaExtension.class.getName();
         String mn = "processPersistenceXmls";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1428,7 +1434,7 @@ public class JpaExtension implements Extension {
                                 .add(PersistenceUnitInfoBean.fromPersistenceUnit(persistenceUnit,
                                                                                  classLoader,
                                                                                  tempClassLoaderSupplier,
-                                                                                 new URL(url, ".."), // i.e. META-INF/..
+                                                                                 url.toURI().resolve("..").toURL(),
                                                                                  unlistedManagedClassesByPersistenceUnitNames,
                                                                                  dataSourceProviderSupplier));
                         }

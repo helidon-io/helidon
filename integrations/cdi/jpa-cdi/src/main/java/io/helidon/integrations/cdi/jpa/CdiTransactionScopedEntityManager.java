@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,11 @@ import jakarta.persistence.EntityManager;
  * this class are not safe for concurrent use by multiple threads.</p>
  *
  * @see JpaExtension
+ *
+ * @deprecated This is an internal class used by the now-deprecated {@link JpaExtension} class. Its replacement is an
+ * internal detail of the {@link PersistenceExtension} class.
  */
+@Deprecated(since = "4.0")
 @Vetoed
 class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
 

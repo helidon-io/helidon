@@ -57,7 +57,10 @@ import jakarta.persistence.metamodel.Metamodel;
  *
  * <p>As with all {@link EntityManager} implementations, instances of
  * this class are not safe for concurrent use by multiple threads.</p>
+ *
+ * @deprecated This is an internal class used only by the now-deprecated {@link JpaExtension} class.
  */
+@Deprecated(since = "4.0")
 @Vetoed
 final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 

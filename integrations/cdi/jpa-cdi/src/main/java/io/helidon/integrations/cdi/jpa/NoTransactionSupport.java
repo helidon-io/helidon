@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,11 @@ import jakarta.enterprise.context.spi.Context;
  * @see TransactionSupport
  *
  * @see JtaTransactionSupport
+ *
+ * @deprecated This is an internal class used only by the now-deprecated {@link JpaExtension} class.
  */
 @ApplicationScoped
+@Deprecated(since = "4.0")
 final class NoTransactionSupport implements TransactionSupport {
 
 

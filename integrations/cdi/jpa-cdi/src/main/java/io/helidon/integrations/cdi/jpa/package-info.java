@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 /**
  * Provides classes and interfaces that integrate the
  * provider-independent parts of <a
- * href="https://jakarta.ee/specifications/persistence/3.0/"
+ * href="https://jakarta.ee/specifications/persistence/3.1/"
  * target="_parent">JPA</a> into CDI.
  *
- * @see io.helidon.integrations.cdi.jpa.JpaExtension
+ * @see io.helidon.integrations.cdi.jpa.PersistenceExtension
  *
  * @see io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean
  */
