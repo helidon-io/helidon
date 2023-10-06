@@ -76,7 +76,7 @@
                 <value><![CDATA[Tracer tracer = TracerBuilder.create("server").build();
 ]]></value>
             </list>
-            <list key="Main-content" if="${tracing}">
+            <list key="main-class-content" if="${tracing}">
                 <value><![CDATA[
     private static class TracedHandler implements Handler {
         private final Tracer tracer;
