@@ -43,6 +43,15 @@
             <artifactId>handlebars</artifactId>
         </dependency>
         <dependency>
+            <!-- required as handlebars use slf4j -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
