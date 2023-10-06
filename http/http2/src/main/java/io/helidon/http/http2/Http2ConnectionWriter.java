@@ -17,7 +17,6 @@
 package io.helidon.http.http2;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -76,7 +75,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
         int maxFrameSize = flowControl.maxFrameSize();
 
-        return withStreamLock(() -> {
+        lock();
+        try {
+
             int written = 0;
             headerBuffer.clear();
             headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
@@ -131,7 +132,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             written += Http2FrameHeader.LENGTH;
             noLockWrite(new Http2FrameData(frameHeader, fragment));
             return written;
-        });
+        } finally {
+            streamLock.unlock();
+        }
     }
 
     @Override
@@ -144,7 +147,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
         // and then immediately written
 
-        return withStreamLock(() -> {
+        lock();
+        try {
             int bytesWritten = 0;
 
             bytesWritten += writeHeaders(headers, streamId, flags, flowControl);
@@ -154,7 +158,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             bytesWritten += dataFrame.header().length();
 
             return bytesWritten;
-        });
+        } finally {
+            streamLock.unlock();
+        }
     }
 
     /**
@@ -164,31 +170,28 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
      * @throws InterruptedException in case we fail to lock on the stream
      */
     public void updateHeaderTableSize(long newSize) throws InterruptedException {
-        withStreamLock(() -> {
+        lock();
+        try {
             outboundDynamicTable.protocolMaxTableSize(newSize);
-            return null;
-        });
+        } finally {
+            streamLock.unlock();
+        }
     }
 
     private void lockedWrite(Http2FrameData frame) {
-        withStreamLock(() -> {
+        lock();
+        try {
             noLockWrite(frame);
-            return null;
-        });
+        } finally {
+            streamLock.unlock();
+        }
     }
 
-    private <T> T withStreamLock(Callable<T> callable) {
+    private void lock() {
         try {
             streamLock.lockInterruptibly();
-            try {
-                return callable.call();
-            } finally {
-                streamLock.unlock();
-            }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted", e);
         }
     }
 

@@ -176,9 +176,9 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     void trailers(Http2Headers headers, boolean endOfStream) {
-        this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
+        state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
         readState = readState.check(ReadState.END);
-        this.trailers.complete(headers.httpHeaders());
+        trailers.complete(headers.httpHeaders());
     }
 
     CompletableFuture<Headers> trailers() {
@@ -388,9 +388,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
                         Http2Headers http2Headers = readHeaders(requestHuffman, false);
                         this.trailers(http2Headers, endOfStream);
                     }
-                    default -> {
-                        throw new IllegalStateException("Client is in wrong read state " + readState.name());
-                    }
+                    default -> throw new IllegalStateException("Client is in wrong read state " + readState.name());
                     }
                 }
                 break;
