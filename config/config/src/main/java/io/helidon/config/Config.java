@@ -534,6 +534,9 @@ public interface Config extends io.helidon.common.config.Config {
         return get(ConfigKeyImpl.of(key));
     }
 
+    @Override
+    Config root();
+
     /**
      * Returns the single sub-node for the specified sub-key.
      *

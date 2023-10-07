@@ -252,6 +252,11 @@ class ConfigMapperManager implements ConfigMapper {
         }
 
         @Override
+        public Config root() {
+            return this;
+        }
+
+        @Override
         public Config get(Key key) {
             if (key.isRoot()) {
                 return this;

@@ -40,7 +40,8 @@ abstract class AbstractConfigImpl implements Config {
 
     /**
      * Initializes Config implementation.
-     *  @param type    a type of config node.
+     *
+     * @param type    a type of config node.
      * @param prefix  prefix key for the new config node.
      * @param key     a key to this config.
      * @param factory a config factory.
@@ -107,6 +108,11 @@ abstract class AbstractConfigImpl implements Config {
     @Override
     public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
         return mapperManager.map(value, type, key().toString());
+    }
+
+    @Override
+    public Config root() {
+        return factory.config(prefix, ConfigKeyImpl.of());
     }
 
     @Override
