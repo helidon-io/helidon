@@ -564,8 +564,7 @@ public final class PersistenceExtension implements Extension {
      *
      * @see #addContainerManagedJpaBeans(AfterBeanDiscovery)
      */
-    private void addSyntheticBeans(@Observes @Priority(LIBRARY_AFTER) AfterBeanDiscovery event, BeanManager bm)
-        throws URISyntaxException {
+    private void addSyntheticBeans(@Observes @Priority(LIBRARY_AFTER) AfterBeanDiscovery event, BeanManager bm) {
         if (!this.enabled) {
             return;
         }
