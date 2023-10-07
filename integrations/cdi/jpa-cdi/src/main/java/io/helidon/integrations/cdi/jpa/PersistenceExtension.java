@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -563,8 +564,7 @@ public final class PersistenceExtension implements Extension {
      *
      * @see #addContainerManagedJpaBeans(AfterBeanDiscovery)
      */
-    private void addSyntheticBeans(@Observes @Priority(LIBRARY_AFTER) AfterBeanDiscovery event, BeanManager bm)
-        throws URISyntaxException {
+    private void addSyntheticBeans(@Observes @Priority(LIBRARY_AFTER) AfterBeanDiscovery event, BeanManager bm) {
         if (!this.enabled) {
             return;
         }
@@ -1011,8 +1011,7 @@ public final class PersistenceExtension implements Extension {
                                         ClassLoader classLoader,
                                         Enumeration<URL> persistenceXmlUrls,
                                         Iterable<? extends PersistenceProvider> providers,
-                                        boolean userSuppliedPuiBeans)
-        throws URISyntaxException {
+                                        boolean userSuppliedPuiBeans) {
         if (!persistenceXmlUrls.hasMoreElements()) {
             return;
         }
@@ -1050,16 +1049,28 @@ public final class PersistenceExtension implements Extension {
                 event.addDefinitionError(e);
                 continue;
             }
+            URL persistenceRootUrl;
+            try {
+                URI persistenceXmlUri = persistenceXmlUrl.toURI();
+                if ("jar".equalsIgnoreCase(persistenceXmlUri.getScheme())) {
+                    String ssp = persistenceXmlUri.getSchemeSpecificPart();
+                    persistenceRootUrl = new URI(ssp.substring(0, ssp.lastIndexOf('!'))).toURL();
+                } else {
+                    persistenceRootUrl = persistenceXmlUri.resolve("..").toURL();
+                }
+            } catch (MalformedURLException | URISyntaxException e) {
+                event.addDefinitionError(e);
+                continue;
+            }
             for (Persistence.PersistenceUnit pu : persistence.getPersistenceUnit()) {
                 PersistenceUnitInfoBean pui;
                 try {
-                    pui =
-                        PersistenceUnitInfoBean.fromPersistenceUnit(pu,
-                                                                    classLoader,
-                                                                    tempClassLoaderSupplier,
-                                                                    persistenceXmlUrl.toURI().resolve("..").toURL(),
-                                                                    unlistedManagedClassesByUnitNames,
-                                                                    dataSourceProviderSupplier);
+                    pui = PersistenceUnitInfoBean.fromPersistenceUnit(pu,
+                                                                      classLoader,
+                                                                      tempClassLoaderSupplier,
+                                                                      persistenceRootUrl,
+                                                                      unlistedManagedClassesByUnitNames,
+                                                                      dataSourceProviderSupplier);
                 } catch (MalformedURLException e) {
                     event.addDefinitionError(e);
                     continue;

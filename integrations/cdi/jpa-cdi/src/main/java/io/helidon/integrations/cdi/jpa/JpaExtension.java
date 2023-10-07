@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -1425,6 +1426,14 @@ public class JpaExtension implements Extension {
                         reader.close();
                     }
                 }
+                URL persistenceRootUrl;
+                URI persistenceXmlUri = url.toURI();
+                if ("jar".equalsIgnoreCase(persistenceXmlUri.getScheme())) {
+                  String ssp = persistenceXmlUri.getSchemeSpecificPart();
+                  persistenceRootUrl = new URI(ssp.substring(0, ssp.lastIndexOf('!'))).toURL();
+                } else {
+                  persistenceRootUrl = persistenceXmlUri.resolve("..").toURL();
+                }
                 Collection<? extends Persistence.PersistenceUnit> persistenceUnits = persistence.getPersistenceUnit();
                 if (persistenceUnits != null && !persistenceUnits.isEmpty()) {
                     persistenceUnitInfos = new ArrayList<>();
@@ -1434,7 +1443,7 @@ public class JpaExtension implements Extension {
                                 .add(PersistenceUnitInfoBean.fromPersistenceUnit(persistenceUnit,
                                                                                  classLoader,
                                                                                  tempClassLoaderSupplier,
-                                                                                 url.toURI().resolve("..").toURL(),
+                                                                                 persistenceRootUrl,
                                                                                  unlistedManagedClassesByPersistenceUnitNames,
                                                                                  dataSourceProviderSupplier));
                         }
