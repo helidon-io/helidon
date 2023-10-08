@@ -16,7 +16,8 @@
 
 package io.helidon.integrations.microstream.health;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 import io.helidon.health.HealthCheckResponse;
 
@@ -64,8 +65,10 @@ class MicrostreamHealthTest {
             return true;
         });
 
-        MicrostreamHealthCheck check = MicrostreamHealthCheck.builder(embeddedStorageManager)
-                .timeout(20, TimeUnit.MILLISECONDS).build();
+        MicrostreamHealthCheck check = MicrostreamHealthCheck
+                .builder(embeddedStorageManager)
+                .timeout(Duration.of(20, ChronoUnit.MILLIS))
+                .build();
 
         HealthCheckResponse response = check.call();
         assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));

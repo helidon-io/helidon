@@ -89,9 +89,7 @@ public class EmbeddedStorageManagerExtension implements Extension {
                                 .addTransitiveTypeClosure(EmbeddedStorageManager.class)
                                 .beanClass(EmbeddedStorageManager.class)
                                 .qualifiers(qualifiers)
-                                .createWith(cc -> {
-                                    return EmbeddedStorageManagerBuilder.create(getConfigNode(qualifiers)).start();
-                                })
+                                .createWith(cc -> EmbeddedStorageManagerBuilder.create(getConfigNode(qualifiers)).start())
                                 .destroyWith((storageManager, context) -> storageManager.shutdown());
                     }
                 }

@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.health.HealthCheckType;
 
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 
@@ -44,11 +43,6 @@ public class MicrostreamHealthCheck implements HealthCheck {
         this.timeoutDuration = builder.timeoutDuration;
         this.timeoutUnit = builder.timeoutUnit;
         this.name = builder.name;
-    }
-
-    @Override
-    public HealthCheckType type() {
-        return HealthCheckType.LIVENESS;
     }
 
     @Override

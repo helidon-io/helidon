@@ -45,6 +45,10 @@
             <artifactId>microstream-configuration</artifactId>
         </dependency>
         <dependency>
+            <groupId>one.microstream</groupId>
+            <artifactId>microstream-persistence-binary-jdk17</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>

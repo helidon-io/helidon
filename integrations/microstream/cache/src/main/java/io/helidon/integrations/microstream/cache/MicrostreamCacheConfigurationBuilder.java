@@ -16,8 +16,6 @@
 
 package io.helidon.integrations.microstream.cache;
 
-import java.lang.reflect.Field;
-import java.util.function.Predicate;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -33,6 +31,7 @@ import one.microstream.cache.types.CacheConfigurationBuilderConfigurationBased;
 import one.microstream.cache.types.CacheConfigurationPropertyNames;
 import one.microstream.cache.types.EvictionManager;
 import one.microstream.configuration.types.Configuration;
+import one.microstream.persistence.binary.util.SerializerFoundation;
 
 /**
  * Builder for Microstream-CacheConfigurations.
@@ -89,7 +88,7 @@ public class MicrostreamCacheConfigurationBuilder<K, V>
      *
      * @param <K> type of the cache key
      * @param <V> type of the cache value
-     * @param config helidon configuation
+     * @param config helidon configuration
      * @param keyType type of the cache key
      * @param valueType type of the cache value
      * @return a new CacheConfiguration builder
@@ -171,10 +170,8 @@ public class MicrostreamCacheConfigurationBuilder<K, V>
     }
 
     @Override
-    public MicrostreamCacheConfigurationBuilder<K, V> serializerFieldPredicate(
-            Predicate<? super Field> serializerFieldPredicate) {
-        cacheConfigBuilder.serializerFieldPredicate(serializerFieldPredicate);
-        return this;
+    public Builder<K, V> serializerFoundation(SerializerFoundation<?> serializerFoundation) {
+        return cacheConfigBuilder.serializerFoundation(serializerFoundation);
     }
 
     @Override
@@ -185,7 +182,7 @@ public class MicrostreamCacheConfigurationBuilder<K, V>
 
     private static void verifyType(String typeName, Class<?> actualType) {
         if (!typeName.equals(actualType.getTypeName())) {
-            throw new ConfigException("Microstream cache-config type missmatch, expected value from configuration: " + typeName
+            throw new ConfigException("Microstream cache-config type mismatch, expected value from configuration: " + typeName
                                               + " but got: " + actualType.getTypeName());
         }
     }

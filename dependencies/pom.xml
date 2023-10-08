@@ -119,7 +119,7 @@
         <version.lib.microprofile-telemetry-tck>1.0</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0</version.lib.microprofile-lra-api>
-        <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
+        <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
@@ -782,6 +782,16 @@
             <dependency>
                 <groupId>one.microstream</groupId>
                 <artifactId>microstream-cache</artifactId>
+                <version>${version.lib.microstream}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.cache</groupId>
+                <artifactId>cache-api</artifactId>
+                <version>1.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>one.microstream</groupId>
+                <artifactId>microstream-persistence-binary-jdk17</artifactId>
                 <version>${version.lib.microstream}</version>
             </dependency>
 

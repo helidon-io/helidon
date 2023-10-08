@@ -100,10 +100,8 @@ public class CacheExtension implements Extension {
                             .scope(ApplicationScoped.class)
                             .addTransitiveTypeClosure(Cache.class)
                             .addTypes(types)
-                            .createWith(cc -> {
-                                return CacheBuilder.create(name, getConfigNode(qualifiers), keyType.rawType(),
-                                                           valueType.rawType());
-                            })
+                            .createWith(cc -> CacheBuilder.create(name, getConfigNode(qualifiers), keyType.rawType(),
+                                                       valueType.rawType()))
                             .destroyWith((cache, context) -> cache.close());
                 }
             }
