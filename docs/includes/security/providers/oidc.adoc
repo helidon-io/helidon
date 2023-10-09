@@ -82,13 +82,13 @@ introspection endpoint depending on configuration
 
 [[tenant-enable]]
 === Multiple tenants
-OIDC provider also supports multiple tenants. To enable this feature it is required to do several steps.
+The OIDC provider also supports multiple tenants. To enable this feature, it is required to do several steps.
 
-1. To enable default multi tenant support, add `multi-tenant: true` option to your
+1. To enable the default multi-tenant support, add the `multi-tenant: true` option to the
 OIDC provider configuration
-2. Specify desired way of how to provide tenant name information. This is done over adding
-`tenant-id-style` config option. More information can be found in the table below
-3. Add `tenants` section to the OIDC provider config
+2. Specify the desired way to provide the tenant name. This step is done over adding
+the `tenant-id-style` configuration option. For more information, see the table below
+3. Add the tenants section to the OIDC provider configuration
 
 [source, yaml]
 ----
@@ -97,43 +97,43 @@ tenants:
      ... tenant configuration options
 ----
 
-There are 4 ways how to provide required tenant information to Helidon by default.
+There are four ways to provide the required tenant information to Helidon by default.
 
 .Possible `tenant-id-style` configuration options
 [cols="2,4a,3a"]
 |===
 |key |description |additional config options
 
-|`host-header` |Tenant configuration will be selected based on your host present in the Host header value |{nbsp}
+|`host-header` |Tenant configuration will be selected based on your host present in the `Host` header value. |{nbsp}
 
 |`domain`
 |Similar to the `host-header` style, but now the tenant name is identified just as
 a part of the host name. By default, it selects the third domain level.
 
 Example: Host header value from inbound request is `my.helidon.com` -> domain level 3 is `my`,
-domain level 2 is `helidon` and domain level 1 is `com`
+domain level 2 is `helidon` and domain level 1 is `com`.
 |[source, yaml]
 ----
 tenant-id-domain-level: <domain level>
 ----
 
 |`token-handler`
-|Tenant name information is expected to be provided via configured custom header value
+|The tenant name information is expected to be provided through the configured custom header value.
 |[source, yaml]
 ----
 tenant-id-handler:
   header: "my-custom-header"
 ----
 
-|`none`|No tenant name finding is used. Default tenant name `@default` is used instead|
+|`none`|No tenant name finding is used. Default tenant name `@default` is used instead.|
 |===
 
-It is also possible to implement custom way of discovering the tenant name and tenant configuration.
-Custom tenant name discovery from request can be done via implementing SPI:
+You can also implement a custom way of discovering the tenant name and tenant configuration.
+The custom tenant name discovery from request can be done by implementing SPI:
 
 `io.helidon.security.providers.oidc.common.spi.TenantIdProvider`
 
-and custom tenant configuration discovery can be provided via implementing SPI:
+and the custom tenant configuration discovery can be provided by implementing SPI:
 
 `io.helidon.security.providers.oidc.common.spi.TenantConfigProvider`
 

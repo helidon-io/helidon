@@ -1274,7 +1274,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Name of a query parameter that contains the tenant name when parameter is used.
+         * Name of a query parameter that contains the tenant name when the parameter is used.
          * Defaults to {@link #DEFAULT_TENANT_PARAM_NAME}.
          *
          * @param paramName name of the query parameter to expect
@@ -1502,7 +1502,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Name of the cookie to use for tenant name.
+         * The name of the cookie to use for the tenant name.
          * Defaults to {@value #DEFAULT_TENANT_COOKIE_NAME}.
          *
          * @param cookieName name of a cookie
