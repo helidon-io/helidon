@@ -1,0 +1,132 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Tracing
+:description: Helidon SE Observability
+:feature-name: Helidon Observability
+:keywords: helidon, observability
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
+
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+// tag::observe-dependency[]
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe</artifactId>
+</dependency>
+----
+// end::observe-dependency[]
+
+For Health Observability features:
+
+// tag::observe-health-dependency[]
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-health</artifactId>
+</dependency>
+----
+// end::observe-health-dependency[]
+
+For Metrics Observability features:
+
+// tag::observe-metrics-dependency[]
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId>
+</dependency>
+----
+// end::observe-metrics-dependency[]
+
+For Info Observability features:
+
+// tag::observe-info-dependency[]
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-info</artifactId>
+</dependency>
+----
+// end::observe-info-dependency[]
+
+For Logging Observability features:
+
+// tag::observe-log-dependency[]
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-log</artifactId>
+</dependency>
+----
+// end::observe-log-dependency[]
+
+
+== Usage
+
+In Helidon 4 all observability features were moved to one logical module `observe`. The observability support groups all observe endpoints together under a single context root (the default behavior) `/observe`.
+
+Each provider usually adds a new endpoint (such as `health`, `metrics`).
+This is to have a single easily configurable path for security, proxy etc. purposes, rather than expose multiple "root" endpoints that may collide with the business code.
+
+=== Discovery
+
+`ObserveProvider` instances are discovered using `ServiceLoader`. In case an explicit `Observer` is registered with the
+same `type` as a provider, the provider will not be used (so we do not duplicate services).
+
+=== Endpoints
+
+The "Observe" service endpoint can be modified on the `ObserveFeature` that is registered with routing. The feature endpoint defaults to `/observe`, and all observers are prefixed with it (see further)
+
+Each observer has customizable endpoints as well, and the result is decided as follows:
+1. If the custom endpoint is relative, the result would be under observe endpoint (e.g. for `health` -> `/observe/health`)
+2. If the custom endpoint is absolute, the result would be absolute as well (e.g. for `/health` -> `/health`)
+
+
+== Configuration
+
+To customize endpoint of an observer:
+
+1. Configure a custom endpoint through configuration to modify the `ObserveProvider` setup (such as `observe.health.endpoint`)
+2. Configure a custom endpoint through a builder on the specific `Observer` (`HealthObserver.builder().endpoint("myhealth")`)
+
+
+== Additional Information
+
+== Reference
+
