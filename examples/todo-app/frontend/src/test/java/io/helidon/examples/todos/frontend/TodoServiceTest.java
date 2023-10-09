@@ -30,7 +30,6 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.security.SecurityFeature;
@@ -92,7 +91,6 @@ class TodoServiceTest {
         Security security = Security.create(securityConfig);
 
         server.routing(routing -> routing
-                        .addFeature(ContextFeature.create())
                         .addFeature(SecurityFeature.create(security, securityConfig))
                         .register("/api", new TodoService(new BackendServiceClient(() -> backendUri))))
                 .putSocket("backend", socket -> socket

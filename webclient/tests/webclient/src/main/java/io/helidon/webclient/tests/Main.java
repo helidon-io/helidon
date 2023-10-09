@@ -17,13 +17,12 @@
 package io.helidon.webclient.tests;
 
 import io.helidon.config.Config;
+import io.helidon.tracing.providers.opentracing.OpenTracing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.tracing.TracingFeature;
 import io.helidon.webserver.security.SecurityFeature;
-import io.helidon.tracing.providers.opentracing.OpenTracing;
+import io.helidon.webserver.tracing.TracingFeature;
 
 import io.opentracing.Tracer;
 
@@ -85,8 +84,7 @@ public final class Main {
      */
     static void routing(HttpRouting.Builder routing, Config config, Tracer tracer) {
         GreetService greetService = new GreetService(config);
-        routing.addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(config.get("security")))
+        routing.addFeature(SecurityFeature.create(config.get("security")))
                 .register("/greet", greetService);
         if (tracer != null) {
             routing.addFeature(TracingFeature.create(OpenTracing.create(tracer)));

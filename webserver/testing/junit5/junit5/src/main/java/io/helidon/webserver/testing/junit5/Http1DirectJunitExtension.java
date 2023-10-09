@@ -19,18 +19,29 @@ package io.helidon.webserver.testing.junit5;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.Set;
 
+import io.helidon.common.Builder;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.Config;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webserver.WebServer;
+import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 import io.helidon.webserver.testing.junit5.spi.DirectJunitExtension;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
+
+import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 
 /**
  * A Java {@link java.util.ServiceLoader} provider implementation of
@@ -92,7 +103,7 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             DirectClient directClient = clients.get(socketName);
 
             if (directClient == null) {
-                if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+                if (DEFAULT_SOCKET_NAME.equals(socketName)) {
                     throw new IllegalStateException("There is no default routing specified. Please add static method "
                                                             + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
                                                             + " or HttpRules");
@@ -111,7 +122,7 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             WebClient directClient = webClients.get(socketName);
 
             if (directClient == null) {
-                if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+                if (DEFAULT_SOCKET_NAME.equals(socketName)) {
                     throw new IllegalStateException("There is no default routing specified. Please add static method "
                                                             + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
                                                             + " or HttpRules");
@@ -155,6 +166,14 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
         public void handle(Method method, String socketName, HttpRouting.Builder value) {
             HttpRouting routing = value.copy().build();
             routing.beforeStart();
+
+            ServerFeature.ServerFeatureContext featureContext = new DirectFeatureContext(socketName, value);
+            HelidonServiceLoader.create(ServiceLoader.load(ServerFeatureProvider.class))
+                    .stream()
+                    .map(it -> it.create(Config.empty(), it.configKey()))
+                    .map(ServerFeature.class::cast)
+                    .forEach(it -> it.setup(featureContext));
+
             if (clients.putIfAbsent(socketName, new DirectClient(value)) != null) {
                 throw new IllegalStateException("Method "
                                                         + method
@@ -176,6 +195,87 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
                                                         + method.getDeclaringClass().getName()
                                                         + "\".");
             }
+        }
+
+        private static class DirectFeatureContext implements ServerFeature.ServerFeatureContext {
+            private final String socketName;
+            private final HttpRouting.Builder routing;
+
+            DirectFeatureContext(String socketName, HttpRouting.Builder routing) {
+                this.socketName = socketName;
+                this.routing = routing;
+            }
+
+            @Override
+            public WebServerConfig serverConfig() {
+                return WebServerConfig.create();
+            }
+
+            @Override
+            public ServerFeature.SocketBuilders defaultListener() {
+                if (DEFAULT_SOCKET_NAME.equals(socketName)) {
+                    return new DirectSocketBuilders(routing);
+                }
+                return new DirectSocketBuilders(HttpRouting.builder());
+            }
+
+            @Override
+            public Set<String> sockets() {
+                return DEFAULT_SOCKET_NAME.equals(socketName) ? Set.of() : Set.of(socketName);
+            }
+
+            @Override
+            public boolean socketExists(String socketName) {
+                return socketName.equals(this.socketName);
+            }
+
+            @Override
+            public ServerFeature.SocketBuilders socket(String socketName) {
+                if (!socketName.equals(this.socketName)) {
+                    if (DEFAULT_SOCKET_NAME.equals(socketName)) {
+                        return defaultListener();
+                    }
+                    throw new NoSuchElementException("Socket " + socketName + " is not defined");
+                }
+
+                return new DirectSocketBuilders(routing);
+            }
+        }
+    }
+
+    private static class DirectSocketBuilders implements ServerFeature.SocketBuilders {
+        private final HttpRouting.Builder routing;
+
+        DirectSocketBuilders(HttpRouting.Builder routing) {
+            this.routing = routing;
+        }
+
+        @Override
+        public ListenerConfig listener() {
+            return ListenerConfig.create();
+        }
+
+        @Override
+        public HttpRouting.Builder httpRouting() {
+            return routing;
+        }
+
+        @Override
+        public ServerFeature.RoutingBuilders routingBuilders() {
+            return new ServerFeature.RoutingBuilders() {
+                @Override
+                public boolean hasRouting(Class<?> builderType) {
+                    return false;
+                }
+
+                @Override
+                public <T extends Builder<T, ?>> T routingBuilder(Class<T> builderType) {
+                    if (builderType == HttpRouting.Builder.class) {
+                        return builderType.cast(routing);
+                    }
+                    throw new NoSuchElementException("Routing not available for type: " + builderType);
+                }
+            };
         }
     }
 }

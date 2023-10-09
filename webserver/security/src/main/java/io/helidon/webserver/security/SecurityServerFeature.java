@@ -76,7 +76,7 @@ public class SecurityServerFeature implements ServerFeature {
         configurations.forEach((socketName, configs) -> {
             if (featureContext.socketExists(socketName)) {
                 SocketBuilders socket = featureContext.socket(socketName);
-                socket.httpRouting().addFeature(SecurityFeature.create(security, defaults, configs));
+                // socket.httpRouting().addFeature(SecurityFeature.create(security, defaults, configs));
             }
         });
     }

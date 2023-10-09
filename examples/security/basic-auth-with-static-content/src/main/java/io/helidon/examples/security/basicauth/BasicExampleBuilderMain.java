@@ -31,7 +31,6 @@ import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
@@ -96,7 +95,6 @@ public final class BasicExampleBuilderMain {
 
     static void setup(WebServerConfig.Builder server) {
         server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
                 // must be configured first, to protect endpoints
                 .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
                 .any("/static[/{*}]", SecurityFeature.rolesAllowed("user"))

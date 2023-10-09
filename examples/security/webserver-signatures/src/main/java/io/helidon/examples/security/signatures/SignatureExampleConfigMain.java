@@ -22,7 +22,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.security.SecurityFeature;
 
@@ -83,8 +82,7 @@ public class SignatureExampleConfigMain {
         Config config = config("service2.yaml");
 
         // helper method to load both security and web server security from configuration
-        routing.addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(config.get("security")))
+        routing.addFeature(SecurityFeature.create(config.get("security")))
                 .register(new Service2());
     }
 
@@ -93,8 +91,7 @@ public class SignatureExampleConfigMain {
         Config config = config("service1.yaml");
 
         // helper method to load both security and web server security from configuration
-        routing.addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(config.get("security")))
+        routing.addFeature(SecurityFeature.create(config.get("security")))
                 .register(new Service1());
     }
 

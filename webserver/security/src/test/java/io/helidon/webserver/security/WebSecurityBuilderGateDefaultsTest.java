@@ -37,7 +37,6 @@ import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
@@ -90,7 +89,6 @@ class WebSecurityBuilderGateDefaultsTest {
 
         serverBuilder.serverContext(context)
                 .routing(builder -> builder
-                        .addFeature(ContextFeature.create())
                         .addFeature(securityFeature)
                         // will only accept admin (due to gate defaults)
                         .get("/noRoles", SecurityFeature.authenticate())

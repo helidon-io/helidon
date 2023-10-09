@@ -165,9 +165,26 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         TypeName actualType = actualType().genericTypeName();
 
         if (factoryMethods.createFromConfig().isPresent()) {
-            method.addLine(configGet(configured)
-                                   + generateFromConfig(factoryMethods)
-                                   + ".ifPresent(this::" + setterName() + ");");
+            FactoryMethods.FactoryMethod factoryMethod = factoryMethods.createFromConfig().get();
+            TypeName returnType = factoryMethod.factoryMethodReturnType();
+            boolean mapList = true;
+            if (returnType.isList() || returnType.isSet()) {
+                mapList = false;
+            } else {
+                // return type is some other type, we must check it is the same as this one,
+                // or we expect another method to be used
+                mapList = returnType.equals(actualType);
+            }
+            if (mapList) {
+                method.addLine(configGet(configured)
+                                       + ".mapList("
+                                       + generateMapListFromConfig(factoryMethods)
+                                       + ").ifPresent(this::" + setterName() + ");");
+            } else {
+                method.addLine(configGet(configured)
+                                       + generateFromConfig(factoryMethods)
+                                       + ".ifPresent(this::" + setterName() + ");");
+            }
         } else if (BUILT_IN_MAPPERS.contains(actualType)) {
             // types we support in config can be simplified,
             // this also supports comma separated lists for string based types
@@ -185,6 +202,15 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                    + "." + collector + ")"
                                    + ".ifPresent(this::" + setterName() + ");");
         }
+    }
+
+    String generateMapListFromConfig(FactoryMethods factoryMethods) {
+        TypeName boxed = actualType().boxed();
+        return factoryMethods.createFromConfig()
+                .map(it -> it.typeWithFactoryMethod().genericTypeName().fqName() + "::" + it.createMethodName())
+                .orElseThrow(() -> new IllegalStateException("This should have been called only if factory method is present for "
+                                                                     + declaredType()  + " " + name()));
+
     }
 
     @Override

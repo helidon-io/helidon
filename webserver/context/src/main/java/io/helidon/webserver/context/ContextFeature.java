@@ -16,25 +16,63 @@
 
 package io.helidon.webserver.context;
 
-import io.helidon.common.context.Contexts;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
-import io.helidon.webserver.http.FilterChain;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.http.RoutingRequest;
-import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Adds {@link io.helidon.common.context.Context} support to Helidon WebServer.
  * When added to the processing, further processing will be executed in a request specific context.
  */
-public class ContextFeature implements ServerFeature {
+@RuntimeType.PrototypedBy(ContextFeatureConfig.class)
+public class ContextFeature implements ServerFeature, RuntimeType.Api<ContextFeatureConfig> {
+    /**
+     * Default weight of the feature. It is quite high, as context is used by a lot of other features.
+     */
+    public static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 1000;
 
-    private final String name;
+    private final ContextFeatureConfig config;
 
-    ContextFeature(String name) {
-        this.name = name;
+    ContextFeature(ContextFeatureConfig config) {
+        this.config = config;
     }
+
+    /**
+     * Fluent API builder to set up an instance.
+     *
+     * @return a new builder
+     */
+    public static ContextFeatureConfig.Builder builder() {
+        return ContextFeatureConfig.builder();
+    }
+
+    /**
+     * Create a new instance from its configuration.
+     *
+     * @param config configuration
+     * @return a new feature
+     */
+    public static ContextFeature create(ContextFeatureConfig config) {
+        return new ContextFeature(config);
+    }
+
+
+    /**
+     * Create a new instance customizing its configuration.
+     *
+     * @param builderConsumer consumer of configuration
+     * @return a new feature
+     */
+    public static ContextFeature create(Consumer<ContextFeatureConfig.Builder> builderConsumer) {
+        return builder()
+                .update(builderConsumer)
+                .build();
+    }
+
 
     /**
      * Create a new context feature with default setup.
@@ -42,7 +80,7 @@ public class ContextFeature implements ServerFeature {
      * @return a new feature
      */
     public static ContextFeature create() {
-        return new ContextFeature("context");
+        return builder().build();
     }
 
     /**
@@ -52,20 +90,34 @@ public class ContextFeature implements ServerFeature {
      * @return a new configured feature
      */
     public static ContextFeature create(Config config) {
-        return new ContextFeature(config.get("weight").asDouble().orElse(WEIGHT));
+        return builder()
+                .config(config)
+                .build();
     }
 
     @Override
-    public void setup(HttpRouting.Builder routing) {
-        routing.addFilter(this::filter);
+    public String name() {
+        return config.name();
     }
 
     @Override
-    public double weight() {
-        return weight;
+    public String type() {
+        return "context";
     }
 
-    private void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-        Contexts.runInContext(req.context(), chain::proceed);
+    @Override
+    public void setup(ServerFeatureContext featureContext) {
+        double featureWeight = config.weight();
+        // all sockets
+        Set<String> sockets = config.sockets();
+        featureContext.defaultListener().httpRouting().addFeature(new ContextRoutingFeature(featureWeight));
+        for (String socket : sockets) {
+            featureContext.socket(socket).httpRouting().addFeature(new ContextRoutingFeature(featureWeight));
+        }
+    }
+
+    @Override
+    public ContextFeatureConfig prototype() {
+        return config;
     }
 }

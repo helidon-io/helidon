@@ -27,7 +27,6 @@ import io.helidon.security.Subject;
 import io.helidon.security.providers.google.login.GoogleTokenProvider;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
@@ -72,7 +71,6 @@ public final class GoogleBuilderMain {
                         .clientId("your-client-id.apps.googleusercontent.com"))
                 .build();
         server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
                 .addFeature(SecurityFeature.create(security))
                 .get("/rest/profile", SecurityFeature.authenticate(),
                         (req, res) -> {

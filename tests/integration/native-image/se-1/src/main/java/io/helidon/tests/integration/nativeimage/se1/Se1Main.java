@@ -69,8 +69,7 @@ public final class Se1Main {
                 .port(7076)
                 .addRouting(createRouting(config))
                 .addRouting(WsRouting.builder()
-                                    .endpoint("/ws/messages", WebSocketEndpoint::new)
-                                    .build())
+                                    .endpoint("/ws/messages", WebSocketEndpoint::new))
                 .build()
                 .start();
 
@@ -96,7 +95,7 @@ public final class Se1Main {
      * @param config configuration of this server
      * @return routing configured with JSON support, a health check, and a service
      */
-    private static HttpRouting createRouting(Config config) {
+    private static HttpRouting.Builder createRouting(Config config) {
 
         GreetService greetService = new GreetService(config);
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
@@ -116,8 +115,7 @@ public final class Se1Main {
                 .register("/static/jar", StaticContentService.create("web-jar"))
                 .register("/greet", greetService)
                 .register("/wc", webClientService)
-                .register("/zipkin", zipkinService)
-                .build();
+                .register("/zipkin", zipkinService);
     }
 
 }

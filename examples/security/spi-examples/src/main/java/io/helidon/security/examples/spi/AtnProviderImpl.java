@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Principal;
@@ -39,10 +39,10 @@ import io.helidon.security.Subject;
 import io.helidon.security.spi.AuthenticationProvider;
 
 /**
- * Example of an authentication provider implementation - synchronous.
- * This is a full-blows example of a provider that requires additional configuration on a resource.
+ * Example of an authentication provider implementation.
+ * This is a full-blown example of a provider that requires additional configuration on a resource.
  */
-public class AtnProviderSync implements AuthenticationProvider {
+public class AtnProviderImpl implements AuthenticationProvider {
     @Override
     public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
 
@@ -76,7 +76,7 @@ public class AtnProviderSync implements AuthenticationProvider {
         }
 
         // 2) configuration in request
-        opt = epConfig.config("atn-object").flatMap(conf -> conf.as(AtnObject::from).asOptional());
+        opt = epConfig.config("atn-object").flatMap(conf -> conf.map(AtnObject::from).asOptional());
         if (opt.isPresent()) {
             return opt.get();
         }

@@ -25,7 +25,6 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityFeature;
 
 /**
@@ -87,14 +86,12 @@ public final class OutboundOverrideJwtExample {
         Config backendConfig = Config.create(ConfigSources.classpath("backend-service-jwt.yaml"));
 
         server.routing(routing -> routing
-                        .addFeature(ContextFeature.create())
                         .addFeature(SecurityFeature.create(clientConfig.get("security")))
                         .register(new JwtOverrideService()))
 
                 // backend that prints the current user
                 .putSocket("backend", socket -> socket
                         .routing(routing -> routing
-                                .addFeature(ContextFeature.create())
                                 .addFeature(SecurityFeature.create(backendConfig.get("security")))
                                 .get("/hello", (req, res) -> {
 

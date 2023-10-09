@@ -39,7 +39,6 @@ import io.helidon.security.providers.httpsign.InboundClientDefinition;
 import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.security.SecurityFeature;
 
@@ -130,8 +129,7 @@ public class SignatureExampleBuilderMain {
         SecurityFeature security = SecurityFeature.create(security2())
                 .securityDefaults(SecurityFeature.authenticate());
 
-        routing.addFeature(ContextFeature.create())
-                .addFeature(security)
+        routing.addFeature(security)
                 .get("/service2*", SecurityFeature.rolesAllowed("user"))
                 .register(new Service2());
     }
@@ -139,8 +137,7 @@ public class SignatureExampleBuilderMain {
     private static void routing1(HttpRouting.Builder routing) {
         SecurityFeature security = SecurityFeature.create(security1())
                 .securityDefaults(SecurityFeature.authenticate());
-        routing.addFeature(ContextFeature.create())
-                .addFeature(security)
+        routing.addFeature(security)
                 .get("/service1*", SecurityFeature.rolesAllowed("user"))
                 .register(new Service1());
     }

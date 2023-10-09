@@ -26,7 +26,6 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
@@ -81,7 +80,6 @@ public final class GoogleConfigMain {
     static void setup(WebServerConfig.Builder server) {
         Config config = buildConfig();
         server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
                 .addFeature(SecurityFeature.create(config.get("security")))
                 .get("/rest/profile", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);

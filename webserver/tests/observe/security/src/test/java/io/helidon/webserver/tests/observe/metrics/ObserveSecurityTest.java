@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Status;
 import io.helidon.openapi.OpenApiFeature;
 import io.helidon.security.EndpointConfig;
@@ -34,7 +33,6 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -71,7 +69,6 @@ class ObserveSecurityTest {
         server.routing(routing -> routing
                 .addFeature(ObserveFeature.create())
                 .addFeature(OpenApiFeature.create())
-                .addFeature(ContextFeature.create())
                 .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
                 .get("/observe/metrics", SecurityFeature.rolesAllowed("user"))
                 .get("/openapi", SecurityFeature.rolesAllowed("user")));

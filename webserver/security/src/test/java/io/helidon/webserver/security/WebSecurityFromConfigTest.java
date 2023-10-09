@@ -20,16 +20,15 @@ import java.util.Optional;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.http.HttpMediaTypes;
 import io.helidon.config.Config;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.HttpMediaTypes;
+import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
-import io.helidon.security.Security;
-import io.helidon.security.SecurityContext;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 /**
  * Unit test for {@link SecurityFeature}.
@@ -53,9 +52,9 @@ public class WebSecurityFromConfigTest extends WebSecurityTests {
         Context context = Context.create();
         context.register(myAuditProvider);
 
-        serverBuilder.serverContext(context)
-                .routing(routing -> routing.addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(security, securityConfig))
+        serverBuilder
+                .serverContext(context)
+                .routing(routing -> routing.addFeature(SecurityFeature.create(security, securityConfig))
                 .get("/*", (req, res) -> {
                     Optional<SecurityContext> securityContext = Contexts.context()
                             .flatMap(ctx -> ctx.get(SecurityContext.class));

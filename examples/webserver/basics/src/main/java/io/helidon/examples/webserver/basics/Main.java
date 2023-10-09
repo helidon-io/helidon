@@ -361,7 +361,7 @@ public class Main {
             System.exit(100);
         }
         server = WebServer.builder()
-                .routing(routingBuilder.build())
+                .routing(routingBuilder)
                 .mediaContext(mediaContextBuilder.build())
                 .build()
                 .start();

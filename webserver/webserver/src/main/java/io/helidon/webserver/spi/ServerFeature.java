@@ -1,6 +1,6 @@
 package io.helidon.webserver.spi;
 
-import java.util.List;
+import java.util.Set;
 
 import io.helidon.common.Builder;
 import io.helidon.common.config.NamedService;
@@ -47,7 +47,7 @@ public interface ServerFeature extends NamedService {
          * @return additional sockets configured
          * @see #defaultListener()
          */
-        List<String> sockets();
+        Set<String> sockets();
 
         /**
          * Check if a named socket exists in configuration.

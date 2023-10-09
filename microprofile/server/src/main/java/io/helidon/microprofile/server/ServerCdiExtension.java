@@ -100,6 +100,7 @@ public class ServerCdiExtension implements Extension {
     // build time
     private WebServerConfig.Builder serverBuilder = WebServer.builder()
             .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
+            .featuresDiscoverServices(false) // we need to explicitly configure features, as they use different sources of config
             .port(7001);
     private ObserveConfig.Builder observeBuilder = ObserveFeature.builder();
     private HttpRouting.Builder routingBuilder = HttpRouting.builder();
@@ -340,6 +341,11 @@ public class ServerCdiExtension implements Extension {
         this.observeBuilder.config(config.get("observe"));
         this.observeRouting = config.get("observe").get("routing").asString().orElse(DEFAULT_SOCKET_NAME);
         this.config = config;
+
+        if (!config.get("server.features.context").exists()) {
+            // not created automatically from configuration, create it manually
+            serverBuilder.addFeature(ContextFeature.create());
+        }
     }
 
     // Priority must ensure that these handlers are added before the MetricsSupport KPI metrics handler.
@@ -405,10 +411,6 @@ public class ServerCdiExtension implements Extension {
 
         // JAX-RS applications (and resources)
         registerJaxRsApplications(beanManager);
-
-        // support for Helidon common Context
-        routingBuilder.addFeature(ContextFeature.create());
-        namedRoutings.forEach((name, value) -> value.addFeature(ContextFeature.create()));
 
         serverNamedRoutingBuilder(observeRouting)
                 .addFeature(observeBuilder.build());

@@ -25,7 +25,6 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
 /**
@@ -83,7 +82,6 @@ public final class BasicExampleConfigMain {
 
         server.config(config)
                 .routing(routing -> routing
-                        .addFeature(ContextFeature.create())
                         .register("/static", StaticContentService.create("/WEB"))
                         .get("/{*}", (req, res) -> {
                             Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);

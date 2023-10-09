@@ -22,11 +22,9 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.config.Config;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityFeature;
 
 /**
@@ -78,16 +76,9 @@ public final class DigestExampleConfigMain {
     }
 
     static void setup(WebServerConfig.Builder server) {
-        Security security = Security.create(config.get("security"));
-        server.addFeature(SecurityFeature.create(security, config.get("server.features.security")))
-                .build();
-
-        server.config(config.get("server"));
-
         Config config = Config.create();
         // helper method to load both security and web server security from configuration
         server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
                 .addFeature(SecurityFeature.create(config.get("security")))
                 // web server does not (yet) have possibility to configure routes in config files, so explicit...
                 .get("/{*}", (req, res) -> {

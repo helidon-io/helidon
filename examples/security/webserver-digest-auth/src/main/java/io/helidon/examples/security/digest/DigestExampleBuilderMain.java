@@ -35,7 +35,6 @@ import io.helidon.security.providers.httpauth.HttpDigestAuthProvider;
 import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityFeature;
 
 /**
@@ -100,7 +99,6 @@ public final class DigestExampleBuilderMain {
 
     static void setup(WebServerConfig.Builder server) {
         server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
                 .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
                 .get("/noRoles", SecurityFeature.enforce())
                 .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
@@ -120,7 +118,6 @@ public final class DigestExampleBuilderMain {
                 }));
 
         server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
                 .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
                 .get("/noRoles", SecurityFeature.enforce())
                 .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))

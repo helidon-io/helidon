@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
 import io.helidon.webserver.http.HttpRouting;
@@ -17,10 +20,15 @@ import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
     private final WebServerConfig serverConfig;
     private final Map<String, ListenerBuildersImpl> socketToBuilders;
+    private final Set<String> configuredSockets;
 
     private ServerFeatureContextImpl(WebServerConfig serverConfig, Map<String, ListenerBuildersImpl> socketToBuilders) {
         this.serverConfig = serverConfig;
         this.socketToBuilders = socketToBuilders;
+        this.configuredSockets = socketToBuilders.keySet()
+                .stream()
+                .filter(Predicate.not(DEFAULT_SOCKET_NAME::equals))
+                .collect(Collectors.toSet());
     }
 
     static ServerFeatureContextImpl create(WebServerConfig serverConfig) {
@@ -89,6 +97,11 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
     @Override
     public boolean socketExists(String socketName) {
         return socketToBuilders.containsKey(socketName);
+    }
+
+    @Override
+    public Set<String> sockets() {
+        return configuredSockets;
     }
 
     @Override
