@@ -971,7 +971,7 @@ managed]
 ----
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
-    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+    <artifactId>helidon-integrations-cdi-hibernate</artifactId>
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----
