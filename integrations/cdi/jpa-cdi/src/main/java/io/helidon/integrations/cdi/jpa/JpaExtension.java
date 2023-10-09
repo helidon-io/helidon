@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
@@ -812,7 +814,7 @@ public class JpaExtension implements Extension {
                                     @Priority(LIBRARY_AFTER)
                                     AfterBeanDiscovery event,
                                     BeanManager beanManager)
-        throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
+        throws IOException, JAXBException, ReflectiveOperationException, URISyntaxException, XMLStreamException {
         String cn = JpaExtension.class.getName();
         String mn = "afterBeanDiscovery";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1357,7 +1359,7 @@ public class JpaExtension implements Extension {
                                         Enumeration<URL> urls,
                                         Collection<? extends PersistenceProvider> providers,
                                         boolean userSuppliedPersistenceUnitInfoBeans)
-        throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
+        throws IOException, JAXBException, ReflectiveOperationException, URISyntaxException, XMLStreamException {
         String cn = JpaExtension.class.getName();
         String mn = "processPersistenceXmls";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1419,6 +1421,14 @@ public class JpaExtension implements Extension {
                         reader.close();
                     }
                 }
+                URL persistenceRootUrl;
+                URI persistenceXmlUri = url.toURI();
+                if ("jar".equalsIgnoreCase(persistenceXmlUri.getScheme())) {
+                  String ssp = persistenceXmlUri.getSchemeSpecificPart();
+                  persistenceRootUrl = new URI(ssp.substring(0, ssp.lastIndexOf('!'))).toURL();
+                } else {
+                  persistenceRootUrl = persistenceXmlUri.resolve("..").toURL();
+                }
                 Collection<? extends Persistence.PersistenceUnit> persistenceUnits = persistence.getPersistenceUnit();
                 if (persistenceUnits != null && !persistenceUnits.isEmpty()) {
                     persistenceUnitInfos = new ArrayList<>();
@@ -1428,7 +1438,7 @@ public class JpaExtension implements Extension {
                                 .add(PersistenceUnitInfoBean.fromPersistenceUnit(persistenceUnit,
                                                                                  classLoader,
                                                                                  tempClassLoaderSupplier,
-                                                                                 new URL(url, ".."), // i.e. META-INF/..
+                                                                                 persistenceRootUrl,
                                                                                  unlistedManagedClassesByPersistenceUnitNames,
                                                                                  dataSourceProviderSupplier));
                         }

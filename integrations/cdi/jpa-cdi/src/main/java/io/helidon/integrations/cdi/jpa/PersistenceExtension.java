@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
@@ -1018,16 +1020,28 @@ public final class PersistenceExtension implements Extension {
                 event.addDefinitionError(e);
                 continue;
             }
+            URL persistenceRootUrl;
+            try {
+                URI persistenceXmlUri = persistenceXmlUrl.toURI();
+                if ("jar".equalsIgnoreCase(persistenceXmlUri.getScheme())) {
+                    String ssp = persistenceXmlUri.getSchemeSpecificPart();
+                    persistenceRootUrl = new URI(ssp.substring(0, ssp.lastIndexOf('!'))).toURL();
+                } else {
+                    persistenceRootUrl = persistenceXmlUri.resolve("..").toURL();
+                }
+            } catch (MalformedURLException | URISyntaxException e) {
+                event.addDefinitionError(e);
+                continue;
+            }
             for (Persistence.PersistenceUnit pu : persistence.getPersistenceUnit()) {
                 PersistenceUnitInfoBean pui;
                 try {
-                    pui =
-                        PersistenceUnitInfoBean.fromPersistenceUnit(pu,
-                                                                    classLoader,
-                                                                    tempClassLoaderSupplier,
-                                                                    new URL(persistenceXmlUrl, ".."), // i.e. META-INF/..
-                                                                    unlistedManagedClassesByUnitNames,
-                                                                    dataSourceProviderSupplier);
+                    pui = PersistenceUnitInfoBean.fromPersistenceUnit(pu,
+                                                                      classLoader,
+                                                                      tempClassLoaderSupplier,
+                                                                      persistenceRootUrl,
+                                                                      unlistedManagedClassesByUnitNames,
+                                                                      dataSourceProviderSupplier);
                 } catch (MalformedURLException e) {
                     event.addDefinitionError(e);
                     continue;
