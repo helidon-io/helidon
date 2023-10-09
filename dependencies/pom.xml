@@ -462,6 +462,10 @@
                 <version>${version.lib.prometheus}</version>
             </dependency>
             <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient_tracer_common</artifactId>
+            </dependency>
+            <dependency>
                 <groupId>io.zipkin.zipkin2</groupId>
                 <artifactId>zipkin</artifactId>
                 <version>${version.lib.zipkin}</version>
