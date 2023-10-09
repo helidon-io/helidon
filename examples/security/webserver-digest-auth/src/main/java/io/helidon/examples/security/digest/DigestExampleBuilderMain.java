@@ -118,6 +118,26 @@ public final class DigestExampleBuilderMain {
                             .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
                 }));
+
+        server.routing(routing -> routing
+                .addFeature(ContextFeature.create())
+                .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
+                .get("/noRoles", SecurityFeature.enforce())
+                .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
+                .get("/admin", SecurityFeature.rolesAllowed("admin"))
+                // audit is not enabled for GET methods by default
+                .get("/deny", SecurityFeature.rolesAllowed("deny").audit())
+                // roles allowed imply authn and authz
+                .any("/noAuthn", SecurityFeature.rolesAllowed("admin")
+                        .authenticationOptional()
+                        .audit())
+                .get("/{*}", (req, res) -> {
+                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                    res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
+                    res.send("Hello, you are: \n" + securityContext
+                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
+                            .orElse("Security context is null"));
+                }));
     }
 
     private static SecurityFeature buildWebSecurity() {

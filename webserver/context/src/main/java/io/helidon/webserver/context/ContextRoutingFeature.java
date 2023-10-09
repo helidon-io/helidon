@@ -16,24 +16,26 @@
 
 package io.helidon.webserver.context;
 
+import io.helidon.common.Weighted;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.webserver.http.FilterChain;
+import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
-import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Adds {@link io.helidon.common.context.Context} support to Helidon WebServer.
  * When added to the processing, further processing will be executed in a request specific context.
  */
-public class ContextFeature implements ServerFeature {
+public class ContextRoutingFeature implements HttpFeature, Weighted {
+    private static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 1000;
 
-    private final String name;
+    private final double weight;
 
-    ContextFeature(String name) {
-        this.name = name;
+    private ContextRoutingFeature(double weight) {
+        this.weight = weight;
     }
 
     /**
@@ -41,8 +43,8 @@ public class ContextFeature implements ServerFeature {
      *
      * @return a new feature
      */
-    public static ContextFeature create() {
-        return new ContextFeature("context");
+    public static ContextRoutingFeature create() {
+        return new ContextRoutingFeature(WEIGHT);
     }
 
     /**
@@ -51,8 +53,8 @@ public class ContextFeature implements ServerFeature {
      * @param config configuration
      * @return a new configured feature
      */
-    public static ContextFeature create(Config config) {
-        return new ContextFeature(config.get("weight").asDouble().orElse(WEIGHT));
+    public static ContextRoutingFeature create(Config config) {
+        return new ContextRoutingFeature(config.get("weight").asDouble().orElse(WEIGHT));
     }
 
     @Override
