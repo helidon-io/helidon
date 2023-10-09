@@ -272,6 +272,15 @@ public interface Config {
     ConfigValue<Map<String, String>> asMap() throws ConfigException;
 
     /**
+     * Returns existing current config node as {@link io.helidon.common.config.ConfigValue}.
+     *
+     * @return current config node as {@link io.helidon.common.config.ConfigValue}
+     */
+    default ConfigValue<? extends Config> asNode() {
+        return as(Config.class);
+    }
+
+    /**
      * String typed value.
      *
      * @return typed value

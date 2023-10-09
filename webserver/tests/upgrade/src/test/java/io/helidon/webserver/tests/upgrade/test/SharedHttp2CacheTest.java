@@ -55,13 +55,12 @@ class SharedHttp2CacheTest {
         HeaderName clientPortHeader = HeaderNames.create("client-port");
         WebServer webServer = null;
         try {
-            HttpRouting routing = HttpRouting.builder()
+            var routing = HttpRouting.builder()
                     .route(Http2Route.route(POST, "/versionspecific", (req, res) -> {
                         req.content().consume(); // Workaround for #7427
                         res.header(clientPortHeader, String.valueOf(req.remotePeer().port()))
                                 .send();
-                    }))
-                    .build();
+                    }));
 
             webServer = WebServer.builder()
                     .routing(routing)

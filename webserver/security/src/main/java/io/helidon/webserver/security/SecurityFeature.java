@@ -94,8 +94,11 @@ import io.helidon.webserver.http.ServerResponse;
  * .get("/user[/{*}]", WebSecurity.{@link SecurityFeature#rolesAllowed(String...)
  * rolesAllowed("user")})
  * </pre>
+ * @deprecated Please use {@link io.helidon.webserver.security.SecurityServerFeature} instead, as it can cover multiple
+ *  sockets
  */
-public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighted {
+@Deprecated(forRemoval = true)
+public final class SecurityFeature implements  HttpSecurity, HttpFeature, Weighted {
     /**
      * Security can accept additional headers to be added to security request.
      * This will be used to obtain multivalue string map (a map of string to list of strings) from context (appropriate

@@ -57,8 +57,8 @@ public class DirectWebClient implements WebClient {
      *
      * @param routing routing to use
      */
-    public DirectWebClient(HttpRouting routing) {
-        this.routing = routing;
+    public DirectWebClient(HttpRouting.Builder routing) {
+        this.routing = routing.build();
         this.webClient = WebClient.builder()
                 .baseUri("http://helidon-unit:65000")
                 .build();

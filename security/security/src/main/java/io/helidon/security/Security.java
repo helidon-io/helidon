@@ -36,8 +36,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.spi.AuditProvider;
@@ -81,7 +81,7 @@ public interface Security {
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
      */
-    static Security create(Config config) {
+    static Security create(io.helidon.common.config.Config config) {
         Objects.requireNonNull(config, "Configuration must not be null");
         return builder()
                 .config(config)
@@ -833,7 +833,7 @@ public interface Security {
          * @param config Config instance
          * @return this instance
          */
-        public Builder config(Config config) {
+        public Builder config(io.helidon.common.config.Config config) {
             this.config = config;
             fromConfig(config);
             return this;
@@ -955,7 +955,7 @@ public interface Security {
             return this;
         }
 
-        private void fromConfig(Config config) {
+        private void fromConfig(io.helidon.common.config.Config config) {
             config.get("enabled").asBoolean().ifPresent(this::enabled);
 
             if (!enabled) {
@@ -963,7 +963,7 @@ public interface Security {
                 return;
             }
 
-            config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
+            config.get("environment.server-time").map(SecurityTime::create).ifPresent(this::serverTime);
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
             Map<String, SecurityProviderService> classNameToService = new HashMap<>();
@@ -1006,7 +1006,7 @@ public interface Security {
             }
 
             // now policy
-            Config providerPolicyConfig = config.get("provider-policy");
+            io.helidon.common.config.Config providerPolicyConfig = config.get("provider-policy");
             ProviderSelectionPolicyType pType = providerPolicyConfig.get("type")
                     .asString()
                     .map(ProviderSelectionPolicyType::valueOf)

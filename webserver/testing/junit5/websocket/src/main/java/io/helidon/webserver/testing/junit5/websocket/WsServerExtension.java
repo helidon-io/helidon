@@ -80,7 +80,7 @@ public class WsServerExtension implements ServerJunitExtension {
                            ListenerConfig.Builder listenerBuilder,
                            Router.RouterBuilder<?> routerBuilder,
                            WsRouting.Builder value) {
-            routerBuilder.addRouting(value.build());
+            routerBuilder.addRouting(value);
         }
     }
 }

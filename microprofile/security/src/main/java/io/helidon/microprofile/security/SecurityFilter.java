@@ -29,8 +29,8 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.jersey.common.InvokedResource;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;

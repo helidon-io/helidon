@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
@@ -52,7 +51,6 @@ import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.http.DirectHandlers;
-import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
@@ -159,22 +157,8 @@ class ServerListener implements ListenerContext {
             port = 0;
         }
         this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
+        this.router = router;
 
-        // for each socket name, use the default router by default, override if customized in builder
-        Optional<HttpRouting> routing = listenerConfig.routing();
-        List<Routing> routings = listenerConfig.routings();
-
-        Router.Builder routerBuilder = Router.builder();
-        routings.forEach(routerBuilder::addRouting);
-        routing.ifPresent(routerBuilder::addRouting);
-
-        if (routing.isEmpty() && routings.isEmpty()) {
-            // inherit from web server
-            this.router = router;
-        } else {
-            // customize routing
-            this.router = routerBuilder.build();
-        }
         // handle idle connection timeout
         IdleTimeoutHandler ith = new IdleTimeoutHandler(idleConnectionTimer,
                                                         listenerConfig,

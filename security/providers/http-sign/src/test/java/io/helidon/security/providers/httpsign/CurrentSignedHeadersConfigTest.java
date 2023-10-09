@@ -42,7 +42,7 @@ class CurrentSignedHeadersConfigTest {
 
     @Test
     void testFromConfig() {
-        SignedHeadersConfig shc = config.get("http-signatures.sign-headers").as(SignedHeadersConfig.class).get();
+        SignedHeadersConfig shc = config.get("http-signatures.sign-headers").map(SignedHeadersConfig::create).get();
 
         testThem(shc);
     }

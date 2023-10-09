@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.observe.spi;
 
+import java.util.List;
+import java.util.Optional;
+
 import io.helidon.common.config.NamedService;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserverConfigBase;
@@ -71,4 +74,21 @@ public interface Observer extends NamedService {
      */
     void register(HttpRouting.Builder routing,
                   String endpoint);
+
+    default void register(NamedRoutingBuilder observabilityRouting,
+                              List<NamedRoutingBuilder> routingBuilder,
+                              String endpoint) {
+
+    }
+
+
+    interface ObserverRegistration {
+        HttpRouting.Builder observerEndpoint();
+        String observerSocketName();
+        Optional<HttpRouting.Builder> namedSocket(String name);
+        String endpoint(String defaultEndpoint);
+    }
+    record NamedRoutingBuilder(String name, HttpRouting.Builder builder) {
+
+    }
 }

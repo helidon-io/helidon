@@ -21,8 +21,6 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.SocketOption;
-import java.net.StandardSocketOptions;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +28,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
@@ -49,7 +46,8 @@ import io.helidon.webserver.spi.ServerConnectionSelector;
  * Configuration of a server listener (server socket).
  */
 @Configured
-@Prototype.Blueprint(decorator = ListenerConfigBlueprint.ConfigDecorator.class)
+@Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
+@Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
@@ -79,7 +77,7 @@ interface ListenerConfigBlueprint {
      *
      * @return HTTP Routing for this listener/server
      */
-    Optional<HttpRouting> routing();
+    Optional<HttpRouting.Builder> routing();
 
     /**
      * List of all routings (possibly for multiple protocols). This allows adding non-http protocols as well,
@@ -88,7 +86,7 @@ interface ListenerConfigBlueprint {
      * @return router for this listener/server
      */
     @Option.Singular
-    List<Routing> routings();
+    List<io.helidon.common.Builder<?, ? extends Routing>> routings();
 
     /**
      * Name of this socket. Defaults to {@code @default}.
@@ -340,43 +338,4 @@ interface ListenerConfigBlueprint {
         }
     }
 
-    class ConfigDecorator implements Prototype.BuilderDecorator<ListenerConfig.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(ListenerConfig.BuilderBase<?, ?> target) {
-            String name = target.name();
-            if (name == null && target.config().isPresent()) {
-                Config config = target.config().get();
-                if (config.exists()) {
-                    target.name(config.get("name").asString().orElse(config.name()));
-                }
-            }
-            name = target.name();
-            if (name == null) {
-                target.name(WebServer.DEFAULT_SOCKET_NAME);
-            }
-
-            if (target.connectionOptions().isEmpty()) {
-                target.connectionOptions(SocketOptions.create());
-            }
-            if (target.address().isEmpty()) {
-                try {
-                    target.address(InetAddress.getByName(target.host()));
-                } catch (UnknownHostException e) {
-                    throw new IllegalArgumentException("Failed to get address from host: " + target.host(), e);
-                }
-            }
-            Map<SocketOption<?>, Object> socketOptions = target.listenerSocketOptions();
-            if (!socketOptions.containsKey(StandardSocketOptions.SO_REUSEADDR)) {
-                target.putListenerSocketOption(StandardSocketOptions.SO_REUSEADDR, true);
-            }
-            if (!socketOptions.containsKey(StandardSocketOptions.SO_RCVBUF)) {
-                target.putListenerSocketOption(StandardSocketOptions.SO_RCVBUF, 4096);
-            }
-            if (target.requestedUriDiscoveryContext().isEmpty()) {
-                target.requestedUriDiscoveryContext(RequestedUriDiscoveryContext.builder()
-                                                            .socketId(target.name())
-                                                            .build());
-            }
-        }
-    }
 }

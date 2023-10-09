@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -60,7 +60,7 @@ public class ConfigUserStore implements SecureUserStore {
         ConfigUserStore store = new ConfigUserStore();
 
         config.asNodeList().ifPresent(configs -> configs.forEach(config1 -> {
-            ConfigUser user = config1.as(ConfigUser::create).get();
+            ConfigUser user = config1.map(ConfigUser::create).get();
             store.users.put(user.login(), user);
         }));
 

@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthorizationResponse;
@@ -154,26 +154,25 @@ public final class AbacProvider implements AuthorizationProvider {
             } else {
                 // only configure this validator if its config key exists
                 // or it has a supported annotation
-                abacConfig.flatMap(it -> it.get(configKey).asNode().asOptional())
-                        .ifPresentOrElse(attribConfig -> {
-                            attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
-                        },
-                        () -> {
-                            List<Annotation> annotationConfig = new ArrayList<>();
-                            for (SecurityLevel securityLevel : epConfig.securityLevels()) {
-                                for (Class<? extends Annotation> annotation : annotations) {
-                                    List<? extends Annotation> list = securityLevel
-                                            .combineAnnotations(annotation,
-                                                                EndpointConfig.AnnotationScope.values());
-                                    annotationConfig.addAll(list);
-                                }
-                            }
+                Optional<Config> attrConfig = abacConfig.map(it -> it.get(configKey));
+                if (attrConfig.isPresent()) {
+                    attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attrConfig.get())));
+                } else {
+                    List<Annotation> annotationConfig = new ArrayList<>();
+                    for (SecurityLevel securityLevel : epConfig.securityLevels()) {
+                        for (Class<? extends Annotation> annotation : annotations) {
+                            List<? extends Annotation> list = securityLevel
+                                    .combineAnnotations(annotation,
+                                                        EndpointConfig.AnnotationScope.values());
+                            annotationConfig.addAll(list);
+                        }
+                    }
 
-                            if (!annotationConfig.isEmpty()) {
-                                attributes.add(new RuntimeAttribute(validator,
-                                                                    validator.fromAnnotations(epConfig)));
-                            }
-                        });
+                    if (!annotationConfig.isEmpty()) {
+                        attributes.add(new RuntimeAttribute(validator,
+                                                            validator.fromAnnotations(epConfig)));
+                    }
+                }
             }
         }
 

@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import io.helidon.common.Builder;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -153,8 +154,8 @@ public class ServerCdiExtension implements Extension {
      *
      * @param routing routing to add, such as WebSocket routing
      */
-    public void addRouting(Routing routing) {
-        addRouting(routing, DEFAULT_SOCKET_NAME, false, null);
+    public void addRouting(Builder<?, ? extends Routing> routing) {
+        this.serverBuilder.addRouting(routing);
     }
 
     /**
@@ -167,20 +168,25 @@ public class ServerCdiExtension implements Extension {
      * @param required is the socket required to be present, validated against configured sockets
      * @param appName name of the application, to provide meaningful error messages
      */
-    public void addRouting(Routing routing, String socketName, boolean required, String appName) {
-        boolean hasRouting = serverBuilder.sockets().containsKey(socketName);
-        if (required && !hasRouting) {
-            throw new IllegalStateException("Application requires configured listener (socket name) "
-                                                    + socketName
-                                                    + " to exist, yet such a socket is not configured for web server"
-                                                    + " for app: " + appName);
+    public void addRouting(Builder<?, ? extends Routing> routing, String socketName, boolean required, String appName) {
+        if (DEFAULT_SOCKET_NAME.equals(socketName)) {
+            serverBuilder.addRouting(routing);
+        } else {
+            boolean hasRouting = serverBuilder.sockets().containsKey(socketName);
+            if (required && !hasRouting) {
+                throw new IllegalStateException("Application requires configured listener (socket name) "
+                                                        + socketName
+                                                        + " to exist, yet such a socket is not configured for web server"
+                                                        + " for app: " + appName);
+            }
+            if (!hasRouting) {
+                LOGGER.log(Level.INFO, "Routing " + socketName + " does not exist, using default routing instead for " + appName);
+                serverBuilder.addRouting(routing);
+            } else {
+                namedRouters.computeIfAbsent(socketName, it -> Router.builder())
+                        .addRouting(routing);
+            }
         }
-        if (!hasRouting && !DEFAULT_SOCKET_NAME.equals(socketName)) {
-            LOGGER.log(Level.INFO, "Routing " + socketName + " does not exist, using default routing instead for " + appName);
-        }
-
-        namedRouters.computeIfAbsent(socketName, it -> Router.builder())
-                .addRouting(routing);
     }
 
     /**
@@ -409,7 +415,19 @@ public class ServerCdiExtension implements Extension {
 
 
         // start the webserver
-        serverBuilder.routing(routingBuilder.build());
+        serverBuilder.routing(routingBuilder);
+
+        namedRouters.forEach((name, routerBuilder) -> {
+            ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
+            ListenerConfig.Builder builder;
+            if (listenerConfig == null) {
+                builder = ListenerConfig.builder();
+            } else {
+                builder = ListenerConfig.builder(listenerConfig);
+            }
+            builder.addRoutings(routerBuilder.routings());
+            serverBuilder.putSocket(name, builder.build());
+        });
 
         namedRoutings.forEach((name, value) -> {
             ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
@@ -419,7 +437,7 @@ public class ServerCdiExtension implements Extension {
             } else {
                 builder = ListenerConfig.builder(listenerConfig);
             }
-            builder.routing(value.build());
+            builder.routing(value);
             serverBuilder.putSocket(name, builder.build());
         });
 

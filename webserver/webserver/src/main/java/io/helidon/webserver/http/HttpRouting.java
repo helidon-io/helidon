@@ -499,6 +499,14 @@ public final class HttpRouting implements Routing, Prototype.Api {
          * @return updated builder
          */
         Builder security(HttpSecurity security);
+
+        /**
+         * Create a copy of this builder that has the same routes, but is not backed by the same lists/maps.
+         * Modifications to the routes of the copy will not modify routes of this builder.
+         *
+         * @return builder that is a copy of this builder
+         */
+        Builder copy();
     }
 
     static class BuilderImpl implements Builder {
@@ -509,6 +517,13 @@ public final class HttpRouting implements Routing, Prototype.Api {
         private int maxReRouteCount = 10;
 
         private BuilderImpl() {
+        }
+
+        private BuilderImpl(List<HttpFeature> features, HttpRoutingFeature mainRouting, HttpSecurity security, int maxReroute) {
+            this.features.addAll(features);
+            this.mainRouting.copyFrom(mainRouting);
+            this.security = security;
+            this.maxReRouteCount = maxReroute;
         }
 
         @Override
@@ -581,6 +596,10 @@ public final class HttpRouting implements Routing, Prototype.Api {
             return this;
         }
 
+        @Override
+        public Builder copy() {
+            return new BuilderImpl(features, mainRouting, security, maxReRouteCount);
+        }
     }
 
     private static final class RoutingExecutor implements Callable<Void> {
@@ -762,6 +781,11 @@ public final class HttpRouting implements Routing, Prototype.Api {
         public Builder security(HttpSecurity security) {
             this.security = security;
             return this;
+        }
+
+        @Override
+        public Builder copy() {
+            throw new UnsupportedOperationException("This builder should only be used internally by Helidon and never copied");
         }
     }
 }

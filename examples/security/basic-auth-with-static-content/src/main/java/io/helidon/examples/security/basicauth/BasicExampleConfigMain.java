@@ -27,6 +27,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityFeature;
+import io.helidon.webserver.security.SecurityServerFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
 /**
@@ -81,6 +82,8 @@ public final class BasicExampleConfigMain {
 
     static void setup(WebServerConfig.Builder server) {
         Config config = Config.create();
+
+        server.addFeature(SecurityServerFeature.create(config.get("security")));
         server.config(config)
                 .routing(routing -> routing
                         .addFeature(ContextFeature.create())

@@ -16,7 +16,7 @@
 
 package io.helidon.security.providers.httpauth;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.util.TokenHandler;
 
@@ -153,7 +153,7 @@ public class HttpBasicOutboundConfig {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("outbound-token").as(TokenHandler::create)
+            config.get("outbound-token").map(TokenHandler::create)
                     .ifPresent(this::tokenHandler);
             config.get("username").asString().ifPresent(this::explicitUser);
             config.get("password").asString().ifPresent(this::explicitPassword);

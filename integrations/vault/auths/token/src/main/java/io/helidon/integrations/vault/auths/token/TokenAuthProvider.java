@@ -19,7 +19,7 @@ package io.helidon.integrations.vault.auths.token;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.spi.AuthMethodProvider;

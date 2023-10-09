@@ -29,15 +29,14 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
 
 import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,7 +120,7 @@ class OciMetricsSupportTest {
                 .monitoringClient(monitoringClient)
                 .enabled(true);
 
-        HttpRouting routing = createRouting(ociMetricsSupportBuilder);
+        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
 
         counter.increment();
         WebServer webServer = createWebServer(routing);
@@ -171,7 +170,7 @@ class OciMetricsSupportTest {
                 .descriptionEnabled(false)
                 .monitoringClient(monitoringClient);
 
-        HttpRouting routing = createRouting(ociMetricsSupportBuilder);
+        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
 
         WebServer webServer = createWebServer(routing);
 
@@ -271,7 +270,7 @@ class OciMetricsSupportTest {
 
         Instant start = Instant.now();
 
-        HttpRouting routing = createRouting(ociMetricsSupportBuilder);
+        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
 
         WebServer webServer = createWebServer(routing);
 
@@ -367,7 +366,7 @@ class OciMetricsSupportTest {
                 .enabled(false);
 
         testMetricCount = 0;
-        HttpRouting routing = createRouting(ociMetricsSupportBuilder);
+        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
         WebServer webServer = createWebServer(routing);
 
         delay(1000L);
@@ -392,7 +391,7 @@ class OciMetricsSupportTest {
         }).when(monitoringClient).postMetricData(any());
     }
 
-    private WebServer createWebServer(HttpRouting routing) {
+    private WebServer createWebServer(HttpRouting.Builder routing) {
         WebServer webServer = WebServer.builder()
                 .host("localhost")
                 .addRouting(routing)
@@ -401,14 +400,10 @@ class OciMetricsSupportTest {
         return webServer;
     }
 
-    private HttpRouting createRouting(OciMetricsSupport.Builder ociMetricsSupportBuilder) {
-        HttpRouting routing = HttpRouting.builder()
-                .put("/test", (req, res) -> {
-                    res.send();
-                })
-                .register(ociMetricsSupportBuilder)
-                .build();
-        return routing;
+    private HttpRouting.Builder createRouting(OciMetricsSupport.Builder ociMetricsSupportBuilder) {
+        return HttpRouting.builder()
+                .put("/test", (req, res) -> res.send())
+                .register(ociMetricsSupportBuilder);
     }
 
     private void validateMetricCount(String scopesList, int expectedMetricCount) {
@@ -447,7 +442,7 @@ class OciMetricsSupportTest {
         testMetricCount = 0;
         CountDownLatch countDownLatch = new CountDownLatch(1);
         mockPostMetricDataAndGetTestMetricCount(countDownLatch);
-        HttpRouting routing = createRouting(ociMetricsSupportBuilder);
+        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
         WebServer webServer = createWebServer(routing);
 
         try {

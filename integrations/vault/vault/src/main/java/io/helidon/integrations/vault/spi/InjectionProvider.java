@@ -19,7 +19,7 @@ package io.helidon.integrations.vault.spi;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.integrations.vault.Vault;
 
 /**

@@ -31,10 +31,10 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -68,8 +68,9 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 
 /**
  * Handles security for web server. This handler is registered either by hand on router config,
- * or automatically from configuration when integration done through {@link SecurityFeature#create(Config)}
- * or {@link SecurityFeature#create(Security, Config)}.
+ * or automatically from configuration when integration done through
+ * {@link SecurityFeature#create(io.helidon.common.config.Config)}
+ * or {@link SecurityFeature#create(Security, io.helidon.common.config.Config)}.
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -85,8 +86,8 @@ public final class SecurityHandler implements Handler {
     private static final String KEY_AUDIT_EVENT_TYPE = "audit-event-type";
     private static final String KEY_AUDIT_MESSAGE_FORMAT = "audit-message-format";
     private static final String KEY_QUERY_PARAM_HANDLERS = "query-params";
-    private static final String DEFAULT_AUDIT_EVENT_TYPE = "request";
-    private static final String DEFAULT_AUDIT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";
+    static final String DEFAULT_AUDIT_EVENT_TYPE = "request";
+    static final String DEFAULT_AUDIT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";
     private static final SecurityHandler DEFAULT_INSTANCE = builder().build();
 
     private final Optional<Set<String>> rolesAllowed;
@@ -218,7 +219,7 @@ public final class SecurityHandler implements Handler {
                 .ifPresent(builder::auditEventType);
         config.get(KEY_AUDIT_MESSAGE_FORMAT).asString().or(() -> defaults.auditMessageFormat)
                 .ifPresent(builder::auditMessageFormat);
-        config.get(KEY_QUERY_PARAM_HANDLERS).asList(QueryParamHandler::create)
+        config.get(KEY_QUERY_PARAM_HANDLERS).mapList(QueryParamHandler::create)
                 .ifPresent(it -> it.forEach(builder::addQueryParamHandler));
 
         // now resolve implicit behavior

@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.AuthenticationProvider;

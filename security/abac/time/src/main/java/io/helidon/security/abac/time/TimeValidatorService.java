@@ -16,7 +16,7 @@
 
 package io.helidon.security.abac.time;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
 import io.helidon.security.providers.abac.spi.AbacValidator;

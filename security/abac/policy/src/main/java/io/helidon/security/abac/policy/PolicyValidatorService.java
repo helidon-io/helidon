@@ -16,7 +16,7 @@
 
 package io.helidon.security.abac.policy;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
 import io.helidon.security.providers.abac.spi.AbacValidator;
 import io.helidon.security.providers.abac.spi.AbacValidatorService;

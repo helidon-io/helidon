@@ -34,7 +34,7 @@ import java.util.Set;
 
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityLevel;

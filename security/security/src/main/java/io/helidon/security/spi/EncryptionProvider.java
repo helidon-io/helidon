@@ -18,7 +18,7 @@ package io.helidon.security.spi;
 
 import java.util.function.Function;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Provider that can encrypt and decrypt secrets.

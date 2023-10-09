@@ -152,7 +152,7 @@ public final class Main {
      * @param config configuration of this server
      * @return routing configured with JSON support, a health check, and a service
      */
-    private static Routing createRouting(Config config) {
+    private static HttpRouting.Builder createRouting(Config config) {
 
         HealthObserver health = HealthObserver.builder()
                 .useSystemServices(false)
@@ -171,7 +171,7 @@ public final class Main {
                 .addFeature(ObserveFeature.just(health, metrics))
                 .register(SERVICE_PATH, new BookService(config));
 
-        return builder.build();
+        return builder;
     }
 
     enum JsonLibrary {

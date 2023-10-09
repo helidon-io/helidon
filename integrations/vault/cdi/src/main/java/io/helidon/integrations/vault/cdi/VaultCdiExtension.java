@@ -27,7 +27,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.spi.InjectionProvider;
 import io.helidon.microprofile.cdi.RuntimeStart;

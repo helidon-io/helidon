@@ -16,7 +16,7 @@
 
 package io.helidon.security.spi;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Service to use with ServiceLoader to map configuration to

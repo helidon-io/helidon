@@ -16,7 +16,7 @@
 
 package io.helidon.security.providers.httpsign;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 

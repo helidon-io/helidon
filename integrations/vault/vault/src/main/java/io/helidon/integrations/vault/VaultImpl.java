@@ -24,7 +24,7 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.spi.AuthMethodProvider;
 import io.helidon.integrations.vault.spi.SecretsEngineProvider;

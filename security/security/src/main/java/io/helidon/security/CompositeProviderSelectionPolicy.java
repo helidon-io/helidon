@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
@@ -315,9 +315,9 @@ public final class CompositeProviderSelectionPolicy implements ProviderSelection
         public Builder config(Config config) {
             config.get("name").asString().ifPresent(this::name);
             config.get("default").asBoolean().ifPresent(this::isDefault);
-            config.get("authentication").asList(FlaggedProvider::create)
+            config.get("authentication").mapList(FlaggedProvider::create)
                     .ifPresent(this.authenticators::addAll);
-            config.get("authorization").asList(FlaggedProvider::create)
+            config.get("authorization").mapList(FlaggedProvider::create)
                     .ifPresent(this.authorizers::addAll);
             config.get("outbound").asNodeList()
                     .ifPresent(configs -> configs.forEach(outConfig -> addOutboundProvider(outConfig.get("name")

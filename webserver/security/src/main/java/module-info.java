@@ -18,7 +18,7 @@
  * Helidon WebServer Security Support.
  */
 module io.helidon.webserver.security {
-
+    requires io.helidon.builder.api;
     requires io.helidon.common.context;
     requires io.helidon.security.integration.common;
     requires io.helidon.webserver;

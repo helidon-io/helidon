@@ -22,6 +22,8 @@ import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
+import io.helidon.webserver.observe.metrics.MetricsObserver;
 
 /**
  * The application main class.
@@ -48,6 +50,9 @@ public final class Main {
         Config.global(config);
 
         WebServer server = WebServer.builder()
+                .featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.create(MetricsObserver.create(), HealthObserver.create()))
+                .addFeature(OpenApiFeature.create())
                 .config(config.get("server"))
                 .routing(Main::routing)
                 .build()
@@ -60,10 +65,6 @@ public final class Main {
      * Updates HTTP Routing and registers observe providers.
      */
     static void routing(HttpRouting.Builder routing) {
-        Config config = Config.global();
-
-        routing.register("/greet", new GreetService())
-                .addFeature(OpenApiFeature.create(config.get("openapi")))
-                .addFeature(ObserveFeature.create(config.get("observe")));
+        routing.register("/greet", new GreetService());
     }
 }

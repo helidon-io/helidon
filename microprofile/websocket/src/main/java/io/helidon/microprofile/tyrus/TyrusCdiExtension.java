@@ -53,7 +53,6 @@ public class TyrusCdiExtension implements Extension {
     private final TyrusApplication.Builder appBuilder = TyrusApplication.builder();
     private Config config;
     private ServerCdiExtension serverCdiExtension;
-    private volatile TyrusRouting tyrusRouting;
 
     /**
      * Overrides a websocket application class.
@@ -125,10 +124,6 @@ public class TyrusCdiExtension implements Extension {
         }
     }
 
-    TyrusRouting tyrusRouting() {
-        return tyrusRouting;
-    }
-
     private void registerWebSockets() {
         try {
             TyrusApplication app = appBuilder.build();
@@ -142,8 +137,7 @@ public class TyrusCdiExtension implements Extension {
                 app.extensions().forEach(tyrusRoutingBuilder::extension);
 
                 // Create routing
-                tyrusRouting = tyrusRoutingBuilder.build();
-                serverCdiExtension.addRouting(tyrusRouting);
+                serverCdiExtension.addRouting(tyrusRoutingBuilder);
             } else {
                 appClasses.forEach(appClass -> {
                     Optional<String> contextRoot = findContextRoot(config, appClass);
@@ -177,8 +171,7 @@ public class TyrusCdiExtension implements Extension {
                     endpointConfigs.forEach(wsCfg -> tyrusRoutingBuilder.endpoint(rootPath, wsCfg));
 
                     // Create routing
-                    tyrusRouting = tyrusRoutingBuilder.build();
-                    serverCdiExtension.addRouting(tyrusRouting,
+                    serverCdiExtension.addRouting(tyrusRoutingBuilder,
                                                   namedRouting.orElse(WebServer.DEFAULT_SOCKET_NAME),
                                                   routingNameRequired,
                                                   appClass.getName());

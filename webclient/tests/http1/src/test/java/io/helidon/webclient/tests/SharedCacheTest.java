@@ -35,9 +35,8 @@ class SharedCacheTest {
     void cacheHttp1WithServerRestart() {
         WebServer webServer = null;
         try {
-            HttpRouting routing = HttpRouting.builder()
-                    .route(Http1Route.route(POST, "/", (req, res) -> res.send()))
-                    .build();
+            var routing = HttpRouting.builder()
+                    .route(Http1Route.route(POST, "/", (req, res) -> res.send()));
 
             webServer = WebServer.builder()
                     .routing(routing)
@@ -76,12 +75,11 @@ class SharedCacheTest {
         HeaderName clientPortHeader = HeaderNames.create("client-port");
         WebServer webServer = null;
         try {
-            HttpRouting routing = HttpRouting.builder()
+            var routing = HttpRouting.builder()
                     .route(Http1Route.route(POST, "/", (req, res) -> {
                         res.header(clientPortHeader, String.valueOf(req.remotePeer().port()));
                         res.send();
-                    }))
-                    .build();
+                    }));
 
             webServer = WebServer.builder()
                     .routing(routing)

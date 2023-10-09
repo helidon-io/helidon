@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.secrets.kv2;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;

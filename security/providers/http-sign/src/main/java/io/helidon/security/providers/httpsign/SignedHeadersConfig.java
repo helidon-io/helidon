@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 

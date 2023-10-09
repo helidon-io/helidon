@@ -21,8 +21,8 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.pki.Keys;
-import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.SubjectType;
@@ -277,7 +277,7 @@ public class InboundClientDefinition {
             keyId(config.get("key-id").asString().get());
             config.get("principal-name").asString().ifPresent(this::principalName);
             config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("public-key").as(Keys::create).ifPresent(this::publicKeyConfig);
+            config.get("public-key").map(Keys::create).ifPresent(this::publicKeyConfig);
             config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
             config.get("algorithm").asString().ifPresent(this::algorithm);
 

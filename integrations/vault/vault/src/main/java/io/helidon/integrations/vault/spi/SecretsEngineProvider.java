@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.spi;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.Secrets;

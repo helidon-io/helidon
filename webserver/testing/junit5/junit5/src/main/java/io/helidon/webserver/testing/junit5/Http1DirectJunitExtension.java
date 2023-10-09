@@ -153,9 +153,9 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
 
         @Override
         public void handle(Method method, String socketName, HttpRouting.Builder value) {
-            HttpRouting routing = value.build();
+            HttpRouting routing = value.copy().build();
             routing.beforeStart();
-            if (clients.putIfAbsent(socketName, new DirectClient(routing)) != null) {
+            if (clients.putIfAbsent(socketName, new DirectClient(value)) != null) {
                 throw new IllegalStateException("Method "
                                                         + method
                                                         + " defines HTTP routing for socket \""
@@ -166,7 +166,7 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
                                                         + "\".");
             }
 
-            if (webClients.putIfAbsent(socketName, new DirectWebClient(routing)) != null) {
+            if (webClients.putIfAbsent(socketName, new DirectWebClient(value)) != null) {
                 throw new IllegalStateException("Method "
                                                         + method
                                                         + " defines HTTP routing for socket \""

@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
 import jakarta.annotation.security.RolesAllowed;

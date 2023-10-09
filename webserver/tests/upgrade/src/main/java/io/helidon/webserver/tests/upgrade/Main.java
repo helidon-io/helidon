@@ -74,8 +74,7 @@ public class Main {
                                                     + " route " + req.prologue().method() + "\n");
                                }))
                 .addRouting(WsRouting.builder()
-                                    .endpoint("/ws-echo", new EchoWsListener())
-                                    .build())
+                                    .endpoint("/ws-echo", new EchoWsListener()))
                 .build()
                 .start();
     }

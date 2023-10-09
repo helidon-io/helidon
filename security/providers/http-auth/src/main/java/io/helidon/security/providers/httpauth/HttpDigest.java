@@ -18,7 +18,7 @@ package io.helidon.security.providers.httpauth;
 
 import java.util.Arrays;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Digest specific enums.

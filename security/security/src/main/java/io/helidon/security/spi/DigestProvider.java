@@ -16,7 +16,7 @@
 
 package io.helidon.security.spi;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Provider that can create digests of bytes, and then verify them.

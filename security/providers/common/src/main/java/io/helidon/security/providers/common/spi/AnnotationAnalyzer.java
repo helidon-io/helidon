@@ -18,7 +18,7 @@ package io.helidon.security.providers.common.spi;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.ClassToInstanceStore;
 
 /**

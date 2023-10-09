@@ -15,7 +15,7 @@
  */
 package io.helidon.security.providers.httpauth.spi;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.providers.httpauth.SecureUserStore;
 
 /**

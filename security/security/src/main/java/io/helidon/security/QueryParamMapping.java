@@ -18,7 +18,7 @@ package io.helidon.security;
 
 import java.util.Map;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.util.TokenHandler;
 
 /**
@@ -67,7 +67,7 @@ public final class QueryParamMapping {
      */
     public static QueryParamMapping create(Config config) {
         String name = config.get("name").asString().get();
-        TokenHandler handler = config.as(TokenHandler::create).get();
+        TokenHandler handler = config.map(TokenHandler::create).get();
         return create(name, handler);
     }
 

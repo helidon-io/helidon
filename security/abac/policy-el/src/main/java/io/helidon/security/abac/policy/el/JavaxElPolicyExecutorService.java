@@ -16,7 +16,7 @@
 
 package io.helidon.security.abac.policy.el;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.abac.policy.spi.PolicyExecutor;
 import io.helidon.security.abac.policy.spi.PolicyExecutorService;
 

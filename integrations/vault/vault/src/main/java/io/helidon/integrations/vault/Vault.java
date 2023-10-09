@@ -22,7 +22,7 @@ import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;
 import io.helidon.http.Method;

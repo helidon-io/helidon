@@ -19,7 +19,7 @@ package io.helidon.security.spi;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Provider that can retrieve secrets.
