@@ -785,11 +785,6 @@
                 <version>${version.lib.microstream}</version>
             </dependency>
             <dependency>
-                <groupId>javax.cache</groupId>
-                <artifactId>cache-api</artifactId>
-                <version>1.1.1</version>
-            </dependency>
-            <dependency>
                 <groupId>one.microstream</groupId>
                 <artifactId>microstream-persistence-binary-jdk17</artifactId>
                 <version>${version.lib.microstream}</version>
