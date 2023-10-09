@@ -117,6 +117,139 @@ Each observer has customizable endpoints as well, and the result is decided as f
 1. If the custom endpoint is relative, the result would be under observe endpoint (e.g. for `health` -> `/observe/health`)
 2. If the custom endpoint is absolute, the result would be absolute as well (e.g. for `/health` -> `/health`)
 
+==== Configuration Observability
+
+Configuration Observability defines the following endpoints:
+
+|===
+|Endpoint |Method |Action
+
+|`/profile`
+|`GET`
+|Returns the current configuration profile
+
+|`/values`
+|`GET`
+|Returns the current configuration values
+
+|`/values/{name}`
+|`GET`
+|Returns specified by `name` configuration value
+|===
+
+==== Metrics Observability
+
+ Metrics Observability defines the following endpoints:
+
+|===
+|Endpoint |Method |Action
+
+|`/ready`
+|`GET`
+|Returns Service Readiness
+
+|`/live`
+|`GET`
+|Returns whether the service is alive
+
+|`/started`
+|`GET`
+|Returns whether the service is started
+
+|`/ready/{name}`
+|`GET`
+|Returns Service `name` Readiness
+
+|`/live/{name}`
+|`GET`
+|Returns whether the service `name` is alive
+
+|`/started/{name}`
+|`GET`
+|Returns whether the service `name` is started
+
+|`/check/{name}`
+|`GET`
+|Returns all checks for service `name`
+
+
+|`/ready`
+|`HEAD`
+|Returns Service Readiness without details
+
+|`/live`
+|`HEAD`
+|Returns whether the service is alive without details
+
+|`/started`
+|`HEAD`
+|Returns whether the service is started without details
+
+|`/ready/{name}`
+|`HEAD`
+|Returns Service `name` Readiness without details
+
+|`/live/{name}`
+|`HEAD`
+|Returns whether the service `name` is alive without details
+
+|`/started/{name}`
+|`HEAD`
+|Returns whether the service `name` is started without details
+
+|`/check/{name}`
+|`HEAD`
+|Returns all checks for service `name` without details
+
+|===
+
+==== Information Observability
+
+Information Observability defines the following endpoints:
+
+|===
+|Endpoint |Method |Action
+
+|`/`
+|`GET`
+|Returns the Application information
+
+|`/{name}`
+|`GET`
+|Returns the Application information for the specified `name`
+
+|===
+
+
+==== Logger Observability
+
+Logger Observability defines the following endpoints:
+
+|===
+|Endpoint |Method |Action
+
+|`/`
+|`GET`
+|Stream logs (if enabled)
+
+|`/loggers`
+|`GET`
+|Returns all logger handlers
+
+|`/loggers/{logger}`
+|`GET`
+|Returns the Logger by name `logger`
+
+|`/loggers/{logger}`
+|`POST`
+|Set Logger level by name `logger`
+
+|`/loggers/{logger}`
+|`DELETE`
+|Unset the specified logger `logger`
+
+|===
+
 
 == Configuration
 
