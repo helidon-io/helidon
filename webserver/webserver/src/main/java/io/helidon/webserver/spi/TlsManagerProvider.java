@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.function.Function;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -48,6 +49,19 @@ public interface TlsManagerProvider {
      * @return a new instance created from this config node
      */
     TlsManager create(Config config, String name);
+
+    /**
+     * Provides the ability to have a unique {@link TlsManager} per unique {@link Config} instance provided.
+     *
+     * @param configBean the config bean instance
+     * @param creator    the creator to apply if not already in cache, which takes the config bean instance
+     * @param <T>        the type of the config bean
+     * @return the tls manager instance from cache, defaulting to creation from the {@code creator} if not in cache
+     */
+    static <T> TlsManager getOrCreate(T configBean,
+                                      Function<T, TlsManager> creator) {
+        return TlsManagerCache.getOrCreate(configBean, creator);
+    }
 
     /**
      * Takes a configuration and looks for a suitable {@link TlsManager} instance based upon that configuration.

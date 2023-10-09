@@ -17,6 +17,7 @@
 package io.helidon.webserver.spi;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -24,10 +25,15 @@ import io.helidon.webserver.ConfiguredTlsManager;
 import io.helidon.webserver.TlsManager;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TlsManagerProviderTest {
@@ -84,6 +90,35 @@ class TlsManagerProviderTest {
                    equalTo("fake"));
         assertThat(configuredTlsManager.type(),
                    equalTo("fake-type"));
+    }
+
+    @Test
+    void caching() {
+        TlsManager mock = Mockito.mock(TlsManager.class);
+        AtomicInteger count = new AtomicInteger();
+
+        // we are using "1" and "2" here abstractly to stand in for Config beans, which would hash properly
+        TlsManager manager1 = TlsManagerProvider.getOrCreate("1", (c) -> {
+            count.incrementAndGet();
+            return mock;
+        });
+        assertThat(manager1, sameInstance(mock));
+        assertThat(count.get(), is(1));
+
+        TlsManager manager2 = TlsManagerProvider.getOrCreate("1", (c) -> {
+            count.incrementAndGet();
+            return Mockito.mock(TlsManager.class);
+        });
+        assertThat(manager2, sameInstance(mock));
+        assertThat(count.get(), is(1));
+
+        TlsManager manager3 = TlsManagerProvider.getOrCreate("2", (c) -> {
+            count.incrementAndGet();
+            return Mockito.mock(TlsManager.class);
+        });
+        assertThat(manager3, notNullValue());
+        assertThat(manager3, not(sameInstance(mock)));
+        assertThat(count.get(), is(2));
     }
 
 }
