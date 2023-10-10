@@ -101,6 +101,7 @@ public class MainTest {
             LineNumberReader reader = new LineNumberReader(new StringReader(openMetricsOutput));
             List<String> returnedLines = reader.lines()
                                                .collect(Collectors.toList());
+            returnedLines.add("# extra line at end to make sure we do not deplete the actual lines");
 
             List<String> expected = List.of(">> skip to max >>",
                     "# TYPE " + GreetService.COUNTER_FOR_PERSONALIZED_GREETINGS + " counter",
