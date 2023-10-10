@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 == Overview
 
-Helidon implements link:{microprofile-rs-operators-spec-url}[MicroProfile Reactive Streams Operators] specification which defines reactive operators and provides a standartized tool for manipulation with https://www.reactive-streams.org/[Reactive Streams]. You can use the Helidon supported reactive operators and tooling when you want to maintain source-level portability between different implementations of the MicroProfile specifications.
+Helidon implements link:{microprofile-rs-operators-spec-url}[MicroProfile Reactive Streams Operators] specification which defines reactive operators and provides a standardized tool for manipulation with https://www.reactive-streams.org/[Reactive Streams]. You can use MicroProfile Reactive Streams Operators when you want to maintain source-level portability between different implementations.
 
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -44,7 +44,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-The MicroProfile Reactive Streams Operators specification provides a set of operators within stages, as well as the builders used to prepare graphs of stages from which streams can be built.
+The MicroProfile Reactive Streams Operators specification provides a set of operators within stages,
+as well as the builders used to prepare graphs of stages from which streams can be built.
 
 [source,java]
 .Example of simple closed graph usage:
@@ -106,7 +107,7 @@ ReactiveStreams.of("1", "2", "3", "4", "5")
 === Graphs
 
 link:{microprofile-rs-operators-spec-url}#_graphs[Graphs] are pre-prepared stream builders with
- link:{microprofile-rs-operators-spec-url}#_stages[stages], which can be combined together to close graph with methods
+ link:{microprofile-rs-operators-spec-url}#_stages[stages], which can be combined to close graph with methods
  `via` and `to`.
 
 [source,java]
