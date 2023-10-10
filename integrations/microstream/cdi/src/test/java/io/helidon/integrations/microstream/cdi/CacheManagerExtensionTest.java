@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @AddConfig(key = "one.microstream.cache-HashMap.value-type", value = "java.util.HashMap")
 @AddConfig(key = "one.microstream.cache-wrongTypes.key-type", value = "java.lang.Integer")
 @AddConfig(key = "one.microstream.cache-wrongTypes.value-type", value = "java.lang.String")
-class CacheManagerExtentionTest {
+class CacheManagerExtensionTest {
 
     @Inject
     @MicrostreamCache(name = "intStrCache")
