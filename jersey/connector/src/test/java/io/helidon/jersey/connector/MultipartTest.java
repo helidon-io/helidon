@@ -75,7 +75,6 @@ public class MultipartTest {
         @Path("upload")
         @Consumes(MediaType.MULTIPART_FORM_DATA)
         public String upload(@Context HttpHeaders headers, MultiPart multiPart) throws IOException {
-//            headers.getRequestHeaders().forEach((k,v) -> System.out.println(k + ":" + v));
             return ReaderWriter.readFromAsString(
                     ((BodyPartEntity) multiPart.getBodyParts().get(0).getEntity()).getInputStream(),
                     MediaType.TEXT_PLAIN_TYPE);
@@ -87,7 +86,6 @@ public class MultipartTest {
     void testMultipart(HelidonEntity.HelidonEntityType entityType, WebTarget webTarget) {
         // For each entity type make 10 consecutive requests
         for (int i = 0; i != 10; i++) {
-//                System.out.append(entityType.name()).println(i);
             MultiPart multipart = new MultiPart().bodyPart(new BodyPart().entity(ENTITY));
             multipart.setMediaType(MediaType.MULTIPART_FORM_DATA_TYPE);
             try (Response r = ClientBuilder.newBuilder()
