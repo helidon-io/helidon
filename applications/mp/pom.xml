@@ -33,9 +33,6 @@
 
     <properties>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
-        <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
-        <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
-        <version.plugin.hibernate.enhance>6.1.7.Final</version.plugin.hibernate.enhance>
         <mainClass>io.helidon.Main</mainClass>
     </properties>
 
@@ -55,20 +52,6 @@
                             <phase>process-classes</phase>
                         </execution>
                     </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.hibernate.orm.tooling</groupId>
-                    <artifactId>hibernate-enhance-maven-plugin</artifactId>
-                    <version>${version.plugin.hibernate.enhance}</version>
-                    <dependencies>
-                        <dependency>
-                            <!-- Force upgrade byte-buddy for Java 21.     -->
-                            <!-- Remove after upgrading to Hibernate 6.2.7 -->
-                            <groupId>net.bytebuddy</groupId>
-                            <artifactId>byte-buddy</artifactId>
-                            <version>${version.lib.byte-buddy}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
