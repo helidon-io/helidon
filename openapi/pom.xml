@@ -31,7 +31,6 @@
 
     <modules>
         <module>openapi</module>
-        <module>openapi-ui</module>
     </modules>
 
     <profiles>
