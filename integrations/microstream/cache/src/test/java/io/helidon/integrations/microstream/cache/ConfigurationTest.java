@@ -64,9 +64,6 @@ class ConfigurationTest {
                   () -> assertThat("getCacheWriterFactory", cacheConfig.getCacheWriterFactory(), nullValue()),
                   () -> assertThat("getCacheEntryListenerConfigurations",
                                    cacheConfig.getCacheEntryListenerConfigurations(), emptyIterable()));
-
-//                  () -> assertThat("getSerializerFieldPredicate", cacheConfig.getSerializerFieldPredicate(),
-//                                   is(CacheConfiguration.DefaultSerializerFieldPredicate())));
     }
 
     /**
@@ -153,14 +150,4 @@ class ConfigurationTest {
         assertThat(cacheConfig.getEvictionManagerFactory(), sameInstance(evictionManagerFactory));
     }
 
-//    @Test
-//    void serializerFieldPredicate() {
-//        @SuppressWarnings("unchecked")
-//        Predicate<? super Field> serializerFieldPredicate = Mockito.mock(Predicate.class);
-//
-//        CacheConfiguration<Integer, String> cacheConfig = MicrostreamCacheConfigurationBuilder
-//                .builder(Integer.class, String.class).serializerFieldPredicate(serializerFieldPredicate).build();
-//
-//        assertThat(cacheConfig.getSerializerFieldPredicate(), sameInstance(serializerFieldPredicate));
-//    }
 }

@@ -40,7 +40,6 @@ import static io.helidon.metrics.api.Meter.BaseUnits.BYTES;
 public class MicrostreamMetricsSupport {
 
     private static final String CONFIG_METRIC_ENABLED_VENDOR = "vendor.";
-    //static final String BASE_ENABLED_KEY = CONFIG_METRIC_ENABLED_VENDOR + "enabled";
 
     private static final GaugeInfo<StorageRawFileStatistics> GLOBAL_FILE_COUNT =
             new GaugeInfo<>("microstream.globalFileCount",
