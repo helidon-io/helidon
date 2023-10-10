@@ -15,12 +15,13 @@
  */
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.integrations.openapi.ui.OpenApiUiProvider;
 
 @Feature(value = "OpenAPI UI",
          description = "OpenAPI UI support",
          in = HelidonFlavor.SE
 )
-module io.helidon.openapi.ui {
+module io.helidon.integrations.openapi.ui {
     requires io.helidon.common.features.api;
     requires io.helidon.common.media.type;
     requires io.helidon.openapi;
@@ -31,5 +32,5 @@ module io.helidon.openapi.ui {
     requires smallrye.open.api.ui;
 
     provides io.helidon.openapi.spi.OpenApiServiceProvider with
-            io.helidon.openapi.ui.OpenApiUiProvider;
+            OpenApiUiProvider;
 }
