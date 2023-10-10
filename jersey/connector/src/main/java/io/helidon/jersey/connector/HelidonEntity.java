@@ -30,6 +30,7 @@ import javax.ws.rs.ProcessingException;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.OutputStreamMulti;
 import io.helidon.common.reactive.Single;
@@ -110,74 +111,37 @@ class HelidonEntity {
             CompletableFuture<Void> firstWrite = new CompletableFuture<>();
             switch (type) {
                 case BYTE_ARRAY_OUTPUT_STREAM:
-                    final ByteArrayOutputStream baos = new ByteArrayOutputStream(bufferSize) {
-                        @Override
-                        public synchronized void write(int b) {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b);
-                        }
+                    final ByteArrayOutputStream baos = new ByteArrayOutputStream(bufferSize);
+                    requestContext.setStreamProvider(unused -> {
+                        requestBuilder.headers(HelidonStructures.createHeaders(requestContext.getRequestHeaders()));
+                        firstWrite.complete(null);
+                        return baos;
+                    });
 
-                        @Override
-                        public synchronized void write(byte[] b, int off, int len) {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b, off, len);
-                        }
-
-                        @Override
-                        public void write(byte[] b) throws IOException {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b);
-                        }
-                    };
-                    requestContext.setStreamProvider(contentLength -> baos);
-                    executorService.execute((ProcessingRunnable) requestContext::writeEntity);
-                    stage = firstWrite.thenCompose(unused -> requestBuilder.submit(baos));
+                    try {
+                        requestContext.writeEntity();
+                        stage = requestBuilder.submit(baos);
+                    } catch (IOException e) {
+                        stage = CompletableFuture.failedStage(e);
+                    }
                     break;
                 case READABLE_BYTE_CHANNEL:
-                    final OutputStreamChannel channel = new OutputStreamChannel(bufferSize) {
-                        @Override
-                        public void write(int b) throws IOException {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b);
-                        }
-
-                        @Override
-                        public void write(byte[] b) throws IOException {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b);
-                        }
-
-                        @Override
-                        public void write(byte[] b, int off, int len) throws IOException {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b, off, len);
-                        }
-                    };
-                    requestContext.setStreamProvider(contentLength -> channel);
+                    final OutputStreamChannel channel = new OutputStreamChannel(bufferSize);
+                    requestContext.setStreamProvider(unused -> {
+                        requestBuilder.headers(HelidonStructures.createHeaders(requestContext.getRequestHeaders()));
+                        firstWrite.complete(null);
+                        return channel;
+                    });
                     executorService.execute((ProcessingRunnable) requestContext::writeEntity);
                     stage = firstWrite.thenCompose(unused -> requestBuilder.submit(channel));
                     break;
                 case OUTPUT_STREAM_MULTI:
-                    final OutputStreamMulti publisher = new OutputStreamMulti() {
-                        @Override
-                        public void write(byte[] b, int off, int len) throws IOException {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b, off, len);
-                        }
-
-                        @Override
-                        public void write(int b) throws IOException {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b);
-                        }
-
-                        @Override
-                        public void write(byte[] b) throws IOException {
-                            firstWrite(firstWrite, requestBuilder, requestContext);
-                            super.write(b);
-                        }
-                    };
-                    requestContext.setStreamProvider(contentLength -> publisher);
+                    final OutputStreamMulti publisher = IoMulti.outputStreamMulti();
+                    requestContext.setStreamProvider(unused -> {
+                        requestBuilder.headers(HelidonStructures.createHeaders(requestContext.getRequestHeaders()));
+                        firstWrite.complete(null);
+                        return publisher;
+                    });
                     executorService.execute((ProcessingRunnable) () -> {
                         requestContext.writeEntity();
                         publisher.close();
@@ -189,15 +153,6 @@ class HelidonEntity {
             }
         }
         return stage;
-    }
-
-    private static void firstWrite(CompletableFuture<Void> firstWrite,
-                                   WebClientRequestBuilder requestBuilder,
-                                   ClientRequest requestContext) {
-        if (!firstWrite.isDone()) {
-            requestBuilder.headers(HelidonStructures.createHeaders(requestContext.getRequestHeaders()));
-            firstWrite.complete(null);
-        }
     }
 
     @FunctionalInterface

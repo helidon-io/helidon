@@ -30,7 +30,8 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.message.internal.ReaderWriter;
 import org.junit.jupiter.api.Assertions;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -57,6 +58,7 @@ import java.util.Set;
 @AddBean(MultipartTest.MultipartApplication.class)
 public class MultipartTest {
     private static final String ENTITY = "hello";
+
     public static class MultipartApplication extends Application {
         @Override
         public Set<Class<?>> getClasses() {
@@ -80,25 +82,23 @@ public class MultipartTest {
         }
     }
 
-    @Test
-    void testMultipart(WebTarget webTarget) {
-        // For each entity type
-        for (HelidonEntity.HelidonEntityType entityType : HelidonEntity.HelidonEntityType.values()) {
-            // make 10 consecutive requests
-            for (int i = 0; i != 10; i++) {
+    @ParameterizedTest
+    @EnumSource(value = HelidonEntity.HelidonEntityType.class)
+    void testMultipart(HelidonEntity.HelidonEntityType entityType, WebTarget webTarget) {
+        // For each entity type make 10 consecutive requests
+        for (int i = 0; i != 10; i++) {
 //                System.out.append(entityType.name()).println(i);
-                MultiPart multipart = new MultiPart().bodyPart(new BodyPart().entity(ENTITY));
-                multipart.setMediaType(MediaType.MULTIPART_FORM_DATA_TYPE);
-                try (Response r = ClientBuilder.newBuilder()
-                        .property(HelidonConnector.INTERNAL_ENTITY_TYPE, entityType.name())
-                        .build().target(webTarget.getUri())
-                        .path("upload")
-                        .register(MultiPartFeature.class)
-                        .request()
-                        .post(Entity.entity(multipart, multipart.getMediaType()))) {
-                    Assertions.assertEquals(Response.Status.OK.getStatusCode(), r.getStatus());
-                    Assertions.assertEquals(ENTITY, r.readEntity(String.class));
-                }
+            MultiPart multipart = new MultiPart().bodyPart(new BodyPart().entity(ENTITY));
+            multipart.setMediaType(MediaType.MULTIPART_FORM_DATA_TYPE);
+            try (Response r = ClientBuilder.newBuilder()
+                    .property(HelidonConnector.INTERNAL_ENTITY_TYPE, entityType.name())
+                    .build().target(webTarget.getUri())
+                    .path("upload")
+                    .register(MultiPartFeature.class)
+                    .request()
+                    .post(Entity.entity(multipart, multipart.getMediaType()))) {
+                Assertions.assertEquals(Response.Status.OK.getStatusCode(), r.getStatus());
+                Assertions.assertEquals(ENTITY, r.readEntity(String.class));
             }
         }
     }
