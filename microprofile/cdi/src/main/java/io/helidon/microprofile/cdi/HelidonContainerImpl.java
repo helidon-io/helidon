@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
@@ -46,6 +45,8 @@ import io.helidon.logging.common.LogConfig;
 import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Destroyed;
 import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Startup;
+import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
@@ -96,6 +97,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private static final Context ROOT_CONTEXT;
     // whether the current shutdown was invoked by the shutdown hook
     private static final AtomicBoolean FROM_SHUTDOWN_HOOK = new AtomicBoolean();
+    // Default Weld container id. TCKs assumes this value.
+    private static final String STATIC_INSTANCE = "STATIC_INSTANCE";
 
     static {
         HelidonFeatures.flavor(HelidonFlavor.MP);
@@ -119,7 +122,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
     HelidonContainerImpl() {
         this.bootstrap = new WeldBootstrap();
-        id = UUID.randomUUID().toString();
+        this.id = STATIC_INSTANCE;
     }
 
     /**
@@ -205,6 +208,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         }
         deployment.getServices().add(ExternalConfiguration.class, configurationBuilder.build());
 
+        // CDI TCK tests expects SE to be excluded, which means Helidon may require to do things that Weld is supposed to do.
         bootstrap.startContainer(id, Environments.SE, deployment);
 
         bootstrap.startInitialization();
@@ -315,6 +319,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         keepLoggingActive(shutdownHook);
 
         bm.getEvent().select(Initialized.Literal.APPLICATION).fire(new ContainerInitialized(id));
+        bm.getEvent().select(Any.Literal.INSTANCE).fire(new Startup());
 
         now = System.currentTimeMillis() - now;
         LOGGER.fine("Container started in " + now + " millis (this excludes the initialization time)");

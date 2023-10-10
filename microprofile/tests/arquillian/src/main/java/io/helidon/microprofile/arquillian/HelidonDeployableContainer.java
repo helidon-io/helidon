@@ -90,7 +90,7 @@ import org.xml.sax.SAXException;
  * <li>The WebArchive contents are written to the temporary directory</li>
  * <li>beans.xml is created in WEB-INF/classes if not present</li>
  * <li>WEB-INF/beans.xml will be moved to WEB-INF/classes/META-INF if present</li>
- * <li>The server is started with WEB-INF/classes and all libraries in WEB-INF/libon the classpath.</li>
+ * <li>The server is started with WEB-INF/classes and all libraries in WEB-INF/lib on the classpath.</li>
  * </ol>
  *
  * Control is then returned to the test harness (in this case, generally testng) to run tests over HTTP.
@@ -225,7 +225,9 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 ensureBeansXml(classesDir, webInfDir);
                 addServerClasspath(classPath, classesDir, libDir, rootDir);
                 if (containerConfig.isInWebContainer()) {
-                    context.rootContext = archive.getName().split("\\.")[0];
+                    if (containerConfig.isIncludeWarContextPath()) {
+                        context.rootContext = archive.getName().split("\\.")[0];
+                    }
                     if (!loadApplicationFromWebXml(context, webInfDir)) {
                         // Search Application in classes
                         loadApplicationFromClasses(context, archive);
@@ -341,10 +343,12 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         }
         if (jakarta.enterprise.inject.spi.DeploymentException.class.isAssignableFrom(t.getClass())) {
             return Optional.of((jakarta.enterprise.inject.spi.DeploymentException) t);
-        }
-        if (IllegalStateException.class.isAssignableFrom(t.getClass())) {
+        } else if (IllegalStateException.class.isAssignableFrom(t.getClass())) {
             return Optional.of((IllegalStateException) t);
+        } else if (java.lang.Error.class.isAssignableFrom(t.getClass())) {
+            return Optional.of((new jakarta.enterprise.inject.spi.DeploymentException(t)));
         }
+
         var deploymentException = lookForSupressedDeploymentException(t.getCause());
         for (Throwable suppressed : t.getSuppressed()) {
             var candicate = lookForSupressedDeploymentException(suppressed);
@@ -519,12 +523,13 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         if (Files.exists(beansPath)) {
             return;
         }
-        try (InputStream beanXmlTemplate = HelidonDeployableContainer.class.getResourceAsStream("/templates/beans.xml")) {
-            if (null == beanXmlTemplate) {
-                Files.write(beansPath, new byte[0]);
-            } else {
-
-                Files.copy(beanXmlTemplate, beansPath);
+        if (containerConfig.isUseBeanXmlTemplate()) {
+            try (InputStream beanXmlTemplate = HelidonDeployableContainer.class.getResourceAsStream("/templates/beans.xml")) {
+                if (null == beanXmlTemplate) {
+                    Files.write(beansPath, new byte[0]);
+                } else {
+                    Files.copy(beanXmlTemplate, beansPath);
+                }
             }
         }
     }

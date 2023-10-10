@@ -33,7 +33,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-core</artifactId>
+            <artifactId>helidon-microprofile</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -77,12 +77,6 @@
                     <includes>
                         <include>*IT.java</include>
                     </includes>
-                    <!-- FIXME: Enable when this https://github.com/jakartaee/platform-tck/pull/1178 is integrated -->
-                    <excludes>
-                        <exclude>ee/jakarta/tck/core/jsonb/JsonbApplicationIT.java</exclude>
-                        <exclude>ee/jakarta/tck/core/json/ApplicationJsonpIT.java</exclude>
-                        <exclude>ee/jakarta/tck/core/rest/jsonb/cdi/CustomJsonbSerializationIT.java</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
         </plugins>

@@ -48,7 +48,7 @@
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://download.eclipse.org/jakartaee/restful-ws/3.1/jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}.zip" dest="jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}.zip"/>
+                                <get skipexisting="true" src="https://www.eclipse.org/downloads/download.php?file=/ee4j/jakartaee-tck/jakartaee10/staged/eftl/jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}.zip" dest="jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}.zip"/>
                                 <unzip src="jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}.zip" dest="./target"/>
                                 <chmod file="artifact-install.sh" perm="+x"/>
                                 <exec executable="sh">

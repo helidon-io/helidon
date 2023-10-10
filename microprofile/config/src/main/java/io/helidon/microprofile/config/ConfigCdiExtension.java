@@ -46,6 +46,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Vetoed;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.Annotated;
@@ -136,7 +137,7 @@ public class ConfigCdiExtension implements Extension {
     private <X> void harvestConfigPropertyInjectionPointsFromEnabledObserverMethod(@Observes ProcessObserverMethod<?, X> event,
                                                                                    BeanManager beanManager) {
         AnnotatedMethod<X> annotatedMethod = event.getAnnotatedMethod();
-        if (annotatedMethod != null) {
+        if (annotatedMethod != null && !annotatedMethod.getDeclaringType().isAnnotationPresent(Vetoed.class)) {
             List<AnnotatedParameter<X>> annotatedParameters = annotatedMethod.getParameters();
             if (annotatedParameters != null) {
                 for (AnnotatedParameter<?> annotatedParameter : annotatedParameters) {

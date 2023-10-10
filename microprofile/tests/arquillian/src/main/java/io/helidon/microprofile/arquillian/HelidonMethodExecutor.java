@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import io.helidon.microprofile.arquillian.HelidonContainerExtension.HelidonCDIInjectionEnricher;
 
+import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.enterprise.context.control.RequestContextController;
 import org.jboss.arquillian.container.test.spi.ContainerMethodExecutor;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -83,7 +84,11 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
         } catch (Throwable t) {
             return TestResult.failed(t);
         } finally {
-            controller.deactivate();
+            try {
+                controller.deactivate();
+            } catch (ContextNotActiveException e) {
+                LOGGER.log(Level.WARNING, "Controller " + controller + " was already deactivated");
+            }
         }
         return TestResult.passed();
     }
