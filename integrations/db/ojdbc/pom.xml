@@ -48,7 +48,19 @@
                     <groupId>com.oracle.database.jdbc</groupId>
                     <artifactId>ucp</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- Contains JAXP impl, so we exclude it to not interfere -->
+                    <groupId>com.oracle.database.xml</groupId>
+                    <artifactId>xmlparserv2</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <!-- Include version without JAXP impl -->
+            <groupId>com.oracle.database.xml</groupId>
+            <artifactId>xmlparserv2_sans_jaxp_services</artifactId>
+            <version>${version.lib.ojdbc8}</version>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 
