@@ -41,12 +41,15 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exemplars.DefaultExemplarSampler;
 
 /**
  * Implementation of the neutral Helidon metrics factory based on Micrometer.
@@ -62,6 +65,13 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private final LazyValue<Collection<MeterRegistryLifeCycleListener>> meterRegistryLifeCycleListeners =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MeterRegistryLifeCycleListener.class))
                     .asList());
+
+    private final LazyValue<SpanContextSupplierProvider> spanContextSupplierProvider =
+            LazyValue.create(() -> HelidonServiceLoader.builder(ServiceLoader.load(SpanContextSupplierProvider.class))
+                    .addService(new NoOpSpanContextSupplierProvider(), Double.MIN_VALUE)
+                    .build()
+                    .iterator()
+                    .next());
 
     private MMeterRegistry globalMeterRegistry;
 
@@ -280,13 +290,22 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
     }
 
-    private static void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
-                                                 MetricsConfig metricsConfig) {
+    private void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
+                                          MetricsConfig metricsConfig) {
         if (compositeMeterRegistry
                 .getRegistries()
                 .stream()
                 .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
-            compositeMeterRegistry.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
+            // If we have a non-no-op span context supplier provider we have to create the prometheus meter registry with
+            // some extra constructor arguments so that we can also pass the exemplar sampler with the span context supplier.
+            SpanContextSupplierProvider provider = spanContextSupplierProvider.get();
+            PrometheusMeterRegistry prometheusMeterRegistry = provider instanceof NoOpSpanContextSupplierProvider
+                    ? new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null))
+                    : new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null),
+                                                  new CollectorRegistry(),
+                                                  io.micrometer.core.instrument.Clock.SYSTEM,
+                                                  new DefaultExemplarSampler(provider.get()));
+            compositeMeterRegistry.add(prometheusMeterRegistry);
         }
     }
 

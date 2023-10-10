@@ -25,6 +25,10 @@ module io.helidon.metrics.providers.micrometer {
     requires io.helidon.common.config;
     requires io.helidon.common.media.type;
     requires simpleclient.common;
+    requires simpleclient.tracer.common;
+    requires simpleclient;
+
+    exports io.helidon.metrics.providers.micrometer.spi;
 
     provides io.helidon.metrics.spi.MetricsFactoryProvider with
             io.helidon.metrics.providers.micrometer.MicrometerMetricsFactoryProvider;
@@ -32,5 +36,6 @@ module io.helidon.metrics.providers.micrometer {
             with io.helidon.metrics.providers.micrometer.MicrometerPrometheusFormatterProvider;
 
     uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
+    uses io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 
 }

@@ -57,6 +57,10 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_tracer_common</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

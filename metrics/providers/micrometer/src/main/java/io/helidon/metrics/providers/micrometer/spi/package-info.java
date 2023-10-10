@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-
 /**
- * Provides exemplar support in metrics using tracing identifiers.
+ * SPIs declared by the Micrometer implementation of the neutral API.
  */
-module io.helidon.metrics.traceexemplar {
-
-    requires io.helidon.common.context;
-    requires io.helidon.tracing;
-    requires io.helidon.metrics.api;
-    requires io.helidon.metrics.providers.micrometer;
-
-    requires simpleclient.tracer.common;
-
-    provides io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider
-            with io.helidon.metrics.exemplartrace.MicrometerSpanContextSupplierProvider;
-}
+package io.helidon.metrics.providers.micrometer.spi;
