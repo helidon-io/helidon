@@ -66,8 +66,8 @@
             <artifactId>helidon-metrics-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-tracing</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>

@@ -22,22 +22,15 @@ import java.util.List;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.Timer;
-import io.helidon.tracing.Tracer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.metrics.MetricsObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.tracing.TracingFeature;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 
@@ -54,9 +47,7 @@ class ExemplarTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        builder.addFeature(ObserveFeature.just(MetricsObserver.create()))
-                .addFeature(TracingFeature.create(Tracer.global()))
-                .get("/test", (req, res) -> {
+        builder.get("/test", (req, res) -> {
                         Metrics.globalRegistry().getOrCreate(Counter.builder(COUNTER_NAME)).increment();
                         res.send();
                     });

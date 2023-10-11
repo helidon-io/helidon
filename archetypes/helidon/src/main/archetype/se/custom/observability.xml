@@ -39,8 +39,8 @@
             </list>
             <list key="dependencies">
                 <map if="${tracing}">
-                    <value key="groupId">io.helidon.webserver</value>
-                    <value key="artifactId">helidon-webserver-tracing</value>
+                    <value key="groupId">io.helidon.webserver.observe</value>
+                    <value key="artifactId">helidon-webserver-observe-tracing</value>
                 </map>
                 <map if="${tracing}">
                     <value key="groupId">io.helidon.webserver</value>

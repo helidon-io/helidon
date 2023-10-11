@@ -1184,8 +1184,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.webserver</groupId>
-                <artifactId>helidon-webserver-tracing</artifactId>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

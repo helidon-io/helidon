@@ -22,7 +22,8 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.tracing.TracingFeature;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.tracing.TracingObserver;
 
 /**
  * The application uses Open Tracing and sends the collected data to ZipKin.
@@ -55,8 +56,10 @@ public final class Main {
                 .build();
 
         WebServer server = WebServer.builder()
+                .addFeature(ObserveFeature.builder()
+                                    .addObserver(TracingObserver.create(tracer))
+                                    .build())
                 .routing(routing -> routing
-                        .addFeature(TracingFeature.create(tracer))
                         .any((req, res) -> {
                             System.out.println("Received another request.");
                             res.next();

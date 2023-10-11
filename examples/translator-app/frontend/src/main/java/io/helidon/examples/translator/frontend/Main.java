@@ -23,7 +23,8 @@ import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.tracing.TracingFeature;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.tracing.TracingObserver;
 
 /**
  * Translator application frontend main class.
@@ -31,21 +32,6 @@ import io.helidon.webserver.tracing.TracingFeature;
 public class Main {
 
     private Main() {
-    }
-
-    static void setup(WebServerConfig.Builder server) {
-        Config config = Config.builder()
-                .sources(ConfigSources.environmentVariables())
-                .build();
-
-        Tracer tracer = TracerBuilder.create(config.get("tracing"))
-                .serviceName("helidon-webserver-translator-frontend")
-                .registerGlobal(false)
-                .build();
-        String backendHost = config.get("backend.host").asString().orElse("localhost");
-        server.routing(routing -> routing
-                .addFeature(TracingFeature.create(tracer))
-                .register(new TranslatorFrontendService(backendHost, 9080)));
     }
 
     /**
@@ -62,5 +48,22 @@ public class Main {
         WebServer server = builder.build().start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port());
+    }
+
+    static void setup(WebServerConfig.Builder server) {
+        Config config = Config.builder()
+                .sources(ConfigSources.environmentVariables())
+                .build();
+
+        Tracer tracer = TracerBuilder.create(config.get("tracing"))
+                .serviceName("helidon-webserver-translator-frontend")
+                .registerGlobal(false)
+                .build();
+        String backendHost = config.get("backend.host").asString().orElse("localhost");
+        server.addFeature(ObserveFeature.builder()
+                                  .addObserver(TracingObserver.create(tracer))
+                                  .build())
+                .routing(routing -> routing
+                        .register(new TranslatorFrontendService(backendHost, 9080)));
     }
 }
