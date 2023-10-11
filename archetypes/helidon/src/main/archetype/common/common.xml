@@ -49,7 +49,7 @@
             <includes>
                 <include>.helidon.mustache</include>
                 <include>README.md.mustache</include>
-                <include>src/main/java/**/*.java.mustache</include>
+                <include>src/main/java/**/Main.java.mustache</include>
             </includes>
         </templates>
         <model>
