@@ -37,8 +37,6 @@ module io.helidon.config {
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.media.type;
     requires transitive io.helidon.common;
-    requires transitive jakarta.annotation;
-
 
     exports io.helidon.config;
     exports io.helidon.config.spi;

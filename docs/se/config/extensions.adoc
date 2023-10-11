@@ -141,15 +141,17 @@ sources:
       my-config: "configuration"
 ----
 
-The config system would iterate through all `ConfigSourceProvider` implementations found through Java `ServiceLoader` based on their priority.
-First provider that returns `true` when `supports("my-type")` is called would be used, and an instance of a `ConfigSource` created using `create("my-type", config)`, where `config` is located on the node of `properties` from config profile.
+The config system would iterate through all `ConfigSourceProvider` implementations found through Java `ServiceLoader` based on
+ their link:{common-javadoc-base-url}/io/helidon/common/Weight.html[weight].
+First provider that returns `true` when `supports("my-type")` is called would be used, and an instance of a `ConfigSource`
+ created using `create("my-type", config)`, where `config` is located on the node of `properties` from config profile.
 
 === About Priority [[priority-info]]
 
 The config system invokes extensions of a given type in priority order.
 Developers can express the relative importance of an extension by annotating the service implementation class with
-`@jakarta.annotation.Priority`.
-The default value is 100. A _lower_ priority value represents _greater_ importance.
+link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`].
+The default value is 100. The higher the weight, the more important the extension is.
 
 == ConfigSource SPI [[Config-SPI-ConfigSource]]
 
@@ -207,7 +209,7 @@ The config system also uses the Java service loader mechanism to load automatica
 `META-INF/services/io.helidon.config.spi.ConfigParser` resource on the runtime classpath.
 Prevent autoloading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
 
-`ConfigParser` accepts `@Priority`.
+`ConfigParser` accepts link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`].
 See <<priority-info, About Priority>>.
 
 [source,listing]
@@ -275,7 +277,7 @@ method.
 
 |link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigFilter.html[`ConfigFilter`]
 
-Accepts `@Priority`. See <<priority-info, About Priority>>.
+Accepts link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`]. See <<priority-info, About Priority>>.
 |`String apply(Config.Key key, String stringValue);`
 |Accepts a key and the corresponding `String` value and
 returns the `String` which the config system should use for that key.
@@ -290,8 +292,7 @@ function which, when passed a `Config` instance, returns a `ConfigFilter`.
 access the `Config` instance passed to the provider function._*
 
 Instead, implement the `ConfigFilter.init(Config)` method on the filter. The config
-system invokes the filters' `init` methods according to the filters' `@Priority`
-order.
+system invokes the filters' `init` methods according to the filters <<priority-info, priority>>.
 
 Recall that whenever any code invokes `Config.get`, the `Config` instance
 invokes the `apply` method of _all_ registered filters. By the time the application
@@ -346,12 +347,12 @@ runtime classpath. The application can prevent autoloading of mappers for a
 given builder by invoking `Config.Builder#disableMapperServices()`. Note
 that the built-in mappers described in `ConfigMappers` still operate.
 
-Mapper providers accept `@Priority`. See <<priority-info, About Priority>>.
+Mapper providers accept `@Weight`. See <<priority-info, About Priority>>.
 
 image::config/spi-ConfigMapperProvider.png[title="ConfigMapperProvider SPI",align="center"]
 
-A mapper provider can specify a `@jakarta.annotation.Priority`.
-If no priority is explicitly assigned, the value of `100` is assumed.
+A mapper provider can specify link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`].
+If no weight is explicitly assigned, the value of `100` is assumed.
 
 [source,java]
 .Reference custom mapper provider implementation in `META-INF/services/io.helidon.config.spi.ConfigMapperProvider`
