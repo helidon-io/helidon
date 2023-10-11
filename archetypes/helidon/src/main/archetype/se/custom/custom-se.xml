@@ -26,9 +26,9 @@
     <source src="/se/custom/database.xml"/>
     <source src="/common/extra.xml"/>
     <source src="/se/custom/extra.xml"/>
-    <exec src="/common/packaging.xml"/>
     <source src="/common/observability.xml"/>
     <source src="/se/custom/observability.xml"/>
+    <exec src="/common/packaging.xml"/>
 
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
