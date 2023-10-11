@@ -119,102 +119,109 @@ Each observer has customizable endpoints as well, and the result is decided as f
 
 ==== Configuration Observability
 
-Configuration Observability defines the following endpoints:
+Configuration observability allows reading the current application configuration values.
+Configuration observability defines the following endpoints:
 
 |===
 |Endpoint |Method |Action
 
-|`/profile`
+|`/config/profile`
 |`GET`
 |Returns the current configuration profile
 
-|`/values`
+|`/config/values`
 |`GET`
 |Returns the current configuration values
 
-|`/values/{name}`
+|`/config/values/{name}`
 |`GET`
 |Returns specified by `name` configuration value
 |===
 
-==== Metrics Observability
+NOTE: All secrets and passwords are obfuscated with "*" characters.
 
- Metrics Observability defines the following endpoints:
+==== Health Observability
+
+Health observability allows reading application readiness to serve requests, whether the services are alive.
+Health observability defines the following endpoints:
 
 |===
 |Endpoint |Method |Action
 
-|`/ready`
+|`/health/ready`
 |`GET`
 |Returns Service Readiness
 
-|`/live`
+|`/health/live`
 |`GET`
 |Returns whether the service is alive
 
-|`/started`
+|`/health/started`
 |`GET`
 |Returns whether the service is started
 
-|`/ready/{name}`
+|`/health/ready/{name}`
 |`GET`
 |Returns Service `name` Readiness
 
-|`/live/{name}`
+|`/health/live/{name}`
 |`GET`
 |Returns whether the service `name` is alive
 
-|`/started/{name}`
+|`/health/started/{name}`
 |`GET`
 |Returns whether the service `name` is started
 
-|`/check/{name}`
+|`/health/check/{name}`
 |`GET`
 |Returns all checks for service `name`
 
-
-|`/ready`
+|`/health/ready`
 |`HEAD`
 |Returns Service Readiness without details
 
-|`/live`
+|`/health/live`
 |`HEAD`
 |Returns whether the service is alive without details
 
-|`/started`
+|`/health/started`
 |`HEAD`
 |Returns whether the service is started without details
 
-|`/ready/{name}`
+|`/health/ready/{name}`
 |`HEAD`
 |Returns Service `name` Readiness without details
 
-|`/live/{name}`
+|`/health/live/{name}`
 |`HEAD`
 |Returns whether the service `name` is alive without details
 
-|`/started/{name}`
+|`/health/started/{name}`
 |`HEAD`
 |Returns whether the service `name` is started without details
 
-|`/check/{name}`
+|`/health/check/{name}`
 |`HEAD`
 |Returns all checks for service `name` without details
 
 |===
 
+For more information, please, check xref:{rootdir}/se/health.adoc[Health] documentation.
+
+
 ==== Information Observability
 
-Information Observability defines the following endpoints:
+Info observability allows configuration of custom properties to be available to users.
+Information observability defines the following endpoints:
 
 |===
 |Endpoint |Method |Action
 
-|`/`
+|`/info`
 |`GET`
 |Returns the Application information
 
-|`/{name}`
+|`/info/{name}`
 |`GET`
 |Returns the Application information for the specified `name`
 
@@ -223,33 +230,68 @@ Information Observability defines the following endpoints:
 
 ==== Logger Observability
 
+Log observability allows reading and configuring of log levels of various loggers and reading log messages.
 Logger Observability defines the following endpoints:
 
 |===
 |Endpoint |Method |Action
 
-|`/`
+|`/log`
 |`GET`
 |Stream logs (if enabled)
 
-|`/loggers`
+|`/log/loggers`
 |`GET`
 |Returns all logger handlers
 
-|`/loggers/{logger}`
+|`/log/log/loggers/{logger}`
 |`GET`
 |Returns the Logger by name `logger`
 
-|`/loggers/{logger}`
+|`/log/loggers/{logger}`
 |`POST`
 |Set Logger level by name `logger`
 
-|`/loggers/{logger}`
+|`/log/loggers/{logger}`
 |`DELETE`
 |Unset the specified logger `logger`
 
 |===
 
+==== Metrics Observability
+
+Helidon distinguishes among three general _types_, or scopes, of metrics.
+
+.Types (scopes) of metrics
+[%autowidth]
+|====
+| Type/scope | Typical Usage
+
+| base | OS or Java runtime measurements (available heap, disk space, etc.).
+| vendor | Implemented by vendors, including the `REST.request` metrics and other key performance indicator measurements.
+| application | Declared via annotations or programmatically registered by your service code.
+|====
+
+When you add the metrics dependency to your project, Helidon automatically provides a built-in REST endpoint `/observe/metrics` which responds with a report of the registered metrics and their values.
+
+Clients can request a particular output format.
+
+.Formats for `/observe/metrics` output
+[%autowidth]
+|====
+| Format | Requested by
+
+| OpenMetrics (Prometheus) | default (`text/plain`)
+| JSON | Header `Accept: application/json`
+|====
+
+Clients can also limit the report by appending the metric type to the path:
+
+* `/observe/metrics/base`
+* `/observe/metrics/vendor`
+* `/observe/metrics/application`
+
+For more information, please, check xref:{rootdir}/se/metrics/metrics.adoc[Metrics] documentation.
 
 == Configuration
 
@@ -261,5 +303,17 @@ To customize endpoint of an observer:
 
 == Additional Information
 
+The Observability features are now implemented with `HttpFeature` and can be registered with `HttpRouting.Builder#addFeature(java.util.function.Supplier)`. Such a feature encapsulates a set of endpoints, services and/or filters.
+
+Feature is similar to `HttpService` but gives more freedom in setup.
+Main difference is that a feature can add `Filter` filters and it cannot be  registered on a path (that is left to the discretion of the feature developer).
+
+* Features are not registered immediately - each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher weighted features are registered first.
+* This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
+
+
 == Reference
 
+* https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.pdf[MicroProfile Metrics Specification]
+* xref:{rootdir}/se/metrics/metrics.adoc[Metrics] documentation.
+* xref:{rootdir}/se/health.adoc[Health] documentation.
