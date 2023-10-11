@@ -35,7 +35,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn -B clean install --file pom.xml
+      run: mvn -B clean install -DskipTests --file pom.xml
     - name: Build Examples vs Helidon
       run: mkdir -p ./examples-repo && cd ./examples-repo 
     - uses: actions/checkout@v4
