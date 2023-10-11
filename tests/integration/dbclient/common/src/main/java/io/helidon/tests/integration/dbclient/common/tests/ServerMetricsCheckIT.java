@@ -23,6 +23,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbStatementType;
@@ -76,6 +77,7 @@ public class ServerMetricsCheckIT {
 
     @BeforeAll
     public static void startup(Config config) {
+        GlobalConfig.config(() -> config);
         DB_CLIENT = initDbClient(config);
         SERVER = WebServer.builder()
                 .config(config.get("server"))

@@ -25,10 +25,11 @@ server:
         - path: "/observe/config/*"
           authenticate: true
     observe:
-      info:
-        values:
-          name: "Observe Example"
-          version: "1.0.0"
+      observers:
+        info:
+          values:
+            name: "Observe Example"
+            version: "1.0.0"
 
 security:
   providers:
@@ -36,7 +37,7 @@ security:
         users:
           - login: "admin"
             password: "password"
-            roles: ["nima-observe"]
+            roles: ["observe"]
 app:
   greeting: "Hello!"
   app-secret: "Do not print this in observe"

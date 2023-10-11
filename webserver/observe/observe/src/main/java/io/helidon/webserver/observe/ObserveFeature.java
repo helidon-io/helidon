@@ -28,6 +28,7 @@ import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeature;
@@ -176,7 +177,7 @@ public class ObserveFeature implements ServerFeature, Weighted, RuntimeType.Api<
 
         List<HttpRouting.Builder> observeEndpointRouting;
         if (sockets.isEmpty()) {
-            observeEndpointRouting = List.of(featureContext.defaultListener().httpRouting());
+            observeEndpointRouting = List.of(featureContext.socket(WebServer.DEFAULT_SOCKET_NAME).httpRouting());
         } else {
             observeEndpointRouting = sockets.stream()
                     .map(it -> featureContext.socket(it).httpRouting())

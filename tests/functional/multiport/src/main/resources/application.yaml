@@ -21,9 +21,9 @@ server:
       port: 8001
     - name: "nothing"
       port: 8003
-
-observe:
-  routing: "observe"
+  features:
+    observe:
+      sockets: "observe"
 
 health:
   # endpoint will be exposed on this named route

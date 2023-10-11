@@ -18,15 +18,13 @@ package io.helidon.webserver.testing.junit5;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 
 import io.helidon.common.Builder;
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.ListenerConfig;
@@ -34,7 +32,6 @@ import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.spi.ServerFeature;
-import io.helidon.webserver.spi.ServerFeatureProvider;
 import io.helidon.webserver.testing.junit5.spi.DirectJunitExtension;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -141,9 +138,9 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
     }
 
     @Override
-    public Optional<ParamHandler<?>> setUpRouteParamHandler(Class<?> type) {
+    public Optional<ParamHandler<?>> setUpRouteParamHandler(List<ServerFeature> features, Class<?> type) {
         if (HttpRouting.Builder.class.equals(type) || HttpRules.class.equals(type)) {
-            return Optional.of(new RoutingParamHandler(clients, webClients));
+            return Optional.of(new RoutingParamHandler(clients, webClients, features));
         }
         return Optional.empty();
     }
@@ -151,10 +148,14 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
     private static final class RoutingParamHandler implements DirectJunitExtension.ParamHandler<HttpRouting.Builder> {
         private final Map<String, DirectClient> clients;
         private final Map<String, DirectWebClient> webClients;
+        private final List<ServerFeature> features;
 
-        private RoutingParamHandler(Map<String, DirectClient> clients, Map<String, DirectWebClient> webClients) {
+        private RoutingParamHandler(Map<String, DirectClient> clients,
+                                    Map<String, DirectWebClient> webClients,
+                                    List<ServerFeature> features) {
             this.clients = clients;
             this.webClients = webClients;
+            this.features = features;
         }
 
         @Override
@@ -168,11 +169,9 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             routing.beforeStart();
 
             ServerFeature.ServerFeatureContext featureContext = new DirectFeatureContext(socketName, value);
-            HelidonServiceLoader.create(ServiceLoader.load(ServerFeatureProvider.class))
-                    .stream()
-                    .map(it -> it.create(Config.empty(), it.configKey()))
-                    .map(ServerFeature.class::cast)
-                    .forEach(it -> it.setup(featureContext));
+            for (ServerFeature feature : features) {
+                feature.setup(featureContext);
+            }
 
             if (clients.putIfAbsent(socketName, new DirectClient(value)) != null) {
                 throw new IllegalStateException("Method "
@@ -212,14 +211,6 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             }
 
             @Override
-            public ServerFeature.SocketBuilders defaultListener() {
-                if (DEFAULT_SOCKET_NAME.equals(socketName)) {
-                    return new DirectSocketBuilders(routing);
-                }
-                return new DirectSocketBuilders(HttpRouting.builder());
-            }
-
-            @Override
             public Set<String> sockets() {
                 return DEFAULT_SOCKET_NAME.equals(socketName) ? Set.of() : Set.of(socketName);
             }
@@ -239,6 +230,13 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
                 }
 
                 return new DirectSocketBuilders(routing);
+            }
+
+            private ServerFeature.SocketBuilders defaultListener() {
+                if (DEFAULT_SOCKET_NAME.equals(socketName)) {
+                    return new DirectSocketBuilders(routing);
+                }
+                return new DirectSocketBuilders(HttpRouting.builder());
             }
         }
     }

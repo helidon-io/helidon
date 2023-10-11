@@ -80,7 +80,7 @@ public final class BasicExampleConfigMain {
     static void setup(WebServerConfig.Builder server) {
         Config config = Config.create();
 
-        server.config(config)
+        server.config(config.get("server"))
                 .routing(routing -> routing
                         .register("/static", StaticContentService.create("/WEB"))
                         .get("/{*}", (req, res) -> {

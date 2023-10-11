@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.tracing;
+package io.helidon.webserver.observe.tracing;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -47,212 +52,106 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeature;
+
+import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 
 /**
- * Tracing configuration for webserver.
- * Tracing configuration has two components - an overall (application wide) {@link io.helidon.tracing.config.TracingConfig}
- * and a path specific {@link PathTracingConfig}.
+ * Observer that registers tracing endpoint, and collects all tracing checks.
  */
-public class TracingFeature implements HttpFeature, Weighted {
-    private static final double WEIGHT = 900;
+@RuntimeType.PrototypedBy(TracingObserverConfig.class)
+public class TracingObserver implements Observer, RuntimeType.Api<TracingObserverConfig> {
+    private final Set<HttpRouting.Builder> alreadyAdded = new HashSet<>();
+    private final TracingObserverConfig config;
 
-    private final boolean enabled;
-    private final Tracer tracer;
-    private final TracingConfig envConfig;
-    private final List<PathTracingConfig> pathConfigs;
-    private final double weight;
-
-    /**
-     * No side effects.
-     */
-    private TracingFeature(Builder builder) {
-        this.enabled = builder.enabled;
-        this.tracer = builder.tracer;
-        this.envConfig = builder.tracedConfig;
-        this.pathConfigs = List.copyOf(builder.pathTracingConfigs);
-        this.weight = builder.weight;
+    private TracingObserver(TracingObserverConfig config) {
+        this.config = config;
     }
 
     /**
-     * Create a tracing configuration that is enabled for all paths and spans (that are enabled by default).
+     * Create a new builder to configure Tracing observer.
+     *
+     * @return a new builder
+     */
+    public static TracingObserverConfig.Builder builder() {
+        return TracingObserverConfig.builder();
+    }
+
+    /**
+     * Create a tracing observer that is enabled for all paths and spans (that are enabled by default).
      *
      * @param tracer tracer to use for tracing spans created by this feature
-     * @return tracing configuration to register with
-     *         {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)}
+     * @return tracing observer to register with {@link io.helidon.webserver.observe.ObserveFeature}}
      */
-    public static TracingFeature create(Tracer tracer) {
-        return create(tracer, TracingConfig.ENABLED);
+    public static TracingObserver create(Tracer tracer) {
+        return builder().tracer(tracer).build();
     }
 
     /**
-     * Create a new tracing support base on {@link io.helidon.tracing.config.TracingConfig}.
-     *
-     * @param tracer        tracer to use for tracing spans created by this feature
-     * @param configuration traced system configuration
-     * @return a new tracing support to register with web server routing
-     */
-    public static TracingFeature create(Tracer tracer, TracingConfig configuration) {
-        return builder().tracer(tracer).envConfig(configuration).build();
-    }
-
-    /**
-     * Create a new tracing support base on {@link io.helidon.config.Config}.
+     * Create a new tracing observer based on {@link io.helidon.config.Config}.
      *
      * @param tracer tracer to use for tracing spans created by this feature
-     * @param config to base this support on
-     * @return a new tracing support to register with web server routing
+     * @param config to base this observer on
+     * @return a new tracing observer to register with {@link io.helidon.webserver.observe.ObserveFeature}
      */
-    public static TracingFeature create(Tracer tracer, Config config) {
-        return builder().tracer(tracer).config(config).build();
+    public static TracingObserver create(Tracer tracer, Config config) {
+        return builder()
+                .tracer(tracer)
+                .config(config)
+                .build();
     }
 
     /**
-     * A fluent API builder to create tracing support.
+     * Create a new Tracing observer using the provided configuration.
      *
-     * @return a new builder instance
+     * @param config configuration
+     * @return a new observer
      */
-    public static Builder builder() {
-        return new Builder();
+    public static TracingObserver create(TracingObserverConfig config) {
+        return new TracingObserver(config);
+    }
+
+    /**
+     * Create a new Tracing observer customizing its configuration.
+     *
+     * @param consumer configuration consumer
+     * @return a new observer
+     */
+    public static TracingObserver create(Consumer<TracingObserverConfig.Builder> consumer) {
+        return builder()
+                .update(consumer)
+                .build();
     }
 
     @Override
-    public void setup(HttpRouting.Builder routing) {
-        if (enabled) {
-            // and now register the tracing of requests
-            routing.addFilter(new TracingFilter(tracer, envConfig, pathConfigs));
-        }
-    }
+    public void register(ServerFeature.ServerFeatureContext featureContext,
+                         List<HttpRouting.Builder> observeEndpointRouting,
+                         UnaryOperator<String> endpointFunction) {
 
-    @Override
-    public double weight() {
-        return weight;
-    }
-
-    /**
-     * A fluent API builder for {@link TracingFeature}.
-     */
-    public static class Builder implements io.helidon.common.Builder<Builder, TracingFeature> {
-        private final List<PathTracingConfig> pathTracingConfigs = new LinkedList<>();
-
-        private double weight = WEIGHT;
-        private TracingConfig tracedConfig = TracingConfig.ENABLED;
-        private Tracer tracer;
-        private boolean enabled = true;
-
-        /**
-         * OpenTracing spec states that certain MP paths need to be disabled by default.
-         * Note that if a user changes the default location of any of these using
-         * web-context's, then they would need to provide these exclusions manually.
-         *
-         * The default path configs below are overridable via configuration. For example,
-         * health could be enabled by setting {@code tracing.paths.0.path=/health} and
-         * {@code tracing.paths.0.enabled=true}.
-         */
-        Builder() {
-            addPathConfig(PathTracingConfig.builder()
-                                  .path("/metrics/*")
-                                  .tracingConfig(TracingConfig.DISABLED)
-                                  .build());
-            addPathConfig(PathTracingConfig.builder()
-                                  .path("/health/*")
-                                  .tracingConfig(TracingConfig.DISABLED)
-                                  .build());
-            addPathConfig(PathTracingConfig.builder()
-                                  .path("/openapi/*")
-                                  .tracingConfig(TracingConfig.DISABLED)
-                                  .build());
-        }
-
-        @Override
-        public TracingFeature build() {
-            if (tracer == null) {
-                throw new IllegalArgumentException("Tracing feature must be configured with a tracer");
+        if (config.enabled()) {
+            Set<String> sockets = new HashSet<>(config.sockets());
+            if (sockets.isEmpty()) {
+                sockets.addAll(featureContext.sockets());
+                sockets.add(DEFAULT_SOCKET_NAME);
             }
-            return new TracingFeature(this);
+
+            for (String socket : sockets) {
+                featureContext.socket(socket)
+                        .httpRouting()
+                        .addFeature(new TracingFeature(config, DEFAULT_SOCKET_NAME.equals(socket) ? "" : socket));
+            }
         }
+    }
 
-        /**
-         * Add a path specific configuration of tracing.
-         *
-         * @param pathTracingConfig configuration of tracing for a specific path
-         * @return updated builder instance
-         */
-        public Builder addPathConfig(PathTracingConfig pathTracingConfig) {
-            this.pathTracingConfigs.add(pathTracingConfig);
-            return this;
-        }
+    @Override
+    public String type() {
+        return "tracing";
+    }
 
-        /**
-         * Use the provided configuration as a default for any request.
-         *
-         * @param tracingConfig default web server tracing configuration
-         * @return updated builder instance
-         */
-        public Builder envConfig(TracingConfig tracingConfig) {
-            this.tracedConfig = tracingConfig;
-            return this;
-        }
-
-        /**
-         * Update builder from {@link io.helidon.config.Config}.
-         *
-         * @param config config to read default configuration and path specific configuration from
-         * @return updated builder instance
-         */
-        public Builder config(Config config) {
-            // read the overall configuration
-            envConfig(TracingConfig.create(config));
-
-            // and then the paths
-            Config allPaths = config.get("paths");
-            allPaths.asNodeList().ifPresent(this::addPaths);
-            enabled(tracedConfig.enabled());
-
-            config.get("weight").asDouble().ifPresent(this::weight);
-
-            return this;
-        }
-
-        /**
-         * Override default weight of this feature.
-         * Changing weight may cause tracing to be executed at a different time (such as after security, or even after
-         * all routes). Please understand feature weights before changing this order.
-         *
-         * @param weight new weight of tracing feature
-         * @return updated builder
-         */
-        public Builder weight(double weight) {
-            this.weight = weight;
-            return this;
-        }
-
-        /**
-         * Explicitly enable/disable tracing feature.
-         *
-         * @param enabled if set to {@code false}, this feature will be disabled and tracing filter will never be registered
-         * @return updated builder
-         */
-        public Builder enabled(boolean enabled) {
-            this.enabled = enabled;
-            return this;
-        }
-
-        /**
-         * Tracer to use to extract inbound span context.
-         *
-         * @param tracer tracer to use
-         * @return updated builder
-         */
-        public Builder tracer(Tracer tracer) {
-            this.tracer = tracer;
-            return this;
-        }
-
-        private void addPaths(List<Config> configs) {
-            configs.stream()
-                    .map(PathTracingConfig::create)
-                    .forEach(this::addPathConfig);
-        }
+    @Override
+    public TracingObserverConfig prototype() {
+        return config;
     }
 
     private static class TracingFilter implements Filter {
@@ -260,11 +159,13 @@ public class TracingFeature implements HttpFeature, Weighted {
         private final Tracer tracer;
         private final TracingConfig envConfig;
         private final List<PathTracingConfig> pathConfigs;
+        private final String socketTag;
 
-        TracingFilter(Tracer tracer, TracingConfig envConfig, List<PathTracingConfig> pathConfigs) {
+        TracingFilter(Tracer tracer, TracingConfig envConfig, List<PathTracingConfig> pathConfigs, String socketTag) {
             this.tracer = tracer;
             this.envConfig = envConfig;
             this.pathConfigs = pathConfigs;
+            this.socketTag = socketTag;
         }
 
         @Override
@@ -304,6 +205,11 @@ public class TracingFeature implements HttpFeature, Weighted {
             // tracing is enabled, so we replace the parent span with web server parent span
             Span span = tracer.spanBuilder(spanName)
                     .kind(Span.Kind.SERVER)
+                    .update(it -> {
+                        if (!socketTag.isBlank()) {
+                            it.tag("helidon.socket", socketTag);
+                        }
+                    })
                     .update(it -> inboundSpanContext.ifPresent(it::parent))
                     .start();
 
@@ -365,38 +271,6 @@ public class TracingFeature implements HttpFeature, Weighted {
                 context.register(discovered);
                 return discovered;
             }
-        }
-    }
-
-    private static class HeaderProviderImpl implements HeaderProvider {
-        private final ServerRequest request;
-
-        private HeaderProviderImpl(ServerRequest request) {
-            this.request = request;
-        }
-
-        @Override
-        public Iterable<String> keys() {
-            List<String> result = new LinkedList<>();
-            for (Header header : request.headers()) {
-                result.add(header.headerName().lowerCase());
-            }
-            return result;
-        }
-
-        @Override
-        public Optional<String> get(String key) {
-            return request.headers().first(HeaderNames.create(key));
-        }
-
-        @Override
-        public Iterable<String> getAll(String key) {
-            return request.headers().all(HeaderNames.create(key), List::of);
-        }
-
-        @Override
-        public boolean contains(String key) {
-            return request.headers().contains(HeaderNames.create(key));
         }
     }
 
@@ -489,6 +363,61 @@ public class TracingFeature implements HttpFeature, Weighted {
                     span.end(thrown);
                 }
             }
+        }
+    }
+
+    private static class HeaderProviderImpl implements HeaderProvider {
+        private final ServerRequest request;
+
+        private HeaderProviderImpl(ServerRequest request) {
+            this.request = request;
+        }
+
+        @Override
+        public Iterable<String> keys() {
+            List<String> result = new LinkedList<>();
+            for (Header header : request.headers()) {
+                result.add(header.headerName().lowerCase());
+            }
+            return result;
+        }
+
+        @Override
+        public Optional<String> get(String key) {
+            return request.headers().first(HeaderNames.create(key));
+        }
+
+        @Override
+        public Iterable<String> getAll(String key) {
+            return request.headers().all(HeaderNames.create(key), List::of);
+        }
+
+        @Override
+        public boolean contains(String key) {
+            return request.headers().contains(HeaderNames.create(key));
+        }
+    }
+
+    private class TracingFeature implements HttpFeature, Weighted {
+        private final TracingObserverConfig config;
+        private final String socketTag;
+
+        TracingFeature(TracingObserverConfig config, String socketTag) {
+            this.config = config;
+            this.socketTag = socketTag;
+        }
+
+        @Override
+        public double weight() {
+            return config.weight();
+        }
+
+        @Override
+        public void setup(HttpRouting.Builder routing) {
+            routing.addFilter(new TracingFilter(config.tracer(),
+                                                config.envConfig(),
+                                                config.pathConfigs(),
+                                                socketTag));
         }
     }
 }

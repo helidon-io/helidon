@@ -43,5 +43,5 @@ interface InfoObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fact
      */
     @Option.Configured
     @Option.Singular
-    Map<String, Object> values();
+    Map<String, String> values();
 }

@@ -14,12 +14,30 @@ class SecurityConfigSupport {
     }
 
     static class SecurityFeatureConfigDecorator implements Prototype.BuilderDecorator<SecurityFeatureConfig.BuilderBase<?, ?>> {
+        private static final System.Logger LOGGER = System.getLogger(SecurityFeatureConfig.class.getName());
+
         SecurityFeatureConfigDecorator() {
         }
 
         @Override
         public void decorate(SecurityFeatureConfig.BuilderBase<?, ?> target) {
             security(target);
+            oldSetup(target);
+        }
+
+        private void oldSetup(SecurityFeatureConfig.BuilderBase<?, ?> target) {
+            if (!target.paths().isEmpty()) {
+                return;
+            }
+            Optional<Config> configOnBuilder = target.config();
+            if (configOnBuilder.isPresent()) {
+                Config config = configOnBuilder.get().root().get("security.web-server");
+                if (config.exists()) {
+                    LOGGER.log(System.Logger.Level.WARNING, "Configuration key security.web-server is deprecated,"
+                            + " please configure security integration with webserver under server.features.security instead");
+                    target.config(config);
+                }
+            }
         }
 
         private void security(SecurityFeatureConfig.BuilderBase<?, ?> target) {
@@ -36,11 +54,11 @@ class SecurityConfigSupport {
             Optional<Config> config = target.config();
             if (config.isEmpty()) {
                 throw new ConfigException("SecurityFeature requires either a configured Security, or security registered with"
-                                                  + " global context, or configuration isntance to construct security");
+                                                  + " global context, or configuration instance to construct security");
             }
 
             Security newSecurity = Security.create(config.get().root().get("security"));
-            Contexts.globalContext().register(newSecurity);
+
             target.security(newSecurity);
         }
     }

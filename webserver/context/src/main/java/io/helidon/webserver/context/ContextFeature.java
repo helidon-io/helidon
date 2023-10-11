@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
 
 /**
@@ -100,7 +101,9 @@ public class ContextFeature implements ServerFeature, RuntimeType.Api<ContextFea
         double featureWeight = config.weight();
         // all sockets
         Set<String> sockets = config.sockets();
-        featureContext.defaultListener().httpRouting().addFeature(new ContextRoutingFeature(featureWeight));
+        featureContext.socket(WebServer.DEFAULT_SOCKET_NAME)
+                .httpRouting()
+                .addFeature(new ContextRoutingFeature(featureWeight));
         for (String socket : sockets) {
             featureContext.socket(socket).httpRouting().addFeature(new ContextRoutingFeature(featureWeight));
         }

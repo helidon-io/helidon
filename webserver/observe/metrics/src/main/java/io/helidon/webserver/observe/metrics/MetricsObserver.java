@@ -22,6 +22,8 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeature;
@@ -129,9 +131,17 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
                          UnaryOperator<String> endpointFunction) {
         String endpoint = endpointFunction.apply(config.endpoint());
 
-        for (HttpRouting.Builder routing : observeEndpointRouting) {
-            // register the service itself
-            metricsFeature.register(routing, endpoint);
+        if (config.enabled()) {
+            for (HttpRouting.Builder routing : observeEndpointRouting) {
+                // register the service itself
+                metricsFeature.register(routing, endpoint);
+            }
+        } else {
+            for (HttpRouting.Builder builder : observeEndpointRouting) {
+                builder.any(endpoint + "/*", (req, res) -> {
+                    throw new HttpException("Metrics endpoint is disabled", Status.SERVICE_UNAVAILABLE_503, true);
+                });
+            }
         }
     }
 

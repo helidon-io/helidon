@@ -35,17 +35,10 @@ public interface ServerFeature extends NamedService {
         WebServerConfig serverConfig();
 
         /**
-         * Default listener builders.
-         *
-         * @return builders for default listener
-         */
-        SocketBuilders defaultListener();
-
-        /**
          * List of all configured sockets, does not contain the default socket name.
          *
          * @return additional sockets configured
-         * @see #defaultListener()
+         * @see io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME
          */
         Set<String> sockets();
 

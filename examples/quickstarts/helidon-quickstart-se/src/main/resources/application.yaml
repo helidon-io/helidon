@@ -30,3 +30,6 @@ server:
   #      health:
   #        enabled: false
   #  openapi:
+
+metrics:
+  permit-all: true

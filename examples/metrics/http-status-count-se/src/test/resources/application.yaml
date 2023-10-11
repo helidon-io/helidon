@@ -21,6 +21,5 @@ server:
 app:
   greeting: "Hello"
 
-security:
-  enabled: false
-
+metrics:
+  permit-all: true

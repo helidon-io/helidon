@@ -22,9 +22,9 @@ import io.helidon.common.tls.Tls;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
+
 import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientConfig;
 
@@ -41,19 +41,18 @@ class ConnectorHttp2AlpnTest extends ConnectorBase {
                 .keystore(keystore -> keystore
                         .keystore(Resource.create("certificate.p12"))
                         .keystorePassphrase("helidon"))
-                        .build();
+                .build();
 
         Tls tls = Tls.builder()
                 .privateKey(privateKeyConfig.privateKey().orElseThrow())
                 .privateKeyCertChain(privateKeyConfig.certChain())
                 .build();
 
-        serverBuilder.putSocket("https", socketBuilder -> socketBuilder.tls(tls));
-        serverBuilder.addProtocol(Http2Config.create());
+        serverBuilder.tls(tls);
     }
 
     ConnectorHttp2AlpnTest(WebServer server) {
-        int port = server.port("https");
+        int port = server.port();
 
         Tls tls = Tls.builder()
                 .trustAll(true)

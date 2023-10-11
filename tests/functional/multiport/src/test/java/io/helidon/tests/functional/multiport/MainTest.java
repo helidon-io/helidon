@@ -71,7 +71,7 @@ class MainTest {
         return Stream.of(
                 new Params("@default", true, false, false),
                 new Params("observe", false, true, true),
-                // when no named routing, serves default routing
+                // when no named routing, serves nothing
                 new Params("nothing", true, false, false)
         );
     }

@@ -133,9 +133,7 @@ public final class SecurityRoutingFeature implements HttpSecurity, HttpFeature, 
      * Create a consumer of routing config to be
      * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)  registered} with
      * web server routing to process security requests.
-     * This method configures security and web server integration from a config instance
-     * When using this method, a new {@link io.helidon.security.Security} instance is created each time,
-     * and never registered with global context.
+     * This method configures security and web server integration from a config instance.
      *
      * @param config on the node of the server configuration of security (expects {@code paths} for example),
      *               configuration of security is expected under root node {@code security}

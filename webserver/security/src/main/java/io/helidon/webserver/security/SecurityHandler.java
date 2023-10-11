@@ -224,15 +224,12 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
         Context context = Contexts.context()
-                .orElseThrow(() -> new SecurityException(
-                        "Security requires Context feature to be registered (modules helidon-security-context and "
-                                + "helidon-webserver-context)"));
+                .orElseGet(req::context);
         //process security
         SecurityContext securityContext = context
                 .get(SecurityContext.class)
                 .orElseThrow(() -> new SecurityException(
-                        "Security context not present. Maybe you forgot to Routing.builder().register(WebSecurity.from"
-                                + "(security))..."));
+                        "Security context not present. The security feature must be applied on this socket."));
 
         if (combined) {
             processSecurity(securityContext, req, res);

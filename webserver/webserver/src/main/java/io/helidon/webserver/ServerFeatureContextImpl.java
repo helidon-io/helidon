@@ -40,13 +40,13 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
         Map<String, ListenerBuildersImpl> socketToBuilders = new HashMap<>();
         socketToBuilders.put(DEFAULT_SOCKET_NAME,
                              new ListenerBuildersImpl(DEFAULT_SOCKET_NAME, serverConfig, httpRouting, routings));
+
+        // for each socket, gather all routing builders
         sockets.forEach((socketName, listener) -> {
-            List<Builder<?, ? extends Routing>> builders = new ArrayList<>();
+            List<Builder<?, ? extends Routing>> builders = new ArrayList<>(listener.routings());
 
             List<Builder<?, ? extends Routing>> existingBuilders = routingMap.get(socketName);
-            if (existingBuilders == null) {
-                builders.addAll(listener.routings());
-            } else {
+            if (existingBuilders != null) {
                 builders.addAll(existingBuilders);
             }
 
@@ -57,7 +57,7 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
                 }
             }
             if (listenerHttpRouting == null) {
-                listenerHttpRouting = listener.routing().orElseGet(httpRouting::copy);
+                listenerHttpRouting = listener.routing().orElseGet(HttpRouting::builder);
                 builders.add(listenerHttpRouting);
             }
             socketToBuilders.put(socketName,
@@ -67,36 +67,14 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
         return new ServerFeatureContextImpl(serverConfig, socketToBuilders);
     }
 
-    private static HttpRouting.Builder defaultRouting(WebServerConfig serverConfig) {
-        HttpRouting.Builder httpRouting = serverConfig.routing().orElse(null);
-        if (httpRouting == null) {
-            // try to find it in routings
-            List<Builder<?, ? extends Routing>> routings = serverConfig.routings();
-            for (Builder<?, ? extends Routing> routing : routings) {
-                if (routing instanceof HttpRouting.Builder httpBuilder) {
-                    httpRouting = httpBuilder;
-                }
-            }
-            if (httpRouting == null) {
-                httpRouting = HttpRouting.builder();
-            }
-        }
-        return httpRouting;
-    }
-
     @Override
     public WebServerConfig serverConfig() {
         return serverConfig;
     }
 
     @Override
-    public ListenerBuildersImpl defaultListener() {
-        return socket(DEFAULT_SOCKET_NAME);
-    }
-
-    @Override
     public boolean socketExists(String socketName) {
-        return socketToBuilders.containsKey(socketName);
+        return DEFAULT_SOCKET_NAME.equals(socketName) || configuredSockets.contains(socketName);
     }
 
     @Override
@@ -118,11 +96,34 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
     Router router(String socketName) {
         ListenerBuildersImpl listener = socket(socketName);
 
-        return Router.builder()
-                .addRouting(listener.httpRouting())
-                .update(it -> listener.routings()
+        boolean containsHttp = listener.routings.stream()
+                .anyMatch(it -> it instanceof HttpRouting.Builder);
+
+        Router.Builder builder = Router.builder();
+        if (!containsHttp) {
+            builder.addRouting(listener.httpRouting());
+        }
+
+        return builder.update(it -> listener.routings()
                         .forEach(it::addRouting))
                 .build();
+    }
+
+    private static HttpRouting.Builder defaultRouting(WebServerConfig serverConfig) {
+        HttpRouting.Builder httpRouting = serverConfig.routing().orElse(null);
+        if (httpRouting == null) {
+            // try to find it in routings
+            List<Builder<?, ? extends Routing>> routings = serverConfig.routings();
+            for (Builder<?, ? extends Routing> routing : routings) {
+                if (routing instanceof HttpRouting.Builder httpBuilder) {
+                    httpRouting = httpBuilder;
+                }
+            }
+            if (httpRouting == null) {
+                httpRouting = HttpRouting.builder();
+            }
+        }
+        return httpRouting;
     }
 
     private static class RoutingBuildersImpl implements ServerFeature.RoutingBuilders {

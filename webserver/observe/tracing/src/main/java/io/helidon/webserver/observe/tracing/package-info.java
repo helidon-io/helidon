@@ -14,27 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
-
 /**
- * Helidon WebServer Tracing Support.
+ * Helidon WebServer Tracing Observability Support.
  */
-@Feature(value = "Tracing",
-        description = "WebServer Tracing support",
-        in = HelidonFlavor.SE
-)
-module io.helidon.webserver.tracing {
-
-    requires io.helidon.http;
-    requires io.helidon.tracing.config;
-    requires io.helidon.tracing;
-    requires io.helidon.webserver;
-
-    requires static io.helidon.common.features.api;
-
-    requires transitive io.helidon.config;
-
-    exports io.helidon.webserver.tracing;
-
-}
+package io.helidon.webserver.observe.tracing;

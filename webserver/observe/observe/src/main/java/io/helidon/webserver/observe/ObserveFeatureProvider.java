@@ -20,7 +20,7 @@ public class ObserveFeatureProvider implements ServerFeatureProvider<ObserveFeat
 
     @Override
     public String configKey() {
-        return "context";
+        return ObserveFeature.OBSERVE_ID;
     }
 
     @Override

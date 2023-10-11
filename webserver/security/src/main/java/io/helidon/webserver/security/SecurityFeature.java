@@ -304,14 +304,14 @@ public class SecurityFeature implements ServerFeature, RuntimeType.Api<SecurityF
         for (PathsConfig path : paths) {
             List<String> sockets = new ArrayList<>(path.sockets());
             if (sockets.isEmpty() || sockets.contains(DEFAULT_SOCKET_NAME)) {
-                paths.add(path);
+                configurations.add(path);
             }
         }
 
         return SecurityRoutingFeature.create(security,
                                              featureConfig.weight(),
                                              defaults,
-                                             paths);
+                                             configurations);
     }
 
     private SecurityRoutingFeature routingFeature(SecurityHandler defaults, List<PathsConfig> configs) {

@@ -138,12 +138,13 @@ final class ProvidedUtil {
             return servicesFromList(serviceLoader, providerType, configType, configuredServices, discoverServices);
         } else {
             // driven by service loader order
-            return servicesFromObject(serviceLoader, providerType, configType, configuredServices, discoverServices);
+            return servicesFromObject(providersConfig, serviceLoader, providerType, configType, configuredServices, discoverServices);
         }
     }
 
     private static <T extends NamedService> List<T>
-    servicesFromObject(HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
+    servicesFromObject(Config providersConfig,
+                       HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
                        Class<? extends ConfiguredProvider<T>> providerType,
                        Class<T> configType,
                        List<ConfiguredService> configuredServices,
@@ -162,7 +163,9 @@ final class ProvidedUtil {
             unusedConfigs.remove(provider.configKey());
             if (configuredService == null) {
                 if (allFromServiceLoader) {
-                    result.add(provider.create(Config.empty(), provider.configKey()));
+                    // even though the specific key does not exist, we want to have the real config tree, so we can get to the
+                    // root of it
+                    result.add(provider.create(providersConfig.get(provider.configKey()), provider.configKey()));
                 }
             } else {
                 if (configuredService.enabled()) {

@@ -25,8 +25,11 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.testing.junit5.spi.DirectJunitExtension;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -124,15 +127,21 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
     }
 
     private void initRoutings() {
+        List<ServerFeature> features = WebServer.builder()
+                .config(GlobalConfig.config().get("server"))
+                .buildPrototype()
+                .features();
+
         Junit5Util.withStaticMethods(testClass(), SetUpRoute.class, (
                 (setUpRoute, method) -> {
                     String socketName = setUpRoute.value();
-                    SetUpRouteHandler methodConsumer = createRoutingMethodCall(method);
+                    SetUpRouteHandler methodConsumer = createRoutingMethodCall(features, method);
                     methodConsumer.handle(socketName);
                 }));
     }
 
-    private SetUpRouteHandler createRoutingMethodCall(Method method) {
+    private SetUpRouteHandler createRoutingMethodCall(List<ServerFeature> features, Method method) {
+
         // @SetUpRoute may have parameters handled by different extensions
         List<DirectJunitExtension.ParamHandler> handlers = new ArrayList<>();
         for (Parameter parameter : method.getParameters()) {
@@ -140,7 +149,7 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
             boolean found = false;
             for (DirectJunitExtension extension : extensions) {
                 Optional<? extends DirectJunitExtension.ParamHandler> paramHandler =
-                        extension.setUpRouteParamHandler(parameter.getType());
+                        extension.setUpRouteParamHandler(features, parameter.getType());
                 if (paramHandler.isPresent()) {
                     // we care about the extension with the highest priority only
                     handlers.add(paramHandler.get());

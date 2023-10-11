@@ -62,7 +62,7 @@ public class MainTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        server.routing(routing -> Main.routing(routing));
+        server.routing(Main::routing);
     }
 
     @Order(1) // Make sure this runs before the greeting message changes so responses are deterministic.

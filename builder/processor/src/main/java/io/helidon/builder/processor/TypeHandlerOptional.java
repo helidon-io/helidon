@@ -27,6 +27,7 @@ import io.helidon.common.processor.classmodel.Javadoc;
 import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
@@ -93,6 +94,13 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
 
     @Override
     TypeName argumentTypeName() {
+        TypeName type = actualType();
+        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive()) {
+            return TypeName.builder(OPTIONAL)
+                    .addTypeArgument(type)
+                    .build();
+        }
+
         return TypeName.builder(OPTIONAL)
                 .addTypeArgument(toWildcard(actualType()))
                 .build();
@@ -205,7 +213,9 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                 .addJavadocTag("see", "#" + getterName() + "()")
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(" + name() + ");")
-                .addLine("this." + name() + " = " + name() + ".orElse(null);")
+                .addLine("this." + name() + " = " + name()
+                                 + ".map(" + actualType().fqName() + ".class::cast)"
+                                 + ".orElse(this." + name() + ");")
                 .addLine("return self();"));
     }
 

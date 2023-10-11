@@ -30,6 +30,8 @@ import io.helidon.security.Security;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
+import io.helidon.webserver.security.SecurityFeature;
+import io.helidon.webserver.security.SecurityFeatureConfig;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -52,6 +54,7 @@ public class SecurityCdiExtension implements Extension {
 
     private Security.Builder securityBuilder = Security.builder();
     private Config config;
+    private SecurityFeatureConfig.Builder securityFeatureBuilder = SecurityFeature.builder();
 
     /**
      * Public constructor required by service loader.
@@ -89,7 +92,8 @@ public class SecurityCdiExtension implements Extension {
     // all additions by other extension will override configuration options
     private void configure(@Observes @RuntimeStart @Priority(PLATFORM_BEFORE + 2) Config config) {
         this.config = config;
-        securityBuilder.config(config.get("security"));
+        this.securityBuilder.config(config.get("security"));
+        this.securityFeatureBuilder.config(config.get("server.features.security"));
     }
 
     // security must have priority higher than metrics, openapi and health
@@ -134,6 +138,8 @@ public class SecurityCdiExtension implements Extension {
 
         JaxRsCdiExtension jaxrs = bm.getExtension(JaxRsCdiExtension.class);
         ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
+        server.addFeature(securityFeatureBuilder.build());
+        securityFeatureBuilder = null;
 
         Contexts.context().ifPresent(ctx -> ctx.register(security));
 

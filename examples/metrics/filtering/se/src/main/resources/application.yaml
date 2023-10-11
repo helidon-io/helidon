@@ -26,3 +26,5 @@ server:
 #      max-content-length: 16384
 tracing:
   service: "hello-world"
+metrics:
+  permit-all: true

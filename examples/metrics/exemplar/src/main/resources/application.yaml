@@ -22,3 +22,5 @@ server:
   host: 0.0.0.0
 tracing:
   service: "hello-world"
+metrics:
+  permit-all: true

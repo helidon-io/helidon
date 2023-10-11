@@ -9,7 +9,8 @@ import io.helidon.security.Security;
 /**
  * Configuration of security feature fow webserver.
  */
-@Prototype.Blueprint(decorator = SecurityConfigSupport.SecurityFeatureConfigDecorator.class)@Prototype.Configured
+@Prototype.Blueprint(decorator = SecurityConfigSupport.SecurityFeatureConfigDecorator.class)
+@Prototype.Configured
 interface SecurityFeatureConfigBlueprint extends Prototype.Factory<SecurityFeature> {
     /**
      * Weight of the security feature. Value is:
@@ -20,6 +21,7 @@ interface SecurityFeatureConfigBlueprint extends Prototype.Factory<SecurityFeatu
     @Option.DefaultDouble(SecurityFeature.WEIGHT)
     @Option.Configured
     double weight();
+
     /**
      * The default security handler.
      *
@@ -42,7 +44,7 @@ interface SecurityFeatureConfigBlueprint extends Prototype.Factory<SecurityFeatu
      * Security associated with this feature.
      * If not specified here, the feature uses security registered with
      * {@link io.helidon.common.context.Contexts#globalContext()}, if not found, it creates a new
-     * instance from root of configuration (using {@code security} key), (and registers it).
+     * instance from root of configuration (using {@code security} key).
      * <p>
      * This configuration allows usage of a different security instance for a specific security feature setup.
      *

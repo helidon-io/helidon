@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -143,6 +144,7 @@ interface MetricsConfigBlueprint {
      * @return list of hints
      */
     @ConfiguredOption
+    @Option.Default("observe")
     List<String> roles();
 
     /**

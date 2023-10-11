@@ -55,6 +55,7 @@ import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.ObserveFeatureConfig;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
 import jakarta.annotation.Priority;
@@ -249,6 +250,15 @@ public class ServerCdiExtension implements Extension {
     }
 
     /**
+     * Add a server feature.
+     *
+     * @param feature feature to add
+     */
+    public void addFeature(ServerFeature feature) {
+        serverBuilder.addFeature(feature);
+    }
+
+    /**
      * Provides access to routing builder.
      *
      * @param namedRouting        Named routing.
@@ -326,7 +336,7 @@ public class ServerCdiExtension implements Extension {
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.serverBuilder.config(config.get("server"));
-        this.observeBuilder.config(config.get("observe"));
+        this.observeBuilder.config(config.get("server.features.observe"));
         this.config = config;
 
         if (!config.get("server.features.context").exists()) {
@@ -427,6 +437,20 @@ public class ServerCdiExtension implements Extension {
             builder.routing(value);
             serverBuilder.putSocket(name, builder.build());
         });
+
+        Set<String> socketNames = serverBuilder.sockets().keySet();
+        for (String socketName : socketNames) {
+            if (DEFAULT_SOCKET_NAME.equals(socketName)) {
+                continue;
+            }
+            if (namedRoutings.get(socketName) == null) {
+                if (!observeBuilder.sockets().contains(socketName)) {
+                    // retain original behavior
+                    serverBuilder.routing(socketName, serverBuilder.routing().orElseGet(HttpRouting::builder).copy());
+                }
+
+            }
+        }
 
         if (this.context == null) {
             this.context = Contexts.context().orElse(Context.builder()
