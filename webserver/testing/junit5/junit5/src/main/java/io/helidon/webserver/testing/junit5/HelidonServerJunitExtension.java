@@ -89,12 +89,12 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         extensions.forEach(it -> it.beforeAll(context));
         extensions.forEach(it -> it.updateServerBuilder(builder));
 
-        setupServer(builder);
-        addRouting(builder);
-
         // port will be random
         builder.port(0)
                 .shutdownHook(false);
+
+        setupServer(builder);
+        addRouting(builder);
 
         server = builder.build().start();
         if (server.hasTls()) {

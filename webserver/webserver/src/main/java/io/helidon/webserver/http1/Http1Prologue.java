@@ -131,6 +131,9 @@ public final class Http1Prologue {
             if (eol == maxLen) {
                 throw badRequest("Prologue size exceeded", method.text(), path, "", "");
             }
+            if (path.isBlank()) {
+                throw badRequest("Path can't be empty", method.text(), path, "", "");
+            }
             protocol = reader.readAsciiString(eol);
             reader.skip(2); // \r\n
         } catch (DataReader.IncorrectNewLineException e) {
