@@ -25,64 +25,143 @@ These steps should only need to be performed once.
 
 0. Open a text document on your computer where you can save some important information related to OCI resources as you
    go along. This example will presume this document is located in `/tmp/helidon-examples-ocids.txt`.
-1. Set up authentication information on your computer to allow this example to authenticate to your Oracle Cloud
-   account.
-    1. Create a [`${HOME}/.oci/config`] file with the [required entries for authenticating to your Oracle Cloud
-       account](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File). Note
-       the [Required Keys and
-       OCIDs](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#Required_Keys_and_OCIDs)
-       documentation.
-    2. (There are many ways to authenticate to your Oracle Cloud account that are supported by Helidon. This is just one
-       of them that is particularly easy to set up.)
-    3. At a minimum, in this file you'll need to have `fingerprint`, `key_file`, `region`, `tenancy` and `user`
-       [entries](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#ariaid-title3).
-2. [Log in to Oracle Cloud](https://cloud.oracle.com/).
-3. Create a compartment to host OCI resources related to this example and gather its OCID.
-    1. Go to https://cloud.oracle.com/identity/compartments
-    2. Press the *Create Compartment* button.
-    3. Supply a name for the compartment in the Name text field. This example uses "helidon-examples", but it can be any
-       name you like that uses alphanumeric characters and the hyphen (`-`) character.
-    4. Supply a description for the compartment in the Description text field. This example uses "A compartment for
-       Helidon Examples" but it can be any text you like.
-    5. Select a parent compartment for your new compartment from the Parent Compartment drop-down list. It will probably
-       be your account's root compartment, and may already be selected for you.
-    6. Press the *Create Compartment* button.
-    7. Click on your new compartment's hyperlink that now appears in the Compartments table.
-    8. In the Compartment Information tab, note the *OCID* item. Click on the "Copy" hyperlink to copy the Oracle Cloud
-       Identifier (OCID) of your new compartment to your computer's clipboard.
-    9. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `compartment-ocid: ` and paste the just-copied OCID.
-3. Create a vault to host secret information related to this example and gather its OCID
+
+1. Create a new, empty '${HOME}/.oci/config' file whose contents you will fill in shortly. This example presumes that
+   you do not already have one. If you do have one, you may need to edit it carefully rather than following these
+   instructions.
+
+    1. (There are many ways to authenticate to your Oracle Cloud account that are supported by Helidon. This is just one
+       of them that is particularly easy to set up, which is why it is used in this example.)
+
+2. [Log in to Oracle Cloud](https://cloud.oracle.com/)
+
+3. Create a user for this example if needed.
+
     1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
        from the resulting menu.
-    2. Click on *Vault* in the page that results, under the *Key Management & Secret Management* section.
-    3. On the left of the page, under the List scope section, select your new compartment from the drop down list.
-    3. Press the *Create Vault* button.
-    4. Supply a name for the vault in the Name text field. This example uses "helidon-examples-vault", but it can be any
+
+    2. Click on Users under the **Identity** section.
+
+    3. Press the **Create User** button.
+
+    4. Supply a name for the user in the Name text field. This exmaple uses "helidon-examples-user", but it can be any
+       name you like that conforms to OCI's valid character restrictions.
+
+    5. Supply a description for the user in the Description text field. This example uses "A user for Helidon examples",
+       but it can be any text you like.
+
+    5. Press the **Create** button.
+
+4. Fill in the contents of your `${HOME}/.oci/config` file.
+
+    1. Click on **API Keys** in the Resources section.
+
+    2. Press the **Add API Key** button.
+
+    3. Press the **Download Private Key** button and take note of where the file is saved.
+
+    4. Press the **Download Public Key** button and take note of where the file is saved.
+
+    5. Press the **Add** button
+    
+    6. Take note of the contents of the Configuration File Preview text area. This will become part of the contents of
+       your `${HOME}/.oci/config` file.
+
+    7. Click the "Copy" hyperlink to copy the contents of the Configuration File Preview text area to your computer's
+       clipboard.
+
+    8. Paste the copied contents into the currently empty `${HOME}/.oci/config` file you just created.
+
+    9. Locate the private key file that you downloaded. Rename it to `${HOME}/.oci/oci_api_key.pem` and adjust its
+       permissions so that it is read-only and only you can read it.
+
+    10. Locate the public key file that you downloaded. Rename it to `${HOME}/.oci/oci_api_key_public.pem`.
+
+    11. In your now non-empty `${HOME}/.oci/config` file, replace the occurrence of `<path to your private keyfile>
+       #TODO` with `~/.oci/oci_api_key.pem`.
+
+5. [Log in to Oracle Cloud](https://cloud.oracle.com/).
+
+6. Create a compartment to host OCI resources related to this example and gather its OCID.
+
+    1. Go to https://cloud.oracle.com/identity/compartments
+
+    2. Press the *Create Compartment* button.
+
+    3. Supply a name for the compartment in the Name text field. This example uses "helidon-examples", but it can be any
        name you like that uses alphanumeric characters and the hyphen (`-`) character.
-    5. Press the *Create Vault* button toward the bottom of the page.
-    6. After several seconds, your new vault should appear in the table with a *State* of *Creating*.
-    7. Click on your new vault's hyperlink.
-    8. In the Vault Information tab, note the *OCID* item. Click on the "Copy" hyperlink to copy the OCID of your new
+
+    4. Supply a description for the compartment in the Description text field. This example uses "A compartment for
+       Helidon Examples" but it can be any text you like.
+
+    5. Select a parent compartment for your new compartment from the Parent Compartment drop-down list. It will probably
+       be your account's root compartment, and may already be selected for you.
+
+    6. Press the *Create Compartment* button.
+
+    7. Click on your new compartment's hyperlink that now appears in the Compartments table.
+
+    8. In the Compartment Information tab, note the *OCID* item. Click on the "Copy" hyperlink to copy the Oracle Cloud
+       Identifier (OCID) of your new compartment to your computer's clipboard.
+
+    9. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `compartment-ocid: ` and paste the just-copied OCID.
+
+7. Create a vault to host secret information related to this example and gather its OCID
+
+    1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
+       from the resulting menu.
+
+    2. Click on *Vault* in the page that results, under the *Key Management & Secret Management* section.
+
+    3. On the left of the page, under the List scope section, select your new compartment from the drop down list.
+
+    4. Press the *Create Vault* button.
+
+    5. Supply a name for the vault in the Name text field. This example uses "helidon-examples-vault", but it can be any
+       name you like that uses alphanumeric characters and the hyphen (`-`) character.
+
+    6. Press the *Create Vault* button toward the bottom of the page.
+
+    7. After several seconds, your new vault should appear in the table with a *State* of *Creating*.
+
+    8. Click on your new vault's hyperlink.
+
+    9. In the Vault Information tab, note the *OCID* item. Click on the "Copy" hyperlink to copy the OCID of your new
        vault to your computer's clipboard.
-    9. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `vault-ocid: ` and paste the just-copied OCID.
-4. Create a master encryption key in your newly-created vault to encrypt secret information hosted in the vault.
+
+    10. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `vault-ocid: ` and paste the just-copied OCID.
+
+8. Create a master encryption key in your newly-created vault to encrypt secret information hosted in the vault.
+
     1. Press the *Create Key* button.
+
     2. Supply a name for the new master encryption key in the Name text field. This example uses "Helidon Examples Master
        Encryption Key" but it can be any text you like.
+
     3. Press the *Create Key* button toward the bottom of the page.
+
     4. After several seconds, your new master encryption key will appear in the table with a *State* of *Creating*.
-5. Create a secret that will be used by this example.
+
+9. Create a secret that will be used by this example.
+
     1. On the left side of the page, in the *Resources* section, click on *Secrets*.
+
     2. Press the *Create Secret* button.
+
     3. Supply a name for the secret in the Name text field. This example uses "helidon-examples-secret", but it can be any
        name you like that uses alphanumeric characters and the hyphen (`-`) character.
+
     4. Supply a description for the secret in the Description text field. This example uses "A secret for Helidon
        Examples" but it can be any text you like.
+
     5. Choose the Helidon Examples Master Encryption Key in the Encryption Key drop down (the master encryption key you
        just created).
+
     6. Supply a plain text value for the secret in the Secret Contents text area. This example uses "secret value", but it
        can be any text you like.
+
     7. Press the *Create Secret* button toward the bottom of the page.
+
 ### Edit The Example's Meta-Configuration to Reference OCI Resources
 
 This example relies on a Helidon configuration feature known as _meta-configuration_, configuration about
