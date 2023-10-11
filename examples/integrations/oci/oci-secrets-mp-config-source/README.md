@@ -26,14 +26,14 @@ These steps should only need to be performed once.
 0. Open a text document on your computer where you can save some important information related to OCI resources as you
    go along. This example will presume this document is located in `/tmp/helidon-examples-ocids.txt`.
 
-1. Create a new, empty '${HOME}/.oci/config' file whose contents you will fill in shortly. This example presumes that
+1. Create a new, empty `${HOME}/.oci/config` file whose contents you will fill in shortly. This example presumes that
    you do not already have one. If you do have one, you may need to edit it carefully rather than following these
    instructions.
 
     1. (There are many ways to authenticate to your Oracle Cloud account that are supported by Helidon. This is just one
        of them that is particularly easy to set up, which is why it is used in this example.)
 
-2. [Log in to Oracle Cloud](https://cloud.oracle.com/)
+2. [Log in to Oracle Cloud](https://cloud.oracle.com/).
 
 3. Create a user for this example if needed.
 
@@ -52,7 +52,7 @@ These steps should only need to be performed once.
 
     5. Press the **Create** button.
 
-4. Fill in the contents of your `${HOME}/.oci/config` file.
+4. Fill in the contents of your `${HOME}/.oci/config` file with your new user's information.
 
     1. Click on **API Keys** in the Resources section.
 
@@ -67,10 +67,10 @@ These steps should only need to be performed once.
     6. Take note of the contents of the Configuration File Preview text area. This will become part of the contents of
        your `${HOME}/.oci/config` file.
 
-    7. Click the "Copy" hyperlink to copy the contents of the Configuration File Preview text area to your computer's
-       clipboard.
+        7. Click the "Copy" hyperlink to copy the contents of the Configuration File Preview text area to your computer's
+           clipboard.
 
-    8. Paste the copied contents into the currently empty `${HOME}/.oci/config` file you just created.
+        8. Paste the copied contents into the currently empty `${HOME}/.oci/config` file you just created.
 
     9. Locate the private key file that you downloaded. Rename it to `${HOME}/.oci/oci_api_key.pem` and adjust its
        permissions so that it is read-only and only you can read it.
@@ -80,9 +80,7 @@ These steps should only need to be performed once.
     11. In your now non-empty `${HOME}/.oci/config` file, replace the occurrence of `<path to your private keyfile>
        #TODO` with `~/.oci/oci_api_key.pem`.
 
-5. [Log in to Oracle Cloud](https://cloud.oracle.com/).
-
-6. Create a compartment to host OCI resources related to this example and gather its OCID.
+5. Create a compartment to host OCI resources related to this example and gather its OCID.
 
     1. Go to https://cloud.oracle.com/identity/compartments
 
@@ -106,7 +104,7 @@ These steps should only need to be performed once.
 
     9. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `compartment-ocid: ` and paste the just-copied OCID.
 
-7. Create a vault to host secret information related to this example and gather its OCID
+6. Create a vault to host secret information related to this example and gather its OCID
 
     1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
        from the resulting menu.
@@ -131,7 +129,7 @@ These steps should only need to be performed once.
 
     10. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `vault-ocid: ` and paste the just-copied OCID.
 
-8. Create a master encryption key in your newly-created vault to encrypt secret information hosted in the vault.
+7. Create a master encryption key in your newly-created vault to encrypt secret information hosted in the vault.
 
     1. Press the *Create Key* button.
 
@@ -142,7 +140,7 @@ These steps should only need to be performed once.
 
     4. After several seconds, your new master encryption key will appear in the table with a *State* of *Creating*.
 
-9. Create a secret that will be used by this example.
+8. Create a secret that will be used by this example.
 
     1. On the left side of the page, in the *Resources* section, click on *Secrets*.
 
