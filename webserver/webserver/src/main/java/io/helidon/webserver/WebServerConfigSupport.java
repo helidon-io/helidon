@@ -19,7 +19,11 @@ import java.net.InetAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
@@ -28,6 +32,7 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.ConfigException;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.spi.ServerFeature;
 
 class WebServerConfigSupport {
 
@@ -65,6 +70,8 @@ class WebServerConfigSupport {
     }
 
     public static class ServerConfigDecorator implements Prototype.BuilderDecorator<WebServerConfig.BuilderBase<?, ?>> {
+        private static final System.Logger LOGGER = System.getLogger(ServerConfigDecorator.class.getName());
+
         @Override
         public void decorate(WebServerConfig.BuilderBase<?, ?> target) {
             if (target.sockets().containsKey(WebServer.DEFAULT_SOCKET_NAME)) {
@@ -75,6 +82,26 @@ class WebServerConfigSupport {
                 throw new ConfigException("Default routing must be configured directly on server config node, or through"
                                                   + " \"ServerConfig.Builder\", not as a named routing.");
             }
+
+            List<ServerFeature> features = target.features();
+            List<ServerFeature> uniqueFeatures = new ArrayList<>();
+            Set<FeatureId> registeredFeatures = new HashSet<>();
+            for (ServerFeature feature : features) {
+                if (registeredFeatures.add(new FeatureId(feature.type(), feature.name()))) {
+                    uniqueFeatures.add(feature);
+                } else {
+                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                        LOGGER.log(System.Logger.Level.DEBUG, "Feature (type, name): ("
+                                + feature.type() + ", " + feature.name()
+                                + ") is already registered with server, and will be ignored (probably one registered through builder"
+                                + ", the other through service loader. Builder wins.");
+                    }
+                }
+            }
+            target.features(uniqueFeatures);
+        }
+
+        record FeatureId(String type, String name) {
         }
     }
 

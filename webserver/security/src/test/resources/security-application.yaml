@@ -14,6 +14,42 @@
 # limitations under the License.
 #
 
+server:
+  port: 0
+  features:
+    security:
+      defaults:
+        query-params:
+          - name: "jwt"
+            header: "BEARER_TOKEN"
+            # looking for first matching group
+            token-regexp: "bearer (.*)"
+            # optional alternative - using a prefix
+            # prefix: "bearer "
+          - name: "name"
+            header: "NAME_FROM_REQUEST"
+      paths:
+        - path: "/query"
+          audit: true
+        - path: "/noRoles"
+          methods: ["get"]
+          authenticate: true
+        - path: "/user[/{*}]"
+          methods: ["get"]
+          # implies authentication and authorization
+          roles-allowed: ["user"]
+        - path: "/admin"
+          methods: ["get"]
+          roles-allowed: ["admin"]
+        - path: "/deny"
+          methods: ["get"]
+          roles-allowed: ["deny"]
+        - path: "/auditOnly"
+          # method - any
+          # audit all methods (by default GET and HEAD are not audited)
+          audit: true
+          audit-event-type: "unit_test"
+          audit-message-format: "Unit test message format"
 
 security:
   config:
@@ -33,36 +69,3 @@ security:
           - login: "john"
             password: "${CLEAR=password}"
     - abac:
-  web-server:
-    defaults:
-      query-params:
-        - name: "jwt"
-          header: "BEARER_TOKEN"
-          # looking for first matching group
-          token-regexp: "bearer (.*)"
-          # optional alternative - using a prefix
-          # prefix: "bearer "
-        - name: "name"
-          header: "NAME_FROM_REQUEST"
-    paths:
-      - path: "/query"
-        audit: true
-      - path: "/noRoles"
-        methods: ["get"]
-        authenticate: true
-      - path: "/user[/{*}]"
-        methods: ["get"]
-        # implies authentication and authorization
-        roles-allowed: ["user"]
-      - path: "/admin"
-        methods: ["get"]
-        roles-allowed: ["admin"]
-      - path: "/deny"
-        methods: ["get"]
-        roles-allowed: ["deny"]
-      - path: "/auditOnly"
-        # method - any
-        # audit all methods (by default GET and HEAD are not audited)
-        audit: true
-        audit-event-type: "unit_test"
-        audit-message-format: "Unit test message format"

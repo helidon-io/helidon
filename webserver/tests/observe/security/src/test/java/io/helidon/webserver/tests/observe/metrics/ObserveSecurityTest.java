@@ -48,11 +48,12 @@ class ObserveSecurityTest {
     private static final Map<String, MyUser> USERS = new HashMap<>();
 
     private final Http1Client client;
+    private final Security security;
 
     ObserveSecurityTest(URI uri) {
         USERS.put("jack", new MyUser("jack", "password".toCharArray(), Set.of("user")));
 
-        Security security = Security.builder()
+        security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder())
                 .build();
 
@@ -66,12 +67,16 @@ class ObserveSecurityTest {
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
+        server.featuresDiscoverServices(false)
+                .addFeature(SecurityFeature.builder()
+                                    .security(buildWebSecurity())
+                                    .defaults(SecurityFeature.authenticate())
+                                    .build())
                 .addFeature(ObserveFeature.create())
-                .addFeature(OpenApiFeature.create())
-                .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
-                .get("/observe/metrics", SecurityFeature.rolesAllowed("user"))
-                .get("/openapi", SecurityFeature.rolesAllowed("user")));
+                .routing(routing -> routing
+                        .addFeature(OpenApiFeature.create())
+                        .get("/observe/metrics", SecurityFeature.rolesAllowed("user"))
+                        .get("/openapi", SecurityFeature.rolesAllowed("user")));
     }
 
     @Test
@@ -98,15 +103,14 @@ class ObserveSecurityTest {
         }
     }
 
-    private static SecurityFeature buildWebSecurity() {
-        Security security = Security.builder()
+    private static Security buildWebSecurity() {
+        return Security.builder()
                 .addAuthenticationProvider(
                         HttpBasicAuthProvider.builder()
                                 .realm("helidon")
                                 .userStore(buildUserStore()),
                         "http-basic-auth")
                 .build();
-        return SecurityFeature.create(security);
     }
 
     private static SecureUserStore buildUserStore() {

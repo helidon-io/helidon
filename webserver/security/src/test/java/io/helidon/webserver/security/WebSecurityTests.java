@@ -57,6 +57,7 @@ abstract class WebSecurityTests {
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();
         this.securityClient = WebClient.builder()
+                .servicesDiscoverServices(false)
                 .baseUri("http://localhost:" + server.port())
                 .addService(WebClientSecurity.create(security))
                 .build();

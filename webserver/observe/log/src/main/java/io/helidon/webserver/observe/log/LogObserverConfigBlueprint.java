@@ -28,7 +28,6 @@ import io.helidon.webserver.observe.ObserverConfigBase;
 interface LogObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<LogObserver> {
     @Option.Configured
     @Option.Default("log")
-    @Override
     String endpoint();
 
     @Override

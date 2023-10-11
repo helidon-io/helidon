@@ -26,7 +26,6 @@ import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.tracing.TracingFeature;
 
 /**
@@ -93,7 +92,6 @@ public final class MongoDbExampleMain {
         Tracer tracer = TracerBuilder.create("mongo-db").build();
 
         routing.register("/db", new PokemonService(dbClient))
-                .addFeature(TracingFeature.create(tracer))
-                .addFeature(ObserveFeature.create());
+                .addFeature(TracingFeature.create(tracer));
     }
 }

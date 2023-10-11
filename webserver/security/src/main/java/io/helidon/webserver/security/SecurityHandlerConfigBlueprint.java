@@ -7,13 +7,15 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
+import io.helidon.security.ClassToInstanceStore;
 
 /**
  * Configuration of a {@link io.helidon.webserver.security.SecurityHandler}.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = SecurityConfigSupport.SecurityHandlerDecorator.class)
 @Prototype.Configured
-interface SecurityHandlerConfigBlueprint {
+@Prototype.CustomMethods(SecurityConfigSupport.SecurityHandlerCustomMethods.class)
+interface SecurityHandlerConfigBlueprint extends Prototype.Factory<SecurityHandler> {
     /**
      * An array of allowed roles for this path - must have a security provider supporting roles (either authentication
      * or authorization provider).
@@ -25,7 +27,7 @@ interface SecurityHandlerConfigBlueprint {
      */
     @Option.Configured
     @Option.Singular("roleAllowed")
-    Optional<Set<String>> rolesAllowed();
+    Set<String> rolesAllowed();
 
     /**
      * Use a named authenticator (as supported by security - if not defined, default authenticator is used).
@@ -87,7 +89,29 @@ interface SecurityHandlerConfigBlueprint {
      */
     @Option.Configured
     Optional<String> auditMessageFormat();
+
+    /**
+     * Query parameter handler(s).
+     *
+     * @return query parameters
+     */
+    @Option.Singular
     List<SecurityHandler.QueryParamHandler> queryParams();
+
+    /**
+     * A store of custom objects, that can be used to customize specific security providers.
+     *
+     * @return custom objects
+     */
+    Optional<ClassToInstanceStore<Object>> customObjects();
+    /**
+     * List of sockets this configuration should be applied to.
+     * If empty, the configuration is applied to all configured sockets.
+     *
+     * @return list of sockets
+     */
+    @Option.Configured
+    List<String> sockets();
 
     /**
      * Configuration associated with this security handler.
@@ -95,4 +119,11 @@ interface SecurityHandlerConfigBlueprint {
      * @return the configuration (if provided)
      */
     Optional<Config> config();
+
+    /**
+     * Whether this is a combined handler. Internal use.
+     *
+     * @return if combined handler
+     */
+    boolean combined();
 }

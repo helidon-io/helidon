@@ -46,7 +46,24 @@ public final class Main {
         // load logging
         LogConfig.configureRuntime();
 
+        ObserveFeature observe = ObserveFeature.builder()
+                .observersDiscoverServices(true)
+                .addObserver(HealthObserver.builder()
+                                     .useSystemServices(true)
+                                     .addCheck(() -> HealthCheckResponse.builder()
+                                             .status(HealthCheckResponse.Status.UP)
+                                             .detail("time", System.currentTimeMillis())
+                                             .build(), HealthCheckType.READINESS)
+                                     .addCheck(() -> HealthCheckResponse.builder()
+                                             .status(isStarted())
+                                             .detail("time", System.currentTimeMillis())
+                                             .build(), HealthCheckType.STARTUP)
+                                     .build())
+                .build();
+
         WebServer server = WebServer.builder()
+                .featuresDiscoverServices(false)
+                .addFeature(observe)
                 .routing(Main::routing)
                 .build()
                 .start();
@@ -61,24 +78,7 @@ public final class Main {
      * @param router HTTP routing builder
      */
     static void routing(HttpRouting.Builder router) {
-        ObserveFeature observe = ObserveFeature.builder()
-                .observersDiscoverServices(true)
-                .addObserver(HealthObserver.builder()
-                        .useSystemServices(true)
-                        .addCheck(() -> HealthCheckResponse.builder()
-                                .status(HealthCheckResponse.Status.UP)
-                                .detail("time", System.currentTimeMillis())
-                                .build(), HealthCheckType.READINESS)
-                        .addCheck(() -> HealthCheckResponse.builder()
-                                .status(isStarted())
-                                .detail("time", System.currentTimeMillis())
-                                .build(), HealthCheckType.STARTUP)
-                        .build())
-                .build();
-
-
-        router.get("/hello", (req, res) -> res.send("Hello World!"))
-              .addFeature(observe);
+        router.get("/hello", (req, res) -> res.send("Hello World!"));
     }
 
     private static boolean isStarted() {

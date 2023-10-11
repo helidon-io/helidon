@@ -20,11 +20,11 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,10 +45,11 @@ class ObserveHealthTest {
         this.httpClient = httpClient;
     }
 
-    @SetUpRoute
-    static void routing(HttpRouting.Builder routing) {
+    @SetUpServer
+    static void server(WebServerConfig.Builder builder) {
         healthCheck = new MyHealthCheck();
-        routing.addFeature(ObserveFeature.just(HealthObserver.create(healthCheck)));
+        builder.featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.just(HealthObserver.create(healthCheck)));
     }
 
     @BeforeEach

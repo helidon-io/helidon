@@ -14,6 +14,31 @@
 # limitations under the License.
 #
 
+server:
+  features:
+    security:
+      # Configuration of integration with web server
+      defaults:
+        authenticate: true
+      paths:
+        - path: "/noRoles"
+          methods: [ "get" ]
+        - path: "/user[/{*}]"
+          methods: [ "get" ]
+          roles-allowed: [ "user" ]
+        - path: "/admin"
+          methods: [ "get" ]
+          roles-allowed: [ "admin" ]
+        - path: "/deny"
+          methods: [ "get" ]
+          roles-allowed: [ "deny" ]
+          audit: true
+        - path: "/noAuthn"
+          roles-allowed: [ "admin" ]
+          authentication-optional: true
+          audit: true
+
+
 security:
     config:
         # Configuration of secured config (encryption of passwords in property files)
@@ -33,24 +58,3 @@ security:
                     - login: "john"
                       password: "${CLEAR=password}"
                       roles: []
-    web-server:
-        # Configuration of integration with web server
-        defaults:
-            authenticate: true
-        paths:
-            - path: "/noRoles"
-              methods: ["get"]
-            - path: "/user[/{*}]"
-              methods: ["get"]
-              roles-allowed: ["user"]
-            - path: "/admin"
-              methods: ["get"]
-              roles-allowed: ["admin"]
-            - path: "/deny"
-              methods: ["get"]
-              roles-allowed: ["deny"]
-              audit: true
-            - path: "/noAuthn"
-              roles-allowed: ["admin"]
-              authentication-optional: true
-              audit: true

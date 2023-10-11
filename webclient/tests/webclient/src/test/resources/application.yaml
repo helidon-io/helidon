@@ -14,9 +14,7 @@
 # limitations under the License.
 #
 
-
 server:
-  port: 0
   sockets:
     - name: "secured"
       port: 0
@@ -82,6 +80,43 @@ server:
             passphrase: "password"
             resource:
               resource-path: "server.p12"
+  features:
+    security:
+      paths:
+        - path: "/greet/secure/basic"
+          authenticate: true
+          roles-allowed: [ "user", "admin" ]
+        - path: "/greet/secure/basic/outbound"
+          authenticate: true
+          roles-allowed: [ "user", "admin" ]
+        - path: "/greet/contextCheck"
+          authenticate: true
+          roles-allowed: [ "user", "admin" ]
+
+client:
+  follow-redirects: true
+  max-redirects: 5
+  services:
+    tracing:
+    security:
+security:
+  providers:
+    # enable the "ABAC" security provider (also handles RBAC)
+    - abac:
+    # enabled the HTTP Basic authentication provider
+    - http-basic-auth:
+        realm: "helidon"
+        users:
+          - login: "jack"
+            password: "password"
+            roles: ["admin"]
+          - login: "jill"
+            password: "password"
+            roles: ["user"]
+          - login: "joe"
+            password: "password"
+        outbound:
+          - name: "propagate-to-all-targets"
 
 success:
   tls:

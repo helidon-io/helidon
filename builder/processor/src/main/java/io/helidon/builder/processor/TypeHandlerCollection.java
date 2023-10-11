@@ -52,6 +52,7 @@ import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
+import static io.helidon.builder.processor.Types.CONFIG_TYPE;
 import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
@@ -165,7 +166,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         TypeName actualType = actualType().genericTypeName();
 
         if (factoryMethods.createFromConfig().isPresent()) {
-            FactoryMethods.FactoryMethod factoryMethod = factoryMethods.createFromConfig().get();
+;            FactoryMethods.FactoryMethod factoryMethod = factoryMethods.createFromConfig().get();
             TypeName returnType = factoryMethod.factoryMethodReturnType();
             boolean mapList = true;
             if (returnType.isList() || returnType.isSet()) {
@@ -356,6 +357,10 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                TypeName returnType,
                                Javadoc blueprintJavadoc,
                                FactoryMethods.FactoryMethod factoryMethod) {
+        if (factoryMethod.argumentType().equals(CONFIG_TYPE)) {
+            // if the factory method uses config as a parameter, then it is not desired on the builder
+            return;
+        }
         String argumentName = name() + "Config";
         Method.Builder builder = Method.builder()
                 .name(setterName())

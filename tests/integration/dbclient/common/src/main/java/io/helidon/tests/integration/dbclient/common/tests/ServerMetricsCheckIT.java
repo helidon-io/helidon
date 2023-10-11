@@ -30,7 +30,6 @@ import io.helidon.dbclient.metrics.DbClientMetrics;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.observe.ObserveFeature;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -79,7 +78,6 @@ public class ServerMetricsCheckIT {
     public static void startup(Config config) {
         DB_CLIENT = initDbClient(config);
         SERVER = WebServer.builder()
-                .routing(routing -> routing.addFeature(ObserveFeature.create()))
                 .config(config.get("server"))
                 .build()
                 .start();

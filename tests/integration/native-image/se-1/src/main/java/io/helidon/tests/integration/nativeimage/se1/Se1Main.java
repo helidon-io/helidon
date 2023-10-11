@@ -63,10 +63,18 @@ public final class Se1Main {
 
         // By default this will pick up application.yaml from the classpath
         Config config = buildConfig();
+        HealthObserver health = HealthObserver.builder()
+                .addCheck(() -> HealthCheckResponse.builder()
+                        .detail("timestamp",
+                                System.currentTimeMillis())
+                        .build())
+                .build();
+        ObserveFeature observe = ObserveFeature.just(health);
 
         // Get webserver config from the "server" section of application.yaml
         WebServer server = WebServer.builder()
                 .port(7076)
+                .addFeature(observe)
                 .addRouting(createRouting(config))
                 .addRouting(WsRouting.builder()
                                     .endpoint("/ws/messages", WebSocketEndpoint::new))
@@ -100,16 +108,8 @@ public final class Se1Main {
         GreetService greetService = new GreetService(config);
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
-        HealthObserver health = HealthObserver.builder()
-                .addCheck(() -> HealthCheckResponse.builder()
-                        .detail("timestamp",
-                                System.currentTimeMillis())
-                        .build())
-                .build();
-        ObserveFeature observe = ObserveFeature.just(health);
 
         return HttpRouting.builder()
-                .addFeature(observe)
                 .register("/static/path", StaticContentService.create(Paths.get("web")))
                 .register("/static/classpath", StaticContentService.create("web"))
                 .register("/static/jar", StaticContentService.create("web-jar"))

@@ -70,10 +70,13 @@ public final class GoogleBuilderMain {
                 .addProvider(GoogleTokenProvider.builder()
                         .clientId("your-client-id.apps.googleusercontent.com"))
                 .build();
-        server.routing(routing -> routing
-                .addFeature(SecurityFeature.create(security))
+        server.featuresDiscoverServices(false)
+                .addFeature(SecurityFeature.builder()
+                                    .security(security)
+                                    .build())
+                .routing(routing -> routing
                 .get("/rest/profile", SecurityFeature.authenticate(),
-                        (req, res) -> {
+                     (req, res) -> {
                             Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                             res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
                             res.send("Response from builder based service, you are: \n" + securityContext

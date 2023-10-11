@@ -22,7 +22,6 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.tracing.TracingFeature;
 
 /**
@@ -59,8 +58,7 @@ public final class JdbcExampleMain {
     }
 
     static void routing(HttpRouting.Builder routing, Config config) {
-        routing.addFeature(ObserveFeature.create(config))
-                .addFeature(TracingFeature.create(TracerBuilder.create(config.get("tracing")).build()))
+        routing.addFeature(TracingFeature.create(TracerBuilder.create(config.get("tracing")).build()))
                 .register("/db", new PokemonService(DbClient.create(config.get("db"))))
                 .build();
     }

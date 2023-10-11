@@ -20,7 +20,6 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * The application main class.
@@ -69,8 +68,7 @@ public final class Main {
      * @param routing routing builder
      */
     static void routing(HttpRouting.Builder routing) {
-        routing.addFeature(ObserveFeature.create())
-                .register(HttpStatusMetricService.create()) // no endpoint, just metrics updates
+        routing.register(HttpStatusMetricService.create()) // no endpoint, just metrics updates
                 .register("/simple-greet", new SimpleGreetService())
                 .register("/greet", new GreetService());
     }

@@ -21,7 +21,6 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * The application main class.
@@ -63,7 +62,6 @@ public final class Main {
         // Build server using three ports:
         // default public port, admin port, private port
         server.routing(Main::publicRouting)
-                .routing("admin", Main::adminSocket)
                 .routing("private", Main::privateSocket);
     }
 
@@ -79,12 +77,5 @@ public final class Main {
      */
     static void publicRouting(HttpRouting.Builder routing) {
         routing.get("/hello", (req, res) -> res.send("Public Hello!!"));
-    }
-
-    /**
-     * Set up admin socket.
-     */
-    static void adminSocket(HttpRouting.Builder routing) {
-        routing.addFeature(ObserveFeature.create());
     }
 }

@@ -96,16 +96,6 @@ public class ContextFeature implements ServerFeature, RuntimeType.Api<ContextFea
     }
 
     @Override
-    public String name() {
-        return config.name();
-    }
-
-    @Override
-    public String type() {
-        return "context";
-    }
-
-    @Override
     public void setup(ServerFeatureContext featureContext) {
         double featureWeight = config.weight();
         // all sockets
@@ -114,6 +104,15 @@ public class ContextFeature implements ServerFeature, RuntimeType.Api<ContextFea
         for (String socket : sockets) {
             featureContext.socket(socket).httpRouting().addFeature(new ContextRoutingFeature(featureWeight));
         }
+    }
+    @Override
+    public String name() {
+        return config.name();
+    }
+
+    @Override
+    public String type() {
+        return "context";
     }
 
     @Override

@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ServerTest
 class MutualTlsTest {
 
-    private static final Config CONFIG = Config.just(() -> ConfigSources.classpath("application-test.yaml").build());
+    private static final Config CONFIG = Config.just(() -> ConfigSources.classpath("application.yaml").build());
 
     private final WebServer server;
 

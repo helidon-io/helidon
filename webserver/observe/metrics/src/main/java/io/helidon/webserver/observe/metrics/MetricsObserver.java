@@ -16,12 +16,15 @@
 
 package io.helidon.webserver.observe.metrics;
 
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Support for metrics for Helidon WebServer.
@@ -121,9 +124,15 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
     }
 
     @Override
-    public void register(HttpRouting.Builder routing, String endpoint) {
-        // register the service itself
-        metricsFeature.register(routing, endpoint);
+    public void register(ServerFeature.ServerFeatureContext featureContext,
+                         List<HttpRouting.Builder> observeEndpointRouting,
+                         UnaryOperator<String> endpointFunction) {
+        String endpoint = endpointFunction.apply(config.endpoint());
+
+        for (HttpRouting.Builder routing : observeEndpointRouting) {
+            // register the service itself
+            metricsFeature.register(routing, endpoint);
+        }
     }
 
     /**

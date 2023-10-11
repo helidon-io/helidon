@@ -23,3 +23,6 @@ server:
     - name: "admin"
       port: 8082
       bind-address: "localhost"
+  features:
+    observe:
+      sockets: "admin"

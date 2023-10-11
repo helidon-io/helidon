@@ -19,14 +19,16 @@ package io.helidon.examples.integrations.neo4j;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.JsonArray;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
 
@@ -48,17 +50,18 @@ public class MainTest {
         this.webClient = webClient;
     }
 
-    @SetUpRoute
-    static void routing(HttpRouting.Builder builder) {
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
         //Setup embedded Neo4j Server and inject in routing
         embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
-                                              .withDisabledServer()
-                                              .withFixture(FIXTURE)
-                                              .build();
+                .withDisabledServer()
+                .withFixture(FIXTURE)
+                .build();
 
-        System.setProperty("neo4j.uri", embeddedDatabaseServer.boltURI().toString());
+        Driver driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI());
+        server.features(Main.features(driver))
+                        .routing(it -> Main.routing(it, driver));
 
-        Main.routing(builder);
     }
 
     @BeforeAll

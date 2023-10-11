@@ -12,7 +12,7 @@ import io.helidon.webserver.WebServer;
 @Prototype.Configured
 interface PathsConfigBlueprint {
     @Prototype.FactoryMethod
-    static Method createMethod(Config config) {
+    static Method createMethods(Config config) {
         return config.asString().map(Method::create).orElseThrow();
     }
 
@@ -28,5 +28,5 @@ interface PathsConfigBlueprint {
     List<String> sockets();
 
     @Option.Configured(merge = true)
-    SecurityHandlerConfig handler();
+    SecurityHandler handler();
 }

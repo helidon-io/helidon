@@ -98,27 +98,12 @@ public final class DigestExampleBuilderMain {
     }
 
     static void setup(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
-                .get("/noRoles", SecurityFeature.enforce())
-                .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
-                .get("/admin", SecurityFeature.rolesAllowed("admin"))
-                // audit is not enabled for GET methods by default
-                .get("/deny", SecurityFeature.rolesAllowed("deny").audit())
-                // roles allowed imply authn and authz
-                .any("/noAuthn", SecurityFeature.rolesAllowed("admin")
-                        .authenticationOptional()
-                        .audit())
-                .get("/{*}", (req, res) -> {
-                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
-                    res.send("Hello, you are: \n" + securityContext
-                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
-                            .orElse("Security context is null"));
-                }));
-
-        server.routing(routing -> routing
-                .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
+        server.featuresDiscoverServices(false)
+                .addFeature(SecurityFeature.builder()
+                                    .security(security())
+                                    .defaults(SecurityFeature.authenticate())
+                                    .build())
+                .routing(routing -> routing
                 .get("/noRoles", SecurityFeature.enforce())
                 .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
                 .get("/admin", SecurityFeature.rolesAllowed("admin"))
@@ -137,8 +122,8 @@ public final class DigestExampleBuilderMain {
                 }));
     }
 
-    private static SecurityFeature buildWebSecurity() {
-        Security security = Security.builder()
+    private static Security security() {
+        return Security.builder()
                 .addAuthenticationProvider(
                         HttpDigestAuthProvider.builder()
                                 .realm("mic")
@@ -146,7 +131,6 @@ public final class DigestExampleBuilderMain {
                                 .userStore(buildUserStore()),
                         "digest-auth")
                 .build();
-        return SecurityFeature.create(security);
     }
 
     private static SecureUserStore buildUserStore() {

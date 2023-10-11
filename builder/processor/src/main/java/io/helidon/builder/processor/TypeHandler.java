@@ -451,6 +451,8 @@ class TypeHandler {
         TypeName builderType;
         if (factoryMethod.factoryMethodReturnType().className().equals("Builder")) {
             builderType = factoryMethod.factoryMethodReturnType();
+        } else if (factoryMethod.factoryMethodReturnType().className().endsWith(".Builder")) {
+            builderType = factoryMethod.factoryMethodReturnType();
         } else {
             builderType = TypeName.create(factoryMethod.factoryMethodReturnType().fqName() + ".Builder");
         }

@@ -23,7 +23,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.security.SecurityFeature;
+import io.helidon.webserver.security.SecurityRoutingFeature;
 
 /**
  * Example of authentication of service with http signatures, using configuration file as much as possible.
@@ -82,7 +82,7 @@ public class SignatureExampleConfigMain {
         Config config = config("service2.yaml");
 
         // helper method to load both security and web server security from configuration
-        routing.addFeature(SecurityFeature.create(config.get("security")))
+        routing.addFeature(SecurityRoutingFeature.create(config.get("security.web-server")))
                 .register(new Service2());
     }
 
@@ -91,7 +91,7 @@ public class SignatureExampleConfigMain {
         Config config = config("service1.yaml");
 
         // helper method to load both security and web server security from configuration
-        routing.addFeature(SecurityFeature.create(config.get("security")))
+        routing.addFeature(SecurityRoutingFeature.create(config.get("security.web-server")))
                 .register(new Service1());
     }
 

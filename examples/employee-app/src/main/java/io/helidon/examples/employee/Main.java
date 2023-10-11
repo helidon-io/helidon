@@ -21,7 +21,6 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
 /**
@@ -75,8 +74,7 @@ public final class Main {
      * @param config  configuration of this server
      */
     static void routing(HttpRouting.Builder routing, Config config) {
-        routing.addFeature(ObserveFeature.create())
-               .register("/public", StaticContentService.builder("public")
+        routing.register("/public", StaticContentService.builder("public")
                                                         .welcomeFileName("index.html"))
                .register("/employees", new EmployeeService(config));
     }

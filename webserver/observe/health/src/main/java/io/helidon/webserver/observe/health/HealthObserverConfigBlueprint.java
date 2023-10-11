@@ -37,7 +37,6 @@ import io.helidon.webserver.observe.ObserverConfigBase;
 interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<HealthObserver> {
     @Option.Configured
     @Option.Default("health")
-    @Override
     String endpoint();
 
     @Override

@@ -27,7 +27,6 @@ import io.helidon.webserver.observe.ObserverConfigBase;
 interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<ConfigObserver> {
     @Option.Configured
     @Option.Default("config")
-    @Override
     String endpoint();
 
     @Override

@@ -30,7 +30,6 @@ import io.helidon.webserver.observe.ObserverConfigBase;
 interface InfoObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<InfoObserver> {
     @Option.Configured
     @Option.Default("info")
-    @Override
     String endpoint();
 
     @Override

@@ -22,7 +22,6 @@ import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * Simple Hello World rest application.
@@ -72,8 +71,7 @@ public final class Main {
      */
     static void routing(HttpRouting.Builder routing) {
         Config config = Config.global();
-        routing.addFeature(ObserveFeature.create())
-                .addFeature(OpenApiFeature.create(config.get("openapi")))
+        routing.addFeature(OpenApiFeature.create(config.get("openapi")))
                 .register("/greet", new GreetService());
     }
 

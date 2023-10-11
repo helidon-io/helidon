@@ -328,7 +328,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         registerRestRequestMetrics();
 
         Set<String> vendorMetricsAdded = new HashSet<>();
-        vendorMetricsAdded.add(server.observeRouting());
 
         // now we may have additional sockets we want to add vendor metrics to
         componentConfig().get("vendor-metrics-routings")

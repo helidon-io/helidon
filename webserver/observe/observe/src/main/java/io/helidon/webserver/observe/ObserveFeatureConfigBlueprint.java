@@ -31,8 +31,7 @@ import io.helidon.webserver.observe.spi.Observer;
  */
 @Prototype.Blueprint
 @Prototype.Configured
-interface ObserveConfigBlueprint extends Prototype.Factory<ObserveFeature> {
-    double WEIGHT = 80;
+interface ObserveFeatureConfigBlueprint extends Prototype.Factory<ObserveFeature> {
 
     /**
      * Cors support inherited by each observe provider, unless explicitly configured.
@@ -68,11 +67,11 @@ interface ObserveConfigBlueprint extends Prototype.Factory<ObserveFeature> {
 
     /**
      * Change the weight of this feature. This may change the order of registration of this feature.
-     * By default, observability weight is {@value #WEIGHT} so it is registered after routing.
+     * By default, observability weight is {@value ObserveFeature#WEIGHT} so it is registered after routing.
      *
      * @return weight to use
      */
-    @Option.DefaultDouble(WEIGHT)
+    @Option.DefaultDouble(ObserveFeature.WEIGHT)
     @Option.Configured
     double weight();
 
@@ -93,4 +92,22 @@ interface ObserveConfigBlueprint extends Prototype.Factory<ObserveFeature> {
      * @return config node of the feature
      */
     Optional<Config> config();
+
+    /**
+     * Sockets the observability endpoint should be exposed on. If not defined, defaults to the default socket
+     * ({@value io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME}.
+     * Each observer may have its own configuration of sockets that are relevant to it, this only controls the endpoints!
+     *
+     * @return list of sockets to register observe endpoint on
+     */
+    @Option.Configured
+    List<String> sockets();
+
+    /**
+     * Name of this instance.
+     *
+     * @return instance name
+     */
+    @Option.Default("observe")
+    String name();
 }

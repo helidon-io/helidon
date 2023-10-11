@@ -32,7 +32,6 @@ import io.helidon.webserver.observe.ObserverConfigBase;
 interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<MetricsObserver> {
     @Option.Configured
     @Option.Default("metrics")
-    @Override
     String endpoint();
 
     @Override

@@ -23,7 +23,6 @@ import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.tracing.TracingFeature;
 
 /**
@@ -75,8 +74,7 @@ public final class Main {
     static void routing(HttpRouting.Builder routing) {
         Config config = Config.global();
         Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
-        routing.addFeature(ObserveFeature.create())
-                .addFeature(TracingFeature.create(tracer))
+        routing.addFeature(TracingFeature.create(tracer))
                 .register("/greet", new GreetService());
     }
 }

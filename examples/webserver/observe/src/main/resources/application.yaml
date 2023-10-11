@@ -17,11 +17,19 @@
 server:
   host: "127.0.0.1"
   port: 8080
-observe:
-  info:
-    values:
-      name: "Observe Example"
-      version: "1.0.0"
+  features:
+    security:
+      paths:
+        - path: "/observe/log/*"
+          authenticate: true
+        - path: "/observe/config/*"
+          authenticate: true
+    observe:
+      info:
+        values:
+          name: "Observe Example"
+          version: "1.0.0"
+
 security:
   providers:
     - http-basic-auth:
@@ -29,13 +37,6 @@ security:
           - login: "admin"
             password: "password"
             roles: ["nima-observe"]
-  web-server:
-    paths:
-      - path: "/observe/log/*"
-        authenticate: true
-      - path: "/observe/config/*"
-        authenticate: true
-
 app:
   greeting: "Hello!"
   app-secret: "Do not print this in observe"

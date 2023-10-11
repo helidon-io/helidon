@@ -27,7 +27,6 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
-import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.security.SecurityContext;
@@ -73,8 +72,8 @@ public class GreetService implements HttpService {
             .addService(WebClientSecurity.create())
             .build();
 
-    GreetService(Config config) {
-        greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
+    GreetService() {
+        greeting.set("Hello");
     }
 
     /**

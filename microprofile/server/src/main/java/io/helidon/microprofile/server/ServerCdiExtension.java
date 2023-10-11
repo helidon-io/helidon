@@ -52,8 +52,8 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.webserver.observe.ObserveConfig;
 import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.ObserveFeatureConfig;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
@@ -102,7 +102,7 @@ public class ServerCdiExtension implements Extension {
             .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
             .featuresDiscoverServices(false) // we need to explicitly configure features, as they use different sources of config
             .port(7001);
-    private ObserveConfig.Builder observeBuilder = ObserveFeature.builder();
+    private ObserveFeatureConfig.Builder observeBuilder = ObserveFeature.builder();
     private HttpRouting.Builder routingBuilder = HttpRouting.builder();
     private Map<String, HttpRouting.Builder> namedRoutings = new HashMap<>();
     private Map<String, Router.Builder> namedRouters = new HashMap<>();
@@ -118,7 +118,6 @@ public class ServerCdiExtension implements Extension {
     private volatile boolean started;
 
     private Context context;
-    private String observeRouting;
 
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.
@@ -199,17 +198,6 @@ public class ServerCdiExtension implements Extension {
      */
     public void addObserver(Observer observer) {
         observeBuilder.addObserver(observer);
-    }
-
-    /**
-     * Name of the routing the observe feature will be registered on.
-     * Observe feature can only be registered on a single routing (which is usually served on a dedicated listener of
-     * the same name). Various observers may register additional components on other routings if required.
-     *
-     * @return name of the observe feature routing, may be {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME}
-     */
-    public String observeRouting() {
-        return observeRouting == null ? DEFAULT_SOCKET_NAME : observeRouting;
     }
 
     /**
@@ -339,7 +327,6 @@ public class ServerCdiExtension implements Extension {
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.serverBuilder.config(config.get("server"));
         this.observeBuilder.config(config.get("observe"));
-        this.observeRouting = config.get("observe").get("routing").asString().orElse(DEFAULT_SOCKET_NAME);
         this.config = config;
 
         if (!config.get("server.features.context").exists()) {
@@ -412,9 +399,7 @@ public class ServerCdiExtension implements Extension {
         // JAX-RS applications (and resources)
         registerJaxRsApplications(beanManager);
 
-        serverNamedRoutingBuilder(observeRouting)
-                .addFeature(observeBuilder.build());
-
+        serverBuilder.addFeature(observeBuilder.build());
 
         // start the webserver
         serverBuilder.routing(routingBuilder);

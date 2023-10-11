@@ -30,7 +30,6 @@ import io.helidon.security.Security;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
-import io.helidon.webserver.security.SecurityFeature;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -157,11 +156,6 @@ public class SecurityCdiExtension implements Extension {
             jaxrs.applicationsToRun().forEach(app -> app.resourceConfig().register(feature));
         }
 
-        Config webServerConfig = config.get("security.web-server");
-        if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().orElse(true)) {
-            server.serverRoutingBuilder()
-                    .addFeature(SecurityFeature.create(security, config.get("security")));
-        }
         this.security.set(security);
     }
 

@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.HelidonServiceLoader;
@@ -30,6 +31,7 @@ import io.helidon.health.HealthCheck;
 import io.helidon.health.spi.HealthCheckProvider;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Observer that registers health endpoint, and collects all health checks.
@@ -102,9 +104,15 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
     }
 
     @Override
-    public void register(HttpRouting.Builder routing, String endpoint) {
-        // register the service itself
-        routing.register(endpoint, new HealthService(config, all));
+    public void register(ServerFeature.ServerFeatureContext featureContext,
+                         List<HttpRouting.Builder> observeEndpointRouting,
+                         UnaryOperator<String> endpointFunction) {
+
+        String endpoint = endpointFunction.apply(config.endpoint());
+        for (HttpRouting.Builder routing : observeEndpointRouting) {
+            // register the service itself
+            routing.register(endpoint, new HealthService(config, all));
+        }
     }
 
     @Override
