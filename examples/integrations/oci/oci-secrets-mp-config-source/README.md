@@ -35,7 +35,7 @@ begin. You should have to perform these steps only once.
 
 3. Create a user for this example if needed.
 
-    1. Go to https://cloud.oracle.com/identity/users (open this link in a new browser tab or window).
+    1. Go to https://cloud.oracle.com/identity/users/ (open this link in a new browser tab or window).
 
     2. Press the **Create User** button.
 
@@ -97,7 +97,7 @@ begin. You should have to perform these steps only once.
 
 5. Create a compartment to host OCI resources related to this example and gather its OCID.
 
-    1. Go to https://cloud.oracle.com/identity/compartments
+    1. Go to https://cloud.oracle.com/identity/compartments/ (open this link in a new browser tab or window).
 
     2. Press the **Create Compartment** button.
 
