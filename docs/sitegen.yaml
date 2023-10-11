@@ -173,6 +173,7 @@ backend:
                   - "application-configuration.adoc"
                   - "jaxrs-applications.adoc"
                   - "jaxrs-client.adoc"
+                  - "helidon-connector.adoc"
               - type: "PAGE"
                 title: "JWT"
                 source: "jwt.adoc"
