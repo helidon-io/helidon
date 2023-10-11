@@ -35,6 +35,7 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
+In Helidon 4 all observability features were moved to one logical module `observe`. The observability support groups all observe endpoints together under a single context root (the default behavior) `/observe`.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -98,8 +99,6 @@ For Logging Observability features:
 
 
 == Usage
-
-In Helidon 4 all observability features were moved to one logical module `observe`. The observability support groups all observe endpoints together under a single context root (the default behavior) `/observe`.
 
 Each provider usually adds a new endpoint (such as `health`, `metrics`).
 This is to have a single easily configurable path for security, proxy etc. purposes, rather than expose multiple "root" endpoints that may collide with the business code.
