@@ -62,7 +62,6 @@ import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
  */
 @RuntimeType.PrototypedBy(TracingObserverConfig.class)
 public class TracingObserver implements Observer, RuntimeType.Api<TracingObserverConfig> {
-    private final Set<HttpRouting.Builder> alreadyAdded = new HashSet<>();
     private final TracingObserverConfig config;
 
     private TracingObserver(TracingObserverConfig config) {

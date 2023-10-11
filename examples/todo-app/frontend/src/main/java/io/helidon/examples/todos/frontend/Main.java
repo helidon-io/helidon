@@ -29,7 +29,6 @@ import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.accesslog.AccessLogFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 import io.helidon.webserver.tracing.TracingFeature;
 
@@ -80,7 +79,6 @@ public final class Main {
 
         server.config(config.get("server"))
                 .routing(routing -> routing
-                        .addFeature(AccessLogFeature.create())
                         .addFeature(TracingFeature.create(tracer))
                         // redirect POST / to GET /
                         .post("/", (req, res) -> {
