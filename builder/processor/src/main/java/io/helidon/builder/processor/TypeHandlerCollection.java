@@ -166,7 +166,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         TypeName actualType = actualType().genericTypeName();
 
         if (factoryMethods.createFromConfig().isPresent()) {
-;            FactoryMethods.FactoryMethod factoryMethod = factoryMethods.createFromConfig().get();
+            FactoryMethods.FactoryMethod factoryMethod = factoryMethods.createFromConfig().get();
             TypeName returnType = factoryMethod.factoryMethodReturnType();
             boolean mapList = true;
             if (returnType.isList() || returnType.isSet()) {
@@ -206,7 +206,6 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     String generateMapListFromConfig(FactoryMethods factoryMethods) {
-        TypeName boxed = actualType().boxed();
         return factoryMethods.createFromConfig()
                 .map(it -> it.typeWithFactoryMethod().genericTypeName().fqName() + "::" + it.createMethodName())
                 .orElseThrow(() -> new IllegalStateException("This should have been called only if factory method is present for "

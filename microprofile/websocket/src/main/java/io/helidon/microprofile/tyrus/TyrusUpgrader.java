@@ -152,7 +152,10 @@ public class TyrusUpgrader extends WsUpgrader {
         return super.origins();
     }
 
-    WebSocketEngine.UpgradeInfo protocolHandshake(TyrusRouting routing, WritableHeaders<?> headers, UriQuery uriQuery, String path) {
+    WebSocketEngine.UpgradeInfo protocolHandshake(TyrusRouting routing,
+                                                  WritableHeaders<?> headers,
+                                                  UriQuery uriQuery,
+                                                  String path) {
         LOGGER.log(Level.DEBUG, "Initiating WebSocket handshake with Tyrus...");
 
         // Create Tyrus request context, copy request headers and query params

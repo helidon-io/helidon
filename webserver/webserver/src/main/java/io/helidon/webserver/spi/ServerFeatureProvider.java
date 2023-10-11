@@ -20,6 +20,8 @@ import io.helidon.common.config.ConfiguredProvider;
 
 /**
  * Server features provider is a {@link java.util.ServiceLoader} provider API to discover server wide features.
+ *
+ * @param <T> type of the server feature the provider provides
  */
 public interface ServerFeatureProvider<T extends ServerFeature> extends ConfiguredProvider<T> {
 }

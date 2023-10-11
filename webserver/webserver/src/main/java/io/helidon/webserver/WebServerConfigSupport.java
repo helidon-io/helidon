@@ -93,8 +93,8 @@ class WebServerConfigSupport {
                     if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                         LOGGER.log(System.Logger.Level.DEBUG, "Feature (type, name): ("
                                 + feature.type() + ", " + feature.name()
-                                + ") is already registered with server, and will be ignored (probably one registered through builder"
-                                + ", the other through service loader. Builder wins.");
+                                + ") is already registered with server, and will be ignored (probably one registered through "
+                                + "builder, the other through service loader. Builder wins.");
                     }
                 }
             }

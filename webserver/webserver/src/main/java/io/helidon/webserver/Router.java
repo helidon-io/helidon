@@ -93,6 +93,6 @@ public interface Router {
          *
          * @return routing builder list
          */
-        List<io.helidon.common.Builder<?,? extends Routing>> routings();
+        List<io.helidon.common.Builder<?, ? extends Routing>> routings();
     }
 }

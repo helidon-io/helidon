@@ -45,7 +45,6 @@ import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ClassToInstanceStore;
 import io.helidon.security.QueryParamMapping;
-import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityRequest;
@@ -66,9 +65,8 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 
 /**
  * Handles security for web server. This handler is registered either by hand on router config,
- * or automatically from configuration when integration done through
- * {@link SecurityHttpFeature#create(io.helidon.common.config.Config)}
- * or {@link SecurityHttpFeature#create(Security, io.helidon.common.config.Config)}.
+ * or automatically from configuration when integration done through {@link io.helidon.webserver.security.SecurityFeature},
+ * or {@link SecurityHttpFeature#create(io.helidon.common.config.Config)}.
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -77,16 +75,6 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
     static final String DEFAULT_AUDIT_EVENT_TYPE = "request";
     static final String DEFAULT_AUDIT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";
     private static final Logger LOGGER = Logger.getLogger(SecurityHandler.class.getName());
-    private static final String KEY_ROLES_ALLOWED = "roles-allowed";
-    private static final String KEY_AUTHENTICATOR = "authenticator";
-    private static final String KEY_AUTHORIZER = "authorizer";
-    private static final String KEY_AUTHENTICATE = "authenticate";
-    private static final String KEY_AUTHENTICATION_OPTIONAL = "authentication-optional";
-    private static final String KEY_AUTHORIZE = "authorize";
-    private static final String KEY_AUDIT = "audit";
-    private static final String KEY_AUDIT_EVENT_TYPE = "audit-event-type";
-    private static final String KEY_AUDIT_MESSAGE_FORMAT = "audit-message-format";
-    private static final String KEY_QUERY_PARAM_HANDLERS = "query-params";
     private static final SecurityHandler DEFAULT_INSTANCE = builder().build();
 
     private final SecurityHandlerConfig config;
@@ -141,10 +129,21 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
         config.config().ifPresent(conf -> conf.asNodeList().get().forEach(node -> configMap.put(node.name(), node)));
     }
 
+    /**
+     * Create a new fluent API builder for security handler.
+     *
+     * @return a new builder
+     */
     public static SecurityHandlerConfig.Builder builder() {
         return SecurityHandlerConfig.builder();
     }
 
+    /**
+     * Create a new instance, customizing its configuration.
+     *
+     * @param consumer consumer of configuration builder
+     * @return a new configured handler
+     */
     public static SecurityHandler create(Consumer<SecurityHandlerConfig.Builder> consumer) {
         return builder()
                 .update(consumer)

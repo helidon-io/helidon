@@ -138,7 +138,12 @@ final class ProvidedUtil {
             return servicesFromList(serviceLoader, providerType, configType, configuredServices, discoverServices);
         } else {
             // driven by service loader order
-            return servicesFromObject(providersConfig, serviceLoader, providerType, configType, configuredServices, discoverServices);
+            return servicesFromObject(providersConfig,
+                                      serviceLoader,
+                                      providerType,
+                                      configType,
+                                      configuredServices,
+                                      discoverServices);
         }
     }
 

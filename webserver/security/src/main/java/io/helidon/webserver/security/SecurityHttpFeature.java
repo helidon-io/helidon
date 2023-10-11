@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.Weighted;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.http.ForbiddenException;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;

@@ -166,10 +166,13 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
 
         @Override
         public <T extends Builder<T, ?>> T routingBuilder(Class<T> builderType) {
-            return builderType.cast(Optional.ofNullable(buildersByType.get(builderType))
-                                            .orElseThrow(() -> new NoSuchElementException("There is no routing builder of type "
-                                                                                                  + builderType.getName()
-                                                                                                  + " available on socket \"" + socketName + "\"")));
+            Optional<Object> result = Optional.ofNullable(buildersByType.get(builderType));
+            if (result.isPresent()) {
+                return builderType.cast(result.get());
+            }
+            throw new NoSuchElementException("There is no routing builder of type "
+                                                     + builderType.getName()
+                                                     + " available on socket \"" + socketName + "\"");
         }
     }
 
