@@ -1,0 +1,12 @@
+add-default-sources: false
+add-discovered-converters: false
+add-discovered-sources: false
+
+sources:
+  - type: 'environment-variables'
+  - type: 'system-properties'
+  - type: 'oci-secrets'
+    accept-pattern: '^helidon-examples-secret$'
+    compartment-ocid: '${compartment-ocid}'
+    lazy: false
+    vault-ocid: '${vault-ocid}'

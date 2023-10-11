@@ -218,7 +218,7 @@ To recap, you have, in dependency order:
 
 * Created a policy that lets your group's users manipulate secrets found in your compartment ("helidon-examples-group-manipulate-secrets")
 
-You should be ready to go.
+Your OCI resources should be ready to go.
 
 ### Edit The Example's Meta-Configuration to Reference OCI Resources
 
@@ -231,18 +231,21 @@ created above makes the example work.
 These steps should only need to be performed once.
 
 1. Edit this example's `src/main/resources/mp-meta-config-yaml` file to include the OCIDs of the compartment and vault you created above.
-    1. Replace the occurrence of `compartment-ocid: ${compartment-ocid}` with the contents of the line you added in
-       `/tmp/helidon-examples-ocids.txt` above that begins with `compartment-ocid: `. Ensure the YAML indentation is correct
-       (`compartment-ocid` should appear at zero-based character position 4, under the `c` in `sources`).
-    2. Replace the occurrence of `vault-ocid: ${vault-ocid}` with the contents of the line you added in
-       `/tmp/helidon-examples-ocids.txt` above that begins with `vault-ocid: `. Ensure the YAML indentation is correct
-       (`vault-ocid` should appear at zero-based character position 4, under the `c` in `sources`).
-    3. Note the `accept-pattern: ` line. Its quoted value is `^helidon-examples-secret$`, which is a regular expression
-       identifying the names of configuration properties whose values should be fetched from the identically-named secret
-       you just created. If you used a name for your new secret other than `helidon-examples-secret` above, replace
-       `helidon-examples-secret` with the name of the newly-created secret.
 
-The resulting file should look similar to this:
+    1. Replace the occurrence of `compartment-ocid: '${compartment-ocid}'` with the contents of the line you added in
+       `/tmp/helidon-examples-ocids.txt` above that begins with `compartment-ocid: `. Ensure the YAML indentation is
+       correct (`compartment-ocid:` should appear at zero-based character position 4, under the `c` in `sources`).
+
+    2. Replace the occurrence of `vault-ocid: '${vault-ocid}'` with the contents of the line you added in
+       `/tmp/helidon-examples-ocids.txt` above that begins with `vault-ocid: `. Ensure the YAML indentation is correct
+       (`vault-ocid:` should appear at zero-based character position 4, under the `c` in `sources`).
+
+    3. Note the `accept-pattern: ` line. Its single-quoted value is `^helidon-examples-secret$`, which is a regular
+       expression identifying the names of configuration properties whose values should be fetched from the
+       identically-named secret you just created. If you used a name for your new secret other than
+       `helidon-examples-secret` above, replace `helidon-examples-secret` with the name of the newly-created secret.
+
+The resulting file should look similar to this (with trailing explanatory comments):
 
 ```
 add-default-sources: false
@@ -272,6 +275,11 @@ The file instructs the Helidon MicroProfile Config implementation:
     by the (OCID) value of the `compartment-ocid` setting.
   * It will use a `NodeConfigSource`-based configuration source rather than a `LazyConfigSource`-based configuration
     source. See Helidon's documentation about configuration sources for more information.
+
+### Remove `/tmp/helidon-examples-ocids.txt`
+
+You can now remove the `/tmp/helidon-examples-ocids.txt` file you created above to temporarily hold the OCIDs you
+gathered. It is no longer needed.
 
 ## Build The Example
 
