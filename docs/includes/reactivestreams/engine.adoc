@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-Stream processing operator chain can be easily constructed by `io.helidon.common.reactive.Multi`, or
+The stream processing operator chain can be easily constructed by `io.helidon.common.reactive.Multi`, or
 `io.helidon.common.reactive.Single` for streams with single value.
 
 [source,java]
@@ -138,7 +138,7 @@ Single.just("1")
 
 |===
 
-=== Operator chains composition
+=== Operator Chains Composition
 
 In the situations when part of the operator chain needs to be prepared in advance,
 `compose` and `to` operators are at hand.
