@@ -80,7 +80,7 @@ These steps should only need to be performed once.
     11. In your now non-empty `${HOME}/.oci/config` file, replace the occurrence of `<path to your private keyfile>
        #TODO` with `~/.oci/oci_api_key.pem`.
 
-5. Create a group for your new user.
+4. Create a group for your new user.
 
     1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
        from the resulting menu.
@@ -215,6 +215,24 @@ These steps should only need to be performed once.
         **helidon-examples-group** to use secret-family in **compartment helidon-examples**".
 
     12. Press the **Create** button toward the bottom of the page.
+
+To recap, you have, in dependency order:
+
+* Created a user ("helidon-examples")
+
+* Created a `${HOME}/.oci/config` file with that user's authentication information
+
+* Created a group ("helidon-examples-group")
+
+* Created a compartment ("helidon-examples")
+
+* Created a vault in the compartment ("helidon-examples-vault")
+
+* Created a secret in the vault ("helidon-examples-secret")
+
+* Created a policy that lets your group's users manipulate secrets found in your compartment ("helidon-examples-group-manipulate-secrets")
+
+You should be ready to go.
 
 ### Edit The Example's Meta-Configuration to Reference OCI Resources
 
