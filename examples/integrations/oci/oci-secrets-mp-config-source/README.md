@@ -14,14 +14,12 @@ This example shows how to configure and use a Microprofile Config configuration 
 Config meta-configuration feature, that can transparently fetch text values from an OCI vault resource. It exercises the
 classes present in the `integrations/oci/oci-secrets-mp-config-source` project elsewhere in this source code repository.
 
-## Setup Steps
+## One-Time Setup Steps
 
-Because this example makes use of Oracle Cloud, you will need to set up some Oracle Cloud resources before you begin,
-along with a way to authenticate to your Oracle Cloud account.
+Because this example makes use of Oracle Cloud, you will need to set up some Oracle Cloud resources before you
+begin. You should have to perform these steps only once.
 
 ### Create OCI Resources and Gather OCI Information
-
-These steps should only need to be performed once.
 
 0. Open a text document on your computer where you can save some important information related to OCI resources as you
    go along. This example will presume this document is located in `/tmp/helidon-examples-ocids.txt`.
@@ -37,12 +35,9 @@ These steps should only need to be performed once.
 
 3. Create a user for this example if needed.
 
-    1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
-       from the resulting menu.
+    1. Go to https://cloud.oracle.com/identity/users (open this link in a new browser tab or window).
 
-    2. Click on Users under the **Identity** section.
-
-    3. Press the **Create User** button.
+    2. Press the **Create User** button.
 
     4. Supply a name for the user in the Name text field. This example uses "helidon-examples-user", but it can be any
        name you like that conforms to OCI's valid character requirements.
@@ -82,26 +77,23 @@ These steps should only need to be performed once.
 
 4. Create a group for your new user.
 
-    1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
-       from the resulting menu.
+    1. Go to https://cloud.oracle.com/identity/groups/ (open this link in a new browser tab or window).
 
-    2. Click on Groups under the **Identity** section.
+    2. Press the **Create Group** button.
 
-    3. Press the **Create Group** button.
-
-    4. Supply a name for the group in the Name text field. This example uses "helidon-examples-group", but it can be any
+    3. Supply a name for the group in the Name text field. This example uses "helidon-examples-group", but it can be any
        name you like that conforms to OCI's valid character requirements.
 
-    5. Supply a description for the user in the Description text field. This example uses "A group for Helidon
+    4. Supply a description for the user in the Description text field. This example uses "A group for Helidon
        examples", but it can be any text you like.
 
-    6. Press the **Create** button.
+    5. Press the **Create** button.
 
-    7. Press the **Add User to Group** button.
+    6. Press the **Add User to Group** button.
 
-    8. Select your new user from the Users drop-down list.
+    7. Select your new user from the Users drop-down list.
 
-    9. Press the **Add** button.
+    8. Press the **Add** button.
 
 5. Create a compartment to host OCI resources related to this example and gather its OCID.
 
@@ -129,28 +121,25 @@ These steps should only need to be performed once.
 
 6. Create a vault to host secret information related to this example and gather its OCID.
 
-    1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
-       from the resulting menu.
+    1. Go to https://cloud.oracle.com/security/kms/ (open this link in a new browser tab or window).
 
-    2. Click on *Vault* in the page that results, under the *Key Management & Secret Management* section.
+    2. On the left of the page, under the List scope section, select your new compartment from the drop-down list.
 
-    3. On the left of the page, under the List scope section, select your new compartment from the drop-down list.
+    3. Press the **Create Vault** button.
 
-    4. Press the **Create Vault** button.
-
-    5. Supply a name for the vault in the Name text field. This example uses "helidon-examples-vault", but it can be any
+    4. Supply a name for the vault in the Name text field. This example uses "helidon-examples-vault", but it can be any
        name you like that conforms to OCI's valid character requirements.
 
-    6. Press the **Create Vault** button toward the bottom of the page.
+    5. Press the **Create Vault** button toward the bottom of the page.
 
-    7. After several seconds, your new vault should appear in the table with a **State** of **Creating**.
+    6. After several seconds, your new vault should appear in the table with a **State** of **Creating**.
 
-    8. Click on your new vault's hyperlink.
+    7. Click on your new vault's hyperlink.
 
-    9. In the Vault Information tab, note the *OCID* item. Click on the "Copy" hyperlink to copy the OCID of your new
+    8. In the Vault Information tab, note the *OCID* item. Click on the "Copy" hyperlink to copy the OCID of your new
        vault to your computer's clipboard.
 
-    10. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `vault-ocid: ` and paste the just-copied OCID.
+    9. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `vault-ocid: ` and paste the just-copied OCID.
 
 7. Create a master encryption key in your newly-created vault to encrypt secret information hosted in the vault.
 
@@ -165,7 +154,7 @@ These steps should only need to be performed once.
 
 8. Create a secret that will be used by this example.
 
-    1. On the left side of the page, in the *Resources* section, click on *Secrets*.
+    1. On the left side of the page, in the Resources section, click on Secrets.
 
     2. Press the **Create Secret** button.
 
@@ -185,36 +174,33 @@ These steps should only need to be performed once.
 
 9. Create a policy to allow your new user in your new group to read your new secret in your new vault.
 
-    1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
-       from the resulting menu.
+    1. Go to https://cloud.oracle.com/identity/policies/ (open this link in a new browser tab or window).
 
-    2. Click on Policies under the **Identity** section.
+    2. Press the **Create Policy** button.
 
-    3. Press the **Create Policy** button.
-
-    4. Supply a name for this new policy in the Name text field. This example uses
+    3. Supply a name for this new policy in the Name text field. This example uses
        "helidon-examples-group-manipulate-secrets", but it can be any name you like that conforms to OCI's valid
        character requirements.
 
-    5. Supply a description for this new policy in the Description text field. This example uses "Permits
+    4. Supply a description for this new policy in the Description text field. This example uses "Permits
        helidon-examples-group members to manipulate secrets in the helidon-examples compartment" but it can be any text
        you like.
 
-    6. Select your new compartment from the Compartment drop-down list.
+    5. Select your new compartment from the Compartment drop-down list.
 
-    7. In the **Policy Builder** area, select "Key and Secret Management" from the Policy use cases drop-down list.
+    6. In the **Policy Builder** area, select "Key and Secret Management" from the Policy use cases drop-down list.
 
-    8. In the **Policy Builder** area, select "Let users read, update and rotate all secrets" from the Common policy
+    7. In the **Policy Builder** area, select "Let users read, update and rotate all secrets" from the Common policy
        template drop-down list.
 
-    9. In the **Policy Builder** area, select your new group from the Groups drop-down list.
+    8. In the **Policy Builder** area, select your new group from the Groups drop-down list.
 
-    10. In the **Policy Builder** area, select your new compartment from the Location drop-down list.
+    9. In the **Policy Builder** area, select your new compartment from the Location drop-down list.
 
-    11. Observe that the **Policy Statements** area now contains a statement like "Allow group
+    10. Observe that the **Policy Statements** area now contains a statement like "Allow group
         **helidon-examples-group** to use secret-family in **compartment helidon-examples**".
 
-    12. Press the **Create** button toward the bottom of the page.
+    11. Press the **Create** button toward the bottom of the page.
 
 To recap, you have, in dependency order:
 
