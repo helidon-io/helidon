@@ -224,13 +224,17 @@ Your OCI resources should be ready to go.
 
 This example relies on a Helidon configuration feature known as _meta-configuration_, configuration about
 configuration. Since this example is Microprofile-based, it specifically relies on Helidon's Microprofile Config
-meta-configuration, which is represented by the `mp-meta-config.yaml` classpath resource. You can find this file in this
-example under the `src/main/resources` directory. Editing this file properly to reference the OCI resources you just
-created above makes the example work.
+meta-configuration, which is represented by the `mp-meta-config.yaml` classpath resource. You can find [this file in
+this example under the `src/main/resources`](src/main/resources/mp-meta-config.yaml) directory. Editing this file
+properly in a checked-out copy of this project on your computer to reference the OCI resources you just created above
+makes the example work.
 
 These steps should only need to be performed once.
 
-1. Edit this example's `src/main/resources/mp-meta-config-yaml` file to include the OCIDs of the compartment and vault you created above.
+0. Check out this project to your computer.
+
+1. In the resulting project, edit this example's `src/main/resources/mp-meta-config-yaml` file to include the OCIDs of
+   the compartment and vault you created above.
 
     1. Replace the occurrence of `compartment-ocid: '${compartment-ocid}'` with the contents of the line you added in
        `/tmp/helidon-examples-ocids.txt` above that begins with `compartment-ocid: `. Ensure the YAML indentation is
