@@ -18,17 +18,17 @@ package io.helidon.inject.runtime.testsubjects;
 
 import java.util.Optional;
 
+import io.helidon.common.Generated;
 import io.helidon.inject.api.Application;
 import io.helidon.inject.api.ServiceInjectionPlanBinder;
 
-import jakarta.annotation.Generated;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 /**
  * For testing.
  */
-@Generated(value = "example", comments = "API Version: n")
+@Generated(value = "example", comments = "API Version: n", trigger = "io.helidon.inject.tools.ApplicationCreatorDefault")
 @Singleton
 @Named(HelloInjection$$Application.NAME)
 public class HelloInjection$$Application implements Application {

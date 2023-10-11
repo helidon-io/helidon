@@ -27,6 +27,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.security.providers.abac {
 
+    requires jakarta.annotation;
+
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
