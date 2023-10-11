@@ -17,8 +17,8 @@ on:
 env:
   JAVA_DISTRO: 'temurin'
   JAVA_VERSION: '17'
-  HELIDON_EXAMPLES_REPOSITORY: 'senivam/helidon-examples.git'
-  HELIDON_EXAMPLES_BUILD_BRANCH: 'dev-3.x'
+  HELIDON_EXAMPLES_REPOSITORY: 'senivam/helidon-ex.git'
+  HELIDON_EXAMPLES_BUILD_BRANCH: '3x_validate_ex'
 
 
 jobs:
