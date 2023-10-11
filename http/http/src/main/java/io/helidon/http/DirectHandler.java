@@ -89,7 +89,7 @@ public interface DirectHandler {
                 return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
             } else {
                 if (logger != null) {
-                    logger.log(Level.ERROR, thrown);
+                    logger.log(Level.DEBUG, thrown);
                 }
                 return handle(request, eventType, defaultStatus, responseHeaders,
                         "Bad request, see server log for more information");
