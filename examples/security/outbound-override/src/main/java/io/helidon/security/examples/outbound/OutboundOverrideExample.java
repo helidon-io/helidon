@@ -24,7 +24,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.security.SecurityRoutingFeature;
+import io.helidon.webserver.security.SecurityHttpFeature;
 
 /**
  * Creates two services.
@@ -78,13 +78,13 @@ public final class OutboundOverrideExample {
 
         server.config(clientConfig.get("security"))
                 .routing(routing -> routing
-                        .addFeature(SecurityRoutingFeature.create(clientConfig.get("security.web-server")))
+                        .addFeature(SecurityHttpFeature.create(clientConfig.get("security.web-server")))
                         .register(new OverrideService()))
 
                 // backend that prints the current user
                 .putSocket("backend", socket -> socket
                         .routing(routing -> routing
-                                .addFeature(SecurityRoutingFeature.create(backendConfig.get("security.web-server")))
+                                .addFeature(SecurityHttpFeature.create(backendConfig.get("security.web-server")))
                                 .get("/hello", (req, res) -> {
                                     String username = req.context()
                                             .get(SecurityContext.class)

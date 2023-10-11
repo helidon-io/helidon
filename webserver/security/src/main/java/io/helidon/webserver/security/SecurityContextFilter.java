@@ -38,7 +38,7 @@ class SecurityContextFilter implements Filter {
         allHeaders.putAll(req.headers().toMap());
 
         Context context = req.context();
-        Optional<Map> newHeaders = context.get(SecurityRoutingFeature.CONTEXT_ADD_HEADERS, Map.class);
+        Optional<Map> newHeaders = context.get(SecurityHttpFeature.CONTEXT_ADD_HEADERS, Map.class);
         newHeaders.ifPresent(allHeaders::putAll);
 
         //make sure there is no context

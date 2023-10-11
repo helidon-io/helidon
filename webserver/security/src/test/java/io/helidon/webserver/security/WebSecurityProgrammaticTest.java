@@ -36,7 +36,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 /**
- * Unit test for {@link SecurityRoutingFeature}.
+ * Unit test for {@link SecurityHttpFeature}.
  */
 @ServerTest
 public class WebSecurityProgrammaticTest extends WebSecurityTests {

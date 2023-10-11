@@ -16,6 +16,9 @@
 app:
   greeting: "Hello"
 
+server:
+  features-discover-services: false
+
 client:
   follow-redirects: true
   max-redirects: 8

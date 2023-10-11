@@ -51,8 +51,8 @@ import io.helidon.webserver.http.ServerResponse;
  * // WebServer routing builder - this is our integration point
  * {@link io.helidon.webserver.http.HttpRouting} routing = HttpRouting.builder()
  * // register the WebSecurity to create context (shared by all routes)
- * .register({@link SecurityRoutingFeature}.{@link
- * SecurityRoutingFeature#create(Security) from(security)})
+ * .register({@link SecurityHttpFeature}.{@link
+ * SecurityHttpFeature#create(Security) from(security)})
  * </pre>
  * <p>
  * Other methods are to create security enforcement points (gates) for routes (e.g. you are expected to use them for a get, post
@@ -86,7 +86,7 @@ import io.helidon.webserver.http.ServerResponse;
  * rolesAllowed("user")})
  * </pre>
  */
-public final class SecurityRoutingFeature implements HttpSecurity, HttpFeature, Weighted {
+public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Weighted {
     /**
      * Security can accept additional headers to be added to security request.
      * This will be used to obtain multivalue string map (a map of string to list of strings) from context (appropriate
@@ -94,14 +94,14 @@ public final class SecurityRoutingFeature implements HttpSecurity, HttpFeature, 
      */
     public static final String CONTEXT_ADD_HEADERS = "security.addHeaders";
 
-    private static final Logger LOGGER = Logger.getLogger(SecurityRoutingFeature.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SecurityHttpFeature.class.getName());
 
     private final Security security;
     private final SecurityHandler defaultHandler;
     private final double weight;
     private final List<PathsConfig> configs;
 
-    private SecurityRoutingFeature(Security security, double weight, SecurityHandler defaults, List<PathsConfig> configs) {
+    private SecurityHttpFeature(Security security, double weight, SecurityHandler defaults, List<PathsConfig> configs) {
         this.security = security;
         this.weight = weight;
         this.defaultHandler = defaults;
@@ -122,7 +122,7 @@ public final class SecurityRoutingFeature implements HttpSecurity, HttpFeature, 
      * @param security initialized security
      * @return routing config consumer
      */
-    public static SecurityRoutingFeature create(Security security) {
+    public static SecurityHttpFeature create(Security security) {
         return SecurityFeature.builder()
                 .security(security)
                 .build()
@@ -139,7 +139,7 @@ public final class SecurityRoutingFeature implements HttpSecurity, HttpFeature, 
      *               configuration of security is expected under root node {@code security}
      * @return routing config consumer
      */
-    public static SecurityRoutingFeature create(Config config) {
+    public static SecurityHttpFeature create(Config config) {
         return SecurityFeature.builder()
                 .security(Security.create(config.root().get("security")))
                 .config(config)
@@ -147,11 +147,11 @@ public final class SecurityRoutingFeature implements HttpSecurity, HttpFeature, 
                 .routingFeature();
     }
 
-    static SecurityRoutingFeature create(Security security,
-                                         double weight,
-                                         SecurityHandler defaults,
-                                         List<PathsConfig> configs) {
-        return new SecurityRoutingFeature(security, weight, defaults, configs);
+    static SecurityHttpFeature create(Security security,
+                                      double weight,
+                                      SecurityHandler defaults,
+                                      List<PathsConfig> configs) {
+        return new SecurityHttpFeature(security, weight, defaults, configs);
     }
 
     /**
@@ -161,9 +161,9 @@ public final class SecurityRoutingFeature implements HttpSecurity, HttpFeature, 
      * @param defaultHandler if a security handler is configured for a route, it will take its defaults from this handler
      * @return new instance of web security with the handler default
      */
-    public SecurityRoutingFeature securityDefaults(SecurityHandler defaultHandler) {
+    public SecurityHttpFeature securityDefaults(SecurityHandler defaultHandler) {
         Objects.requireNonNull(defaultHandler, "Default security handler must not be null");
-        return new SecurityRoutingFeature(security, weight, defaultHandler, configs);
+        return new SecurityHttpFeature(security, weight, defaultHandler, configs);
     }
 
     @Override

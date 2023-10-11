@@ -243,7 +243,7 @@ final class GenerateAbstractBuilder {
                 }
                 // now we have a method called config with wrong return type - this is not supported
                 throw new IllegalArgumentException("Configured property named \"config\" can only be of type "
-                                                           + CONFIG_TYPE.fqName() + ", but is: " + child.typeName().fqName());
+                                                           + CONFIG_TYPE.declaredName() + ", but is: " + child.typeName().fqName());
             }
             /*
             String host() {

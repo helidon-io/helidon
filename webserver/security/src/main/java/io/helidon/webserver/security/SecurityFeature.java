@@ -130,7 +130,7 @@ public class SecurityFeature implements ServerFeature, RuntimeType.Api<SecurityF
      * <li>Audit: not modified (default: enabled except for GET and HEAD methods)</li>
      * </ul>
      *
-     * This type replaces for most use cases the {@link io.helidon.webserver.security.SecurityRoutingFeature} (intentionally
+     * This type replaces for most use cases the {@link SecurityHttpFeature} (intentionally
      * has the same class name, so the use cases are re-visited).
      * <p>
      * This type is discovered automatically by {@link io.helidon.webserver.WebServer}. To configure it, use the
@@ -139,7 +139,7 @@ public class SecurityFeature implements ServerFeature, RuntimeType.Api<SecurityF
      *
      * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
      * @return {@link io.helidon.webserver.security.SecurityHandler} instance
-     * @see io.helidon.webserver.security.SecurityRoutingFeature
+     * @see SecurityHttpFeature
      */
     public static SecurityHandler authenticator(String explicitAuthenticator) {
         return SecurityHandler.create().authenticate().authenticator(explicitAuthenticator);
@@ -282,7 +282,7 @@ public class SecurityFeature implements ServerFeature, RuntimeType.Api<SecurityF
             if (featureContext.socketExists(socketName)) {
                 allSockets.remove(socketName);
                 SocketBuilders socket = featureContext.socket(socketName);
-                SecurityRoutingFeature routingFeature = routingFeature(defaults, configs);
+                SecurityHttpFeature routingFeature = routingFeature(defaults, configs);
                 socket.httpRouting().addFeature(routingFeature);
             }
         });
@@ -290,12 +290,12 @@ public class SecurityFeature implements ServerFeature, RuntimeType.Api<SecurityF
         for (String allSocket : allSockets) {
             // for remaining socket, we still need to register SecurityContext
             SocketBuilders socket = featureContext.socket(allSocket);
-            SecurityRoutingFeature routingFeature = routingFeature(defaults, List.of());
+            SecurityHttpFeature routingFeature = routingFeature(defaults, List.of());
             socket.httpRouting().addFeature(routingFeature);
         }
     }
 
-    SecurityRoutingFeature routingFeature() {
+    SecurityHttpFeature routingFeature() {
         SecurityHandler defaults = featureConfig.defaults();
 
         List<PathsConfig> configurations = new ArrayList<>();
@@ -308,16 +308,16 @@ public class SecurityFeature implements ServerFeature, RuntimeType.Api<SecurityF
             }
         }
 
-        return SecurityRoutingFeature.create(security,
-                                             featureConfig.weight(),
-                                             defaults,
-                                             configurations);
+        return SecurityHttpFeature.create(security,
+                                          featureConfig.weight(),
+                                          defaults,
+                                          configurations);
     }
 
-    private SecurityRoutingFeature routingFeature(SecurityHandler defaults, List<PathsConfig> configs) {
-        return SecurityRoutingFeature.create(security,
-                                             featureConfig.weight(),
-                                             defaults,
-                                             configs);
+    private SecurityHttpFeature routingFeature(SecurityHandler defaults, List<PathsConfig> configs) {
+        return SecurityHttpFeature.create(security,
+                                          featureConfig.weight(),
+                                          defaults,
+                                          configs);
     }
 }

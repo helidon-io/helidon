@@ -41,7 +41,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.security.SecurityFeature;
-import io.helidon.webserver.security.SecurityRoutingFeature;
+import io.helidon.webserver.security.SecurityHttpFeature;
 
 /**
  * Example of authentication of service with http signatures, using configuration file as much as possible.
@@ -127,7 +127,7 @@ public class SignatureExampleBuilderMain {
     }
 
     private static void routing2(HttpRouting.Builder routing) {
-        SecurityRoutingFeature security = SecurityRoutingFeature.create(security2())
+        SecurityHttpFeature security = SecurityHttpFeature.create(security2())
                 .securityDefaults(SecurityFeature.authenticate());
 
         routing.addFeature(security)
@@ -136,7 +136,7 @@ public class SignatureExampleBuilderMain {
     }
 
     private static void routing1(HttpRouting.Builder routing) {
-        SecurityRoutingFeature security = SecurityRoutingFeature.create(security1())
+        SecurityHttpFeature security = SecurityHttpFeature.create(security1())
                 .securityDefaults(SecurityFeature.authenticate());
         routing.addFeature(security)
                 .get("/service1*", SecurityFeature.rolesAllowed("user"))

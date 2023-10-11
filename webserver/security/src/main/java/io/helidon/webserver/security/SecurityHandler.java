@@ -67,8 +67,8 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 /**
  * Handles security for web server. This handler is registered either by hand on router config,
  * or automatically from configuration when integration done through
- * {@link SecurityRoutingFeature#create(io.helidon.common.config.Config)}
- * or {@link SecurityRoutingFeature#create(Security, io.helidon.common.config.Config)}.
+ * {@link SecurityHttpFeature#create(io.helidon.common.config.Config)}
+ * or {@link SecurityHttpFeature#create(Security, io.helidon.common.config.Config)}.
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -158,7 +158,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
      * <pre>
      * {
      *   #
-     *   # these are used by {@link SecurityRoutingFeature} when loaded from config, to register with {@link io.helidon.webserver.WebServer}
+     *   # these are used by {@link SecurityHttpFeature} when loaded from config, to register with {@link io.helidon.webserver.WebServer}
      *   #
      *   path = "/noRoles"
      *   methods = ["get"]

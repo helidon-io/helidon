@@ -52,7 +52,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link SecurityRoutingFeature}.
+ * Unit test for {@link SecurityHttpFeature}.
  */
 @ServerTest
 class WebSecurityBuilderGateDefaultsTest {
