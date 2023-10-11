@@ -116,7 +116,7 @@ sources:
   - type: 'environment-variables'
   - type: 'system-properties'
   - type: 'oci-secrets'
-    accept-pattern: '^helidon-examples-secret$'
+    accept-pattern: '^helidon-examples-secret$' # note the name of the secret you created above
     compartment-ocid: ocid1.compartment.oc1... # the OCID of the compartment you created above
     lazy: false
     vault-ocid: ocid1.vault.oc1... # the OCID of the vault you created above
@@ -126,7 +126,9 @@ The file instructs the Helidon MicroProfile Config implementation:
 * not to add any default or discovered configuration sources via the normal discovery mechanisms (this file will instead specify
   exactly what configuration sources will apply for this example application)
 * not to add any discovered converters (this application does not require them)
-* to add a configuration source of type `oci-secrets` with characteristics
+* to add the `environment-variables` configuration source first
+* to add the `system-properties` configuration source second
+* to add a configuration source of type `oci-secrets` third, with characteristics:
   * It will attempt to fetch a value for any configuration property name that matches the `accept-pattern`'s regular
     expression value, and none other.
   * It will look in the vault identified by the (OCID) value of the `vault-ocid` setting, in the compartment identified
