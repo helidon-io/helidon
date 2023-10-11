@@ -42,15 +42,11 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
-import io.helidon.common.socket.HelidonSocket;
-import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -71,10 +67,8 @@ class ServerListener implements ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
 
     @SuppressWarnings("rawtypes")
-    private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() -> {
-        return HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class))
-                .asList();
-    });
+    private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() ->
+            HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class)).asList());
 
     private final ConnectionProviders connectionProviders;
     private final String socketName;
@@ -359,37 +353,16 @@ class ServerListener implements ListenerContext {
                 Socket socket = serverSocket.accept();
 
                 try {
-                    ConnectionHandler handler;
-                    String channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
                     connectionOptions.configureSocket(socket);
-
-                    HelidonSocket helidonSocket;
-                    if (tls.enabled()) {
-                        SSLSocket sslSocket = (SSLSocket) socket;
-                        sslSocket.setHandshakeApplicationProtocolSelector(
-                                (sslEngine, list) -> {
-                                    for (String protocolId : list) {
-                                        if (connectionProviders.supportedApplicationProtocols()
-                                                .contains(protocolId)) {
-                                            return protocolId;
-                                        }
-                                    }
-                                    return null;
-                                });
-                        sslSocket.startHandshake();
-                        helidonSocket = TlsSocket.server(sslSocket, channelId, serverChannelId);
-                    } else {
-                        helidonSocket = PlainSocket.server(socket, channelId, serverChannelId);
-                    }
-
-                    handler = new ConnectionHandler(this,
+                    ConnectionHandler handler = new ConnectionHandler(this,
                                                     connectionSemaphore,
                                                     requestSemaphore,
                                                     connectionProviders,
                                                     activeConnections,
-                                                    helidonSocket,
-                                                    router);
-
+                                                    socket,
+                                                    serverChannelId,
+                                                    router,
+                                                    tls);
                     readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");
