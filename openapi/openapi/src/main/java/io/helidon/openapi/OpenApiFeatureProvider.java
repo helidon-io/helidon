@@ -1,31 +1,31 @@
-package io.helidon.webserver.cors;
+package io.helidon.openapi;
 
 import io.helidon.common.Weight;
 import io.helidon.common.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for CORS feature for {@link io.helidon.webserver.WebServer}.
+ * {@link java.util.ServiceLoader} provider implementation for OpenAPI feature for {@link io.helidon.webserver.WebServer}.
  */
-@Weight(CorsFeature.WEIGHT)
-public class CorsFeatureProvider implements ServerFeatureProvider<CorsFeature> {
+@Weight(OpenApiFeature.WEIGHT)
+public class OpenApiFeatureProvider implements ServerFeatureProvider<OpenApiFeature> {
     /**
      * Required for {@link java.util.ServiceLoader}.
      *
      * @deprecated only for {@link java.util.ServiceLoader}
      */
     @Deprecated
-    public CorsFeatureProvider() {
+    public OpenApiFeatureProvider() {
     }
 
     @Override
     public String configKey() {
-        return CorsFeature.CORS_ID;
+        return OpenApiFeature.OPENAPI_ID;
     }
 
     @Override
-    public CorsFeature create(Config config, String name) {
-        return CorsFeature.builder()
+    public OpenApiFeature create(Config config, String name) {
+        return OpenApiFeature.builder()
                 .config(config)
                 .name(name)
                 .build();

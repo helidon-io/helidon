@@ -11,6 +11,7 @@ Features
 | CORS                   | 950    |
 | Security               | 800    |
 | Routing (all handlers) | 100    |
+| OpenAPI                | 90     |
 | Observe                | 80     |
 
 Reasoning:
@@ -22,4 +23,5 @@ Reasoning:
 - security evaluates authentication and authorization and may forbid access to other routes
 - routing - all registered filters and handlers are added with this weight (to allow features that pick up requests that were not
   processed at all)
+- openapi feature - after business routes
 - Observability feature - after business routes

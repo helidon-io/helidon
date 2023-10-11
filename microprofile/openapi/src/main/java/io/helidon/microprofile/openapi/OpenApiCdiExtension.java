@@ -64,10 +64,11 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension {
                                 ServerCdiExtension server) {
 
         feature = OpenApiFeature.builder()
+                .permitAll(true) // backward compatible behavior for MP
                 .config(componentConfig())
                 .manager(new MpOpenApiManager(ConfigProvider.getConfig()))
                 .build();
-        feature.setup(server.serverRoutingBuilder(), routingBuilder(server));
+        server.addFeature(feature);
     }
 
     @Override

@@ -18,7 +18,6 @@ package io.helidon.examples.quickstart.se;
 
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -61,7 +60,6 @@ public final class Main {
     static void routing(HttpRouting.Builder routing) {
         Config config = Config.global();
 
-        routing.register("/greet", new GreetService())
-                .addFeature(OpenApiFeature.create(config.get("openapi")));
+        routing.register("/greet", new GreetService());
     }
 }

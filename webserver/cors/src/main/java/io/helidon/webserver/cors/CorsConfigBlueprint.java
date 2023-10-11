@@ -30,6 +30,7 @@ interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature> {
      * @return socket names to register on, defaults to empty (all available sockets)
      */
     @Option.Configured
+    @Option.Singular
     Set<String> sockets();
 
     /**

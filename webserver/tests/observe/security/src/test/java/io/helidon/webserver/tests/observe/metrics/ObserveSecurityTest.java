@@ -75,8 +75,8 @@ class ObserveSecurityTest {
                                     .defaults(SecurityFeature.authenticate())
                                     .build())
                 .addFeature(ObserveFeature.create())
+                .addFeature(OpenApiFeature.create())
                 .routing(routing -> routing
-                        .addFeature(OpenApiFeature.create())
                         .get("/observe/metrics", SecurityFeature.rolesAllowed("user"))
                         .get("/openapi", SecurityFeature.rolesAllowed("user")));
     }

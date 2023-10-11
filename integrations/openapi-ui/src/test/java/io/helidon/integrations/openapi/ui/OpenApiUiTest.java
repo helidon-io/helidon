@@ -24,9 +24,11 @@ import io.helidon.http.Status;
 import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -61,26 +63,39 @@ class OpenApiUiTest {
         this.client = client;
     }
 
-    @SetUpRoute
-    public static void setup(HttpRouting.Builder routing) {
-        routing.addFeature(OpenApiFeature.builder()
-                                   .servicesDiscoverServices(false)
-                                   .staticFile("src/test/resources/greeting.yml")
-                                   .cors(cors -> cors.enabled(false))
-                                   .addService(OpenApiUi.create()))
+    @SetUpServer
+    static void setupServer(WebServerConfig.Builder server) {
+        server.addFeature(OpenApiFeature.builder()
+                                  .servicesDiscoverServices(false)
+                                  .staticFile("src/test/resources/greeting.yml")
+                                  .cors(cors -> cors.enabled(false))
+                                  .addService(OpenApiUi.create())
+                                  .permitAll(true)
+                                  .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
                                     .staticFile("src/test/resources/greeting.yml")
                                     .webContext("/openapi-greeting")
+                                    .name("openapi-greeting")
                                     .cors(cors -> cors.enabled(false))
-                                    .addService(OpenApiUi.create()))
+                                    .addService(OpenApiUi.create())
+                                    .permitAll(true)
+                                    .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
                                     .staticFile("src/test/resources/greeting.yml")
                                     .cors(cors -> cors.enabled(false))
                                     .addService(OpenApiUi.builder()
                                                         .webContext("/my-ui")
-                                                        .build()));
+                                                        .build())
+                                    .name("openapi-ui")
+                                    .permitAll(true)
+                                    .build());
+    }
+
+    @SetUpRoute
+    static void setup(HttpRouting.Builder routing) {
+        routing.get("/greet", (req, res) -> res.send("hi"));
     }
 
     @Test
