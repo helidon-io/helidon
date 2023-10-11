@@ -45,7 +45,7 @@ These steps should only need to be performed once.
     3. Press the **Create User** button.
 
     4. Supply a name for the user in the Name text field. This example uses "helidon-examples-user", but it can be any
-       name you like that conforms to OCI's valid character restrictions.
+       name you like that conforms to OCI's valid character requirements.
 
     5. Supply a description for the user in the Description text field. This example uses "A user for Helidon examples",
        but it can be any text you like.
@@ -62,7 +62,7 @@ These steps should only need to be performed once.
 
         4. Press the **Download Public Key** button and take note of where the file is saved.
 
-        5. Press the **Add** button
+        5. Press the **Add** button.
 
         6. Take note of the contents of the Configuration File Preview text area. This will become part of the contents
            of your `${HOME}/.oci/config` file.
@@ -90,7 +90,7 @@ These steps should only need to be performed once.
     3. Press the **Create Group** button.
 
     4. Supply a name for the group in the Name text field. This example uses "helidon-examples-group", but it can be any
-       name you like that conforms to OCI's valid character restrictions.
+       name you like that conforms to OCI's valid character requirements.
 
     5. Supply a description for the user in the Description text field. This example uses "A group for Helidon
        examples", but it can be any text you like.
@@ -110,7 +110,7 @@ These steps should only need to be performed once.
     2. Press the **Create Compartment** button.
 
     3. Supply a name for the compartment in the Name text field. This example uses "helidon-examples", but it can be any
-       name you like that uses alphanumeric characters and the hyphen (`-`) character.
+       name you like that conforms to OCI's valid character requirements.
 
     4. Supply a description for the compartment in the Description text field. This example uses "A compartment for
        Helidon Examples" but it can be any text you like.
@@ -127,7 +127,7 @@ These steps should only need to be performed once.
 
     9. In `/tmp/helidon-examples-ocids.txt`, on a new line, type `compartment-ocid: ` and paste the just-copied OCID.
 
-6. Create a vault to host secret information related to this example and gather its OCID
+6. Create a vault to host secret information related to this example and gather its OCID.
 
     1. Click on the three-dash "hamburger" menu in the upper left of the navigation bar. Click on *Identity and Security*
        from the resulting menu.
@@ -139,11 +139,11 @@ These steps should only need to be performed once.
     4. Press the **Create Vault** button.
 
     5. Supply a name for the vault in the Name text field. This example uses "helidon-examples-vault", but it can be any
-       name you like that uses alphanumeric characters and the hyphen (`-`) character.
+       name you like that conforms to OCI's valid character requirements.
 
     6. Press the **Create Vault** button toward the bottom of the page.
 
-    7. After several seconds, your new vault should appear in the table with a *State* of *Creating*.
+    7. After several seconds, your new vault should appear in the table with a **State** of **Creating**.
 
     8. Click on your new vault's hyperlink.
 
@@ -170,7 +170,7 @@ These steps should only need to be performed once.
     2. Press the **Create Secret** button.
 
     3. Supply a name for the secret in the Name text field. This example uses "helidon-examples-secret", but it can be any
-       name you like that uses alphanumeric characters and the hyphen (`-`) character.
+       name you like that conform's to OCI's valid character requirements.
 
     4. Supply a description for the secret in the Description text field. This example uses "A secret for Helidon
        Examples" but it can be any text you like.
