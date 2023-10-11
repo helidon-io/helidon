@@ -52,23 +52,23 @@ These steps should only need to be performed once.
 
     5. Press the **Create** button.
 
-4. Fill in the contents of your `${HOME}/.oci/config` file with your new user's information.
+    4. Fill in the contents of your `${HOME}/.oci/config` file with your new user's information.
 
-    1. Click on **API Keys** in the Resources section.
+        1. Click on **API Keys** in the Resources section.
 
-    2. Press the **Add API Key** button.
+        2. Press the **Add API Key** button.
 
-    3. Press the **Download Private Key** button and take note of where the file is saved.
+        3. Press the **Download Private Key** button and take note of where the file is saved.
 
-    4. Press the **Download Public Key** button and take note of where the file is saved.
+        4. Press the **Download Public Key** button and take note of where the file is saved.
 
-    5. Press the **Add** button
+        5. Press the **Add** button
 
-    6. Take note of the contents of the Configuration File Preview text area. This will become part of the contents of
-       your `${HOME}/.oci/config` file.
+        6. Take note of the contents of the Configuration File Preview text area. This will become part of the contents
+           of your `${HOME}/.oci/config` file.
 
-        7. Click the "Copy" hyperlink to copy the contents of the Configuration File Preview text area to your computer's
-           clipboard.
+        7. Click the "Copy" hyperlink to copy the contents of the Configuration File Preview text area to your
+           computer's clipboard.
 
         8. Paste the copied contents into the currently empty `${HOME}/.oci/config` file you just created.
 
