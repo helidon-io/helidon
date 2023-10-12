@@ -210,13 +210,16 @@ To recap, you have, in dependency order:
 
 * Created a group ("helidon-examples-group")
 
+* Added the user to the group
+
 * Created a compartment ("helidon-examples")
 
 * Created a vault in the compartment ("helidon-examples-vault")
 
 * Created a secret in the vault ("helidon-examples-secret")
 
-* Created a policy that lets your group's users manipulate secrets found in your compartment ("helidon-examples-group-manipulate-secrets")
+* Created a policy that lets your group's users manipulate secrets found in your compartment
+  ("helidon-examples-group-manipulate-secrets")
 
 Your OCI resources should be ready to go.
 
