@@ -25,6 +25,7 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.cors.CorsRequestAdapter;
 import io.helidon.cors.CorsResponseAdapter;
 import io.helidon.cors.CorsSupportBase;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.HeaderName;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -91,6 +92,12 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         @Override
         public CorsSupportMp build() {
             return new CorsSupportMp(this);
+        }
+
+        @Override
+        protected Builder secondaryLookupSupplier(
+                Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
+            return super.secondaryLookupSupplier(secondaryLookupSupplier);
         }
     }
 
