@@ -236,13 +236,15 @@ These steps should only need to be performed once.
 1. In the resulting project, edit this example's `src/main/resources/mp-meta-config-yaml` file to include the OCIDs of
    the compartment and vault you created above.
 
-    1. Replace the occurrence of `compartment-ocid: '${compartment-ocid}'` with the contents of the line you added in
-       `/tmp/helidon-examples-ocids.txt` above that begins with `compartment-ocid: `. Ensure the YAML indentation is
-       correct (`compartment-ocid:` should appear at zero-based character position 4, under the `c` in `sources`).
+    1. Following the directions in the file, insert the value of your compartment's OCID between the colon (`:`) and the
+       comment character (`#`) in the line starting with `compartment-ocid`.  Consult `/tmp/helidon-examples-ocids.txt`
+       as necessary. Ensure the YAML indentation is correct (`compartment-ocid:` should appear at zero-based character
+       position 4, under the `c` in `sources`).
 
-    2. Replace the occurrence of `vault-ocid: '${vault-ocid}'` with the contents of the line you added in
-       `/tmp/helidon-examples-ocids.txt` above that begins with `vault-ocid: `. Ensure the YAML indentation is correct
-       (`vault-ocid:` should appear at zero-based character position 4, under the `c` in `sources`).
+    2. Following the directions in the file, insert the value of your compartment's OCID between the colon (`:`) and the
+       comment character (`#`) in the line starting with `compartment-ocid`.  Consult `/tmp/helidon-examples-ocids.txt`
+       as necessary. Ensure the YAML indentation is correct (`vault-ocid:` should appear at zero-based character
+       position 4, under the `c` in `sources`).
 
     3. Note the `accept-pattern: ` line. Its single-quoted value is `^helidon-examples-secret$`, which is a regular
        expression identifying the names of configuration properties whose values should be fetched from the
@@ -287,8 +289,40 @@ gathered. It is no longer needed.
 
 ## Build The Example
 
+In the root directory of your computer's copy of this project, open a shell and type:
+
+```sh
 `mvn clean verify`
+```
 
 ## Run The Example
 
-`java -jar target/TODO.jar`
+The jar file produced by this example contains a main class that accepts a single command-line argument, treats it as
+the name of a configuration property that the Helidon Microprofile Config implementation will look up, and prints its
+value if it is found.
+
+You can run the example with, for example, the name of a System property that will always be resolved:
+
+```sh
+java -jar target/helidon-examples-integrations-oci-secrets-mp-config-source.jar java.home
+```
+
+(You may see log information printed to the terminal that reflects the initialization of the OCI configuration source,
+but `java.home` will be resolved from Helidon's system properties configuration source.)
+
+You can run the same example with logging if you want to experiment with levels. Edit your local copy of
+`logging.properties` appropriately, and then run:
+
+```sh
+java -Djava.util.logging.config.file=logging.properties -jar target/helidon-examples-integrations-oci-secrets-mp-config-source.jar java.home
+```
+
+Finally you can run the example with logging that looks up the decoded value of the secret you created above, if you set
+everything up according to the directions above:
+
+```sh
+java -Djava.util.logging.config.file=logging.properties -jar target/helidon-examples-integrations-oci-secrets-mp-config-source.jar helidon-examples-secret
+```
+
+You should see the value of your secret (for example, `secret value`, as created in the instructions above) printed to
+the terminal.

@@ -6,7 +6,7 @@ sources:
   - type: 'environment-variables'
   - type: 'system-properties'
   - type: 'oci-secrets'
-    accept-pattern: '^helidon-examples-secret$'
-    compartment-ocid: '${compartment-ocid}'
+    accept-pattern: '^helidon-examples-secret$' # Replace helidon-examples-secret with the name of your secret. See ../../../README.md.
+    compartment-ocid: # Insert your compartment's OCID between the colon (:) and the comment character (#).
     lazy: false
-    vault-ocid: '${vault-ocid}'
+    vault-ocid: # Insert your vault's OCID between the colon (:) and the comment character (#).
