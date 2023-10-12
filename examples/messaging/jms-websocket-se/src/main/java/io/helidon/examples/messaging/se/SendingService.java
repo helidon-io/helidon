@@ -77,7 +77,7 @@ class SendingService implements HttpService {
         // Listen for GET /example/send/{msg}
         // to send it through messaging to Jms
         rules.get("/send/{msg}", (req, res) -> {
-            String msg = req.path().pathParameters().value("msg");
+            String msg = req.path().pathParameters().get("msg");
             System.out.println("Emitting: " + msg);
             emitter.send(msg);
             res.send();

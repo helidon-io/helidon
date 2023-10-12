@@ -23,7 +23,7 @@ ifndef::attributes-included[]
 // functional attributes
 :imagesdir: {rootdir}/images
 
-:helidon-version: 3.0.0-SNAPSHOT
+:helidon-version: 4.0.0-SNAPSHOT
 :helidon-version-is-release: false
 
 ifeval::["{helidon-version-is-release}" != "true"]
@@ -35,53 +35,53 @@ ifeval::["{helidon-version-is-release}" == "true"]
 endif::[]
 
 // versions
-:version-plugin-helidon: 3.0.0-M3
+:version-plugin-helidon: 3.0.5
 
 :version-lib-microprofile-api: 5.0
 
 // microprofile specifications
-:version-lib-microprofile-lra-api: 2.0-RC1
-:version-lib-microprofile-config: 3.0.1
-:version-lib-microprofile-fault-tolerance-api: 4.0
+:version-lib-microprofile-lra-api: 2.0
+:version-lib-microprofile-config: 3.0.3
+:version-lib-microprofile-fault-tolerance-api: 4.0.2
 :version-lib-microprofile-graphql: 2.0
 :version-lib-microprofile-health: 4.0
-:version-lib-microprofile-jwt: 2.0
-:version-lib-microprofile-metrics-api: 4.0
-:version-lib-microprofile-openapi-api: 3.0
-:version-lib-microprofile-reactive-messaging-api: 3.0-RC2
-:version-lib-microprofile-rs-operators-api: 3.0-RC1
+:version-lib-microprofile-jwt: 2.1
+:version-lib-microprofile-metrics-api: 5.0.1
+:version-lib-microprofile-openapi-api: 3.1
+:version-lib-microprofile-reactive-messaging-api: 3.0
+:version-lib-microprofile-rs-operators-api: 3.1.1
 :version-lib-microprofile-rest-client: 3.0
+:version.lib.microprofile-telemetry-tck: 1.0
 :version-lib-microprofile-tracing: 3.0
 
 // jakarta specifications
-:version-lib-jakarta-cdi: 3.0
-:version-lib-jakarta-websockets-api: 2.0
-:version-lib-jakarta-bean-validation: 2.0
-:version-lib-jakarta-jsonp-api: 2.0
-:version-lib-jakarta-jsonb-api: 2.0
-:version-lib-jakarta-jsonp-api: 2.0.1
-:version-lib-jakarta-annotations-api: 2.0
+:version-lib-jakarta-cdi: 4.0.1
+:version-lib-jakarta-websockets-api: 2.1.0
+:version-lib-jakarta-bean-validation: 3.0
+:version-lib-jakarta-jsonp-api: 2.1.1
+:version-lib-jakarta-jsonb-api: 3.0
+:version-lib-jakarta-jsonp-api: 2.1.1
+:version-lib-jakarta-annotations-api: 2.1.1
 :version-lib-jakarta-transaction-api: 2.0
-:version-lib-jakarta-persistence-api: 3.0
-:version-lib-jakarta-jaxrs-api: 3.0
-:version-lib-jakarta-inject: 2.0
+:version-lib-jakarta-persistence-api: 3.1.0
+:version-lib-jakarta-jaxrs-api: 3.1.0
+:version-lib-jakarta-inject: 2.0.1
 
 // 3rd party
 :version-lib-jaeger: 1.22
-:version-lib-jedis: 2.9.0
 :version-lib-hikaricp: 5.0.1
-:version-lib-eclipselink: 3.0
-:version-lib-hibernate: 6.1
+:version-lib-eclipselink: 4.0.2
+:version-lib-hibernate: 6.1.7.Final
 :version-lib-oracle-jdbc: 21
 :version-lib-oracle-ucp: {version-lib-oracle-jdbc}
 :version-plugin-jib: 0.10.1
 :version-plugin-jandex: 3.1.2
-:version-lib-micrometer: 1.6.6
-:version-lib-smallrye-open-api: 2.1.16
+:version-lib-micrometer: 1.11.1
+:version-lib-smallrye-open-api: 3.3.4
 
-:jdk-version: 17
+:jdk-version: 21
 
-:jdk-doc-url: https://docs.oracle.com/en/java/javase/17
+:jdk-doc-url: https://docs.oracle.com/en/java/javase/21
 :jdk-javadoc-url: {jdk-doc-url}/docs/api
 
 :helidon-maven-plugin-doc-url: https://github.com/oracle/helidon-build-tools/blob/{version-plugin-helidon}/maven-plugins/helidon-maven-plugin/README.md
@@ -190,13 +190,13 @@ endif::[]
 :http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
 :config-javadoc-base-url: {javadoc-base-url}/io.helidon.config
 :configurable-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.common.configurable
-:faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.reactive.faulttolerance
+:faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
 :integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
-:media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.reactive.media.jsonp
-:media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.reactive.media.jsonb
-:media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.reactive.media.jackson
+:media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonp
+:media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonb
+:media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jackson
 :metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api
 :metrics-mp-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.metrics
 :metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
@@ -211,11 +211,10 @@ endif::[]
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
 :security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.security.integration.webserver
-:webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.reactive.webclient
-:webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.reactive.webserver
-:webserver-jersey-javadoc-base-url: {javadoc-base-url}/io.helidon.reactive.webserver.jersey
+:webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
+:webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
-:webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.reactive.webserver.cors
+:webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.cors
 :graphql-javadoc-base-url: {javadoc-base-url}/io.helidon.graphql.server
 :security-provider-oidc-base-url: {javadoc-base-url}/io.helidon.security.providers.oidc
 :security-provider-httpauth-base-url: {javadoc-base-url}/io.helidon.security.providers.httpauth
@@ -236,7 +235,6 @@ endif::[]
 :hibernate-doc-jboss-url: https://docs.jboss.org/hibernate/orm/{version-lib-hibernate}
 :hibernate-javadoc-base-url: {hibernate-doc-jboss-url}/javadocs
 :jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
-:jedis-base-url: {javadoc-io-base-url}/static/redis.clients/jedis/{version-lib-jedis}/redis/clients
 :kafka-client-base-url: https://kafka.apache.org/28/documentation.html
 :openapi-version: 3.0.0
 :openapi-spec-base-url: https://github.com/OAI/OpenAPI-Specification/blob/master/versions
@@ -274,6 +272,10 @@ endif::[]
 :openapi-generator-tool-docs-url: {openapi-generator-tool-base-url}/blob/{openapi-generator-site-version}/docs
 :openapi-generator-tool-generators-docs-url: {openapi-generator-tool-docs-url}/generators
 :openapi-generator-tool-site-url: https://openapi-generator.tech
+
+// GraalVM
+:graalvm-jdk-version: 21
+:graalvm-doc-url: https://www.graalvm.org/jdk{graalvm-jdk-version}/
 
 // OpenAPI UI
 :smallrye-openapi-ui-base-url: https://github.com/smallrye/smallrye-open-api/tree/{version-lib-smallrye-open-api}/ui/open-api-ui

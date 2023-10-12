@@ -61,6 +61,16 @@
             <artifactId>helidon-builder-api</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -80,6 +90,11 @@
                             <artifactId>helidon-common-processor-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.config</groupId>
+                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
@@ -91,6 +106,11 @@
                     <dependency>
                         <groupId>io.helidon.common.processor</groupId>
                         <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config</groupId>
+                        <artifactId>helidon-config-metadata-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

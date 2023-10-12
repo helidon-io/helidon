@@ -21,11 +21,15 @@ import java.util.Set;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.http.Http;
-import io.helidon.http.HttpMediaTypes;
 import io.helidon.config.Config;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Status;
+import io.helidon.security.AuditEvent;
+import io.helidon.security.EndpointConfig;
+import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
@@ -34,10 +38,8 @@ import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
-import io.helidon.security.AuditEvent;
-import io.helidon.security.Security;
-import io.helidon.security.SecurityContext;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -120,7 +122,7 @@ class WebSecurityBuilderGateDefaultsTest {
         // as then audit is called twice - first time with 401 (challenge) and second time with 200 (correct request)
         // and that intermittently breaks this test
         try (Http1ClientResponse response = webClient.get("/auditOnly").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
 
         // audit
@@ -167,19 +169,19 @@ class WebSecurityBuilderGateDefaultsTest {
     void basicTest401() {
         try (Http1ClientResponse response = webClient.get("/noRoles").request()) {
 
-            if (response.status() != Http.Status.UNAUTHORIZED_401) {
+            if (response.status() != Status.UNAUTHORIZED_401) {
                 assertThat("Response received: " + response.entity().as(String.class),
                         response.status(),
-                        is(Http.Status.UNAUTHORIZED_401));
+                        is(Status.UNAUTHORIZED_401));
             }
 
-            assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
+            assertThat(response.headers().first(HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Basic realm=\"mic\"")));
         }
 
         try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
-            assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
+            assertThat(response.headers().first(HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Basic realm=\"mic\"")));
         }
 
@@ -189,7 +191,7 @@ class WebSecurityBuilderGateDefaultsTest {
         try (HttpClientResponse response = callProtected(uri, username, password)) {
             assertThat(uri + " for user " + username + " should be forbidden",
                     response.status(),
-                    is(Http.Status.FORBIDDEN_403));
+                    is(Status.FORBIDDEN_403));
         }
     }
 
@@ -201,7 +203,7 @@ class WebSecurityBuilderGateDefaultsTest {
 
         String entity;
         try (HttpClientResponse response = callProtected(uri, username, password)) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             entity = response.entity().as(String.class);
 
@@ -217,8 +219,8 @@ class WebSecurityBuilderGateDefaultsTest {
     private HttpClientResponse callProtected(String uri, String username, String password) {
         // here we call the endpoint
         return securityClient.get(uri)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, username)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, username)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
                 .request();
     }
 }

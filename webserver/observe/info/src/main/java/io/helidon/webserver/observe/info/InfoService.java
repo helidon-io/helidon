@@ -16,10 +16,8 @@
 
 package io.helidon.webserver.observe.info;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
-import io.helidon.common.config.Config;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.jsonp.JsonpSupport;
@@ -39,14 +37,8 @@ class InfoService implements HttpService {
 
     private final Map<String, Object> info;
 
-    private InfoService(Map<String, Object> info) {
+    InfoService(Map<String, Object> info) {
         this.info = info;
-    }
-
-    public static HttpService create(Config config) {
-        Map<String, Object> info = new LinkedHashMap<>(config.get("values").detach().asMap().orElseGet(Map::of));
-
-        return new InfoService(info);
     }
 
     @Override
@@ -56,7 +48,7 @@ class InfoService implements HttpService {
     }
 
     private void namedInfo(ServerRequest req, ServerResponse res) {
-        String name = req.path().pathParameters().value("name");
+        String name = req.path().pathParameters().get("name");
 
         Object value = info.get(name);
         if (value == null) {

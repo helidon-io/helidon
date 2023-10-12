@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 
 /**
  * Helidon WebClient cookie manager.
@@ -36,9 +36,9 @@ import io.helidon.http.Http;
 @RuntimeType.PrototypedBy(WebClientCookieManagerConfig.class)
 public class WebClientCookieManager extends CookieManager implements RuntimeType.Api<WebClientCookieManagerConfig> {
 
-    private static final String COOKIE = Http.HeaderNames.COOKIE.defaultCase();
-    private static final String SET_COOKIE = Http.HeaderNames.SET_COOKIE.defaultCase();
-    private static final String SET_COOKIE2 = Http.HeaderNames.SET_COOKIE2.defaultCase();
+    private static final String COOKIE = HeaderNames.COOKIE.defaultCase();
+    private static final String SET_COOKIE = HeaderNames.SET_COOKIE.defaultCase();
+    private static final String SET_COOKIE2 = HeaderNames.SET_COOKIE2.defaultCase();
 
     private final boolean acceptCookies;
     private final List<String> defaultCookies;
@@ -117,10 +117,10 @@ public class WebClientCookieManager extends CookieManager implements RuntimeType
                 List<String> cookies = cookieMap.get(COOKIE);
                 cookies.addAll(defaultCookies);
                 if (!cookies.isEmpty()) {
-                    requestHeaders.add(Http.HeaderNames.COOKIE, cookies.toArray(new String[0]));
+                    requestHeaders.add(HeaderNames.COOKIE, cookies.toArray(new String[0]));
                 }
             } else if (!defaultCookies.isEmpty()) {
-                requestHeaders.add(Http.HeaderNames.COOKIE, defaultCookies.toArray(new String[0]));
+                requestHeaders.add(HeaderNames.COOKIE, defaultCookies.toArray(new String[0]));
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -140,14 +140,14 @@ public class WebClientCookieManager extends CookieManager implements RuntimeType
             if (acceptCookies) {
                 Map<String, List<String>> cookies = null;
 
-                if (headers.contains(Http.HeaderNames.SET_COOKIE)) {
+                if (headers.contains(HeaderNames.SET_COOKIE)) {
                     cookies = new HashMap<>();
-                    cookies.put(SET_COOKIE, headers.values(Http.HeaderNames.SET_COOKIE));
+                    cookies.put(SET_COOKIE, headers.get(HeaderNames.SET_COOKIE).allValues());
                 }
 
-                if (headers.contains(Http.HeaderNames.SET_COOKIE2)) {
+                if (headers.contains(HeaderNames.SET_COOKIE2)) {
                     cookies = cookies == null ? new HashMap<>() : cookies;
-                    cookies.put(SET_COOKIE2, headers.values(Http.HeaderNames.SET_COOKIE2));
+                    cookies.put(SET_COOKIE2, headers.get(HeaderNames.SET_COOKIE2).allValues());
                 }
 
                 if (cookies != null) {

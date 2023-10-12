@@ -47,6 +47,7 @@ public class WebSocketEndpoint implements WsListener {
 
         String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
         String topic = config.get("app.kafka.topic").asString().get();
+        String compression = config.get("app.kafka.compression").asString().orElse("none");
 
         // Prepare channel for connecting kafka connector with specific publisher configuration -> listener,
         // channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
@@ -60,6 +61,7 @@ public class WebSocketEndpoint implements WsListener {
                         .enableAutoCommit(true)
                         .keyDeserializer(StringDeserializer.class)
                         .valueDeserializer(StringDeserializer.class)
+                        .compressionType(compression)
                         .build()
                 )
                 .build();
@@ -72,7 +74,7 @@ public class WebSocketEndpoint implements WsListener {
                 .listener(fromKafka, payload -> {
                     System.out.println("Kafka says: " + payload);
                     // Send message received from Kafka over websocket
-                    session.send(payload, false);
+                    session.send(payload, true);
                 })
                 .build()
                 .start();

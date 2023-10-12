@@ -19,7 +19,10 @@ package io.helidon.webserver.tests;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -38,8 +41,8 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 // Use by both RoutingTest and RulesTest to share the same test methods
 class RoutingTestBase {
-    private static final Http.Header MULTI_HANDLER = Http.Headers.createCached(
-            Http.HeaderNames.create("X-Multi-Handler"), "true");
+    private static final Header MULTI_HANDLER = HeaderValues.createCached(
+            HeaderNames.create("X-Multi-Handler"), "true");
     static Http1Client client;
     // Functions that will be used to execute http webclient shortcut methods
     private static Function<String, Http1ClientRequest> get = x -> client.get(x);
@@ -61,7 +64,7 @@ class RoutingTestBase {
     void testRouteWithSpace() {
         try (Http1ClientResponse response = client.get("/my path").request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             String message = response.as(String.class);
             assertThat(message, is("done"));
@@ -72,7 +75,7 @@ class RoutingTestBase {
     void testRouteWithUtf8() {
         try (Http1ClientResponse response = client.get("/českáCesta").request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             String message = response.as(String.class);
             assertThat(message, is("done"));
@@ -83,7 +86,7 @@ class RoutingTestBase {
     @MethodSource("basic")
     void testHttpShortcutMethods(Function<String, Http1ClientRequest> request, String path, String responseMessage) {
         try (Http1ClientResponse response = request.apply(path).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(responseMessage));
         }
     }
@@ -94,7 +97,7 @@ class RoutingTestBase {
                                                    String path,
                                                    String responseMessage) {
         try (Http1ClientResponse response = request.apply(path).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(responseMessage));
         }
     }
@@ -105,7 +108,7 @@ class RoutingTestBase {
                                                 String path,
                                                 String responseMessage) {
         try (Http1ClientResponse response = request.apply(path).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(responseMessage));
         }
     }
@@ -116,7 +119,7 @@ class RoutingTestBase {
                                                   String path,
                                                   String responseMessage) {
         try (Http1ClientResponse response = request.apply(path).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), hasHeader(MULTI_HANDLER));
             assertThat(response.as(String.class), is(responseMessage));
         }

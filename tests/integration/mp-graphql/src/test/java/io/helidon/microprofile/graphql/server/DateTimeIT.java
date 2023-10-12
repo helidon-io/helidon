@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.SimpleDateTime;
-import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddBean;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

@@ -16,22 +16,16 @@
 
 package io.helidon.webserver.http;
 
-import java.util.function.Supplier;
-
 import io.helidon.webserver.ServerLifecycle;
 
 /**
  * Encapsulates a set of {@link HttpRouting routing} rules and related logic.
  * <p>
  * Instance can be assigned to the {@link HttpRouting routing} using
- * {@link HttpRouting.Builder#register(java.util.function.Supplier[])} methods.
+ * {@link HttpRouting.Builder#register(java.util.function.Supplier)} methods.
  */
 @FunctionalInterface
-public interface HttpService extends Supplier<HttpService>, ServerLifecycle {
-    @Override
-    default HttpService get() {
-        return this;
-    }
+public interface HttpService extends ServerLifecycle {
 
     /**
      * Updates the routing to add handlers of this service.
@@ -40,4 +34,3 @@ public interface HttpService extends Supplier<HttpService>, ServerLifecycle {
      */
     void routing(HttpRules rules);
 }
-

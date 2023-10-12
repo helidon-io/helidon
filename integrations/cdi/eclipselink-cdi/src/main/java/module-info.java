@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,20 +31,24 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"JPA", "EclipseLink"}
 )
 @Aot(false)
+@SuppressWarnings("deprecation")
 module io.helidon.integrations.cdi.eclipselink {
-    requires static io.helidon.common.features.api;
 
-    requires java.management;
-
-    requires jakarta.transaction;
+    requires io.helidon.integrations.jdbc;
     requires jakarta.cdi;
     requires jakarta.inject;
+    requires jakarta.transaction;
+    requires java.management;
     requires java.sql;
-    requires org.eclipse.persistence.jpa;
-    requires org.eclipse.persistence.core;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive org.eclipse.persistence.core;
+    requires transitive org.eclipse.persistence.jpa;
 
     exports io.helidon.integrations.cdi.eclipselink;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.cdi.eclipselink.CDISEPlatformExtension;
+
 }

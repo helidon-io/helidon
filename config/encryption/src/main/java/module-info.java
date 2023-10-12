@@ -26,17 +26,17 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Config", "Encryption"}
 )
 module io.helidon.config.encryption {
+
     requires static io.helidon.common.features.api;
-
-    // for RSA encrypted keys
-    requires transitive io.helidon.common.pki;
-    requires transitive io.helidon.common.crypto;
-    requires transitive io.helidon.config;
-
     requires static io.helidon.config.mp;
+
+    requires transitive io.helidon.common.crypto;
+    requires transitive io.helidon.common.pki; // for RSA encrypted keys
+    requires transitive io.helidon.config;
 
     exports io.helidon.config.encryption;
 
     provides io.helidon.config.spi.ConfigFilter with io.helidon.config.encryption.EncryptionFilterService;
     provides io.helidon.config.mp.spi.MpConfigFilter with io.helidon.config.encryption.MpEncryptionFilter;
+
 }

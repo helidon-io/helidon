@@ -15,24 +15,26 @@
  */
 package io.helidon.examples.se.httpstatuscount;
 
-import io.helidon.http.Http.Status;
+import java.util.Set;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
-import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.Tag;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.examples.se.httpstatuscount.HttpStatusMetricService.STATUS_COUNTER_NAME;
+import static io.helidon.examples.se.httpstatuscount.HttpStatusMetricService.STATUS_TAG_NAME;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -40,7 +42,6 @@ import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
-@Disabled
 public class StatusTest {
 
     private final Counter[] STATUS_COUNTERS = new Counter[6];
@@ -52,18 +53,19 @@ public class StatusTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
+        Config.global(Config.create());
         server.routing(r -> {
-            Main.routing(r, Config.create());
+            Main.routing(r);
             r.register("/status", new StatusService());
         });
     }
 
     @BeforeEach
     void findStatusMetrics() {
-        MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
+        MeterRegistry meterRegistry = Metrics.globalRegistry();
         for (int i = 1; i < STATUS_COUNTERS.length; i++) {
-            STATUS_COUNTERS[i] = metricRegistry.counter(new MetricID(HttpStatusMetricService.STATUS_COUNTER_NAME,
-                    new Tag(HttpStatusMetricService.STATUS_TAG_NAME, i + "xx")));
+            STATUS_COUNTERS[i] = meterRegistry.getOrCreate(Counter.builder(STATUS_COUNTER_NAME)
+                                                                    .tags(Set.of(Tag.create(STATUS_TAG_NAME, i + "xx"))));
         }
     }
 
@@ -82,7 +84,7 @@ public class StatusTest {
     void checkStatusAfterGreet() throws InterruptedException {
         long[] before = new long[6];
         for (int i = 1; i < 6; i++) {
-            before[i] = STATUS_COUNTERS[i].getCount();
+            before[i] = STATUS_COUNTERS[i].count();
         }
         try (Http1ClientResponse response = client.get("/greet")
                 .accept(MediaTypes.APPLICATION_JSON)
@@ -97,19 +99,20 @@ public class StatusTest {
     void checkAfterStatus(Status status) throws InterruptedException {
         long[] before = new long[6];
         for (int i = 1; i < 6; i++) {
-            before[i] = STATUS_COUNTERS[i].getCount();
+            before[i] = STATUS_COUNTERS[i].count();
         }
         try (Http1ClientResponse response = client.get("/status/" + status.code())
                 .accept(MediaTypes.APPLICATION_JSON)
+                .followRedirects(false)
                 .request()) {
-            assertThat("Response status", response.status(), is(status));
+            assertThat("Response status", response.status().code(), is(status.code()));
             checkCounters(status, before);
         }
     }
 
     @SuppressWarnings("BusyWait")
     private void checkCounters(Status status, long[] before) throws InterruptedException {
-        // first make sure we do not have a request in progress
+        // Make sure the server has updated the counter(s).
         long now = System.currentTimeMillis();
 
         while (HttpStatusMetricService.isInProgress()) {
@@ -122,7 +125,7 @@ public class StatusTest {
         int family = status.code() / 100;
         for (int i = 1; i < 6; i++) {
             long expectedDiff = i == family ? 1 : 0;
-            assertThat("Diff in counter " + family + "xx", STATUS_COUNTERS[i].getCount() - before[i], is(expectedDiff));
+            assertThat("Diff in counter " + family + "xx", STATUS_COUNTERS[i].count() - before[i], is(expectedDiff));
         }
     }
 }

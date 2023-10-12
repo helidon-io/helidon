@@ -42,16 +42,15 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 /**
  * JUnit5 extension to support Helidon WebServer in tests.
  */
-class HelidonRoutingJunitExtension implements BeforeAllCallback,
-                                              AfterAllCallback,
-                                              InvocationInterceptor,
-                                              BeforeEachCallback,
-                                              AfterEachCallback,
-                                              ParameterResolver {
+class HelidonRoutingJunitExtension extends JunitExtensionBase
+        implements BeforeAllCallback,
+                   AfterAllCallback,
+                   InvocationInterceptor,
+                   BeforeEachCallback,
+                   AfterEachCallback,
+                   ParameterResolver {
 
     private final List<DirectJunitExtension> extensions;
-
-    private Class<?> testClass;
 
     HelidonRoutingJunitExtension() {
         this.extensions = HelidonServiceLoader.create(ServiceLoader.load(DirectJunitExtension.class)).asList();
@@ -61,7 +60,8 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
     public void beforeAll(ExtensionContext context) {
         LogConfig.configureRuntime();
 
-        testClass = context.getRequiredTestClass();
+        Class<?> testClass = context.getRequiredTestClass();
+        super.testClass(testClass);
         RoutingTest testAnnot = testClass.getAnnotation(RoutingTest.class);
         if (testAnnot == null) {
             throw new IllegalStateException("Invalid test class for this extension: " + testClass + ", missing "
@@ -76,6 +76,7 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
     @Override
     public void afterAll(ExtensionContext context) {
         extensions.forEach(it -> it.afterAll(context));
+        super.afterAll(context);
     }
 
     @Override
@@ -123,7 +124,7 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
     }
 
     private void initRoutings() {
-        Junit5Util.withStaticMethods(testClass, SetUpRoute.class, (
+        Junit5Util.withStaticMethods(testClass(), SetUpRoute.class, (
                 (setUpRoute, method) -> {
                     String socketName = setUpRoute.value();
                     SetUpRouteHandler methodConsumer = createRoutingMethodCall(method);

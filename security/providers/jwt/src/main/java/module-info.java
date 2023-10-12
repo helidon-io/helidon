@@ -26,18 +26,21 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Security", "Provider", "JWT"}
 )
 module io.helidon.security.providers.jwt {
+
+    requires io.helidon.common;
+    requires io.helidon.security.providers.common;
+    requires io.helidon.security.util;
+
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.security;
     requires transitive io.helidon.security.jwt;
-    requires transitive io.helidon.security.providers.common;
-    requires transitive io.helidon.security.util;
+    requires transitive io.helidon.security;
 
     requires static io.helidon.config.metadata;
 
     exports io.helidon.security.providers.jwt;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.jwt.JwtProviderService;
+
 }

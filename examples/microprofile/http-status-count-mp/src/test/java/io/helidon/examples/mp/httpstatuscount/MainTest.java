@@ -15,7 +15,7 @@
  */
 package io.helidon.examples.mp.httpstatuscount;
 
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Entity;
@@ -81,32 +81,32 @@ public class MainTest {
 
     @Test
     public void testGreet() throws Exception {
-        Message message = target
+        GreetingMessage message = target
                 .path("simple-greet")
                 .request()
-                .get(Message.class);
+                .get(GreetingMessage.class);
         assertThat(message.getMessage(), is("Hello World!"));
     }
                 
     @Test
     public void testGreetings() throws Exception {
-        Message jsonMessage = target
+        GreetingMessage jsonMessage = target
                 .path("greet/Joe")
                 .request()
-                .get(Message.class);
+                .get(GreetingMessage.class);
         assertThat(jsonMessage.getMessage(), is("Hello Joe!"));
 
         try (Response r = target
                 .path("greet/greeting")
                 .request()
-                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+                .put(Entity.entity("{\"message\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
             assertThat(r.getStatus(), is(204));
         }
 
         jsonMessage = target
                 .path("greet/Jose")
                 .request()
-                .get(Message.class);
+                .get(GreetingMessage.class);
         assertThat(jsonMessage.getMessage(), is("Hola Jose!"));
     }
                 

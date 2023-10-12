@@ -26,11 +26,13 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Config", "ObjectMapping"}
 )
 module io.helidon.config.objectmapping {
-    requires static io.helidon.common.features.api;
 
     requires io.helidon.config;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.config.objectmapping;
 
     provides io.helidon.config.spi.ConfigMapperProvider with io.helidon.config.objectmapping.ObjectConfigMapperProvider;
+	
 }

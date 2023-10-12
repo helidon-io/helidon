@@ -23,11 +23,12 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,9 +57,9 @@ class ResponseOrderingTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.any("/multi", (req, res) -> {
-                    long requestId = Long.parseLong(req.query().value("id"));
+                    long requestId = Long.parseLong(req.query().get("id"));
                     queue.add(requestId);
-                    res.status(Http.Status.CREATED_201)
+                    res.status(Status.CREATED_201)
                             .send("" + requestId);
                 })
                 .any("/stream", (req, res) -> {
@@ -92,7 +93,7 @@ class ResponseOrderingTest {
                     .append("\n");
         }
 
-        String response = client.method(Http.Method.POST)
+        String response = client.method(Method.POST)
                 .path("/stream")
                 .submit(sb.toString().getBytes())
                 .as(String.class);

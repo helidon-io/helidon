@@ -20,10 +20,10 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * Provides classes and interfaces that integrate the
  * provider-independent parts of <a
- * href="https://jakarta.ee/specifications/persistence/3.0/"
+ * href="https://jakarta.ee/specifications/persistence/3.1/"
  * target="_parent">JPA</a> into CDI.
  *
- * @see io.helidon.integrations.cdi.jpa.JpaExtension
+ * @see io.helidon.integrations.cdi.jpa.PersistenceExtension
  *
  * @see io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean
  */
@@ -32,13 +32,8 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.MP,
         path = "JPA"
 )
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "deprecation", "requires-automatic"})
 module io.helidon.integrations.cdi.jpa {
-    requires static io.helidon.common.features.api;
-
-    // Static metamodel generation requires access to java.compiler at
-    // compile time only.
-    requires static java.compiler;
   
     requires jakarta.xml.bind;
 
@@ -54,11 +49,17 @@ module io.helidon.integrations.cdi.jpa {
 
     // JTA is optional at runtime, as well as the modules that support
     // it.
+    requires static io.helidon.common.features.api;
+
+    // Static metamodel generation requires access to java.compiler at
+    // compile time only.
+    requires static java.compiler;
     requires static jakarta.transaction; // automatic module
     requires static io.helidon.integrations.jta.jdbc;
 
     exports io.helidon.integrations.cdi.jpa;
     exports io.helidon.integrations.cdi.jpa.jaxb;
 
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.cdi.jpa.JpaExtension;
+    provides jakarta.enterprise.inject.spi.Extension with
+        io.helidon.integrations.cdi.jpa.JpaExtension, io.helidon.integrations.cdi.jpa.PersistenceExtension;
 }

@@ -18,13 +18,16 @@
  * Helidon Common HTTP classes.
  */
 module io.helidon.http {
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.common.mapper;
-    requires transitive io.helidon.common.buffers;
-    requires transitive io.helidon.common.media.type;
-    requires transitive io.helidon.common.uri;
+
     requires static io.helidon.config.metadata;
 
+    requires transitive io.helidon.common.buffers;
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.common.mapper;
+    requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.common.uri;
+    requires transitive io.helidon.common;
+
     exports io.helidon.http;
+
 }

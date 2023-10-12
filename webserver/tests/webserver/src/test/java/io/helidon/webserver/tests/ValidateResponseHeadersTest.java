@@ -21,14 +21,12 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.stream.Stream;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
-import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
-import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
@@ -40,7 +38,6 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -48,7 +45,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
@@ -90,11 +86,11 @@ class ValidateResponseHeadersTest {
         Http1ClientRequest request = client.get("/test");
         HttpClientResponse response = request.submit(headerNameAndValue);
         if (expectsValid) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            assertThat(response.status(), is(Status.OK_200));
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
-            assertThat(response.status(), not(Http.Status.OK_200));
+            assertThat(response.status(), not(Status.OK_200));
         }
     }
 
@@ -105,11 +101,11 @@ class ValidateResponseHeadersTest {
         Http1ClientRequest request = client.get("/testOutputStream");
         HttpClientResponse response = request.submit(headerNameAndValue);
         if (expectsValid) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            assertThat(response.status(), is(Status.OK_200));
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
-            assertThat(response.status(), not(Http.Status.OK_200));
+            assertThat(response.status(), not(Status.OK_200));
         }
     }
 
@@ -128,9 +124,8 @@ class ValidateResponseHeadersTest {
     }
 
     private static void setHeader(ServerRequest request, ServerResponse response) {
-        ServerRequestHeaders headers = request.headers();
         String[] header = request.content().as(String.class).split(HEADER_NAME_VALUE_DELIMETER);
-        response.headers().add(Http.Headers.create(Http.HeaderNames.create(header[0]), header[1]));
+        response.headers().add(HeaderValues.create(header[0], header[1]));
     }
 
     private static Stream<Arguments> responseHeaders() {

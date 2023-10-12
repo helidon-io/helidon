@@ -19,7 +19,8 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -54,7 +55,8 @@ public class GreetService implements HttpService {
      */
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
-    GreetService(Config config) {
+    GreetService() {
+        Config config = Config.global();
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
     }
 
@@ -83,7 +85,7 @@ public class GreetService implements HttpService {
     }
 
     /**
-     * Return a status code of {@link Http.Status#MOVED_PERMANENTLY_301} and the new location where should
+     * Return a status code of {@link io.helidon.http.Status#MOVED_PERMANENTLY_301} and the new location where should
      * client redirect.
      *
      * @param request  the server request
@@ -92,8 +94,8 @@ public class GreetService implements HttpService {
     private void redirect(ServerRequest request,
                           ServerResponse response) {
         int port = request.context().get(WebServer.class).orElseThrow().port();
-        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + port + "/greet/");
-        response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+        response.headers().add(HeaderNames.LOCATION, "http://localhost:" + port + "/greet/");
+        response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     /**
@@ -104,7 +106,7 @@ public class GreetService implements HttpService {
      */
     private void getMessageHandler(ServerRequest request,
                                    ServerResponse response) {
-        String name = request.path().pathParameters().value("name");
+        String name = request.path().pathParameters().get("name");
         sendResponse(response, name);
     }
 
@@ -135,12 +137,12 @@ public class GreetService implements HttpService {
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                                              .add("error", "No greeting provided")
                                              .build();
-            response.status(Http.Status.BAD_REQUEST_400)
+            response.status(Status.BAD_REQUEST_400)
                     .send(jsonErrorObject);
             return;
         }
 
         greeting.set(jo.getString("greeting"));
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.status(Status.NO_CONTENT_204).send();
     }
 }

@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.http1;
 
+import java.io.InputStream;
+import java.util.function.UnaryOperator;
+
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.media.ReadableEntity;
@@ -44,5 +47,9 @@ class Http1ServerRequestNoEntity extends Http1ServerRequest {
     public boolean continueSent() {
         // we do not have a request entity, so we did not sent expect continue, and we do not need to drain it
         return false;
+    }
+
+    @Override
+    public void streamFilter(UnaryOperator<InputStream> filterFunction) {
     }
 }

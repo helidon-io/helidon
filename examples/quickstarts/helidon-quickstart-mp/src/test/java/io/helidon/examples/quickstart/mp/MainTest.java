@@ -16,10 +16,9 @@
 
 package io.helidon.examples.quickstart.mp;
 
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
-import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
@@ -41,36 +40,41 @@ class MainTest {
     @Test
     void testHelloWorld() {
 
-        JsonObject jsonObject = target.path("/greet")
+        GreetingMessage message = target.path("/greet")
                 .request()
-                .get(JsonObject.class);
-        assertThat("default message", jsonObject.getString("message"),
-                is("Hello World!"));
+                .get(GreetingMessage.class);
+        assertThat("default message", message.getMessage(),
+                   is("Hello World!"));
 
-        jsonObject = target.path("/greet/Joe")
+        message = target.path("/greet/Joe")
                 .request()
-                .get(JsonObject.class);
-        assertThat("hello Joe message", jsonObject.getString("message"),
-                is("Hello Joe!"));
+                .get(GreetingMessage.class);
+        assertThat("hello Joe message", message.getMessage(),
+                   is("Hello Joe!"));
 
         try (Response r = target.path("/greet/greeting")
                 .request()
-                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+                .put(Entity.entity("{\"message\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
             assertThat("PUT status code", r.getStatus(), is(204));
         }
 
-        jsonObject = target.path("/greet/Jose")
+        message = target.path("/greet/Jose")
                 .request()
-                .get(JsonObject.class);
-        assertThat("hola Jose message", jsonObject.getString("message"),
-                is("Hola Jose!"));
-
+                .get(GreetingMessage.class);
+        assertThat("hola Jose message", message.getMessage(),
+                   is("Hola Jose!"));
+    }
+    @Test
+    void testMetrics() {
         try (Response r = target.path("/metrics")
                 .request()
                 .get()) {
             assertThat("GET metrics status code", r.getStatus(), is(200));
         }
+    }
 
+    @Test
+    void testHealth() {
         try (Response r = target.path("/health")
                 .request()
                 .get()) {

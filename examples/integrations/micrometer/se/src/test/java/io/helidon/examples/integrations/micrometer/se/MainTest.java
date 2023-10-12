@@ -17,13 +17,13 @@ package io.helidon.examples.integrations.micrometer.se;
 
 import java.util.Collections;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig.Builder;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -62,7 +62,7 @@ public class MainTest {
 
     @SetUpServer
     public static void setup(Builder builder) {
-        builder.routing(r -> Main.setupRouting(r, Config.create()));
+        builder.routing(Main::setupRouting);
     }
 
     @Test
@@ -86,7 +86,7 @@ public class MainTest {
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
 
         JsonObject jsonObject = personalizedGet("Joe");

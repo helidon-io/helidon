@@ -18,16 +18,17 @@
  * Helidon Injection Integrations to support OCI Runtime module.
  */
 module io.helidon.integrations.oci.sdk.runtime {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
 
     requires io.helidon.builder.api;
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.config.metadata;
-    requires transitive io.helidon.inject.runtime;
     requires oci.java.sdk.common;
-    requires io.helidon.common.types;
+
+    requires static io.helidon.config.metadata;
+    requires static jakarta.annotation;
+    requires static jakarta.inject;
+
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.inject.runtime;
 
     exports io.helidon.integrations.oci.sdk.runtime;
 

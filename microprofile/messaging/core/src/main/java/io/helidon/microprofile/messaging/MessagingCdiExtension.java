@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.Type;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -61,35 +60,11 @@ public class MessagingCdiExtension implements Extension {
 
     private final ChannelRouter channelRouter = new ChannelRouter();
     private final Set<Consumer<AfterBeanDiscovery>> aotBeanRegistrations = new HashSet<>();
-    private final FormerHealthProbe formerHealthProbe = new FormerHealthProbe();
 
     /**
      * Initialize messaging CDI extension.
      */
     public MessagingCdiExtension() {
-        channelRouter.getChannelProcessors().register(formerHealthProbe);
-    }
-
-    /**
-     * Get names of all channels accompanied by boolean if cancel or onError signal has been intercepted in it.
-     *
-     * @return map of channels
-     * @deprecated Implement {@link MessagingChannelProcessor} as a bean instead, which can peak to any messaging channel.
-     */
-    @Deprecated(since = "3.0.0", forRemoval = true)
-    public Map<String, Boolean> channelsLiveness() {
-        return formerHealthProbe.getLiveChannels();
-    }
-
-    /**
-     * Get names of all channels accompanied by boolean if onSubscribe signal has been intercepted in it.
-     *
-     * @return map of channels
-     * @deprecated Implement {@link MessagingChannelProcessor} as a bean instead, which can peak to any messaging channel.
-     */
-    @Deprecated(since = "3.0.0", forRemoval = true)
-    public Map<String, Boolean> channelsReadiness() {
-        return formerHealthProbe.getReadyChannels();
     }
 
     private void registerChannelMethods(

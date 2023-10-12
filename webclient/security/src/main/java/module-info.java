@@ -26,14 +26,18 @@ import io.helidon.common.features.api.HelidonFlavor;
          path = {"WebClient", "Security"}
 )
 module io.helidon.webclient.security {
-    requires static io.helidon.common.features.api;
 
-    requires io.helidon.webclient;
-    requires io.helidon.security;
     requires io.helidon.security.providers.common;
+    requires io.helidon.webclient;
+
+    requires transitive io.helidon.security;
+    requires transitive io.helidon.webclient.api;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.webclient.security;
 
     provides io.helidon.webclient.spi.WebClientServiceProvider
             with io.helidon.webclient.security.WebClientSecurityProvider;
+
 }

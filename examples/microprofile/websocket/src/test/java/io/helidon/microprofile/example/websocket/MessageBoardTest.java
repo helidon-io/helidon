@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.websocket.ClientEndpointConfig;

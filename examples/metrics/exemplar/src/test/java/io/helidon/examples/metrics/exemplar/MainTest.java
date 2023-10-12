@@ -56,7 +56,8 @@ public class MainTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        server.routing(it -> Main.routing(it, Config.create()));
+        Config.global(Config.create());
+        server.routing(Main::routing);
     }
 
     @Test
@@ -93,21 +94,15 @@ public class MainTest {
             assertThat(response.as(String.class), containsString("Hello Joe!"));
         }
 
-        try (Http1ClientResponse response = client.get("/metrics/application").request()) {
+        try (Http1ClientResponse response = client.get("/observe/metrics/application").request()) {
 
             String openMetricsOutput = response.as(String.class);
             LineNumberReader reader = new LineNumberReader(new StringReader(openMetricsOutput));
             List<String> returnedLines = reader.lines()
                                                .collect(Collectors.toList());
 
-            List<String> expected = List.of(">> skip to timer total >>",
-                    "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_mean_seconds gauge",
-                    valueMatcher("mean"),
-                    ">> end of output >>");
-            assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_mean_seconds TYPE and value");
-
-            expected = List.of(">> skip to max >>",
-                    "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_max_seconds gauge",
+            List<String> expected = List.of(">> skip to max >>",
+                    "# TYPE " + GreetService.TIMER_FOR_GETS + "_seconds_max gauge",
                     valueMatcher("max"),
                     ">> end of output >>");
             assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_max_seconds TYPE and value");
@@ -115,9 +110,9 @@ public class MainTest {
     }
 
     private static String valueMatcher(String statName) {
-        // application_timerForGets_mean_seconds 0.010275403147594316 # {trace_id="cfd13196e6a9fb0c"} 0.002189822 1617799841.963000
-        return "application_" + GreetService.TIMER_FOR_GETS
-                + "_" + statName + "_seconds [\\d\\.]+ # \\{trace_id=\"[^\"]+\"\\} [\\d\\.]+ [\\d\\.]+";
+        // timerForGets_mean_seconds 0.010275403147594316 # {scope="application",trace_id="cfd13196e6a9fb0c"} 0.002189822 1617799841.963000
+        return GreetService.TIMER_FOR_GETS
+                + "_" + statName + "_seconds [\\d\\.]+ # \\{scope=\"application\",trace_id=\"[^\"]+\"\\} [\\d\\.]+ [\\d\\.]+";
     }
 
 }

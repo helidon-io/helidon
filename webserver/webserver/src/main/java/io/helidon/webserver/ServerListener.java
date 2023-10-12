@@ -393,11 +393,28 @@ class ServerListener implements ListenerContext {
                     readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");
+
+                    // the socket was never handled
+                    try {
+                        socket.close();
+                    } catch (IOException ex) {
+                        LOGGER.log(TRACE, "Failed to close socket that was rejected for execution", e);
+                    }
+
                     // we never started the handler, so we must release the semaphore here
                     connectionSemaphore.release();
                 } catch (Exception e) {
                     // we may get an SSL handshake errors, which should only fail one socket, not the listener
                     LOGGER.log(TRACE, "Failed to handle accepted socket", e);
+                    // the socket was never handled
+                    try {
+                        socket.close();
+                    } catch (IOException ex) {
+                        LOGGER.log(TRACE,
+                                   "Failed to close socket that failed start execution (see previous trace for reason)",
+                                   e);
+                    }
+
                     // we never started the handler, so we must release the semaphore here
                     connectionSemaphore.release();
                 }

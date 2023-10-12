@@ -21,6 +21,7 @@ import java.net.CookieStore;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -50,7 +51,7 @@ interface WebClientCookieManagerConfigBlueprint extends Prototype.Factory<WebCli
      * @return map of default cookies
      */
     @ConfiguredOption
-    @Prototype.Singular
+    @Option.Singular
     Map<String, String> defaultCookies();
 
     /**

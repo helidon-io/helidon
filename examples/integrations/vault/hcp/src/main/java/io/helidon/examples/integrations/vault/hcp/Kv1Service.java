@@ -19,7 +19,7 @@ package io.helidon.examples.integrations.vault.hcp;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.secrets.kv1.Kv1Secrets;
 import io.helidon.integrations.vault.sys.Sys;
@@ -62,20 +62,20 @@ class Kv1Service implements HttpService {
     }
 
     private void deleteSecret(ServerRequest req, ServerResponse res) {
-        String path = req.path().pathParameters().value("path");
+        String path = req.path().pathParameters().get("path");
         secrets.delete(path);
         res.send("Deleted secret on path " + path);
     }
 
     private void getSecret(ServerRequest req, ServerResponse res) {
-        String path = req.path().pathParameters().value("path");
+        String path = req.path().pathParameters().get("path");
 
         Optional<Secret> secret = secrets.get(path);
         if (secret.isPresent()) {
             // using toString so we do not need to depend on JSON-B
             res.send(secret.get().values().toString());
         } else {
-            res.status(Http.Status.NOT_FOUND_404);
+            res.status(Status.NOT_FOUND_404);
             res.send();
         }
     }

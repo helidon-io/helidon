@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,21 +26,24 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE,
         path = "Messaging"
 )
-@Aot(description = "Experimental support in native image")
+@Aot
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.common.configurable;
+    requires io.helidon.common.context;
+    requires io.helidon.config.mp;
     requires java.logging;
 
-    requires io.helidon.common.context;
-    requires io.helidon.common.configurable;
-    requires io.helidon.config.mp;
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.config;
-    requires transitive org.reactivestreams;
     requires transitive microprofile.config.api;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
+    requires transitive org.reactivestreams;
 
     exports io.helidon.messaging;
+
 }

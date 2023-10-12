@@ -19,6 +19,7 @@ package io.helidon.inject.spi;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.api.ServiceProvider;
@@ -48,7 +49,7 @@ interface InjectionPlanBlueprint {
      *
      * @return the qualified service providers for this injection point
      */
-    @Prototype.Singular
+    @Option.Singular
     List<ServiceProvider<?>> injectionPointQualifiedServiceProviders();
 
     /**

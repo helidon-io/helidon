@@ -27,10 +27,11 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.dbclient.health {
 
+    requires io.helidon.health;
+
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.dbclient;
-    requires io.helidon.health;
 
     exports io.helidon.dbclient.health;
 

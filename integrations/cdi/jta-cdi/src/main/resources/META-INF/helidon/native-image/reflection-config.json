@@ -1,7 +1,8 @@
 {
     "annotated": [],
     "class-hierarchy": [
-        "com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase"
+        "com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase",
+        "com.arjuna.ats.arjuna.coordinator.CheckedActionFactory"
     ],
     "classes": [
         "org.jboss.tm.usertx.client.ServerVMClientUserTransactionOperationsProvider",

@@ -162,7 +162,6 @@ backend:
                 sources:
                   - "oci.adoc"
                   - "hcv.adoc"
-                  - "jedis.adoc"
                   - "neo4j.adoc"
               - type: "MENU"
                 title: "JAX-RS/Jersey"
@@ -264,6 +263,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "settings_ethernet"
+              - type: "PAGE"
+                title: "Telemetry"
+                source: "telemetry.adoc"
+                glyph:
+                  type: "icon"
+                  value: "analytics"
               - type: "MENU"
                 title: "Testing"
                 glyph:
@@ -377,12 +382,6 @@ backend:
                 glyph:
                   type: "icon"
                   value: "favorite_outline"
-              - type: "PAGE"
-                title: "Injection"
-                source: "inject/injection_intro.adoc"
-                glyph: 
-                  type: "icon"
-                  value: "vaccines"
               - type: "MENU"
                 title: "Integrations"
                 dir: "integrations"
@@ -430,7 +429,7 @@ backend:
                   - "engine.adoc"
                   - "rsoperators.adoc"
               - type: "PAGE"
-                title: "Reactive Webserver"
+                title: "Webserver"
                 source: "webserver.adoc"
                 glyph:
                   type: "icon"
@@ -477,7 +476,7 @@ backend:
                 source: "websocket.adoc"
                 glyph:
                   type: "icon"
-                  value: "timeline"
+                  value: "sync_alt"
         - type: "HEADER"
           title: "Additional resources"
         - type: "LINK"

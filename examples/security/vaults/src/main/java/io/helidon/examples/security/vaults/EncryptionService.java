@@ -39,15 +39,15 @@ class EncryptionService implements HttpService {
     }
 
     private void encrypt(ServerRequest req, ServerResponse res) {
-        String configName = req.path().pathParameters().value("config");
-        String text = req.path().pathParameters().value("text");
+        String configName = req.path().pathParameters().get("config");
+        String text = req.path().pathParameters().get("text");
 
         res.send(security.encrypt(configName, text.getBytes(UTF_8)));
     }
 
     private void decrypt(ServerRequest req, ServerResponse res) {
-        String configName = req.path().pathParameters().value("config");
-        String cipherText = req.path().pathParameters().value("cipherText");
+        String configName = req.path().pathParameters().get("config");
+        String cipherText = req.path().pathParameters().get("cipherText");
 
         res.send(security.decrypt(configName, cipherText));
     }

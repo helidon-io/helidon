@@ -17,9 +17,10 @@
 package io.helidon.common.types;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import io.helidon.builder.api.Prototype;
+import io.helidon.builder.api.Option;
 
 /**
  * Annotated elements provide annotations and their values.
@@ -31,7 +32,7 @@ public interface Annotated {
      *
      * @return the list of annotations on this element
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Annotation> annotations();
 
     /**
@@ -47,6 +48,23 @@ public interface Annotated {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Get an annotation on this annotated type.
+     *
+     * @param annotationType annotation type
+     * @return annotation with value
+     * @throws java.util.NoSuchElementException if the annotation is not present on this element
+     * @see #hasAnnotation(TypeName)
+     * @see #findAnnotation(TypeName)
+     */
+    default Annotation annotation(TypeName annotationType) {
+        return findAnnotation(annotationType).orElseThrow(() -> new NoSuchElementException("Annotation " + annotationType + " "
+                                                                                                   + "is not present. Guard "
+                                                                                                   + "with hasAnnotation(), or "
+                                                                                                   + "use findAnnotation() "
+                                                                                                   + "instead"));
     }
 
     /**

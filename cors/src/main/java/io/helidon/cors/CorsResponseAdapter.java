@@ -16,7 +16,7 @@
 
 package io.helidon.cors;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
 
 /**
  * <em>Not for use by developers.</em>
@@ -40,7 +40,7 @@ public interface CorsResponseAdapter<T> {
      * @param value header value to add
      * @return the adapter
      */
-    CorsResponseAdapter<T> header(Http.HeaderName key, String value);
+    CorsResponseAdapter<T> header(HeaderName key, String value);
 
     /**
      * Arranges to add the specified header and value to the eventual response.
@@ -49,7 +49,7 @@ public interface CorsResponseAdapter<T> {
      * @param value header value to add
      * @return the adapter
      */
-    CorsResponseAdapter<T> header(Http.HeaderName key, Object value);
+    CorsResponseAdapter<T> header(HeaderName key, Object value);
 
     /**
      * Returns a response with the forbidden status and the specified error message, without any headers assigned

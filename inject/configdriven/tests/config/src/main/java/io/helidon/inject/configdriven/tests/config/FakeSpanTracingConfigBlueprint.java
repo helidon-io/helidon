@@ -19,6 +19,7 @@ package io.helidon.inject.configdriven.tests.config;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -41,7 +42,7 @@ public interface FakeSpanTracingConfigBlueprint extends FakeTraceableConfigBluep
     Optional<String> newName();
 
     @ConfiguredOption
-    @Prototype.Singular("spanLog")
+    @Option.Singular("spanLog")
         // B addSpanLog(String, FakeSpanLogTracingConfigBean);
     Map<String, FakeSpanLogTracingConfig> spanLogMap();
 

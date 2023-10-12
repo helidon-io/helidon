@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -67,7 +67,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     }
 
     @Override
-    boolean doHandle(Http.Method method, String requestedPath, ServerRequest req, ServerResponse res, boolean mapped)
+    boolean doHandle(Method method, String requestedPath, ServerRequest req, ServerResponse res, boolean mapped)
             throws IOException {
         Path path = requestedPath(requestedPath);
         if (LOGGER.isLoggable(Level.DEBUG)) {
@@ -99,7 +99,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         return doHandle(method, requestedResource, req, res, rawPath, path);
     }
 
-    boolean doHandle(Http.Method method,
+    boolean doHandle(Method method,
                      String requestedResource,
                      ServerRequest req,
                      ServerResponse res,

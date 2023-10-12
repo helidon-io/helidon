@@ -23,5 +23,5 @@ interface Http2StreamConfig {
 
     int priority();
 
-    Duration timeout();
+    Duration readTimeout();
 }

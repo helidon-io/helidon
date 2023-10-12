@@ -17,9 +17,12 @@
  * General Bean Validation. This module is used to enable validation
  * and to handle validation exceptions and map them to JAX-RS response.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module helidon.microprofile.bean.validation {
-    requires transitive jakarta.ws.rs;
+
     requires transitive jakarta.validation;
+    requires transitive jakarta.ws.rs;
 
     exports io.helidon.microprofile.bean.validation;
+
 }

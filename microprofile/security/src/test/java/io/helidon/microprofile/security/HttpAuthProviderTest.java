@@ -18,9 +18,9 @@ package io.helidon.microprofile.security;
 
 import java.util.Set;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.Configuration;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.Configuration;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.HttpDigestAuthProvider;
 

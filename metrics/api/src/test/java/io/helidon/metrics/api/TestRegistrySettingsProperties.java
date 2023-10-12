@@ -26,26 +26,44 @@ import static org.hamcrest.Matchers.is;
 
 public class TestRegistrySettingsProperties {
 
-    private static Config metricsConfig;
+    private static Config metricsConfigNode;
+    private static Config fromYaml;
 
     @BeforeAll
     static void prep() {
-        metricsConfig = Config.create(ConfigSources.classpath("registrySettings.properties")).get("metrics");
+        metricsConfigNode = Config.just(ConfigSources.classpath("registrySettings.properties")).get("metrics");
+        fromYaml = Config.create(ConfigSources.classpath("scopeSettings.yaml")).get("metrics");
     }
 
     @Test
     void testInclude() {
-        MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
+        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
         assertThat("'pass.me' metric is enabled",
-                   metricsSettings.registrySettings(Registry.VENDOR_SCOPE).isMetricEnabled("pass.me"),
+                   metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("pass.me"),
                    is(true));
     }
 
     @Test
     void testExclude() {
-        MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
+        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
         assertThat("'ignore.me' metric is enabled",
-                   metricsSettings.registrySettings(Registry.VENDOR_SCOPE).isMetricEnabled("ignore.me"),
+                   metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("ignore.me"),
+                   is(false));
+    }
+
+    @Test
+    void testIncludeYaml() {
+        MetricsConfig metricsConfig = MetricsConfig.create(fromYaml);
+        assertThat("'pass.me' metric is enabled",
+                   metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("pass.me"),
+                   is(true));
+    }
+
+    @Test
+    void testExcludeYaml() {
+        MetricsConfig metricsConfig = MetricsConfig.create(fromYaml);
+        assertThat("'ignore.me' metric is enabled",
+                   metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("ignore.me"),
                    is(false));
     }
 }

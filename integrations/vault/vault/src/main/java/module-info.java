@@ -46,4 +46,5 @@ module io.helidon.integrations.vault {
 
     // required for CDI
     opens io.helidon.integrations.vault to weld.core.impl, io.helidon.microprofile.cdi;
+	
 }

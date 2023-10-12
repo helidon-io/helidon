@@ -15,37 +15,90 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.StreamSupport;
 
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.Tag;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 /**
  * Captures and makes available for output any system tag settings to be applied when metric IDs are output.
  * <P>
- *     In MP, the config might contain the config key {@code mp.metrics.tags}. In SE, the config might be {@code metrics.tags},
- *     either of which can be a string of the form {@code tag1=value1,tag2=value2,...}.
+ * In MP, the config might contain the config key {@code mp.metrics.tags}. In SE, the config might be {@code metrics.tags},
+ * either of which can be a string of the form {@code tag1=value1,tag2=value2,...}.
  * </P>
  * <p>
- *     Further, the MP config key {@code mp.metrics.appName} or the SE config key {metrics.appName} can convey
- *     an application name which will add a tag conveying the app name to each metric ID written to output.
+ * Further, the MP config key {@code mp.metrics.appName} or the SE config key {metrics.appName} can convey
+ * an application name which will add a tag conveying the app name to each metric ID written to output.
  * </p>
  */
 class SystemTagsManagerImpl implements SystemTagsManager {
 
+    private static final LazyValue<Collection<MetricsProgrammaticConfig>> METRICS_CONFIG_OVERRIDES =
+            LazyValue.create(() ->
+                                     HelidonServiceLoader.create(ServiceLoader.load(MetricsProgrammaticConfig.class))
+                                             .asList());
+
     private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
 
-    private final Map<String, String> systemTags;
+    private static final Collection<Consumer<SystemTagsManager>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
 
-    private final String scopeTagName;
+    private final List<Tag> systemTags; // global tags plus the app tag, if any specified
+    private final Set<String> systemTagNames = new HashSet<>(); // tag names for global tags and app
+    private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for globa tags, app, and scope
+    private String scopeTagName;
+    private String defaultScopeValue;
+
+    private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
+
+        metricsConfig.tags().forEach(tag -> systemTagNames.add(tag.key()));
+        systemAndScopeTagNames.addAll(systemTagNames);
+        metricsConfig.scoping().tagName().ifPresent(systemAndScopeTagNames::add);
+
+        List<Tag> result = new ArrayList<>(metricsConfig.tags());
+
+        // Add a tag for the app name if there is an appName setting in config AND we have a setting
+        // from somewhere for the tag name to use for recording the app name.
+
+        metricsConfig.appTagName()
+                .filter(Predicate.not(String::isBlank))
+                .ifPresent(tagNameToUse ->
+                                   metricsConfig.appName()
+                                           .ifPresent(appNameToUse -> result.add(Tag.create(tagNameToUse, appNameToUse)))
+                );
+
+        systemTags = List.copyOf(result);
+
+        // Set the scope tag, if appropriate.
+        metricsConfig.scoping().tagName()
+                .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
+        defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
+    }
+
+    static void onChange(Consumer<SystemTagsManager> subscriber) {
+        ON_CHANGE_SUBSCRIBERS.add(subscriber);
+    }
+
+    // for testing
+    private SystemTagsManagerImpl() {
+        systemTags = List.of();
+        scopeTagName = "scope";
+    }
 
     /**
      * Returns the singleton instance of the system tags manager.
@@ -56,93 +109,147 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return instance;
     }
 
-    static SystemTagsManagerImpl create(MetricsSettings metricsSettings) {
-        instance = createWithoutSaving(metricsSettings);
+    static SystemTagsManagerImpl create(MetricsConfig metricsConfig) {
+        instance = createWithoutSaving(metricsConfig);
         return instance;
     }
 
-    static SystemTagsManagerImpl createWithoutSaving(MetricsSettings metricsSettings) {
-        return new SystemTagsManagerImpl(metricsSettings);
+    static SystemTagsManagerImpl instance(MetricsConfig metricsConfig) {
+        instance = createWithoutSaving(metricsConfig);
+        ON_CHANGE_SUBSCRIBERS.forEach(sub -> sub.accept(instance()));
+        return instance;
     }
 
-    private SystemTagsManagerImpl(MetricsSettings metricsSettings) {
-        Map<String, String> result = new HashMap<>(metricsSettings.globalTags());
-        String appTagName = MetricsProgrammaticSettings.instance().appTagName();
-        if (metricsSettings.appTagValue() != null && appTagName != null && !appTagName.isBlank()) {
-            result.put(appTagName, metricsSettings.appTagValue());
+    static SystemTagsManagerImpl createWithoutSaving(MetricsConfig metricsConfig) {
+        return new SystemTagsManagerImpl(metricsConfig);
+    }
+
+    /**
+     * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
+     * is active: the scope tag name is non-null and non-blank.
+     *
+     * @param scopeTagName scope tag name
+     * @param scope        scope value
+     * @param factory      factory method to accept the scope tag and the scope and return an instance of the implied type
+     * @param <T>          type to which the scope tag and scope are converted
+     * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
+     */
+    static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
+        return scopeTagName != null && !scopeTagName.isBlank() && scope != null
+                ? List.of(factory.apply(scopeTagName, scope))
+                : List.of();
+    }
+
+    @Override
+    public Optional<Tag> scopeTag(Optional<String> candidateScope) {
+        return scopeTagName == null
+                ? Optional.empty()
+                : effectiveScope(candidateScope)
+                        .map(sc -> Tag.create(scopeTagName,
+                                              sc));
+    }
+
+    @Override
+    public Iterable<Tag> withoutSystemTags(Iterable<Tag> tags) {
+        return without(tags, systemTagNames);
+    }
+
+    @Override
+    public Iterable<Tag> withoutSystemOrScopeTags(Iterable<Tag> tags) {
+        return without(tags, systemAndScopeTagNames);
+    }
+
+    private Iterable<Tag> without(Iterable<Tag> tags, Collection<String> unwantedTagNames) {
+        if (unwantedTagNames.isEmpty()) {
+            return tags;
         }
-        systemTags = Collections.unmodifiableMap(result);
-        scopeTagName = MetricsProgrammaticSettings.instance().scopeTagName();
-    }
-
-    // for testing
-    private SystemTagsManagerImpl() {
-        systemTags = Collections.emptyMap();
-        scopeTagName = "_testScope_";
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags, String scope) {
-        return new MultiIterable<>(explicitTags.entrySet(),
-                                   systemTags.entrySet(),
-                                   scopeIterable(scope));
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(MetricID metricID, String scope) {
-        return new MultiIterable<>(metricID.getTags().entrySet(),
-                                   systemTags.entrySet(),
-                                   scopeIterable(scope));
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope) {
-        return new MultiIterable<>(explicitTags,
-                                   systemTags.entrySet(),
-                                   scopeIterable(scope));
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags) {
-        return new MultiIterable<>(explicitTags,
-                                   systemTags.entrySet());
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(MetricID metricId) {
-        return new MultiIterable<>(metricId.getTags().entrySet(),
-                                   systemTags.entrySet());
-    }
-
-    @Override
-    public MetricID metricIdWithAllTags(MetricID original, String scope) {
-        List<Tag> tags = new ArrayList<>();
-        List.of(original.getTags().entrySet(),
-                systemTags.entrySet(),
-                scopeIterable(scope))
-                .forEach(iter -> iter.forEach(entry -> tags.add(new Tag(entry.getKey(), entry.getValue()))));
-        return new MetricID(original.getName(), tags.toArray(new Tag[0]));
-    }
-
-    private Iterable<Map.Entry<String, String>> scopeIterable(String scope) {
-        return () -> new Iterator<>() {
-
-            private boolean hasNext = scopeTagName != null && !scopeTagName.isBlank() && scope != null;
-
-            @Override
-            public boolean hasNext() {
-                return hasNext;
+        List<Tag> result = new ArrayList<>();
+        tags.forEach(tag -> {
+            if (!unwantedTagNames.contains(tag.key())) {
+                result.add(tag);
             }
+        });
+        return result;
+    }
+    @Override
+    public Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope) {
+        if (scopeTagName == null) {
+            return tags;
+        }
+        Map<String, Tag> tagsMap = new TreeMap<>();
 
-            @Override
-            public Map.Entry<String, String> next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                hasNext = false;
-                return new AbstractMap.SimpleImmutableEntry<>(scopeTagName, scope);
-            }
-        };
+        if (defaultScopeValue != null) {
+            tagsMap.put(scopeTagName,
+                        Tag.create(scopeTagName,
+                                   defaultScopeValue));
+        }
+
+        tags.forEach(tag -> tagsMap.put(tag.key(), // If scope is set in a tag, the tag's value overrides the default in the map.
+                                        tag));
+
+        explicitScope.ifPresent(s -> tagsMap.put(scopeTagName,
+                                                 Tag.create(scopeTagName,
+                                                            explicitScope.get())));
+
+        return tagsMap.values();
+    }
+
+    @Override
+    public Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope) {
+        if (scopeTagName == null) {
+            return tags;
+        }
+        Map<String, String> result = new TreeMap<>();
+        tags.forEach((tag -> result.put(tag.getKey(), tag.getValue())));
+        result.put(scopeTagName, scope);
+        return result.entrySet();
+    }
+
+    @Override
+    public Iterable<Tag> displayTags() {
+        return List.copyOf(systemTags);
+    }
+
+    @Override
+    public void assignScope(String validScope, Function<Tag, ?> tagSetter) {
+        if (scopeTagName != null) {
+            tagSetter.apply(Tag.create(scopeTagName, validScope));
+        }
+    }
+
+    @Override
+    public Optional<String> effectiveScope(Optional<String> candidateScope) {
+        return candidateScope.isEmpty() && defaultScopeValue == null
+                ? Optional.empty()
+                : Optional.of(candidateScope.orElse(defaultScopeValue));
+    }
+
+    @Override
+    public Optional<String> effectiveScope(Optional<String> explicitScope, Iterable<Tag> tags) {
+        return explicitScope
+                .or(() -> scopeFromTags(tags))
+                .or(() -> Optional.ofNullable(defaultScopeValue));
+    }
+
+    @Override
+    public Optional<String> scopeTagName() {
+        return Optional.ofNullable(scopeTagName);
+    }
+
+    @Override
+    public Collection<String> reservedTagNamesUsed(Collection<String> tagNames) {
+        Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
+        reservedTagNamesUsed.retainAll(MetricsProgrammaticConfig.instance().reservedTagNames());
+        return reservedTagNamesUsed;
+    }
+
+    private Optional<String> scopeFromTags(Iterable<Tag> tags) {
+        return (scopeTagName != null)
+                ? StreamSupport.stream(tags.spliterator(), false)
+                .filter(tag -> tag.key().equals(scopeTagName))
+                .findAny()
+                .map(Tag::value)
+                : Optional.empty();
     }
 
     static class MultiIterable<T> implements Iterable<T> {
@@ -199,4 +306,5 @@ class SystemTagsManagerImpl implements SystemTagsManager {
             }
         }
     }
+
 }

@@ -1,0 +1,7 @@
+{
+    "bundles": [
+        {
+            "name": "sun.security.util.Resources"
+        }
+    ]
+}

@@ -29,14 +29,18 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Random;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,13 +50,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class PostTest {
     private static final byte[] BYTES = new byte[256];
-    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-REquEst-HEADeR");
+    private static final HeaderName REQUEST_HEADER_NAME = HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final Http.Header REQUEST_HEADER_VALUE = Http.Headers.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
-    private static final HeaderName RESPONSE_HEADER_NAME = Http.HeaderNames.create("X-REsponSE-HeADER");
+    private static final Header REQUEST_HEADER_VALUE = HeaderValues.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final Http.Header RESPONSE_HEADER_VALUE = Http.Headers.create(RESPONSE_HEADER_NAME,
-                                                                                 RESPONSE_HEADER_VALUE_STRING);
+    private static final Header RESPONSE_HEADER_VALUE = HeaderValues.create(RESPONSE_HEADER_NAME,
+                                                                            RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -72,11 +76,11 @@ class PostTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(Http.Method.POST, "/string", Handler.create(String.class, Routes::string))
-                .route(Http.Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
-                .route(Http.Method.POST, "/streamed", Routes::streamed)
-                .route(Http.Method.POST, "/headers", Routes::headers)
-                .route(Http.Method.POST, "/nocontent", Routes::noContent);
+        router.route(Method.POST, "/string", Handler.create(String.class, Routes::string))
+                .route(Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
+                .route(Method.POST, "/streamed", Routes::streamed)
+                .route(Method.POST, "/headers", Routes::headers)
+                .route(Method.POST, "/nocontent", Routes::noContent);
     }
 
     @Test
@@ -93,7 +97,7 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofString("Hello"))
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         String entity = response.body();
         assertThat(entity, is("Hello"));
         java.net.http.HttpHeaders headers = response.headers();
@@ -115,7 +119,7 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofByteArray(BYTES))
                                                             .build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         byte[] entity = response.body();
         assertThat(entity, is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
@@ -137,7 +141,7 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofByteArray(BYTES))
                                                             .build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         byte[] entity = response.body();
         assertThat(entity, is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
@@ -161,7 +165,7 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofString("Hello"))
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         String entity = response.body();
         assertThat(entity, is("Hello"));
         java.net.http.HttpHeaders headers = response.headers();
@@ -191,12 +195,12 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofString("Hello"))
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.NO_CONTENT_204.code()));
+        assertThat(response.statusCode(), is(Status.NO_CONTENT_204.code()));
     }
 
     private static class Routes {
         public static void noContent(ServerRequest req, ServerResponse res) {
-            res.status(Http.Status.NO_CONTENT_204);
+            res.status(Status.NO_CONTENT_204);
             res.send();
         }
 

@@ -17,19 +17,25 @@
 /**
  * Open tracing support for Helidon tracing.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.providers.opentracing {
-    exports io.helidon.tracing.providers.opentracing.spi;
-    exports io.helidon.tracing.providers.opentracing;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.config;
-    requires transitive io.helidon.tracing;
+
+    requires io.opentracing.noop;
+    requires io.opentracing.util;
+
     requires static io.helidon.config.metadata;
 
-    requires io.opentracing.util;
-    requires io.opentracing.api;
-    requires io.opentracing.noop;
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.tracing;
+    requires transitive io.opentracing.api;
+
+    exports io.helidon.tracing.providers.opentracing.spi;
+    exports io.helidon.tracing.providers.opentracing;
 
     uses io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider;
+
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.opentracing.OpenTracingTracerProvider;
+
 }

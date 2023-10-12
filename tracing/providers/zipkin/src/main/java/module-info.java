@@ -25,26 +25,30 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Tracing", "Zipkin"}
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.providers.zipkin {
-    requires static io.helidon.common.features.api;
 
-    requires io.helidon.common;
-    requires io.helidon.common.config;
-    requires io.helidon.tracing;
-    requires io.helidon.tracing.providers.opentracing;
-    requires static io.helidon.config.metadata;
-
-    requires java.logging;
-    requires io.opentracing.util;
     requires brave.opentracing;
-    requires zipkin2.reporter;
-    requires zipkin2.reporter.urlconnection;
-    requires zipkin2;
     requires brave;
+    requires io.helidon.common;
+    requires io.helidon.tracing.providers.opentracing;
     requires io.opentracing.noop;
-    requires io.opentracing.api;
+    requires io.opentracing.util;
+    requires java.logging;
+
+    requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.tracing;
+    requires transitive io.opentracing.api;
+
+    requires zipkin2.reporter.urlconnection;
+    requires zipkin2.reporter;
+    requires zipkin2;
 
     exports io.helidon.tracing.providers.zipkin;
 
-    provides io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider with io.helidon.tracing.providers.zipkin.ZipkinTracerProvider;
+    provides io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider
+            with io.helidon.tracing.providers.zipkin.ZipkinTracerProvider;
+
 }

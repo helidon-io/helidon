@@ -40,9 +40,10 @@ public final class ServerMain {
     public static void main(String[] args) {
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
+        Config.global(config);
 
         WebServerConfig.Builder builder = WebServer.builder();
-        setup(builder, config);
+        setup(builder);
         WebServer server = builder.build().start();
         server.context().register(server);
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
@@ -52,21 +53,20 @@ public final class ServerMain {
      * Set up the server.
      *
      * @param server server builder
-     * @param config config
      */
-    static void setup(WebServerConfig.Builder server, Config config) {
+    static void setup(WebServerConfig.Builder server) {
+        Config config = Config.global();
         server.config(config.get("server"))
-              .routing(r -> routing(r, config));
+              .routing(ServerMain::routing);
     }
 
     /**
      * Setup routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    private static void routing(HttpRouting.Builder routing, Config config) {
+    private static void routing(HttpRouting.Builder routing) {
         routing.addFeature(ObserveFeature.create())
-               .register("/greet", new GreetService(config));
+               .register("/greet", new GreetService());
     }
 }

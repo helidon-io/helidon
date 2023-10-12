@@ -1,0 +1,30 @@
+package {{package}};
+
+import java.util.Optional;
+
+import io.helidon.http.HttpMediaTypes;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.Subject;
+
+class Service2 implements HttpService {
+
+    @Override
+    public void routing(HttpRules rules) {
+        rules.get("/{*}", this::handle);
+    }
+
+    private void handle(ServerRequest req, ServerResponse res) {
+        Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+        res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
+        res.send("Response from service2, you are: \n" + securityContext
+                .flatMap(SecurityContext::user)
+                .map(Subject::toString)
+                .orElse("Security context is null") + ", service: " + securityContext
+                .flatMap(SecurityContext::service)
+                .map(Subject::toString));
+    }
+}

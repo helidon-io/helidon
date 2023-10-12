@@ -403,6 +403,7 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
                     services.addParentServiceType(serviceTypeName, TypeName.builder(typeName.genericTypeName())
                             .className(typeName.classNameWithEnclosingNames().replace('.', '$')
                                                + ActivatorCreatorDefault.INNER_ACTIVATOR_CLASS_NAME)
+                            .enclosingNames(List.of()) // activators are always flat
                             .build());
                 } else {
                     // otherwise extends AbstractServiceProvider with the correct type
@@ -644,8 +645,8 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
         InterceptorCreator.InterceptorProcessor processor = interceptorCreator.createInterceptorProcessor(
                 interceptedServiceInfo,
                 interceptorCreator,
-                Optional.of(processingEnv));
-        Set<String> annotationTypeTriggers = processor.allAnnotationTypeTriggers();
+                processingEnv);
+        Set<TypeName> annotationTypeTriggers = processor.allAnnotationTypeTriggers();
         if (annotationTypeTriggers.isEmpty()) {
             services.addInterceptorPlanFor(serviceTypeName, Optional.empty());
             return;
@@ -758,14 +759,14 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
                 .findFirst(ExternalContracts.class, typeInfo.annotations())
                 .orElse(null);
         if (externalContractAnno != null) {
-            String[] externalContractNames = externalContractAnno.getValue("value").orElse("").split(",[ \t]*");
+            List<String> externalContractNames = externalContractAnno.stringValues().orElseGet(List::of);
             for (String externalContractName : externalContractNames) {
                 TypeName externalContractTypeName = TypeName.create(externalContractName);
                 externalContracts.add(externalContractTypeName);
                 filterModuleName(typeInfo.moduleNameOf(externalContractTypeName)).ifPresent(externalModuleNamesRequired::add);
             }
 
-            String[] moduleNames = externalContractAnno.getValue("moduleNames").orElse("").split(",[ \t]*");
+            List<String> moduleNames = externalContractAnno.stringValues("moduleNames").orElseGet(List::of);
             for (String externalModuleName : moduleNames) {
                 if (!externalModuleName.isBlank()) {
                     externalModuleNamesRequired.add(externalModuleName);

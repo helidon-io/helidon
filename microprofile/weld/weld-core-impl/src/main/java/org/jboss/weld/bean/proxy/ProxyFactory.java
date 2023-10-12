@@ -233,7 +233,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
     static String getProxyName(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, Bean<?> bean) {
         TypeInfo typeInfo = TypeInfo.of(typeClosure);
         final String className;
-        org.jboss.weld.bean.proxy.ProxyFactory.ProxyNameHolder holder;
+        ProxyNameHolder holder;
         if (typeInfo.getSuperClass() == Object.class) {
             // for classes that do not have an enclosing class, we want the super interface to be first
             if (proxiedBeanType.getEnclosingClass() == null) {
@@ -262,7 +262,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
                 StringBuilder name = new StringBuilder(typeInfo.getSuperClass().getSimpleName() + "$");
                 holder = createCompoundProxyName(contextId, bean, typeInfo, name);
             } else {
-                holder = new org.jboss.weld.bean.proxy.ProxyFactory.ProxyNameHolder(null, typeInfo.getSuperClass().getSimpleName(), bean);
+                holder = new ProxyNameHolder(null, typeInfo.getSuperClass().getSimpleName(), bean);
             }
         }
         className = holder.getClassName() + PROXY_SUFFIX;
@@ -295,7 +295,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
     /*
      * Helidon modification (original method with different body)
      */
-    private static org.jboss.weld.bean.proxy.ProxyFactory.ProxyNameHolder createCompoundProxyName(String contextId, Bean<?> bean, TypeInfo typeInfo, StringBuilder name) {
+    private static ProxyNameHolder createCompoundProxyName(String contextId, Bean<?> bean, TypeInfo typeInfo, StringBuilder name) {
         String className;
         String proxyPackage = null;
         // we need a sorted collection without repetition, hence LinkedHashSet
@@ -331,7 +331,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         }
         // we use unique names, we should never get a duplicity
         className = name.toString();
-        return new org.jboss.weld.bean.proxy.ProxyFactory.ProxyNameHolder(proxyPackage, className, bean);
+        return new ProxyNameHolder(proxyPackage, className, bean);
     }
 
     private static String getEnclosingPrefix(Class<?> clazz) {
@@ -619,8 +619,8 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
 
         ProtectionDomain domain = AccessController.doPrivileged(new GetProtectionDomainAction(proxiedBeanType));
 
-        if (proxiedBeanType.getPackage() == null || proxiedBeanType.equals(Object.class)) {
-            domain = org.jboss.weld.bean.proxy.ProxyFactory.class.getProtectionDomain();
+        if (proxiedBeanType.getPackage() == null || proxiedBeanType.getPackage().getName().isEmpty() || proxiedBeanType.equals(Object.class)) {
+            domain = ProxyFactory.class.getProtectionDomain();
         } else if (System.getSecurityManager() != null) {
             ProtectionDomainCache cache = Container.instance(contextId).services().get(ProtectionDomainCache.class);
             domain = cache.getProtectionDomainForProxy(domain);
@@ -632,7 +632,10 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
 
     private ClassFile newClassFile(String name, int accessFlags, String superclass, String... interfaces) {
         try {
-            return new ClassFile(name, accessFlags, superclass, interfaces);
+            // We need to use a (non-deprecated) method that avoids instantiating DefaultClassFactory.INSTANCE
+            // If that happens, we will have module accessibility issues and the need to use --add-opens clausules
+            // NOTE: the CL and ClassFactory are never really used to define the class, see WeldDefaultProxyServices
+            return new ClassFile(name, accessFlags, superclass, ProxyFactory.class.getClassLoader(), DummyClassFactoryImpl.INSTANCE, interfaces);
         } catch (Exception e) {
             throw BeanLogger.LOG.unableToCreateClassFile(name, e.getCause());
         }

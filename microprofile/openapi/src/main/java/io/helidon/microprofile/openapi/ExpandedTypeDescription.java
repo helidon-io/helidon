@@ -18,6 +18,7 @@ package io.helidon.microprofile.openapi;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -55,12 +56,12 @@ import org.yaml.snakeyaml.nodes.Tag;
  *     Some of the MP OpenAPI items are extensible, meaning they accept sub-item keys with the
  *     "x-" prefix. This class supports extensions. For scalars it delegates to the normal
  *     SnakeYAML processing to correctly type and parse the scalar. For sequences it
- *     creates {@code List}s. For mappings it creates {@code Map}s. The subnodes of the lists and
+ *     creates {@code List}s. For mappings it creates {@code Map}s. The sub-nodes of the lists and
  *     maps are handled by the normal SnakeYAML parsing, so the resulting elements in lists and
  *     maps are of the SnakeYAML-inferred types.
  * </p>
  * <p>
- *     A subnode {@code $ref} maps to the {@code ref} property on the MP OpenAPI types. This type
+ *     A sub-node {@code $ref} maps to the {@code ref} property on the MP OpenAPI types. This type
  *     description simplifies defining the {@code $ref} property to those types that support it.
  * </p>
  * <p>
@@ -158,9 +159,9 @@ public class ExpandedTypeDescription extends TypeDescription {
         Property p = getProperty(propertyName);
         if (p.getType().isEnum()) {
             @SuppressWarnings("unchecked")
-            Class<Enum> eClass = (Class<Enum>) p.getType();
-            String valueText = ScalarNode.class.cast(node).getValue();
-            for (Enum e : eClass.getEnumConstants()) {
+            Class<Enum<?>> eClass = (Class<Enum<?>>) p.getType();
+            String valueText = ((ScalarNode) node).getValue();
+            for (Enum<?> e : eClass.getEnumConstants()) {
                 if (e.toString().equals(valueText)) {
                     return e;
                 }
@@ -178,9 +179,7 @@ public class ExpandedTypeDescription extends TypeDescription {
         if (excludes == Collections.<String>emptySet()) {
             excludes = new HashSet<>();
         }
-        for (String propName : propNames) {
-            excludes.add(propName);
-        }
+        excludes.addAll(Arrays.asList(propNames));
     }
 
     /**
@@ -198,19 +197,7 @@ public class ExpandedTypeDescription extends TypeDescription {
      * @return {@code true} if default value property is defined
      */
     public boolean hasDefaultProperty() {
-        return getPropertyNoEx("defaultValue") != null;
-    }
-
-    Property getPropertyNoEx(String name) {
-        try {
-            Property p = getProperty("defaultValue");
-            return p;
-        } catch (YAMLException ex) {
-            if (ex.getMessage().startsWith("Unable to find property")) {
-                return null;
-            }
-            throw ex;
-        }
+        return defaultProperty() != null;
     }
 
     /**
@@ -219,32 +206,32 @@ public class ExpandedTypeDescription extends TypeDescription {
      * @return the 'default' property for this type; null if none
      */
     Property defaultProperty() {
-        return getPropertyNoEx("defaultValue");
+        try {
+            return getProperty("defaultValue");
+        } catch (YAMLException ex) {
+            if (ex.getMessage().startsWith("Unable to find property")) {
+                return null;
+            }
+            throw ex;
+        }
     }
 
     private static boolean setupExtensionType(String key, Node valueNode) {
         if (isExtension(key)) {
-            /*
-             * The nodeId in a node is more like node "category" in SnakeYAML. For those OpenAPI interfaces which implement
-             * Extensible we need to set the node's type if the extension is a List or Map.
-             */
+            // The nodeId in a node is more like node "category" in SnakeYAML. For those OpenAPI interfaces which implement
+            // Extensible we need to set the node's type if the extension is a List or Map.
             switch (valueNode.getNodeId()) {
-            case sequence:
-                valueNode.setType(List.class);
-                return true;
-
-            case anchor:
-                break;
-
-            case mapping:
-                valueNode.setType(Map.class);
-                return true;
-
-            case scalar:
-                break;
-
-            default:
-
+                case sequence -> {
+                    valueNode.setType(List.class);
+                    return true;
+                }
+                case mapping -> {
+                    valueNode.setType(Map.class);
+                    return true;
+                }
+                default -> {
+                    return false;
+                }
             }
         }
         return false;
@@ -261,13 +248,13 @@ public class ExpandedTypeDescription extends TypeDescription {
     /**
      * Specific type description for {@code Schema}.
      * <p>
-     * The {@code Schema} node allows the {@code additionalProperties} subnode to be either
+     * The {@code Schema} node allows the {@code additionalProperties} sub-node to be either
      * {@code Boolean} or another {@code Schema}, and the {@code Schema} class exposes getters and setters for
      * {@code additionalPropertiesBoolean}, and {@code additionalPropertiesSchema}.
      * This type description customizes the handling of {@code additionalProperties} to account for all that.
      * </p>
      *
-     * @see Serializer (specifically doRepresentJavaBeanProperty) for output handling for
+     * @see OpenApiSerializer (specifically doRepresentJavaBeanProperty) for output handling for
      *         additionalProperties
      */
     static final class SchemaTypeDescription extends ExpandedTypeDescription {
@@ -278,8 +265,8 @@ public class ExpandedTypeDescription extends TypeDescription {
                 new MethodProperty(ADDL_PROPS_PROP_DESCRIPTOR) {
 
                     @Override
-                    public void set(Object object, Object value) throws Exception {
-                        Schema s = Schema.class.cast(object);
+                    public void set(Object object, Object value) {
+                        Schema s = (Schema) object;
                         if (value instanceof Schema) {
                             s.setAdditionalPropertiesSchema((Schema) value);
                         } else {
@@ -289,7 +276,7 @@ public class ExpandedTypeDescription extends TypeDescription {
 
                     @Override
                     public Object get(Object object) {
-                        Schema s = Schema.class.cast(object);
+                        Schema s = (Schema) object;
                         Boolean b = s.getAdditionalPropertiesBoolean();
                         return b != null ? b : s.getAdditionalPropertiesSchema();
                     }
@@ -394,7 +381,7 @@ public class ExpandedTypeDescription extends TypeDescription {
         }
 
         @Override
-        public boolean setProperty(Object targetBean, String propertyName, Object value) throws Exception {
+        public boolean setProperty(Object targetBean, String propertyName, Object value) {
             P parent = parentType.cast(targetBean);
             C child = childType.cast(value);
             childAdder.addChild(parent, propertyName, child);
@@ -441,7 +428,7 @@ public class ExpandedTypeDescription extends TypeDescription {
 
         @Override
         @SuppressWarnings("unchecked")
-        public boolean setProperty(Object targetBean, String propertyName, Object value) throws Exception {
+        public boolean setProperty(Object targetBean, String propertyName, Object value) {
             P parent = parentType().cast(targetBean);
             if (value == null) {
                 childNameAdder.addChild(parent, propertyName);
@@ -455,11 +442,11 @@ public class ExpandedTypeDescription extends TypeDescription {
     }
 
     /**
-     * Property description for an extension subnode.
+     * Property description for an extension sub-node.
      */
     static class ExtensionProperty extends Property {
 
-        private static final Class[] EXTENSION_TYPE_ARGS = new Class[0];
+        private static final Class<?>[] EXTENSION_TYPE_ARGS = new Class<?>[0];
 
         ExtensionProperty(String name) {
             super(name, Object.class);

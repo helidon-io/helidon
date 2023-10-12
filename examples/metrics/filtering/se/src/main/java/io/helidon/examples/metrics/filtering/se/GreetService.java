@@ -20,7 +20,10 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Timer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -29,11 +32,6 @@ import io.helidon.webserver.http.ServerResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * A simple service to greet you. Examples:
@@ -65,19 +63,11 @@ public class GreetService implements HttpService {
     private final Timer timerForGets;
     private final Counter personalizedGreetingsCounter;
 
-    GreetService(Config config, MetricRegistry appRegistry) {
+    GreetService(MeterRegistry meterRegistry) {
+        Config config = Config.global();
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
-        Metadata metadata = Metadata.builder()
-                .withName(TIMER_FOR_GETS)
-                .withUnit(MetricUnits.NANOSECONDS)
-                .build();
-        timerForGets = appRegistry.timer(metadata);
-
-        metadata = Metadata.builder()
-                .withName(COUNTER_FOR_PERSONALIZED_GREETINGS)
-                .withUnit(MetricUnits.NONE)
-                .build();
-        personalizedGreetingsCounter = appRegistry.counter(metadata);
+        timerForGets = meterRegistry.getOrCreate(Timer.builder(TIMER_FOR_GETS));
+        personalizedGreetingsCounter = meterRegistry.getOrCreate(Counter.builder(COUNTER_FOR_PERSONALIZED_GREETINGS));
     }
 
     /**
@@ -87,7 +77,7 @@ public class GreetService implements HttpService {
      */
     @Override
     public void routing(HttpRules rules) {
-        rules.get("/", this::timeGet, this::getDefaultMessageHandler)
+        rules.get("/", this::timeGet)
                 .get("/{name}", this::countPersonalized, this::getMessageHandler)
                 .put("/greeting", this::updateGreetingHandler);
     }
@@ -111,7 +101,7 @@ public class GreetService implements HttpService {
      */
     private void getMessageHandler(ServerRequest request,
                                    ServerResponse response) {
-        String name = request.path().pathParameters().value("name");
+        String name = request.path().pathParameters().get("name");
         sendResponse(response, name);
     }
 
@@ -130,13 +120,13 @@ public class GreetService implements HttpService {
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "No greeting provided")
                     .build();
-            response.status(Http.Status.BAD_REQUEST_400)
+            response.status(Status.BAD_REQUEST_400)
                     .send(jsonErrorObject);
             return;
         }
 
         greeting.set(jo.getString("greeting"));
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.status(Status.NO_CONTENT_204).send();
     }
 
     /**
@@ -152,11 +142,11 @@ public class GreetService implements HttpService {
     }
 
     private void timeGet(ServerRequest request, ServerResponse response) {
-        timerForGets.time((Runnable) response::next);
+        timerForGets.record(() -> getDefaultMessageHandler(request, response));
     }
 
     private void countPersonalized(ServerRequest request, ServerResponse response) {
-        personalizedGreetingsCounter.inc();
+        personalizedGreetingsCounter.increment();
         response.next();
     }
 }

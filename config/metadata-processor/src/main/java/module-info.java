@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,13 @@
  * Annotation processor generating JSON metadata for configuration.
  */
 module io.helidon.config.metadata.processor {
+
     requires java.compiler;
+    requires io.helidon.common.types;
+    requires io.helidon.common.processor;
 
     exports io.helidon.config.metadata.processor;
 
     provides javax.annotation.processing.Processor with io.helidon.config.metadata.processor.ConfigMetadataProcessor;
+	
 }

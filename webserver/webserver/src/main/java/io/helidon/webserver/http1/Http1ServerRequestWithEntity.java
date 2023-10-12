@@ -16,13 +16,17 @@
 
 package io.helidon.webserver.http1;
 
+import java.io.InputStream;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webserver.ConnectionContext;
@@ -30,12 +34,15 @@ import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.ServerRequestEntity;
 
 final class Http1ServerRequestWithEntity extends Http1ServerRequest {
+    private static final System.Logger LOGGER = System.getLogger(Http1ServerRequestWithEntity.class.getName());
+
     private final LazyValue<ReadableEntity> entity;
     private final ConnectionContext ctx;
     private final Http1Connection connection;
     private final boolean expectContinue;
     private final boolean continueImmediately;
     private boolean continueSent;
+    private UnaryOperator<InputStream> streamFilter = UnaryOperator.identity();
 
     Http1ServerRequestWithEntity(ConnectionContext ctx,
                                  Http1Connection connection,
@@ -59,6 +66,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         this.continueSent = continueImmediately || !expectContinue;
         // we need the same entity instance every time the entity() method is called
         this.entity = LazyValue.create(() -> ServerRequestEntity.create(this::trySend100,
+                                                                        streamFilter,
                                                                         decoder,
                                                                         it -> readEntityFromPipeline.get(),
                                                                         entityReadLatch::countDown,
@@ -83,9 +91,21 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         return continueSent;
     }
 
+    @Override
+    public void streamFilter(UnaryOperator<InputStream> filterFunction) {
+        Objects.requireNonNull(filterFunction);
+        UnaryOperator<InputStream> current = this.streamFilter;
+        this.streamFilter = it -> filterFunction.apply(current.apply(it));
+    }
+
     private void trySend100(boolean drain) {
         if (!continueImmediately && expectContinue && !drain) {
-            ctx.dataWriter().writeNow(BufferData.create(Http1Connection.CONTINUE_100));
+            BufferData buffer = BufferData.create(Http1Connection.CONTINUE_100);
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Status.CONTINUE_100);
+                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send %n%s", buffer.debugDataHex());
+            }
+            ctx.dataWriter().writeNow(buffer);
             this.continueSent = true;
         }
     }

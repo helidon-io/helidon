@@ -16,15 +16,14 @@
 
 package io.helidon.examples.todos.backend;
 
-import java.io.IOException;
 import java.util.Base64;
 import java.util.Properties;
 
-import io.helidon.http.Http;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
-import io.helidon.microprofile.tests.junit5.Configuration;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.http.HeaderNames;
+import io.helidon.microprofile.testing.junit5.Configuration;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
@@ -35,29 +34,33 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Testcontainers
 @HelidonTest
 @Configuration(useExisting = true)
-// Embedded cassandra does not start on Java 17+
-@Disabled("3.0.0-JAKARTA")
+@EnabledOnOs(OS.LINUX) // due to usage of docker with testcontainers, only Linux is enabled by default
 class BackendTests {
-
-    private final static String CASSANDRA_HOST = "127.0.0.1";
+    @Container
+    static final CassandraContainer<?> CASSANDRA_CONTAINER = new CassandraContainer<>("cassandra:3.11.2")
+            .withReuse(true);
 
     @Inject
     private WebTarget webTarget;
 
     @BeforeAll
-    static void init() throws IOException {
+    static void init() {
         Properties cassandraProperties = initCassandra();
 
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -73,23 +76,23 @@ class BackendTests {
 
     @AfterAll
     static void stopServer() {
-        EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
     }
 
-    private static Properties initCassandra() throws IOException {
-        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE,
-                                                             20000L);
+    private static Properties initCassandra() {
+        String host = CASSANDRA_CONTAINER.getHost();
+        Integer port = CASSANDRA_CONTAINER.getMappedPort(CassandraContainer.CQL_PORT);
+
         Properties prop = new Properties();
-        prop.put("cassandra.port", String.valueOf(EmbeddedCassandraServerHelper.getNativeTransportPort()));
-        prop.put("cassandra.servers.host.host", CASSANDRA_HOST);
+        prop.put("cassandra.port", String.valueOf(port));
+        prop.put("cassandra.servers.host.host", host);
 
         Cluster cluster = Cluster.builder()
                 .withoutMetrics()
-                .addContactPoint(CASSANDRA_HOST)
-                .withPort(EmbeddedCassandraServerHelper.getNativeTransportPort())
+                .addContactPoint(host)
+                .withPort(port)
                 .build();
 
-        Session session = cluster.connect();
+        Session session = cluster.newSession();
         session.execute("CREATE KEYSPACE backend WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 1};");
         session.execute(
                 "CREATE TABLE backend.backend (id ascii, user ascii, message ascii, completed Boolean, created timestamp, "
@@ -113,7 +116,7 @@ class BackendTests {
         JsonObject returnedTodo = webTarget
                 .path("/api/backend")
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .post(Entity.json(todo), JsonObject.class);
 
         assertThat(returnedTodo.getString("user"), is("john"));
@@ -122,7 +125,7 @@ class BackendTests {
         // Get the todo created earlier
         JsonObject fromServer = webTarget.path("/api/backend/" + returnedTodo.getString("id"))
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .get(JsonObject.class);
 
         assertThat(fromServer, is(returnedTodo));
@@ -135,7 +138,7 @@ class BackendTests {
 
         fromServer = webTarget.path("/api/backend/" + returnedTodo.getString("id"))
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .put(Entity.json(updatedTodo), JsonObject.class);
 
         assertThat(fromServer.getString("title"), is(updatedTodo.getString("title")));
@@ -143,7 +146,7 @@ class BackendTests {
         // Delete the todo created earlier
         fromServer = webTarget.path("/api/backend/" + returnedTodo.getString("id"))
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .delete(JsonObject.class);
 
         assertThat(fromServer.getString("id"), is(returnedTodo.getString("id")));
@@ -151,7 +154,7 @@ class BackendTests {
         // Get list of todos
         JsonArray jsonValues = webTarget.path("/api/backend")
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .get(JsonArray.class);
 
         assertThat("There should be no todos on server", jsonValues.size(), is(0));

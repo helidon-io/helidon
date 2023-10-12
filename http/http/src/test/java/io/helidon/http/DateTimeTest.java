@@ -27,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Tests {@link Http.DateTime}.
+ * Tests {@link DateTime}.
  */
 public class DateTimeTest {
 
@@ -37,48 +37,48 @@ public class DateTimeTest {
     @Test
     public void rfc1123() {
         String text = "Tue, 3 Jun 2008 11:05:30 GMT";
-        ZonedDateTime zdt = ZonedDateTime.parse(text, Http.DateTime.RFC_1123_DATE_TIME);
+        ZonedDateTime zdt = ZonedDateTime.parse(text, DateTime.RFC_1123_DATE_TIME);
         assertThat(zdt, is(ZDT));
-        assertThat(zdt.format(Http.DateTime.RFC_1123_DATE_TIME), is(text));
+        assertThat(zdt.format(DateTime.RFC_1123_DATE_TIME), is(text));
 
         text = "Tue, 17 Jun 2008 11:05:30 GMT";
-        zdt = ZonedDateTime.parse(text, Http.DateTime.RFC_1123_DATE_TIME);
+        zdt = ZonedDateTime.parse(text, DateTime.RFC_1123_DATE_TIME);
         assertThat(zdt, is(ZDT2));
-        assertThat(zdt.format(Http.DateTime.RFC_1123_DATE_TIME), is(text));
+        assertThat(zdt.format(DateTime.RFC_1123_DATE_TIME), is(text));
     }
 
     @Test
     public void rfc850() {
         assumeTrue(LocalDate.now().getYear() < 2057);
         String text = "Tuesday, 03-Jun-08 11:05:30 GMT";
-        ZonedDateTime zdt = ZonedDateTime.parse(text, Http.DateTime.RFC_850_DATE_TIME);
+        ZonedDateTime zdt = ZonedDateTime.parse(text, DateTime.RFC_850_DATE_TIME);
         assertThat(zdt, is(ZDT));
-        assertThat(zdt.format(Http.DateTime.RFC_850_DATE_TIME), is(text));
+        assertThat(zdt.format(DateTime.RFC_850_DATE_TIME), is(text));
 
         text = "Tuesday, 17-Jun-08 11:05:30 GMT";
-        zdt = ZonedDateTime.parse(text, Http.DateTime.RFC_850_DATE_TIME);
+        zdt = ZonedDateTime.parse(text, DateTime.RFC_850_DATE_TIME);
         assertThat(zdt, is(ZDT2));
-        assertThat(zdt.format(Http.DateTime.RFC_850_DATE_TIME), is(text));
+        assertThat(zdt.format(DateTime.RFC_850_DATE_TIME), is(text));
     }
 
     @Test
     public void rfc851() {
         String text = "Tue Jun  3 11:05:30 2008";
-        ZonedDateTime zdt = ZonedDateTime.parse(text, Http.DateTime.ASCTIME_DATE_TIME);
+        ZonedDateTime zdt = ZonedDateTime.parse(text, DateTime.ASCTIME_DATE_TIME);
         assertThat(zdt, is(ZDT));
-        assertThat(zdt.format(Http.DateTime.ASCTIME_DATE_TIME), is(text));
+        assertThat(zdt.format(DateTime.ASCTIME_DATE_TIME), is(text));
 
         text = "Tue Jun 17 11:05:30 2008";
-        zdt = ZonedDateTime.parse(text, Http.DateTime.ASCTIME_DATE_TIME);
+        zdt = ZonedDateTime.parse(text, DateTime.ASCTIME_DATE_TIME);
         assertThat(zdt, is(ZDT2));
-        assertThat(zdt.format(Http.DateTime.ASCTIME_DATE_TIME), is(text));
+        assertThat(zdt.format(DateTime.ASCTIME_DATE_TIME), is(text));
     }
 
     @Test
     public void parse() {
-        assertThat(Http.DateTime.parse("Tue, 3 Jun 2008 11:05:30 GMT"), is(ZDT));
-        assertThat(Http.DateTime.parse("Tuesday, 03-Jun-08 11:05:30 GMT"), is(ZDT));
-        assertThat(Http.DateTime.parse("Tue Jun  3 11:05:30 2008"), is(ZDT));
+        assertThat(DateTime.parse("Tue, 3 Jun 2008 11:05:30 GMT"), is(ZDT));
+        assertThat(DateTime.parse("Tuesday, 03-Jun-08 11:05:30 GMT"), is(ZDT));
+        assertThat(DateTime.parse("Tue Jun  3 11:05:30 2008"), is(ZDT));
     }
 
 }

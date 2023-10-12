@@ -15,16 +15,17 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import java.time.Duration;
 
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
+
+import org.eclipse.microprofile.metrics.Metric;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.is;
 
 @HelidonTest
 @AddConfig(key = "metrics.enabled", value = "false")
@@ -35,6 +36,20 @@ class TestDisabledMetrics {
     void ensureRegistryFactoryIsMinimal() {
         // Invoking instance() should retrieve the factory previously initialized as disabled.
         RegistryFactory rf = RegistryFactory.getInstance();
-        assertThat("RegistryFactory type", rf, not(instanceOf(io.helidon.metrics.RegistryFactory.class)));
+        /*
+         Probe each metric to make sure its delegate is a no-op.
+         */
+        for (Metric m : rf.getRegistry(Registry.APPLICATION_SCOPE).getMetrics().values()) {
+            if (m instanceof HelidonCounter c) {
+                c.inc();
+                assertThat("Expected counter", c.getCount(), is(0L));
+            } else if (m instanceof HelidonHistogram h) {
+                h.update(23L);
+                assertThat("Histogram count", h.getCount(), is(0L));
+            } else if (m instanceof HelidonTimer t) {
+                t.update(Duration.ofMillis(123L));
+                assertThat("Timer count", t.getCount(), is(0L));
+            }
+        }
     }
 }

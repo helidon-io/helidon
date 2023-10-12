@@ -39,10 +39,11 @@
         <mainClass>io.helidon.examples.todos.backend.Main</mainClass>
         <version.lib.cassandra>3.10.2</version.lib.cassandra>
         <version.cassandra.unit>4.3.1.0</version.cassandra.unit>
-        <version.datastax.driver.core>4.9.0</version.datastax.driver.core>
-        <version.datastax.driver.query.builder>4.9.0</version.datastax.driver.query.builder>
+        <version.datastax.driver>4.9.0</version.datastax.driver>
         <version.codahale.metrics.core>3.0.2</version.codahale.metrics.core>
-        <version.lib.snakeyaml.override>1.32</version.lib.snakeyaml.override>
+        <version.snakeyaml.override>1.32</version.snakeyaml.override>
+        <version.testcontainers>1.19.1</version.testcontainers>
+        <version.testcontainers.cassandra>1.19.1</version.testcontainers.cassandra>
     </properties>
 
     <dependencyManagement>
@@ -61,19 +62,22 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>${version.lib.snakeyaml.override}</version>
+                <version>${version.snakeyaml.override}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${version.testcontainers}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
+            <artifactId>helidon-microprofile-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
@@ -84,13 +88,20 @@
             <artifactId>helidon-security-providers-google-login</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-http-sign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-abac</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.tracing</groupId>
             <artifactId>helidon-microprofile-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
             <artifactId>helidon-tracing-providers-zipkin</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
@@ -102,37 +113,37 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.tests</groupId>
-            <artifactId>helidon-microprofile-tests-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-mp</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.cassandraunit</groupId>
-            <artifactId>cassandra-unit</artifactId>
-            <version>${version.cassandra.unit}</version>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-core</artifactId>
-            <version>${version.datastax.driver.core}</version>
+            <version>${version.datastax.driver}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.datastax.oss</groupId>
             <artifactId>java-driver-query-builder</artifactId>
-            <version>${version.datastax.driver.query.builder}</version>
+            <version>${version.datastax.driver}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.codahale.metrics</groupId>
             <artifactId>metrics-core</artifactId>
             <version>${version.codahale.metrics.core}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>cassandra</artifactId>
+            <version>${version.testcontainers.cassandra}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

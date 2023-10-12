@@ -16,7 +16,7 @@
 package io.helidon.microprofile.metrics;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class TestConfigProcessing {
     @Test
     void checkTopLeveTagsIgnoredForMetrics() {
         MetricsCdiExtension extension = CDI.current().getBeanManager().getExtension(MetricsCdiExtension.class);
-        Config seConfig = extension.seComponentConfig();
+        Config seConfig = extension.componentConfig();
         Config metricsTags = seConfig.get("tags");
         assertThat("Tags setting is present", metricsTags.asString().isPresent(), is(false));
     }

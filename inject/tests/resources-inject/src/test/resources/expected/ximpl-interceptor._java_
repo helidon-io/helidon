@@ -25,8 +25,6 @@ import java.util.function.Function;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementInfo;
 import io.helidon.common.types.TypeValues;
 import io.helidon.inject.api.ClassNamed;
 import io.helidon.inject.api.InvocationContext;
@@ -58,55 +56,55 @@ public class XImpl$$Injection$$Interceptor extends io.helidon.inject.tests.injec
             Annotation.create(jakarta.inject.Singleton.class),
             Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")),
             Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")),
-            Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")),
-            Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")));
+            Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))),
+            Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))));
 
     private static final TypedElementInfo __ctor = TypedElementInfo.builder()
             .typeName(create(void.class))
 			.elementTypeKind(TypeValues.KIND_CONSTRUCTOR)
 			.elementName(io.helidon.inject.api.ElementInfo.CONSTRUCTOR)
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(jakarta.inject.Inject.class))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __methodIA1 = TypedElementInfo.builder()
             .typeName(create(void.class))
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("methodIA1")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
 			.addAnnotation(Annotation.create(java.lang.Override.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __methodIA2 = TypedElementInfo.builder()
             .typeName(create(void.class))
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("methodIA2")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IA2")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
 			.addAnnotation(Annotation.create(java.lang.Override.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __methodIB = TypedElementInfo.builder()
             .typeName(create(void.class))
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("methodIB")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
 			.addAnnotation(Annotation.create(jakarta.inject.Named.class, Map.of("value", "methodIB")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
 			.addAnnotation(Annotation.create(java.lang.Override.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __methodIB__p1 = TypedElementInfo.builder()
             .typeName(create(java.lang.String.class))
@@ -119,13 +117,13 @@ public class XImpl$$Injection$$Interceptor extends io.helidon.inject.tests.injec
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("methodIB2")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
 			.addAnnotation(Annotation.create(jakarta.inject.Named.class, Map.of("value", "methodIB2")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
 			.addAnnotation(Annotation.create(java.lang.Override.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __methodIB2__p1 = TypedElementInfo.builder()
             .typeName(create(java.lang.String.class))
@@ -138,22 +136,22 @@ public class XImpl$$Injection$$Interceptor extends io.helidon.inject.tests.injec
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("close")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
 			.addAnnotation(Annotation.create(java.lang.Override.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __methodX = TypedElementInfo.builder()
             .typeName(create(long.class))
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("methodX")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __methodX__p1 = TypedElementInfo.builder()
             .typeName(create(java.lang.String.class))
@@ -175,30 +173,30 @@ public class XImpl$$Injection$$Interceptor extends io.helidon.inject.tests.injec
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("methodY")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __methodZ = TypedElementInfo.builder()
             .typeName(create(java.lang.String.class))
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("methodZ")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
     private static final TypedElementInfo __throwRuntimeException = TypedElementInfo.builder()
             .typeName(create(void.class))
 			.elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("throwRuntimeException")
 			.addAnnotation(Annotation.create(io.helidon.inject.api.ClassNamed.class, Map.of("value", "io.helidon.inject.tests.inject.ClassNamedX")))
-			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.inject.api.ExternalContracts.class, Map.of("moduleNames", java.util.List.of("test1", "test2"), "value", java.util.List.of("java.io.Closeable"))))
 			.addAnnotation(Annotation.create(io.helidon.inject.tests.inject.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
-			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", java.util.List.of("unused"))))
             .build();
 
     private static final TypeName __serviceTypeName = TypeName.create(io.helidon.inject.tests.inject.interceptor.XImpl.class);
@@ -228,17 +226,17 @@ public class XImpl$$Injection$$Interceptor extends io.helidon.inject.tests.injec
     @Inject
     @SuppressWarnings("unchecked")
     XImpl$$Injection$$Interceptor(
-                @ClassNamed(io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno.class) List<Provider<Interceptor>> io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno,
                 @ClassNamed(io.helidon.inject.tests.inject.interceptor.TestNamed.class) List<Provider<Interceptor>> io_helidon_inject_tests_inject_interceptor_TestNamed,
+                @ClassNamed(io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno.class) List<Provider<Interceptor>> io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno,
                 Provider<io.helidon.inject.tests.inject.interceptor.XImpl> provider) {
         this.__provider = Objects.requireNonNull(provider);
         this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<io.helidon.inject.tests.inject.interceptor.XImpl>) __provider : null;
         List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);
         this.__methodIA1__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);
-        this.__methodIA2__interceptors = mergeAndCollapse(io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno, io_helidon_inject_tests_inject_interceptor_TestNamed);
-        this.__methodIB__interceptors = mergeAndCollapse(io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno, io_helidon_inject_tests_inject_interceptor_TestNamed);
-        this.__methodIB2__interceptors = mergeAndCollapse(io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno, io_helidon_inject_tests_inject_interceptor_TestNamed);
-        this.__close__interceptors = mergeAndCollapse(io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno, io_helidon_inject_tests_inject_interceptor_TestNamed);
+        this.__methodIA2__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed, io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno);
+        this.__methodIB__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed, io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno);
+        this.__methodIB2__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed, io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno);
+        this.__close__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed, io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno);
         this.__methodX__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);
         this.__methodY__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);
         this.__methodZ__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);

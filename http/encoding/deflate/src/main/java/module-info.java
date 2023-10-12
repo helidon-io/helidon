@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.encoding.deflate.DeflateEncodingProvider;
 
 /**
  * Deflate content encoding support.
@@ -27,12 +26,14 @@ import io.helidon.http.encoding.deflate.DeflateEncodingProvider;
         path = {"Encoding", "Deflate"}
 )
 module io.helidon.http.encoding.deflate {
-    requires static io.helidon.common.features.api;
 
     requires io.helidon.common;
     requires io.helidon.http.encoding;
 
+    requires static io.helidon.common.features.api;
+
     exports io.helidon.http.encoding.deflate;
 
-    provides io.helidon.http.encoding.spi.ContentEncodingProvider with DeflateEncodingProvider;
+    provides io.helidon.http.encoding.spi.ContentEncodingProvider
+            with io.helidon.http.encoding.deflate.DeflateEncodingProvider;
 }

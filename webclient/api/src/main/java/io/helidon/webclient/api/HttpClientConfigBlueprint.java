@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriFragment;
@@ -31,7 +34,7 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -48,11 +51,22 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
+     * Config method to get {@link io.helidon.webclient.api.ClientUri}.
+     *
+     * @param config configuration instance
+     * @return client URI for the config node
+     */
+    @Prototype.FactoryMethod
+    static ClientUri createBaseUri(Config config) {
+        return config.as(URI.class).map(ClientUri::create).orElseThrow();
+    }
+
+    /**
      * Base uri used by the client in all requests.
      *
      * @return base uri of the client requests
      */
-    @ConfiguredOption
+    @ConfiguredOption(type = String.class)
     Optional<ClientUri> baseUri();
 
     /**
@@ -112,8 +126,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return default headers
      */
-    @Prototype.Singular
-    Set<Http.Header> headers();
+    @Option.Singular
+    Set<Header> headers();
 
     /**
      * Default headers as a headers object. Creates a new instance for each call, so the returned value
@@ -161,7 +175,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return list of explicitly added media supports
      */
-    @Prototype.Singular
+    @Option.Singular
     List<MediaSupport> mediaSupports();
 
     /**
@@ -169,7 +183,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return services to use with this web client
      */
-    @Prototype.Singular
+    @Option.Singular
     @ConfiguredOption(provider = true, providerType = WebClientServiceProvider.class)
     List<WebClientService> services();
 
@@ -179,8 +193,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return relative URIs flag
      */
-    // TODO Set the default value to false when proxy is implemented and see Http1CallChainBase.prologue for other changes
-    @ConfiguredOption("true")
+    @ConfiguredOption("false")
     boolean relativeUris();
 
     /**
@@ -234,4 +247,16 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @ConfiguredOption("true")
     boolean shareConnectionCache();
+
+    /**
+     * If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance.
+     * If bigger, streaming will be used.
+     * <p>
+     * Note that for some entity types we cannot use streaming, as they are already fully in memory (String, byte[]), for such
+     * cases, this option is ignored. Default is 128Kb.
+     *
+     * @return maximal number of bytes to buffer in memory for supported writers
+     */
+    @ConfiguredOption("131072")
+    int maxInMemoryEntity();
 }

@@ -16,44 +16,50 @@
 
 package io.helidon.webclient.tests.http2;
 
+import java.util.function.Supplier;
+
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.function.Supplier;
-
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
 class Http2ClientTest {
     private static final String MESSAGE = "Hello World!";
     private static final String TEST_HEADER_NAME = "custom_header";
     private static final String TEST_HEADER_VALUE = "as!fd";
-    private static final Header TEST_HEADER = Http.Headers.create(HeaderNames.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
+    private static final Header TEST_HEADER = HeaderValues.create(HeaderNames.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
     private final Http1Client http1Client;
     private final Supplier<Http2Client> tlsClient;
     private final Supplier<Http2Client> plainClient;
+    private final int tlsPort;
+    private final int plainPort;
 
     Http2ClientTest(WebServer server, Http1Client http1Client) {
-        int plainPort = server.port();
-        int tlsPort = server.port("https");
+        plainPort = server.port();
+        tlsPort = server.port("https");
         this.http1Client = http1Client;
         Tls clientTls = Tls.builder()
                 .trust(trust -> trust
@@ -93,7 +99,7 @@ class Http2ClientTest {
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
         // explicitly on HTTP/2 only, to make sure we do upgrade
-        router.route(Http2Route.route(Http.Method.GET, "/", (req, res) -> res.header(TEST_HEADER)
+        router.route(Http2Route.route(Method.GET, "/", (req, res) -> res.header(TEST_HEADER)
                 .send(MESSAGE)));
     }
 
@@ -104,7 +110,22 @@ class Http2ClientTest {
                 .get("/")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
+    void testSchemeValidation() {
+        try (var r = Http2Client.builder()
+                .baseUri("test://localhost:" + plainPort + "/")
+                .shareConnectionCache(false)
+                .build()
+                .get("/")
+                .request()) {
+
+            fail("Should have failed because of invalid scheme.");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), startsWith("Not supported scheme test"));
         }
     }
 
@@ -114,7 +135,7 @@ class Http2ClientTest {
                 .get("/")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(MESSAGE));
             assertThat(TEST_HEADER + " header must be present in response",
                        response.headers().contains(TEST_HEADER), is(true));
@@ -127,7 +148,7 @@ class Http2ClientTest {
                 .get("/")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(MESSAGE));
             assertThat(TEST_HEADER + " header must be present in response",
                        response.headers().contains(TEST_HEADER), is(true));
@@ -141,7 +162,7 @@ class Http2ClientTest {
                 .priorKnowledge(true)
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(MESSAGE));
             assertThat(TEST_HEADER + " header must be present in response",
                        response.headers().contains(TEST_HEADER), is(true));

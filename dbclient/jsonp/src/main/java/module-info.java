@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.dbclient.jsonp.JsonProcessingMapperProvider;
-import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
  * Helidon Database Client JSON-P Mapper.
@@ -28,14 +26,15 @@ import io.helidon.dbclient.spi.DbMapperProvider;
         path = {"DbClient", "JSON-P"}
 )
 module io.helidon.dbclient.jsonp {
-    requires static io.helidon.common.features.api;
 
-    requires java.logging;
     requires io.helidon.dbclient;
     requires jakarta.json;
+    requires java.logging;
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.dbclient.jsonp;
 
-    provides DbMapperProvider with JsonProcessingMapperProvider;
+    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.dbclient.jsonp.JsonProcessingMapperProvider;
+	
 }
 

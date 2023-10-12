@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.webclient.dns.resolver.first.FirstDnsResolverProvider;
-import io.helidon.webclient.spi.DnsResolverProvider;
 
 /**
  * Helidon WebClient DNS Resolver First Support.
  * This implementation uses the first address from DNS lookup.
  */
 module io.helidon.webclient.dns.resolver.first {
-    requires io.helidon.webclient.api;
+
+    requires transitive io.helidon.webclient.api;
 
     exports io.helidon.webclient.dns.resolver.first;
 
-    provides DnsResolverProvider
-            with FirstDnsResolverProvider;
+    provides io.helidon.webclient.spi.DnsResolverProvider
+            with io.helidon.webclient.dns.resolver.first.FirstDnsResolverProvider;
+
 }

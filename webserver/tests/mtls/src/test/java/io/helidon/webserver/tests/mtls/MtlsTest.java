@@ -24,13 +24,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsClientAuth;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.ConnectionConfig;
@@ -38,6 +36,9 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +60,7 @@ class MtlsTest {
         routing.get("/name", (req, res) -> {
                     String name = req.remotePeer().tlsPrincipal().map(Principal::getName).orElse(null);
                     if (name == null) {
-                        res.status(Http.Status.BAD_REQUEST_400).send("Expected client principal");
+                        res.status(Status.BAD_REQUEST_400).send("Expected client principal");
                     } else {
                         res.send(name);
                     }
@@ -87,7 +88,7 @@ class MtlsTest {
                             .build();
 
                     server.reloadTls(tls);
-                    res.status(Http.Status.OK_200).send();
+                    res.status(Status.OK_200).send();
                 })
                 .get("/serverCert", (req, res) -> {
                     Certificate[] certs = req.localPeer().tlsCertificates().orElse(null);
@@ -121,54 +122,52 @@ class MtlsTest {
     @Test
     void testMutualTlsPrincipal() {
         WebClient client = client();
-        ClientResponseTyped<String> response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/name")
                 .request(String.class);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("CN=Helidon-Test-Client"));
     }
 
     @Test
     void testMutualTlsCertificates() {
         WebClient client = client();
-        ClientResponseTyped<String> response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/certs")
                 .request(String.class);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("X.509:CN=Helidon-Test-Client|X.509:CN=Helidon-Test-CA"));
     }
 
     @Test
     void testTlsReload() {
         WebClient client = client();
-        ClientResponseTyped<String> response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/serverCert")
                 .request(String.class);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("X.509:CN=Helidon-Test-Server|X.509:CN=Helidon-Test-CA"));
 
-        response = client.method(Http.Method.GET)
+        response = client.method(Method.GET)
                 .uri("/reload")
                 .request(String.class);
 
-        client = client();
+        assertThat(response.status(), is(Status.OK_200));
 
-        assertThat(response.status(), is(Http.Status.OK_200));
-
-        response = client.method(Http.Method.GET)
+        response = client.method(Method.GET)
                 .uri("/serverCert")
                 .request(String.class);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("X.509:CN=Helidon-Test-Server-Secondary|X.509:CN=Helidon-Test-CA"));
     }
 
     private static void sendCertificateString(Certificate[] certs, ServerResponse res) {
         if (certs == null) {
-            res.status(Http.Status.BAD_REQUEST_400).send("Expected client certificate");
+            res.status(Status.BAD_REQUEST_400).send("Expected client certificate");
         } else {
             List<String> certDefs = new LinkedList<>();
             for (Certificate cert : certs) {

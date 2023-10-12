@@ -25,10 +25,11 @@
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>pom</packaging>
     <groupId>io.helidon.microprofile.tests</groupId>
-    <artifactId>tests-project</artifactId>
+    <artifactId>helidon-microprofile-tests-project</artifactId>
     <name>Helidon Microprofile Tests</name>
 
     <properties>
@@ -42,10 +43,8 @@
 
     <modules>
         <module>arquillian</module>
-        <module>junit5</module>
-        <module>junit5-tests</module>
-        <module>testng</module>
-        <module>testng-tests</module>
+        <module>server</module>
+        <module>testing</module>
     </modules>
 
     <profiles>

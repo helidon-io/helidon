@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
          path = "FT"
 )
 module io.helidon.faulttolerance {
+
     requires io.helidon.common;
     requires io.helidon.common.types;
     requires io.helidon.common.configurable;
@@ -46,4 +47,5 @@ module io.helidon.faulttolerance {
 
     // inject module
     provides io.helidon.inject.api.ModuleComponent with io.helidon.faulttolerance.Injection$$Module;
+
 }

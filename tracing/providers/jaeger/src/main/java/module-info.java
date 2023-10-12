@@ -26,21 +26,24 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Tracing", "Jaeger"}
 )
 module io.helidon.tracing.providers.jaeger {
-    requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.config;
-    requires io.helidon.tracing;
-    requires io.helidon.tracing.providers.opentelemetry;
-    requires io.helidon.common.context;
     requires io.helidon.common.configurable;
+    requires io.helidon.common.context;
+    requires io.helidon.tracing.providers.opentelemetry;
+    requires io.opentelemetry.exporter.jaeger;
+    requires io.opentelemetry.sdk.common;
+    requires io.opentelemetry.sdk.trace;
+    requires io.opentelemetry.sdk;
+    // this was missing from module path, need an explicit requires
+    // as kotlin is modularized
+    requires kotlin.stdlib;
 
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires io.opentelemetry.sdk;
-    requires io.opentelemetry.exporter.jaeger;
-    requires io.opentelemetry.sdk.trace;
-    requires io.opentelemetry.sdk.common;
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.tracing;
 
     exports io.helidon.tracing.providers.jaeger;
 

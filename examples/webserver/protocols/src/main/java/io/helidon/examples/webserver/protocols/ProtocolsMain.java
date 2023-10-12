@@ -34,7 +34,7 @@ import io.helidon.websocket.WsSession;
 
 import io.grpc.stub.StreamObserver;
 
-import static io.helidon.http.Http.Method.GET;
+import static io.helidon.http.Method.GET;
 import static io.helidon.webserver.grpc.ResponseHelper.complete;
 
 /**

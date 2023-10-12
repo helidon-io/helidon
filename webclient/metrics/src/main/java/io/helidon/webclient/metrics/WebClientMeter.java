@@ -15,11 +15,10 @@
  */
 package io.helidon.webclient.metrics;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.metrics.api.Counter;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
-
-import org.eclipse.microprofile.metrics.Metadata;
 
 /**
  * Client metric meter for all requests.
@@ -32,7 +31,7 @@ public class WebClientMeter extends WebClientMetric {
 
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
-        Http.Method method = request.method();
+        Method method = request.method();
         try {
             WebClientServiceResponse response = chain.proceed(request);
             int code = response.status().code();
@@ -49,6 +48,8 @@ public class WebClientMeter extends WebClientMetric {
     }
 
     private void updateMeter(Metadata metadata) {
-        metricRegistry().counter(metadata).inc();
+        meterRegistry().getOrCreate(Counter.builder(metadata.name())
+                                            .description(metadata.description()))
+                .increment();
     }
 }

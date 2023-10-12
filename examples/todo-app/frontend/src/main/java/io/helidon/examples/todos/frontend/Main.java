@@ -16,22 +16,25 @@
 
 package io.helidon.examples.todos.frontend;
 
+import java.net.URI;
 import java.util.List;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.config.FileSystemWatcher;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.security.Security;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.accesslog.AccessLogFeature;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.tracing.TracingFeature;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.environmentVariables;
@@ -44,9 +47,6 @@ import static java.time.Duration.ofSeconds;
  */
 public final class Main {
 
-    /**
-     * Interval for config polling.
-     */
     private static final Long POLLING_INTERVAL = 5L;
 
     /**
@@ -65,13 +65,6 @@ public final class Main {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // needed for default connection of Jersey client
-        // to allow our headers to be set
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-
-        // to allow us to set host header explicitly
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-
         WebServerConfig.Builder builder = WebServer.builder();
         setup(builder);
         WebServer server = builder.build();
@@ -82,30 +75,29 @@ public final class Main {
     }
 
     private static void setup(WebServerConfig.Builder server) {
-
         Config config = buildConfig();
 
         Security security = Security.create(config.get("security"));
-
-        Http1Client client = Http1Client.builder().baseUri(config.get("services.backend.endpoint").asString().get())
-                                        .addService(WebClientSecurity.create())
-                                        .build();
-
-        BackendServiceClient bsc = new BackendServiceClient(client);
-
         Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
+
+        ConfigValue<URI> backendEndpoint = config.get("services.backend.endpoint").as(URI.class);
 
         server.config(config.get("webserver"))
                 .routing(routing -> routing
                         .addFeature(AccessLogFeature.create())
                         .addFeature(ObserveFeature.create())
                         .addFeature(SecurityFeature.create(security, config.get("security")))
+                        .addFeature(TracingFeature.create(tracer))
+                        // redirect POST / to GET /
+                        .post("/", (req, res) -> {
+                            res.header(HeaderNames.LOCATION, "/");
+                            res.status(Status.SEE_OTHER_303);
+                            res.send();
+                        })
                         // register static content support (on "/")
                         .register(StaticContentService.builder("/WEB").welcomeFileName("index.html"))
-                        // register API handler (on "/api") - this path is secured (see application.yaml)
-                        .register("/api", new TodosHandler(bsc, tracer))
-                        // and a simple environment handler to see where we are
-                        .register("/env", new EnvHandler(config)));
+                        // register API service (on "/api") - this path is secured (see application.yaml)
+                        .register("/api", new TodoService(new BackendServiceClient(backendEndpoint::get))));
     }
 
     /**

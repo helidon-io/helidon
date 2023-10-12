@@ -20,14 +20,16 @@
  * @see io.helidon.webserver.testing.junit5.ServerTest
  * @see io.helidon.webserver.testing.junit5.RoutingTest
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.webserver.testing.junit5 {
-    requires transitive io.helidon.common.testing.http.junit5;
-    requires transitive io.helidon.webserver;
-    requires transitive io.helidon.webclient;
+
     requires io.helidon.logging.common;
 
-    requires transitive org.junit.jupiter.api;
     requires transitive hamcrest.all;
+    requires transitive io.helidon.common.testing.http.junit5;
+    requires transitive io.helidon.webclient;
+    requires transitive io.helidon.webserver;
+    requires transitive org.junit.jupiter.api;
 
     exports io.helidon.webserver.testing.junit5;
     exports io.helidon.webserver.testing.junit5.spi;
@@ -42,4 +44,5 @@ module io.helidon.webserver.testing.junit5 {
             with io.helidon.webserver.testing.junit5.Http1DirectJunitExtension;
 
     opens io.helidon.webserver.testing.junit5 to org.junit.platform.commons;
+
 }

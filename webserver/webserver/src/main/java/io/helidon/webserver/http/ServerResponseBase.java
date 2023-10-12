@@ -27,13 +27,20 @@ import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.UnsupportedTypeException;
 import io.helidon.webserver.ConnectionContext;
 
 /**
@@ -44,12 +51,22 @@ import io.helidon.webserver.ConnectionContext;
 @SuppressWarnings("unchecked")
 public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implements RoutingResponse {
 
+    /**
+     * Stream result trailer name.
+     */
+    protected static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
+    /**
+     * Stream status trailers.
+     */
+    protected static final Header STREAM_TRAILERS =
+            HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;
     private final List<Runnable> whenSent = new ArrayList<>(5);
+    private final int maxInMemory;
 
-    private Http.Status status;
+    private Status status;
     private boolean nexted;
     private boolean reroute;
     private UriQuery rerouteQuery;
@@ -65,18 +82,22 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.mediaContext = ctx.listenerContext().mediaContext();
         this.requestHeaders = request.headers();
+        this.maxInMemory = ctx.listenerContext().config().maxInMemoryEntity();
     }
 
     @Override
-    public T status(Http.Status status) {
+    public T status(Status status) {
+        if (isSent()) {
+            throw new IllegalStateException("Response already sent");
+        }
         this.status = status;
         return (T) this;
     }
 
     @Override
-    public Http.Status status() {
+    public Status status() {
         if (status == null) {
-            return Http.Status.OK_200;
+            return Status.OK_200;
         }
         return status;
     }
@@ -86,7 +107,6 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         send(BufferData.EMPTY_BYTES);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public void send(Object entity) {
         if (entity instanceof byte[] bytes) {
@@ -94,19 +114,11 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             return;
         }
 
-        GenericType type;
-        if (entity instanceof String) {
-            type = GenericType.STRING;
-        } else {
-            type = GenericType.create(entity);
-        }
-
-        OutputStream outputStream = outputStream();
         try {
-            mediaContext.writer(type, requestHeaders, headers())
-                    .write(type, entity, outputStream, requestHeaders, this.headers());
-        } catch (IllegalArgumentException e) {
-            throw new HttpException(e.getMessage(), Http.Status.UNSUPPORTED_MEDIA_TYPE_415, e, true);
+            // now we have to use a media writer, so we may fail
+            doSend(entity);
+        } catch (UnsupportedTypeException e) {
+            throw new HttpException(e.getMessage(), Status.UNSUPPORTED_MEDIA_TYPE_415, e, true);
         }
     }
 
@@ -196,7 +208,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             // we want to preserve optimization here, let's create a new byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream(entity.length);
-            OutputStream os = encoder.encode(baos);
+            OutputStream os = encoder.apply(baos);
             try {
                 os.write(entity);
                 os.close();
@@ -220,7 +232,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             encoder.headers(headers());
 
-            return encoder.encode(outputStream);
+            return encoder.apply(outputStream);
         }
         return outputStream;
     }
@@ -232,5 +244,44 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         for (Runnable runnable : whenSent) {
             runnable.run();
         }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void doSend(Object entity) {
+        GenericType type;
+        if (entity instanceof String) {
+            type = GenericType.STRING;
+        } else {
+            type = GenericType.create(entity);
+        }
+
+        EntityWriter writer = mediaContext.writer(type, requestHeaders, headers());
+        long configuredContentLength = headers().contentLength().orElse(-1);
+        if (writer.supportsInstanceWriter()) {
+            InstanceWriter instanceWriter = writer.instanceWriter(type, entity, requestHeaders, headers());
+            if (instanceWriter.alwaysInMemory()) {
+                send(instanceWriter.instanceBytes());
+                return;
+            }
+            long contentLength = instanceWriter.contentLength().orElse(configuredContentLength);
+            if (contentLength != -1 && contentLength < maxInMemory) {
+                send(instanceWriter.instanceBytes());
+                return;
+            }
+            instanceWriter.write(outputStream());
+            return;
+        }
+
+
+        if (configuredContentLength == -1 || configuredContentLength > maxInMemory) {
+            OutputStream outputStream = outputStream();
+            writer.write(type, entity, outputStream, requestHeaders, this.headers());
+            return;
+        }
+
+        // safe to cast to int, as the maxInMemoryEntity configuration option is an int
+        ByteArrayOutputStream baos = new ByteArrayOutputStream((int) configuredContentLength);
+        writer.write(type, entity, baos, requestHeaders, headers());
+        send(baos.toByteArray());
     }
 }

@@ -21,7 +21,7 @@
 :keywords: helidon, java, microservices, microprofile, documentation
 :rootdir: {docdir}/..
 
-Check out the xref:{rootdir}/about/doc_sitemap.adoc[Documentation Overview] for information about this site and the materials we provide.
+
 
 include::{rootdir}/includes/attributes.adoc[]
 
@@ -34,17 +34,17 @@ include::{rootdir}/includes/attributes.adoc[]
 .Introduction to Helidon
 [icon=lightbulb]
 --
-New to Helidon? Start here to learn how Helidon's open-source set of Java libraries can help you write cloud-native Java microservices.
+Start here to learn how Helidon's open-source set of Java libraries can help you write cloud-native Java microservices.
 
 xref:{rootdir}/about/introduction.adoc[What is Helidon?]
 
-xref:{rootdir}/about/benefits.adoc[Features and Benefits]
+xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
 
 xref:{rootdir}/about/archetype.adoc[Helidon Archetypes]
 
 xref:{rootdir}/about/additional_info.adoc[Helidon Community and Support]
 
-xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
+
 
 
 --
@@ -58,8 +58,6 @@ There are several ways to generate your first Helidon project. In a hurry? Try t
 xref:{rootdir}/about/prerequisites.adoc[Prerequisites and System Requirements]
 
 xref:{rootdir}/about/cli.adoc[Using the Helidon CLI]
-
-xref:{rootdir}/about/generating_project.adoc[Using Project Starter]
 
 xref:{rootdir}/mp/guides/quickstart.adoc[Using the MP Quickstart Guide]
 
@@ -112,29 +110,58 @@ xref:{rootdir}/se/guides/overview.adoc[SE Guides]
 xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
-//Advanced Features
+//Advanced SE Features
 [CARD]
-.Advanced Features
-[icon=swap_horiz]
+.Advanced SE Features
+[icon=hotel_class]
 --
+xref:{rootdir}/se/webserver.adoc[Helidon WebServer]
 
+xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics]
+
+xref:{rootdir}/se/config/introduction.adoc[Helidon Config]
 --
 
 
 //Training and Certification
 [CARD]
 .Training and Certification
-[icon=swap_horiz]
+[icon=model_training]
 --
+ 
 
+Training:  
+ https://learn.oracle.com/ols/learning-path/become-a-helidon-microservices-developer-professional/88258/114512[Become a Helidon Microservices Developer Professional]
+ 
+Certification: 
+  https://learn.oracle.com/ols/learning-path/become-a-helidon-microservices-developer-professional/88258/114512[Helidon Microservices Developer Professional (1Z0-1113)]
+  
+New to Helidon? Check out https://a.co/d/0niQnwC[Beginning Helidon] to learn more about building cloud-native microservices with Helidon.  
+
+
+  
 --
 
 //Get Involved
 [CARD]
 .Get Involved
-[icon=swap_horiz]
+[icon=groups]
 --
+Here are some additional resources you can use to get started, get help, and to follow the evolution of Helidon.
 
+Project website: https://helidon.io
+
+Medium publication: https://medium.com/helidon
+
+GitHub repository: https://github.com/helidon-io/helidon
+
+Public Slack workspace: https://slack.helidon.io/
+
+Twitter account: https://twitter.com/helidon_project
+
+YouTube channel: https://www.youtube.com/channel/UChg00-uTTrCMmPsuzUNaZsA
+
+Stack Overflow tag: https://stackoverflow.com/tags/helidon
 --
 ====
 

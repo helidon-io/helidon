@@ -70,9 +70,9 @@ the following dependency in your project:
 Support in Helidon for CORS configuration uses two closely-related cross-origin configuration formats: basic and mapped.
 Each format corresponds to a class
 in the Helidon CORS library.
-The basic format corresponds to the link:{webserver-cors-javadoc-base-url}/io/helidon/reactive/webserver/cors/CrossOriginConfig.html[`CrossOriginConfig`]
+The basic format corresponds to the link:{webserver-cors-javadoc-base-url}/io/helidon/cors/CrossOriginConfig.html[`CrossOriginConfig`]
 class, and the mapped format corresponds to the
-link:{webserver-cors-javadoc-base-url}/io/helidon/reactive/webserver/cors/MappedCrossOriginConfig.html[`MappedCrossOriginConfig`] class.
+link:{webserver-cors-javadoc-base-url}/io/helidon/cors/MappedCrossOriginConfig.html[`MappedCrossOriginConfig`] class.
 //end::cors-configuration-formats-intro[]
 
 //tag::basic-cross-origin-config[]
@@ -239,7 +239,7 @@ the top-level resource in the app (the `path-pattern` key and value).
 <6> Begins the basic CORS config section for `/`; it permits sharing of resources at the top-level path with all origins
 for the indicated HTTP methods.
 
-Path patterns can be any expression accepted by the link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/PathMatcher.html[`PathMatcher`] class.
+Path patterns can be any expression accepted by the link:{webserver-javadoc-base-url}/io/helidon/webserver/PathMatcher.html[`PathMatcher`] class.
 
 NOTE: Be sure to arrange the entries in the order that you want Helidon to check them.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
@@ -247,6 +247,21 @@ matches an incoming request's path pattern and HTTP method.
 
 // end::mapped-config-suffix[]
 // end::mapped-config[]
+
+// tag::cors-and-requested-uri-intro[]
+=== CORS and the Requested URI Feature
+The decisions the Helidon CORS feature makes depend on accurate information about each incoming request,
+particularly the host to which the request is sent.
+Conveyed as headers in the request, this information can be changed or overwritten by intermediate nodes--such as load
+balancers--between the origin of the request and your service.
+
+Well-behaved intermediate nodes preserve this important data in other headers, such as `Forwarded`.
+// end::cors-and-requested-uri-intro[]
+
+// tag::cors-and-requested-uri-wrapup[]
+The CORS support in Helidon uses the requested URI feature to discover the correct information about each request,
+according to your configuration, so it can make accurate decisions about whether to permit cross-origin accesses.
+// end::cors-and-requested-uri-wrapup[]
 
 // tag::understanding-cors-support-in-services[]
 === Using CORS Support in Built-in Helidon Services

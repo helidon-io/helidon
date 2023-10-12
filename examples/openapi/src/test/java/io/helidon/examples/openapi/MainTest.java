@@ -18,21 +18,19 @@ package io.helidon.examples.openapi;
 
 import java.util.Map;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.examples.openapi.internal.SimpleAPIModelReader;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonPointer;
 import jakarta.json.JsonString;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -79,7 +77,7 @@ public class MainTest {
         }
 
         try (Http1ClientResponse response = client.get("/observe/health").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
 
         try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
@@ -88,12 +86,7 @@ public class MainTest {
     }
 
     @Test
-    @Disabled("https://github.com/helidon-io/helidon/issues/5411")
     public void testOpenAPI() {
-        /*
-         * If you change the OpenAPI endpoint path in application.yaml, then
-         * change the following path also.
-         */
         JsonObject jsonObject = client.get("/openapi")
                 .accept(MediaTypes.APPLICATION_JSON)
                 .requestEntity(JsonObject.class);
@@ -102,14 +95,6 @@ public class MainTest {
         JsonPointer jp = Json.createPointer("/" + escape("/greet/greeting") + "/put/summary");
         JsonString js = (JsonString) jp.getValue(paths);
         assertThat("/greet/greeting.put.summary not as expected", js.getString(), is("Set the greeting prefix"));
-
-        jp = Json.createPointer("/" + escape(SimpleAPIModelReader.MODEL_READER_PATH) + "/get/summary");
-        js = (JsonString) jp.getValue(paths);
-        assertThat("summary added by model reader does not match", js.getString(),
-                is(SimpleAPIModelReader.SUMMARY));
-
-        jp = Json.createPointer("/" + escape(SimpleAPIModelReader.DOOMED_PATH));
-        assertThat("/test/doomed should not appear but does", jp.containsValue(paths), is(false));
     }
 
     private static String escape(String path) {

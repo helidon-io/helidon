@@ -18,8 +18,8 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Base for {@link PickleBarrel}.
@@ -31,7 +31,7 @@ interface ContainerBlueprint {
      *
      * @return the ID of this container
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String id();
 
     /**
@@ -39,7 +39,7 @@ interface ContainerBlueprint {
      *
      * @return type of container if specified
      */
-    @ConfiguredOption("PLASTIC")
+    @Option.Default("PLASTIC")
     Optional<ContainerType> type();
 
 }

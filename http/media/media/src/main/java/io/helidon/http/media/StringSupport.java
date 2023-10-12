@@ -24,11 +24,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import io.helidon.common.GenericType;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.WritableHeaders;
@@ -40,6 +42,8 @@ import io.helidon.http.WritableHeaders;
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class StringSupport implements MediaSupport {
+    private static final Header HEADER_PLAIN_TEXT = HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
+                                                                              HttpMediaTypes.PLAINTEXT_UTF_8.text());
     private static final EntityReader READER = new StringReader();
     private static final EntityWriter WRITER = new StringWriter();
     private final String name;
@@ -120,9 +124,6 @@ public class StringSupport implements MediaSupport {
 
     private static final class StringWriter implements EntityWriter<String> {
 
-        private static final Header HEADER_PLAIN_TEXT = Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE,
-                                                                                  HttpMediaTypes.PLAINTEXT_UTF_8.text());
-
         @Override
         public void write(GenericType<String> type,
                           String object,
@@ -140,11 +141,29 @@ public class StringSupport implements MediaSupport {
             write(object, outputStream, headers);
         }
 
+        @Override
+        public boolean supportsInstanceWriter() {
+            return true;
+        }
+
+        @Override
+        public InstanceWriter instanceWriter(GenericType<String> type, String object, WritableHeaders<?> requestHeaders) {
+            return new StringInstanceWriter(object, requestHeaders);
+        }
+
+        @Override
+        public InstanceWriter instanceWriter(GenericType<String> type,
+                                             String object,
+                                             Headers requestHeaders,
+                                             WritableHeaders<?> responseHeaders) {
+            return new StringInstanceWriter(object, responseHeaders);
+        }
+
         private void write(String toWrite,
                            OutputStream outputStream,
                            WritableHeaders<?> writableHeaders) {
             Charset charset;
-            if (writableHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
+            if (writableHeaders.contains(HeaderNames.CONTENT_TYPE)) {
                 charset = writableHeaders.contentType()
                         .flatMap(HttpMediaType::charset)
                         .map(Charset::forName)
@@ -159,6 +178,49 @@ public class StringSupport implements MediaSupport {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+        }
+    }
+
+    private static final class StringInstanceWriter implements InstanceWriter {
+        private final byte[] bytes;
+
+        private StringInstanceWriter(String object, WritableHeaders<?> headers) {
+            Charset charset;
+            if (headers.contains(HeaderNames.CONTENT_TYPE)) {
+                charset = headers.contentType()
+                        .flatMap(HttpMediaType::charset)
+                        .map(Charset::forName)
+                        .orElse(StandardCharsets.UTF_8);
+            } else {
+                headers.set(HEADER_PLAIN_TEXT);
+                charset = StandardCharsets.UTF_8;
+            }
+
+            this.bytes = object.getBytes(charset);
+        }
+
+        @Override
+        public boolean alwaysInMemory() {
+            return true;
+        }
+
+        @Override
+        public OptionalLong contentLength() {
+            return OptionalLong.of(bytes.length);
+        }
+
+        @Override
+        public void write(OutputStream stream) {
+            try (stream) {
+                stream.write(bytes);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public byte[] instanceBytes() {
+            return bytes;
         }
     }
 

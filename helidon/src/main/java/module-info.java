@@ -18,6 +18,7 @@
  * Types needed to start a Helidon application.
  */
 module io.helidon {
+
     requires io.helidon.common;
     requires io.helidon.logging.common;
 
@@ -25,4 +26,5 @@ module io.helidon {
     exports io.helidon.spi;
 
     uses io.helidon.spi.HelidonStartupProvider;
+
 }

@@ -18,15 +18,17 @@
  * Injection maven-plugin module.
  */
 module io.helidon.inject.maven.plugin {
+
+    requires io.helidon.builder.api;
+    requires io.helidon.common;
+    requires io.helidon.config;
+    requires io.helidon.inject.configdriven.runtime;
+    requires maven.artifact;
+    requires maven.model;
     requires maven.plugin.annotations;
     requires maven.plugin.api;
     requires maven.project;
-    requires maven.artifact;
-    requires maven.model;
-    requires io.helidon.builder.api;
-    requires io.helidon.inject.configdriven.runtime;
-    requires io.helidon.common;
-    requires io.helidon.config;
+
     requires transitive io.helidon.inject.tools;
 
     exports io.helidon.inject.maven.plugin;
@@ -34,4 +36,5 @@ module io.helidon.inject.maven.plugin {
     uses io.helidon.inject.tools.spi.ActivatorCreator;
     uses io.helidon.inject.tools.spi.ApplicationCreator;
     uses io.helidon.inject.tools.spi.ExternalModuleCreator;
+
 }

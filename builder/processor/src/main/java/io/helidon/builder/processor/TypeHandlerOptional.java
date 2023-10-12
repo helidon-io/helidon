@@ -39,7 +39,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    Field.Builder fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
+    Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
         Field.Builder builder = Field.builder()
                 .isFinal(alwaysFinal || !isBuilder)
                 .name(name());
@@ -68,8 +68,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
 
     @Override
     void setters(InnerClass.Builder classBuilder,
-                 PrototypeProperty.ConfiguredOption configured,
-                 PrototypeProperty.Singular singular,
+                 AnnotationDataOption configured,
                  FactoryMethods factoryMethod,
                  TypeName returnType,
                  Javadoc blueprintJavadoc) {
@@ -180,7 +179,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
 
     private void clearSetter(InnerClass.Builder classBuilder,
                              TypeName returnType,
-                             PrototypeProperty.ConfiguredOption configured) {
+                             AnnotationDataOption configured) {
         // declared setter - optional is package local, field is never optional in builder
         classBuilder.addMethod(builder -> builder.name("clear" + capitalize(name()))
                 .accessModifier(setterAccessModifier(configured))

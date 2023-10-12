@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,17 +33,20 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"JPA", "Hibernate"}
 )
 @Aot(description = "Experimental support, tested on limited use cases")
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.hibernate {
-    requires static io.helidon.common.features.api;
 
-    requires jakarta.transaction;
-    requires java.sql;
-    requires jakarta.inject;
-    requires jakarta.cdi;
-    requires org.hibernate.orm.core;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.inject;
+    requires jakarta.persistence;
+    requires transitive jakarta.transaction;
+    requires transitive org.hibernate.orm.core;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.integrations.cdi.hibernate;
 
     provides org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider
             with io.helidon.integrations.cdi.hibernate.CDISEJtaPlatformProvider;
+
 }

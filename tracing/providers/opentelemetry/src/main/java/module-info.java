@@ -17,21 +17,23 @@
 /**
  * Open telemetry support for Helidon tracing.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.providers.opentelemetry {
-    requires io.helidon.tracing;
-    requires io.helidon.common.context;
 
-    requires transitive io.opentelemetry.api;
-    requires transitive io.opentelemetry.semconv;
-    requires transitive io.opentelemetry.context;
-    requires transitive io.opentelemetry.extension.trace.propagation;
-
-    requires io.helidon.common;
     requires io.helidon.common.config;
+    requires io.helidon.common.context;
+    requires io.helidon.common;
     requires io.helidon.config;
+    requires io.opentelemetry.context;
+    requires io.opentelemetry.extension.trace.propagation;
+    requires io.opentelemetry.semconv;
+
+    requires transitive io.helidon.tracing;
+    requires transitive io.opentelemetry.api;
 
     exports io.helidon.tracing.providers.opentelemetry;
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
+
 }

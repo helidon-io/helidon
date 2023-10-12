@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.Base64Value;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -103,7 +103,7 @@ class VaultService implements HttpService {
     private void getSecret(ServerRequest req, ServerResponse res) {
         ociHandler(response -> {
             GetSecretBundleResponse id = secrets.getSecretBundle(GetSecretBundleRequest.builder()
-                    .secretId(req.path().pathParameters().value("id"))
+                    .secretId(req.path().pathParameters().get("id"))
                     .build());
             SecretBundleContentDetails content = id.getSecretBundle().getSecretBundleContent();
             if (content instanceof Base64SecretBundleContentDetails) {
@@ -111,7 +111,7 @@ class VaultService implements HttpService {
                 res.send(Base64Value.createFromEncoded(((Base64SecretBundleContentDetails) content).getContent())
                         .toDecodedString());
             } else {
-                res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("Invalid secret content type");
+                res.status(Status.INTERNAL_SERVER_ERROR_500).send("Invalid secret content type");
             }
         }, res);
 
@@ -121,7 +121,7 @@ class VaultService implements HttpService {
         ociHandler(response -> {
             // has to be for quite a long period of time - did not work with less than 30 days
             Date deleteTime = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
-            String secretOcid = req.path().pathParameters().value("id");
+            String secretOcid = req.path().pathParameters().get("id");
             vaults.scheduleSecretDeletion(ScheduleSecretDeletionRequest.builder()
                     .secretId(secretOcid)
                     .scheduleSecretDeletionDetails(ScheduleSecretDeletionDetails.builder()
@@ -141,7 +141,7 @@ class VaultService implements HttpService {
                     .build();
             CreateSecretResponse vaultsSecret = vaults.createSecret(CreateSecretRequest.builder()
                     .createSecretDetails(CreateSecretDetails.builder()
-                            .secretName(req.path().pathParameters().value("name"))
+                            .secretName(req.path().pathParameters().get("name"))
                             .vaultId(vaultOcid)
                             .compartmentId(compartmentOcid)
                             .keyId(encryptionKeyOcid)
@@ -156,7 +156,7 @@ class VaultService implements HttpService {
 
 
         ociHandler(response -> {
-            String text = req.path().pathParameters().value("text");
+            String text = req.path().pathParameters().get("text");
             String signature = req.content().as(String.class);
             VerifyDataDetails.SigningAlgorithm algorithm = VerifyDataDetails.SigningAlgorithm.Sha224RsaPkcsPss;
             VerifyResponse verifyResponse = crypto.verify(VerifyRequest.builder()
@@ -179,7 +179,7 @@ class VaultService implements HttpService {
                             .keyId(signatureKeyOcid)
                             .signingAlgorithm(SignDataDetails.SigningAlgorithm.Sha224RsaPkcsPss)
                             .message(Base64Value.create(req.path()
-                                    .pathParameters().value("text")).toBase64())
+                                    .pathParameters().get("text")).toBase64())
                             .build())
                     .build());
             response.send(signResponse.getSignedData().getSignature());
@@ -192,7 +192,7 @@ class VaultService implements HttpService {
                     .encryptDataDetails(EncryptDataDetails.builder()
                             .keyId(encryptionKeyOcid)
                             .plaintext(Base64Value.create(req.path()
-                                    .pathParameters().value("text")).toBase64())
+                                    .pathParameters().get("text")).toBase64())
                             .build())
                     .build());
             response.send(encryptResponse.getEncryptedData().getCiphertext());
@@ -205,7 +205,7 @@ class VaultService implements HttpService {
                     .decryptDataDetails(DecryptDataDetails.builder()
                             .keyId(encryptionKeyOcid)
                             .ciphertext(req.path()
-                                    .pathParameters().value("text"))
+                                    .pathParameters().get("text"))
                             .build())
                     .build());
             response.send(Base64Value.createFromEncoded(decryptResponse.getDecryptedData().getPlaintext())
@@ -218,7 +218,7 @@ class VaultService implements HttpService {
             consumer.accept(response);
         } catch (Throwable error) {
             LOGGER.log(Level.WARNING, "OCI Exception", error);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(error.getMessage());
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send(error.getMessage());
         }
     }
 }

@@ -82,7 +82,9 @@
                 <value>jakarta.cdi</value>
                 <value>jakarta.inject</value>
                 <value>jakarta.ws.rs</value>
+                <value>io.helidon</value>
                 <value>io.helidon.microprofile.config</value>
+                <value>io.helidon.microprofile.server</value>
             </list>
         </model>
     </output>

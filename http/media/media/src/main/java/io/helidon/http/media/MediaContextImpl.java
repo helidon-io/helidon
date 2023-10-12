@@ -175,7 +175,7 @@ class MediaContextImpl implements MediaContext {
                 LOGGER.log(System.Logger.Level.WARNING, "There is no media writer configured for " + type);
             }
 
-            throw new IllegalArgumentException("No server response media writer for " + type + " configured");
+            throw new UnsupportedTypeException("No server response media writer for " + type + " configured");
         }
 
         @Override
@@ -188,7 +188,7 @@ class MediaContextImpl implements MediaContext {
                 LOGGER.log(System.Logger.Level.WARNING, "There is no media writer configured for " + type);
             }
 
-            throw new IllegalArgumentException("No client request media writer for " + type + " configured");
+            throw new UnsupportedTypeException("No client request media writer for " + type + " configured");
         }
     }
 
@@ -205,7 +205,7 @@ class MediaContextImpl implements MediaContext {
             if (LOGGED_READERS.computeIfAbsent(type, it -> new AtomicBoolean()).compareAndSet(false, true)) {
                 LOGGER.log(System.Logger.Level.WARNING, "There is no media reader configured for " + type);
             }
-            throw new IllegalArgumentException("No server request media support for " + type + " configured");
+            throw new UnsupportedTypeException("No server request media support for " + type + " configured");
         }
 
         @Override
@@ -216,7 +216,7 @@ class MediaContextImpl implements MediaContext {
             if (LOGGED_READERS.computeIfAbsent(type, it -> new AtomicBoolean()).compareAndSet(false, true)) {
                 LOGGER.log(System.Logger.Level.WARNING, "There is no media reader configured for " + type);
             }
-            throw new IllegalArgumentException("No client response media support for " + type + " configured");
+            throw new UnsupportedTypeException("No client response media support for " + type + " configured");
         }
     }
 
@@ -256,6 +256,24 @@ class MediaContextImpl implements MediaContext {
 
         CloseStreamWriter(EntityWriter delegate) {
             this.delegate = delegate;
+        }
+
+        @Override
+        public boolean supportsInstanceWriter() {
+            return delegate.supportsInstanceWriter();
+        }
+
+        @Override
+        public InstanceWriter instanceWriter(GenericType type, Object object, WritableHeaders requestHeaders) {
+            return delegate.instanceWriter(type, object, requestHeaders);
+        }
+
+        @Override
+        public InstanceWriter instanceWriter(GenericType type,
+                                             Object object,
+                                             Headers requestHeaders,
+                                             WritableHeaders responseHeaders) {
+            return delegate.instanceWriter(type, object, requestHeaders, responseHeaders);
         }
 
         @Override

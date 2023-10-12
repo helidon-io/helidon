@@ -50,7 +50,7 @@ ${jri_dir}/bin/start
 # Module Path
 ${jri_dir}/bin/java \
   --module-path ${jri_dir}/app/helidon-tests-native-image-mp-1.jar:${jri_dir}/app/libs \
-  --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
+  --module helidon.tests.nimage.mp
 
 # Run MP-3 (just start and stop)
 cd ${WS_DIR}/tests/integration/native-image/mp-3

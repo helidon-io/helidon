@@ -41,8 +41,8 @@
         <version.plugin.dependency>3.6.0</version.plugin.dependency>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
-        <version.plugin.helidon>4.0.0-M1</version.plugin.helidon>
-        <version.plugin.helidon-cli>4.0.0-M1</version.plugin.helidon-cli>
+        <version.plugin.helidon>4.0.0-M2</version.plugin.helidon>
+        <version.plugin.helidon-cli>4.0.0-M2</version.plugin.helidon-cli>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
@@ -78,10 +78,16 @@
         <dependency>
             <groupId>io.helidon.webserver.observe</groupId>
             <artifactId>helidon-webserver-observe-metrics</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <artifactId>helidon-metrics-system-meters</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

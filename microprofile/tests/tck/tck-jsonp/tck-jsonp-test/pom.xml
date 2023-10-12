@@ -22,11 +22,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile.tests</groupId>
-        <artifactId>tck-jsonp</artifactId>
+        <groupId>io.helidon.microprofile.tests.tck</groupId>
+        <artifactId>helidon-microprofile-tests-tck-jsonp</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>tck-jsonp-test</artifactId>
+    <artifactId>helidon-microprofile-tests-tck-jsonp-test</artifactId>
     <name>Helidon Microprofile Tests TCK JSONP</name>
 
     <dependencies>
@@ -35,16 +36,16 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!-- Dependencies coming from below maven-antrun-plugin -->
         <dependency>
             <groupId>jakarta.json</groupId>
             <artifactId>jakarta.json-tck-tests</artifactId>
             <version>${version.lib.jakarta.jsonp-api}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -18,22 +18,21 @@
  * The Injection Tools module.
  */
 module io.helidon.inject.tools {
-    requires static io.helidon.config.metadata;
-    requires static jakarta.annotation;
 
-    requires java.compiler;
-    requires jakarta.inject;
+    exports io.helidon.inject.tools.spi;
+    exports io.helidon.inject.tools;
     requires handlebars;
     requires io.github.classgraph;
     requires io.helidon.builder.api;
-    requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.common.processor;
+    requires io.helidon.common;
+    requires jakarta.inject;
+    requires java.compiler;
+    requires static io.helidon.config.metadata;
+    requires static jakarta.annotation;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.inject.runtime;
-
-    exports io.helidon.inject.tools;
-    exports io.helidon.inject.tools.spi;
 
     uses io.helidon.inject.tools.spi.InterceptorCreator;
     uses io.helidon.inject.tools.spi.ApplicationCreator;
@@ -50,4 +49,5 @@ module io.helidon.inject.tools {
             with io.helidon.inject.tools.ExternalModuleCreatorDefault;
     provides io.helidon.inject.tools.spi.InterceptorCreator
             with io.helidon.inject.tools.InterceptorCreatorDefault;
+	
 }

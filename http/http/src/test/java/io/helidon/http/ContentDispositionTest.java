@@ -230,7 +230,7 @@ class ContentDispositionTest {
     @Test
     void testDateQuotes() {
         ZonedDateTime zonedDateTime = ZonedDateTime.now();
-        String date = zonedDateTime.format(Http.DateTime.RFC_1123_DATE_TIME);
+        String date = zonedDateTime.format(DateTime.RFC_1123_DATE_TIME);
         // order is in order of insertion backed by LinkedMap -> we want to preserve this
         String template = "form-data;"
                 + "creation-date=\"" + date + "\";"

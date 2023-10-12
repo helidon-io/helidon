@@ -20,16 +20,17 @@
  * @see io.helidon.common.configurable.Resource
  */
 module io.helidon.common.configurable {
+
+    requires io.helidon.builder.api;
+    requires io.helidon.common.context;
     requires java.management;
+
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common;
-    requires io.helidon.common.context;
-
-    requires static io.helidon.config.metadata;
-    requires io.helidon.builder.api;
 
     exports io.helidon.common.configurable;
     exports io.helidon.common.configurable.spi;
 
     uses io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
+
 }

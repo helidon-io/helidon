@@ -20,8 +20,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -43,6 +45,7 @@ import static io.helidon.builder.processor.Types.PROTOTYPE_BUILDER;
 import static io.helidon.builder.processor.Types.PROTOTYPE_CONFIGURED_BUILDER;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
 import static io.helidon.common.processor.GeneratorTools.capitalize;
+import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.MAP;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
@@ -128,44 +131,6 @@ final class GenerateAbstractBuilder {
         });
     }
 
-    private static void addCustomBuilderMethods(TypeContext typeContext, InnerClass.Builder builder) {
-        for (CustomMethods.CustomMethod customMethod : typeContext.customMethods().builderMethods()) {
-            // builder specific custom methods (not part of interface)
-            CustomMethods.Method generated = customMethod.generatedMethod().method();
-            // public Builder type(Type) with implementation
-            Method.Builder method = Method.builder()
-                    .name(generated.name())
-                    .returnType(TypeName.createFromGenericDeclaration("BUILDER"))
-                    .addLine(customMethod.generatedMethod().callCode() + ";");
-            for (String annotation : customMethod.generatedMethod().annotations()) {
-                method.addAnnotation(Annotation.parse(annotation));
-            }
-            for (CustomMethods.Argument argument : generated.arguments()) {
-                method.addParameter(param -> param.name(argument.name())
-                        .type(argument.typeName()));
-            }
-            if (!generated.javadoc().isEmpty()) {
-                Javadoc javadoc = Javadoc.builder()
-                        .from(Javadoc.parse(generated.javadoc()))
-                        .returnDescription("updated builder instance")
-                        .build();
-                method.javadoc(javadoc);
-            }
-            builder.addMethod(method);
-        }
-    }
-
-    private static void createConstructor(Constructor.Builder constructor, TypeContext typeContext) {
-        constructor.description("Protected to support extensibility.")
-                .accessModifier(AccessModifier.PROTECTED);
-        // overriding defaults
-        for (var prop : typeContext.propertyData().overridingProperties()) {
-            if (prop.configuredOption().hasDefault()) {
-                constructor.addLine(prop.setterName() + "(" + prop.configuredOption().defaultValue() + ");");
-            }
-        }
-    }
-
     static void buildRuntimeObjectMethod(InnerClass.Builder classBuilder, TypeContext typeContext, boolean isBuilder) {
         TypeContext.TypeInformation typeInformation = typeContext.typeInfo();
         boolean hasRuntimeObject = typeInformation.runtimeObject().isPresent();
@@ -207,9 +172,47 @@ final class GenerateAbstractBuilder {
                 .anyMatch(it -> CONFIG_TYPE.equals(it.typeHandler().actualType()));
     }
 
+    private static void addCustomBuilderMethods(TypeContext typeContext, InnerClass.Builder builder) {
+        for (CustomMethods.CustomMethod customMethod : typeContext.customMethods().builderMethods()) {
+            // builder specific custom methods (not part of interface)
+            CustomMethods.Method generated = customMethod.generatedMethod().method();
+            // public Builder type(Type) with implementation
+            Method.Builder method = Method.builder()
+                    .name(generated.name())
+                    .returnType(TypeName.createFromGenericDeclaration("BUILDER"))
+                    .addLine(customMethod.generatedMethod().callCode() + ";");
+            for (String annotation : customMethod.generatedMethod().annotations()) {
+                method.addAnnotation(Annotation.parse(annotation));
+            }
+            for (CustomMethods.Argument argument : generated.arguments()) {
+                method.addParameter(param -> param.name(argument.name())
+                        .type(argument.typeName()));
+            }
+            if (!generated.javadoc().isEmpty()) {
+                Javadoc javadoc = Javadoc.builder()
+                        .from(Javadoc.parse(generated.javadoc()))
+                        .returnDescription("updated builder instance")
+                        .build();
+                method.javadoc(javadoc);
+            }
+            builder.addMethod(method);
+        }
+    }
+
+    private static void createConstructor(Constructor.Builder constructor, TypeContext typeContext) {
+        constructor.description("Protected to support extensibility.")
+                .accessModifier(AccessModifier.PROTECTED);
+        // overriding defaults
+        for (var prop : typeContext.propertyData().overridingProperties()) {
+            if (prop.configuredOption().hasDefault()) {
+                constructor.addLine(prop.setterName() + "(" + prop.configuredOption().defaultValue() + ");");
+            }
+        }
+    }
+
     private static void builderMethods(InnerClass.Builder classBuilder, TypeContext typeContext) {
         List<PrototypeProperty> properties = typeContext.propertyData().properties();
-        TypeContext.ConfiguredData configured = typeContext.configuredData();
+        AnnotationDataConfigured configured = typeContext.configuredData();
 
         if (configured.configured() || hasConfig(properties)) {
             createConfigMethod(classBuilder, typeContext, configured, properties);
@@ -222,7 +225,7 @@ final class GenerateAbstractBuilder {
                 // this is never done here, config must be defined as a standalone method
                 continue;
             }
-            child.setters(classBuilder, returnType, child.configuredOption().description());
+            child.setters(classBuilder, returnType, child.configuredOption().javadoc());
         }
         // then getters
         /*
@@ -251,8 +254,8 @@ final class GenerateAbstractBuilder {
                     .name(getterName)
                     .returnType(child.builderGetterType())
                     .addLine("return " + child.builderGetter() + ";");
-            if (child.configuredOption().description() != null) {
-                method.description(child.configuredOption().description().content())
+            if (child.configuredOption().javadoc() != null) {
+                method.description(child.configuredOption().javadoc().content())
                         .returnType(child.builderGetterType(), "the " + toHumanReadable(child.name()));
             }
             classBuilder.addMethod(method);
@@ -275,7 +278,7 @@ final class GenerateAbstractBuilder {
     }
 
     private static void createConfigMethod(InnerClass.Builder classBuilder, TypeContext typeContext,
-                                           TypeContext.ConfiguredData configured,
+                                           AnnotationDataConfigured configured,
                                            List<PrototypeProperty> properties) {
         /*
         public BUILDER config(Config config) {
@@ -313,7 +316,7 @@ final class GenerateAbstractBuilder {
 
         if (configured.configured()) {
             for (PrototypeProperty child : properties) {
-                if (!child.configuredOption().notConfigured() && !child.configuredOption().provider()) {
+                if (child.configuredOption().configured() && !child.configuredOption().provider()) {
                     child.typeHandler().generateFromConfig(builder,
                                                            child.configuredOption(),
                                                            child.factoryMethods());
@@ -415,13 +418,27 @@ final class GenerateAbstractBuilder {
             classBuilder.addField(builder -> builder.type(CONFIG_TYPE).name("config"));
         }
         for (PrototypeProperty child : typeContext.propertyData().properties()) {
+            if (isBuilder && child.configuredOption().hasAllowedValues()) {
+                String allowedValues = child.configuredOption().allowedValues()
+                        .stream()
+                        .map(AnnotationDataOption.AllowedValue::value)
+                        .map(it -> "\"" + it + "\"")
+                        .collect(Collectors.joining(", "));
+                // private static final Set<String> PROPERTY_ALLOWED_VALUES = Set.of("a", "b", "c");
+                classBuilder.addField(it -> it.isFinal(true)
+                        .isStatic(true)
+                        .name(child.name().toUpperCase(Locale.ROOT) + "_ALLOWED_VALUES")
+                        .type(TypeName.builder(SET).addTypeArgument(STRING_TYPE).build())
+                        .defaultValue(TYPE_TOKEN + Set.class.getName() + TYPE_TOKEN + ".of(" + allowedValues + ")")
+                );
+            }
             if (!isBuilder || !child.typeHandler().actualType().equals(CONFIG_TYPE)) {
                 classBuilder.addField(child.fieldDeclaration(isBuilder));
             }
             if (isBuilder && child.configuredOption().provider()) {
                 classBuilder.addField(builder -> builder.type(boolean.class)
                         .name(child.name() + "DiscoverServices")
-                        .defaultValue(String.valueOf(child.configuredOption().providerOption().defaultDiscoverServices())));
+                        .defaultValue(String.valueOf(child.configuredOption().providerDiscoverServices())));
             }
         }
     }
@@ -447,29 +464,29 @@ final class GenerateAbstractBuilder {
                 preBuildBuilder.addLine("this.config = config == null ? Config.empty() : config;");
             }
             for (PrototypeProperty property : typeContext.propertyData().properties()) {
-                PrototypeProperty.ConfiguredOption configuredOption = property.configuredOption();
+                AnnotationDataOption configuredOption = property.configuredOption();
                 if (configuredOption.provider()) {
-                    PrototypeProperty.ProviderOption providerOption = configuredOption.providerOption();
-                    boolean defaultDiscoverServices = providerOption.defaultDiscoverServices();
+                    boolean defaultDiscoverServices = configuredOption.providerDiscoverServices();
 
                     // using a code block, so we can reuse the same variable names for multiple providers
                     preBuildBuilder.addLine("{");
+                    TypeName providerType = configuredOption.providerType();
                     preBuildBuilder.add("var serviceLoader = ")
                             .typeName("io.helidon.common.HelidonServiceLoader")
                             .add(".create(")
                             .typeName("java.util.ServiceLoader")
                             .add(".load(")
-                            .typeName(providerOption.serviceProviderInterface().fqName())
+                            .typeName(providerType.fqName())
                             .addLine(".class));");
                     if (configured) {
                         TypeName typeName = property.typeHandler().declaredType();
                         if (typeName.isList() || typeName.isSet()) {
                             preBuildBuilder.add("this.add")
                                     .add(capitalize(property.name()))
-                                    .add("(discoverServices(config.get(\"")
+                                    .add("(discoverServices(config, \"")
                                     .add(configuredOption.configKey())
-                                    .add("\"), serviceLoader, ")
-                                    .typeName(providerOption.serviceProviderInterface())
+                                    .add("\", serviceLoader, ")
+                                    .typeName(providerType)
                                     .add(".class, ")
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
@@ -477,10 +494,10 @@ final class GenerateAbstractBuilder {
                                     .add("DiscoverServices")
                                     .addLine("));");
                         } else {
-                            preBuildBuilder.add("discoverService(config.get(\"")
+                            preBuildBuilder.add("discoverService(config, \"")
                                     .add(configuredOption.configKey())
-                                    .add("\"), serviceLoader, ")
-                                    .typeName(providerOption.serviceProviderInterface())
+                                    .add("\", serviceLoader, ")
+                                    .typeName(providerType)
                                     .add(".class, ")
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
@@ -516,7 +533,10 @@ final class GenerateAbstractBuilder {
                 .superPrototype()
                 .ifPresent(it -> validateBuilder.addLine("super.validatePrototype();"));
 
-        if (typeContext.propertyData().hasRequired() || typeContext.propertyData().hasNonNulls()) {
+        TypeContext.PropertyData propertyData = typeContext.propertyData();
+        if (propertyData.hasRequired()
+                || propertyData.hasNonNulls()
+                || propertyData.hasAllowedValues()) {
             requiredValidation(validateBuilder, typeContext);
         }
         classBuilder.addMethod(validateBuilder);
@@ -529,11 +549,13 @@ final class GenerateAbstractBuilder {
                 .addLine(".collector();");
 
         for (PrototypeProperty property : typeContext.propertyData().properties()) {
+            String configKey = property.configuredOption().configKey();
+            String propertyName = property.name();
+
             if (property.configuredOption().validateNotNull() && !property.configuredOption().hasDefault()) {
-                String configKey = property.configuredOption().configKey();
-                validateBuilder.addLine("if (" + property.typeHandler().name() + " == null) {")
+                validateBuilder.addLine("if (" + propertyName + " == null) {")
                         .add("collector.fatal(getClass(), \"Property \\\"")
-                        .add(configKey == null ? property.typeHandler().name() : configKey);
+                        .add(configKey == null ? propertyName : configKey);
 
                 if (property.configuredOption().required()) {
                     validateBuilder.addLine("\\\" is required, but not set\");");
@@ -541,6 +563,35 @@ final class GenerateAbstractBuilder {
                     validateBuilder.addLine("\\\" must not be null, but not set\");");
                 }
                 validateBuilder.addLine("}");
+            }
+            if (property.configuredOption().hasAllowedValues()) {
+                String allowedValuesConstant = propertyName.toUpperCase(Locale.ROOT) + "_ALLOWED_VALUES";
+                TypeName declaredType = property.typeHandler().declaredType();
+
+                if (declaredType.isList() || declaredType.isSet()) {
+                    String single = "single" + capitalize(propertyName);
+                    validateBuilder.addLine("for (var " + single + " : " + propertyName + ") {");
+                    validateBuilder.addLine("if (!" + allowedValuesConstant + ".contains(String.valueOf(" + single + "))) {")
+                            .add("collector.fatal(getClass(), \"Property \\\"")
+                            .add(configKey == null ? propertyName : configKey)
+                            .add("\\\" contains value that is not within allowed values. Configured: \\\"\" + "
+                                         + single + " + \"\\\"")
+                            .addLine(", expected one of: \\\"\" + " + allowedValuesConstant + " + \"\\\"\");");
+                    validateBuilder.addLine("}");
+                    validateBuilder.addLine("}");
+
+                } else {
+                    validateBuilder.add("if (");
+                    if (!declaredType.primitive()) {
+                        validateBuilder.add(propertyName + " != null && ");
+                    }
+                    validateBuilder.addLine("!" + allowedValuesConstant + ".contains(String.valueOf(" + propertyName + "))) {")
+                            .add("collector.fatal(getClass(), \"Property \\\"")
+                            .add(configKey == null ? propertyName : configKey)
+                            .add("\\\" value is not within allowed values. Configured: \\\"\" + " + propertyName + " + \"\\\"")
+                            .addLine(", expected one of: \\\"\" + " + allowedValuesConstant + " + \"\\\"\");");
+                    validateBuilder.addLine("}");
+                }
             }
         }
         validateBuilder.addLine("collector.collect().checkValid();");
@@ -861,7 +912,7 @@ final class GenerateAbstractBuilder {
         char[] nameChars = name.toCharArray();
         for (char nameChar : nameChars) {
             if (Character.isUpperCase(nameChar)) {
-                if (result.length() != 0) {
+                if (!result.isEmpty()) {
                     result.append(' ');
                 }
                 result.append(Character.toLowerCase(nameChar));

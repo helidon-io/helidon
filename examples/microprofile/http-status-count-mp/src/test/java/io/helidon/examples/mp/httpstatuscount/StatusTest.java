@@ -15,9 +15,9 @@
  */
 package io.helidon.examples.mp.httpstatuscount;
 
-import io.helidon.http.Http;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.http.Status;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
@@ -74,7 +74,7 @@ public class StatusTest {
         Response response = webTarget.path("/greet")
                 .request(MediaType.APPLICATION_JSON)
                 .get();
-        assertThat("Status of /greet", response.getStatus(), is(Http.Status.OK_200.code()));
+        assertThat("Status of /greet", response.getStatus(), is(Status.OK_200.code()));
         checkCounters(response.getStatus(), before);
     }
 

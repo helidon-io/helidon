@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 /**
  * Field model representation.
@@ -145,14 +146,15 @@ public final class Field extends AnnotatedComponent {
         }
 
         /**
-         * Set default value this field should be initialized with.
+         * Set default value this field should be initialized with, wrapping the value in double quotes
+         * if the field type is String.
          *
          * @param defaultValue default value
          * @return updated builder instance
          */
         public Builder defaultValue(String defaultValue) {
             if (defaultValue != null
-                    && type().fqTypeName().equals(String.class.getName())
+                    && type().equals(TypeNames.STRING)
                     && !type().isArray()
                     && !defaultValue.startsWith("\"")
                     && !defaultValue.endsWith("\"")) {
@@ -160,6 +162,17 @@ public final class Field extends AnnotatedComponent {
             } else {
                 defaultValueBuilder.content(defaultValue);
             }
+            return this;
+        }
+
+        /**
+         * Configure a default value for this field as a string that will be copied verbatim to the generated sources.
+         *
+         * @param defaultValue default value
+         * @return updated builder instance
+         */
+        public Builder defaultValueContent(String defaultValue) {
+            defaultValueBuilder.content(defaultValue);
             return this;
         }
 

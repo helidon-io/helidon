@@ -20,9 +20,11 @@
  * @see io.helidon.tracing.config.TracingConfig
  */
 module io.helidon.tracing.config {
-    requires transitive io.helidon.common;
+
     requires transitive io.helidon.common.config;
-    requires io.helidon.common.context;
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.common;
 
     exports io.helidon.tracing.config;
+
 }

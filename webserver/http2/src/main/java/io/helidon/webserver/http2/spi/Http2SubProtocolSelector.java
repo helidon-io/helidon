@@ -53,6 +53,7 @@ public interface Http2SubProtocolSelector {
      * @param router             router
      * @return sub-protocol result
      */
+    @SuppressWarnings("checkstyle:ParameterNumber") // all parameters required, no benefit using a record wrapper
     SubProtocolResult subProtocol(ConnectionContext ctx,
                                   HttpPrologue prologue,
                                   Http2Headers headers,

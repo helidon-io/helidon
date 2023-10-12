@@ -19,17 +19,17 @@ package io.helidon.examples.cors;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.http.Headers;
-import io.helidon.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Headers;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.MethodOrderer;
@@ -37,11 +37,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.http.Http.HeaderNames.HOST;
-import static io.helidon.http.Http.HeaderNames.ORIGIN;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.http.HeaderNames.HOST;
+import static io.helidon.http.HeaderNames.ORIGIN;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -62,7 +62,7 @@ public class MainTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        server.routing(routing -> Main.routing(routing, Config.create()));
+        server.routing(routing -> Main.routing(routing));
     }
 
     @Order(1) // Make sure this runs before the greeting message changes so responses are deterministic.

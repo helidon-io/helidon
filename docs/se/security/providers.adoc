@@ -27,6 +27,7 @@ include::{rootdir}/includes/se.adoc[]
 == Contents
 
 - <<Implemented Security Providers, Implemented Security Providers>>
+- <<Maven Coordinates, Maven Coordinates>>
 - <<Reference, Reference>>
 
 == Implemented Security Providers
@@ -55,10 +56,10 @@ The following providers are no longer evolved:
 |<<JWT Provider,JWT Provider>> |Authentication |✅ |JWT tokens passed from frontend
 |===
 
-=== OIDC Provider
+== OIDC Provider
 Open ID Connect security provider.
 
-==== Setup
+=== Maven Coordinates
 [source,xml]
 .Maven dependency
 ----

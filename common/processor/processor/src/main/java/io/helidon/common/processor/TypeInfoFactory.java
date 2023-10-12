@@ -36,6 +36,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -45,6 +46,7 @@ import javax.tools.JavaFileObject;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import com.sun.source.util.TreePath;
@@ -63,17 +65,52 @@ public final class TypeInfoFactory {
     }
 
     /**
+     * Create type information for a type name, reading all child elements.
+     *
+     * @param processingEnv annotation processor processing environment
+     * @param typeName      type name to find
+     * @return type info for the type element
+     * @throws java.lang.IllegalArgumentException when the element cannot be resolved into type info (such as if you ask for
+     *                                            a primitive type)
+     */
+    public static Optional<TypeInfo> create(ProcessingEnvironment processingEnv,
+                                            TypeName typeName) {
+        return create(processingEnv, typeName, ALL_PREDICATE);
+    }
+
+    /**
+     * Create type information for a type name.
+     *
+     * @param processingEnv    annotation processor processing environment
+     * @param typeName         type name to find
+     * @param elementPredicate predicate for child elements
+     * @return type info for the type element, or empty if it cannot be resolved
+     */
+    public static Optional<TypeInfo> create(ProcessingEnvironment processingEnv,
+                                            TypeName typeName,
+                                            Predicate<TypedElementInfo> elementPredicate) throws IllegalArgumentException {
+
+        TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(typeName.fqName());
+        if (typeElement == null) {
+            return Optional.empty();
+        }
+        return TypeFactory.createTypeName(typeElement.asType())
+                .flatMap(it -> create(processingEnv, typeElement, elementPredicate, it));
+    }
+
+
+    /**
      * Create type information from a type element, reading all child elements.
      *
-     * @param env         annotation processor processing environment
+     * @param processingEnv         annotation processor processing environment
      * @param typeElement type element of the type we want to analyze
      * @return type info for the type element
      * @throws java.lang.IllegalArgumentException when the element cannot be resolved into type info (such as if you ask for
      *                                            a primitive type)
      */
-    public static Optional<TypeInfo> create(ProcessingEnvironment env,
+    public static Optional<TypeInfo> create(ProcessingEnvironment processingEnv,
                                             TypeElement typeElement) {
-        return create(env, typeElement, ALL_PREDICATE);
+        return create(processingEnv, typeElement, ALL_PREDICATE);
     }
 
     /**
@@ -126,12 +163,12 @@ public final class TypeInfoFactory {
                     .collect(Collectors.toList());
             AnnotationValue annotationValue = ee.getDefaultValue();
             defaultValue = (annotationValue == null) ? null
-                    : annotationValue.accept(new ToStringAnnotationValueVisitor()
+                    : String.valueOf(annotationValue.accept(new ToAnnotationValueVisitor(elements)
                                                      .mapBooleanToNull(true)
                                                      .mapVoidToNull(true)
                                                      .mapBlankArrayToNull(true)
                                                      .mapEmptyStringToNull(true)
-                                                     .mapToSourceDeclaration(true), null);
+                                                     .mapToSourceDeclaration(true), null));
         } else if (v instanceof VariableElement) {
             VariableElement ve = (VariableElement) v;
             typeMirror = Objects.requireNonNull(ve.asType());
@@ -139,7 +176,14 @@ public final class TypeInfoFactory {
 
         if (typeMirror != null) {
             if (type == null) {
-                type = TypeFactory.createTypeName(typeMirror).orElse(createFromGenericDeclaration(typeMirror.toString()));
+                Element element = env.getTypeUtils().asElement(typeMirror);
+                if (element instanceof TypeElement typeElement) {
+                    type = TypeFactory.createTypeName(typeElement, typeMirror)
+                            .orElse(createFromGenericDeclaration(typeMirror.toString()));
+                } else {
+                    type = TypeFactory.createTypeName(typeMirror)
+                            .orElse(createFromGenericDeclaration(typeMirror.toString()));
+                }
             }
             if (typeMirror instanceof DeclaredType) {
                 List<? extends TypeMirror> args = ((DeclaredType) typeMirror).getTypeArguments();
@@ -258,10 +302,15 @@ public final class TypeInfoFactory {
             });
 
             TypeMirror superTypeMirror = typeElement.getSuperclass();
-            TypeName fqSuperTypeName = TypeFactory.createTypeName(superTypeMirror).orElse(null);
-            if (fqSuperTypeName != null && !fqSuperTypeName.name().equals(Object.class.getName())) {
-                TypeElement superTypeElement = elementUtils.getTypeElement(fqSuperTypeName.name());
-                if (superTypeElement != null) {
+            TypeElement superTypeElement = (TypeElement) processingEnv.getTypeUtils().asElement(superTypeMirror);
+
+            TypeName fqSuperTypeName;
+            if (superTypeElement != null) {
+                fqSuperTypeName = TypeFactory.createTypeName(superTypeElement, superTypeMirror)
+                        .orElse(null);
+
+                if (fqSuperTypeName != null && !TypeNames.OBJECT.equals(fqSuperTypeName)) {
+
                     TypeName genericSuperTypeName = fqSuperTypeName.genericTypeName();
                     Optional<TypeInfo> superTypeInfo =
                             create(processingEnv, superTypeElement, elementPredicate, fqSuperTypeName);
@@ -276,7 +325,10 @@ public final class TypeInfoFactory {
             }
 
             typeElement.getInterfaces().forEach(interfaceTypeMirror -> {
+                TypeElement element = (TypeElement) processingEnv.getTypeUtils().asElement(interfaceTypeMirror);
                 TypeName fqInterfaceTypeName = TypeFactory.createTypeName(interfaceTypeMirror).orElse(null);
+                List<? extends TypeParameterElement> typeParameters = element.getTypeParameters();
+
                 if (fqInterfaceTypeName != null) {
                     TypeName genericInterfaceTypeName = fqInterfaceTypeName.genericTypeName();
                     allInterestingTypeNames.add(genericInterfaceTypeName);
@@ -304,6 +356,10 @@ public final class TypeInfoFactory {
                     }
                 }
             });
+            ModuleElement module = processingEnv.getElementUtils().getModuleOf(typeElement);
+            if (module != null) {
+                builder.module(module.toString());
+            }
 
             return Optional.of(builder.build());
         } catch (Exception e) {

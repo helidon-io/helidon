@@ -24,16 +24,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientProperties;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -42,7 +41,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
-@Disabled("https://github.com/helidon-io/helidon/issues/7094")
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
 @AddConfig(key = "security.providers.1.oidc.oidc-metadata-well-known", value = "false")

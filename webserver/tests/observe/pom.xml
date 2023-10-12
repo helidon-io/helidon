@@ -35,5 +35,7 @@
 
     <modules>
         <module>health</module>
+        <module>observe</module>
+        <module>security</module>
     </modules>
 </project>

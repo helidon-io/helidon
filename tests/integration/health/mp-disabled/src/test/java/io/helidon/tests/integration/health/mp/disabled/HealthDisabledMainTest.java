@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.tests.integration.health.mp.disabled;
 
 import io.helidon.microprofile.server.Server;
 
-import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
@@ -54,7 +54,7 @@ class HealthDisabledMainTest {
                 .get(String.class);
 
         // health should not work
-        assertThrows(NotFoundException.class, () -> baseTarget.path("/health")
+        assertThrows(ServiceUnavailableException.class, () -> baseTarget.path("/health")
                 .request()
                 .get(String.class));
     }

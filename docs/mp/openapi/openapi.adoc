@@ -92,10 +92,10 @@ include::{incdir}/openapi.adoc[tag=api]
 
 == Examples
 
-Helidon MP includes a link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[complete OpenAPI example]
+Helidon MP includes a link:{helidon-github-tree-url}/examples/microprofile/openapi[complete OpenAPI example]
 based on the MP quick-start sample app. The rest of this section shows, step-by-step, how one might change the original QuickStart service to adopt OpenAPI.
 
-=== Helidon MP Basic OpenAPI Example
+=== Helidon MP OpenAPI Example
 
 This example shows a simple greeting application, similar to the one from the
 Helidon MP QuickStart, enhanced with OpenAPI support.
@@ -228,8 +228,8 @@ Having written the filter and model reader classes, identify them by adding conf
 
 [source,properties]
 ----
-mp.openapi.filter=io.helidon.microprofile.examples.openapi.basic.internal.SimpleAPIFilter
-mp.openapi.model.reader=io.helidon.microprofile.examples.openapi.basic.internal.SimpleAPIModelReader
+mp.openapi.filter=io.helidon.microprofile.examples.openapi.internal.SimpleAPIFilter
+mp.openapi.model.reader=io.helidon.microprofile.examples.openapi.internal.SimpleAPIModelReader
 ----
 
 
@@ -238,7 +238,7 @@ Now just build and run:
 [source,bash]
 ----
 mvn package
-java -jar target/helidon-examples-microprofile-openapi-basic.jar
+java -jar target/helidon-examples-microprofile-openapi.jar
 ----
 
 Try the endpoints:
@@ -255,7 +255,7 @@ curl -X GET http://localhost:8080/openapi
 The output describes not only then endpoints from `GreetResource` but
 also one contributed by the `SimpleAPIModelReader`.
 
-Full example is available link:{helidon-github-tree-url}}/examples/microprofile/openapi-basic[in our official repository]
+Full example is available link:{helidon-github-tree-url}}/examples/microprofile/openapi[in our official repository]
 
 
 == Additional Information

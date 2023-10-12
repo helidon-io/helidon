@@ -18,8 +18,8 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Demonstrates multi-level inheritance for the generated builder.
@@ -35,7 +35,7 @@ interface Level1Blueprint extends Level0Blueprint {
      * @return ignored, here for testing purposes only
      */
     @Override
-    @ConfiguredOption("1")
+    @Option.Default("1")
     String getLevel0StringAttribute();
 
     /**
@@ -43,7 +43,7 @@ interface Level1Blueprint extends Level0Blueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption("1")
+    @Option.DefaultInt(1)
     int getLevel1intAttribute();
 
     /**
@@ -51,7 +51,7 @@ interface Level1Blueprint extends Level0Blueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption("1")
+    @Option.DefaultInt(1)
     Integer getLevel1IntegerAttribute();
 
     /**
@@ -59,7 +59,7 @@ interface Level1Blueprint extends Level0Blueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption("true")
+    @Option.DefaultBoolean(true)
     boolean getLevel1booleanAttribute();
 
     /**

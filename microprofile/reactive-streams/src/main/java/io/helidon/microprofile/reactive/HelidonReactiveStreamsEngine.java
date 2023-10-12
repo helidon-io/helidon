@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "checkstyle:MethodLength" }) // lot of instanceof checks required, long method
     static Object build(Iterable<Stage> graph, Mode mode) throws UnsupportedStageException {
         Flow.Subscriber graphInlet = null;
         Multi result = null;

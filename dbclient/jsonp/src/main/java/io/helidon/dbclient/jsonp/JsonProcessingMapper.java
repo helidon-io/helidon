@@ -86,7 +86,7 @@ public final class JsonProcessingMapper implements DbMapper<JsonObject> {
     @Override
     public JsonObject read(DbRow row) {
         JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
-        row.forEach(dbCol -> toJson(objectBuilder, dbCol.name(), dbCol.javaType(), dbCol.value()));
+        row.forEach(dbCol -> toJson(objectBuilder, dbCol.name(), dbCol.javaType(), dbCol.get()));
         return objectBuilder.build();
     }
 

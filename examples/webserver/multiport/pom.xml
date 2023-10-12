@@ -48,13 +48,20 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-health</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-metrics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
-            <scope>runtime</scope>
+            <artifactId>helidon-metrics-system-meters</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>

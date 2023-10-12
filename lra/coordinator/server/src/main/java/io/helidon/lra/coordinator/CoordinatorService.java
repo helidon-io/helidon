@@ -32,7 +32,8 @@ import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.scheduling.FixedRateInvocation;
 import io.helidon.scheduling.Scheduling;
 import io.helidon.scheduling.Task;
@@ -50,11 +51,11 @@ import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
-import static io.helidon.http.Http.Status.CREATED_201;
-import static io.helidon.http.Http.Status.GONE_410;
-import static io.helidon.http.Http.Status.NOT_FOUND_404;
-import static io.helidon.http.Http.Status.OK_200;
-import static io.helidon.http.Http.Status.PRECONDITION_FAILED_412;
+import static io.helidon.http.Status.CREATED_201;
+import static io.helidon.http.Status.GONE_410;
+import static io.helidon.http.Status.NOT_FOUND_404;
+import static io.helidon.http.Status.OK_200;
+import static io.helidon.http.Status.PRECONDITION_FAILED_412;
 
 /**
  * LRA coordinator with Narayana like rest api.
@@ -72,8 +73,8 @@ public class CoordinatorService implements HttpService {
     static final String DEFAULT_COORDINATOR_URL = "http://localhost:8070/lra-coordinator";
 
     private static final System.Logger LOGGER = System.getLogger(CoordinatorService.class.getName());
-    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
-    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
+    private static final HeaderName LRA_HTTP_CONTEXT_HEADER = HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final HeaderName LRA_HTTP_RECOVERY_HEADER = HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
 
     private static final Set<LRAStatus> RECOVERABLE_STATUSES = Set.of(LRAStatus.Cancelling, LRAStatus.Closing, LRAStatus.Active);
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
@@ -187,7 +188,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void close(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
             res.status(NOT_FOUND_404).send();
@@ -209,7 +210,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void cancel(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
             res.status(NOT_FOUND_404).send();
@@ -227,8 +228,8 @@ public class CoordinatorService implements HttpService {
      */
     private void join(ServerRequest req, ServerResponse res) {
 
-        String lraId = req.path().pathParameters().value("LraId");
-        String compensatorLink = req.headers().first(Http.HeaderNames.LINK).orElse("");
+        String lraId = req.path().pathParameters().get("LraId");
+        String compensatorLink = req.headers().first(HeaderNames.LINK).orElse("");
 
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
@@ -243,7 +244,7 @@ public class CoordinatorService implements HttpService {
         String recoveryUrl = coordinatorUriWithPath("/" + lraId + "/recovery").toASCIIString();
 
         res.headers().set(LRA_HTTP_RECOVERY_HEADER, recoveryUrl);
-        res.headers().set(Http.HeaderNames.LOCATION, recoveryUrl);
+        res.headers().set(HeaderNames.LOCATION, recoveryUrl);
         res.status(OK_200)
                 .send(recoveryUrl);
     }
@@ -255,7 +256,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void status(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
             res.status(NOT_FOUND_404).send();
@@ -274,7 +275,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void leave(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         String compensatorLinks = req.content().as(String.class);
 
         Lra lra = lraPersistentRegistry.get(lraId);
@@ -296,7 +297,7 @@ public class CoordinatorService implements HttpService {
         nextRecoveryCycle();
 
         Optional<String> lraUUID = req.query().first("lraId")
-                .or(() -> req.path().pathParameters().first("LraId"))
+                .or(() -> req.path().pathParameters().first("LraId").asOptional())
                 .map(l -> {
                     if (l.lastIndexOf("/") != -1 && l.lastIndexOf("/") + 1 < l.length()) {
                         return l.substring(l.lastIndexOf("/") + 1);
@@ -339,7 +340,7 @@ public class CoordinatorService implements HttpService {
 
     private void get(ServerRequest req, ServerResponse res) {
         Optional<String> lraId = req.path().pathParameters().first("LraId")
-                .or(() -> req.query().first("lraId"));
+                .or(() -> req.query().first("lraId").asOptional());
 
         JsonArray array = lraPersistentRegistry
                 .stream()

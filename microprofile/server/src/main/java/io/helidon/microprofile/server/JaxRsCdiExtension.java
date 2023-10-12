@@ -291,8 +291,8 @@ public class JaxRsCdiExtension implements Extension {
         @Override
         public Response toResponse(Exception exception) {
             serverRequest.context().register("unmappedException", exception);
-            if (exception instanceof WebApplicationException) {
-                return ((WebApplicationException) exception).getResponse();
+            if (exception instanceof WebApplicationException wae) {
+                return wae.getResponse();
             } else {
                 LOGGER.log(Level.WARNING, () -> "Internal server error", exception);
                 return Response.serverError().build();

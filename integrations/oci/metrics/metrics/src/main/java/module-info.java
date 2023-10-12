@@ -17,20 +17,21 @@
 /**
  * Integrating with OCI Metrics.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.oci.metrics {
-    requires java.logging;
 
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
     requires io.helidon.http;
-    requires io.helidon.webserver;
-    requires static io.helidon.config.metadata;
     requires io.helidon.metrics.api;
-
-    requires oci.java.sdk.monitoring;
+    requires java.logging;
     requires oci.java.sdk.common;
 
-    requires transitive microprofile.metrics.api;
+    requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.webserver;
+    requires transitive oci.java.sdk.monitoring;
 
     exports io.helidon.integrations.oci.metrics;
+
  }

@@ -1,6 +1,0 @@
-[
-    [
-        "io.helidon.security.SecurityContext",
-        "org.glassfish.hk2.api.ProxyCtl"
-    ]
-]

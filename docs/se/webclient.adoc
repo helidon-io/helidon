@@ -18,7 +18,7 @@
 
 = WebClient Introduction
 :description: Helidon WebClient
-:keywords: helidon, se, rest, httpclient, webclient, reactive
+:keywords: helidon, se, rest, httpclient, webclient
 :feature-name: WebClient
 :rootdir: {docdir}/..
 
@@ -35,12 +35,9 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-WebClient is an HTTP client of Helidon SE. It handles the responses to the HTTP requests in a reactive way.
+WebClient is an HTTP client of Helidon SE. It handles the responses to the HTTP requests in a programmatic way.
 
 Helidon WebClient provides the following features:
-
-* *Reactive approach* +
-Allows you to execute HTTP requests and handle the responses without having to wait for the server response. When the response is received, the client requests only the amount of data that it can handle at that time. So, there is no overflow of memory.
 
 * *Builder-like setup and execution* +
 Creates every client and request as a builder pattern. This improves readability and code maintenance.
@@ -109,7 +106,9 @@ Single<String> response = client.get()
 
 The class responsible for WebClient configuration is:
 
-include::{rootdir}/config/io_helidon_reactive_webclient_WebClientConfiguration.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_webclient_api_WebClient.adoc[leveloffset=+1,tag=config]
+
+
 
 === Example of a WebClient Runtime Configuration
 
@@ -211,7 +210,7 @@ The request settings are based on the following optional parameters, and change 
 * `contentType` (MediaType contentType)
 * `accept` (MediaType... mediaTypes)
 
-For more details, see the link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/RequestHeaders.html[Request Headers] API.
+For more details, see the link:{webserver-javadoc-base-url}/io/helidon/webserver/RequestHeaders.html[Request Headers] API.
 
 === Adding JSON Processing Media Support to the WebClient
 
@@ -318,4 +317,5 @@ WebClientTls.builder()
 
 == Reference
 
-* link:https://helidon.io/docs/v2/apidocs/io.helidon.reactive.webclient/module-summary.html[Helidon WebClient JavaDoc]
+* link:https://helidon.io/docs/v2/apidocs/io.helidon.webclient/module-summary.html[Helidon WebClient JavaDoc]
+

@@ -1,0 +1,12 @@
+{
+    "annotated":[
+    ],
+    "class-hierarchy": [
+        "java.util.logging.Formatter",
+        "java.util.logging.Handler"
+    ],
+    "classes": [
+    ],
+    "exclude": [
+    ]
+}

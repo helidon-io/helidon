@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webserver.sse.SseSinkProvider;
-import io.helidon.webserver.http.spi.SinkProvider;
 
 /**
  * Helidon WebServer SSE Support.
@@ -28,13 +26,15 @@ import io.helidon.webserver.http.spi.SinkProvider;
          path = {"WebServer", "SSE"}
 )
 module io.helidon.webserver.sse {
+
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.common;
-    requires transitive io.helidon.webserver;
     requires transitive io.helidon.http.sse;
+    requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.sse;
 
-    provides SinkProvider with SseSinkProvider;
+    provides io.helidon.webserver.http.spi.SinkProvider with io.helidon.webserver.sse.SseSinkProvider;
+
 }

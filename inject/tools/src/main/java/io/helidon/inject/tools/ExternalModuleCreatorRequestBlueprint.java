@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.inject.api.Qualifier;
 
@@ -37,7 +38,7 @@ interface ExternalModuleCreatorRequestBlueprint extends GeneralCreatorRequestBlu
      *
      * @return the list of package names to analyze and target for activator creation
      */
-    @Prototype.Singular
+    @Option.Singular
     List<String> packageNamesToScan();
 
     /**
@@ -45,7 +46,7 @@ interface ExternalModuleCreatorRequestBlueprint extends GeneralCreatorRequestBlu
      *
      * @return any qualifiers that should be mapped into the generated services
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<String, Set<Qualifier>> serviceTypeToQualifiersMap();
 
     /**

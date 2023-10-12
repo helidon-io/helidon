@@ -17,15 +17,16 @@ package io.helidon.security.examples.outbound;
 
 import java.net.URI;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.security.EndpointConfig;
+import io.helidon.security.Security;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.security.Security;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -60,8 +61,8 @@ public class OutboundOverrideJwtExampleTest {
     public void testOverrideExample() {
         try (Http1ClientResponse response = client.get()
                 .path("/override")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -75,8 +76,8 @@ public class OutboundOverrideJwtExampleTest {
     public void testPropagateExample() {
         try (Http1ClientResponse response = client.get()
                 .path("/propagate")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
             assertThat(response.status().code(), is(200));

@@ -17,18 +17,18 @@
 package io.helidon.webserver.tests.upgrade;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
-import io.helidon.http.PathMatchers;
 import io.helidon.common.pki.Keys;
+import io.helidon.http.Method;
+import io.helidon.http.PathMatchers;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http1.Http1Route;
+import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.websocket.WsRouting;
 
-import static io.helidon.http.Http.Method.GET;
-import static io.helidon.http.Http.Method.POST;
-import static io.helidon.http.Http.Method.PUT;
+import static io.helidon.http.Method.GET;
+import static io.helidon.http.Method.POST;
+import static io.helidon.http.Method.PUT;
 
 public class Main {
 
@@ -58,10 +58,21 @@ public class Main {
                         .route(Http2Route.route(GET, "/versionspecific", (req, res) -> res.send("HTTP/2.0 route\n")))
                         .route(Http1Route.route(GET, "/versionspecific1", (req, res) -> res.send("HTTP/1.1 route\n")))
                         .route(Http2Route.route(GET, "/versionspecific2", (req, res) -> res.send("HTTP/2.0 route\n")))
-                        .route(Http.Method.predicate(GET, POST, PUT),
-                                PathMatchers.create("/multi*"),
-                                (req, res) -> res.send("HTTP/" + req.prologue().protocolVersion()
-                                                               + " route " + req.prologue().method() + "\n")))
+                        .route(Method.predicate(GET),
+                               PathMatchers.create("/multi*"),
+                               (req, res) -> res.send("HTTP/" + req.prologue().protocolVersion()
+                                                              + " route " + req.prologue().method() + "\n"))
+                        .route(Method.predicate(POST, PUT),
+                               PathMatchers.create("/multi*"),
+                               (req, res) ->
+                               {
+                                   if (req.content().hasEntity()) {
+                                       // Workaround for #7427
+                                       req.content().as(String.class);
+                                   }
+                                   res.send("HTTP/" + req.prologue().protocolVersion()
+                                                    + " route " + req.prologue().method() + "\n");
+                               }))
                 .addRouting(WsRouting.builder()
                                     .endpoint("/ws-echo", new EchoWsListener())
                                     .build())

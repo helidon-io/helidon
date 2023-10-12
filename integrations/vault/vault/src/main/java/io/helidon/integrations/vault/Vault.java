@@ -25,7 +25,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.spi.VaultAuth;
 import io.helidon.webclient.api.WebClientConfig;
@@ -41,7 +41,7 @@ public interface Vault {
     /**
      * HTTP {@code LIST} method used by several Vault engines.
      */
-    Http.Method LIST = Http.Method.create("LIST");
+    Method LIST = Method.create("LIST");
 
     /**
      * Fluent API builder to construct new instances.

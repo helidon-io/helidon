@@ -23,7 +23,11 @@ import java.util.function.Function;
 
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
@@ -97,13 +101,13 @@ public class WebClientTracing implements WebClientService {
 
         try {
             WebClientServiceResponse response = chain.proceed(request);
-            Http.Status status = response.status();
+            Status status = response.status();
             span.tag(Tag.HTTP_STATUS.create(status.code()));
 
-            Http.Status.Family family = status.family();
+            Status.Family family = status.family();
 
             if (status.code() >= 400) {
-                String errorKind = family == Http.Status.Family.CLIENT_ERROR ? "ClientError" : "ServerError";
+                String errorKind = family == Status.Family.CLIENT_ERROR ? "ClientError" : "ServerError";
                 span.addEvent("error", Map.of("message", "Response HTTP status: " + status,
                                               "error.kind", errorKind));
 
@@ -127,7 +131,7 @@ public class WebClientTracing implements WebClientService {
 
         @Override
         public void setIfAbsent(String key, String... values) {
-            Http.HeaderName name = Http.HeaderNames.create(key);
+            HeaderName name = HeaderNames.create(key);
             if (!headers.contains(name)) {
                 headers.set(name, values);
             }
@@ -135,29 +139,29 @@ public class WebClientTracing implements WebClientService {
 
         @Override
         public void set(String key, String... values) {
-            headers.set(Http.Headers.create(key, values));
+            headers.set(HeaderValues.create(key, values));
         }
 
         @Override
         public Iterable<String> keys() {
             return headers.stream()
-                    .map(Http.Header::name)
+                    .map(Header::name)
                     .toList();
         }
 
         @Override
         public Optional<String> get(String key) {
-            return headers.first(Http.HeaderNames.create(key));
+            return headers.first(HeaderNames.create(key));
         }
 
         @Override
         public Iterable<String> getAll(String key) {
-            return headers.all(Http.HeaderNames.create(key), List::of);
+            return headers.all(HeaderNames.create(key), List::of);
         }
 
         @Override
         public boolean contains(String key) {
-            return headers.contains(Http.HeaderNames.create(key));
+            return headers.contains(HeaderNames.create(key));
         }
     }
 }

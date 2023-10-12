@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -97,7 +98,7 @@ interface ModuleInfoDescriptorBlueprint {
      *
      * @return the items
      */
-    @Prototype.Singular
+    @Option.Singular
     List<ModuleInfoItem> items();
 
     /**
@@ -105,7 +106,7 @@ interface ModuleInfoDescriptorBlueprint {
      *
      * @return the list of unhandled lines
      */
-    @Prototype.Singular
+    @Option.Singular
     List<String> unhandledLines();
 
     /**

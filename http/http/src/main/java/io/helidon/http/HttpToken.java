@@ -16,6 +16,10 @@
 
 package io.helidon.http;
 
+import java.nio.charset.StandardCharsets;
+
+import io.helidon.common.buffers.BufferData;
+
 /**
  * HTTP Token utility.
  * Token is defined by the HTTP specification and must not contain a set of characters.
@@ -32,25 +36,46 @@ public final class HttpToken {
      */
     public static void validate(String token) throws IllegalArgumentException {
         char[] chars = token.toCharArray();
-        for (char aChar : chars) {
+        for (int i = 0; i < chars.length; i++) {
+            char aChar = chars[i];
             if (aChar > 254) {
-                throw new IllegalArgumentException("Token contains non-ASCII character");
+                throw new IllegalArgumentException("Token contains non-ASCII character at position "
+                                                           + hex(i)
+                                                           + " \n"
+                                                           + debugToken(token));
             }
             if (Character.isISOControl(aChar)) {
-                throw new IllegalArgumentException("Token contains control character");
+                throw new IllegalArgumentException("Token contains control character at position "
+                                                           + hex(i)
+                                                           + "\n"
+                                                           + debugToken(token));
             }
             if (Character.isWhitespace(aChar)) {
-                throw new IllegalArgumentException("Token contains whitespace character");
+                throw new IllegalArgumentException("Token contains whitespace character at position "
+                                                           + hex(i)
+                                                           + "\n"
+                                                           + debugToken(token));
             }
             switch (aChar) {
             case '(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}' -> {
-                throw new IllegalArgumentException(
-                        "Token contains illegal character: " + aChar);
+                throw new IllegalArgumentException("Token contains illegal character at position "
+                                                           + hex(i)
+                                                           + "\n"
+                                                           + debugToken(token));
             }
             default -> {
                 // this is a valid character
             }
             }
         }
+    }
+
+    private static String hex(int i) {
+        return Integer.toHexString(i);
+    }
+
+    private static String debugToken(String token) {
+        return BufferData.create(token.getBytes(StandardCharsets.US_ASCII))
+                .debugDataHex();
     }
 }

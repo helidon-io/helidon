@@ -15,8 +15,8 @@
  */
 package io.helidon.security.examples.outbound;
 
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.providers.jwt.JwtProvider;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
@@ -47,7 +47,7 @@ final class JwtOverrideService implements HttpService {
                 .orElseThrow(() -> new RuntimeException("WebServer not found in context"));
 
         String result = client.get("http://localhost:" + server.port("backend") + "/hello")
-                .property(JwtProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jill")
                 .requestEntity(String.class);
 
         res.send("You are: " + context.userName() + ", backend service returned: " + result);

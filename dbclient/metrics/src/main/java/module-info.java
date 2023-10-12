@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.dbclient.metrics.DbClientMetricsProvider;
-import io.helidon.dbclient.spi.DbClientServiceProvider;
 
 /**
  * Helidon Database Client Metrics.
@@ -29,12 +27,15 @@ import io.helidon.dbclient.spi.DbClientServiceProvider;
 )
 module io.helidon.dbclient.metrics {
 
-    requires static io.helidon.common.features.api;
-    requires transitive io.helidon.dbclient;
     requires io.helidon.metrics.api;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.dbclient;
 
     exports io.helidon.dbclient.metrics;
 
-    provides DbClientServiceProvider with DbClientMetricsProvider;
+    provides io.helidon.dbclient.spi.DbClientServiceProvider
+            with io.helidon.dbclient.metrics.DbClientMetricsProvider;
 
 }

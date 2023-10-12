@@ -18,7 +18,7 @@ package io.helidon.webserver.tests.imperative;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -45,7 +45,7 @@ public final class ImperativeMain {
     }
 
     static void routing(HttpRouting.Builder routing) {
-        Http.Method list = Http.Method.create("LIST");
+        Method list = Method.create("LIST");
 
         routing.get("/", (req, res) -> res.send("Hello World!"))
                 .route(list, "/", (req, res) -> res.send("lll"))

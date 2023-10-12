@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@
  * Utilities for Jersey handling.
  */
 module io.helidon.jersey.common {
-    requires java.logging;
-    requires jakarta.annotation;
 
     requires io.helidon.common;
-
+    requires jakarta.annotation;
     requires jakarta.ws.rs;
+    requires java.logging;
     requires jersey.common;
     requires jersey.server;
 
     exports io.helidon.jersey.common;
+
 }

@@ -35,7 +35,7 @@ withKpi:
     key-performance-indicators:
       extended: true
       long-running-requests:
-        threshold-ms: 789
+        threshold: PT23S
 
 withRESTSettings:
   metrics:

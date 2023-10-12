@@ -108,7 +108,13 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
      * @return statement
      */
     protected PreparedStatement prepareStatement(String stmtName, String stmt) {
-        return prepareStatement(connectionPool.connection(), stmtName, stmt);
+        Connection connection = connectionPool.connection();
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DbClientException("Failed to set autocommit to true", e);
+        }
+        return prepareStatement(connection, stmtName, stmt);
     }
 
     /**

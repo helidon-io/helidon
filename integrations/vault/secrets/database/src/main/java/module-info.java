@@ -26,12 +26,12 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"HCP Vault", "Secrets", "Database"}
 )
 module io.helidon.integrations.vault.secrets.database {
-    requires static io.helidon.common.features.api;
 
     requires java.logging;
 
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.integrations.common.rest;
 
     exports io.helidon.integrations.vault.secrets.database;
 
@@ -40,4 +40,5 @@ module io.helidon.integrations.vault.secrets.database {
 
     provides io.helidon.integrations.vault.spi.InjectionProvider
             with io.helidon.integrations.vault.secrets.database.DbEngineProvider;
+
 }

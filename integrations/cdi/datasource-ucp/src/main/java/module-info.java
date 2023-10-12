@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,19 +23,22 @@
  * @see
  * io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension
  */
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.datasource.ucp.cdi {
-    requires transitive java.sql;
+
+    requires com.oracle.database.ucp;
     requires java.desktop; // For java.beans
     requires java.naming; // PoolDataSourceImpl implements javax.naming.Referenceable
-    requires transitive jakarta.inject;
-    requires transitive jakarta.cdi;
     requires microprofile.config.api;
-    requires com.oracle.database.ucp;
+
     requires transitive io.helidon.integrations.datasource.cdi;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.inject;
+    requires transitive java.sql;
 
     exports io.helidon.integrations.datasource.ucp.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension;
+
 }

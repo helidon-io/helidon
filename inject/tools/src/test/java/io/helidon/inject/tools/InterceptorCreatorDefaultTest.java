@@ -19,7 +19,6 @@ package io.helidon.inject.tools;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.types.Annotation;
@@ -49,13 +48,13 @@ class InterceptorCreatorDefaultTest extends AbstractBaseCreator {
         assertThat(interceptorCreator.getClass(), equalTo(InterceptorCreatorDefault.class));
         assertThat(interceptorCreator.strategy(), is(InterceptorCreator.Strategy.BLENDED));
         assertThat(interceptorCreator.allowListedAnnotationTypes().size(), is(0));
-        assertThat(interceptorCreator.isAllowListed(Named.class.getName()), is(false));
+        assertThat(interceptorCreator.isAllowListed(TypeName.create(Named.class)), is(false));
     }
 
     @Test
     void resolverByReflection() {
         InterceptorCreatorDefault.AnnotationTypeNameResolver resolver = InterceptorCreatorDefault.createResolverFromReflection();
-        assertThat(resolver.resolve(InterceptedTrigger.class.getName()),
+        assertThat(resolver.resolve(TypeName.create(InterceptedTrigger.class)),
                    containsInAnyOrder(
                            Annotation.create(Documented.class),
                            Annotation.create(Retention.class, "java.lang.annotation.RetentionPolicy.CLASS"),
@@ -69,10 +68,10 @@ class InterceptorCreatorDefaultTest extends AbstractBaseCreator {
                 .serviceTypeName(HelloInjectionWorldImpl.class)
                 .build();
         InterceptorCreatorDefault.AbstractInterceptorProcessor processor =
-                ((InterceptorCreatorDefault) interceptorCreator).createInterceptorProcessor(serviceInfoBasics,
-                                                                                            interceptorCreator,
-                                                                                            Optional.empty());
-        InterceptionPlan plan = processor.createInterceptorPlan(Set.of(Singleton.class.getName())).orElseThrow();
+                (InterceptorCreatorDefault.AbstractInterceptorProcessor)
+                interceptorCreator.createInterceptorProcessor(serviceInfoBasics, interceptorCreator);
+        InterceptionPlan plan = processor.createInterceptorPlan(Set.of(TypeName.create(Singleton.class.getName())))
+                .orElseThrow();
         assertThat(plan.hasNoArgConstructor(),
                    is(false));
         assertThat(plan.interfaces(),

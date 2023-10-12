@@ -18,6 +18,7 @@ package io.helidon.inject.runtime;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.inject.spi.InjectionPlan;
 
@@ -35,7 +36,7 @@ interface HelidonInjectionPlanBlueprint extends InjectionPlan {
      *
      * @return the unqualified services/providers for this injection point
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Object> unqualifiedProviders();
 
 }

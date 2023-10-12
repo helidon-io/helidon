@@ -16,9 +16,14 @@
 
 package io.helidon.security.providers.oidc.common;
 
-import io.helidon.http.Http;
+import java.net.URI;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
@@ -43,11 +48,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-
-import java.net.URI;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Map;
 
 /**
  * Unit test for {@link OidcConfig}.
@@ -136,11 +136,11 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                                 String reqUri = req.requestedUri().toUri().toASCIIString();
                                 if (!relativeUris[0] && !reqUri.startsWith("http://localhost")) {
                                     // Simulate a failed Identity response if relativeURIs=false but the request URI is relative
-                                    res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                                    res.status(Status.INTERNAL_SERVER_ERROR_500);
                                     res.send("URI must be absolute");
                                 } else if (relativeUris[0] && reqUri.startsWith("http://localhost")) {
                                     // Simulate a failed Identity response if relativeURIs=true but the request URI is absolute
-                                    res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                                    res.status(Status.INTERNAL_SERVER_ERROR_500);
                                     res.send("URI must be relative");
                                 } else {
                                     // Simulate a successful Identity response
@@ -191,6 +191,29 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
             // reset the value
             cookieEncryptionPasswordValue[0] = null;
         }
+    }
+
+    @Test
+    void testOptionalAudience() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("http://localhost/identity"))
+                .clientSecret("top-secret")
+                .clientId("client-id")
+                .optionalAudience(true)
+                .build();
+        String audience = config.audience();
+        assertThat(audience, nullValue());
+    }
+
+    @Test
+    void testCheckAudience() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("http://localhost/identity"))
+                .clientSecret("top-secret")
+                .clientId("client-id")
+                .checkAudience(false)
+                .build();
+        assertThat(config.checkAudience(), is(false));
     }
 
     // Stub the Builder class to be able to retrieve the cookie-encryption-password value

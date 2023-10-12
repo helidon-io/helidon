@@ -17,25 +17,35 @@
 package io.helidon.webserver.observe.config;
 
 import io.helidon.common.config.Config;
-import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.ObserveProvider;
+import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for config observe provider.
+ *
+ * @deprecated only for {@link java.util.ServiceLoader}
  */
+@Deprecated
 public class ConfigObserveProvider implements ObserveProvider {
+    /**
+     * Required for {@link java.util.ServiceLoader}.
+     *
+     * @deprecated only for {@link java.util.ServiceLoader}
+     */
+    @Deprecated
+    public ConfigObserveProvider() {
+    }
+
     @Override
     public String configKey() {
         return "config";
     }
 
     @Override
-    public String defaultEndpoint() {
-        return "config";
-    }
-
-    @Override
-    public void register(Config config, String componentPath, HttpRouting.Builder routing) {
-        routing.register(componentPath, ConfigService.create(config));
+    public Observer create(Config config, String name) {
+        return ConfigObserver.builder()
+                .config(config)
+                .name(name)
+                .build();
     }
 }

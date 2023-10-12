@@ -18,10 +18,12 @@
  * Helidon copyright implementation.
  */
 module io.helidon.common.processor.helidon.copyright {
+
     requires io.helidon.common.processor;
 
     exports io.helidon.common.processor.helidon.copyright;
 
     provides io.helidon.common.processor.spi.CopyrightProvider
              with io.helidon.common.processor.helidon.copyright.HelidonCopyrightProvider;
+	
 }

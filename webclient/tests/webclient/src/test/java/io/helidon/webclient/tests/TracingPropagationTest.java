@@ -17,22 +17,26 @@
 package io.helidon.webclient.tests;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Context;
-import io.helidon.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.jsonp.JsonpSupport;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.providers.opentracing.OpenTracing;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.tracing.WebClientTracing;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.tracing.Tracer;
-import io.helidon.tracing.providers.opentracing.OpenTracing;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
@@ -45,6 +49,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -52,12 +57,16 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @ServerTest
 class TracingPropagationTest {
+    private static final Duration TIMEOUT = Duration.ofSeconds(15);
+    private static final AtomicReference<CountDownLatch> SPAN_COUNT_LATCH = new AtomicReference<>();
+    // 2+1 after re-introduction of content-write span
+    private static final int EXPECTED_NUMBER_OF_SPANS = 3;
     private static MockTracer tracer;
     private final Http1Client client;
     private final URI uri;
 
     TracingPropagationTest(URI uri) {
-        Tracer tracer = OpenTracing.create(this.tracer);
+        Tracer tracer = OpenTracing.create(TracingPropagationTest.tracer);
         this.uri = uri.resolve("/greet");
         this.client = Http1Client.builder()
                 .baseUri(this.uri)
@@ -72,14 +81,20 @@ class TracingPropagationTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        tracer = new MockTracer();
+        tracer = new MockTracer() {
+            @Override
+            protected void onSpanFinished(MockSpan mockSpan) {
+                SPAN_COUNT_LATCH.get().countDown();
+            }
+        };
         Config config = Config.create();
         server.config(config);
         server.routing(routing -> Main.routing(routing, config, tracer));
     }
 
     @Test
-    void testTracingSuccess() {
+    void testTracingSuccess() throws InterruptedException {
+        SPAN_COUNT_LATCH.set(new CountDownLatch(EXPECTED_NUMBER_OF_SPANS));
         Context context = Context.builder().id("tracing-unit-test").build();
         context.register(tracer);
 
@@ -87,15 +102,17 @@ class TracingPropagationTest {
                 .queryParam("some", "value")
                 .fragment("fragment")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.entity().as(JsonObject.class), notNullValue());
         }
+
+        assertTrue(SPAN_COUNT_LATCH.get().await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                   "Expected number of spans wasn't reported in time!");
 
         List<MockSpan> mockSpans = tracer.finishedSpans();
 
         // the server traces asynchronously, some spans may be written after we receive the response.
-        // we need to try to wait for such spans
-        assertThat("There should be 2 spans reported", tracer.finishedSpans(), hasSize(2));
+        assertThat("There should be 3 spans reported", tracer.finishedSpans(), hasSize(EXPECTED_NUMBER_OF_SPANS));
 
         // we need the first span - parentId 0
         MockSpan clientSpan = findSpanWithParentId(mockSpans, 0);

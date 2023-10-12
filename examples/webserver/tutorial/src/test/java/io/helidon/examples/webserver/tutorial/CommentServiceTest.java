@@ -16,13 +16,13 @@
 
 package io.helidon.examples.webserver.tutorial;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -67,18 +67,18 @@ class CommentServiceTest {
     @Test
     void testRouting() {
         try (Http1ClientResponse response = client.get("/article/one").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
 
         // Add first comment
         try (Http1ClientResponse response = client.post("/article/one")
                                                   .contentType(MediaTypes.TEXT_PLAIN)
                                                   .submit("aaa")) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
 
         try (Http1ClientResponse response = client.get("/article/one").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.entity().as(String.class), is("anonymous: aaa"));
         }
 
@@ -87,11 +87,11 @@ class CommentServiceTest {
         try (Http1ClientResponse response = client.post("/article/one")
                                                   .contentType(MediaTypes.TEXT_PLAIN)
                                                   .submit("bbb")) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
 
         try (Http1ClientResponse response = client.get("/article/one").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.entity().as(String.class), is("anonymous: aaa\nanonymous: bbb"));
         }
     }

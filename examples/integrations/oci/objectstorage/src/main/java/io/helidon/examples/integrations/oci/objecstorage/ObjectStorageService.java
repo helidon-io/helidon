@@ -26,7 +26,8 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -90,7 +91,7 @@ public class ObjectStorageService implements HttpService {
      * @param response response
      */
     public void download(ServerRequest request, ServerResponse response) {
-        String fileName = request.path().pathParameters().value("file-name");
+        String fileName = request.path().pathParameters().get("file-name");
         GetObjectResponse getObjectResponse =
                 objectStorageClient.getObject(
                         GetObjectRequest.builder()
@@ -101,22 +102,22 @@ public class ObjectStorageService implements HttpService {
 
         if (getObjectResponse.getContentLength() == 0) {
             LOGGER.log(Level.SEVERE, "GetObjectResponse is empty");
-            response.status(Http.Status.NOT_FOUND_404).send();
+            response.status(Status.NOT_FOUND_404).send();
             return;
         }
 
         try (InputStream fileStream = getObjectResponse.getInputStream()) {
             byte[] objectContent = fileStream.readAllBytes();
             response
-                    .status(Http.Status.OK_200)
-                    .header(Http.HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
+                    .status(Status.OK_200)
+                    .header(HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
                     .header("opc-request-id", getObjectResponse.getOpcRequestId())
-                    .header(Http.HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength().toString());
+                    .header(HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength().toString());
 
             response.send(objectContent);
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error processing GetObjectResponse", e);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
         }
     }
 
@@ -127,7 +128,7 @@ public class ObjectStorageService implements HttpService {
      * @param response response
      */
     public void upload(ServerRequest request, ServerResponse response) {
-        String fileName = request.path().pathParameters().value("fileName");
+        String fileName = request.path().pathParameters().get("fileName");
         PutObjectRequest putObjectRequest;
         try (InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + fileName)) {
             byte[] contents = stream.readAllBytes();
@@ -141,12 +142,12 @@ public class ObjectStorageService implements HttpService {
                             .build();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error creating PutObjectRequest", e);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
         PutObjectResponse putObjectResponse = objectStorageClient.putObject(putObjectRequest);
 
-        response.status(Http.Status.OK_200).header("opc-request-id", putObjectResponse.getOpcRequestId());
+        response.status(Status.OK_200).header("opc-request-id", putObjectResponse.getOpcRequestId());
 
         response.send();
     }
@@ -158,13 +159,13 @@ public class ObjectStorageService implements HttpService {
      * @param response response
      */
     public void delete(ServerRequest request, ServerResponse response) {
-        String fileName = request.path().pathParameters().value("file-name");
+        String fileName = request.path().pathParameters().get("file-name");
         DeleteObjectResponse deleteObjectResponse = objectStorageClient.deleteObject(DeleteObjectRequest.builder()
                 .namespaceName(namespaceName)
                 .bucketName(bucketName)
                 .objectName(fileName)
                 .build());
-        response.status(Http.Status.OK_200).header("opc-request-id", deleteObjectResponse.getOpcRequestId());
+        response.status(Status.OK_200).header("opc-request-id", deleteObjectResponse.getOpcRequestId());
 
         response.send();
     }

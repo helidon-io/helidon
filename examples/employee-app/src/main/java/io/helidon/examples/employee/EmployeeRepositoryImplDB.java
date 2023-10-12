@@ -154,14 +154,14 @@ final class EmployeeRepositoryImplDB implements EmployeeRepository {
         static Employee read(DbRow row) {
             // map named columns to an object
             return Employee.of(
-                    row.column("ID").as(String.class),
-                    row.column("FIRSTNAME").as(String.class),
-                    row.column("LASTNAME").as(String.class),
-                    row.column("EMAIL").as(String.class),
-                    row.column("PHONE").as(String.class),
-                    row.column("BIRTHDATE").as(String.class),
-                    row.column("TITLE").as(String.class),
-                    row.column("DEPARTMENT").as(String.class)
+                    row.column("ID").get(String.class),
+                    row.column("FIRSTNAME").get(String.class),
+                    row.column("LASTNAME").get(String.class),
+                    row.column("EMAIL").get(String.class),
+                    row.column("PHONE").get(String.class),
+                    row.column("BIRTHDATE").get(String.class),
+                    row.column("TITLE").get(String.class),
+                    row.column("DEPARTMENT").get(String.class)
             );
         }
     }

@@ -25,10 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Value;
 
 /**
  * A generic representation of the {@code Content-Disposition} header.
@@ -47,14 +51,13 @@ import io.helidon.common.mapper.MapperManager;
  * </li>
  * </ul>
  */
-public class ContentDisposition implements Http.Header {
+public class ContentDisposition implements Header {
     private static final String NAME_PARAMETER = "name";
     private static final String FILENAME_PARAMETER = "filename";
     private static final String CREATION_DATE_PARAMETER = "creation-date";
     private static final String MODIFICATION_DATE_PARAMETER = "modification-date";
     private static final String READ_DATE_PARAMETER = "read-date";
     private static final String SIZE_PARAMETER = "size";
-    private static final MapperManager MAPPER_MANAGER = MapperManager.create();
     private static final ContentDisposition EMPTY = ContentDisposition.builder()
             .type("")
             .build();
@@ -126,16 +129,16 @@ public class ContentDisposition implements Http.Header {
 
     @Override
     public String name() {
-        return Http.HeaderNames.CONTENT_DISPOSITION.defaultCase();
+        return HeaderNames.CONTENT_DISPOSITION.defaultCase();
     }
 
     @Override
-    public Http.HeaderName headerName() {
-        return Http.HeaderNames.CONTENT_DISPOSITION;
+    public HeaderName headerName() {
+        return HeaderNames.CONTENT_DISPOSITION;
     }
 
     @Override
-    public String value() {
+    public String get() {
         if (value == null) {
             StringBuilder sb = new StringBuilder();
             sb.append(type);
@@ -157,13 +160,53 @@ public class ContentDisposition implements Http.Header {
     }
 
     @Override
-    public <T> T value(Class<T> type) {
-        return MAPPER_MANAGER.map(value(), String.class, type, "http-header");
+    public <N> Value<N> as(Class<N> type) throws MapperException {
+        return asString().as(type);
+    }
+
+    @Override
+    public <N> Value<N> as(GenericType<N> type) throws MapperException {
+        return asString().as(type);
+    }
+
+    @Override
+    public <N> Value<N> as(Function<? super String, ? extends N> mapper) {
+        return asString().as(mapper);
+    }
+
+    @Override
+    public Optional<String> asOptional() throws MapperException {
+        return asString().asOptional();
+    }
+
+    @Override
+    public Value<Boolean> asBoolean() {
+        return asString().asBoolean();
+    }
+
+    @Override
+    public Value<String> asString() {
+        return Value.create(MapperManager.global(), name(), get(), GenericType.STRING, "http", "header");
+    }
+
+    @Override
+    public Value<Integer> asInt() {
+        return asString().asInt();
+    }
+
+    @Override
+    public Value<Long> asLong() {
+        return asString().asLong();
+    }
+
+    @Override
+    public Value<Double> asDouble() {
+        return asString().asDouble();
     }
 
     @Override
     public List<String> allValues() {
-        return List.of(value());
+        return List.of(get());
     }
 
     @Override
@@ -183,7 +226,7 @@ public class ContentDisposition implements Http.Header {
 
     @Override
     public String toString() {
-        return value();
+        return get();
     }
 
     /**
@@ -220,7 +263,7 @@ public class ContentDisposition implements Http.Header {
      * @return {@code Optional<ZonedDateTime>}, never {@code null}
      */
     public Optional<ZonedDateTime> creationDate() {
-        return Optional.ofNullable(parameters.get(CREATION_DATE_PARAMETER)).map(Http.DateTime::parse);
+        return Optional.ofNullable(parameters.get(CREATION_DATE_PARAMETER)).map(DateTime::parse);
     }
 
     /**
@@ -230,7 +273,7 @@ public class ContentDisposition implements Http.Header {
      * @return {@code Optional<ZonedDateTime>}, never {@code null}
      */
     public Optional<ZonedDateTime> modificationDate() {
-        return Optional.ofNullable(parameters.get(MODIFICATION_DATE_PARAMETER)).map(Http.DateTime::parse);
+        return Optional.ofNullable(parameters.get(MODIFICATION_DATE_PARAMETER)).map(DateTime::parse);
     }
 
     /**
@@ -240,7 +283,7 @@ public class ContentDisposition implements Http.Header {
      * @return {@code Optional<ZonedDateTime>}, never {@code null}
      */
     public Optional<ZonedDateTime> readDate() {
-        return Optional.ofNullable(parameters.get(READ_DATE_PARAMETER)).map(Http.DateTime::parse);
+        return Optional.ofNullable(parameters.get(READ_DATE_PARAMETER)).map(DateTime::parse);
     }
 
     /**
@@ -337,7 +380,7 @@ public class ContentDisposition implements Http.Header {
          * @return this builder
          */
         public Builder creationDate(ZonedDateTime date) {
-            parameters.put(CREATION_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            parameters.put(CREATION_DATE_PARAMETER, date.format(DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 
@@ -348,7 +391,7 @@ public class ContentDisposition implements Http.Header {
          * @return this builder
          */
         public Builder modificationDate(ZonedDateTime date) {
-            parameters.put(MODIFICATION_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            parameters.put(MODIFICATION_DATE_PARAMETER, date.format(DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 
@@ -359,7 +402,7 @@ public class ContentDisposition implements Http.Header {
          * @return this builder
          */
         public Builder readDate(ZonedDateTime date) {
-            parameters.put(READ_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            parameters.put(READ_DATE_PARAMETER, date.format(DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 

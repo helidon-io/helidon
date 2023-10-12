@@ -36,10 +36,10 @@
                         description="Declarative, MicroProfile compliant">
                     <exec src="mp/mp.xml"/>
                 </option>
-                <option value="nima"
-                        name="Helidon Níma"
+                <option value="se"
+                        name="Helidon SE"
                         description="WebSever based on Virtual Threads">
-                    <exec src="nima/nima.xml"/>
+                    <exec src="se/se.xml"/>
                 </option>
             </enum>
         </inputs>

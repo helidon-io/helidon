@@ -19,7 +19,7 @@ package io.helidon.examples.integrations.micrometer.se;
 import java.util.Collections;
 
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRequest;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -64,7 +64,8 @@ public class GreetService implements HttpService {
 
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
 
-    GreetService(Config config, Timer getTimer, Counter personalizedGetCounter) {
+    GreetService(Timer getTimer, Counter personalizedGetCounter) {
+        Config config = Config.global();
         this.greeting = config.get("app.greeting").asString().orElse("Ciao");
         this.getTimer = getTimer;
         this.personalizedGetCounter = personalizedGetCounter;
@@ -120,13 +121,13 @@ public class GreetService implements HttpService {
             JsonObject jsonErrorObject = JSON_BF.createObjectBuilder()
                     .add("error", "No greeting provided")
                     .build();
-            response.status(Http.Status.BAD_REQUEST_400)
+            response.status(Status.BAD_REQUEST_400)
                     .send(jsonErrorObject);
             return;
         }
 
         greeting = GreetingMessage.fromRest(jo).getMessage();
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.status(Status.NO_CONTENT_204).send();
     }
 
     /**

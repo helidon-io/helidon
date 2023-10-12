@@ -15,12 +15,12 @@
  */
 package io.helidon.tests.integration.bean.validation;
 
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-import org.junit.jupiter.api.Test;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

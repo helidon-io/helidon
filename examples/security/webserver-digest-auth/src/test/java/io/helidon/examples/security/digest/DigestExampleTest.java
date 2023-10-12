@@ -19,7 +19,7 @@ package io.helidon.examples.security.digest;
 import java.net.URI;
 import java.util.Set;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 
@@ -127,7 +127,7 @@ public abstract class DigestExampleTest {
         //Must NOT be accessible without authentication
         try (Http1ClientResponse response = client.get().path(uri).request()) {
             assertThat(response.status().code(), is(401));
-            String header = response.headers().first(Http.HeaderNames.create("WWW-Authenticate")).orElse(null);
+            String header = response.headers().first(HeaderNames.create("WWW-Authenticate")).orElse(null);
             assertThat(header, notNullValue());
             assertThat(header.toLowerCase(), containsString("digest"));
             assertThat(header, containsString("mic"));

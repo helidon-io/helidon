@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Flag;
@@ -49,8 +49,8 @@ import static java.lang.System.Logger.Level.ERROR;
 
 class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(GrpcProtocolHandler.class.getName());
-    private static final Header GRPC_CONTENT_TYPE = Http.Headers.createCached(HeaderNames.CONTENT_TYPE, "application/grpc");
-    private static final Header GRPC_ENCODING_IDENTITY = Http.Headers.createCached("grpc-encoding", "identity");
+    private static final Header GRPC_CONTENT_TYPE = HeaderValues.createCached(HeaderNames.CONTENT_TYPE, "application/grpc");
+    private static final Header GRPC_ENCODING_IDENTITY = HeaderValues.createCached("grpc-encoding", "identity");
 
     private final HttpPrologue prologue;
     private final Http2Headers headers;
@@ -166,7 +166,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 writable.set(GRPC_ENCODING_IDENTITY);
 
                 Http2Headers http2Headers = Http2Headers.create(writable);
-                http2Headers.status(Http.Status.OK_200);
+                http2Headers.status(io.helidon.http.Status.OK_200);
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
@@ -203,13 +203,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
                 // write the expected gRPC headers for content type and status
                 writable.set(GRPC_CONTENT_TYPE);
-                writable.set(Http.Headers.create(GrpcStatus.STATUS_NAME, status.getCode().value()));
+                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, status.getCode().value()));
                 String description = status.getDescription();
                 if (description != null) {
-                    writable.set(Http.Headers.create(GrpcStatus.MESSAGE_NAME, description));
+                    writable.set(HeaderValues.create(GrpcStatus.MESSAGE_NAME, description));
                 }
 
-                Http2Headers http2Headers = Http2Headers.create(writable).status(Http.Status.OK_200);
+                Http2Headers http2Headers = Http2Headers.create(writable).status(io.helidon.http.Status.OK_200);
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),

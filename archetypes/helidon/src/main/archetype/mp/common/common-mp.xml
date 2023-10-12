@@ -25,6 +25,7 @@
     <source src="/common/sources.xml"/>
     <output>
         <model>
+            <value key="mainClass">${package}.Main</value>
             <value key="parent-artifactId">helidon-mp</value>
             <list key="dependencies">
                 <map>
@@ -42,8 +43,8 @@
                     <value key="scope">test</value>
                 </map>
                 <map order="0">
-                    <value key="groupId">io.helidon.microprofile.tests</value>
-                    <value key="artifactId">helidon-microprofile-tests-junit5</value>
+                    <value key="groupId">io.helidon.microprofile.testing</value>
+                    <value key="artifactId">helidon-microprofile-testing-junit5</value>
                     <value key="scope">test</value>
                 </map>
                 <map order="0">
@@ -69,7 +70,7 @@
                 <value>jakarta.ws.rs.core.Response</value>
             </list>
             <list key="MainTest-helidon-imports">
-                <value>io.helidon.microprofile.tests.junit5.HelidonTest</value>
+                <value>io.helidon.microprofile.testing.junit5.HelidonTest</value>
             </list>
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.AfterAll</value>
@@ -79,6 +80,33 @@
             <list key="MainTest-static-imports">
                 <value>static org.hamcrest.MatcherAssert.assertThat</value>
                 <value>static org.hamcrest.Matchers.is</value>
+            </list>
+            <value key="main-class-javadoc"><![CDATA[
+/**
+ * Main entry point of the application.
+ * <p>
+ * Note that this class is required when using modules as the module main class must be in a package that is either exported
+ * or opened by the module, see {@link java.lang.module.ModuleDescriptor#read(java.io.InputStream, java.util.function.Supplier)}.
+ * <p>
+ * This class provides a proper module main class and calls the {@link io.helidon.Main#main(String[]) built-in main class}.
+ */]]></value>
+            <value key="main-method-javadoc"><![CDATA[
+    /**
+     * Main method. Starts CDI (and the application).
+     *
+     * @param args ignored
+     */]]></value>
+            <list key="main-class-fields">
+                <value><![CDATA[
+    /**
+    * Cannot be instantiated.
+    */
+    private Main() {
+    }
+]]></value>
+            </list>
+            <list key="main-method-content">
+                <value><![CDATA[        io.helidon.Main.main(args);]]></value>
             </list>
         </model>
     </output>

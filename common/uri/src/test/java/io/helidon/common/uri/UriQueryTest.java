@@ -41,7 +41,7 @@ class UriQueryTest {
     @Test
     void testEncoded() throws UnsupportedEncodingException {
         UriQuery uriQuery = UriQuery.create("a=" + URLEncoder.encode("1&b=2", US_ASCII));
-        assertThat(uriQuery.value("a"), is("1&b=2"));
+        assertThat(uriQuery.get("a"), is("1&b=2"));
     }
 
     @Test
@@ -52,8 +52,8 @@ class UriQueryTest {
                    is("a=b%26c=d&e=f&e=g&h=x%63%23e%3c"));
 
         assertThat(uriQuery.all("e"), hasItems("f", "g"));
-        assertThat(uriQuery.value("h"), is("xc#e<"));
-        assertThat(uriQuery.value("a"), is("b&c=d"));
+        assertThat(uriQuery.get("h"), is("xc#e<"));
+        assertThat(uriQuery.get("a"), is("b&c=d"));
     }
     
     @Test

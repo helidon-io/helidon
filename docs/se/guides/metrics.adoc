@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 = Helidon SE Metrics Guide
 :description: Helidon metrics
-:keywords: helidon, metrics, microprofile, guide
+:keywords: helidon, metrics, guide
 :intro-project-name: {h1-prefix}
 :rootdir: {docdir}/../..
 
@@ -225,10 +225,10 @@ will demonstrate how to use a `Counter` to track the number of times the `/cards
 package io.helidon.examples.quickstart.se;
 
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.webserver.HttpRules;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 import java.util.Collections;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -236,7 +236,7 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;  // <1>
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
-public class GreetingCards implements Service {
+public class GreetingCards implements HttpService {
 
   private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
   private final Counter cardCounter;   // <2>
@@ -248,7 +248,7 @@ public class GreetingCards implements Service {
   }
 
   @Override
-  public void update(Routing.Rules rules) {
+  public void routing(HttpRules rules) {
     rules.get("/", this::getDefaultMessageHandler);
   }
 
@@ -322,11 +322,10 @@ The following example marks an event each time the `/cards` endpoint is called.
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.metrics.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.webserver.HttpRules;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 import java.util.Collections;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -334,7 +333,7 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Meter; // <1>
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
-public class GreetingCards implements Service {
+public class GreetingCards implements HttpService {
 
   private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
   private final Meter cardMeter; // <2>
@@ -346,7 +345,7 @@ public class GreetingCards implements Service {
   }
 
   @Override
-  public void update(Routing.Rules rules) {
+  public void routing(HttpRules rules) {
     rules.get("/", this::getDefaultMessageHandler);
   }
 
@@ -409,10 +408,10 @@ endpoint is called, the `Timer` will be updated with additional timing informati
 package io.helidon.examples.quickstart.se;
 
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 import java.util.Collections;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -420,7 +419,7 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 import org.eclipse.microprofile.metrics.Timer; // <1>
 
-public class GreetingCards implements Service {
+public class GreetingCards implements HttpService {
 
   private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
   private final Timer cardTimer; // <2>
@@ -432,7 +431,7 @@ public class GreetingCards implements Service {
   }
 
   @Override
-  public void update(Routing.Rules rules) {
+  public void routing(HttpRules rules) {
     rules.get("/", this::getDefaultMessageHandler);
   }
 
@@ -505,10 +504,10 @@ the `/cards` endpoint is invoked.
 package io.helidon.examples.quickstart.se;
 
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.webserver.HttpRules;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 import java.util.Collections;
 import java.util.Random;
 import jakarta.json.Json;
@@ -517,7 +516,7 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Histogram; // <1>
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
-public class GreetingCards implements Service {
+public class GreetingCards implements HttpService {
 
   private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
   private final Histogram cardHistogram; // <2>
@@ -529,7 +528,7 @@ public class GreetingCards implements Service {
   }
 
   @Override
-  public void update(Routing.Rules rules) {
+  public void routing(HttpRules rules) {
     rules.get("/", this::getDefaultMessageHandler);
   }
 
@@ -598,7 +597,6 @@ how a `Gauge` is used to get the current temperature.
 ----
 
 import io.helidon.metrics.RegistryFactory;
-import java.util.Random;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
@@ -629,10 +627,10 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 package io.helidon.examples.quickstart.se;
 
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.webserver.HttpRules;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 import java.util.Collections;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -640,7 +638,7 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
-public class GreetingCards implements Service {
+public class GreetingCards implements HttpService {
 
   private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
   private final Counter cardCounter;
@@ -652,7 +650,7 @@ public class GreetingCards implements Service {
   }
 
   @Override
-  public void update(Routing.Rules rules) {
+  public void routing(HttpRules rules) {
     rules.get("/", this::getDefaultMessageHandler);
   }
 
@@ -700,10 +698,10 @@ endpoint is called, the `SimpleTimer` updates its count and total elapsed time.
 package io.helidon.examples.quickstart.se;
 
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.webserver.HttpRules;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 import java.util.Collections;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -711,7 +709,7 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 import org.eclipse.microprofile.metrics.SimpleTimer; // <!>
 
-public class GreetingCards implements Service {
+public class GreetingCards implements HttpService {
 
   private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
   private final SimpleTimer cardTimer; // <2>
@@ -723,7 +721,7 @@ public class GreetingCards implements Service {
   }
 
   @Override
-  public void update(Routing.Rules rules) {
+  public void routing(HttpRules rules) {
     rules.get("/", this::getDefaultMessageHandler);
   }
 

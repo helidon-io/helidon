@@ -25,15 +25,13 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.FunctionalCounter;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.neo4j.driver.ConnectionPoolMetrics;
 import org.neo4j.driver.Driver;
 
@@ -45,19 +43,19 @@ import static java.util.Map.entry;
 public class Neo4jMetricsSupport {
 
     private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j";
-    private static final String VENDOR_SCOPE = "vendor";
+    private static final String NEO4J_METER_SCOPE = "vendor";
 
     private final AtomicReference<Collection<ConnectionPoolMetrics>> lastPoolMetrics = new AtomicReference<>();
     private final AtomicReference<ScheduledFuture<?>> reinitFuture = new AtomicReference<>();
     private final AtomicReference<Boolean> metricsInitialized = new AtomicReference<>(false);
-    private final LazyValue<MetricRegistry> metricRegistry;
+    private final LazyValue<MeterRegistry> meterRegistry;
     private final Driver driver;
 
     @SuppressWarnings("removal")
     private Neo4jMetricsSupport(Builder builder) {
         this.driver = builder.driver;
         // Assuming for the moment that VENDOR is the correct registry to use.
-        metricRegistry = LazyValue.create(() -> RegistryFactory.getInstance().getRegistry(VENDOR_SCOPE));
+        meterRegistry = LazyValue.create(Metrics::globalRegistry);
     }
 
     /**
@@ -116,42 +114,34 @@ public class Neo4jMetricsSupport {
         for (ConnectionPoolMetrics it : lastPoolMetrics.get()) {
             //String poolPrefix = NEO4J_METRIC_NAME_PREFIX + "-" + it.id() + "-";
             String poolPrefix = NEO4J_METRIC_NAME_PREFIX + "-";
-            counters.forEach((name, supplier) -> registerCounter(metricRegistry.get(), it, poolPrefix, name, supplier));
-            gauges.forEach((name, supplier) -> registerGauge(metricRegistry.get(), it, poolPrefix, name, supplier));
+            counters.forEach((name, supplier) -> registerCounter(meterRegistry.get(), it, poolPrefix, name, supplier));
+            gauges.forEach((name, supplier) -> registerGauge(meterRegistry.get(), it, poolPrefix, name, supplier));
             // we only care about the first one
             metricsInitialized.set(true);
             break;
         }
     }
 
-    private void registerCounter(MetricRegistry metricRegistry,
+    private void registerCounter(MeterRegistry meterRegistry,
                                  ConnectionPoolMetrics cpm,
                                  String poolPrefix,
                                  String name,
                                  Function<ConnectionPoolMetrics, Long> fn) {
 
         String counterName = poolPrefix + name;
-        if (metricRegistry.getCounters().get(new MetricID(counterName)) == null) {
-            Metadata metadata = Metadata.builder()
-                    .withName(counterName)
-                    .build();
-            metricRegistry.gauge(metadata, cpm, fn);
-        }
+        meterRegistry.getOrCreate(FunctionalCounter.builder(counterName, cpm, fn::apply)
+                                          .scope(NEO4J_METER_SCOPE));
     }
 
-    private void registerGauge(MetricRegistry metricRegistry,
+    private void registerGauge(MeterRegistry meterRegistry,
                                ConnectionPoolMetrics cpm,
                                String poolPrefix,
                                String name,
                                Function<ConnectionPoolMetrics, Integer> fn) {
 
         String gaugeName = poolPrefix + name;
-        if (metricRegistry.getGauges().get(new MetricID(gaugeName)) == null) {
-            Metadata metadata = Metadata.builder()
-                    .withName(poolPrefix + name)
-                    .build();
-            metricRegistry.gauge(metadata, cpm, fn);
-        }
+        meterRegistry.getOrCreate(Gauge.builder(gaugeName, cpm, fn::apply)
+                                          .scope(NEO4J_METER_SCOPE));
     }
 
     /**
@@ -183,20 +173,6 @@ public class Neo4jMetricsSupport {
         public Builder driver(Driver driver) {
             this.driver = driver;
             return this;
-        }
-    }
-
-    private static class Neo4JGaugeWrapper<T extends Number> implements Gauge<T> {
-
-        private final Supplier<T> supplier;
-
-        private Neo4JGaugeWrapper(Supplier<T> supplier) {
-            this.supplier = supplier;
-        }
-
-        @Override
-        public T getValue() {
-            return supplier.get();
         }
     }
 }

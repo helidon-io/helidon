@@ -19,6 +19,7 @@ package io.helidon.common.pki;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.metadata.Configured;
@@ -63,7 +64,7 @@ interface KeystoreKeysBlueprint {
      *
      * @return keystore password to use
      */
-    @Prototype.Confidential
+    @Option.Confidential
     @ConfiguredOption
     Optional<char[]> passphrase();
 
@@ -83,7 +84,7 @@ interface KeystoreKeysBlueprint {
      * @return pass-phrase of the key
      */
     @ConfiguredOption(key = "key.passphrase")
-    @Prototype.Confidential
+    @Option.Confidential
     Optional<char[]> keyPassphrase();
 
     /**
@@ -108,7 +109,7 @@ interface KeystoreKeysBlueprint {
      *
      * @return aliases of certificates
      */
-    @Prototype.Singular("certAlias")
+    @Option.Singular("certAlias")
     List<String> certAliases();
 
     /**

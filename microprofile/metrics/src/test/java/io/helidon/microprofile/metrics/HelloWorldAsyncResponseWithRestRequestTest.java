@@ -24,9 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.metrics.api.Registry;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.json.JsonNumber;
@@ -39,7 +38,6 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +61,7 @@ class HelloWorldAsyncResponseWithRestRequestTest {
     private MetricRegistry baseRegistry;
 
     @Test
-    void checkForAsyncMethodRESTRequestMetric() throws NoSuchMethodException, IOException {
+    void checkForAsyncMethodRESTRequestMetric() throws NoSuchMethodException {
 
         MetricID idForRestRequestTimer = MetricsCdiExtension.restEndpointTimerMetricID(
                 HelloWorldResource.class.getMethod("getAsync", AsyncResponse.class));

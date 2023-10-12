@@ -23,7 +23,7 @@ import java.util.Objects;
 import io.helidon.common.parameters.Parameters;
 
 class UriPathNoParam implements UriPath {
-    private static final Parameters EMPTY_PARAMS = Parameters.empty("path");
+    private static final Parameters EMPTY_PARAMS = Parameters.empty("uri/path");
 
     private final UriPath absolute;
     private final String rawPath;
@@ -73,7 +73,7 @@ class UriPathNoParam implements UriPath {
     @Override
     public String path() {
         if (decodedPath == null) {
-            decodedPath = decode(rawPath);
+            decodedPath = decode(rawPath, false);
         }
         return decodedPath;
     }
@@ -104,11 +104,11 @@ class UriPathNoParam implements UriPath {
     @Override
     public void validate() {
         if (decodedPath == null) {
-            this.decodedPath = URI.create(rawPath).normalize().getPath();
+            this.decodedPath = decode(rawPath, true);
         }
     }
 
-    private static String decode(String rawPath) {
+    private static String decode(String rawPath, boolean validate) {
         /*
         Raw path may:
          - be encoded (%20)
@@ -121,8 +121,16 @@ class UriPathNoParam implements UriPath {
         int dot = rawPath.indexOf(".");
         int doubleSlash = rawPath.indexOf("//");
 
-        if (percent == -1 && doubleSlash == -1 && dot == -1) {
+        if (!validate && percent == -1 && doubleSlash == -1 && dot == -1) {
             return rawPath;
+        }
+
+        if (doubleSlash == 0) {
+            /*
+            RFC2396 - net_path starts with //, that would lead to loosing first path segment.
+            example: URI.create("//foo/bar").getPath() --> "/bar"
+            */
+            rawPath = rawPath.substring(1);
         }
 
         return URI.create(rawPath).normalize().getPath();

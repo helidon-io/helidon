@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -39,7 +40,7 @@ interface ModuleInfoItemBlueprint {
      *
      * @return pre-comments
      */
-    @Prototype.Singular
+    @Option.Singular
     List<String> precomments();
 
     /**
@@ -118,7 +119,7 @@ interface ModuleInfoItemBlueprint {
      *
      * @return the set of with or to definitions
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<String> withOrTo();
 
     /**

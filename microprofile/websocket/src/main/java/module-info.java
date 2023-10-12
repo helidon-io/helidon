@@ -29,24 +29,23 @@ import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
 )
 @Aot(false)
 module io.helidon.microprofile.tyrus {
-    requires static io.helidon.common.features.api;
-
-    requires java.net.http;
-    requires jakarta.inject;
-
-    requires jakarta.cdi;
-    requires transitive jakarta.websocket;
 
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;
-    requires io.helidon.webserver;
     requires io.helidon.webserver.websocket;
-
+    requires io.helidon.webserver;
+    requires jakarta.cdi;
+    requires jakarta.inject;
+    requires java.net.http;
     requires org.glassfish.tyrus.core;
     requires org.glassfish.tyrus.server;
     requires org.glassfish.tyrus.spi;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive jakarta.websocket;
 
     exports io.helidon.microprofile.tyrus;
 
@@ -59,4 +58,5 @@ module io.helidon.microprofile.tyrus {
             with io.helidon.microprofile.tyrus.HelidonComponentProvider;
     provides Http1UpgradeProvider
             with io.helidon.microprofile.tyrus.TyrusUpgradeProvider;
+	 
 }

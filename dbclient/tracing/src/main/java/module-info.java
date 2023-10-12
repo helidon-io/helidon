@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.dbclient.spi.DbClientServiceProvider;
-import io.helidon.dbclient.tracing.DbClientTracingProvider;
 
 /**
  * Helidon Database Client Tracing.
@@ -29,15 +27,16 @@ import io.helidon.dbclient.tracing.DbClientTracingProvider;
 )
 module io.helidon.dbclient.tracing {
 
-    requires static io.helidon.common.features.api;
-    requires transitive io.helidon.dbclient;
     requires io.helidon.tracing.config;
+    requires io.helidon.tracing;
 
-    requires io.opentracing.api;
-    requires io.opentracing.util;
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.dbclient;
+
 
     exports io.helidon.dbclient.tracing;
 
-    provides DbClientServiceProvider with DbClientTracingProvider;
+    provides io.helidon.dbclient.spi.DbClientServiceProvider with io.helidon.dbclient.tracing.DbClientTracingProvider;
 
 }

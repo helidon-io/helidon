@@ -2,6 +2,9 @@
     "resources": [
         {
             "pattern": "logging.properties"
+        },
+        {
+            "pattern": "META-INF/services/.*"
         }
     ]
 }

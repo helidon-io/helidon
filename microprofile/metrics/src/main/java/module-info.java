@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.microprofile.metrics.MpMetricsProgrammaticSettings;
 
 /**
  * Microprofile metrics implementation.
@@ -28,27 +27,23 @@ import io.helidon.microprofile.metrics.MpMetricsProgrammaticSettings;
         in = HelidonFlavor.MP,
         path = "Metrics"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.metrics {
+
+    requires io.helidon.config.mp;
+    requires io.helidon.metrics.api;
+    requires io.helidon.microprofile.config;
+    requires io.helidon.microprofile.server;
+    requires jakarta.annotation;
+    requires jakarta.inject;
+    requires microprofile.metrics.api;
+
     requires static io.helidon.common.features.api;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
-
-    requires io.helidon.microprofile.servicecommon;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.config;
-
-    requires transitive io.helidon.metrics.api;
-
-    requires io.helidon.webserver.observe.metrics;
-
+    requires transitive io.helidon.microprofile.servicecommon;
+    requires transitive io.helidon.webserver.observe.metrics;
+    requires transitive jakarta.cdi;
     requires transitive microprofile.config.api;
-    requires microprofile.metrics.api;
-    requires io.helidon.config.mp;
-
-    requires micrometer.registry.prometheus;
-    requires simpleclient.common;
 
     exports io.helidon.microprofile.metrics;
     exports io.helidon.microprofile.metrics.spi;
@@ -58,5 +53,10 @@ module io.helidon.microprofile.metrics {
     opens io.helidon.microprofile.metrics.spi to io.helidon.microprofile.cdi, weld.core.impl;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
-    provides io.helidon.metrics.api.MetricsProgrammaticSettings with MpMetricsProgrammaticSettings;
+    provides io.helidon.metrics.spi.MetricsProgrammaticConfig
+            with io.helidon.microprofile.metrics.MpMetricsProgrammaticConfig;
+    provides io.helidon.metrics.spi.MeterRegistryLifeCycleListener
+            with io.helidon.microprofile.metrics.RegistryFactoryManager;
+
+    uses io.helidon.metrics.spi.ExemplarService;
 }

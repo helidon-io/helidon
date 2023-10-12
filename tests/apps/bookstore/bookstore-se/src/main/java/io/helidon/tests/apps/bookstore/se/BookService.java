@@ -18,15 +18,15 @@ package io.helidon.tests.apps.bookstore.se;
 
 import java.util.Collection;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.Status;
+import io.helidon.tests.apps.bookstore.common.Book;
+import io.helidon.tests.apps.bookstore.common.BookMapper;
+import io.helidon.tests.apps.bookstore.common.BookStore;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.tests.apps.bookstore.common.Book;
-import io.helidon.tests.apps.bookstore.common.BookMapper;
-import io.helidon.tests.apps.bookstore.common.BookStore;
 
 import jakarta.json.JsonObject;
 
@@ -93,19 +93,19 @@ public class BookService implements HttpService {
 
     private void addBook(Book book, ServerResponse response) {
         if (BOOK_STORE.contains(book.getIsbn())) {
-            response.status(Http.Status.CONFLICT_409).send();
+            response.status(Status.CONFLICT_409).send();
         } else {
             BOOK_STORE.store(book);
-            response.status(Http.Status.OK_200).send();
+            response.status(Status.OK_200).send();
         }
     }
 
     private void getBook(ServerRequest request, ServerResponse response) {
-        String isbn = request.path().pathParameters().value(ISBN_PARAM);
+        String isbn = request.path().pathParameters().get(ISBN_PARAM);
         Book book = BOOK_STORE.find(isbn);
 
         if (book == null) {
-            response.status(Http.Status.NOT_FOUND_404).send();
+            response.status(Status.NOT_FOUND_404).send();
             return;
         }
 
@@ -141,19 +141,19 @@ public class BookService implements HttpService {
     private void updateBook(Book book, ServerResponse response) {
         if (BOOK_STORE.contains(book.getIsbn())) {
             BOOK_STORE.store(book);
-            response.status(Http.Status.OK_200).send();
+            response.status(Status.OK_200).send();
         } else {
-            response.status(Http.Status.NOT_FOUND_404).send();
+            response.status(Status.NOT_FOUND_404).send();
         }
     }
 
     private void deleteBook(ServerRequest request, ServerResponse response) {
-        String isbn = request.path().pathParameters().value(ISBN_PARAM);
+        String isbn = request.path().pathParameters().get(ISBN_PARAM);
         if (BOOK_STORE.contains(isbn)) {
             BOOK_STORE.remove(isbn);
             response.send();
         } else {
-            response.status(Http.Status.NOT_FOUND_404).send();
+            response.status(Status.NOT_FOUND_404).send();
         }
     }
 }

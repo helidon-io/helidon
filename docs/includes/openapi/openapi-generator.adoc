@@ -423,7 +423,7 @@ The next example runs the Helidon client generator using the same input file.
 
 :example-project-type: client
 .Creating or updating a client project using the OpenAPI generator CLI
-//include::openapi-generator.adoc[tag=example-cli-usage]
+include::openapi-generator.adoc[tag=example-cli-usage]
 
 The key differences between the commands are:
 
@@ -535,9 +535,9 @@ The generated client code represents a true library. Typically, you do not need 
 // tag::common-references[]
 
 == References
-//* link:{openapi-generator-tool-site-url}[OpenAPI Generator Official Website]
+* link:{openapi-generator-tool-site-url}[OpenAPI Generator Official Website]
 
-//* link:{openapi-generator-tool-base-url}[OpenAPI Generator GitHub Repository]
+* link:{openapi-generator-tool-base-url}[OpenAPI Generator GitHub Repository]
 
-//* link:{openapi-spec-url}[OpenAPI specification]
+* link:{openapi-spec-url}[OpenAPI specification]
 // end::common-references[]

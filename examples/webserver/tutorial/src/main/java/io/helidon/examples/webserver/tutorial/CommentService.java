@@ -41,7 +41,7 @@ class CommentService implements HttpService {
     }
 
     private void getComments(ServerRequest req, ServerResponse resp) {
-        String roomId = req.path().pathParameters().value("room-id");
+        String roomId = req.path().pathParameters().get("room-id");
         resp.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
         resp.send(getComments(roomId));
     }
@@ -62,7 +62,7 @@ class CommentService implements HttpService {
     }
 
     private void addComment(ServerRequest req, ServerResponse res) {
-        String roomId = req.path().pathParameters().value("room-id");
+        String roomId = req.path().pathParameters().get("room-id");
         User user = req.context().get(User.class).orElse(User.ANONYMOUS);
         String msg = req.content().as(String.class);
         addComment(roomId, user, msg);

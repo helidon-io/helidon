@@ -16,9 +16,8 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.config.metadata.ConfiguredValue;
 
 /**
  * Used for demonstrating and testing the Builder.
@@ -26,6 +25,7 @@ import io.helidon.config.metadata.ConfiguredValue;
  * @see MyDerivedConfigBean
  */
 @Prototype.Blueprint(beanStyle = true)
+@Prototype.Configured
 interface MyConfigBeanBlueprint {
 
     /**
@@ -34,7 +34,7 @@ interface MyConfigBeanBlueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String getName();
 
     /**
@@ -45,14 +45,14 @@ interface MyConfigBeanBlueprint {
     boolean isEnabled();
 
     /**
-     * Used for testing and demonstrating usage of {@link io.helidon.config.metadata.ConfiguredOption}
-     * and {@link io.helidon.config.metadata.ConfiguredValue}.
+     * Used for testing and demonstrating usage of {@link io.helidon.builder.api.Option.AllowedValue}.
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption(key = "port", value = "8080", allowedValues = {
-            @ConfiguredValue(value = "8080", description = "t1"),
-            @ConfiguredValue(value = "false", description = "t2")})
+    @Option.Configured("port")
+    @Option.DefaultInt(8080)
+    @Option.AllowedValue(value = "8080", description = "t1")
+    @Option.AllowedValue(value = "80", description = "t2")
     int getPort();
 
 }

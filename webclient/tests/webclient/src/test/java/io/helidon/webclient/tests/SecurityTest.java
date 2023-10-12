@@ -16,11 +16,11 @@
 
 package io.helidon.webclient.tests;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
+import io.helidon.security.EndpointConfig;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -51,11 +51,11 @@ public class SecurityTest extends TestParent {
     private void performOperation(String path) {
         try (Http1ClientResponse response = client.get()
                 .path(path)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(JsonObject.class).getString("message"), is("Hello jack!"));
         }
     }

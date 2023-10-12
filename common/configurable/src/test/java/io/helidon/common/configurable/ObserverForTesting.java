@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,14 +47,6 @@ public class ObserverForTesting implements ExecutorServiceSupplierObserver {
         SupplierInfo supplierInfo = new SupplierInfo(supplierCategory);
         suppliers.put(supplier, supplierInfo);
         return supplierInfo.context;
-    }
-
-    @Override
-    public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                    int supplierIndex,
-                                                    String supplierCategory,
-                                                    List<MethodInvocation> methodInvocations) {
-        return registerSupplier(supplier, supplierIndex, supplierCategory);
     }
 
     Map<Supplier<? extends ExecutorService>, SupplierInfo> suppliers() {

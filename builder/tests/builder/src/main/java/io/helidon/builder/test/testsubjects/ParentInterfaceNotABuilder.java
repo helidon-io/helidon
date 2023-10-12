@@ -18,8 +18,6 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
-import io.helidon.config.metadata.ConfiguredOption;
-
 /**
  * Used for demonstrating (and testing) multi-inheritance of interfaces and the builders that are produced.
  *

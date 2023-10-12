@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,21 @@ package io.helidon.integrations.micronaut.cdi.data;
 import java.sql.Connection;
 import java.util.Optional;
 
+import javax.validation.ConstraintViolationException;
+import javax.validation.constraints.Pattern;
+
 import io.helidon.integrations.micronaut.cdi.data.app.DbOwnerRepository;
 import io.helidon.integrations.micronaut.cdi.data.app.DbPetRepository;
 import io.helidon.integrations.micronaut.cdi.data.app.Owner;
 import io.helidon.integrations.micronaut.cdi.data.app.Pet;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.Configuration;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-
-import javax.validation.ConstraintViolationException;
-import javax.validation.constraints.Pattern;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.Configuration;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,10 @@ import jakarta.persistence.metamodel.Metamodel;
  *
  * <p>As with all {@link EntityManager} implementations, instances of
  * this class are not safe for concurrent use by multiple threads.</p>
+ *
+ * @deprecated This is an internal class used only by the now-deprecated {@link JpaExtension} class.
  */
+@Deprecated(since = "4.0")
 @Vetoed
 final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 
@@ -215,10 +218,9 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
      *
      * <p>This method never returns {@code null}.</p>
      *
-     * <p>If a {@linkplain TransactionSupport#inTransaction() JTA
-     * transaction is active}, then an {@link EntityManager} that is
-     * joined to it is returned.  Otherwise a non-transactional {@link
-     * EntityManager} is returned.</p>
+     * <p>If a JTA transaction is active, then an
+     * {@link EntityManager}} that is joined to it is returned. Otherwise a
+     * non-transactional {@link EntityManager} is returned.</p>
      *
      * <p>Recall that this method is invoked by all {@link
      * DelegatingEntityManager} methods.</p>

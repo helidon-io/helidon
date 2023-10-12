@@ -18,10 +18,13 @@
  * Injection Testing Support module.
  */
 module io.helidon.inject.testing {
+
     requires io.helidon.builder.api;
-    requires io.helidon.config;
-    requires transitive io.helidon.inject.runtime;
     requires io.helidon.common.types;
+    requires io.helidon.config;
+
+    requires transitive io.helidon.inject.runtime;
 
     exports io.helidon.inject.testing;
+
 }

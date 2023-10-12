@@ -18,8 +18,9 @@ package io.helidon.webclient.tests;
 import java.io.InputStream;
 import java.util.Collections;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.UnsupportedTypeException;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -74,7 +75,7 @@ public class MediaContextTest extends TestParent {
         try (Http1ClientResponse res = client.get().request()) {
             InputStream is = res.inputStream();
             assertAll(
-                    () -> assertThat(res.status(), is(Http.Status.OK_200)),
+                    () -> assertThat(res.status(), is(Status.OK_200)),
                     () -> assertThat(new String(is.readAllBytes()), is("{\"message\":\"Hello World!\"}"))
             );
         }
@@ -102,8 +103,8 @@ public class MediaContextTest extends TestParent {
                         .build())
                 .build();
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                client.get().request().as(String.class));
+        UnsupportedTypeException ex = assertThrows(UnsupportedTypeException.class, () ->
+                client.get().request(String.class).entity());
         assertThat(ex.getMessage(), startsWith("No client response media support for class"));
     }
 

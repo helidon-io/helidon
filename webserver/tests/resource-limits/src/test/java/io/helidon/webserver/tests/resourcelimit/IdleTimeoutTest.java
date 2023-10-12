@@ -19,13 +19,13 @@ package io.helidon.webserver.tests.resourcelimit;
 import java.time.Duration;
 import java.util.List;
 
-import io.helidon.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.Method;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ class IdleTimeoutTest {
     void testNoTimeout() throws InterruptedException {
         // the timer is using second precision, we must run for longer than 3 seconds to make sure
         for (int i = 0; i < 20; i++) {
-            String response = client.sendAndReceive(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
+            String response = client.sendAndReceive(Method.GET, "/greet", null, List.of("Connection: keep-alive"));
             assertThat(response, containsString("200 OK"));
             // we sleep for 50, timeout is 250, it should be ok
             Thread.sleep(150);
@@ -67,7 +67,7 @@ class IdleTimeoutTest {
     @Test
     void testTimeout() throws InterruptedException {
         // the timer is using second precision, we must run for longer than 3 seconds to make sure
-        String response = client.sendAndReceive(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
+        String response = client.sendAndReceive(Method.GET, "/greet", null, List.of("Connection: keep-alive"));
         assertThat(response, containsString("200 OK"));
         // this should be triggered correctly through the timer
         Thread.sleep(3000);

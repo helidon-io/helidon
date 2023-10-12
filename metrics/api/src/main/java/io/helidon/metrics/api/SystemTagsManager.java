@@ -15,9 +15,11 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
 import java.util.Map;
-
-import org.eclipse.microprofile.metrics.MetricID;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
@@ -26,14 +28,13 @@ import org.eclipse.microprofile.metrics.MetricID;
 public interface SystemTagsManager {
 
     /**
-     * Creates a new system tags manager using the provided metrics settings, saving the new instance as the initialized
-     * singleton which will be returned to subsequent invocatinos of {@link #instance()}.
+     * Creates a new system tags manager using the provided metrics settings.
      *
-     * @param metricsSettings settings containing the global and app-level tags (if any)
+     * @param metricsConfig settings containing the global and app-level tags (if any)
      * @return new tags manager
      */
-    static SystemTagsManager create(MetricsSettings metricsSettings) {
-        return SystemTagsManagerImpl.create(metricsSettings);
+    static SystemTagsManager create(MetricsConfig metricsConfig) {
+        return SystemTagsManagerImpl.create(metricsConfig);
     }
 
     /**
@@ -46,57 +47,118 @@ public interface SystemTagsManager {
     }
 
     /**
-     * Returns a single iterator over the explicit tags in the metric ID plus any global and app tags.
+     * Creates a new system tags manager using the provide metrics settings, saving the new instance as the initialized
+     * singleton which will be returned to subsequent invocations of {@link #instance()}.
      *
-     * @param metricID metric ID possibly containing explicit tag settings
-     * @param scope the registry scope
-     * @return iterator over all tags, explicit and global and app
+     * @param metricsConfig settings containing the global and app-level tags (if any)
+     * @return new (and saved) tags manager
      */
-    Iterable<Map.Entry<String, String>> allTags(MetricID metricID, String scope);
+    static SystemTagsManager instance(MetricsConfig metricsConfig) {
+        return SystemTagsManagerImpl.instance(metricsConfig);
+    }
 
     /**
-     * Returns a single iterator over the explicit tags in the provided map plus any global and app tags.
+     * Allows subscription to notification when a new system tags manager is created with a new configuration.
      *
-     * @param explicitTags map containing explicitly-defined tags for a metric
-     * @param scope registry scope
-     * @return iterator over all tags, explicit and global and app
+     * @param changeListener subscriber to receive change notifications
      */
-    Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags, String scope);
+    static void onChange(Consumer<SystemTagsManager> changeListener) {
+        SystemTagsManagerImpl.onChange(changeListener);
+    }
 
     /**
-     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
-     * and app tags, plus a tag for the specified scope (if the system tags manager has been initialized
-     * with a scope tag name).
-     * @param explicitTags iterable over the key/value pairs for tags
-     * @param scope scope value
-     * @return iterator over all tags, explicit and global and app
+     * Returns a scope tag so long as the candidate scope or configured default scope are present and the scope tag name
+     * is configured.
+     *
+     * @param candidateScope candidate scope value
+     * @return {@link io.helidon.metrics.api.Tag} representing the scope if suitable; empty otherwise
      */
-    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope);
+    Optional<Tag> scopeTag(Optional<String> candidateScope);
 
     /**
-     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
-     * and app tags, <em>without</em>> a tag for scope.
+     * Augments map entries (tag names and values) with, possibly, one more for the scope (if configured that way).
      *
-     * @param explicitTags iterable over the key/value pairs for tags
-     * @return iterator over all tags, explicit and global and app
+     * @param tags original tags
+     * @param scope the scope value
+     * @return augmented iterable including, if appropriate, a scope tag entry
      */
-    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags);
+    Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope);
 
     /**
-     * Returns a single iterator over the explicit tags in the provided {@link org.eclipse.microprofile.metrics.MetricID}, plus
-     * any global and app tags <em>without</em> scope.
+     * Augments, if necessary, the provided tags with an additional tag with the scope tag name and value from the explicit
+     * scope provided, an existing tag, or the default scope value, if configured.
      *
-     * @param metricId metric ID
-     * @return iterator over all tags, explicit and global and app, without a tag for scope
+     * @param tags original tags
+     * @param explicitScope explicit scope setting if available
+     * @return tags containing a tag for the scope
      */
-    Iterable<Map.Entry<String, String>> allTags(MetricID metricId);
+    Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope);
 
     /**
-     * Creates a new {@link org.eclipse.microprofile.metrics.MetricID} using the original ID and adding the system tags.
+     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting any system tags but including
+     * the scope tag, if these appear in the provided tags.
      *
-     * @param original original metric ID
-     * @param scope scope to use in augmenting the tags
-     * @return augmented metric ID
+     * @param tags tags to filter
+     * @return tags without the system tags
      */
-    MetricID metricIdWithAllTags(MetricID original, String scope);
+    Iterable<Tag> withoutSystemTags(Iterable<Tag> tags);
+
+    /**
+     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting system and scope tags.
+     *
+     * @param tags tags to filter
+     * @return tags without system or scope tags
+     */
+    Iterable<Tag> withoutSystemOrScopeTags(Iterable<Tag> tags);
+
+    /**
+     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} representing the any system tags
+     * configured for display (for example, an app tag or global tags set through configuration).
+     *
+     * @return system tags
+     */
+    Iterable<Tag> displayTags();
+
+    /**
+     * Scans the provided tag names and throws an exception if any is a reserved tag name.
+     *
+     * @param tagNames tag names
+     * @return reserved tag names present in the provided tag names
+     */
+    Collection<String> reservedTagNamesUsed(Collection<String> tagNames);
+
+    /**
+     * Invokes the specified consumer with the scope tag name setting from the configuration (if present) and the
+     * provided scope value. This method is most useful to assign a tag to a meter if configuration implies that.
+     *
+     * @param scope    scope value to use
+     * @param consumer uses the tag and scope in some appropriate way
+     */
+    void assignScope(String scope, Function<Tag, ?> consumer);
+
+    /**
+     * Returns the effective scope, given the provided candidate scope combined with any default scope value in the
+     * configuration which initialized this manager.
+     *
+     * @param candidateScope candidate scope
+     * @return effective scope, preferring the candidate and falling back to the default; empty if neither is present
+     */
+    Optional<String> effectiveScope(Optional<String> candidateScope);
+
+    /**
+     * Returns the effective scope, given the provided explicit setting and tags (which might specify the scope) combined with
+     * any default scope value in the configuration which was used to initialize this system tags manager.
+     *
+     * @param explicitScope explicit scope to use (if present)
+     * @param tags tag which might specify the scope using the configured scope tag name
+     * @return effective scope; empty if none available from the arguments or the system default
+     */
+    Optional<String> effectiveScope(Optional<String> explicitScope, Iterable<Tag> tags);
+
+    /**
+     * Returns the scope tag name derived from configuration.
+     *
+     * @return scope tag name; empty if not set
+     */
+    Optional<String> scopeTagName();
 }

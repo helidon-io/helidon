@@ -18,14 +18,17 @@
  * Socket abstraction and data writing.
  */
 module io.helidon.common.socket {
+
     requires io.helidon.common;
-    requires transitive io.helidon.common.buffers;
-    requires transitive io.helidon.builder.api;
     // even though this is part of API, it is not transitive,
     // as unless your module uses config, the API is not useful
     requires io.helidon.common.config;
 
     requires static io.helidon.config.metadata;
 
+    requires transitive io.helidon.common.buffers;
+    requires transitive io.helidon.builder.api;
+
     exports io.helidon.common.socket;
+
 }

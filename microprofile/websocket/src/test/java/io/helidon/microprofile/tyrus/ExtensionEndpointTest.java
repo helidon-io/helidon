@@ -20,8 +20,9 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
+
 import jakarta.websocket.Extension;
 import jakarta.websocket.OnMessage;
 import jakarta.websocket.Session;

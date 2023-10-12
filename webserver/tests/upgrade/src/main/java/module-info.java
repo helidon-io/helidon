@@ -19,12 +19,13 @@
  */
 module helidon.tests.integration.webserver.upgrade {
 
-    exports io.helidon.webserver.tests.upgrade;
-
     requires io.helidon.logging.common;
     requires io.helidon.http;
     requires io.helidon.webserver;
     requires io.helidon.common.pki;
     requires io.helidon.webserver.http2;
     requires io.helidon.webserver.websocket;
+	
+	exports io.helidon.webserver.tests.upgrade;
+	
 }

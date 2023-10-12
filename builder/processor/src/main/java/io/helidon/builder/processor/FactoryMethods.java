@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.processor.GeneratorTools;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -99,6 +100,10 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                     // this may be part of annotation processing where type info is not available
                     // our assumption is that the type is code generated and is a correct builder, if this assumption
                     // is not correct, we will need to improve this "algorithm" (please file an issue if that happens)
+                    if (builderCandidate.fqName().endsWith(".Builder")) {
+                        // this is already a builder
+                        continue;
+                    }
                     TypeName builderTypeName = TypeName.builder(builderCandidate)
                             .className("Builder")
                             .enclosingNames(List.of(builderCandidate.className()))
@@ -110,10 +115,10 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
 
             found = typeInfo.elementInfo()
                     .stream()
-                    .filter(TypeInfoPredicates::isMethod)
-                    .filter(TypeInfoPredicates::isStatic)
-                    .filter(TypeInfoPredicates.methodName("builder"))
-                    .filter(TypeInfoPredicates::hasNoArgs)
+                    .filter(ElementInfoPredicates::isMethod)
+                    .filter(ElementInfoPredicates::isStatic)
+                    .filter(ElementInfoPredicates.elementName("builder"))
+                    .filter(ElementInfoPredicates::hasNoArgs)
                     .findFirst()
                     .map(it -> new FactoryMethod(builderCandidate, it.typeName(), "builder", null))
                     .orElse(null);
@@ -159,7 +164,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             // is this a config object?
             if (doesImplement(typeInfo, PROTOTYPE_TYPE)) {
                 // it should have create(Config) with the correct typing
-                Optional<FactoryMethod> foundMethod = TypeInfoPredicates.findMethod(
+                Optional<FactoryMethod> foundMethod = BuilderInfoPredicates.findMethod(
                                 new MethodSignature(typeInfo.typeName(), createMethod, List.of(CONFIG_TYPE)),
                                 Set.of(TypeValues.MODIFIER_STATIC),
                                 typeInfo)
@@ -181,7 +186,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                 // there is no config factory method available for the type that we have
                 TypeName candidateTypeName = typeInfo.typeName();
                 // we are now interested in a method with signature "static T create(Config)" where T is the type we are handling
-                Optional<FactoryMethod> foundMethod = TypeInfoPredicates.findMethod(
+                Optional<FactoryMethod> foundMethod = BuilderInfoPredicates.findMethod(
                                 new MethodSignature(candidateTypeName, createMethod, List.of(CONFIG_TYPE)),
                                 Set.of(TypeValues.MODIFIER_STATIC),
                                 typeInfo)
@@ -276,9 +281,9 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
         return declaringType.elementInfo()
                 .stream()
                 // methods
-                .filter(TypeInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isMethod)
                 // static
-                .filter(TypeInfoPredicates::isStatic)
+                .filter(ElementInfoPredicates::isStatic)
                 // @FactoryMethod
                 .filter(it -> it.hasAnnotation(FACTORY_METHOD_TYPE))
                 // createMyProperty
@@ -298,15 +303,15 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
         return declaringType.elementInfo()
                 .stream()
                 // methods
-                .filter(TypeInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isMethod)
                 // static
-                .filter(TypeInfoPredicates::isStatic)
+                .filter(ElementInfoPredicates::isStatic)
                 // @FactoryMethod
-                .filter(TypeInfoPredicates.hasAnnotation(FACTORY_METHOD_TYPE))
+                .filter(ElementInfoPredicates.hasAnnotation(FACTORY_METHOD_TYPE))
                 // createMyProperty
-                .filter(TypeInfoPredicates.methodName(methodName))
+                .filter(ElementInfoPredicates.elementName(methodName))
                 // must have a single parameter of the correct type
-                .filter(TypeInfoPredicates.hasParams(paramType))
+                .filter(ElementInfoPredicates.hasParams(paramType))
                 .map(TypedElementInfo::typeName)
                 .findFirst();
     }

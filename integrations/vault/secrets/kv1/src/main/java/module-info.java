@@ -26,12 +26,13 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"HCP Vault", "Secrets", "K/V 1"}
 )
 module io.helidon.integrations.vault.secrets.kvone {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.integrations.common.rest;
     requires java.logging;
 
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.integrations.common.rest;
     requires transitive io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.kv1;
@@ -46,4 +47,5 @@ module io.helidon.integrations.vault.secrets.kvone {
     // Implementation of service to support secrets in Helidon Security
     provides io.helidon.security.spi.SecurityProviderService
             with io.helidon.integrations.vault.secrets.kv1.Kv1SecurityService;
+
 }

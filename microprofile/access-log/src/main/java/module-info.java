@@ -26,12 +26,14 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Server", "AccessLog"}
 )
 module io.helidon.microprofile.accesslog {
-    requires static io.helidon.common.features.api;
-
-    requires jakarta.annotation;
 
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
+    requires jakarta.annotation;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive jakarta.inject;
 
     exports io.helidon.microprofile.accesslog;
 
@@ -39,4 +41,5 @@ module io.helidon.microprofile.accesslog {
     opens io.helidon.microprofile.accesslog to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.accesslog.AccessLogCdiExtension;
+	
 }

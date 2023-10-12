@@ -40,7 +40,6 @@
     <modules>
         <module>config</module>
         <module>dbclient</module>
-        <module>gh-5792</module>
         <module>harness</module>
         <module>health</module>
         <module>jep290</module>

@@ -15,19 +15,19 @@
  */
 package io.helidon.integrations.micrometer;
 
-import static org.hamcrest.Matchers.is;
-
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.Matchers.is;
 
 public class MicrometerEndpointTests {
 
@@ -78,14 +78,14 @@ public class MicrometerEndpointTests {
                     .routing(router -> router.addFeature(() -> micrometerFeatureSupplier.get()))
                     .build()
                     .start();
-            Http.Status status = WebClient.builder()
+            Status status = WebClient.builder()
                     .baseUri(String.format("http://localhost:%d%s", webServer.port(), contextForRequest))
                     .build()
                     .get()
 //                    .header(Header.ACCEPT, MediaTypes.TEXT_PLAIN.toString())
                     .request().status();
 
-            MatcherAssert.assertThat(status, is(Http.Status.OK_200));
+            MatcherAssert.assertThat(status, is(Status.OK_200));
         } finally {
             webServer.stop();
         }

@@ -16,16 +16,15 @@
 
 package io.helidon.webserver.tests.observe.health;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.Headers;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.health.HealthObserveProvider;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +48,7 @@ class ObserveHealthTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
         healthCheck = new MyHealthCheck();
-        routing.addFeature(ObserveFeature.create(HealthObserveProvider.create(HealthFeature.create(healthCheck))));
+        routing.addFeature(ObserveFeature.just(HealthObserver.create(healthCheck)));
     }
 
     @BeforeEach
@@ -62,15 +61,15 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
 
         healthCheck.status(DOWN);
         try (Http1ClientResponse response = httpClient.get("/observe/health")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
     }
 
@@ -79,16 +78,16 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/live")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
 
         healthCheck.status(DOWN);
         try (Http1ClientResponse response = httpClient.get("/observe/health/live")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
     }
 
@@ -97,16 +96,16 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/started")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
 
         healthCheck.status(DOWN);
         try (Http1ClientResponse response = httpClient.get("/observe/health/started")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
     }
 
@@ -115,15 +114,15 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/ready")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
 
         healthCheck.status(DOWN);
         try (Http1ClientResponse response = httpClient.get("/observe/health/ready")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
-            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
     }
 
@@ -132,15 +131,15 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/ready/mine1")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
 
         healthCheck.status(DOWN);
         try (Http1ClientResponse response = httpClient.get("/observe/health/ready/mine1")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
-            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
     }
 
@@ -149,15 +148,15 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/check/mine1")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
 
         healthCheck.status(DOWN);
         try (Http1ClientResponse response = httpClient.get("/observe/health/ready/mine1")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
-            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
     }
 
@@ -166,7 +165,7 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/check/mine2")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 
@@ -175,7 +174,7 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/ready/mine2")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 
@@ -184,7 +183,7 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/live/mine2")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 
@@ -193,7 +192,7 @@ class ObserveHealthTest {
         try (Http1ClientResponse response = httpClient.get("/observe/health/startup/mine2")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 }

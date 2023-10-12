@@ -17,13 +17,10 @@
 package io.helidon.webserver.observe.config;
 
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.http.NotFoundException;
@@ -46,53 +43,26 @@ class ConfigService implements HttpService {
 
     private final List<Pattern> secretPatterns;
     private final String profile;
+    private final boolean permitAll;
 
-    private ConfigService(List<Pattern> secretPatterns) {
+    ConfigService(List<Pattern> secretPatterns, String profile, boolean permitAll) {
         this.secretPatterns = secretPatterns;
-        this.profile = findProfile();
-    }
-
-    public static HttpService create(Config config) {
-        List<String> configuredSecretsPatterns = config.get("secrets").asList(String.class).orElseGet(List::of);
-        Set<String> secretsPatterns = new LinkedHashSet<>(configuredSecretsPatterns);
-        secretsPatterns.add(".*password");
-        secretsPatterns.add(".*passphrase");
-        secretsPatterns.add(".*secret");
-        List<Pattern> patterns = secretsPatterns.stream()
-                .map(Pattern::compile)
-                .toList();
-
-        // todo we may want more configuration - use a builder?
-        return new ConfigService(patterns);
+        this.profile = profile;
+        this.permitAll = permitAll;
     }
 
     @Override
     public void routing(HttpRules rules) {
-        rules.any(SecureHandler.authorize("webserver-observe"))
-                .get("/profile", this::profile)
+        if (!permitAll) {
+            rules.any(SecureHandler.authorize("webserver-observe"));
+        }
+        rules.get("/profile", this::profile)
                 .get("/values", this::values)
                 .get("/values/{name}", this::value);
     }
 
-    private static String findProfile() {
-        // we may want to have this directly in config
-        String name = System.getenv("HELIDON_CONFIG_PROFILE");
-        if (name != null) {
-            return name;
-        }
-        name = System.getProperty("helidon.config.profile");
-        if (name != null) {
-            return name;
-        }
-        name = System.getProperty("config.profile");
-        if (name != null) {
-            return name;
-        }
-        return "";
-    }
-
     private void value(ServerRequest req, ServerResponse res) {
-        String name = req.path().pathParameters().value("name");
+        String name = req.path().pathParameters().get("name");
 
         ConfigValue<String> value = GlobalConfig.config().get(name).asString();
         if (value.isPresent()) {

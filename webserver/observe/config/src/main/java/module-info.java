@@ -14,18 +14,28 @@
  * limitations under the License.
  */
 
-import io.helidon.webserver.observe.config.ConfigObserveProvider;
-import io.helidon.webserver.observe.spi.ObserveProvider;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer Observability Config Support.
  */
+@Feature(value = "Config",
+         description = "WebServer Config observability support",
+         in = HelidonFlavor.SE,
+         path = {"Observe", "Config"})
 module io.helidon.webserver.observe.config {
-    requires transitive io.helidon.webserver.observe;
-    requires io.helidon.webserver;
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.http.media.jsonp;
+    requires io.helidon.webserver;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.webserver.observe;
 
     exports io.helidon.webserver.observe.config;
 
-    provides ObserveProvider with ConfigObserveProvider;
+    provides io.helidon.webserver.observe.spi.ObserveProvider
+            with io.helidon.webserver.observe.config.ConfigObserveProvider;
+
 }

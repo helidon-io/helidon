@@ -16,9 +16,11 @@
 
 package io.helidon.webserver;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
 import io.helidon.config.ConfigException;
@@ -31,6 +33,7 @@ import io.helidon.inject.configdriven.api.ConfigBean;
  * See {@link WebServer#create(java.util.function.Consumer)}.
  */
 @Prototype.Blueprint(decorator = WebServerConfigBlueprint.ServerConfigDecorator.class)
+@Prototype.CustomMethods(WebServerConfigSupport.CustomMethods.class)
 @Configured(root = true, prefix = "server")
 @ConfigBean(wantDefault = true)
 interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
@@ -52,8 +55,19 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      * @return map of listener configurations, except for the default one
      */
     @ConfiguredOption
-    @Prototype.Singular
+    @Option.Singular
     Map<String, ListenerConfig> sockets();
+
+    /**
+     * Routing for additional sockets.
+     * Note that socket named {@value WebServer#DEFAULT_SOCKET_NAME} cannot be used,
+     * configure the routing on the server directly.
+     *
+     * @return map of routing
+     */
+    @Option.Singular
+    @Option.Access("")
+    Map<String, List<Routing>> namedRoutings();
 
     /**
      * Context for the WebServer, if none defined, a new one will be created with global context as the root.
@@ -68,6 +82,10 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
             if (target.sockets().containsKey(WebServer.DEFAULT_SOCKET_NAME)) {
                 throw new ConfigException("Default socket must be configured directly on server config node, or through"
                                                   + " \"ServerConfig.Builder\", not as a separated socket.");
+            }
+            if (target.namedRoutings().containsKey(WebServer.DEFAULT_SOCKET_NAME)) {
+                throw new ConfigException("Default routing must be configured directly on server config node, or through"
+                                                  + " \"ServerConfig.Builder\", not as a named routing.");
             }
         }
     }

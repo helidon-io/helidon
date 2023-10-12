@@ -85,19 +85,28 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     int initialWindowSize();
 
     /**
-     * First connection window update increment sent right after the connection is established.
-     * Defaults to {@code 33_554_432}.
-     *
-     * @return number of bytes the client is prepared to receive as data from all the streams combined
-     */
-    @ConfiguredOption("33554432")
-    int prefetch();
-
-    /**
      * Timeout for blocking between windows size check iterations.
      *
      * @return timeout
      */
     @ConfiguredOption("PT0.1S")
     Duration flowControlBlockTimeout();
+
+    /**
+     * Check healthiness of cached connections with HTTP/2.0 ping frame.
+     * Defaults to {@code false}.
+     *
+     * @return use ping if true
+     */
+    @ConfiguredOption("false")
+    boolean ping();
+
+    /**
+     * Timeout for ping probe used for checking healthiness of cached connections.
+     * Defaults to {@code PT0.5S}, which means 500 milliseconds.
+     *
+     * @return timeout
+     */
+    @ConfiguredOption("PT0.5S")
+    Duration pingTimeout();
 }

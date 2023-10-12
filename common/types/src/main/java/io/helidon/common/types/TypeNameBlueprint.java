@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #name()} returns the package +
@@ -53,7 +53,7 @@ interface TypeNameBlueprint {
      *
      * @return the package name, never null
      */
-    @ConfiguredOption("") // default value is empty package
+    @Option.Default("") // default value is empty package
     String packageName();
 
     /**
@@ -61,7 +61,7 @@ interface TypeNameBlueprint {
      *
      * @return the simple class name
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String className();
 
     /**
@@ -84,7 +84,7 @@ interface TypeNameBlueprint {
      *
      * @return enclosing classes simple names
      */
-    @Prototype.Singular
+    @Option.Singular
     List<String> enclosingNames();
 
     /**
@@ -92,7 +92,7 @@ interface TypeNameBlueprint {
      *
      * @return true if this type represents a primitive type
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean primitive();
 
     /**
@@ -100,7 +100,7 @@ interface TypeNameBlueprint {
      *
      * @return true if this type represents a primitive array []
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean array();
 
     /**
@@ -108,8 +108,8 @@ interface TypeNameBlueprint {
      *
      * @return used to represent a generic (e.g., "Optional&lt;CB&gt;")
      */
-    @Prototype.Redundant
-    @ConfiguredOption("false")
+    @Option.Redundant
+    @Option.DefaultBoolean(false)
     boolean generic();
 
     /**
@@ -117,18 +117,30 @@ interface TypeNameBlueprint {
      *
      * @return used to represent a wildcard (e.g., "? extends SomeType")
      */
-    @ConfiguredOption("false")
-    @Prototype.Redundant
+    @Option.Redundant
+    @Option.DefaultBoolean(false)
     boolean wildcard();
 
     /**
-     * Returns the list of generic type parameters, or an empty list if no generics are in use.
+     * Returns the list of generic type arguments, or an empty list if no generics are in use.
      *
      * @return the type arguments of this type, if this type supports generics/parameterized type
+     * @see #typeParameters()
      */
-    @Prototype.Singular
-    @Prototype.Redundant
+    @Option.Singular
+    @Option.Redundant
     List<TypeName> typeArguments();
+
+    /**
+     * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
+     * for example in declaration of the top level type (as arguments are a function of usage of the type).
+     * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
+     *
+     * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
+     */
+    @Option.Singular
+    @Option.Redundant
+    List<String> typeParameters();
 
     /**
      * Indicates whether this type is a {@code java.util.List}.

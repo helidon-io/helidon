@@ -30,7 +30,7 @@
                 <option value="json" name="JSON" description="Handle 'application/json' payloads">
                     <inputs>
                         <enum id="json-lib" name="Select a JSON library" default="${default-json-lib}" optional="true">
-                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${flavor} == 'nima'">
+                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${flavor} == 'se'">
                                 <output>
                                     <model>
                                         <list key="dependencies">
@@ -43,9 +43,6 @@
                                                 <value key="artifactId">helidon-http-media-jsonp</value>
                                             </map>
                                         </list>
-                                        <list key="Main-routing-builder">
-                                            <value>.register("/greet", new GreetService())</value>
-                                        </list>
                                         <list key="MainTest-other-imports">
                                             <value>jakarta.json.JsonObject</value>
                                         </list>
@@ -56,7 +53,7 @@
         try (Http1ClientResponse response = client.get("/greet")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
             assertThat(json.getString("message"), is("Hello World!"));
         }
@@ -77,6 +74,10 @@
                                                 <value key="groupId">com.fasterxml.jackson.core</value>
                                                 <value key="artifactId">jackson-databind</value>
                                             </map>
+                                            <map order="500" if="${flavor} == 'se'">
+                                                <value key="groupId">io.helidon.http.media</value>
+                                                <value key="artifactId">helidon-http-media-jackson</value>
+                                            </map>
                                             <map order="500" if="${flavor} == 'mp'">
                                                 <value key="groupId">org.glassfish.jersey.media</value>
                                                 <value key="artifactId">jersey-media-json-jackson</value>
@@ -93,7 +94,7 @@
                                 <output>
                                     <model>
                                         <list key="dependencies">
-                                            <map order="500" if="${flavor} != 'nima'">
+                                            <map order="500" if="${flavor} != 'se'">
                                                 <value key="groupId">jakarta.json.bind</value>
                                                 <value key="artifactId">jakarta.json.bind-api</value>
                                             </map>
@@ -102,20 +103,17 @@
                                                 <value key="artifactId">jersey-media-json-binding</value>
                                                 <value key="scope">runtime</value>
                                             </map>
-                                            <map order="500" if="${flavor} == 'nima'">
+                                            <map order="500" if="${flavor} == 'se'">
                                                 <value key="groupId">io.helidon.http.media</value>
                                                 <value key="artifactId">helidon-http-media-jsonb</value>
                                             </map>
                                         </list>
-                                        <list key="Main-routing-builder" if="${flavor} == 'nima'">
-                                            <value><![CDATA[.register("/greet", new GreetService())]]></value>
-                                        </list>
-                                        <list key="Abstract-tests" if="${flavor} == 'nima'">
+                                        <list key="Abstract-tests" if="${flavor} == 'se'">
                                             <value><![CDATA[
     @Test
     void testGreet() {
         try (Http1ClientResponse response = client.get("/greet").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(Message.class).getMessage(), is("Hello World!"));
         }
     }
@@ -123,7 +121,7 @@
     @Test
     void testGreetJoe() {
         try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(Message.class).getMessage(), is("Hello Joe!"));
         }
     }
@@ -146,24 +144,24 @@
                                     <value key="groupId">org.glassfish.jersey.media</value>
                                     <value key="artifactId">jersey-media-multipart</value>
                                 </map>
-                                <map order="500" if="${flavor} == 'nima'">
+                                <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.http.media</value>
                                     <value key="artifactId">helidon-http-media-multipart</value>
                                 </map>
-                                <map order="500" if="${flavor} == 'nima'">
+                                <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.http.media</value>
                                     <value key="artifactId">helidon-http-media-jsonp</value>
                                 </map>
-                                <map order="500" if="${flavor} == 'nima'">
+                                <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.webserver</value>
                                     <value key="artifactId">helidon-webserver-static-content</value>
                                 </map>
-                                <map order="500" if="${flavor} == 'nima'">
+                                <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">jakarta.json</value>
                                     <value key="artifactId">jakarta.json-api</value>
                                 </map>
                             </list>
-                            <list key="modules" if="${flavor} == 'nima'">
+                            <list key="modules" if="${flavor} == 'se'">
                                 <value>jakarta.json</value>
                                 <value>io.helidon.http.media.multipart</value>
                                 <value>io.helidon.webserver.staticcontent</value>
@@ -172,15 +170,17 @@
                                 <value>jakarta.json</value>
                                 <value>jersey.media.multipart</value>
                             </list>
-                            <list key="Main-helidon-imports" if="${flavor} == 'nima'">
-                                <value>io.helidon.http.Http</value>
-                                <value>io.helidon.http.Http.Header</value>
+                            <list key="Main-helidon-imports" if="${flavor} == 'se'">
+                                <value>io.helidon.http.Header</value>
+                                <value>io.helidon.http.Status</value>
+                                <value>io.helidon.http.HeaderNames</value>
+                                <value>io.helidon.http.HeaderValues</value>
                                 <value>io.helidon.webserver.staticcontent.StaticContentService</value>
                             </list>
-                            <list key="Main-routing-builder" if="${flavor} == 'nima'">
+                            <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value order="1"><![CDATA[.any("/", (req, res) -> {
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.header(Http.Headers.createCached(Http.HeaderNames.LOCATION, "/ui"));
+                    res.status(Status.MOVED_PERMANENTLY_301);
+                    res.header(HeaderValues.createCached(HeaderNames.LOCATION, "/ui"));
                     res.send();
                 })
                 .register("/ui", StaticContentService.builder("WEB")
@@ -193,7 +193,7 @@
     @Test
     void testFileService() {
         try (Http1ClientResponse response = client.get("/api").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 ]]></value>

@@ -20,19 +20,19 @@ import java.io.OutputStream;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +62,7 @@ class MediaContextTest {
     @Test
     void testCustomizeMediaContext() {
 
-        try (Http1ClientResponse response = client.method(Http.Method.GET).uri("/hello").request()) {
+        try (Http1ClientResponse response = client.method(Method.GET).uri("/hello").request()) {
             String responseEntityString = response.entity().as(String.class);
             assertThat(responseEntityString.length(), equalTo(5));
             assertThat(responseEntityString, is("hello"));

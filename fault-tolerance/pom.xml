@@ -31,6 +31,5 @@
 
     <modules>
         <module>fault-tolerance</module>
-        <module>processor</module>
     </modules>
 </project>

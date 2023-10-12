@@ -22,8 +22,11 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
-import io.helidon.tests.integration.harness.SetUp;
+import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
+
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.verifyDeletePokemon;
@@ -34,12 +37,12 @@ import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.veri
  * Test set of basic JDBC DML statement calls.
  */
 @SuppressWarnings("SpellCheckingInspection")
-public class SimpleDmlIT extends AbstractIT {
+@ExtendWith(DbClientParameterResolver.class)
+public class SimpleDmlIT {
 
     private static final System.Logger LOGGER = System.getLogger(SimpleDmlIT.class.getName());
-    private static final int BASE_ID = LAST_POKEMON_ID + 40;
+    private static final int BASE_ID = TestConfig.LAST_POKEMON_ID + 40;
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
-
     private final DbClient dbClient;
     private final Config config;
 
@@ -55,7 +58,7 @@ public class SimpleDmlIT extends AbstractIT {
         verifyInsertPokemon(dbClient, result, pokemon);
     }
 
-    @SetUp
+    @BeforeAll
     public static void setup(DbClient dbClient) {
         try {
             // [BASE_ID + 1 .. BASE_ID + 9] is reserved for inserts

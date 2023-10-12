@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.Base64Value;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.Vault;
@@ -149,7 +149,7 @@ class VaultTest {
 
         assertThat("Enable kv1 engine, got response status: " + enableResponse.status(),
                    enableResponse.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
 
         Kv1Secrets secrets = tokenVault.secrets(Kv1Secrets.ENGINE);
         String secretPath = "first/secret";
@@ -158,7 +158,7 @@ class VaultTest {
         CreateKv1.Response createResponse = secrets.create(secretPath, Map.of("key", "secretValue"));
         assertThat("Create secret, got response status: " + createResponse.status(),
                    createResponse.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
 
         // get secret
         Optional<Secret> maybeSecret = secrets.get(secretPath);
@@ -171,7 +171,7 @@ class VaultTest {
         DeleteKv1.Response deleteResponse = secrets.delete(secretPath);
         assertThat("Delete secret, got response status: " + deleteResponse.status(),
                    deleteResponse.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
 
         List<String> secretList = secrets.list();
         assertThat(secretList, is(List.of()));
@@ -185,7 +185,7 @@ class VaultTest {
 
         assertThat("Disable kv1 engine, got response status: " + disableResponse.status(),
                    disableResponse.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
     }
 
     @Test
@@ -198,7 +198,7 @@ class VaultTest {
         CreateKv2.Response createResponse = secrets.create(secretPath, Map.of("key", "secretValue"));
         assertThat("Create secret, got response status: " + createResponse.status(),
                    createResponse.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
 
         // get secret
         Optional<Kv2Secret> maybeSecret = secrets.get(secretPath);
@@ -218,7 +218,7 @@ class VaultTest {
         DeleteKv2.Response deleteResponse = secrets.delete(secretPath, 1);
         assertThat("Delete secret, got response status: " + deleteResponse.status(),
                    deleteResponse.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
 
         maybeSecret = secrets.get(secretPath);
 
@@ -235,7 +235,7 @@ class VaultTest {
         CreateCubbyhole.Response createResponse = secrets.create(secretPath, Map.of("key", "secretValue"));
         assertThat("Create secret, got response status: " + createResponse.status(),
                    createResponse.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
 
         // get secret
         Optional<Secret> maybeSecret = secrets.get(secretPath);
@@ -248,7 +248,7 @@ class VaultTest {
         DeleteCubbyhole.Response deleteResponse = secrets.delete(secretPath);
         assertThat("Delete secret, got response status: " + deleteResponse.status(),
                    deleteResponse.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
 
         List<String> secretList = secrets.list();
         assertThat(secretList, is(List.of()));
@@ -509,6 +509,6 @@ class VaultTest {
     private void assertSuccess(String action, ApiResponse response) {
         assertThat(action + ", got response status: " + response.status(),
                    response.status().family(),
-                   is(Http.Status.Family.SUCCESSFUL));
+                   is(Status.Family.SUCCESSFUL));
     }
 }

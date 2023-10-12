@@ -25,10 +25,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.http.Http;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
+import io.helidon.security.SecurityContext;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
@@ -36,7 +38,6 @@ import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.security.SecurityContext;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -104,8 +105,8 @@ public class GreetService implements HttpService {
 
     private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
         serverRequest.headers().contentLength()
-                .ifPresentOrElse(value -> serverResponse.send(Http.HeaderNames.CONTENT_LENGTH + " is " + value),
-                        () -> serverResponse.send("No " + Http.HeaderNames.CONTENT_LENGTH + " has been set"));
+                .ifPresentOrElse(value -> serverResponse.send(HeaderNames.CONTENT_LENGTH + " is " + value),
+                        () -> serverResponse.send("No " + HeaderNames.CONTENT_LENGTH + " has been set"));
     }
 
     private void basicAuthOutbound(ServerRequest request, ServerResponse response) {
@@ -115,7 +116,7 @@ public class GreetService implements HttpService {
                                                                              + "/greet/secure/basic")
                 .request()) {
             response.status(clientResponse.status());
-            if (clientResponse.status() == Http.Status.OK_200) {
+            if (clientResponse.status() == Status.OK_200) {
                 response.send(clientResponse.entity().as(String.class));
             } else {
                 response.send();
@@ -126,7 +127,7 @@ public class GreetService implements HttpService {
     private void valuesPropagated(ServerRequest serverRequest, ServerResponse serverResponse) {
         String queryParam = serverRequest.query().first("param").orElse("Query param not present");
         String fragment = serverRequest.prologue().fragment().value();
-        serverResponse.status(Http.Status.OK_200);
+        serverResponse.status(Status.OK_200);
         serverResponse.send(queryParam + " " + fragment);
     }
 
@@ -135,7 +136,7 @@ public class GreetService implements HttpService {
         String queryValue = serverRequest.query().first(queryParam).orElse("Query " + queryParam + " param not present");
         UriFragment uriFragment = serverRequest.prologue().fragment();
         String fragment = uriFragment.hasValue() ? uriFragment.value() : null;
-        serverResponse.status(Http.Status.OK_200);
+        serverResponse.status(Status.OK_200);
         serverResponse.send(queryValue + " " + (fragment == null ? "" : fragment));
     }
 
@@ -167,18 +168,18 @@ public class GreetService implements HttpService {
      * @param response the server response
      */
     private void redirect(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet");
-        response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+        response.headers().add(HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet");
+        response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectPath(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, "/greet");
-        response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+        response.headers().add(HeaderNames.LOCATION, "/greet");
+        response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectInfinite(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet/redirect/infinite");
-        response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+        response.headers().add(HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet/redirect/infinite");
+        response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void form(ServerRequest req, ServerResponse res) {
@@ -207,7 +208,7 @@ public class GreetService implements HttpService {
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "Invalid JSON")
                     .build();
-            response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+            response.status(Status.BAD_REQUEST_400).send(jsonErrorObject);
         }
     }
 
@@ -226,13 +227,13 @@ public class GreetService implements HttpService {
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "No greeting provided")
                     .build();
-            response.status(Http.Status.BAD_REQUEST_400)
+            response.status(Status.BAD_REQUEST_400)
                     .send(jsonErrorObject);
             return;
         }
 
         greeting.set(jo.getString("greeting"));
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.status(Status.NO_CONTENT_204).send();
     }
 
     /**
@@ -250,7 +251,7 @@ public class GreetService implements HttpService {
 
         // Verify that context was propagated with auth enabled
         if (context.isEmpty()) {
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
 
@@ -261,7 +262,7 @@ public class GreetService implements HttpService {
         try (Http1ClientResponse ignored = webClient.get().request()) {
             Context singleContext = Contexts.context().orElseThrow();
             Objects.requireNonNull(singleContext.get(GreetService.class));
-            response.status(Http.Status.OK_200);
+            response.status(Status.OK_200);
             response.send();
         }
     }

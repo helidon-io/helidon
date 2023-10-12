@@ -122,7 +122,7 @@ The index `_i_` is an integer (0, 1, 2, etc.).
 
 The system uses the index `_i_`, not the position in the config file, to identify the settings for a particular resource.
 
-Path patterns can be any expression accepted by the link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/PathMatcher.html[`PathMatcher`] class.
+Path patterns can be any expression accepted by the link:{webserver-javadoc-base-url}/io/helidon/webserver/PathMatcher.html[`PathMatcher`] class.
 
 NOTE: Helidon scans the cross-origin entries in index order (0, 1, 2, etc.) until it finds an entry that
 matches an incoming request's path and HTTP method, so be sure to assign index values to the entries so Helidon will check them in the order you want. In particular, use lower index values for entries with more specific path patterns.
@@ -212,6 +212,11 @@ cors.paths.1.allow-origins=http://foo.com
 
 
 == Additional Information
+
+include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-intro]
+You can configure how the Helidon server handles these headers as described in the documentation for xref:{rootdir}/mp/server.adoc#_using_requested_uri_discovery[requested URI discovery].
+
+include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-wrapup]
 
 include::{rootdir}/includes/cors.adoc[tag=understanding-cors-support-in-services]
 

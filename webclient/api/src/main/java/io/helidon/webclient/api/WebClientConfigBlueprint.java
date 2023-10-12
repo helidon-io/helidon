@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -38,7 +39,7 @@ interface WebClientConfigBlueprint extends HttpClientConfigBlueprint, Prototype.
      * @return client protocol configurations
      */
     @ConfiguredOption(provider = true, providerType = ProtocolConfigProvider.class)
-    @Prototype.Singular
+    @Option.Singular
     List<ProtocolConfig> protocolConfigs();
 
     /**
@@ -51,6 +52,6 @@ interface WebClientConfigBlueprint extends HttpClientConfigBlueprint, Prototype.
      *
      * @return list of HTTP protocol IDs in order of preference
      */
-    @Prototype.Singular
+    @Option.Singular
     List<String> protocolPreference();
 }

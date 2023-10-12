@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -53,7 +53,8 @@ public class GreetService implements HttpService {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-    GreetService(Config config) {
+    GreetService() {
+        Config config = Config.global();
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
     }
 
@@ -86,7 +87,7 @@ public class GreetService implements HttpService {
      * @param response the server response
      */
     private void getMessageHandler(ServerRequest request, ServerResponse response) {
-        String name = request.path().pathParameters().value("name");
+        String name = request.path().pathParameters().get("name");
         sendResponse(response, name);
     }
 
@@ -104,13 +105,13 @@ public class GreetService implements HttpService {
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                                              .add("error", "No greeting provided")
                                              .build();
-            response.status(Http.Status.BAD_REQUEST_400)
+            response.status(Status.BAD_REQUEST_400)
                     .send(jsonErrorObject);
             return;
         }
 
         greeting.set(jo.getString("greeting"));
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.status(Status.NO_CONTENT_204).send();
     }
 
     /**

@@ -17,7 +17,7 @@ package io.helidon.webclient.tests;
 
 import java.util.List;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -49,7 +49,7 @@ public class HeaderTest extends TestParent {
         Http1Client webClient = createNewClient(new HeaderTestService(TEST_USER));
 
         webClient.get()
-                .header(Http.HeaderNames.USER_AGENT, TEST_USER)
+                .header(HeaderNames.USER_AGENT, TEST_USER)
                 .request(JsonObject.class);
     }
 
@@ -59,18 +59,18 @@ public class HeaderTest extends TestParent {
 
         try (Http1ClientResponse res = webClient.post("contentLength").request()) {
             String contentLength = res.as(String.class);
-            assertThat(contentLength, is(Http.HeaderNames.CONTENT_LENGTH + " is 0"));
+            assertThat(contentLength, is(HeaderNames.CONTENT_LENGTH + " is 0"));
         }
 
         try (Http1ClientResponse res = webClient.post("contentLength").request()) {
             String contentLength = res.as(String.class);
-            assertThat(contentLength, is(Http.HeaderNames.CONTENT_LENGTH + " is 0"));
+            assertThat(contentLength, is(HeaderNames.CONTENT_LENGTH + " is 0"));
         }
 
         String sampleSmallEntity = "Hi there";
         try (Http1ClientResponse res = webClient.post("contentLength").submit(sampleSmallEntity)) {
             String contentLength = res.as(String.class);
-            assertThat(contentLength, is(Http.HeaderNames.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
+            assertThat(contentLength, is(HeaderNames.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
         }
 
         try (Http1ClientResponse res = webClient.post()
@@ -80,7 +80,7 @@ public class HeaderTest extends TestParent {
                 .path("contentLength")
                 .submit(sampleSmallEntity)) {
             String contentLength = res.as(String.class);
-            assertThat(contentLength, is(Http.HeaderNames.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
+            assertThat(contentLength, is(HeaderNames.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
         }
     }
 
@@ -88,7 +88,7 @@ public class HeaderTest extends TestParent {
 
         @Override
         public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
-            List<String> userAgent = request.headers().all(Http.HeaderNames.USER_AGENT, List::of);
+            List<String> userAgent = request.headers().all(HeaderNames.USER_AGENT, List::of);
             assertThat(userAgent, hasSize(1));
             assertThat(userAgent, contains(user));
             return chain.proceed(request);

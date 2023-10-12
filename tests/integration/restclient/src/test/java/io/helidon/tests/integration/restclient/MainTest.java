@@ -16,11 +16,11 @@
 
 package io.helidon.tests.integration.restclient;
 
+import io.helidon.microprofile.testing.junit5.HelidonTest;
+
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
-
-import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;

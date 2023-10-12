@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.media.multipart.MultiPartSupportProvider;
-import io.helidon.http.media.spi.MediaSupportProvider;
 
 /**
  * Multipart media support.
@@ -28,13 +26,16 @@ import io.helidon.http.media.spi.MediaSupportProvider;
         path = {"Media", "Multipart"}
 )
 module io.helidon.http.media.multipart {
-    requires static io.helidon.common.features.api;
 
-    requires io.helidon.http;
-    requires io.helidon.http.media;
     requires io.helidon.common.buffers;
+    requires io.helidon.http.media;
+    requires io.helidon.http;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.http.media.multipart;
 
-    provides MediaSupportProvider with MultiPartSupportProvider;
+    provides io.helidon.http.media.spi.MediaSupportProvider
+            with io.helidon.http.media.multipart.MultiPartSupportProvider;
+
 }

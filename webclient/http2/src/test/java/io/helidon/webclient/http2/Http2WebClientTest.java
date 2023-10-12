@@ -31,40 +31,39 @@ import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ConnectionSelector;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.helidon.http.Http.HeaderNames.USER_AGENT;
-import static io.helidon.http.Http.Method.GET;
-import static io.helidon.http.Http.Method.POST;
-import static io.helidon.http.Http.Method.PUT;
+import static io.helidon.http.HeaderNames.USER_AGENT;
+import static io.helidon.http.Method.GET;
+import static io.helidon.http.Method.POST;
+import static io.helidon.http.Method.PUT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @ServerTest
 class Http2WebClientTest {
 
-    private static final Http.HeaderName CLIENT_CUSTOM_HEADER_NAME = Http.HeaderNames.create("client-custom-header");
-    private static final Http.HeaderName SERVER_CUSTOM_HEADER_NAME = Http.HeaderNames.create("server-custom-header");
-    private static final Http.HeaderName SERVER_HEADER_FROM_PARAM_NAME = Http.HeaderNames.create("header-from-param");
-    private static final Http.HeaderName CLIENT_USER_AGENT_HEADER_NAME = Http.HeaderNames.create("client-user-agent");
+    private static final HeaderName CLIENT_CUSTOM_HEADER_NAME = HeaderNames.create("client-custom-header");
+    private static final HeaderName SERVER_CUSTOM_HEADER_NAME = HeaderNames.create("server-custom-header");
+    private static final HeaderName SERVER_HEADER_FROM_PARAM_NAME = HeaderNames.create("header-from-param");
+    private static final HeaderName CLIENT_USER_AGENT_HEADER_NAME = HeaderNames.create("client-user-agent");
     private static ExecutorService executorService;
     private static int plainPort;
     private static int tlsPort;
@@ -139,24 +138,24 @@ class Http2WebClientTest {
                         .route(Http1Route.route(GET, "/versionspecific", (req, res) -> res.send("HTTP/1.1 route")))
                         .route(Http2Route.route(GET, "/versionspecific", (req, res) -> {
                             res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().value("custQueryParam"));
+                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
                             res.send("HTTP/2 route");
                         }))
                         .route(Http2Route.route(PUT, "/versionspecific", (req, res) -> {
                             res.header(SERVER_CUSTOM_HEADER_NAME, req.headers().get(CLIENT_CUSTOM_HEADER_NAME).value());
                             res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().value("custQueryParam"));
+                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
                             res.send("PUT " + req.content().as(String.class));
                         }))
                         .route(Http2Route.route(POST, "/versionspecific", (req, res) -> {
                             res.header(SERVER_CUSTOM_HEADER_NAME, req.headers().get(CLIENT_CUSTOM_HEADER_NAME).value());
                             res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().value("custQueryParam"));
+                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
                             res.send("POST " + req.content().as(String.class));
                         }))
                         .route(Http2Route.route(GET, "/versionspecific/h2streaming", (req, res) -> {
-                            res.status(Http.Status.OK_200);
-                            String execId = req.query().value("execId");
+                            res.status(Status.OK_200);
+                            String execId = req.query().get("execId");
                             try (OutputStream os = res.outputStream()) {
                                 for (int i = 0; i < 5; i++) {
                                     os.write(String.format(execId + "BAF%03d", i).getBytes());
@@ -195,7 +194,7 @@ class Http2WebClientTest {
                 .queryParam("custQueryParam", "test-get")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("HTTP/2 route"));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
                        is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
@@ -216,7 +215,7 @@ class Http2WebClientTest {
                 .header(CLIENT_CUSTOM_HEADER_NAME, custHeaderValue)
                 .submit(payload)) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("PUT " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
                        is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
@@ -239,7 +238,7 @@ class Http2WebClientTest {
                 .header(CLIENT_CUSTOM_HEADER_NAME, custHeaderValue)
                 .submit(payload)) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("POST " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
                        is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));

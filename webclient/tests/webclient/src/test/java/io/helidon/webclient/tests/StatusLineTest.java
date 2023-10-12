@@ -16,13 +16,13 @@
 
 package io.helidon.webclient.tests;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -45,12 +45,12 @@ class StatusLineTest {
     static void routing(HttpRules rules) {
         rules.get("/status/{code}", (
                         (req, res) -> {
-                            int code = Integer.parseInt(req.path().pathParameters().value("code"));
+                            int code = Integer.parseInt(req.path().pathParameters().get("code"));
                             res.status(code);
                             res.send();
                         }))
                 .get("/{code}", (req, res) -> {
-                    int code = Integer.parseInt(req.path().pathParameters().value("code"));
+                    int code = Integer.parseInt(req.path().pathParameters().get("code"));
                     try (HttpClientResponse clientRes = client.get("/status/" + code).request()) {
                         res.send("got : " + clientRes.status().code());
                     }

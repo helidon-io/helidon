@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,20 +28,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
 import io.helidon.common.features.HelidonFeatures;
-import io.helidon.config.mp.MpConfigProviderResolver;
 import io.helidon.logging.common.LogConfig;
 
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import org.graalvm.nativeimage.hosted.Feature;
-import org.graalvm.nativeimage.hosted.RuntimeProxyCreation;
+import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
 import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
 
@@ -54,7 +51,6 @@ public class HelidonReflectionFeature implements Feature {
 
     private static final String AT_ENTITY = "jakarta.persistence.Entity";
     private static final String AT_MAPPED_SUPERCLASS = "jakarta.persistence.MappedSuperclass";
-    private static final String AT_REGISTER_REST_CLIENT = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
 
     private final NativeTrace tracer = new NativeTrace();
     private NativeUtil util;
@@ -68,7 +64,10 @@ public class HelidonReflectionFeature implements Feature {
     public void beforeAnalysis(BeforeAnalysisAccess access) {
         // need the application classloader
         Class<?> logConfigClass = access.findClassByName(LogConfig.class.getName());
-        ClassLoader classLoader = logConfigClass.getClassLoader();
+        ClassLoader classLoader = access.getApplicationClassLoader();
+
+        tracer.parsing(() -> "Classpath as provided by the access: " + access.getApplicationClassPath());
+        tracer.parsing(() -> "Modulepath as provided by the access: " + access.getApplicationModulePath());
 
         // initialize logging (if on classpath)
         try {
@@ -81,12 +80,15 @@ public class HelidonReflectionFeature implements Feature {
         // make sure we print all the warnings for native image
         HelidonFeatures.nativeBuildTime(classLoader);
 
+        // we need to initialize open-api type (as it fails at runtime, uses class files from classpath)
+        initLogging(access);
+
         // load configuration
         HelidonReflectionConfiguration config = HelidonReflectionConfiguration.load(access, classLoader, tracer);
 
         // classpath scanning using the correct classloader
         ScanResult scan = new ClassGraph()
-                .overrideClassLoaders(classLoader)
+                .overrideClasspath(access.getApplicationClassPath())
                 .enableAllInfo()
                 .scan();
 
@@ -107,20 +109,12 @@ public class HelidonReflectionFeature implements Feature {
         // process each configured class
         config.classes().forEach(it -> addSingleClass(context, it));
 
-        // rest client registration (proxy support)
-        processRegisterRestClient(context);
-
         // JPA Entity registration
         processEntity(context);
 
         // all classes, fields and methods annotated with @Reflected
         addAnnotatedWithReflected(context);
 
-        // all classes used as return types and parameters in JAX-RS resources
-        processJaxRsTypes(context);
-
-        // JAX-RS types required for headers, query params etc.
-        addJaxRsConversions(context);
 
         /*
          *
@@ -130,9 +124,24 @@ public class HelidonReflectionFeature implements Feature {
         registerForReflection(context);
     }
 
-    @Override
-    public void beforeCompilation(BeforeCompilationAccess access) {
-        MpConfigProviderResolver.buildTimeEnd();
+    private void initLogging(BeforeAnalysisAccess access) {
+        String jul = "io.helidon.logging.jul.JulProvider";
+        Class<?> classByName = access.findClassByName(jul);
+        if (classByName != null) {
+            addBuildTime(access, "java.util.logging.StreamHandler");
+            addBuildTime(access, "java.util.logging.Handler");
+            addBuildTime(access, "io.helidon.logging.jul.HelidonConsoleHandler");
+            addBuildTime(access, jul);
+        }
+    }
+
+    private void addBuildTime(BeforeAnalysisAccess access, String className) {
+        Class<?> classByName = access.findClassByName(className);
+        if (classByName == null) {
+            return;
+        }
+        // only register it if on classpath
+        RuntimeClassInitialization.initializeAtBuildTime(classByName);
     }
 
     private void processAnnotated(BeforeAnalysisContext context, Class<?> annotationClass) {
@@ -172,68 +181,6 @@ public class HelidonReflectionFeature implements Feature {
             superclasses(context, theClass);
             context.register(theClass).addDefaults();
         }
-    }
-
-    private void addJaxRsConversions(BeforeAnalysisContext context) {
-        addJaxRsConversions(context, "jakarta.ws.rs.QueryParam");
-        addJaxRsConversions(context, "jakarta.ws.rs.PathParam");
-        addJaxRsConversions(context, "jakarta.ws.rs.HeaderParam");
-        addJaxRsConversions(context, "jakarta.ws.rs.MatrixParam");
-        addJaxRsConversions(context, "jakarta.ws.rs.BeanParam");
-    }
-
-    private void addJaxRsConversions(BeforeAnalysisContext context, String annotation) {
-        tracer.parsing(() -> "Looking up annotated by " + annotation);
-
-        Set<Class<?>> allTypes = new HashSet<>();
-
-        // we need fields and method parameters
-        context.scan()
-                .getClassesWithFieldAnnotation(annotation)
-                .stream()
-                .flatMap(theClass -> theClass.getFieldInfo().stream())
-                .filter(field -> field.hasAnnotation(annotation))
-                .map(fieldInfo -> util.getSimpleType(context.access()::findClassByName, fieldInfo))
-                .filter(Objects::nonNull)
-                .forEach(allTypes::add);
-
-        // method annotations
-        context.scan()
-                .getClassesWithMethodParameterAnnotation(annotation)
-                .stream()
-                .flatMap(theClass -> theClass.getMethodInfo().stream())
-                .flatMap(theMethod -> Stream.of(theMethod.getParameterInfo()))
-                .filter(param -> param.hasAnnotation(annotation))
-                .map(param -> util.getSimpleType(context.access()::findClassByName, param))
-                .filter(Objects::nonNull)
-                .forEach(allTypes::add);
-
-        // now let's find all static methods `valueOf` and `fromString`
-        for (Class<?> type : allTypes) {
-            try {
-                Method valueOf = type.getDeclaredMethod("valueOf", String.class);
-                RuntimeReflection.register(valueOf);
-                tracer.parsing(() -> "Registering " + valueOf);
-            } catch (NoSuchMethodException ignored) {
-                try {
-                    Method fromString = type.getDeclaredMethod("fromString", String.class);
-                    RuntimeReflection.register(fromString);
-                    tracer.parsing(() -> "Registering " + fromString);
-                } catch (NoSuchMethodException ignored2) {
-                }
-            }
-        }
-    }
-
-    private void processJaxRsTypes(BeforeAnalysisContext context) {
-        tracer.parsing(() -> "Looking up JAX-RS resource methods.");
-
-        new JaxRsMethodAnalyzer(context, util)
-                .find()
-                .forEach(it -> {
-                    tracer.parsing(() -> " class " + it);
-                    context.register(it).addAll();
-                });
     }
 
     private void addAnnotatedWithReflected(BeforeAnalysisContext context) {
@@ -294,34 +241,7 @@ public class HelidonReflectionFeature implements Feature {
         });
     }
 
-    @SuppressWarnings("unchecked")
-    private void processRegisterRestClient(BeforeAnalysisContext context) {
 
-        Class<? extends Annotation> restClientAnnotation = (Class<? extends Annotation>) context.access()
-                .findClassByName(AT_REGISTER_REST_CLIENT);
-
-        if (null == restClientAnnotation) {
-            return;
-        }
-
-        tracer.parsing(() -> "Looking up annotated by " + AT_REGISTER_REST_CLIENT);
-
-        Set<Class<?>> annotatedSet = util.findAnnotated(AT_REGISTER_REST_CLIENT);
-        Class<?> autoCloseable = context.access().findClassByName("java.lang.AutoCloseable");
-        Class<?> closeable = context.access().findClassByName("java.io.Closeable");
-
-        annotatedSet.forEach(it -> {
-            if (context.isExcluded(it)) {
-                tracer.parsing(() -> "Class " + it.getName() + " annotated by " + AT_REGISTER_REST_CLIENT + " is excluded");
-            } else {
-                // we need to add it for reflection
-                processClassHierarchy(context, it);
-                // and we also need to create a proxy
-                tracer.parsing(() -> "Registering a proxy for class " + it.getName());
-                RuntimeProxyCreation.register(it, autoCloseable, closeable);
-            }
-        });
-    }
 
     private void registerForReflection(BeforeAnalysisContext context) {
         Collection<Register> toRegister = context.toRegister();

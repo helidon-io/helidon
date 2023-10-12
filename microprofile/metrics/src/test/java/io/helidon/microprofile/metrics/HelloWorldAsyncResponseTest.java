@@ -21,8 +21,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.LongStream;
 
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.inject.Inject;
@@ -37,8 +37,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
-import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
-import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
+import static io.helidon.metrics.api.MetricsConfig.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_SIMPLE_TIMER;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_TIMER;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_RESPONSE;
@@ -53,7 +52,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddConfig(key =
         "metrics."
                 + KEY_PERFORMANCE_INDICATORS_CONFIG_KEY
-                + "." + KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY,
+                + ".extended",
         value = "true")
 public class HelloWorldAsyncResponseTest {
 

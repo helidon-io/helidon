@@ -57,7 +57,7 @@ public interface DirectHandler {
      */
     default TransportResponse handle(TransportRequest request,
                                      EventType eventType,
-                                     Http.Status defaultStatus,
+                                     Status defaultStatus,
                                      ServerResponseHeaders responseHeaders,
                                      Throwable thrown) {
         return handle(request, eventType, defaultStatus, responseHeaders, thrown, null);
@@ -80,7 +80,7 @@ public interface DirectHandler {
      */
     default TransportResponse handle(TransportRequest request,
                                      EventType eventType,
-                                     Http.Status defaultStatus,
+                                     Status defaultStatus,
                                      ServerResponseHeaders responseHeaders,
                                      Throwable thrown,
                                      System.Logger logger) {
@@ -115,7 +115,7 @@ public interface DirectHandler {
      */
     TransportResponse handle(TransportRequest request,
                              EventType eventType,
-                             Http.Status defaultStatus,
+                             Status defaultStatus,
                              ServerResponseHeaders responseHeaders,
                              String message);
 
@@ -172,28 +172,28 @@ public interface DirectHandler {
         /**
          * Bad request, such as invalid path, header.
          */
-        BAD_REQUEST(Http.Status.BAD_REQUEST_400, false),
+        BAD_REQUEST(Status.BAD_REQUEST_400, false),
         /**
          * Payload is bigger than the configured maximal size.
          */
-        PAYLOAD_TOO_LARGE(Http.Status.REQUEST_ENTITY_TOO_LARGE_413, false),
+        PAYLOAD_TOO_LARGE(Status.REQUEST_ENTITY_TOO_LARGE_413, false),
         /**
          * Forbidden, such as when CORS forbids this request.
          */
-        FORBIDDEN(Http.Status.FORBIDDEN_403, true),
+        FORBIDDEN(Status.FORBIDDEN_403, true),
         /**
          * Internal server error.
          */
-        INTERNAL_ERROR(Http.Status.INTERNAL_SERVER_ERROR_500, true),
+        INTERNAL_ERROR(Status.INTERNAL_SERVER_ERROR_500, true),
         /**
          * Other type, please specify expected status code.
          */
-        OTHER(Http.Status.INTERNAL_SERVER_ERROR_500, true);
+        OTHER(Status.INTERNAL_SERVER_ERROR_500, true);
 
-        private final Http.Status defaultStatus;
+        private final Status defaultStatus;
         private final boolean keepAlive;
 
-        EventType(Http.Status defaultStatus, boolean keepAlive) {
+        EventType(Status defaultStatus, boolean keepAlive) {
             this.defaultStatus = defaultStatus;
             this.keepAlive = keepAlive;
         }
@@ -203,7 +203,7 @@ public interface DirectHandler {
          *
          * @return status
          */
-        public Http.Status defaultStatus() {
+        public Status defaultStatus() {
             return defaultStatus;
         }
 
@@ -221,7 +221,7 @@ public interface DirectHandler {
      * Response to correctly reply to the original client.
      */
     class TransportResponse {
-        private final Http.Status status;
+        private final Status status;
         private final ServerResponseHeaders headers;
         private final byte[] entity;
         private final boolean keepAlive;
@@ -247,7 +247,7 @@ public interface DirectHandler {
          *
          * @return status
          */
-        public Http.Status status() {
+        public Status status() {
             return status;
         }
 
@@ -282,7 +282,7 @@ public interface DirectHandler {
          * Fluent API builder for {@link DirectHandler.TransportResponse}.
          */
         public static class Builder implements io.helidon.common.Builder<Builder, TransportResponse> {
-            private Http.Status status = Http.Status.BAD_REQUEST_400;
+            private Status status = Status.BAD_REQUEST_400;
             private byte[] entity;
             private ServerResponseHeaders headers = ServerResponseHeaders.create();
             private boolean keepAlive = true;
@@ -301,7 +301,7 @@ public interface DirectHandler {
              * @param status status to use, default is bad request
              * @return updated builder
              */
-            public Builder status(Http.Status status) {
+            public Builder status(Status status) {
                 this.status = status;
                 return this;
             }
@@ -325,7 +325,7 @@ public interface DirectHandler {
              * @param values value of the header
              * @return updated builder
              */
-            public Builder header(Http.HeaderName name, String... values) {
+            public Builder header(HeaderName name, String... values) {
                 this.headers.set(name, List.of(values));
                 return this;
             }
@@ -337,7 +337,7 @@ public interface DirectHandler {
              * @param header header value
              * @return updated builder
              */
-            public Builder header(Http.Header header) {
+            public Builder header(Header header) {
                 this.headers.add(header);
                 return this;
             }
@@ -365,7 +365,7 @@ public interface DirectHandler {
              * @return updated builder
              */
             public Builder entity(String entity) {
-                this.headers.setIfAbsent(Http.Headers.CONTENT_TYPE_TEXT_PLAIN);
+                this.headers.setIfAbsent(HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
                 return entity(entity.getBytes(StandardCharsets.UTF_8));
             }
 
@@ -381,9 +381,9 @@ public interface DirectHandler {
             public Builder entity(byte[] entity) {
                 this.entity = Arrays.copyOf(entity, entity.length);
                 if (this.entity.length == 0) {
-                    this.headers.remove(Http.HeaderNames.CONTENT_LENGTH);
+                    this.headers.remove(HeaderNames.CONTENT_LENGTH);
                 } else {
-                    header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length));
+                    header(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length));
                 }
                 return this;
             }

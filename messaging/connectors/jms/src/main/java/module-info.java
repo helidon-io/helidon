@@ -17,37 +17,39 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * Microprofile messaging JMS connector.
  */
-@Preview
 @Feature(value = "JMS Connector",
         description = "Reactive messaging connector for JMS",
         in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Messaging", "JMS"}
 )
 @Aot(false)
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging.connectors.jms {
-    requires static io.helidon.common.features.api;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
-    requires jakarta.messaging;
-    requires org.reactivestreams;
-    requires transitive io.helidon.config;
-    requires transitive microprofile.reactive.messaging.api;
-    requires transitive microprofile.reactive.streams.operators.api;
-    requires io.helidon.config.mp;
+    requires io.helidon.common.configurable;
     requires io.helidon.common.context;
     requires io.helidon.common.reactive;
-    requires io.helidon.common.configurable;
+    requires io.helidon.config.mp;
     requires io.helidon.messaging.jms.shim;
-    requires io.helidon.messaging;
-    requires microprofile.config.api;
+    requires jakarta.messaging;
     requires java.naming;
     requires javax.jms.api;
+    requires microprofile.config.api;
+    requires org.reactivestreams;
+
+    requires static io.helidon.common.features.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
+
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.messaging;
+    requires transitive microprofile.reactive.messaging.api;
+    requires transitive microprofile.reactive.streams.operators.api;
 
     exports io.helidon.messaging.connectors.jms;
+
 }

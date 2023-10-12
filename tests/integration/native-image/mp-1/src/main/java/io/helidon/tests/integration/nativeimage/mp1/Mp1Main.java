@@ -55,9 +55,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
-import static io.helidon.http.Http.Status.FORBIDDEN_403;
-import static io.helidon.http.Http.Status.OK_200;
-import static io.helidon.http.Http.Status.UNAUTHORIZED_401;
+import static io.helidon.http.Status.FORBIDDEN_403;
+import static io.helidon.http.Status.OK_200;
+import static io.helidon.http.Status.UNAUTHORIZED_401;
 
 /**
  * Main class of this integration test.

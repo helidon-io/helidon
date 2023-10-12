@@ -22,8 +22,9 @@ import java.util.Set;
 
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.Configuration;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.Configuration;
+
 import jakarta.enterprise.context.Dependent;
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.server.ServerApplicationConfig;

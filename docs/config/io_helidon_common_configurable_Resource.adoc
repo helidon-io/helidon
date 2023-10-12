@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -42,14 +42,36 @@ Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/c
 |===
 |key |type |default value |description
 
-|`content` |string |{nbsp} |Base64 encoded content of the resource
-|`content-plain` |string |{nbsp} |Plain text content of the resource
-|`path` |string |{nbsp} |File system path to the resource.
-|`proxy-host` |string |{nbsp} |Host of the proxy when using url.
-|`proxy-port` |int |{nbsp} |Port of the proxy when using url.
-|`resource-path` |string |{nbsp} |Classpath location of the resource.
-|`uri` |URI |{nbsp} |URI of the resource.
-|`use-proxy` |boolean |`true` |Whether to use proxy. Only used if proxy-host is defined as well.
+|`content` |string |{nbsp} |Binary content of the resource (base64 encoded).
+
+ @return binary content
+|`content-plain` |string |{nbsp} |Plain content of the resource (text).
+
+ @return plain content
+|`description` |string |{nbsp} |Description of this resource when configured through plain text or binary.
+
+ @return description
+|`path` |Path |{nbsp} |Resource is located on filesystem.
+
+ @return path of the resource
+|`proxy-host` |string |{nbsp} |Host of the proxy when using URI.
+
+ @return proxy host
+|`proxy-port` |int |`80` |Port of the proxy when using URI.
+
+ @return proxy port
+|`resource-path` |string |{nbsp} |Resource is located on classpath.
+
+ @return classpath location of the resource
+|`uri` |URI |{nbsp} |Resource is available on a java.net.URI.
+
+ @return of the resource
+ @see #proxy()
+ @see #useProxy()
+|`use-proxy` |boolean |`true` |Whether to use proxy. If set to `false`, proxy will not be used even if configured.
+ When set to `true` (default), proxy will be used if configured.
+
+ @return whether to use proxy if configured
 
 |===
 

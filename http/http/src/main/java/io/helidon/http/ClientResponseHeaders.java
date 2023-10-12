@@ -23,12 +23,11 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.media.type.ParserMode;
-import io.helidon.http.Http.DateTime;
 
-import static io.helidon.http.Http.HeaderNames.ACCEPT_PATCH;
-import static io.helidon.http.Http.HeaderNames.EXPIRES;
-import static io.helidon.http.Http.HeaderNames.LAST_MODIFIED;
-import static io.helidon.http.Http.HeaderNames.LOCATION;
+import static io.helidon.http.HeaderNames.ACCEPT_PATCH;
+import static io.helidon.http.HeaderNames.EXPIRES;
+import static io.helidon.http.HeaderNames.LAST_MODIFIED;
+import static io.helidon.http.HeaderNames.LOCATION;
 
 /**
  * HTTP Headers of a client response.
@@ -71,7 +70,7 @@ public interface ClientResponseHeaders extends Headers {
     }
 
     /**
-     * Optionally gets the value of {@link io.helidon.http.Http.HeaderNames#LOCATION} header.
+     * Optionally gets the value of {@link HeaderNames#LOCATION} header.
      * <p>
      * Used in redirection, or when a new resource has been created.
      *
@@ -80,14 +79,14 @@ public interface ClientResponseHeaders extends Headers {
     default Optional<URI> location() {
         if (contains(LOCATION)) {
             return Optional.of(get(LOCATION))
-                    .map(Http.Header::value)
+                    .map(Header::get)
                     .map(URI::create);
         }
         return Optional.empty();
     }
 
     /**
-     * Optionally gets the value of {@link io.helidon.http.Http.HeaderNames#LAST_MODIFIED} header.
+     * Optionally gets the value of {@link HeaderNames#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object.
      *
@@ -96,14 +95,14 @@ public interface ClientResponseHeaders extends Headers {
     default Optional<ZonedDateTime> lastModified() {
         if (contains(LAST_MODIFIED)) {
             return Optional.of(get(LAST_MODIFIED))
-                    .map(Http.Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
         return Optional.empty();
     }
 
     /**
-     * Optionally gets the value of {@link io.helidon.http.Http.HeaderNames#EXPIRES} header.
+     * Optionally gets the value of {@link HeaderNames#EXPIRES} header.
      * <p>
      * Gives the date/time after which the response is considered stale.
      *
@@ -112,7 +111,7 @@ public interface ClientResponseHeaders extends Headers {
     default Optional<ZonedDateTime> expires() {
         if (contains(EXPIRES)) {
             return Optional.of(get(EXPIRES))
-                    .map(Http.Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
         return Optional.empty();

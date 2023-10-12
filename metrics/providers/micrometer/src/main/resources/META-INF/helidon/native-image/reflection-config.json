@@ -1,0 +1,9 @@
+{
+    "annotated": [],
+    "class-hierarchy": [
+        "org.HdrHistogram.EncodableHistogram"
+    ],
+    "classes": [],
+    "exclude": [
+    ]
+}

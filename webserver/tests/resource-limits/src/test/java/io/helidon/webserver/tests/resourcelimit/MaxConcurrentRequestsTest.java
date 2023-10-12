@@ -19,16 +19,17 @@ package io.helidon.webserver.tests.resourcelimit;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import io.helidon.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webclient.api.WebClient;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,15 +74,15 @@ class MaxConcurrentRequestsTest {
 
     @Test
     void testConcurrentRequests() throws InterruptedException {
-        client.request(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
+        client.request(Method.GET, "/greet", null, List.of("Connection: keep-alive"));
         serverCountDown.await(); // need to make sure we are in the server request
         // now that we have request in progress, any other should fail
         ClientResponseTyped<String> response = webClient.get("/greet")
                 .request(String.class);
-        assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
+        assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
         response = http2Client.get("/greet")
                 .request(String.class);
-        assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
+        assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
         clientCountDown.countDown();
         assertThat(client.receive(), containsString("200 OK"));
     }

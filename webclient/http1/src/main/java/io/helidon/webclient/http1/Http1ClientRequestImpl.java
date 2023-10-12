@@ -16,11 +16,19 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.InstanceWriter;
+import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.WebClientServiceRequest;
@@ -31,7 +39,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     private final Http1ClientImpl http1Client;
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
-                           Http.Method method,
+                           Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
         super(http1Client.clientConfig(),
@@ -44,7 +52,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     //Copy constructor for redirection purposes
     Http1ClientRequestImpl(Http1ClientRequestImpl request,
-                           Http.Method method,
+                           Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
         this(request.http1Client,
@@ -59,10 +67,50 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     @Override
     public Http1ClientResponse doSubmit(Object entity) {
-        if (followRedirects()) {
-            return RedirectionProcessor.invokeWithFollowRedirects(this, entity);
+        byte[] entityBytes;
+        if (entity == BufferData.EMPTY_BYTES) {
+            entityBytes = BufferData.EMPTY_BYTES;
+        } else if (entity instanceof byte[] buffer) {
+            entityBytes = buffer;
+        } else {
+            // must apply media writer, and if the writer has unknown length, or longer than we can buffer, stream it
+            GenericType<Object> genericType = GenericType.create(entity);
+            EntityWriter<Object> mediaWriter = clientConfig()
+                    .mediaContext()
+                    .writer(genericType, headers());
+
+            long configuredContentLength = headers().contentLength().orElse(-1);
+            if (mediaWriter.supportsInstanceWriter()) {
+                InstanceWriter instanceWriter = mediaWriter.instanceWriter(genericType, entity, headers());
+                if (instanceWriter.alwaysInMemory()) {
+                    entityBytes = instanceWriter.instanceBytes();
+                } else {
+                    long length = instanceWriter.contentLength().orElse(configuredContentLength);
+                    if (length == -1) {
+                        return doOutputStream(instanceWriter::write);
+                    } else if (length > clientConfig().maxInMemoryEntity()) {
+                        headers().contentLength(length);
+                        return doOutputStream(instanceWriter::write);
+                    } else {
+                        entityBytes = instanceWriter.instanceBytes();
+                    }
+                }
+            } else {
+                if (configuredContentLength == -1 || configuredContentLength > clientConfig().maxInMemoryEntity()) {
+                    return doOutputStream(it -> mediaWriter.write(genericType, entity, it, headers()));
+                } else {
+                    // safe to cast to int, as the maxInMemoryEntity configuration option is an int
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream((int) configuredContentLength);
+                    mediaWriter.write(genericType, entity, baos, headers());
+                    entityBytes = baos.toByteArray();
+                }
+            }
         }
-        return invokeRequestWithEntity(entity);
+
+        if (followRedirects()) {
+            return RedirectionProcessor.invokeWithFollowRedirects(this, entityBytes);
+        }
+        return invokeRequestWithEntity(entityBytes);
     }
 
     @Override
@@ -80,10 +128,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     @Override
     public UpgradeResponse upgrade(String protocol) {
-        if (!headers().contains(Http.HeaderNames.UPGRADE)) {
-            headers().set(Http.HeaderNames.UPGRADE, protocol);
+        if (!headers().contains(HeaderNames.UPGRADE)) {
+            headers().set(HeaderNames.UPGRADE, protocol);
         }
-        Http.Header requestedUpgrade = headers().get(Http.HeaderNames.UPGRADE);
+        Header requestedUpgrade = headers().get(HeaderNames.UPGRADE);
         Http1ClientResponseImpl response;
 
         if (followRedirects()) {
@@ -92,7 +140,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             response = invokeRequestWithEntity(BufferData.EMPTY_BYTES);
         }
 
-        if (response.status() == Http.Status.SWITCHING_PROTOCOLS_101) {
+        if (response.status() == Status.SWITCHING_PROTOCOLS_101) {
             // yep, this is the response we want
             if (response.headers().contains(requestedUpgrade)) {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
@@ -126,11 +174,16 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return UpgradeResponse.failure(response);
     }
 
+    @Override
+    protected MediaContext mediaContext() {
+        return super.mediaContext();
+    }
+
     Http1ClientImpl http1Client() {
         return http1Client;
     }
 
-    Http1ClientResponseImpl invokeRequestWithEntity(Object entity) {
+    Http1ClientResponseImpl invokeRequestWithEntity(byte[] entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         Http1CallChainBase callChain = new Http1CallEntityChain(http1Client,

@@ -17,7 +17,7 @@
 package io.helidon.http;
 
 /**
- * A runtime exception indicating a {@link Http.Status#BAD_REQUEST_400 bad request}.
+ * A runtime exception indicating a {@link Status#BAD_REQUEST_400 bad request}.
  */
 public class BadRequestException extends HttpException {
 
@@ -27,7 +27,7 @@ public class BadRequestException extends HttpException {
      * @param message the message
      */
     public BadRequestException(String message) {
-        super(message, Http.Status.BAD_REQUEST_400);
+        super(message, Status.BAD_REQUEST_400);
     }
 
     /**
@@ -37,6 +37,6 @@ public class BadRequestException extends HttpException {
      * @param cause the cause of this exception
      */
     public BadRequestException(String message, Throwable cause) {
-        super(message, Http.Status.BAD_REQUEST_400, cause);
+        super(message, Status.BAD_REQUEST_400, cause);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,19 @@
  * Helidon MP Bookstore test application
  */
 module io.helidon.tests.apps.bookstore.mp {
-    requires java.logging;
-    requires jakarta.json;
-    requires jakarta.json.bind;
 
-    requires io.helidon.microprofile.bundle.core;
-    requires io.helidon.microprofile.metrics;
-    requires io.helidon.microprofile.health;
     requires io.helidon.logging.common;
     requires io.helidon.logging.jul;
-
+    requires io.helidon.microprofile.bundle.core;
+    requires io.helidon.microprofile.health;
+    requires io.helidon.microprofile.metrics;
     requires io.helidon.tests.apps.bookstore.common;
+    requires jakarta.json.bind;
+    requires jakarta.json;
+    requires java.logging;
 
     opens io.helidon.tests.apps.bookstore.mp to io.helidon.microprofile.cdi,weld.core.impl;
 
     exports io.helidon.tests.apps.bookstore.mp;
+
 }

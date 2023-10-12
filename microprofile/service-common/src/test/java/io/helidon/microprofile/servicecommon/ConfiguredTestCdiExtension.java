@@ -15,23 +15,35 @@
  */
 package io.helidon.microprofile.servicecommon;
 
-import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import io.helidon.microprofile.server.ServerCdiExtension;
+
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Test MP extension that relies on the test SE service which itself reads a value from config, to make sure the config used
  * is runtime not build-time config.
  */
-public class ConfiguredTestCdiExtension extends HelidonRestCdiExtension<ConfiguredTestSupport> {
-
+public class ConfiguredTestCdiExtension extends HelidonRestCdiExtension {
     /**
      * Common initialization for concrete implementations.
      */
     protected ConfiguredTestCdiExtension() {
         super(System.getLogger(ConfiguredTestCdiExtension.class.getName()),
-                config -> ConfiguredTestSupport.builder().config(config).build(), "test");
+              "test");
     }
 
-    @Override
-    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
+    void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+                         Object event,
+                         ServerCdiExtension server) {
+
+        ConfiguredTestSupport testSupport = ConfiguredTestSupport.builder()
+                .config(componentConfig())
+                .build();
+        testSupport.setup(server.serverRoutingBuilder(), super.routingBuilder(server));
     }
 }

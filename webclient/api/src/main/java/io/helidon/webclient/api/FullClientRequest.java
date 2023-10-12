@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.tls.Tls;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 
 /**
  * Client request with getters for all configurable options, used for integration with HTTP version implementations.
@@ -41,7 +41,7 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      *
      * @return method
      */
-    Http.Method method();
+    Method method();
 
     /**
      * URI of this request.

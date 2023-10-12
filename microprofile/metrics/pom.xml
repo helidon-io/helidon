@@ -31,7 +31,7 @@
     <name>Helidon Microprofile Metrics</name>
 
     <description>
-        Helidon Microprofile Metrics 2.0
+        Helidon Microprofile Metrics Implementation
     </description>
 
     <dependencies>
@@ -60,20 +60,28 @@
             <groupId>io.helidon.webserver.observe</groupId>
             <artifactId>helidon-webserver-observe-metrics</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <artifactId>helidon-metrics-api</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-system-meters</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -86,8 +94,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.tests</groupId>
-            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -102,6 +110,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                    </systemPropertyVariables>
+                </configuration>
                 <executions>
                     <execution>
                         <id>default-test</id>
@@ -112,6 +125,9 @@
                                 <exclude>**/TestDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
                             </excludes>
+                            <systemPropertyVariables>
+                                <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -125,6 +141,9 @@
                                 <include>**/HelloWorldAsyncResponseTest.java</include>
                                 <include>**/TestMetricsOnOwnSocket.java</include>
                             </includes>
+                            <systemPropertyVariables>
+                                <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -155,6 +174,9 @@
                             <environmentVariables>
                                 <TAGS>topLevel</TAGS>
                             </environmentVariables>
+                            <systemPropertyVariables>
+                                <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                 </executions>

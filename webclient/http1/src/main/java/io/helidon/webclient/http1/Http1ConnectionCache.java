@@ -17,15 +17,15 @@
 package io.helidon.webclient.http1;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
@@ -46,7 +46,7 @@ class Http1ConnectionCache {
     private static final Http1ConnectionCache SHARED = create();
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
-    private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new HashMap<>();
+    private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new ConcurrentHashMap<>();
 
     static Http1ConnectionCache shared() {
         return SHARED;
@@ -72,17 +72,17 @@ class Http1ConnectionCache {
     }
 
     private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {
-        if (headers.contains(Http.Headers.CONNECTION_CLOSE)) {
+        if (headers.contains(HeaderValues.CONNECTION_CLOSE)) {
             return false;
         }
         if (defaultKeepAlive) {
-            headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
+            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
             return true;
         }
-        if (headers.contains(Http.Headers.CONNECTION_KEEP_ALIVE)) {
+        if (headers.contains(HeaderValues.CONNECTION_KEEP_ALIVE)) {
             return true;
         }
-        headers.set(Http.Headers.CONNECTION_CLOSE);
+        headers.set(HeaderValues.CONNECTION_CLOSE);
         return false;
     }
 
@@ -154,6 +154,7 @@ class Http1ConnectionCache {
         if (conn.isConnected()) {
             try {
                 if (connectionQueue.offer(conn, QUEUE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+                    conn.helidonSocket().idle(); // mark it as idle to stay blocked at read for closed conn detection
                     if (LOGGER.isLoggable(DEBUG)) {
                         LOGGER.log(DEBUG, "[%s] client connection returned %s",
                                    conn.channelId(),

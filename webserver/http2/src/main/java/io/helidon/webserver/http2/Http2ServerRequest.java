@@ -16,7 +16,10 @@
 
 package io.helidon.webserver.http2;
 
+import java.io.InputStream;
+import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
@@ -25,7 +28,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
@@ -60,6 +63,7 @@ class Http2ServerRequest implements RoutingRequest {
     private Context context;
     // preparation for continue support in HTTP/2
     private boolean continueSent;
+    private UnaryOperator<InputStream> streamFilter = UnaryOperator.identity();
 
     Http2ServerRequest(ConnectionContext ctx,
                        HttpSecurity security,
@@ -76,7 +80,8 @@ class Http2ServerRequest implements RoutingRequest {
         this.requestId = requestId;
         this.authority = headers.authority();
 
-        this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(decoder,
+        this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(streamFilter,
+                                                                             decoder,
                                                                              it -> entitySupplier.get(),
                                                                              NO_OP_RUNNABLE,
                                                                              this.headers,
@@ -153,7 +158,7 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public void header(Http.Header header) {
+    public void header(Header header) {
         if (writable == null) {
             writable = WritableHeaders.create(headers);
         }
@@ -206,6 +211,13 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public boolean continueSent() {
         return continueSent;
+    }
+
+    @Override
+    public void streamFilter(UnaryOperator<InputStream> filterFunction) {
+        Objects.requireNonNull(filterFunction);
+        UnaryOperator<InputStream> current = this.streamFilter;
+        this.streamFilter = it -> filterFunction.apply(current.apply(it));
     }
 
     private UriInfo createUriInfo() {

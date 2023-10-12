@@ -41,7 +41,7 @@ java -jar target/helidon-tests-native-image-mp-1.jar
 
 # Module Path
 java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
-  --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
+  --module helidon.tests.nimage.mp
 
 #
 # Run MP-3 (just start and stop)

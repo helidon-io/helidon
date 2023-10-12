@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-import io.helidon.inject.spi.InjectionServicesProvider;
-
 /**
  * Injection API module.
  */
 module io.helidon.inject.api {
-    requires jakarta.inject;
+
+    requires io.helidon.common.config;
     requires io.helidon.common.types;
     requires io.helidon.common;
-    requires io.helidon.common.config;
-    requires transitive io.helidon.builder.api;
+    requires io.helidon.logging.common;
+    requires jakarta.inject;
+
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
-    requires io.helidon.logging.common;
+
+    requires transitive io.helidon.builder.api;
 
     exports io.helidon.inject.api;
     exports io.helidon.inject.spi;
 
-    uses InjectionServicesProvider;
+    uses io.helidon.inject.spi.InjectionServicesProvider;
+
 }

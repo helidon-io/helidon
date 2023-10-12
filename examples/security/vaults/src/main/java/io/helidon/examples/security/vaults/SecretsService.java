@@ -36,7 +36,7 @@ class SecretsService implements HttpService {
     }
 
     private void secret(ServerRequest req, ServerResponse res) {
-        String secretName = req.path().pathParameters().value("name");
+        String secretName = req.path().pathParameters().get("name");
         res.send(security.secret(secretName, "default-" + secretName));
     }
 }

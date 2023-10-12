@@ -17,9 +17,13 @@
 package io.helidon.webclient.http1;
 
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.GenericType;
@@ -28,11 +32,11 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
-import io.helidon.http.Http.Headers;
+import io.helidon.http.ClientResponseTrailers;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Http1HeadersParser;
-import io.helidon.http.WritableHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.http.media.ReadableEntityBase;
@@ -49,10 +53,11 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     @SuppressWarnings("rawtypes")
     private static final List<SourceHandlerProvider> SOURCE_HANDLERS
             = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandlerProvider.class)).build().asList();
-
+    private static final long ENTITY_LENGTH_CHUNKED = -1;
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    private final Http.Status responseStatus;
+    private final HttpClientConfig clientConfig;
+    private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
     private final InputStream inputStream;
@@ -65,12 +70,12 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final ClientUri lastEndpointUri;
 
     private final ClientConnection connection;
+    private final CompletableFuture<io.helidon.http.Headers> trailers = new CompletableFuture<>();
+    private boolean entityRequested;
     private long entityLength;
-    private boolean entityFullyRead;
-    private WritableHeaders<?> trailers;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
-                            Http.Status responseStatus,
+                            Status responseStatus,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
                             ClientConnection connection,
@@ -79,6 +84,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                             ParserMode parserMode,
                             ClientUri lastEndpointUri,
                             CompletableFuture<Void> whenComplete) {
+        this.clientConfig = clientConfig;
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
@@ -91,10 +97,10 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             this.entityLength = Long.parseLong(responseHeaders.get(HeaderNames.CONTENT_LENGTH).value());
-        } else if (responseHeaders.contains(Headers.TRANSFER_ENCODING_CHUNKED)) {
-            this.entityLength = -1;
+        } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+            this.entityLength = ENTITY_LENGTH_CHUNKED;
         }
-        if (responseHeaders.contains(Http.HeaderNames.TRAILER)) {
+        if (responseHeaders.contains(HeaderNames.TRAILER)) {
             this.hasTrailers = true;
             this.trailerNames = responseHeaders.get(HeaderNames.TRAILER).allValues(true);
         } else {
@@ -104,7 +110,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     @Override
-    public Http.Status status() {
+    public Status status() {
         return responseStatus;
     }
 
@@ -114,7 +120,37 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     @Override
+    public ClientResponseTrailers trailers() {
+        if (hasTrailers) {
+            // Block until trailers arrive
+            Duration timeout = clientConfig.readTimeout()
+                    .orElseGet(() -> clientConfig.socketOptions().readTimeout());
+
+            if (!this.entityRequested) {
+                throw new IllegalStateException("Trailers requested before reading entity.");
+            }
+
+            try {
+                return ClientResponseTrailers.create(this.trailers.get(timeout.toMillis(), TimeUnit.MILLISECONDS));
+            } catch (TimeoutException e) {
+                throw new IllegalStateException("Timeout " + timeout + " reached while waiting for trailers.", e);
+            } catch (InterruptedException e) {
+                throw new IllegalStateException("Interrupted while waiting for trailers.", e);
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof IllegalStateException ise) {
+                    throw ise;
+                } else {
+                    throw new IllegalStateException(e.getCause());
+                }
+            }
+        } else {
+            return ClientResponseTrailers.create();
+        }
+    }
+
+    @Override
     public ReadableEntity entity() {
+        this.entityRequested = true;
         return entity(requestHeaders, responseHeaders);
     }
 
@@ -122,14 +158,18 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (headers().contains(Http.Headers.CONNECTION_CLOSE)) {
+                if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
-                    if (entityFullyRead || entityLength == 0) {
+                    if (entityLength == 0) {
+                        connection.releaseResource();
+                    } else if (entityLength == ENTITY_LENGTH_CHUNKED) {
                         if (hasTrailers) {
                             readTrailers();
+                            connection.releaseResource();
+                        } else {
+                            connection.closeResource();
                         }
-                        connection.releaseResource();
                     } else {
                         connection.closeResource();
                     }
@@ -176,7 +216,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     private void readTrailers() {
-        this.trailers = Http1HeadersParser.readHeaders(connection.reader(), 1024, true);
+        this.trailers.complete(Http1HeadersParser.readHeaders(connection.reader(), 1024, true));
     }
 
     private BufferData readBytes(int estimate) {

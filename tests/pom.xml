@@ -46,6 +46,7 @@
         <module>apps</module>
         <module>functional</module>
         <module>integration</module>
+        <module>benchmark</module>
     </modules>
 
     <profiles>

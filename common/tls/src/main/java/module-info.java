@@ -18,13 +18,16 @@
  * TLS configuration for client and server.
  */
 module io.helidon.common.tls {
+    requires static io.helidon.config.metadata;
+    requires static io.helidon.inject.api;
+
+    requires io.helidon.builder.api;
     requires io.helidon.common;
+    requires io.helidon.common.config;
     requires io.helidon.common.pki;
 
-    requires io.helidon.common.config;
-
-    requires static io.helidon.builder.api;
-    requires static io.helidon.config.metadata;
+    uses io.helidon.common.tls.spi.TlsManagerProvider;
 
     exports io.helidon.common.tls;
+    exports io.helidon.common.tls.spi;
 }

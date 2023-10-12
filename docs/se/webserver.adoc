@@ -17,8 +17,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = WebServer Introduction
-:description: Helidon Reactive WebServer Introduction
-:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver, tls
+:description: Helidon WebServer Introduction
+:keywords: helidon, java, webserver, tls
 :feature-name: WebServer
 :rootdir: {docdir}/..
 :requested-uri-discovery-inc: {rootdir}/includes/server/requested-uri-discovery.adoc
@@ -30,26 +30,22 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Configuration, Configuration>>
-- <<Routing, Routing>>
-- <<Request Handling, Request Handling>>
-- <<Protocol Specific Routing, Protocol Specific Routing>>
-- <<Error Handling, Error Handling>>
-- <<Http/2 Support, Http/2 Support>>
-- <<Static Content Support, Static Content Support>>
-- <<Jersey (JAX-RS) Support, Jersey (JAX-RS) Support>>
-- <<JSON Support, JSON Support>>
-- <<JSON-B Support, JSON-B Support>>
-- <<Jackson Support, Jackson Support>>
-- <<Access Log, Access Log>>
-- <<TLS configuration, TLS configuration>>
-- <<HTTP Compression, HTTP Compression>>
-- <<Quick Start, Quick Start>>
+** <<Configuring the WebServer in Your Code, Configuring the WebServer in Your Code>>
+** <<Configuring the WebServer in a Configuration File, Configuring the WebServer in a Configuration File>>
+** <<Configuration Options, Configuration Options>>
+*** <<Routing, Routing>>
+*** <<Request Handling, Request Handling>>
+*** <<Error Handling, Error Handling>>
+- <<Supported Technologies, Supported Technologies>>
+** <<HTTP/2 Support, HTTP/2 Support>>
+** <<Static Content Support, Static Content Support>>
+** <<JSON Support, JSON Support>>
 - <<Reference, Reference>>
+- <<Additional Information, Additional Information>>
 
 == Overview
 
-WebServer provides an asynchronous and reactive API for creating web applications.
-The API is inspired by popular NodeJS and Java frameworks.
+WebServer provides an API for creating HTTP servers. It uses virtual threads and can handle nearly unlimited concurrent requests.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -63,9 +59,9 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Configuration
 
-Configure the WebServer either programmatically, or by the Helidon configuration framework.
+You can configure the WebServer either programmatically or by the Helidon configuration framework.
 
-=== Configuring the WebServer in your code
+=== Configuring the WebServer in Your Code
 
 The easiest way to configure the WebServer is in your
 application code.
@@ -78,7 +74,7 @@ WebServer webServer = WebServer.builder()
       .build();
 ----
 
-=== Configuring the WebServer in a configuration file
+=== Configuring the WebServer in a Configuration File
 
 You can also define the configuration in a file.
 
@@ -103,17 +99,18 @@ WebServer webServer = WebServer.create(routing, config.get("server")); // <2>
 just use `Config.create()`
 <2> Server expects the configuration tree located on the node of `server`
 
-=== Configuration options
+=== Configuration Options
 
-include::{rootdir}/config/io_helidon_reactive_webserver_WebServer.adoc[leveloffset=+2,tag=config]
+include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+2,tag=config]
 
-== Routing [[routing]]
+== Routing
+
 Routing lets you use request matching criteria to bind requests to a `handler` that implements
 your custom business logic. Matching criteria include one or more *HTTP Method(s)* and, optionally,
 a request *path matcher*. Use the `RequestPredicate` class to specify more routing
 criteria.
 
-=== Basics
+=== Routing Basics
 
 Routing also supports _Error Routing_ which binds Java `Throwable` to the
 handling logic.
@@ -214,9 +211,9 @@ or more services, each with its own path prefix and set of handlers.
 [source,java]
 .Service implementation
 ----
-public class HelloService implements Service {
+public class HelloService implements HttpService {
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/subpath", this::getHandler);
     }
 
@@ -288,7 +285,7 @@ This is the reason why returning from the handler can't automatically
 trigger calling the next handler.
 
 [[anchor-sending-response]]
-=== Sending a response
+=== Sending a Response
 To complete the request handling, you must send a response by calling the `res.send()` method.
 
 [source,java]
@@ -302,7 +299,7 @@ To complete the request handling, you must send a response by calling the `res.s
 <1> handler that terminates the request handling for any HTTP method using the `/hello` path
 <2> send the response
 
-== Protocol Specific Routing
+== Protocol-Specific Routing
 Handling routes based on the protocol version is possible by registering specific routes
 on routing builder.
 
@@ -316,8 +313,7 @@ on routing builder.
 )
 ----
 
-While `Http1Route` for Http/1 is always available with Helidon webserver,
-other routes like `Http2Route` for <<Http/2 Support, Http/2>> needs to be added as additional dependency.
+While `Http1Route` for Http/1 is always available with Helidon webserver, other routes like `Http2Route` for <<HTTP/2 Support, HTTP/2>> needs to be added as additional dependency.
 
 == Requested URI Discovery
 include::{requested-uri-discovery-inc}[tag=intro]
@@ -451,7 +447,7 @@ are equivalent.
 <1> Call a downstream error handler with the `Throwable` instance.
 <2> Here, `req.next()` is the same as `req.next(ex)`. In both cases, the downstream error handler is called.
 
-=== Default error handling
+=== Default Error Handling
 If no user-defined error handler is matched, or if the last error handler of the
 exception called `req.next()`, then the exception is translated to an HTTP response as follows:
 
@@ -466,26 +462,28 @@ exception called `req.next()`, then the exception is translated to an HTTP respo
 * Otherwise, the exceptions are translated to an Internal Server Error HTTP
 error code `500`.
 
-== Http/2 Support
+== Supported Technologies
 
-Helidon supports Http/2 upgrade from Http/1, Http/2 without prior knowledge
-and Http/2 with ALPN over TLS.
-Http/2 support is enabled in webserver by default when it's artefact is available on classpath.
+== HTTP/2 Support
+
+Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge
+and HTTP/2 with ALPN over TLS.
+HTTP/2 support is enabled in WebServer by default when it's artifact is available on classpath.
 
 === Maven Coordinates
-To enable Http/2 support add the following dependency to your project's `pom.xml`.
+To enable HTTP/2 support add the following dependency to your project's `pom.xml`.
 
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.webserver</groupId>
-    <artifactId>helidon-reactive-webserver-http2</artifactId>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-http2</artifactId>>
 </dependency>
 ----
 
 == Static Content Support
 
-Use the `io.helidon.reactive.webserver.staticcontent.StaticContentSupport` class to serve files and classpath resources.
++Use the `io.helidon.webserver.staticcontent.StaticContentSupport` class to serve files and classpath resources.
 `StaticContentSupport` can be created for any readable directory or classpath
 context root and registered on a path in `Routing`.
 
@@ -499,8 +497,8 @@ To enable Static Content Support add the following dependency to your project's 
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.webserver</groupId>
-    <artifactId>helidon-reactive-webserver-static-content</artifactId>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-static-content</artifactId>
 </dependency>
 ----
 
@@ -527,93 +525,6 @@ A `StaticContentSupport` object can be created using `create(...)` factory metho
 `builder`. The `builder` lets you provide more configuration values, including _welcome file-name_
 and mappings of filename extensions to media types.
 
-== Jersey (JAX-RS) Support
-
-=== Maven Coordinates
-
-To enable Jersey (JAX-RS) Support add the following dependency to your project's `pom.xml`.
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.reactive.webserver</groupId>
-    <artifactId>helidon-reactive-webserver-jersey</artifactId>
-</dependency>
-----
-
-=== JAX-RS Support
-You can register a Jersey (JAX-RS) application at a _context root_ using the
-`JerseySupport` class.
-
-==== Registering a Jersey Application
-To register a *Jersey* application at a context root, use the
-`JerseySupport` class and its `JerseySupport.Builder` builder.
-
-`JerseySupport` can register the JAX-RS resources directly.
-[source,java]
-.Jersey (JAX-RS) `HelloWorld` resource
-----
-@Path("/")
-public class HelloWorld {
-
-    @GET
-    @Path("hello")
-    public Response hello() {
-        return Response.ok("Hello World!").build();
-    }
-}
-----
-
-[source,java]
-.Registering the `HelloWorld` resource
-----
-Routing.builder()
-       .register("/jersey", // <1>
-                 JerseySupport.builder()
-                              .register(HelloWorld.class) // <2>
-                              .build())
-       .build();
-----
-<1> Register the Jersey application at `/jersey` context root
-<2> The Jersey `Application` stays hidden and consists of a single `HelloWorld`
-resource class
-
-As a result, an HTTP GET request to `/jersey/hello` would yield a `Hello World!`
-response string.
-
-===== Registering a JAX-RS Application
-You can also register the JAX-RS `Application` object.
-[source,java]
-.Register the `HelloWorld` resource
-----
-Routing.builder()
-       .register("/jersey", // <1>
-                 JerseySupport.builder(new MyApplication()) // <2>
-                              .build())
-       .build();
-----
-<1> Register the Jersey application at `/jersey` context root
-<2> `MyApplication` handles requests made to /jersey context root.
-
-===== Accessing WebServer Internals from a JAX-RS Application
-
-You can inject WebServer request and response objects into your
-JAX-RS application using `@Context`.
-
-[source,java]
-.Injection of WebServer internal objects
-----
-@Path("/")
-@RequestScoped
-public class HelloWorld {
-    @Context
-    private ServerRequest request;
-
-    @Context
-    private ServerResponse response;
-}
-----
-
 == JSON Support
 The WebServer supports JSON-P. When enabled, you can send and
 receive JSON-P objects transparently.
@@ -625,28 +536,12 @@ To enable JSON Support add the following dependency to your project's `pom.xml`.
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.media</groupId>
-    <artifactId>helidon-reactive-media-jsonp</artifactId>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
 ----
 
 === Usage
-
-To enable JSON-P support, first register it with the web server.
-Then you can add routes that handle and return JSON.
-
-[source,java]
-.Configure JsonpSupport and use it for reading and writing of entities
-----
-JsonpSupport jsonbSupport = JsonpSupport.create(); // <1>
-WebServer webServer = WebServer.builder()
-    .addMediaSupport(jsonpSupport) // <2>
-    .build();
-----
-<1> Register JsonpSupport to enable transformation from and to `JsonObject` objects
-<2> Register that JsonpSupport instance to enable automatic
-deserialization of Java objects from and serialization of Java objects
-to JSON.
 
 [source,java]
 .Handler that receives and returns JSON objects
@@ -678,16 +573,6 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
 {"message":"Hello Joe"}
 ----
 
-=== Configuring Json Reader/Writer factories
-To configure JSON-P `JsonReaderFactory` and `JsonWriterFactory` that are used by
-the `JsonpSupport` instance, create the `JsonpSupport` object:
-
-[source,java]
-.Create `JsonpSupport` with the provided configuration
-----
-JsonpSupport.create(Map.of(JsonGenerator.PRETTY_PRINTING, false));
-----
-
 == JSON-B Support
 The WebServer supports the http://json-b.net/[JSON-B
 specification]. When this support is enabled, Java objects will be
@@ -702,29 +587,12 @@ To enable JSON-B Support add the following dependency to your project's `pom.xml
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.media</groupId>
-    <artifactId>helidon-reactive-media-jsonp</artifactId>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jsonb</artifactId>
 </dependency>
 ----
 
 === Usage
-To enable JSON-B support, first create and register a
-link:{media-jsonb-javadoc-base-url}/io/helidon/reactive/media/jsonb/JsonbSupport.html[`JsonbSupport`] instance with a
-link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/WebServer.Builder.html[`WebServer.Builder`].
-
-[source,java]
-.Registration of the `JsonbSupport` via `WebServer`
-----
-JsonbSupport jsonbSupport = JsonbSupport.create(); // <1>
-WebServer webServer = WebServer.builder()
-    .addMediaSupport(jsonbSupport) // <2>
-    .build();
-----
-<1> Create a `JsonbSupport` instance.  This instance may be
-reused freely.
-<2> Register that `JsonbSupport` instance to enable automatic
-deserialization of Java objects from and serialization of Java objects
-to JSON.
 
 Now that automatic JSON serialization and deserialization facilities
 have been set up, you can register a `Handler` that works with Java
@@ -766,10 +634,8 @@ final Routing routing =
                                        (req, res, person) -> res.send(person)))) // <3>
     .build();
 ----
-<1> Set up a route for `POST` requests using the
-link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/Routing.Builder.html#post-java.lang.String-io.helidon.reactive.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
-<2> Use the
-link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/Handler.html#create-java.lang.Class-io.helidon.reactive.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
+<1> link:{webserver-javadoc-base-url}/io/helidon/webserver/Routing.Builder.html#post-java.lang.String-io.helidon.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
+<2> link:{webserver-javadoc-base-url}/io/helidon/webserver/Handler.html#create-java.lang.Class-io.helidon.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
 to install a `Handler.EntityHandler` that works with `Person` instances.
 <3> This `Handler.EntityHandler` consumes a `Person` instance
 (`person`) and simply echoes it back.  Note that there is no working
@@ -796,30 +662,12 @@ To enable Jackson Support add the following dependency to your project's `pom.xm
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.media</groupId>
-    <artifactId>helidon-reactive-media-jackson</artifactId>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jackson</artifactId>
 </dependency>
 ----
 
 === Usage
-To enable Jackson support, first create and register a
-link:{media-jackson-javadoc-base-url}/io/helidon/reactive/media/jackson/JacksonSupport.html[`JacksonSupport`]
-instance with a
-link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/WebServer.Builder.html[`WebServer.Builder`].
-
-[source,java]
-.Registration of the `JacksonSupport` via `WebServer`
-----
-JacksonSupport jacksonSupport = JacksonSupport.create(); // <1>
-WebServer webServer = WebServer.builder()
-    .addMediaSupport(jacksonSupport) // <2>
-    .build();
-----
-<1> Create a `JacksonSupport` instance.  This instance may be
-reused freely.
-<2> Register that `JacksonSupport` instance to enable automatic
-deserialization of Java objects from and serialization of Java objects
-to JSON.
 
 Now that automatic JSON serialization and deserialization facilities
 have been set up, you can register a `Handler` that works with Java
@@ -862,9 +710,9 @@ final Routing routing =
     .build();
 ----
 <1> Set up a route for `POST` requests using the
-link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/Routing.Builder.html#post-java.lang.String-io.helidon.reactive.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
+link:{webserver-javadoc-base-url}/io/helidon/webserver/Routing.Builder.html#post-java.lang.String-io.helidon.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
 <2> Use the
-link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/Handler.html#create-java.lang.Class-io.helidon.reactive.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
+link:{webserver-javadoc-base-url}/io/helidon/webserver/Handler.html#create-java.lang.Class-io.helidon.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
 to install a `Handler.EntityHandler` that works with `Person` instances.
 <3> This `Handler.EntityHandler` consumes a `Person` instance
 (`person`) and simply echoes it back.  Note that there is no working
@@ -904,7 +752,7 @@ To enable Access logging add the following dependency to project's `pom.xml`:
 ----
 
 
-=== Configuring Access Log in your code
+=== Configuring Access Log in Your Code
 
 Access log is configured in your code by registering it as a service with `Routing`
 
@@ -917,7 +765,7 @@ Routing.builder()
 
 The order of registration is significant - make sure `AccessLogSupport` is registered first (even before security, tracing etc.).
 
-=== Configuring Access Log in a configuration file
+=== Configuring Access Log in a Configuration File
 
 Access log can be configured as follows:
 
@@ -939,7 +787,7 @@ include::{rootdir}/includes/server/access-log-config-common.adoc[leveloffset=+1]
 
 Configure TLS either programmatically, or by the Helidon configuration framework.
 
-=== Configuring TLS in your code
+=== Configuring TLS in Your Code
 
 To configure TLS in WebServer programmatically create your keystore configuration and pass it to the WebServer builder.
 
@@ -962,34 +810,8 @@ WebServer.builder()
          .build();
 ----
 
-== TLS configuration
 
-Configure TLS either programmatically, or by the Helidon configuration framework.
-
-=== Configuring TLS in your code
-
-To configure TLS in WebServer programmatically create your keystore configuration and pass it to the WebServer builder.
-
-[source,java]
-----
-KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-                //Whether this keystore is also trust store
-                .trustStore()
-                //Keystore location/name
-                .keystore(Resource.create("keystore.p12"))
-                //Password to the keystore
-                .keystorePassphrase("password")
-                .build();
-
-WebServer.builder()
-         .tls(WebServerTls.builder()
-               .trust(keyConfig)
-               .privateKey(keyConfig)
-               .build())
-         .build();
-----
-
-=== Configuring TLS in the config file
+=== Configuring TLS in the Config File
 
 It is also possible to configure TLS via the config file.
 
@@ -1054,9 +876,9 @@ server:
             resource-path: "chain.pem"
 ----
 
-=== Configuration options
+=== Configuration Options
 
-include::{rootdir}/config/io_helidon_reactive_webserver_WebServerTls.adoc[leveloffset=+2,tag=config]
+include::{rootdir}/config/io_helidon_common_tls_Tls.adoc[leveloffset=+2,tag=config]
 
 
 == HTTP Compression
@@ -1113,7 +935,7 @@ For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP 
 has been enabled as shown above, the response shall include the header `Content-Encoding: gzip`
 and a compressed payload.
 
-== Quick Start
+== Additional Information
 
 Here is the code for a minimalist web application that runs on a random free port:
 

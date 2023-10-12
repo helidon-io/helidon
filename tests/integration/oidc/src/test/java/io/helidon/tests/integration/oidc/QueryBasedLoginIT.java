@@ -16,7 +16,7 @@
 
 package io.helidon.tests.integration.oidc;
 
-import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddConfig;
 
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -26,7 +26,6 @@ import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientProperties;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_TEST_MESSAGE;
@@ -34,7 +33,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled("https://github.com/helidon-io/helidon/issues/7094")
 @AddConfig(key = "security.providers.1.oidc.cookie-use", value = "false")
 @AddConfig(key = "security.providers.1.oidc.query-param-use", value = "true")
 class QueryBasedLoginIT extends CommonLoginBase {

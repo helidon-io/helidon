@@ -26,7 +26,7 @@ import java.util.function.BiConsumer;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.ForbiddenException;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -42,7 +42,7 @@ record CachedHandlerPath(Path path,
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
-                          Http.Method method,
+                          Method method,
                           ServerRequest request,
                           ServerResponse response,
                           String requestedResource) throws IOException {
@@ -69,7 +69,7 @@ record CachedHandlerPath(Path path,
 
         response.headers().contentType(mediaType);
 
-        if (method == Http.Method.GET) {
+        if (method == Method.GET) {
             FileBasedContentHandler.send(request, response, path);
         } else {
             FileBasedContentHandler.processContentLength(path, response.headers());

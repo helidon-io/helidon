@@ -23,7 +23,7 @@ import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputType;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithAddress;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithName;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithNameValue;
-import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddBean;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

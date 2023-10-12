@@ -23,6 +23,7 @@ import java.util.Optional;
 public interface SampledMetric {
     /**
      * Sample (if available).
+     *
      * @return sample
      */
     default Optional<Sample.Labeled> sample() {

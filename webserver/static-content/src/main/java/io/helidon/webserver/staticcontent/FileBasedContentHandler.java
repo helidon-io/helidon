@@ -34,8 +34,8 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
@@ -61,7 +61,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     }
 
     static void processContentLength(Path path, ServerResponseHeaders headers) {
-        headers.set(Http.Headers.create(HeaderNames.CONTENT_LENGTH, contentLength(path)));
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength(path)));
     }
 
     static long contentLength(Path path) {
@@ -78,7 +78,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
             long contentLength = contentLength(path);
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                    response,
-                                                                   headers.get(Http.HeaderNames.RANGE).values(),
+                                                                   headers.get(HeaderNames.RANGE).values(),
                                                                    contentLength);
             if (ranges.size() == 1) {
                 // single response

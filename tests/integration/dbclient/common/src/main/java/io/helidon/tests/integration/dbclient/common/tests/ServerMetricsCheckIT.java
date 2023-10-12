@@ -27,21 +27,22 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.metrics.DbClientMetrics;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.WebServer;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
+import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.observe.ObserveFeature;
 
-import io.helidon.tests.integration.harness.SetUp;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonParsingException;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
-import static io.helidon.tests.integration.dbclient.common.tests.AbstractIT.LAST_POKEMON_ID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -52,10 +53,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Verify metrics check in web server environment.
  */
 @SuppressWarnings("SpellCheckingInspection")
+@ExtendWith(DbClientParameterResolver.class)
 public class ServerMetricsCheckIT {
 
     private static final System.Logger LOGGER = System.getLogger(ServerMetricsCheckIT.class.getName());
-    private static final int BASE_ID = LAST_POKEMON_ID + 300;
+    private static final int BASE_ID = TestConfig.LAST_POKEMON_ID + 300;
 
     private static DbClient DB_CLIENT;
     private static WebServer SERVER;
@@ -73,7 +75,7 @@ public class ServerMetricsCheckIT {
                 .build();
     }
 
-    @SetUp
+    @BeforeAll
     public static void startup(Config config) {
         DB_CLIENT = initDbClient(config);
         SERVER = WebServer.builder()
@@ -82,13 +84,14 @@ public class ServerMetricsCheckIT {
                 .build()
                 .start();
         URL = "http://localhost:" + SERVER.port();
-        System.out.println("WEB server is running at " + URL);
+        LOGGER.log(Level.TRACE, () -> "WEB server is running at " + URL);
     }
 
     @AfterAll
     public static void shutdown() {
         if (null != SERVER) {
             SERVER.stop();
+            LOGGER.log(Level.TRACE, () -> "WEB server stopped");
         }
     }
 
@@ -130,8 +133,8 @@ public class ServerMetricsCheckIT {
         DB_CLIENT.execute()
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName());
         // Read and process metrics response
-        String response = get(URL + "/metrics/application");
-        LOGGER.log(Level.DEBUG, () -> String.format("RESPONSE: %s", response));
+        String response = get(URL + "/observe/metrics/application");
+        LOGGER.log(Level.TRACE, () -> String.format("RESPONSE: %s", response));
         JsonObject application = null;
         try (JsonReader jr = Json.createReader(new StringReader(response))) {
             application = jr.readObject();
@@ -151,7 +154,7 @@ public class ServerMetricsCheckIT {
         assertThat(application.containsKey("db.timer.insert-pokemon"), equalTo(true));
         JsonObject insertTimer = application.getJsonObject("db.timer.insert-pokemon");
         assertThat(insertTimer.containsKey("count"), equalTo(true));
-        assertThat(insertTimer.containsKey("min"), equalTo(true));
+        assertThat(insertTimer.containsKey("mean"), equalTo(true));
         assertThat(insertTimer.containsKey("max"), equalTo(true));
         int timerCount = insertTimer.getInt("count");
         assertThat(timerCount, equalTo(1));

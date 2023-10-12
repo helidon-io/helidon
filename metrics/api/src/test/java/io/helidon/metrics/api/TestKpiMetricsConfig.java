@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import java.time.Duration;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -29,36 +31,36 @@ public class TestKpiMetricsConfig {
 
     @Test
     void checkExtendedEnabled() {
-        KeyPerformanceIndicatorMetricsSettings settings =
-                KeyPerformanceIndicatorMetricsSettings.create(TEST_CONFIG.get("extended-enabled"));
-        assertThat("KPI extended setting", settings.isExtended(), is(true));
-        assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(),
-                   is(KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT));
+        KeyPerformanceIndicatorMetricsConfig settings =
+                KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("extended-enabled"));
+        assertThat("KPI extended setting", settings.extended(), is(true));
+        assertThat("Long-running threshold", settings.longRunningRequestThreshold(),
+                   is(Duration.parse(KeyPerformanceIndicatorMetricsConfig.LONG_RUNNING_REQUESTS_THRESHOLD_DEFAULT)));
     }
 
     @Test
     void checkExtendedDisabled() {
-        KeyPerformanceIndicatorMetricsSettings settings =
-                KeyPerformanceIndicatorMetricsSettings.create(TEST_CONFIG.get("extended-disabled"));
-        assertThat("KPI extended setting", settings.isExtended(), is(false));
-        assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(),
-                   is(KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT));
+        KeyPerformanceIndicatorMetricsConfig settings =
+                KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("extended-disabled"));
+        assertThat("KPI extended setting", settings.extended(), is(false));
+        assertThat("Long-running threshold", settings.longRunningRequestThreshold(),
+                   is(Duration.parse(KeyPerformanceIndicatorMetricsConfig.LONG_RUNNING_REQUESTS_THRESHOLD_DEFAULT)));
     }
 
     @Test
     void longRunningSet() {
-        KeyPerformanceIndicatorMetricsSettings settings =
-                KeyPerformanceIndicatorMetricsSettings.create(TEST_CONFIG.get("long-running-set"));
-        assertThat("KPI extended setting", settings.isExtended(),
-                   is(KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_DEFAULT));
-        assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(), is(123L));
+        KeyPerformanceIndicatorMetricsConfig settings =
+                KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("long-running-set"));
+        assertThat("KPI extended setting", settings.extended(),
+                   is(false));
+        assertThat("Long-running threshold", settings.longRunningRequestThreshold(), is(Duration.ofSeconds(3)));
     }
 
     @Test
     void bothSet() {
-        KeyPerformanceIndicatorMetricsSettings settings =
-                KeyPerformanceIndicatorMetricsSettings.create(TEST_CONFIG.get("both"));
-        assertThat("KPI extended setting", settings.isExtended(), is(true));
-        assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(), is(456L));
+        KeyPerformanceIndicatorMetricsConfig settings =
+                KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("both"));
+        assertThat("KPI extended setting", settings.extended(), is(true));
+        assertThat("Long-running threshold", settings.longRunningRequestThreshold(), is(Duration.ofSeconds(4)));
     }
 }

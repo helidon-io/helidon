@@ -19,7 +19,9 @@ package io.helidon.integrations.vault.auths.k8s;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.vault.VaultTokenBase;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
@@ -27,7 +29,7 @@ import io.helidon.webclient.api.HttpClientRequest;
 
 class K8sRestApi extends VaultRestApi {
 
-    private static final Http.HeaderName VAULT_TOKEN_HEADER_NAME = Http.HeaderNames.create("X-Vault-Token");
+    private static final HeaderName VAULT_TOKEN_HEADER_NAME = HeaderNames.create("X-Vault-Token");
     private final AtomicReference<VaultTokenBase> currentToken = new AtomicReference<>();
 
     private final K8sAuth auth;
@@ -50,7 +52,7 @@ class K8sRestApi extends VaultRestApi {
     protected HttpClientRequest updateRequestBuilderCommon(HttpClientRequest requestBuilder,
                                                             String path,
                                                             ApiRequest<?> request,
-                                                            Http.Method method,
+                                                            Method method,
                                                             String requestId) {
         VaultTokenBase k8sToken = currentToken.get();
 

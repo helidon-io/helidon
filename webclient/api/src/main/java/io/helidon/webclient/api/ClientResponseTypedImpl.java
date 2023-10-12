@@ -17,7 +17,8 @@
 package io.helidon.webclient.api;
 
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.ClientResponseTrailers;
+import io.helidon.http.Status;
 
 class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     private final HttpClientResponse response;
@@ -42,13 +43,18 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     }
 
     @Override
-    public Http.Status status() {
+    public Status status() {
         return response.status();
     }
 
     @Override
     public ClientResponseHeaders headers() {
         return response.headers();
+    }
+
+    @Override
+    public ClientResponseTrailers trailers() {
+        return response.trailers();
     }
 
     @Override
@@ -61,7 +67,8 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
         if (thrown == null) {
             return entity;
         }
-        throw new IllegalStateException("Failed to read response entity", thrown);
+        // re-throw the same exception, somebody may be interested in catching it
+        throw thrown;
     }
 
     @Override

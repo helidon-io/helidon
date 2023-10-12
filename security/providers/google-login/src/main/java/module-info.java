@@ -28,21 +28,24 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 @Aot(false)
 module io.helidon.security.providers.google.login {
-    requires static io.helidon.common.features.api;
 
-    requires io.helidon.config;
-    requires io.helidon.common;
-    requires io.helidon.security;
-    requires google.api.client;
-    requires com.google.api.client;
+    requires com.google.api.client.auth;
     requires com.google.api.client.json.gson;
-    requires io.helidon.security.providers.common;
+    requires com.google.api.client;
+    requires google.api.client;
+    requires io.helidon.common;
     requires io.helidon.security.util;
     requires io.helidon.tracing;
 
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.security.providers.common;
+    requires transitive io.helidon.security;
 
     exports io.helidon.security.providers.google.login;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.google.login.GoogleTokenService;
+
 }

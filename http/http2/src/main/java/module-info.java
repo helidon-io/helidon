@@ -18,9 +18,12 @@
  * Helidon Common HTTP/2 classes.
  */
 module io.helidon.http.http2 {
+
+    requires io.helidon.common;
+    
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.http;
-    requires io.helidon.common;
 
     exports io.helidon.http.http2;
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
  * #acquireDelegate()} method and only under appropriate
  * circumstances.</p>
  *
- * <p>This class is added as a synthetic bean by the {@link
+ * <p>This class is added as a synthetic bean by the (now-deprecated) {@link
  * JpaExtension} class.</p>
  *
  * <h2>Implementation Notes</h2>
@@ -60,7 +60,10 @@ import jakarta.persistence.criteria.CriteriaQuery;
  * this class are not safe for concurrent use by multiple threads.</p>
  *
  * @see JpaExtension
+ *
+ * @deprecated This is an internal class used only by the now-deprecated {@link JpaExtension} class.
  */
+@Deprecated(since = "4.0")
 @Vetoed
 class NonTransactionalEntityManager extends DelegatingEntityManager {
 
@@ -69,6 +72,16 @@ class NonTransactionalEntityManager extends DelegatingEntityManager {
      * Constructors.
      */
 
+
+    /**
+     * Creates a new {@link NonTransactionalEntityManager}.
+     *
+     * @deprecated For use by CDI only.
+     */
+    @Deprecated // For use by CDI only
+    NonTransactionalEntityManager() {
+        super();
+    }
 
     /**
      * Creates a new {@link NonTransactionalEntityManager}.

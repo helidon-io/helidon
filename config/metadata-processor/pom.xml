@@ -34,11 +34,14 @@
     </description>
 
     <dependencies>
-        <!--
-        This module should not have any dependencies, so we can configure it easily by
-        adding a dependency, rather than defining a proper annotation processor path in
-        maven compiler plugin
-        -->
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-types</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.processor</groupId>
+            <artifactId>helidon-common-processor</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

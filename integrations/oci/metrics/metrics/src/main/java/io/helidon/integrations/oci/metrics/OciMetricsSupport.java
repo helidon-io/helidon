@@ -15,27 +15,28 @@
  */
 package io.helidon.integrations.oci.metrics;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.FunctionalCounter;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.Timer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 
@@ -43,16 +44,6 @@ import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * OCI Metrics Support.
@@ -76,14 +67,11 @@ public class OciMetricsSupport implements HttpService {
     private final TimeUnit schedulingTimeUnit;
     private final String resourceGroup;
     private final boolean descriptionEnabled;
-    private final String[] scopes;
+    private final Set<String> scopes;
     private final int batchSize;
     private final boolean enabled;
-    private final AtomicInteger webServerCounter = new AtomicInteger(0);
 
     private final Monitoring monitoringClient;
-
-    private final Map<MetricRegistry, String> metricRegistries = new HashMap<>();
     private OciMetricsData ociMetricsData;
 
     private OciMetricsSupport(Builder builder) {
@@ -128,18 +116,18 @@ public class OciMetricsSupport implements HttpService {
          * @param metric the metric to be formatted
          * @param metricId {@code MetricID} of the metric being formatted
          * @param suffix name suffix to append to the recorded metric name (e.g, "total"); can be null
-         * @param metadata metric metadata describing the metric
+         * @param unit metric unit
          * @return the formatted metric name
          */
-        default String format(Metric metric, MetricID metricId, String suffix, Metadata metadata) {
+        default String format(Meter metric, Meter.Id metricId, String suffix, String unit) {
 
-            StringBuilder result = new StringBuilder(metricId.getName());
+            StringBuilder result = new StringBuilder(metricId.name());
             if (suffix != null) {
                 result.append("_").append(suffix);
             }
             result.append("_").append(textType(metric).replace(" ", "_"));
 
-            String units = formattedBaseUnits(metadata.getUnit());
+            String units = formattedBaseUnits(unit);
             if (units != null && !units.isBlank()) {
                 result.append("_").append(units);
             }
@@ -149,17 +137,20 @@ public class OciMetricsSupport implements HttpService {
         /**
          * Converts a metric instance into the corresponding text representation of its metric type.
          *
-         * @param metric {@link org.eclipse.microprofile.metrics.Metric} to be converted
+         * @param metric {@link io.helidon.metrics.api.Meter} to be converted
          * @return text type of the metric
          */
-        static String textType(Metric metric) {
+        static String textType(Meter metric) {
             if (metric instanceof Counter) {
                 return "counter";
             }
-            if (metric instanceof Gauge<?>) {
+            if (metric instanceof FunctionalCounter) {
+                return "counter";
+            }
+            if (metric instanceof Gauge) {
                 return "gauge";
             }
-            if (metric instanceof Histogram) {
+            if (metric instanceof DistributionSummary) {
                 return "histogram";
             }
             if (metric instanceof Timer) {
@@ -175,7 +166,7 @@ public class OciMetricsSupport implements HttpService {
     }
 
     static String baseMetricUnits(String metricUnits) {
-        if (!MetricUnits.NONE.equals(metricUnits) && !metricUnits.isEmpty()) {
+        if (metricUnits != null && !Meter.BaseUnits.NONE.equals(metricUnits) && !metricUnits.isEmpty()) {
             for (UnitConverter converter : UNIT_CONVERTERS) {
                 if (converter.handles(metricUnits)) {
                     return converter.baseUnits();
@@ -265,19 +256,15 @@ public class OciMetricsSupport implements HttpService {
             return;
         }
 
-        if (scopes.length == 0) {
+        if (scopes.isEmpty()) {
             LOGGER.info("No selected metric scopes to push to OCI");
             return;
         }
 
         LOGGER.fine("Starting OCI Metrics agent");
 
-        RegistryFactory rf = RegistryFactory.getInstance();
-        Stream.of(scopes)
-                .forEach(type -> metricRegistries.put(rf.getRegistry(type), type));
-
         ociMetricsData = new OciMetricsData(
-                metricRegistries, nameFormatter, compartmentId, namespace, resourceGroup, descriptionEnabled);
+                scopes, nameFormatter, compartmentId, namespace, resourceGroup, descriptionEnabled);
         startExecutor();
     }
 
@@ -302,12 +289,6 @@ public class OciMetricsSupport implements HttpService {
         private static final TimeUnit DEFAULT_SCHEDULER_TIME_UNIT = TimeUnit.SECONDS;
         private static final int DEFAULT_BATCH_SIZE = 50;
 
-        private static final Map<String, Type> SCOPE_TYPES = Map.of(
-                Type.BASE.getName(), Type.BASE,
-                Type.VENDOR.getName(), Type.VENDOR,
-                Type.APPLICATION.getName(), Type.APPLICATION
-        );
-
         private long initialDelay = DEFAULT_SCHEDULER_INITIAL_DELAY;
         private long delay = DEFAULT_SCHEDULER_DELAY;
         private long batchDelay = DEFAULT_BATCH_DELAY;
@@ -316,7 +297,7 @@ public class OciMetricsSupport implements HttpService {
         private String namespace;
         private NameFormatter nameFormatter = DEFAULT_NAME_FORMATTER;
         private String resourceGroup;
-        private String[] scopes = Registry.BUILT_IN_SCOPES.toArray(new String[0]);
+        private Set<String> scopes = Meter.Scope.BUILT_IN_SCOPES;
         private boolean descriptionEnabled = true;
         private int batchSize = DEFAULT_BATCH_SIZE;
         private boolean enabled = true;
@@ -415,7 +396,7 @@ public class OciMetricsSupport implements HttpService {
          * Sets the {@link NameFormatter} to use in formatting metric
          * names. See the
          * {@link NameFormatter#format(
-         * Metric, MetricID, String, Metadata)} method for details
+         * Meter, Meter.Id, String, String)} method for details
          * about the default formatting.
          *
          * @param nameFormatter the formatter to use
@@ -475,14 +456,14 @@ public class OciMetricsSupport implements HttpService {
 
         private Builder scopes(List<String> value) {
             if (value == null || value.isEmpty()) {
-                this.scopes = Registry.BUILT_IN_SCOPES.toArray(new String[0]);
+                this.scopes = Meter.Scope.BUILT_IN_SCOPES;
             } else {
-                List<String> convertedScope = new ArrayList<>();
+                Set<String> convertedScope = new HashSet<>();
                 for (String element: value) {
                     String scopeItem = element.toLowerCase(Locale.ROOT).trim();
                     convertedScope.add(scopeItem);
                 }
-                this.scopes = convertedScope.toArray(new String[0]);
+                this.scopes = convertedScope;
             }
             return this;
         }
@@ -553,10 +534,6 @@ public class OciMetricsSupport implements HttpService {
          */
         public boolean enabled() {
             return this.enabled;
-        }
-
-        private static Type[] getAllMetricScopes() {
-            return new ArrayList<>(SCOPE_TYPES.values()).toArray(new Type[SCOPE_TYPES.size()]);
         }
 
         private static TimeUnit toSchedulingTimeUnit(Config value) {

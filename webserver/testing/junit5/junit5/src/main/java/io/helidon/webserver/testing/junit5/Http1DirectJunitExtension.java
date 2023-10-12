@@ -154,7 +154,7 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
         @Override
         public void handle(Method method, String socketName, HttpRouting.Builder value) {
             HttpRouting routing = value.build();
-
+            routing.beforeStart();
             if (clients.putIfAbsent(socketName, new DirectClient(routing)) != null) {
                 throw new IllegalStateException("Method "
                                                         + method

@@ -17,10 +17,9 @@ package io.helidon.microprofile.openapi;
 
 import java.util.Map;
 
-import io.helidon.http.Http;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.openapi.OpenApiFeature;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
@@ -33,63 +32,37 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Test that MP OpenAPI support works when retrieving the OpenAPI document
- * from the server's /openapi endpoint.
+ * Test model from annotations.
  */
 @HelidonTest
 @AddBean(TestApp.class)
 @AddBean(TestApp3.class)
-public class BasicServerTest {
+class BasicServerTest {
 
-    private static Map<String, Object> yaml;
+    private static final String APPLICATION_OPENAPI_YAML = MediaTypes.APPLICATION_OPENAPI_YAML.text();
 
     @Inject
-    WebTarget webTarget;
+    private WebTarget webTarget;
 
-    private static Map<String, Object> retrieveYaml(WebTarget webTarget) {
-        try (Response response = webTarget
-                .path(OpenApiFeature.DEFAULT_CONTEXT)
-                .request(OpenApiFeature.DEFAULT_RESPONSE_MEDIA_TYPE.text())
-                .get()) {
-            assertThat("Fetch of OpenAPI document from server status", response.getStatus(),
-                    is(equalTo(Http.Status.OK_200.code())));
-            String yamlText = response.readEntity(String.class);
-            return new Yaml().load(yamlText);
-        }
-    }
-
-    private static Map<String, Object> yaml(WebTarget webTarget) {
-        if (yaml == null) {
-            yaml = retrieveYaml(webTarget);
-        }
-        return yaml;
-    }
-
-    private Map<String, Object> yaml() {
-        return yaml(webTarget);
-    }
-
-    public BasicServerTest() {
-    }
-
-    /**
-     * Make sure that the annotations in the test app were found and properly
-     * incorporated into the OpenAPI document.
-     *
-     * @throws Exception in case of errors reading the HTTP response
-     */
     @Test
-    public void simpleTest() throws Exception {
-        checkPathValue("paths./testapp/go.get.summary", TestApp.GO_SUMMARY);
+    public void simpleTest() {
+        Map<String, Object> document = document();
+        String summary = TestUtil.query(document, "paths./testapp/go.get.summary", String.class);
+        assertThat(summary, is(equalTo(TestApp.GO_SUMMARY)));
     }
 
     @Test
     public void testMultipleApps() {
-        checkPathValue("paths./testapp3/go3.get.summary", TestApp3.GO_SUMMARY);
+        Map<String, Object> document = document();
+        String summary = TestUtil.query(document, "paths./testapp3/go3.get.summary", String.class);
+        assertThat(summary, is(equalTo(TestApp3.GO_SUMMARY)));
     }
 
-    private void checkPathValue(String pathExpression, String expected) {
-        String result = TestUtil.fromYaml(yaml(), pathExpression, String.class);
-        assertThat(pathExpression, result, is(equalTo(expected)));
+    private Map<String, Object> document() {
+        try (Response response = webTarget.path("/openapi").request(APPLICATION_OPENAPI_YAML).get()) {
+            assertThat(response.getStatus(), is(200));
+            String yamlText = response.readEntity(String.class);
+            return new Yaml().load(yamlText);
+        }
     }
 }

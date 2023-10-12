@@ -19,13 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class StatusHelper {
-    private static final List<Http.Status> KNOWN = new ArrayList<>(40);
+    private static final List<Status> KNOWN = new ArrayList<>(40);
     private static StatusPair[] statuses;
 
     private StatusHelper() {
     }
 
-    static Http.Status find(int statusCode) {
+    static Status find(int statusCode) {
         for (StatusPair status : statuses) {
             if (status.code == statusCode) {
                 return status.status;
@@ -35,7 +35,7 @@ final class StatusHelper {
         return null;
     }
 
-    static void add(Http.Status status) {
+    static void add(Status status) {
         KNOWN.add(status);
     }
 
@@ -47,8 +47,8 @@ final class StatusHelper {
         KNOWN.clear();
     }
 
-    private record StatusPair(int code, Http.Status status) {
-        public static StatusPair create(Http.Status status) {
+    private record StatusPair(int code, Status status) {
+        public static StatusPair create(Status status) {
             return new StatusPair(status.code(), status);
         }
     }

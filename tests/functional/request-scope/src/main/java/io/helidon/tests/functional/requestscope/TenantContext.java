@@ -15,7 +15,8 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.webserver.http.ServerRequest;
 
 import jakarta.annotation.PostConstruct;
@@ -24,7 +25,7 @@ import jakarta.ws.rs.core.Context;
 
 @RequestScoped
 public class TenantContext {
-    private static final Http.HeaderName TENANT_ID = Http.HeaderNames.create("x-tenant-id");
+    private static final HeaderName TENANT_ID = HeaderNames.create("x-tenant-id");
 
     @Context
     private ServerRequest request;

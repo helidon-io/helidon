@@ -19,13 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class MethodHelper {
-    private static final List<Http.Method> KNOWN = new ArrayList<>(10);
+    private static final List<Method> KNOWN = new ArrayList<>(10);
     private static AsciiMethodPair[] methods;
 
     private MethodHelper() {
     }
 
-    static void add(Http.Method method) {
+    static void add(Method method) {
         KNOWN.add(method);
     }
 
@@ -37,7 +37,7 @@ final class MethodHelper {
         KNOWN.clear();
     }
 
-    static Http.Method byName(String upperCase) {
+    static Method byName(String upperCase) {
         // optimization over Map (most commonly used methods fastest)
         for (AsciiMethodPair method : methods) {
             if (method.string().equals(upperCase)) {
@@ -47,8 +47,8 @@ final class MethodHelper {
         return null;
     }
 
-    private record AsciiMethodPair(String string, Http.Method method) {
-        public static AsciiMethodPair create(Http.Method method) {
+    private record AsciiMethodPair(String string, Method method) {
+        public static AsciiMethodPair create(Method method) {
             return new AsciiMethodPair(method.text(), method);
         }
     }

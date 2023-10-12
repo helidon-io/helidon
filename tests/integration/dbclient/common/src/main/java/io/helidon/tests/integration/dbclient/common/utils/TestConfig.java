@@ -22,6 +22,9 @@ import java.lang.System.Logger.Level;
  */
 public class TestConfig {
 
+    /** Last used id in {@code Pokemon} table. */
+    public static final int LAST_POKEMON_ID = 1000;
+
     private static final System.Logger LOGGER = System.getLogger(TestConfig.class.getName());
     private static final String CONFIG_PROPERTY_NAME = "io.helidon.tests.integration.dbclient.config";
     private static final String DEFAULT_CONFIG_FILE = "test.yaml";

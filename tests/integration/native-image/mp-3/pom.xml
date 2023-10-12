@@ -33,6 +33,10 @@
         This test uses quickstart application with minimal number of changes
     </description>
 
+    <properties>
+        <mainClass>io.helidon.tests.integration.nativeimage.mp3.Mp3Main</mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

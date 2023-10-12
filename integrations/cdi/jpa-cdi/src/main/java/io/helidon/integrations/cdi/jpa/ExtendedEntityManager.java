@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,11 @@ import jakarta.persistence.EntityManager;
 /**
  * A {@link DelegatingEntityManager} created to support extended
  * persistence contexts.
+ *
+ * @deprecated This is an internal class used by the now-deprecated {@link JpaExtension} class.
  */
-final class ExtendedEntityManager extends DelegatingEntityManager {
+@Deprecated(since = "4.0")
+class ExtendedEntityManager extends DelegatingEntityManager {
 
 
     /*
@@ -58,7 +61,39 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
      * Constructors.
      */
 
+    /**
+     * Creates a new {@link ExtendedEntityManager}.
+     *
+     * <p>This constructor exists only for proxiable type requirements imposed by CDI. Using it for any other purpose
+     * will result in undefined behavior.</p>
+     *
+     * @deprecated For use by CDI only.
+     */
+    @Deprecated // For use by CDI only.
+    ExtendedEntityManager() {
+        super();
+        this.transactionSupport = null;
+        this.suppliedQualifiers = null;
+        this.isSynchronized = false;
+        this.instance = null;
+        this.beanManager = null;
+    }
 
+    /**
+     * Creates a new {@link ExtendedEntityManager}.
+     *
+     * @param instance an {@link Instance} representing the CDI
+     * container
+     *
+     * @param suppliedQualifiers a {@link Set} of qualifier {@link
+     * Annotation}s; must not be {@code null}
+     *
+     * @param beanManager a {@link BeanManager}; must not be {@code
+     * null}
+     *
+     * @exception NullPointerException if any parameter value is
+     * {@code null}
+     */
     ExtendedEntityManager(final Instance<Object> instance,
                           final Set<? extends Annotation> suppliedQualifiers,
                           final BeanManager beanManager) {

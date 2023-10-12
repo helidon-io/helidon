@@ -16,12 +16,13 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
+import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +41,7 @@ class UriEncodingTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/foo", (req, res) -> res.send("It works!"))
-                .get("/foo/{bar}", (req, res) -> res.send(req.path().pathParameters().value("bar")));
+                .get("/foo/{bar}", (req, res) -> res.send(req.path().pathParameters().get("bar")));
     }
 
     /**
@@ -48,10 +49,10 @@ class UriEncodingTest {
      */
     @Test
     void testEncodedUrl() {
-        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/f%6F%6F", null);
+        String s = socketHttpClient.sendAndReceive(Method.GET, "/f%6F%6F", null);
         assertThat(SocketHttpClient.entityFromResponse(s, true), is("It works!"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
     /**
@@ -59,9 +60,9 @@ class UriEncodingTest {
      */
     @Test
     void testEncodedUrlParams() {
-        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/f%6F%6F/b%61%72", null);
+        String s = socketHttpClient.sendAndReceive(Method.GET, "/f%6F%6F/b%61%72", null);
         assertThat(SocketHttpClient.entityFromResponse(s, true), is("bar"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 }

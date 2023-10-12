@@ -16,12 +16,12 @@
 
 package io.helidon.examples.webserver.observe;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -55,21 +55,21 @@ abstract class AbstractObserveTest {
     void testConfigObserver() {
         try (Http1ClientResponse response = client.get("/observe/config/profile").request()) {
             // this requires basic authentication
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
         }
     }
 
     @Test
     void testHealthObserver() {
         try (Http1ClientResponse response = client.get("/observe/health").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
     }
 
     @Test
     void testInfoObserver() {
         try (Http1ClientResponse response = client.get("/observe/info").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 }

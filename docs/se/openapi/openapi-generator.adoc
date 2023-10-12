@@ -23,7 +23,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-//:helidon-client-xref: {webclient-page}
+:helidon-client-xref: {webclient-page}
 
 include::{gen-inc}[tag=preamble]
 
@@ -36,7 +36,7 @@ Along with the `PetService` interface or abstract class which has methods such a
 [source,java]
 .Generated `PetService` abstract class
 ----
-public abstract class PetService implements Service {
+public abstract class PetService implements HttpService {
     void addPet(ServerRequest request, ServerResponse response, Pet pet) {
         // ...
     }
@@ -181,68 +181,45 @@ PetApi petApi = PetApiImpl.create(apiClient);
 ==== Invoking Remote Endpoints
 With the `petApi` object, your code can invoke any of the methods on the `PetApi` interface to contact the remote service.
 
-The Helidon WebClient follows a reactive programming model, and the Helidon SE client generator creates an `ApiResponse` interface, also reactive.
+The Helidon SE client generator creates an `ApiResponse` interface.
 Each generated `PetApi` method returns an `ApiResponse<returnType>` where the `returnType` is the return type declared in the OpenAPI document for the corresponding operation.
 
 The `ApiResponse` interface exposes two methods your code can use to work with the response from the remote service invocation:
 
-* `Single<T> result()`
+* `T result()`
 +
-Provides reactive access to the value returned by the remote service in the response.
+Provides access to the value returned by the remote service in the response.
 This method lets your code fetch the return value directly.
-* `Single<WebClientResponse> webClientResponse()`
+* `HTTPClientResponse webClientResponse()`
 +
-Provides reactive access to the Helidon `WebClientResponse` object.
+Provides access to the Helidon `HTTPClientResponse` object.
 Your code can find out the HTTP return status, read headers in the response, and process the content (if any) in the response however it needs to.
 
-In the reactive Helidon WebClient model, the first part of the response message can  arrive (the status and headers are available) before the entity in the body of the response is readable.
-So there are two reactive events associated with an incoming HTTP response:
+In the Helidon WebClient model, the first part of the response message can  arrive (the status and headers are available) before the entity in the body of the response is readable.
+So there are two events associated with an incoming HTTP response:
 
 . when the response _excluding_ the entity content has arrived, and
 . when your code can begin consuming the entity content.
 
 You can adopt different styles of retrieving the results, depending on the specific needs of the code you are writing.
 
-===== Synchronous access to the result
-This example shows the simplest way to invoke the remote service and work with the result.
+===== Access with status checking
+The Helidon WebClient programming model includes a `HTTPClientResponse` interface which exposes all aspects of the HTTP response returned from the remote service.
+
+The next example shows how your code can use the `HTTPClientResponse`.
 
 [source,java]
-.Synchronous access to the return value
-----
-// Assumes the petApi field is initialized as above.
-List<Pet> availablePets = petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())) // <1>
-                .result() // <2>
-                .await(4, TimeUnit.SECONDS); // <3>
-----
-<1> Start the remote service invocation.
-<2> Access the reactive result.
-<3> Wait for the result to arrive subject to a four-second timeout.
-
-This code blocks the current thread, waiting up to four seconds for the response to arrive.
-This approach might be adequate if you are developing a command-line client where the thread has no other meaningful work to do until it has the result.
-This is _not_ an appropriate style for server code that uses the generated client to invoke another service.
-
-Note that this approach offers no access to the HTTP status for the response or any headers that might have been returned.
-
-===== Synchronous access with status checking
-The Helidon WebClient programming model includes a `WebClientResponse` interface which exposes all aspects of the HTTP response returned from the remote service.
-
-The next example shows how your code can use the `WebClientResponse`.
-
-[source,java]
-.Synchronous access with status checking
+.Access with status checking
 ----
 ApiResponse<List<Pet>> apiResponse = petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); // <1>
 
-WebClientResponse webClientResponse = apiResponse.webClientResponse()
-            .await(4, TimeUnit.SECONDS); // <2>
+HTTPClientResponse webClientResponse = apiResponse.webClientResponse(); // <2>
 
 if (webClientResponse.status().code() != 200) { // <3>
     // Handle a non-successful status.
 }
 
-List<Pet>> availablePets = apiResponse.result()
-            .await(4, TimeUnit.SECONDS); // <4>
+List<Pet>> availablePets = apiResponse.result(); // <4>
 ----
 <1> Start the remote service invocation.
 <2> Wait for the HTTP response status and headers to arrive.
@@ -251,55 +228,6 @@ List<Pet>> availablePets = apiResponse.result()
 
 This code also blocks the current thread, first to wait for the initial response and then to wait for the result content.
 
-===== Fully-reactive access
-The following example shows how your code might invoke the remote service and process the response using the reactive programming model.
-
-.Fully-reactive access with status checking
-[source,java]
-----
-// Assumes the petApi field is initialized as above.
-ApiResponse<List<Pet>> availablePetsResponse =
-    petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); // <1>
-
-availablePetsResponse.webClientResponse()
-    .thenAccept(resp -> { // <2>
-        if (resp.status().code() == 200) {
-            try {
-                availablePetsResponse.result() // <3>
-                    .thenAccept(availablePets -> {
-                        // Process the List<Pet> of available pets. // <4>
-
-                    })
-                    .exceptionally(throwable -> {
-                        // Handle whatever problem occurred in retrieving the results. // <5>
-                        return null;
-                    });
-            } catch (ExecutionException | InterruptedException e) {
-                // Handle errors while waiting for the response content to arrive. // <6>
-            }
-        } else {
-            // Handle non-200 HTTP status. // <7>
-        })
-    .exceptionally(throwable -> {
-        // Handle whatever problem occurred in receiving the response. // <8>
-        return null;
-    });
-----
-<1> Starts the remote service invocation.
-<2> Reactively processes the first portion of the HTTP response.
-<3> Reactively processes a successfully-received HTTP response.
-<4> Reactively processes the successfully-returned list of available pets.
-<5> Reactively handles any errors in retrieving the list of available pets.
-<6> Handle problems that occurred while waiting for the response content to arrive.
-<7> Handle a non-200 response status.
-<8> Reactively handles any errors in receiving the HTTP response.
-
-The fully-reactive approach brings with it some complexity, but it lets your code completely avoid blocking the thread that initiates the outbound remote service access.
-Avoiding blocking is especially important if the code which uses the generated client runs in a server.
-
-Some of this complexity enters because there are several ways this processing can fail.
-Your code should handle each of them in whatever ways make sense for your application, and that might mean dealing with each different error scenario in a different way.
-
 include::{gen-inc}[tag=common-references]
 
-//* xref:{helidon-client-xref}[Helidon WebClient documentation]
+* xref:{helidon-client-xref}[Helidon WebClient documentation]

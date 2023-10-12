@@ -35,6 +35,7 @@ import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
@@ -232,6 +233,10 @@ public class FaultToleranceExtension implements Extension {
                 }
             });
         }
+    }
+
+    void close(@Observes BeforeShutdown shutdown) {
+        FaultToleranceMetrics.close();
     }
 
     /**

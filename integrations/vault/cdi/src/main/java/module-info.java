@@ -19,16 +19,16 @@
  * Exposes all APIs discovered through
  * {@link io.helidon.integrations.vault.spi.InjectionProvider} service loader.
  */
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.vault.cdi {
-    requires java.logging;
 
+    requires io.helidon.microprofile.cdi;
     requires jakarta.inject;
-    requires jakarta.cdi;
-
+    requires java.logging;
     requires microprofile.config.api;
 
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.microprofile.cdi;
+    requires transitive jakarta.cdi;
 
     exports io.helidon.integrations.vault.cdi;
 
@@ -36,4 +36,5 @@ module io.helidon.integrations.vault.cdi {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.vault.cdi.VaultCdiExtension;
+
 }

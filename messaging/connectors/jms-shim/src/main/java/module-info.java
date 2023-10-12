@@ -18,8 +18,10 @@
  * Exposes JMS based on {@code javax} packages over {@code jakarta} packages.
  */
 module io.helidon.messaging.jms.shim {
-    requires javax.jms.api;
+
     requires jakarta.messaging;
+    requires javax.jms.api;
 
     exports io.helidon.messaging.connectors.jms.shim;
+
 }

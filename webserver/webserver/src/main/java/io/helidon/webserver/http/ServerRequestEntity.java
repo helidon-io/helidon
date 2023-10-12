@@ -19,6 +19,7 @@ package io.helidon.webserver.http;
 import java.io.InputStream;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
@@ -32,17 +33,20 @@ import io.helidon.http.media.ReadableEntityBase;
  * Server request entity.
  */
 public final class ServerRequestEntity extends ReadableEntityBase implements ReadableEntity {
-    private final Function<InputStream, InputStream> decoder;
+    private final UnaryOperator<InputStream> streamFilter;
+    private final UnaryOperator<InputStream> decoder;
     private final ServerRequestHeaders requestHeaders;
     private final MediaContext mediaContext;
 
     private ServerRequestEntity(Consumer<Boolean> entityRequestedCallback,
-                                Function<InputStream, InputStream> decoder,
+                                UnaryOperator<InputStream> streamFilter,
+                                UnaryOperator<InputStream> decoder,
                                 Function<Integer, BufferData> readEntityFunction,
                                 Runnable entityProcessedRunnable,
                                 ServerRequestHeaders requestHeaders,
                                 MediaContext mediaContext) {
         super(entityRequestedCallback, readEntityFunction, entityProcessedRunnable);
+        this.streamFilter = streamFilter;
         this.decoder = decoder;
         this.requestHeaders = requestHeaders;
         this.mediaContext = mediaContext;
@@ -52,6 +56,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
      * Create a new entity.
      *
      * @param entityRequestedCallback callback invoked when entity data are requested for the first time
+     * @param streamFilter            stream filter to apply, provided by user
      * @param decoder                 content decoder
      * @param readEntityFunction      function to read buffer from entity (int is an estimated number of bytes needed, buffer
      *                                will contain at least 1 byte)
@@ -61,12 +66,14 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
      * @return a new entity
      */
     public static ServerRequestEntity create(Consumer<Boolean> entityRequestedCallback,
+                                             UnaryOperator<InputStream> streamFilter,
                                              ContentDecoder decoder,
                                              Function<Integer, BufferData> readEntityFunction,
                                              Runnable entityProcessedRunnable,
                                              ServerRequestHeaders requestHeaders,
                                              MediaContext mediaContext) {
         return new ServerRequestEntity(entityRequestedCallback,
+                                       streamFilter,
                                        decoder,
                                        readEntityFunction,
                                        entityProcessedRunnable,
@@ -77,6 +84,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
     @Override
     public ReadableEntity copy(Runnable entityProcessedRunnable) {
         return new ServerRequestEntity(d -> {},
+                                       streamFilter,
                                        decoder,
                                        readEntityFunction(),
                                        entityProcessedRunnable(),
@@ -86,7 +94,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
 
     @Override
     public InputStream inputStream() {
-        return decoder.apply(super.inputStream());
+        return streamFilter.apply(decoder.apply(super.inputStream()));
     }
 
     @Override

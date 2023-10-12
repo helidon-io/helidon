@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ import jakarta.persistence.Parameter;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.TypedQuery;
 
-abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
+class DelegatingTypedQuery<X> implements TypedQuery<X> {
 
     private final TypedQuery<X> delegate;
 
-    DelegatingTypedQuery(final TypedQuery<X> delegate) {
+    DelegatingTypedQuery(TypedQuery<X> delegate) {
         super();
         this.delegate = Objects.requireNonNull(delegate);
     }
@@ -56,7 +56,7 @@ abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
     }
 
     @Override
-    public TypedQuery<X> setMaxResults(final int maxResults) {
+    public TypedQuery<X> setMaxResults(int maxResults) {
         this.delegate.setMaxResults(maxResults);
         return this;
     }
@@ -68,7 +68,7 @@ abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
     }
 
     @Override
-    public TypedQuery<X> setFirstResult(final int startPosition) {
+    public TypedQuery<X> setFirstResult(int startPosition) {
         this.delegate.setFirstResult(startPosition);
         return this;
     }
@@ -80,7 +80,7 @@ abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
     }
 
     @Override
-    public TypedQuery<X> setHint(final String hintName, final Object value) {
+    public TypedQuery<X> setHint(String hintName, Object value) {
         this.delegate.setHint(hintName, value);
         return this;
     }
@@ -92,113 +92,113 @@ abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
     }
 
     @Override
-    public Parameter<?> getParameter(final String name) {
+    public Parameter<?> getParameter(String name) {
         return this.delegate.getParameter(name);
     }
 
     @Override
-    public <T> Parameter<T> getParameter(final String name, final Class<T> type) {
+    public <T> Parameter<T> getParameter(String name, Class<T> type) {
         return this.delegate.getParameter(name, type);
     }
 
     @Override
-    public Parameter<?> getParameter(final int position) {
+    public Parameter<?> getParameter(int position) {
         return this.delegate.getParameter(position);
     }
 
     @Override
-    public <T> Parameter<T> getParameter(final int position, final Class<T> type) {
+    public <T> Parameter<T> getParameter(int position, Class<T> type) {
         return this.delegate.getParameter(position, type);
     }
 
 
     @Override
-    public <T> T getParameterValue(final Parameter<T> parameter) {
+    public <T> T getParameterValue(Parameter<T> parameter) {
         return this.delegate.getParameterValue(parameter);
     }
 
     @Override
-    public Object getParameterValue(final String name) {
+    public Object getParameterValue(String name) {
         return this.delegate.getParameterValue(name);
     }
 
     @Override
-    public Object getParameterValue(final int position) {
+    public Object getParameterValue(int position) {
         return this.delegate.getParameterValue(position);
     }
 
 
     @Override
-    public boolean isBound(final Parameter<?> parameter) {
+    public boolean isBound(Parameter<?> parameter) {
         return this.delegate.isBound(parameter);
     }
 
 
     @Override
-    public <T> TypedQuery<X> setParameter(final Parameter<T> parameter,
-                                          final T value) {
+    public <T> TypedQuery<X> setParameter(Parameter<T> parameter,
+                                          T value) {
         this.delegate.setParameter(parameter, value);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final Parameter<Calendar> parameter,
-                                      final Calendar value,
-                                      final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(Parameter<Calendar> parameter,
+                                      Calendar value,
+                                      TemporalType temporalType) {
         this.delegate.setParameter(parameter, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final Parameter<Date> parameter,
-                                      final Date value,
-                                      final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(Parameter<Date> parameter,
+                                      Date value,
+                                      TemporalType temporalType) {
         this.delegate.setParameter(parameter, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final int position,
-                                      final Object value) {
+    public TypedQuery<X> setParameter(int position,
+                                      Object value) {
         this.delegate.setParameter(position, value);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final int position,
-                                      final Calendar value,
-                                      final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(int position,
+                                      Calendar value,
+                                      TemporalType temporalType) {
         this.delegate.setParameter(position, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final int position,
-                                      final Date value,
-                                      final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(int position,
+                                      Date value,
+                                      TemporalType temporalType) {
         this.delegate.setParameter(position, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final String name,
-                                      final Object value) {
+    public TypedQuery<X> setParameter(String name,
+                                      Object value) {
         this.delegate.setParameter(name, value);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final String name,
-                                      final Calendar value,
-                                      final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(String name,
+                                      Calendar value,
+                                      TemporalType temporalType) {
         this.delegate.setParameter(name, value, temporalType);
         return this;
     }
 
     @Override
-    public TypedQuery<X> setParameter(final String name,
-                                      final Date value,
-                                      final TemporalType temporalType) {
+    public TypedQuery<X> setParameter(String name,
+                                      Date value,
+                                      TemporalType temporalType) {
         this.delegate.setParameter(name, value, temporalType);
         return this;
     }
@@ -210,7 +210,7 @@ abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
     }
 
     @Override
-    public TypedQuery<X> setFlushMode(final FlushModeType flushMode) {
+    public TypedQuery<X> setFlushMode(FlushModeType flushMode) {
         this.delegate.setFlushMode(flushMode);
         return this;
     }
@@ -222,7 +222,7 @@ abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
     }
 
     @Override
-    public TypedQuery<X> setLockMode(final LockModeType lockMode) {
+    public TypedQuery<X> setLockMode(LockModeType lockMode) {
         this.delegate.setLockMode(lockMode);
         return this;
     }
@@ -235,7 +235,10 @@ abstract class DelegatingTypedQuery<X> implements TypedQuery<X> {
 
 
     @Override
-    public <T> T unwrap(final Class<T> cls) {
+    public <T> T unwrap(Class<T> cls) {
+        if (cls != null && cls.isInstance(this)) {
+            return cls.cast(this);
+        }
         return this.delegate.unwrap(cls);
     }
 

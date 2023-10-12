@@ -18,7 +18,7 @@ package io.helidon.microprofile.example.staticc;
 
 import java.io.IOException;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
@@ -69,7 +69,7 @@ class StaticContentTest {
                 .request()
                 .accept(MediaType.TEXT_HTML_TYPE)
                 .get()) {
-            assertThat("Status should be 200", response.getStatus(), is(Http.Status.OK_200.code()));
+            assertThat("Status should be 200", response.getStatus(), is(Status.OK_200.code()));
 
             String str = response.readEntity(String.class);
 
@@ -87,7 +87,7 @@ class StaticContentTest {
                 .request()
                 .accept(MediaType.TEXT_HTML_TYPE)
                 .get()) {
-            assertThat("Status should be 200", response.getStatus(), is(Http.Status.OK_200.code()));
+            assertThat("Status should be 200", response.getStatus(), is(Status.OK_200.code()));
 
             String str = response.readEntity(String.class);
 

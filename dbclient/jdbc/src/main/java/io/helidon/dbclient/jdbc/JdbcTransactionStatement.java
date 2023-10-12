@@ -15,8 +15,11 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
+import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbStatement;
 
 /**
@@ -44,6 +47,14 @@ abstract class JdbcTransactionStatement<S extends DbStatement<S>> extends JdbcSt
 
     @Override
     protected PreparedStatement prepareStatement(String stmtName, String stmt) {
-        return prepareStatement(transactionContext.connection(), stmtName, stmt);
+        Connection connection = transactionContext.connection();
+        try {
+            connection.setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new DbClientException("Failed to set autocommit to false", e);
+        }
+        return prepareStatement(connection, stmtName, stmt);
     }
+
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 
+import static io.helidon.config.metadata.processor.UsedTypes.CONFIGURED;
+import static io.helidon.config.metadata.processor.UsedTypes.META_CONFIGURED;
+import static io.helidon.config.metadata.processor.UsedTypes.META_OPTION;
+import static io.helidon.config.metadata.processor.UsedTypes.META_OPTIONS;
+
 /**
  * Annotation processor.
  */
 public class ConfigMetadataProcessor extends AbstractProcessor {
-    static final String ANNOTATIONS_PACKAGE = "io.helidon.config.metadata.";
-    static final String CONFIGURED_CLASS = ANNOTATIONS_PACKAGE + "Configured";
-    static final String CONFIGURED_OPTION_CLASS = ANNOTATIONS_PACKAGE + "ConfiguredOption";
-    static final String CONFIGURED_OPTIONS_CLASS = ANNOTATIONS_PACKAGE + "ConfiguredOptions";
-
     private ConfigMetadataHandler handler;
 
     /**
@@ -43,9 +43,10 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(CONFIGURED_CLASS,
-                      CONFIGURED_OPTION_CLASS,
-                      CONFIGURED_OPTIONS_CLASS);
+        return Set.of(META_CONFIGURED.fqName(),
+                      META_OPTION.fqName(),
+                      META_OPTIONS.fqName(),
+                      CONFIGURED.fqName());
     }
 
     @Override
@@ -63,6 +64,6 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        return handler.process(annotations, roundEnv);
+        return handler.process(roundEnv);
     }
 }

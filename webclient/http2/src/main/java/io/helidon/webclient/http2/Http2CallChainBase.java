@@ -27,7 +27,12 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.ClientResponseTrailers;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.Http2Headers;
@@ -42,7 +47,7 @@ import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.spi.WebClientService;
 
-import static io.helidon.http.Http.HeaderNames.CONTENT_ENCODING;
+import static io.helidon.http.HeaderNames.CONTENT_ENCODING;
 import static io.helidon.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
@@ -56,7 +61,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     private Http2ClientStream stream;
     private HttpClientResponse response;
     private ClientRequestHeaders requestHeaders;
-    private Http.Status responseStatus;
+    private Status responseStatus;
 
     Http2CallChainBase(Http2ClientImpl http2Client,
                        Http2ClientRequestImpl clientRequest,
@@ -70,13 +75,40 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         this.http1EntityHandler = http1EntityHandler;
     }
 
+    static WebClientServiceResponse createServiceResponse(WebClientServiceRequest serviceRequest,
+                                                          HttpClientConfig clientConfig,
+                                                          Http2ClientStream stream,
+                                                          CompletableFuture<WebClientServiceResponse> whenComplete,
+                                                          Status responseStatus,
+                                                          ClientResponseHeaders clientResponseHeaders) {
+        WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
+
+        // we need an instance to create it, so let's just use a reference
+        AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
+        if (stream.hasEntity()) {
+            ContentDecoder decoder = contentDecoder(clientResponseHeaders, clientConfig);
+            builder.inputStream(decoder.apply(new RequestingInputStream(stream, whenComplete, response)));
+        }
+        WebClientServiceResponse serviceResponse = builder
+                .serviceRequest(serviceRequest)
+                .whenComplete(whenComplete)
+                .connection(stream)
+                .status(responseStatus)
+                .headers(clientResponseHeaders)
+                .connection(stream)
+                .build();
+
+        response.set(serviceResponse);
+        return serviceResponse;
+    }
+
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         ClientUri uri = serviceRequest.uri();
         requestHeaders = serviceRequest.headers();
 
-        requestHeaders.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, uri.authority()));
-        requestHeaders.remove(Http.HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
+        requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
+        requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
         ConnectionKey connectionKey = connectionKey(serviceRequest);
@@ -95,7 +127,11 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                 return doProceed(serviceRequest, result.response());
             }
         } catch (StreamTimeoutException e){
-            http2Client.connectionCache().remove(connectionKey);
+            //This request was waiting for 100 Continue, but it was very likely not supported by the server.
+            //Do not remove connection from the cache in that case.
+            if (!clientRequest().outputStreamRedirect()) {
+                http2Client.connectionCache().remove(connectionKey);
+            }
             throw e;
         }
     }
@@ -104,8 +140,12 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return requestHeaders;
     }
 
-    Http.Status responseStatus() {
+    Status responseStatus() {
         return responseStatus;
+    }
+
+    CompletableFuture<WebClientServiceResponse> whenComplete() {
+        return whenComplete;
     }
 
     /**
@@ -154,9 +194,16 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         // we need an instance to create it, so let's just use a reference
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
         if (stream.hasEntity()) {
-            ContentDecoder decoder = contentDecoder(responseHeaders);
+            ContentDecoder decoder = contentDecoder(responseHeaders, clientConfig);
             builder.inputStream(decoder.apply(new RequestingInputStream(stream, whenComplete, response)));
         }
+
+        if (responseHeaders.contains(HeaderNames.TRAILER)) {
+            builder.trailers(stream.trailers().thenApply(ClientResponseTrailers::create));
+        } else {
+            builder.trailers(CompletableFuture.failedFuture(new IllegalStateException("No trailers are expected.")));
+        }
+
         WebClientServiceResponse serviceResponse = builder
                 .serviceRequest(serviceRequest)
                 .whenComplete(whenComplete)
@@ -169,10 +216,10 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return serviceResponse;
     }
 
-    private ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders) {
+    private static ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders, HttpClientConfig clientConfig) {
         ContentEncodingContext encodingSupport = clientConfig.contentEncoding();
         if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(CONTENT_ENCODING)) {
-            String contentEncoding = responseHeaders.get(CONTENT_ENCODING).value();
+            String contentEncoding = responseHeaders.get(CONTENT_ENCODING).get();
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 return encodingSupport.decoder(contentEncoding);
             } else {
@@ -184,7 +231,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return ContentDecoder.NO_OP;
     }
 
-    protected Http2Headers prepareHeaders(Http.Method method, ClientRequestHeaders headers, ClientUri uri) {
+    protected static Http2Headers prepareHeaders(Method method, ClientRequestHeaders headers, ClientUri uri) {
         Http2Headers h2Headers = Http2Headers.create(headers);
         h2Headers.method(method);
         h2Headers.path(uri.pathWithQueryAndFragment());
@@ -225,12 +272,12 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                                  clientRequest.proxy());
     }
 
-    private static final class LogHeaderConsumer implements Consumer<Http.Header> {
+    private static final class LogHeaderConsumer implements Consumer<Header> {
         private static final System.Logger LOGGER = System.getLogger(LogHeaderConsumer.class.getName());
         private static final LogHeaderConsumer INSTANCE = new LogHeaderConsumer();
 
         @Override
-        public void accept(Http.Header httpHeader) {
+        public void accept(Header httpHeader) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG,
                            "HTTP/2 request contains wrong header, removing {0}", httpHeader);

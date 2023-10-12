@@ -326,12 +326,12 @@ public interface RequestedUriDiscoveryContext {
                                 }
                             }
                             case HOST -> {
-                                authority = headers.first(Http.HeaderNames.HOST).orElse(null);
+                                authority = headers.first(HeaderNames.HOST).orElse(null);
                                 break nextDiscoveryType;
                             }
 
                             default -> {
-                                authority = headers.first(Http.HeaderNames.HOST).orElse(null);
+                                authority = headers.first(HeaderNames.HOST).orElse(null);
                                 break nextDiscoveryType;
                             }
                             }
@@ -343,7 +343,7 @@ public interface RequestedUriDiscoveryContext {
 
                 // now we must fill values that were not discovered (to have a valid URI information)
                 if (host == null && authority == null) {
-                    authority = headers.first(Http.HeaderNames.HOST).orElse(null);
+                    authority = headers.first(HeaderNames.HOST).orElse(null);
                 }
 
                 uriInfo.path(path == null ? requestPath : path);
@@ -422,7 +422,7 @@ public interface RequestedUriDiscoveryContext {
                 int port = -1;
                 String path = null;
 
-                List<String> xForwardedFors = headers.values(Http.HeaderNames.X_FORWARDED_FOR);
+                List<String> xForwardedFors = headers.values(HeaderNames.X_FORWARDED_FOR);
                 boolean areProxiesTrusted = true;
                 if (xForwardedFors.size() > 0) {
                     // Intentionally skip the first X-Forwarded-For value. That is the originating client, and as such it
@@ -432,10 +432,10 @@ public interface RequestedUriDiscoveryContext {
                     }
                 }
                 if (areProxiesTrusted) {
-                    scheme = headers.first(Http.HeaderNames.X_FORWARDED_PROTO).orElse(null);
-                    host = headers.first(Http.HeaderNames.X_FORWARDED_HOST).orElse(null);
-                    port = headers.first(Http.HeaderNames.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
-                    path = headers.first(Http.HeaderNames.X_FORWARDED_PREFIX)
+                    scheme = headers.first(HeaderNames.X_FORWARDED_PROTO).orElse(null);
+                    host = headers.first(HeaderNames.X_FORWARDED_HOST).orElse(null);
+                    port = headers.first(HeaderNames.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
+                    path = headers.first(HeaderNames.X_FORWARDED_PREFIX)
                             .map(prefix -> {
                                 String absolute = requestPath;
                                 return prefix + (absolute.startsWith("/") ? "" : "/") + absolute;
@@ -460,20 +460,20 @@ public interface RequestedUriDiscoveryContext {
      */
     enum RequestedUriDiscoveryType {
         /**
-         * The {@code io.helidon.http.Http.Header#FORWARDED} header is used to discover the original requested URI.
+         * The {@code io.helidon.http.Header#FORWARDED} header is used to discover the original requested URI.
          */
         FORWARDED,
         /**
          * The
-         * {@code io.helidon.http.Http.Header#X_FORWARDED_PROTO},
-         * {@code io.helidon.http.Http.Header#X_FORWARDED_HOST},
-         * {@code io.helidon.http.Http.Header#X_FORWARDED_PORT},
-         * {@code io.helidon.http.Http.Header#X_FORWARDED_PREFIX}
+         * {@code io.helidon.http.Header#X_FORWARDED_PROTO},
+         * {@code io.helidon.http.Header#X_FORWARDED_HOST},
+         * {@code io.helidon.http.Header#X_FORWARDED_PORT},
+         * {@code io.helidon.http.Header#X_FORWARDED_PREFIX}
          * headers are used to discover the original requested URI.
          */
         X_FORWARDED,
         /**
-         * This is the default, only the {@code io.helidon.http.Http.Header#HOST} header is used to discover
+         * This is the default, only the {@code io.helidon.http.Header#HOST} header is used to discover
          * requested URI.
          */
         HOST

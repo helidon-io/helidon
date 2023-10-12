@@ -31,18 +31,22 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Status;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -62,7 +66,6 @@ import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
@@ -97,12 +100,6 @@ class JaxRsService implements HttpService {
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
         resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
         resourceConfig.property(WADL_FEATURE_DISABLE, "true");
-
-        // TODO - temporary until MP OpenAPI TCK bug fix released. https://github.com/eclipse/microprofile-open-api/issues/557
-        if (System.getProperties().containsKey("io.helidon." + ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS)) {
-            resourceConfig.property(ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS,
-                                    Boolean.getBoolean("io.helidon." + ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS));
-        }
 
         InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
@@ -218,6 +215,10 @@ class JaxRsService implements HttpService {
                                                                req.prologue().method().text(),
                                                                new HelidonMpSecurityContext(), new MapPropertiesDelegate(),
                                                                resourceConfig);
+        /*
+         MP CORS supports needs a way to obtain the UriInfo from the request context.
+         */
+        requestContext.setProperty(UriInfo.class.getName(), ((Supplier<UriInfo>) req::requestedUri));
 
         for (Header header : req.headers()) {
             requestContext.headers(header.name(),
@@ -248,6 +249,17 @@ class JaxRsService implements HttpService {
             kpiMetricsContext.ifPresent(KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
             appHandler.handle(requestContext);
             writer.await();
+            if (res.status() == Status.NOT_FOUND_404 && requestContext.getUriInfo().getMatchedResourceMethod() == null) {
+                // Jersey will not throw an exception, it will complete the request - but we must
+                // continue looking for the next route
+                // this is a tricky piece of code - the next can only be called if reset was successful
+                // reset may be impossible if data has already been written over the network
+                if (res instanceof RoutingResponse routing) {
+                    if (routing.reset()) {
+                        routing.next();
+                    }
+                }
+            }
         } catch (UncheckedIOException e) {
             throw e;
         } catch (io.helidon.http.NotFoundException | NotFoundException e) {
@@ -333,16 +345,16 @@ class JaxRsService implements HttpService {
                 String name = entry.getKey();
                 List<String> values = entry.getValue();
                 if (values.size() == 1) {
-                    res.header(Http.Headers.create(HeaderNames.create(name), values.get(0)));
+                    res.header(HeaderValues.create(HeaderNames.create(name), values.get(0)));
                 } else {
-                    res.header(Http.Headers.create(entry.getKey(), entry.getValue()));
+                    res.header(HeaderValues.create(entry.getKey(), entry.getValue()));
                 }
             }
             Response.StatusType statusInfo = containerResponse.getStatusInfo();
-            res.status(Http.Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
+            res.status(Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
 
             if (contentLength > 0) {
-                res.header(Http.Headers.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
+                res.header(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
             this.outputStream = new NoFlushOutputStream(res.outputStream());
             return outputStream;

@@ -24,9 +24,11 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
-import io.helidon.tests.integration.harness.SetUp;
+import io.helidon.tests.integration.dbclient.common.utils.TestConfig;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Pokemon.POKEMONS;
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
@@ -40,10 +42,11 @@ import static org.hamcrest.Matchers.equalTo;
  * Verify mapping interface.
  */
 @SuppressWarnings("SpellCheckingInspection")
-public class MapperIT extends AbstractIT {
+@ExtendWith(DbClientParameterResolver.class)
+public class MapperIT {
 
     private static final System.Logger LOGGER = System.getLogger(MapperIT.class.getName());
-    private static final int BASE_ID = LAST_POKEMON_ID + 400;
+    private static final int BASE_ID = TestConfig.LAST_POKEMON_ID + 400;
 
     private final DbClient dbClient;
 
@@ -58,7 +61,7 @@ public class MapperIT extends AbstractIT {
         verifyInsertPokemon(dbClient, result, pokemon);
     }
 
-    @SetUp
+    @BeforeAll
     public static void setup(DbClient dbClient) throws ExecutionException, InterruptedException {
         try {
             // BASE_ID+1, 2 is used for inserts

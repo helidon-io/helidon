@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@
 :feature-name: Testing with TestNG
 :rootdir: {docdir}/..
 
+include::{rootdir}/includes/mp.adoc[]
+
 == Contents
 
 - <<Overview, Overview>>
@@ -40,20 +42,20 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.microprofile.tests</groupId>
-    <artifactId>helidon-microprofile-tests-testng</artifactId>
+    <groupId>io.helidon.microprofile.testing</groupId>
+    <artifactId>helidon-microprofile-testing-testng</artifactId>
     <scope>test</scope>
 </dependency>
 ----
 
 == Usage - default
-A test can be annotated with `io.helidon.microprofile.tests.testng.HelidonTest` annotation to mark it as a
+A test can be annotated with `io.helidon.microprofile.testing.testng.HelidonTest` annotation to mark it as a
 CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
 the last method is invoked. This annotation also enables injection into the test class itself.
 
 == Usage
 
-A test can be annotated with `io.helidon.microprofile.tests.testng.HelidonTest` annotation to mark it as a
+A test can be annotated with `io.helidon.microprofile.testing.testng.HelidonTest` annotation to mark it as a
 CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
 the last method is invoked. This annotation also enables injection into the test class itself.
 
@@ -97,16 +99,16 @@ In addition to this simplification, the following annotations are supported:
 |===
 |Annotation | Usage
 
-|`@io.helidon.microprofile.tests.testng.AddBean`
+|`@io.helidon.microprofile.testing.testng.AddBean`
 |Used to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
 
-|`@io.helidon.microprofile.tests.testng.AddExtension`
+|`@io.helidon.microprofile.testing.testng.AddExtension`
 |Used to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
 
-|`@io.helidon.microprofile.tests.testng.AddConfig`
+|`@io.helidon.microprofile.testing.testng.AddConfig`
 |Used to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
 
-|`@io.helidon.microprofile.tests.testng.DisableDiscovery`
+|`@io.helidon.microprofile.testing.testng.DisableDiscovery`
 |Used to disable automated discovery of beans and extensions
 |===
 

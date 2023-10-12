@@ -38,7 +38,7 @@ public class DbClientMetrics {
      * with {@link io.helidon.dbclient.DbClient.Builder#addService(java.util.function.Supplier)}.
      *
      * @return a new counter builder
-     * @see org.eclipse.microprofile.metrics.Counter
+     * @see io.helidon.metrics.api.Counter
      */
     public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends DbClientServiceBase> counter() {
         return MetricCounter.builder();
@@ -49,7 +49,7 @@ public class DbClientMetrics {
      * with {@link io.helidon.dbclient.DbClient.Builder#addService(java.util.function.Supplier)}.
      *
      * @return a new timer builder
-     * @see org.eclipse.microprofile.metrics.Timer
+     * @see io.helidon.metrics.api.Timer
      */
     public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends DbClientServiceBase> timer() {
         return MetricTimer.builder();

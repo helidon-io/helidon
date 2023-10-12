@@ -17,7 +17,7 @@
 package io.helidon.integrations.common.rest;
 
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 /**
  * A base for responses without an entity.
@@ -26,7 +26,7 @@ import io.helidon.http.Http;
  */
 public abstract class ApiResponse extends ApiJsonParser {
     private final Headers headers;
-    private final Http.Status status;
+    private final Status status;
     private final String requestId;
 
     /**
@@ -57,7 +57,7 @@ public abstract class ApiResponse extends ApiJsonParser {
      *
      * @return status of the response (only if successful)
      */
-    public Http.Status status() {
+    public Status status() {
         return status;
     }
 
@@ -80,7 +80,7 @@ public abstract class ApiResponse extends ApiJsonParser {
     public abstract static class Builder<B extends Builder<B, T>, T extends ApiResponse>
             implements io.helidon.common.Builder<B, T> {
         private Headers headers;
-        private Http.Status status;
+        private Status status;
         private String requestId;
 
         /**
@@ -106,7 +106,7 @@ public abstract class ApiResponse extends ApiJsonParser {
          * @param status HTTP status
          * @return updated builder
          */
-        public B status(Http.Status status) {
+        public B status(Status status) {
             this.status = status;
             return me();
         }
@@ -136,7 +136,7 @@ public abstract class ApiResponse extends ApiJsonParser {
          *
          * @return status
          */
-        public Http.Status status() {
+        public Status status() {
             return status;
         }
 

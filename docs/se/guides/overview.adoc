@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -86,14 +86,14 @@ Learn how to Upgrade your Helidon SE application
 .Helidon SE WebClient Guide
 [link=webclient.adoc]
 --
-Learn how to use the Helidon SE Reactive WebClient
+Learn how to use the Helidon SE WebClient
 --
 
 [CARD]
 .Helidon SE DB Client Guide
 [link=dbclient.adoc]
 --
-Learn how to use the Helidon SE Reactive DB Client
+Learn how to use the Helidon SE DB Client
 --
 
 [CARD]

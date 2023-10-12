@@ -22,6 +22,7 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.model.Pokemon.POKEMONS;
 import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.verifyPokemon;
@@ -29,7 +30,8 @@ import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.veri
 /**
  * Test set of basic JDBC queries.
  */
-public class SimpleQueriesIT extends AbstractIT {
+@ExtendWith(DbClientParameterResolver.class)
+public class SimpleQueriesIT {
 
     private final DbClient dbClient;
     private final Config config;

@@ -40,7 +40,7 @@ public interface Http2Stream {
     /**
      * Headers received.
      *
-     * @param headers     request headers
+     * @param headers     headers
      * @param endOfStream whether these headers are the last data that would be received
      */
     void headers(Http2Headers headers, boolean endOfStream);
@@ -50,8 +50,9 @@ public interface Http2Stream {
      *
      * @param header frame header
      * @param data   frame data
+     * @param endOfStream whether this is the last data that would be received
      */
-    void data(Http2FrameHeader header, BufferData data);
+    void data(Http2FrameHeader header, BufferData data, boolean endOfStream);
 
     /**
      * Priority.

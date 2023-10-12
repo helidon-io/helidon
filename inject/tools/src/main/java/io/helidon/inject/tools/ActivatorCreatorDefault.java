@@ -99,7 +99,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     private static final String SERVICE_PROVIDER_ACTIVATOR_HBS = "service-provider-activator.hbs";
     private static final String SERVICE_PROVIDER_APPLICATION_STUB_HBS = "service-provider-application-stub.hbs";
     private static final String SERVICE_PROVIDER_MODULE_HBS = "service-provider-module.hbs";
-    private static final TypeName CREATOR = TypeName.create(AbstractCreator.class);
+    private static final TypeName CREATOR = TypeName.create(ActivatorCreatorDefault.class);
 
     /**
      * Service loader based constructor.
@@ -569,6 +569,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     public TypeName toActivatorImplTypeName(TypeName serviceTypeName) {
         return TypeName.builder()
                 .packageName(serviceTypeName.packageName())
+                .enclosingNames(List.of())
                 .className(CommonUtils.toFlatName(serviceTypeName.classNameWithEnclosingNames()) + INNER_ACTIVATOR_CLASS_NAME)
                 .build();
     }

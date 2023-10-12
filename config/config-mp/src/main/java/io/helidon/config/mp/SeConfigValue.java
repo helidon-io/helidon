@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigValue;
@@ -29,8 +30,10 @@ import io.helidon.config.MissingValueException;
 class SeConfigValue<T> implements ConfigValue<T> {
     private final Config.Key key;
     private final Supplier<T> valueSupplier;
+    private final Config owningConfig;
 
-    SeConfigValue(Config.Key key, Supplier<T> valueSupplier) {
+    SeConfigValue(Config config, Config.Key key, Supplier<T> valueSupplier) {
+        this.owningConfig = config;
         this.key = key;
         this.valueSupplier = valueSupplier;
     }
@@ -50,8 +53,18 @@ class SeConfigValue<T> implements ConfigValue<T> {
     }
 
     @Override
-    public <N> ConfigValue<N> as(Function<T, N> mapper) {
-        return new SeConfigValue<>(key, () -> mapper.apply(valueSupplier.get()));
+    public <N> ConfigValue<N> as(Function<? super T, ? extends N> mapper) {
+        return new SeConfigValue<>(owningConfig, key, () -> mapper.apply(valueSupplier.get()));
+    }
+
+    @Override
+    public <N> ConfigValue<N> as(Class<N> type) {
+        return owningConfig.as(type);
+    }
+
+    @Override
+    public <N> ConfigValue<N> as(GenericType<N> type) {
+        return owningConfig.as(type);
     }
 
     @Override

@@ -16,21 +16,21 @@
 
 package io.helidon.examples.metrics.filtering.se;
 
+import java.util.regex.Pattern;
+
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.metrics.api.RegistryFilterSettings;
-import io.helidon.metrics.api.RegistrySettings;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.ScopeConfig;
+import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.metrics.MetricsFeature;
-import io.helidon.webserver.observe.metrics.MetricsObserveProvider;
-
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import io.helidon.webserver.observe.metrics.MetricsObserver;
 
 /**
  * The application main class.
@@ -67,40 +67,43 @@ public final class Main {
 
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
+        Config.global(config);
 
-        // Ignore the "gets" timer.
-        RegistryFilterSettings.Builder registryFilterSettingsBuilder =
-                RegistryFilterSettings.builder()
-                                      .exclude(GreetService.TIMER_FOR_GETS);
+        // Programmatically (not through config), tell the metrics feature to ignore the "gets" timer.
+        // To do so, create the scope config, then add it to the metrics config that ultimately
+        // the metrics feature class will use.
+        ScopeConfig scopeConfig = ScopeConfig.builder()
+                .name(Meter.Scope.APPLICATION)
+                .exclude(Pattern.compile(GreetService.TIMER_FOR_GETS))
+                .build();
 
-        RegistrySettings.Builder registrySettingsBuilder =
-                RegistrySettings.builder()
-                                .filterSettings(registryFilterSettingsBuilder);
-
-        MetricsSettings.Builder metricsSettingsBuilder =
-                MetricsSettings.builder()
-                               .registrySettings(Registry.APPLICATION_SCOPE, registrySettingsBuilder.build());
+        MetricsConfig initialMetricsConfig = config.get(MetricsConfig.METRICS_CONFIG_KEY)
+                .map(MetricsConfig::create)
+                .orElseGet(MetricsConfig::create);
+        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(initialMetricsConfig)
+                .scoping(ScopingConfig.builder()
+                                 .putScope(Meter.Scope.APPLICATION, scopeConfig));
 
         server.config(config.get("server"))
-              .routing(r -> routing(r, config, metricsSettingsBuilder));
+              .routing(r -> routing(r, metricsConfigBuilder));
     }
 
     /**
      * Set up routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    static void routing(HttpRouting.Builder routing, Config config, MetricsSettings.Builder metricsSettingsBuilder) {
-        MetricsFeature metrics = MetricsFeature.builder()
-                .metricsSettings(metricsSettingsBuilder)
+    static void routing(HttpRouting.Builder routing, MetricsConfig.Builder metricsConfigBuilder) {
+        Config config = Config.global();
+
+        MeterRegistry meterRegistry = MetricsFactory.getInstance(config).globalRegistry(metricsConfigBuilder.build());
+
+        MetricsObserver metrics = MetricsObserver.builder()
+                .metricsConfig(metricsConfigBuilder)
                 .build();
-        MetricRegistry appRegistry = RegistryFactory.getInstance(metricsSettingsBuilder.build())
-                .getRegistry(MetricRegistry.APPLICATION_SCOPE);
+        GreetService greetService = new GreetService(meterRegistry);
 
-        GreetService greetService = new GreetService(config, appRegistry);
-
-        routing.addFeature(ObserveFeature.create(MetricsObserveProvider.create(metrics)))
+        routing.addFeature(ObserveFeature.just(metrics))
                 .register("/greet", greetService);
     }
 }

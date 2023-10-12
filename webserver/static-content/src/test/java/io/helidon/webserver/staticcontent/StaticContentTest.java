@@ -19,14 +19,14 @@ package io.helidon.webserver.staticcontent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.DirectClient;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -68,7 +68,7 @@ class StaticContentTest {
         try (Http1ClientResponse response = testClient.get("/classpath/favicon.ico")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "image/x-icon"));
         }
     }
@@ -78,7 +78,7 @@ class StaticContentTest {
         try (Http1ClientResponse response = testClient.get("/classpath/nested/resource.txt")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Nested content"));
         }
@@ -89,7 +89,7 @@ class StaticContentTest {
         try (Http1ClientResponse response = testClient.get("/singleclasspath")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Content"));
         }
@@ -100,7 +100,7 @@ class StaticContentTest {
         try (Http1ClientResponse response = testClient.get("/path/favicon.ico")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "image/x-icon"));
         }
     }
@@ -110,7 +110,7 @@ class StaticContentTest {
         try (Http1ClientResponse response = testClient.get("/path/nested/resource.txt")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Nested content"));
         }
@@ -121,7 +121,7 @@ class StaticContentTest {
         try (Http1ClientResponse response = testClient.get("/singlepath")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Content"));
         }

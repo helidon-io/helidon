@@ -17,3 +17,77 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Features and Benefits of Helidon
+
+* <<Open Source with Support, Open Source with Support>>
+* <<Two API Flavors for Two Programming Styles, Two API Flavors for Two Programming Styles>>
+* <<Feature Richness, Feature Richness>>
+* <<Enterprise Features, Enterprise Features>>
+* <<Integrations, Integrations>>
+
+== Open Source with Support
+
+Helidon is open-source software, licensed with Apache License, Version 2.0. Its
+codebase is kept in GitHub. Its artifacts are published to Maven Central. This
+makes it easy for users to inspect, modify, and contribute to its source code. The
+Apache license makes it easy for organizations to adopt Helidon from a licensing
+perspective. Publishing artifacts to Maven Central makes it easy and natural for
+developers and operators to pull Helidon binaries into development
+environments and CI/CD pipelines. In short, Helidon is intentionally aligned with
+modern mainstream development practices to make it as easy as possible to
+adopt and use.
+
+And yet, enterprise-grade support is also available for Helidon. Oracle offers
+cost-competitive commercial support for Helidon, for customers serious about
+support SLAs for their production operations. So, customers can get the best of
+both worlds: seamless incorporation of Helidon into DevOps practices and third-
+party product approvals, and award-winning customer support for high-scale
+mission-critical production applications.
+
+
+
+
+
+== Two API Flavors for Two Programming Styles
+Helidon offers two API flavors: Helidon SE, and Helidon MP. Both are fun to
+program in, but each caters to a different style of programming
+
+
+== Feature Richness
+Both API flavors, Helidon SE and Helidon MP, offer a rich and similar set of
+features, like configuration and metrics and security, as examples. In Helidon
+MP, the APIs for the features are specified by a standards body, whereas in
+Helidon SE they are not. In both cases, the
+set of features available is complete enough to cover every aspect of the needs
+of modern microservices applications.
+
+== Enterprise Features
+Helidon intentionally includes many features required by industrial-strength
+enterprise applications – even when they are now architected with microservices.
+Among these features are support for data access, messaging, and transactions,
+with integrations to existing Oracle products in each category.
+
+== Integrations
+Helidon integrates with many other technologies that are useful in the
+implementation of microservices applications, for example:
+
+* Oracle Coherence and Coherence Community Edition, the leading in-
+memory data grid, which can serve as a distributed cache or system of
+record for stateful microservices
+* The Oracle Cloud Infrastructure (OCI) SDK for Java, for using a wide
+variety of OCI services from within Helidon applications
+* Oracle WebLogic Server (WLS), including
+- Bi-directional REST service invocations
+- Helidon-to-WLS SOAP web service invocations
+- Helidon consumption and production of messages on WLS-
+hosted JMS destinations
+- Single sign-on between Helidon and WLS -hosted services
+using Oracle Identity Cloud Service
+- Distributed transaction coordination between Helidon and WLS
+- hosted resources using Oracle MicroTx Free
+* Messaging Connectors for JMS, Kafka, and Oracle AQ, to allow Helidon
+applications to consume and produce messages with those providers
+* HashiCorp Vault for accessing securely stored tokens, passwords, API
+keys, PKI certificates, and other secrets
+* Micrometer Metrics, for monitoring Helidon applications using
+Micrometer
+* Neo4j, for using a graph database from within Helidon applications

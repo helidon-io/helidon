@@ -19,50 +19,66 @@ package io.helidon.webclient.http2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.ClientResponseTrailers;
+import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.HttpClientConfig;
+import io.helidon.webclient.api.ReleasableResource;
 
 class Http2ClientResponseImpl implements Http2ClientResponse {
-    private final Http.Status responseStatus;
+    private final HttpClientConfig httpClientConfig;
+    private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
+    private final ReleasableResource stream;
     private final CompletableFuture<Void> complete;
     private final Runnable closeResponseRunnable;
+    private final CompletableFuture<ClientResponseTrailers> responseTrailers;
     private final InputStream inputStream;
     private final MediaContext mediaContext;
     private final ClientUri lastEndpointUri;
-
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private boolean entityRequested;
 
-    Http2ClientResponseImpl(Http.Status status,
+    Http2ClientResponseImpl(HttpClientConfig httpClientConfig,
+                            Status status,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
+                            CompletableFuture<ClientResponseTrailers> responseTrailers,
                             InputStream inputStream, // input stream is nullable - no response entity
                             MediaContext mediaContext,
                             ClientUri lastEndpointUri,
+                            ReleasableResource stream,
                             CompletableFuture<Void> complete,
                             Runnable closeResponseRunnable) {
+        this.httpClientConfig = httpClientConfig;
         this.responseStatus = status;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
+        this.responseTrailers = responseTrailers;
         this.inputStream = inputStream;
         this.mediaContext = mediaContext;
         this.lastEndpointUri = lastEndpointUri;
+        this.stream = stream;
         this.complete = complete;
         this.closeResponseRunnable = closeResponseRunnable;
     }
 
     @Override
-    public Http.Status status() {
+    public Status status() {
         return responseStatus;
     }
 
@@ -72,7 +88,34 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     }
 
     @Override
+    public ClientResponseTrailers trailers() {
+        // Block until trailers arrive
+        Duration timeout = httpClientConfig.readTimeout()
+                .orElseGet(() -> httpClientConfig.socketOptions().readTimeout());
+
+        if (!this.entityRequested) {
+            throw new IllegalStateException("Trailers requested before reading entity.");
+        }
+
+        try {
+            return ClientResponseTrailers.create(this.responseTrailers.get(timeout.toMillis(), TimeUnit.MILLISECONDS));
+        } catch (TimeoutException e) {
+            throw new IllegalStateException("Timeout " + timeout + " reached while waiting for trailers.", e);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted while waiting for trailers.", e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof IllegalStateException ise) {
+                throw ise;
+            } else {
+                throw new IllegalStateException(e.getCause());
+            }
+        }
+    }
+
+    @Override
     public ReadableEntity entity() {
+        this.entityRequested = true;
+
         if (inputStream == null) {
             return ClientResponseEntity.empty();
         }
@@ -84,6 +127,10 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                 responseHeaders,
                 mediaContext
         );
+    }
+
+    Http2ClientStream stream() {
+        return (Http2ClientStream) stream;
     }
 
     private BufferData readBytes(int estimate) {

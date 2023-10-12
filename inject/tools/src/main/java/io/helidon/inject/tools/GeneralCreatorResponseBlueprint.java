@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -59,7 +60,7 @@ interface GeneralCreatorResponseBlueprint extends GeneralCodeGenNamesBlueprint {
      *
      * @return map of service type names to generated details
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<TypeName, GeneralCodeGenDetail> serviceTypeDetails();
 
     // resources related ...

@@ -23,7 +23,7 @@ import java.security.cert.Certificate;
 import java.util.Optional;
 
 import io.helidon.common.socket.PeerInfo;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientConfig;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -56,10 +56,9 @@ public class DirectClient implements Http1Client {
     public DirectClient(HttpRouting routing) {
         this.routing = routing;
         this.httpClient = Http1Client.builder()
-                .baseUri(URI.create("unit://helidon-unit:65000"))
+                .baseUri(URI.create("http://helidon-unit:65000"))
                 .build();
         this.router = Router.builder().addRouting(routing).build();
-        this.router.beforeStart();
     }
 
     @Override
@@ -68,7 +67,7 @@ public class DirectClient implements Http1Client {
     }
 
     @Override
-    public Http1ClientRequest method(Http.Method method) {
+    public Http1ClientRequest method(Method method) {
         if (clientHost == null) {
             clientHost = "localhost";
         }

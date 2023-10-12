@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
@@ -68,7 +69,7 @@ interface ListenerConfigBlueprint {
      * @return all defined protocol configurations, loaded from service loader by default
      */
     @ConfiguredOption(provider = true, providerType = ProtocolConfigProvider.class)
-    @Prototype.Singular
+    @Option.Singular
     List<ProtocolConfig> protocols();
 
     /**
@@ -86,7 +87,7 @@ interface ListenerConfigBlueprint {
      *
      * @return router for this listener/server
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Routing> routings();
 
     /**
@@ -132,8 +133,8 @@ interface ListenerConfigBlueprint {
 
     /**
      * Maximal number of bytes an entity may have.
-     * If {@link io.helidon.http.Http.HeaderNames#CONTENT_LENGTH} is used, this is checked immediately,
-     * if {@link io.helidon.http.Http.Headers#TRANSFER_ENCODING_CHUNKED} is used, we will fail when the
+     * If {@link io.helidon.http.HeaderNames#CONTENT_LENGTH} is used, this is checked immediately,
+     * if {@link io.helidon.http.HeaderValues#TRANSFER_ENCODING_CHUNKED} is used, we will fail when the
      * number of bytes read would exceed the max payload size.
      * Defaults to unlimited ({@code -1}).
      *
@@ -262,14 +263,29 @@ interface ListenerConfigBlueprint {
     Duration idleConnectionPeriod();
 
     /**
+     * If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize
+     * performance when writing it.
+     * If bigger, streaming will be used.
+     * <p>
+     * Note that for some entity types we cannot use streaming, as they are already fully in memory (String, byte[]), for such
+     * cases, this option is ignored.
+     * <p>
+     * Default is 128Kb.
+     *
+     * @return maximal number of bytes to buffer in memory for supported writers
+     */
+    @ConfiguredOption("131072")
+    int maxInMemoryEntity();
+
+    /**
      * Server listener socket options.
      * Unless configured through builder, {@code SO_REUSEADDR} is set to {@code true},
      * and {@code SO_RCVBUF} is set to {@code 4096}.
      *
      * @return custom socket options
      */
-    @Prototype.Singular
-    @Prototype.SameGeneric
+    @Option.Singular
+    @Option.SameGeneric
     Map<SocketOption<?>, Object> listenerSocketOptions();
 
     /**
@@ -278,7 +294,7 @@ interface ListenerConfigBlueprint {
      *
      * @return connection selectors to be used for this socket
      */
-    @Prototype.Singular
+    @Option.Singular
     List<ServerConnectionSelector> connectionSelectors();
 
     /**
@@ -364,4 +380,3 @@ interface ListenerConfigBlueprint {
         }
     }
 }
-

@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -622,6 +623,23 @@ class BuilderImpl implements Config.Builder {
                 .changesExecutor(command -> {})
                 .build();
 
+    }
+
+    static final class GlobalConfigHolder {
+        private static final AtomicReference<Config> GLOBAL_CONFIG = new AtomicReference<>();
+
+        static Config get() {
+            Config config = GLOBAL_CONFIG.get();
+            if (config == null) {
+                config = Config.create();
+                GLOBAL_CONFIG.set(config);
+            }
+            return config;
+        }
+
+        static void set(Config config) {
+            GLOBAL_CONFIG.set(config);
+        }
     }
 
     static class InternalMapperProvider implements ConfigMapperProvider {

@@ -11,6 +11,18 @@
         },
         {
             "pattern": "config-profile-.*\\.yaml$"
+        },
+        {
+            "pattern": "application.yml"
+        },
+        {
+            "pattern": "meta-config.yml"
+        },
+        {
+            "pattern": "config-profile.yml"
+        },
+        {
+            "pattern": "config-profile-.*\\.yml$"
         }
     ]
 }

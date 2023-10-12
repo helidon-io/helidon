@@ -18,7 +18,7 @@ package io.helidon.examples.metrics.kpi;
 
 import java.util.Collections;
 
-import io.helidon.metrics.api.Registry;
+import io.helidon.metrics.api.Meter;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
@@ -28,7 +28,6 @@ import io.helidon.webserver.WebServerConfig;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -38,7 +37,7 @@ import static org.hamcrest.Matchers.containsString;
 @ServerTest
 public class MainTest {
 
-    private static final String KPI_REGISTRY_TYPE = Registry.VENDOR_SCOPE;
+    private static final String KPI_REGISTRY_TYPE = Meter.Scope.VENDOR;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
             .add("greeting", "Hola")
@@ -79,7 +78,6 @@ public class MainTest {
     }
 
     @Test
-    @Disabled
     public void testMetrics() {
         try (Http1ClientResponse response = client.get("/greet").request()) {
             assertThat(response.as(String.class), containsString("Hello World!"));
@@ -92,7 +90,7 @@ public class MainTest {
 
         try (Http1ClientResponse response = client.get("/observe/metrics/" + KPI_REGISTRY_TYPE).request()) {
             assertThat("Returned metrics output", response.as(String.class),
-                    containsString("# TYPE " + KPI_REGISTRY_TYPE + "_requests_inFlight_current"));
+                    containsString("# TYPE " + "requests_inFlight"));
         }
     }
 }

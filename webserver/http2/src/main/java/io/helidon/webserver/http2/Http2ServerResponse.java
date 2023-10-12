@@ -19,21 +19,18 @@ package io.helidon.webserver.http2;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
-import io.helidon.http.Http.Headers;
+import io.helidon.http.DateTime;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
-import io.helidon.http.http2.FlowControl;
-import io.helidon.http.http2.Http2Flag;
-import io.helidon.http.http2.Http2Flag.DataFlags;
-import io.helidon.http.http2.Http2FrameData;
-import io.helidon.http.http2.Http2FrameHeader;
-import io.helidon.http.http2.Http2FrameTypes;
+import io.helidon.http.ServerResponseTrailers;
+import io.helidon.http.Status;
 import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http.ServerResponseBase;
 
@@ -41,27 +38,26 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
 
     private final ConnectionContext ctx;
-    private final Http2StreamWriter writer;
-    private final int streamId;
     private final ServerResponseHeaders headers;
-    private final FlowControl.Outbound flowControl;
+    private final ServerResponseTrailers trailers;
+    private final Http2ServerRequest request;
+    private final Http2ServerStream stream;
 
     private boolean isSent;
     private boolean streamingEntity;
     private long bytesWritten;
     private BlockingOutputStream outputStream;
+    private UnaryOperator<OutputStream> outputStreamFilter;
+    private String streamResult = null;
 
-    Http2ServerResponse(ConnectionContext ctx,
-                        Http2ServerRequest request,
-                        Http2StreamWriter writer,
-                        int streamId,
-                        FlowControl.Outbound flowControl) {
-        super(ctx, request);
-        this.ctx = ctx;
-        this.writer = writer;
-        this.streamId = streamId;
-        this.flowControl = flowControl;
+    Http2ServerResponse(Http2ServerStream stream,
+                        Http2ServerRequest request) {
+        super(stream.connectionContext(), request);
+        this.ctx = stream.connectionContext();
+        this.request = request;
+        this.stream = stream;
         this.headers = ServerResponseHeaders.create();
+        this.trailers = ServerResponseTrailers.create();
     }
 
     @Override
@@ -72,6 +68,16 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public void send(byte[] entityBytes) {
+        if (outputStreamFilter != null) {
+            // in this case we must honor user's request to filter the stream
+            try (OutputStream os = outputStream()) {
+                os.write(entityBytes);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return;
+        }
+
         if (isSent) {
             throw new IllegalStateException("Response already sent");
         }
@@ -84,11 +90,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         // handle content encoding
         byte[] bytes = entityBytes(entityBytes);
 
-        headers.setIfAbsent(Headers.create(HeaderNames.CONTENT_LENGTH,
-                                           true,
-                                           false,
-                                           String.valueOf(bytes.length)));
-        headers.setIfAbsent(Headers.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+        headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                true,
+                                                false,
+                                                String.valueOf(bytes.length)));
+        headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
 
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.status(status());
@@ -97,17 +103,14 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                                "Status must be configured on response, "
                                                                        + "do not set HTTP/2 pseudo headers"));
 
-        Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(bytes.length,
-                                                                              Http2FrameTypes.DATA,
-                                                                              DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                              streamId),
-                                                      BufferData.create(bytes));
+        boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
 
         http2Headers.validateResponse();
-        bytesWritten = writer.writeHeaders(http2Headers,
-                                           streamId,
-                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                           frameData, flowControl);
+        bytesWritten += stream.writeHeadersWithData(http2Headers, bytes.length, BufferData.create(bytes), !sendTrailers);
+
+        if (sendTrailers) {
+            bytesWritten += stream.writeTrailers(Http2Headers.create(trailers));
+        }
 
         afterSend();
     }
@@ -127,11 +130,19 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         streamingEntity = true;
 
-        outputStream = new BlockingOutputStream(headers, writer, streamId, flowControl, status(), () -> {
+        if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+            headers.add(STREAM_TRAILERS);
+        }
+
+        outputStream = new BlockingOutputStream(request, this, () -> {
             this.isSent = true;
             afterSend();
         });
-        return contentEncode(outputStream);
+        if (outputStreamFilter == null) {
+            return contentEncode(outputStream);
+        } else {
+            return outputStreamFilter.apply(contentEncode(outputStream));
+        }
     }
 
     @Override
@@ -143,10 +154,19 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     public ServerResponseHeaders headers() {
         return headers;
     }
+    @Override
+    public ServerResponseTrailers trailers() {
+        if (request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
+            return trailers;
+        }
+        throw new IllegalStateException(
+                "Trailers are supported only when request came with 'TE: trailers' header or "
+                        + "response headers have trailer names definition 'Trailer: <trailer-name>'");
+    }
 
     @Override
     public void streamResult(String result) {
-        // TODO use this when closing the stream
+        this.streamResult = result;
     }
 
     @Override
@@ -172,32 +192,48 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
     }
 
+    @Override
+    public void streamFilter(UnaryOperator<OutputStream> filterFunction) {
+        if (isSent) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (streamingEntity) {
+            throw new IllegalStateException("OutputStream already obtained");
+        }
+        Objects.requireNonNull(filterFunction);
+
+        UnaryOperator<OutputStream> current = this.outputStreamFilter;
+        if (current == null) {
+            this.outputStreamFilter = filterFunction;
+        } else {
+            this.outputStreamFilter = it -> filterFunction.apply(current.apply(it));
+        }
+    }
+
     private static class BlockingOutputStream extends OutputStream {
 
+        private final Http2ServerRequest request;
         private final ServerResponseHeaders headers;
-        private final Http2StreamWriter writer;
-        private final int streamId;
-        private final FlowControl.Outbound flowControl;
-        private final Http.Status status;
+        private final ServerResponseTrailers trailers;
+        private final Status status;
         private final Runnable responseCloseRunnable;
+        private final Http2ServerResponse response;
+        private final Http2ServerStream stream;
 
         private BufferData firstBuffer;
         private boolean closed;
         private boolean firstByte = true;
         private long bytesWritten;
 
-        private BlockingOutputStream(ServerResponseHeaders headers,
-                                     Http2StreamWriter writer,
-                                     int streamId,
-                                     FlowControl.Outbound flowControl,
-                                     Http.Status status,
+        private BlockingOutputStream(Http2ServerRequest request,
+                                     Http2ServerResponse response,
                                      Runnable responseCloseRunnable) {
-
-            this.headers = headers;
-            this.writer = writer;
-            this.streamId = streamId;
-            this.flowControl = flowControl;
-            this.status = status;
+            this.request = request;
+            this.response = response;
+            this.headers = response.headers;
+            this.trailers = response.trailers;
+            this.stream = response.stream;
+            this.status = response.status();
             this.responseCloseRunnable = responseCloseRunnable;
         }
 
@@ -233,10 +269,14 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 return;
             }
             this.closed = true;
+            boolean sendTrailers =
+                    request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
             if (firstByte) {
-                sendFirstChunkOnly();
+                sendFirstChunkOnly(sendTrailers);
+            } else if (sendTrailers) {
+                sendTrailers();
             } else {
-                sendEndOfStream();
+                bytesWritten += stream.writeData(BufferData.empty(), true);
             }
             responseCloseRunnable.run();
             try {
@@ -259,25 +299,25 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             if (firstByte) {
                 sendHeadersAndPrepare();
                 firstByte = false;
-                writeChunk(BufferData.create(firstBuffer, buffer));
+                bytesWritten += stream.writeData(BufferData.create(firstBuffer, buffer), false);
             } else {
-                writeChunk(buffer);
+                bytesWritten += stream.writeData(buffer, false);
             }
         }
 
-        private void sendFirstChunkOnly() {
+        private void sendFirstChunkOnly(boolean sendTrailers) {
             int contentLength;
             if (firstBuffer == null) {
-                headers.set(Headers.CONTENT_LENGTH_ZERO);
+                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
-                headers.set(Headers.create(HeaderNames.CONTENT_LENGTH,
-                                           true,
-                                           false,
-                                           String.valueOf(firstBuffer.available())));
+                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                true,
+                                                false,
+                                                String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
-            headers.setIfAbsent(Headers.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);
@@ -285,63 +325,29 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
             // at this moment, we must send headers
             if (contentLength == 0) {
-                int written = writer.writeHeaders(http2Headers,
-                                                  streamId,
-                                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
-                                                                                       | Http2Flag.END_OF_STREAM),
-                                                  flowControl);
-                bytesWritten += written;
+                bytesWritten += stream.writeHeaders(http2Headers, !sendTrailers);
             } else {
-                Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(contentLength,
-                                                                                      Http2FrameTypes.DATA,
-                                                                                      DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                                      streamId),
-                                                              firstBuffer);
-                int written = writer.writeHeaders(http2Headers,
-                                                  streamId,
-                                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                                  frameData, flowControl);
-
-                bytesWritten += written;
+                bytesWritten += stream.writeHeadersWithData(http2Headers, contentLength, firstBuffer, !sendTrailers);
             }
         }
 
         private void sendHeadersAndPrepare() {
-            headers.setIfAbsent(Headers.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);
             http2Headers.validateResponse();
-            int written = writer.writeHeaders(http2Headers,
-                                              streamId,
-                                              Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                              flowControl);
 
-            bytesWritten += written;
+            bytesWritten += stream.writeHeaders(http2Headers, false);
         }
 
-        private void writeChunk(BufferData buffer) {
-            Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(buffer.available(),
-                                                                                  Http2FrameTypes.DATA,
-                                                                                  DataFlags.create(0),
-                                                                                  streamId),
-                                                          buffer);
-            bytesWritten += frameData.header().length();
-            bytesWritten += Http2FrameHeader.LENGTH;
+        private void sendTrailers(){
+            if (response.streamResult != null) {
+                trailers.set(STREAM_RESULT_NAME, response.streamResult);
+            }
 
-            writer.writeData(frameData, flowControl);
-        }
-
-        private void sendEndOfStream() {
-            Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(0,
-                                                                                  Http2FrameTypes.DATA,
-                                                                                  DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                                  streamId),
-                                                          BufferData.empty());
-
-            bytesWritten += frameData.header().length();
-            bytesWritten += Http2FrameHeader.LENGTH;
-            writer.writeData(frameData, flowControl);
+            Http2Headers http2Headers = Http2Headers.create(trailers);
+            bytesWritten += stream.writeTrailers(http2Headers);
         }
     }
 }

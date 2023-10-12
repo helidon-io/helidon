@@ -23,11 +23,12 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import io.helidon.common.GenericType;
-import io.helidon.http.WritableHeaders;
 import io.helidon.config.Config;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.UnsupportedTypeException;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnectionSelector;
@@ -42,7 +43,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class WebServerConfigTest {
 
@@ -81,11 +82,11 @@ public class WebServerConfigTest {
         ContentEncodingContext contentEncodingContext = wsConfig.contentEncoding().orElseThrow();
         assertThat(contentEncodingContext.contentEncodingEnabled(), is(false));
         assertThat(contentEncodingContext.contentDecodingEnabled(), is(false));
-        failsWith(() -> contentEncodingContext.decoder("gzip"), NoSuchElementException.class);
-        failsWith(() -> contentEncodingContext.decoder("gzip"), NoSuchElementException.class);
-        failsWith(() -> contentEncodingContext.encoder("gzip"), NoSuchElementException.class);
-        failsWith(() -> contentEncodingContext.decoder("x-gzip"), NoSuchElementException.class);
-        failsWith(() -> contentEncodingContext.encoder("x-gzip"), NoSuchElementException.class);
+        assertThrows(NoSuchElementException.class, () -> contentEncodingContext.decoder("gzip"));
+        assertThrows(NoSuchElementException.class, () -> contentEncodingContext.decoder("gzip"));
+        assertThrows(NoSuchElementException.class, () -> contentEncodingContext.encoder("gzip"));
+        assertThrows(NoSuchElementException.class, () -> contentEncodingContext.decoder("x-gzip"));
+        assertThrows(NoSuchElementException.class, () -> contentEncodingContext.encoder("x-gzip"));
     }
 
     // Check that WebServer MediaContext builder produces expected provider using MediaContext configuration from Config file:
@@ -130,14 +131,13 @@ public class WebServerConfigTest {
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
         EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-        failsWith(() -> writer.write(
+        assertThrows(UnsupportedTypeException.class, () -> writer.write(
                           GenericType.create(JsonObject.class),
                           Json.createObjectBuilder()
                                   .add("name", "John Smith")
                                   .build(),
                           outputStream,
-                          writableHeaders),
-                  IllegalArgumentException.class);
+                          writableHeaders));
         outputStream.close();
     }
 
@@ -193,28 +193,14 @@ public class WebServerConfigTest {
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
         EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-        failsWith(() -> writer.write(
+        assertThrows(UnsupportedTypeException.class,
+                     () -> writer.write(
                           GenericType.create(JsonObject.class),
                           Json.createObjectBuilder()
                                   .add("name", "John Smith")
                                   .build(),
                           outputStream,
-                          writableHeaders),
-                  IllegalArgumentException.class);
+                          writableHeaders));
         outputStream.close();
     }
-
-    // Verify that provided task throws an exception
-    private static void failsWith(Runnable task, Class<? extends Exception> exception) {
-        try {
-            task.run();
-            // Fail the test when no Exception was thrown
-            fail(String.format("Exception %s was not thrown", exception.getName()));
-        } catch (Exception ex) {
-            if (!exception.isAssignableFrom(ex.getClass())) {
-                throw ex;
-            }
-        }
-    }
-
 }

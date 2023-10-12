@@ -59,22 +59,22 @@ public final class Main {
 
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
+        Config.global(config);
 
         server.config(config.get("server"))
-                .routing(r -> routing(r, config));
+                .routing(Main::routing);
     }
 
     /**
      * Set up routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    static void routing(HttpRouting.Builder routing, Config config) {
+    static void routing(HttpRouting.Builder routing) {
+        Config config = Config.global();
         routing.addFeature(ObserveFeature.create())
-                .addFeature(OpenApiFeature.builder()
-                        .config(config.get(OpenApiFeature.Builder.CONFIG_KEY)))
-                .register("/greet", new GreetService(config));
+                .addFeature(OpenApiFeature.create(config.get("openapi")))
+                .register("/greet", new GreetService());
     }
 
 }

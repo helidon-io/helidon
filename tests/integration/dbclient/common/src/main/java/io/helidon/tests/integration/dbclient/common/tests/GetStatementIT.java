@@ -26,12 +26,14 @@ import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.utils.RangePoJo;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.verifyPokemonsIdRange;
 
 /**
  * Test DbStatementGet methods.
  */
+@ExtendWith(DbClientParameterResolver.class)
 public class GetStatementIT {
 
     private final DbClient dbClient;

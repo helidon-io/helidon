@@ -26,25 +26,28 @@ import io.helidon.common.features.api.HelidonFlavor;
  * version 2.0 using <a href="http://narayana.io/">Narayana</a> as the
  * underlying implementation.
  */
+@Aot(description = "Experimental support, tested on limited use cases")
 @Feature(value = "JTA",
         description = "Jakarta transaction API support for Helidon MP",
         in = HelidonFlavor.MP,
         path = "JTA"
 )
-@Aot(description = "Experimental support, tested on limited use cases")
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.jta.cdi {
-    requires static io.helidon.common.features.api;
 
-    requires jakarta.transaction;
     requires jakarta.annotation;
-    requires java.sql;
-    requires java.rmi;
+    requires transitive jakarta.cdi;
     requires jakarta.inject;
-    requires jakarta.cdi;
-    requires narayana.jta.jakarta;
+    requires transitive jakarta.transaction;
+    requires java.rmi;
+    requires java.sql;
+    requires narayana.jta;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.integrations.jta.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.jta.cdi.NarayanaExtension;
+
 }

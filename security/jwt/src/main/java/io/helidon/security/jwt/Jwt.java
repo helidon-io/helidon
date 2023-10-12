@@ -953,6 +953,21 @@ public class Jwt {
 
     /**
      * Validates all default values.
+     * Values validated: {@link #validate(String, Set, boolean)}
+     *
+     * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
+     *                 issuer claim mandatory
+     * @param audience validates that this JWT was issued for this audience. Setting this to non-null value will make
+     *                 audience claim mandatory
+     * @param checkAudience whether audience claim validation should be executed
+     * @return errors instance to check for validation result
+     */
+    public Errors validate(String issuer, String audience, boolean checkAudience) {
+        return validate(issuer, audience == null ? Set.of() : Set.of(audience), checkAudience);
+    }
+
+    /**
+     * Validates all default values.
      * Values validated:
      * <ul>
      * <li>{@link #expirationTime() Expiration time} if defined</li>
@@ -966,21 +981,40 @@ public class Jwt {
      *                 issuer claim mandatory
      * @param audience validates that this JWT was issued for this audience. Setting this to non-null value and with
      *                 any non-null value in the Set will make audience claim mandatory
+     * @param checkAudience whether audience claim validation should be executed
      * @return errors instance to check for validation result
      */
-    public Errors validate(String issuer, Set<String> audience) {
+    public Errors validate(String issuer, Set<String> audience, boolean checkAudience) {
         List<Validator<Jwt>> validators = defaultTimeValidators();
         if (null != issuer) {
             addIssuerValidator(validators, issuer, true);
         }
-        if (null != audience) {
-            audience.stream()
-                    .filter(Objects::nonNull)
-                    .findAny()
-                    .ifPresent(it -> addAudienceValidator(validators, audience, true));
+        // Audience check is turned on
+        if (checkAudience) {
+            if (null != audience) {
+                audience.stream()
+                        .filter(Objects::nonNull)
+                        .findAny()
+                        .ifPresent(it -> addAudienceValidator(validators, audience, true));
+            }
         }
         addUserPrincipalValidator(validators);
         return validate(validators);
+    }
+
+    /**
+     * Validates all default values.
+     * Audience claim check is not mandatory.
+     * Values validated: {@link #validate(String, Set, boolean)}
+     *
+     * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
+     *                 issuer claim mandatory
+     * @param audience validates that this JWT was issued for this audience. Setting this to non-null value and with
+     *                 any non-null value in the Set will make audience claim mandatory
+     * @return errors instance to check for validation result
+     */
+    public Errors validate(String issuer, Set<String> audience) {
+        return validate(issuer, audience, true);
     }
 
     /**

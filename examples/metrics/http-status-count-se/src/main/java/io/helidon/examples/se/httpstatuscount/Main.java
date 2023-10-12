@@ -56,8 +56,9 @@ public final class Main {
 
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
+        Config.global(config);
 
-        server.routing(r -> routing(r, config))
+        server.routing(Main::routing)
                 .config(config.get("server"));
 
     }
@@ -66,14 +67,11 @@ public final class Main {
      * Set up routing.
      *
      * @param routing routing builder
-     * @param config  configuration of this server
      */
-    static void routing(HttpRouting.Builder routing, Config config) {
-        SimpleGreetService simpleGreetService = new SimpleGreetService(config);
-        GreetService greetService = new GreetService(config);
+    static void routing(HttpRouting.Builder routing) {
         routing.addFeature(ObserveFeature.create())
                 .register(HttpStatusMetricService.create()) // no endpoint, just metrics updates
-                .register("/simple-greet", simpleGreetService)
-                .register("/greet", greetService);
+                .register("/simple-greet", new SimpleGreetService())
+                .register("/greet", new GreetService());
     }
 }

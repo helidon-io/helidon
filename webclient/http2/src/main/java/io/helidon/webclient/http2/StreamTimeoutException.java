@@ -22,7 +22,14 @@ import java.time.Duration;
  * Thrown when no data are received over the stream within configured request timeout.
  */
 public class StreamTimeoutException extends RuntimeException {
-    StreamTimeoutException(int streamId, Duration timeout) {
+    private final Http2ClientStream stream;
+
+    StreamTimeoutException(Http2ClientStream stream, int streamId, Duration timeout) {
         super("No data received on stream " + streamId + " within the timeout " + timeout);
+        this.stream = stream;
+    }
+
+    Http2ClientStream stream() {
+        return stream;
     }
 }

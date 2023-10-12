@@ -313,17 +313,18 @@ The `Main.createRouting` method gather all configuration properties.
 ----
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
-import io.helidon.security.providers.oidc.reactive.OidcSupport;
+import io.helidon.security.providers.oidc.OidcFeature;
 
 Security security = Security.create(config.get("security"));    // <1>
 
 return Routing.builder()
-                .register(WebSecurity.create(security, config.get("security"))) // <2>
-                .register(OidcSupport.create(config))   // <3>
+                .addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.create(security, config.get("security"))) // <2>
+                .addFeature(OidcFeature.create(config))   // <3>
 ----
 <1> Create the Helidon `Security` instance using configuration.
 <2> Register Helidon `WebSecurity` instance using security instance and configuration.
-<3> Register Helidon `OidcSupport` instance.
+<3> Register Helidon `OidcFeature` instance.
 
 That code is extracting security properties from application.yaml into two steps.
 First the Security instance is used to bootstrap security, so the WebSecurity instance

@@ -26,10 +26,12 @@ import io.helidon.common.features.api.HelidonFlavor;
          path = {"WebServer", "Static Content"}
 )
 module io.helidon.webserver.staticcontent {
+
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.webserver;
     requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.staticcontent;
+
 }

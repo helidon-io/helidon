@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.media.jsonp.JsonpMediaSupportProvider;
-import io.helidon.http.media.spi.MediaSupportProvider;
 
 /**
  * JSON-P media support.
@@ -28,12 +26,15 @@ import io.helidon.http.media.spi.MediaSupportProvider;
         path = {"Media", "JSON-P"}
 )
 module io.helidon.http.media.jsonp {
-    requires static io.helidon.common.features.api;
 
     requires io.helidon.http.media;
+
+    requires static io.helidon.common.features.api;
+
     requires transitive jakarta.json;
 
     exports io.helidon.http.media.jsonp;
 
-    provides MediaSupportProvider with JsonpMediaSupportProvider;
+    provides io.helidon.http.media.spi.MediaSupportProvider with io.helidon.http.media.jsonp.JsonpMediaSupportProvider;
+
 }

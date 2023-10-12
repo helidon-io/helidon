@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.media.jackson.JacksonMediaSupportProvider;
-import io.helidon.http.media.spi.MediaSupportProvider;
 
 /**
  * Jackson media support.
@@ -28,18 +26,19 @@ import io.helidon.http.media.spi.MediaSupportProvider;
          path = {"Media", "Jackson"}
 )
 module io.helidon.http.media.jackson {
-    requires static io.helidon.common.features.api;
 
-    requires io.helidon.http.media;
-
-    requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
+    requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.datatype.jdk8;
     requires com.fasterxml.jackson.datatype.jsr310;
     requires com.fasterxml.jackson.module.paramnames;
+    requires io.helidon.http.media;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.http.media.jackson;
 
-    provides MediaSupportProvider
-            with JacksonMediaSupportProvider;
+    provides io.helidon.http.media.spi.MediaSupportProvider
+            with io.helidon.http.media.jackson.JacksonMediaSupportProvider;
+
 }

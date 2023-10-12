@@ -17,7 +17,6 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 
 /**
  * GraphQL microprofile server module.
@@ -29,32 +28,31 @@ import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 )
 @Aot(description = "Experimental support, tested on limited use cases")
 module io.helidon.microprofile.graphql.server {
-    requires static io.helidon.common.features.api;
 
-    requires java.desktop;
-
-    requires jakarta.json.bind;
-    requires jakarta.annotation;
-    requires jakarta.cdi;
-    requires org.eclipse.yasson;
-
-    requires org.jboss.jandex;
-
+    requires com.graphqljava.extendedscalars;
+    requires com.graphqljava;
     requires io.helidon.config;
-    requires io.helidon.webserver.graphql;
     requires io.helidon.graphql.server;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;
-
-    requires com.graphqljava;
-    requires com.graphqljava.extendedscalars;
-    requires microprofile.graphql.api;
+    requires io.helidon.webserver.graphql;
+    requires jakarta.annotation;
+    requires jakarta.json.bind;
+    requires java.desktop;
     requires microprofile.config.api;
+    requires microprofile.graphql.api;
+    requires org.eclipse.yasson;
+    requires org.jboss.jandex;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive jakarta.cdi;
 
     exports io.helidon.microprofile.graphql.server;
 
     provides jakarta.enterprise.inject.spi.Extension with
-            GraphQlCdiExtension;
+            io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 
     opens io.helidon.microprofile.graphql.server to weld.core.impl;
+	
 }

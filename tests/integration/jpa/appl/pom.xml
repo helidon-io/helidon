@@ -106,8 +106,8 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jboss-transaction-spi-jakarta</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -120,7 +120,6 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -159,32 +158,6 @@
             <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.jvnet.jaxb2.maven2</groupId>
-                <artifactId>maven-jaxb2-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>Generate persistence.xml Java objects</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <generatePackage>io.helidon.tests.integration.nativeimage.mp2.jaxb</generatePackage>
-                            <markGenerated>true</markGenerated>
-                            <schemas>
-                                <schema>
-                                    <dependencyResource>
-                                        <groupId>jakarta.persistence</groupId>
-                                        <artifactId>jakarta.persistence-api</artifactId>
-                                        <resource>javax/persistence/persistence_2_2.xsd</resource>
-                                    </dependencyResource>
-                                </schema>
-                            </schemas>
-                            <strict>false</strict>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.hibernate.orm.tooling</groupId>

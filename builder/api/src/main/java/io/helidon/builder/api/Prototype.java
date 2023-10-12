@@ -17,6 +17,7 @@
 package io.helidon.builder.api;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -84,7 +85,7 @@ public final class Prototype {
          * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,
          * it will override current value for that option on this builder.
          * Options that do not exist in the provided config will not impact current values.
-         * The config instance is kept and may be used in builder interceptor, it is not available in prototype implementation.
+         * The config instance is kept and may be used in builder decorator, it is not available in prototype implementation.
          *
          * @param config configuration to use
          * @return updated builder instance
@@ -94,7 +95,8 @@ public final class Prototype {
         /**
          * Discover services from configuration.
          *
-         * @param config               configuration located at the node of the service providers
+         * @param config               configuration located at the parent node of the service providers
+         * @param configKey            configuration key of the provider list
          *                             (either a list node, or object, where each child is one service)
          * @param serviceLoader        helidon service loader for the expected type
          * @param providerType         type of the service provider interface
@@ -107,19 +109,26 @@ public final class Prototype {
          */
         default <S extends NamedService, T extends ConfiguredProvider<S>> List<S>
         discoverServices(Config config,
+                         String configKey,
                          HelidonServiceLoader<T> serviceLoader,
                          Class<T> providerType,
                          Class<S> configType,
                          boolean allFromServiceLoader) {
-            return ProvidedUtil.discoverServices(config, serviceLoader, providerType, configType, allFromServiceLoader);
+            return ProvidedUtil.discoverServices(config,
+                                                 configKey,
+                                                 serviceLoader,
+                                                 providerType,
+                                                 configType,
+                                                 allFromServiceLoader);
         }
 
         /**
          * Discover service from configuration.
          *
-         * @param config               configuration located at the node of the service providers
+         * @param config               configuration located at the parent node of the service providers
+         * @param configKey            configuration key of the provider list
          *                             (either a list node, or object, where each child is one service - this method requires
-         *                             zero to one configured services)
+         *                             *                             zero to one configured services)
          * @param serviceLoader        helidon service loader for the expected type
          * @param providerType         type of the service provider interface
          * @param configType           type of the configured service
@@ -128,15 +137,16 @@ public final class Prototype {
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
          * @return the first service (ordered by {@link io.helidon.common.Weight} that is discovered, or empty optional if none
-         *                             is found
+         *         is found
          */
         default <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
         discoverService(Config config,
-                         HelidonServiceLoader<T> serviceLoader,
-                         Class<T> providerType,
-                         Class<S> configType,
-                         boolean allFromServiceLoader) {
-            return ProvidedUtil.discoverService(config, serviceLoader, providerType, configType, allFromServiceLoader);
+                        String configKey,
+                        HelidonServiceLoader<T> serviceLoader,
+                        Class<T> providerType,
+                        Class<S> configType,
+                        boolean allFromServiceLoader) {
+            return ProvidedUtil.discoverService(config, configKey, serviceLoader, providerType, configType, allFromServiceLoader);
         }
     }
 
@@ -184,6 +194,7 @@ public final class Prototype {
         /**
          * The generated interface is public by default. We can switch it to package local
          * by setting this property to {@code false}-
+         *
          * @return whether the generated interface should be public
          */
         boolean isPublic() default true;
@@ -221,7 +232,7 @@ public final class Prototype {
 
         /**
          * Used to decorate the builder, right before method build is called.
-         * Validations are done AFTER the interceptor is handled.
+         * Validations are done AFTER the decorator is handled.
          * This class may be package local if located in the same package as blueprint.
          * The class must have accessible constructor with no parameters.
          *
@@ -231,14 +242,47 @@ public final class Prototype {
     }
 
     /**
+     * A blueprint annotated with this annotation will create a prototype that can be created from a
+     * {@link io.helidon.common.config.Config} instance. The builder will also have a method {@code config(Config)} that
+     * reads all options annotated with {@link io.helidon.builder.api.Option.Configured} from the config.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Configured {
+        /**
+         * Root configuration this type is read from, if it is read from root.
+         * Do not fill this otherwise (e.g. when nested in another configuration type).
+         *
+         * @return configuration key of this type, from the root of configuration
+         */
+        String value() default "";
+    }
+
+    /**
+     * Types provided by this configured type. Complementary to {@link io.helidon.builder.api.Option.Provider}.
+     */
+    @Target(ElementType.TYPE)
+    @Inherited
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Provides {
+        /**
+         * Types this type provides, probably through {@link java.util.ServiceLoader}.
+         * For example security expects a {@code SecurityProvider} - basic authentication provider is such a provider, so it
+         * can be marked to provide this type.
+         *
+         * @return types this configured type provides in addition to its qualified class name
+         */
+        Class<?>[] value();
+    }
+
+    /**
      * Provides a contract by which the {@link Prototype.Blueprint}
-     * annotated type can be intercepted (i.e., including decoration or
-     * mutation).
+     * annotated type can be decorated.
      * <p>
      * The implementation class type must provide a no-arg accessible constructor available to the generated class
      * <p>
-     * Note that when intercepting config, you may get {@code null} even for required types, as these may be configured
-     * by your very builder interceptor.
+     * The builder provides accessors to all types, using {@link java.util.Optional} for any field that is optional,
+     * or any other field unless it has a default value. Primitive types are an exception (unless declared as required).
      *
      * @param <T> the type of the bean builder to intercept
      * @see io.helidon.builder.api.Prototype.Blueprint#decorator()
@@ -246,9 +290,9 @@ public final class Prototype {
     @FunctionalInterface
     public interface BuilderDecorator<T> {
         /**
-         * Provides the ability to intercept (i.e., including decoration or mutation) the target.
+         * Provides the ability to decorate the target.
          *
-         * @param target the target being intercepted
+         * @param target the target being decorated
          */
         void decorate(T target);
     }
@@ -294,51 +338,6 @@ public final class Prototype {
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.CLASS)
     public @interface FactoryMethod {
-    }
-
-    /**
-     * Applying this annotation to a {@link Prototype.Blueprint}-annotated interface method will cause
-     * the generated class to also include additional "add*()" methods. This will only apply, however, if the method is for
-     * a {@link java.util.Map}, {@link java.util.List}, or {@link java.util.Set}.
-     */
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.CLASS)
-    public @interface Singular {
-
-        /**
-         * The optional value specified here will determine the singular form of the method name.
-         * For instance, if we take a method like this:
-         * <pre>{@code
-         * @Singlular("pickle")
-         * List<Pickle> getPickles();
-         * }</pre>
-         * an additional generated method named {@code addPickle(Pickle val)} will be placed on the builder of the generated
-         * class.
-         * <p>This annotation only applies to getter methods that return a Map, List, or Set. If left undefined then the add
-         * method
-         * will use the default method name, dropping any "s" that might be present at the end of the method name (e.g.,
-         * pickles -> pickle).
-         *
-         * @return The singular name to add
-         */
-        String value() default "";
-    }
-
-    /**
-     * Useful for marking map properties, where the key and value must have the
-     * same generic type. For example you can declare a Map of a generalized type (such as Class)
-     * to an Object. This would change the singular setters to ones that expect the types to be the same.
-     * <p>
-     * Example:
-     * For {@code Map<Class<Object>, Object>}, the following method would be generated:
-     * {@code <TYPE> BUILDER put(Class<TYPE> key, TYPE value)}.
-     * <p>
-     * This annotation is only allowed on maps that have a key with a single type parameter,
-     * and value of Object, or with a single type parameter.
-     */
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.CLASS)
-    public @interface SameGeneric {
     }
 
     /**
@@ -395,40 +394,5 @@ public final class Prototype {
         String[] value();
     }
 
-    /**
-     * Mark a getter method as redundant - not important for {@code equals}, {@code hashcode}, and/or {@code toString}.
-     * The generated prototype will ignore the fields for these methods in equals and hashcode methods.
-     * All other fields will be included.
-     * <p>
-     * In case both properties are set to false, it is af this annotation is not present.
-     */
-    @Target(ElementType.METHOD)
-    // note: class retention needed for cases when derived builders are inherited across modules
-    @Retention(RetentionPolicy.CLASS)
-    public @interface Redundant {
-        /**
-         * Set to {@code false} to mark this NOT redundant for equals and hashcode.
-         *
-         * @return whether this should be ignored for equals and hashcode
-         */
-        boolean equality() default true;
-
-        /**
-         * Set to {@code false} to mark this NOT redundant for toString.
-         *
-         * @return whether this should be ignored for toString
-         */
-        boolean stringValue() default true;
-    }
-
-    /**
-     * Mark a getter method as confidential - not suitable to be used in clear text in {@code toString} method.
-     * The field will be mentioned (whether it has a value or not), but its value will not be visible.
-     */
-    @Target(ElementType.METHOD)
-    // note: class retention needed for cases when derived builders are inherited across modules
-    @Retention(RetentionPolicy.CLASS)
-    public @interface Confidential {
-    }
 }
 

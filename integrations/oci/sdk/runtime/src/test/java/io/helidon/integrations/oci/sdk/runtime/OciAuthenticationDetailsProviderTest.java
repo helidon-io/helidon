@@ -20,12 +20,12 @@ import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Set;
 
-import io.helidon.builder.api.Prototype;
+import io.helidon.builder.api.Option;
 import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
 import io.helidon.inject.api.InjectionPointInfo;
-import io.helidon.inject.api.InjectionServices;
 import io.helidon.inject.api.InjectionServiceProviderException;
+import io.helidon.inject.api.InjectionServices;
 import io.helidon.inject.api.Qualifier;
 import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.Services;
@@ -103,7 +103,7 @@ class OciAuthenticationDetailsProviderTest {
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.addAnnotation(Annotation.create(Prototype.Singular.class));
+        ipi.addAnnotation(Annotation.create(Option.Singular.class));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
@@ -111,12 +111,12 @@ class OciAuthenticationDetailsProviderTest {
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.qualifiers(Set.of(Qualifier.create(Prototype.Singular.class),
+        ipi.qualifiers(Set.of(Qualifier.create(Option.Singular.class),
                               Qualifier.create(Named.class, "")));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.qualifiers(Set.of(Qualifier.create(Prototype.Singular.class),
+        ipi.qualifiers(Set.of(Qualifier.create(Option.Singular.class),
                               Qualifier.create(Named.class, " profileName ")));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    equalTo("profileName"));
@@ -164,6 +164,9 @@ class OciAuthenticationDetailsProviderTest {
         Config config = OciExtensionTest.createTestConfig(
                 OciExtensionTest.basicTestingConfigSource());
         resetWith(config);
+
+        assertThat(OciExtension.isSufficientlyConfigured(config),
+                   is(false));
 
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
                 services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();

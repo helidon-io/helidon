@@ -18,21 +18,22 @@ package io.helidon.webserver.security;
 
 import java.util.Set;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
+import io.helidon.security.AuditEvent;
+import io.helidon.security.Security;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
-import io.helidon.security.AuditEvent;
-import io.helidon.security.Security;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD;
-import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_SECRET;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -99,23 +100,23 @@ abstract class WebSecurityTests {
     @Test
     void basicTest401() {
         try (Http1ClientResponse response = webClient.get("/noRoles").request()) {
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
 
             String header = response.headers()
-                    .first(Http.HeaderNames.WWW_AUTHENTICATE)
+                    .first(HeaderNames.WWW_AUTHENTICATE)
                     .orElseThrow(() -> new IllegalStateException(
-                            "Header " + Http.HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
+                            "Header " + HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
 
             assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
         }
 
         try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
 
             String header = response.headers()
-                    .first(Http.HeaderNames.WWW_AUTHENTICATE)
+                    .first(HeaderNames.WWW_AUTHENTICATE)
                     .orElseThrow(() -> new IllegalStateException(
-                            "Header " + Http.HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
+                            "Header " + HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
             assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
         }
     }
@@ -123,7 +124,7 @@ abstract class WebSecurityTests {
     @Test
     void testCustomizedAudit() {
         try (Http1ClientResponse response = webClient.get("/auditOnly").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
 
         // audit
@@ -137,7 +138,7 @@ abstract class WebSecurityTests {
         try (HttpClientResponse response = callProtected(uri, username, password)) {
             assertThat(uri + " for user " + username + " should be forbidden",
                     response.status(),
-                    is(Http.Status.FORBIDDEN_403));
+                    is(Status.FORBIDDEN_403));
         }
     }
 
@@ -149,7 +150,7 @@ abstract class WebSecurityTests {
 
         try (HttpClientResponse response = callProtected(uri, username, password)) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             String entity = response.entity().as(String.class);
 
@@ -163,8 +164,8 @@ abstract class WebSecurityTests {
 
     private HttpClientResponse callProtected(String uri, String username, String password) {
         return securityClient.get(uri)
-                .property(EP_PROPERTY_OUTBOUND_USER, username)
-                .property(EP_PROPERTY_OUTBOUND_PASSWORD, password)
+                .property(PROPERTY_OUTBOUND_ID, username)
+                .property(PROPERTY_OUTBOUND_SECRET, password)
                 .request();
     }
 

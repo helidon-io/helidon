@@ -30,12 +30,10 @@
     <name>Helidon Tests Integration GraalVM Native image MP1</name>
 
     <description>
-        This test makes sure the following helidon modules can be compiled into native image:
-        - Microprofile CDI
-        - Microprofile Server
-        - Microprofile Tracing - Jaeger Tracer - Microprofile Access Log - Microprofile Fault Tolerance - Microprofile Metrics -
-        Microprofile Health Check - Microprofile Rest Client - Microprofile Config - YAML configuration - JSON-P - JSON-B -
-        Microprofile JWT-Auth
+        This test makes sure the following helidon modules can be compiled into native image: - Microprofile CDI - Microprofile
+        Server - Microprofile Tracing - Jaeger Tracer - Microprofile Access Log - Microprofile Fault Tolerance - Microprofile
+        Metrics - Microprofile Health Check - Microprofile Rest Client - Microprofile Config - YAML configuration - JSON-P -
+        JSON-B - Microprofile JWT-Auth
     </description>
 
     <properties>
@@ -46,6 +44,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>
+        </dependency>
+        <dependency>
+            <artifactId>helidon-microprofile-tracing</artifactId>
+            <groupId>io.helidon.microprofile.tracing</groupId>
         </dependency>
         <dependency>
             <groupId>io.helidon.security.providers</groupId>
@@ -64,6 +66,11 @@
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-access-log</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -101,9 +108,14 @@
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
-                <configuration>
-                    <quickBuild>true</quickBuild>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>build-native-image</id>
+                        <configuration>
+                            <quickBuild>true</quickBuild>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

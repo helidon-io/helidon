@@ -23,8 +23,7 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.health.HealthFeature;
-import io.helidon.webserver.observe.health.HealthObserveProvider;
+import io.helidon.webserver.observe.health.HealthObserver;
 
 /**
  * Main class of health check integration example.
@@ -63,8 +62,8 @@ public final class Main {
      */
     static void routing(HttpRouting.Builder router) {
         ObserveFeature observe = ObserveFeature.builder()
-                .useSystemServices(true)
-                .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                .observersDiscoverServices(true)
+                .addObserver(HealthObserver.builder()
                         .useSystemServices(true)
                         .addCheck(() -> HealthCheckResponse.builder()
                                 .status(HealthCheckResponse.Status.UP)
@@ -74,7 +73,7 @@ public final class Main {
                                 .status(isStarted())
                                 .detail("time", System.currentTimeMillis())
                                 .build(), HealthCheckType.STARTUP)
-                        .build()))
+                        .build())
                 .build();
 
 

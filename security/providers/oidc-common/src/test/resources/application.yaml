@@ -16,6 +16,7 @@
 
 security:
   config.require-encryption: false
+
   oidc-test:
     identity-uri: "https://identity.oracle.com"
     scope-audience: "https://something:7987/test-application"
@@ -29,3 +30,15 @@ security:
     authorization-endpoint-uri: "https://identity.oracle.com/authorization"
     introspect-endpoint-uri: "https://identity.oracle.com/introspect"
     relative-uris: true
+
+  oidc-optional-aud:
+    identity-uri: "https://my.identity"
+    client-id: "my-id"
+    client-secret: "my-well-known-secret"
+    optional-audience: true
+
+  oidc-disabled-aud:
+    identity-uri: "https://my.identity"
+    client-id: "my-id"
+    client-secret: "my-well-known-secret"
+    check-audience: false

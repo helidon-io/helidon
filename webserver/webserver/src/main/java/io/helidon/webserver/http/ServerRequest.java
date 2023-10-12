@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.http;
 
+import java.io.InputStream;
+import java.util.function.UnaryOperator;
+
 import io.helidon.common.context.Context;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.media.ReadableEntity;
@@ -93,11 +96,18 @@ public interface ServerRequest extends HttpRequest {
     HttpSecurity security();
 
     /**
-     * Whether we have already sent the {@link io.helidon.http.Http.Status#CONTINUE_100} when expect continue is
+     * Whether we have already sent the {@link io.helidon.http.Status#CONTINUE_100} when expect continue is
      * present. This method returns {@code true} for cases where expect continue is not set.
      * This method returns {@code false} for requests without entity.
      *
      * @return whether 100-Continue was sent back to client
      */
     boolean continueSent();
+
+    /**
+     * Configure a custom input stream to wrap the input stream of the request.
+     *
+     * @param filterFunction the function to replace input stream of this request with a user provided one
+     */
+    void streamFilter(UnaryOperator<InputStream> filterFunction);
 }

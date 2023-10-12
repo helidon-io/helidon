@@ -31,12 +31,14 @@ import io.helidon.inject.api.InjectionServices;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -76,19 +78,19 @@ class OciExtensionTest {
                 .get(OciConfig.CONFIG_KEY);
         OciConfig cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+                   contains("config", "config-file", "instance-principals", "resource-principal"));
 
         config = createTestConfig(ociAuthConfigStrategies("auto"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+                   contains( "config", "config-file", "instance-principals", "resource-principal"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "auto"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+                   contains("config", "config-file", "instance-principals", "resource-principal"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "resource-principal"))
                 .get(OciConfig.CONFIG_KEY);
@@ -114,28 +116,27 @@ class OciExtensionTest {
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config", "config-file"));
 
-        config = createTestConfig(ociAuthConfigStrategies("", ""))
+        // this must fail, as empty string is not an allowed strategy
+        Config configWithEmpty = createTestConfig(ociAuthConfigStrategies("", ""))
                 .get(OciConfig.CONFIG_KEY);
-        cfg = OciConfig.create(config);
-        assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+        assertThrows(RuntimeException.class, () -> OciConfig.create(configWithEmpty));
     }
 
     @Test
     void bogusAuthStrategyAttempted() {
         Config config = createTestConfig(ociAuthConfigStrategies("bogus"))
                 .get(OciConfig.CONFIG_KEY);
-        OciConfig cfg = OciConfig.create(config);
-        IllegalStateException e = assertThrows(IllegalStateException.class, cfg::potentialAuthStrategies);
+        RuntimeException e = assertThrows(RuntimeException.class, () -> OciConfig.create(config));
         assertThat(e.getMessage(),
-                   equalTo("Unknown auth strategy: bogus"));
-
-        config = createTestConfig(ociAuthConfigStrategies(null, "config", "bogus"))
+                   containsString("Configured: \"bogus\", expected one of:"));
+    }
+    @Test
+    void testBogusAuthStrategies() {
+        Config config = createTestConfig(ociAuthConfigStrategies(null, "config", "bogus"))
                 .get(OciConfig.CONFIG_KEY);
-        cfg = OciConfig.create(config);
-        e = assertThrows(IllegalStateException.class, cfg::potentialAuthStrategies);
+        RuntimeException e = assertThrows(RuntimeException.class, () -> OciConfig.create(config));
         assertThat(e.getMessage(),
-                   equalTo("Unknown auth strategy: bogus"));
+                   containsString("Configured: \"bogus\", expected one of:"));
     }
 
     @Test
@@ -286,6 +287,25 @@ class OciExtensionTest {
                    "The oci configuration from the config source should be cached");
     }
 
+    @Test
+    void fallbackConfigSupplier() {
+        Config fallbackCfg = Config.just(
+                        ConfigSources.create(
+                                Map.of("oci.auth", "config"),
+                                "test-fallback-cfg"));
+        OciExtension.fallbackConfigSupplier(() -> fallbackCfg);
+
+        assertThat("when there is no oci.yaml present then we should be looking at the fallback config",
+                   OciExtension.configuredAuthenticationDetailsProvider(false),
+                   equalTo(SimpleAuthenticationDetailsProvider.class));
+
+        OciExtension.ociConfigFileName("test-oci-resource-principal.yaml");
+        OciExtension.fallbackConfigSupplier(() -> fallbackCfg);
+        assertThat("when there is an oci.yaml present then we should NOT be looking at the fallback config",
+                   OciExtension.configuredAuthenticationDetailsProvider(false),
+                   equalTo(ResourcePrincipalAuthenticationDetailsProvider.class));
+    }
+
     static Config createTestConfig(MapConfigSource.Builder... builders) {
         return Config.builder(builders)
                 .disableEnvironmentVariablesSource()
@@ -306,7 +326,7 @@ class OciExtensionTest {
         if (strategy != null) {
             map.put(OciConfig.CONFIG_KEY + ".auth-strategy", strategy);
         }
-        if (strategies != null) {
+        if (strategies != null && strategies.length != 0) {
             map.put(OciConfig.CONFIG_KEY + ".auth-strategies", String.join(",", strategies));
         }
         return ConfigSources.create(map, "config-oci-auth-strategies");

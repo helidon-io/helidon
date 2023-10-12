@@ -33,14 +33,18 @@ import java.util.function.Function;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.DateTime;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Method;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -80,18 +84,18 @@ abstract class StaticContentHandler implements StaticContentService {
         // Put ETag into the response
         responseHeaders.set(HeaderNames.ETAG, '"' + etag + '"');
         // Process If-None-Match header
-        if (requestHeaders.contains(Http.HeaderNames.IF_NONE_MATCH)) {
+        if (requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
             List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
             for (String ifNoneMatch : ifNoneMatches) {
                 ifNoneMatch = unquoteETag(ifNoneMatch);
                 if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
                     // using exception to handle normal flow (same as in reactive static content)
-                    throw new HttpException("Accepted by If-None-Match header", Http.Status.NOT_MODIFIED_304, true);
+                    throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true);
                 }
             }
         }
 
-        if (requestHeaders.contains(Http.HeaderNames.IF_MATCH)) {
+        if (requestHeaders.contains(HeaderNames.IF_MATCH)) {
             // Process If-Match header
             List<String> ifMatches = requestHeaders.get(HeaderNames.IF_MATCH).allValues();
             if (!ifMatches.isEmpty()) {
@@ -104,7 +108,7 @@ abstract class StaticContentHandler implements StaticContentService {
                     }
                 }
                 if (!ifMatchChecked) {
-                    throw new HttpException("Not accepted by If-Match header", Http.Status.PRECONDITION_FAILED_412, true);
+                    throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true);
                 }
             }
         }
@@ -125,14 +129,14 @@ abstract class StaticContentHandler implements StaticContentService {
                 .ifModifiedSince()
                 .map(ChronoZonedDateTime::toInstant);
         if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Modified-Since header", Http.Status.NOT_MODIFIED_304, true);
+            throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
         }
         // If-Unmodified-Since
         Optional<Instant> ifUnmodSince = requestHeaders
                 .ifUnmodifiedSince()
                 .map(ChronoZonedDateTime::toInstant);
         if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Unmodified-Since header", Http.Status.PRECONDITION_FAILED_412, true);
+            throw new HttpException("Not valid for If-Unmodified-Since header", Status.PRECONDITION_FAILED_412, true);
         }
     }
 
@@ -180,7 +184,7 @@ abstract class StaticContentHandler implements StaticContentService {
 
     @Override
     public void routing(HttpRules rules) {
-        rules.route(Http.Method.predicate(Http.Method.GET, Http.Method.HEAD),
+        rules.route(Method.predicate(Method.GET, Method.HEAD),
                     PathMatchers.any(),
                     this::handle);
     }
@@ -200,7 +204,7 @@ abstract class StaticContentHandler implements StaticContentService {
      * @param response an HTTP response
      */
     void handle(ServerRequest request, ServerResponse response) {
-        Http.Method method = request.prologue().method();
+        Method method = request.prologue().method();
 
         // Resolve path
         String requestPath = request.path().rawPathNoParams();
@@ -217,7 +221,7 @@ abstract class StaticContentHandler implements StaticContentService {
                 response.next();
             }
         } catch (HttpException httpException) {
-            if (httpException.status().code() == Http.Status.NOT_FOUND_404.code()) {
+            if (httpException.status().code() == Status.NOT_FOUND_404.code()) {
                 // Prefer to next() before NOT_FOUND
                 response.next();
             } else {
@@ -241,7 +245,7 @@ abstract class StaticContentHandler implements StaticContentService {
      * @throws java.io.IOException                          if resource is not acceptable
      * @throws io.helidon.http.RequestException if some known WEB error
      */
-    abstract boolean doHandle(Http.Method method,
+    abstract boolean doHandle(Method method,
                               String requestedPath,
                               ServerRequest request,
                               ServerResponse response,
@@ -312,7 +316,7 @@ abstract class StaticContentHandler implements StaticContentService {
 
     void cacheInMemory(String resource, MediaType contentType, byte[] bytes, Optional<Instant> lastModified) {
         int contentLength = bytes.length;
-        Http.Header contentLengthHeader = Http.Headers.create(HeaderNames.CONTENT_LENGTH, contentLength);
+        Header contentLengthHeader = HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength);
 
         CachedHandlerInMemory inMemoryResource;
         if (lastModified.isEmpty()) {
@@ -324,10 +328,10 @@ abstract class StaticContentHandler implements StaticContentService {
                                                          contentLengthHeader);
         } else {
             // we can cache this, as this is a jar record
-            Http.Header lastModifiedHeader = Http.Headers.create(HeaderNames.LAST_MODIFIED,
-                                                                 true,
-                                                                 false,
-                                                                 formatLastModified(lastModified.get()));
+            Header lastModifiedHeader = HeaderValues.create(HeaderNames.LAST_MODIFIED,
+                                                            true,
+                                                            false,
+                                                            formatLastModified(lastModified.get()));
 
             inMemoryResource = new CachedHandlerInMemory(contentType,
                                                          lastModified.get(),
@@ -342,6 +346,6 @@ abstract class StaticContentHandler implements StaticContentService {
 
     static String formatLastModified(Instant lastModified) {
         ZonedDateTime dt = ZonedDateTime.ofInstant(lastModified, ZoneId.systemDefault());
-        return dt.format(Http.DateTime.RFC_1123_DATE_TIME);
+        return dt.format(DateTime.RFC_1123_DATE_TIME);
     }
 }

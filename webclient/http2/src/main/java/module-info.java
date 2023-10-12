@@ -26,13 +26,17 @@ import io.helidon.common.features.api.HelidonFlavor;
          path = {"WebClient", "HTTP/2"}
 )
 module io.helidon.webclient.http2 {
+
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.common.pki;
     requires transitive io.helidon.http.http2;
     requires transitive io.helidon.webclient;
-    requires transitive io.helidon.common.pki;
 
     exports io.helidon.webclient.http2;
+
+    provides io.helidon.webclient.spi.HttpClientSpiProvider
+            with io.helidon.webclient.http2.Http2ClientSpiProvider;
 }

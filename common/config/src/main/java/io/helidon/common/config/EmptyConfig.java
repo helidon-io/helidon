@@ -23,6 +23,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperException;
 
 final class EmptyConfig {
     static final Config.Key ROOT_KEY = new KeyImpl(null, "");
@@ -136,8 +140,33 @@ final class EmptyConfig {
         }
 
         @Override
-        public <N> ConfigValue<N> as(Function<T, N> mapper) {
+        public <N> ConfigValue<N> as(Function<? super T, ? extends N> mapper) {
             return new EmptyValue<>(key);
+        }
+
+        @Override
+        public <N> ConfigValue<N> as(GenericType<N> type) throws MapperException {
+            return new EmptyValue<>(key);
+        }
+
+        @Override
+        public Supplier<T> supplier() {
+            return this::get;
+        }
+
+        @Override
+        public Supplier<T> supplier(T defaultValue) {
+            return () -> defaultValue;
+        }
+
+        @Override
+        public Supplier<Optional<T>> optionalSupplier() {
+            return this::asOptional;
+        }
+
+        @Override
+        public <N> ConfigValue<N> as(Class<N> type) throws MapperException {
+            return null;
         }
     }
 

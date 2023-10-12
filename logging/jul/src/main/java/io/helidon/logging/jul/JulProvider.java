@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import io.helidon.common.NativeImageHelper;
 import io.helidon.common.Weight;
 import io.helidon.logging.common.spi.LoggingProvider;
 
@@ -44,6 +45,8 @@ public class JulProvider implements LoggingProvider {
     private static final String SYS_PROP_DISABLE_CONFIG = "io.helidon.logging.config.disabled";
     private static final String SYS_PROP_LOGGING_CLASS = "java.util.logging.config.class";
     private static final String SYS_PROP_LOGGING_FILE = "java.util.logging.config.file";
+    private static final String WHEN_INIT = "initialization";
+    private static final String WHEN_RUNTIME = "runtime";
 
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.
@@ -53,28 +56,28 @@ public class JulProvider implements LoggingProvider {
 
     @Override
     public void initialization() {
-        configureLogging("initialization");
+        configureLogging(false);
     }
 
     @Override
     public void runTime() {
-        configureLogging("runtime");
+        configureLogging(true);
     }
 
     // when is either `initialization` or `runtime`
     // when building native image, the `initialization` is called
     // when running it, the `runtime` is called
     // when outside of native-image, only `initialization` is called
-    private static void configureLogging(String when) {
+    private static void configureLogging(boolean runtime) {
         try {
-            doConfigureLogging(when);
+            doConfigureLogging(runtime);
         } catch (IOException e) {
             System.err.println("Failed to configure logging");
             e.printStackTrace();
         }
     }
 
-    private static void doConfigureLogging(String when) throws IOException {
+    private static void doConfigureLogging(boolean runtime) throws IOException {
         String disableConfigProperty = System.getProperty(SYS_PROP_DISABLE_CONFIG);
         if (Boolean.parseBoolean(disableConfigProperty)) {
             // we are explicitly request to disable this feature
@@ -94,7 +97,10 @@ public class JulProvider implements LoggingProvider {
             source = findAndConfigureLogging();
         }
 
-        Logger.getLogger(JulProvider.class.getName()).info("Logging at " + when + " configured using " + source);
+        if (runtime || NativeImageHelper.isBuildTime()) {
+            String when = runtime ? WHEN_RUNTIME : WHEN_INIT;
+            Logger.getLogger(JulProvider.class.getName()).info("Logging at " + when + " configured using " + source);
+        }
     }
 
     private static String findAndConfigureLogging() throws IOException {

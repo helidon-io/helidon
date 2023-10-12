@@ -16,33 +16,30 @@
 
 package io.helidon.webclient.http1;
 
-import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
-import io.helidon.http.media.EntityWriter;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 class Http1CallEntityChain extends Http1CallChainBase {
 
-    private final Http1ClientRequestImpl request;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
-    private final Object entity;
+    private final byte[] entity;
 
     Http1CallEntityChain(Http1ClientImpl http1Client,
                          Http1ClientRequestImpl request,
                          CompletableFuture<WebClientServiceRequest> whenSent,
                          CompletableFuture<WebClientServiceResponse> whenComplete,
-                         Object entity) {
+                         byte[] entity) {
         super(http1Client, request, whenComplete);
-        this.request = request;
+
         this.whenSent = whenSent;
         this.entity = entity;
     }
@@ -54,38 +51,18 @@ class Http1CallEntityChain extends Http1CallChainBase {
                                               DataWriter writer,
                                               DataReader reader,
                                               BufferData writeBuffer) {
-        byte[] entityBytes;
-        if (entity == BufferData.EMPTY_BYTES) {
-            entityBytes = BufferData.EMPTY_BYTES;
-        } else {
-            entityBytes = entityBytes(entity, headers);
-        }
 
-        headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, entityBytes.length));
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entity.length));
 
         writeHeaders(headers, writeBuffer, protocolConfig().validateRequestHeaders());
         // we have completed writing the headers
         whenSent.complete(serviceRequest);
 
-        if (entityBytes.length > 0) {
-            writeBuffer.write(entityBytes);
+        if (entity.length > 0) {
+            writeBuffer.write(entity);
         }
         writer.write(writeBuffer);
 
         return readResponse(serviceRequest, connection, reader);
-    }
-
-    byte[] entityBytes(Object entity, ClientRequestHeaders headers) {
-        if (entity instanceof byte[] bytes) {
-            return bytes;
-        }
-        GenericType<Object> genericType = GenericType.create(entity);
-        EntityWriter<Object> writer = clientConfig().mediaContext().writer(genericType, headers);
-
-        // todo this should use output stream of client, but that would require delaying header write
-        // to first byte written
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        writer.write(genericType, entity, bos, headers);
-        return bos.toByteArray();
     }
 }

@@ -2,7 +2,7 @@
 
 It is common when deploying a microservice to run your service on
 multiple ports so that you can control the visibility of your
-service's endpoints. For example you might want to use three ports:
+service's endpoints. For example, you might want to use three ports:
 
 - 8080: public REST endpoints of application
 - 8081: private REST endpoints of application
@@ -16,7 +16,7 @@ as described above.
 
 The ports are configured in `application.yaml` by using named sockets.
 
-Seperate routing is defined for each named socket in `Main.java`
+Separate routing is defined for each named socket in `Main.java`
 
 ## Build and run
 
@@ -32,7 +32,7 @@ curl -X GET http://localhost:8080/hello
 
 curl -X GET http://localhost:8081/private/hello
 
-curl -X GET http://localhost:8082/health
+curl -X GET http://localhost:8082/observe/health
 
-curl -X GET http://localhost:8082/metrics
+curl -X GET http://localhost:8082/observe/metrics
 ```

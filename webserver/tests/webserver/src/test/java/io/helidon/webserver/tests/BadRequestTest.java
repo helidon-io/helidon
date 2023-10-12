@@ -18,20 +18,23 @@ package io.helidon.webserver.tests;
 
 import java.util.List;
 
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.DirectHandler;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http1.Http1Route;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class BadRequestTest {
     public static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
     public static final String CUSTOM_ENTITY = "There we go";
-    private static final Http.Header LOCATION_ERROR_PAGE = Http.Headers.create(Http.HeaderNames.LOCATION, "/errorPage");
+    private static final Header LOCATION_ERROR_PAGE = HeaderValues.create(HeaderNames.LOCATION, "/errorPage");
 
     private final Http1Client client;
     private final SocketHttpClient socketClient;
@@ -56,7 +59,7 @@ class BadRequestTest {
 
     @SetUpRoute
     static void routing(HttpRules builder) {
-        builder.route(Http1Route.route(Http.Method.GET,
+        builder.route(Http1Route.route(Method.GET,
                                        "/",
                                        (req, res) -> res.send("Hi")));
     }
@@ -72,7 +75,7 @@ class BadRequestTest {
     @SuppressWarnings("resource")
     @Test
     void testOk() {
-        String response = client.method(Http.Method.GET)
+        String response = client.method(Method.GET)
                 .request()
                 .as(String.class);
 
@@ -82,7 +85,7 @@ class BadRequestTest {
     @Test
     void testInvalidRequest() {
         // wrong content length
-        String response = socketClient.sendAndReceive(Http.Method.GET,
+        String response = socketClient.sendAndReceive(Method.GET,
                                                       "/",
                                                       null,
                                                       List.of("Content-Length: 47a"));
@@ -94,12 +97,12 @@ class BadRequestTest {
     @Test
     void testInvalidRequestWithRedirect() {
         // wrong content length
-        String response = socketClient.sendAndReceive(Http.Method.GET,
+        String response = socketClient.sendAndReceive(Method.GET,
                                                       "/redirect",
                                                       null,
                                                       List.of("Content-Length: 47a"));
 
-        assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.TEMPORARY_REDIRECT_307));
 
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
         assertThat(headers, hasHeader(LOCATION_ERROR_PAGE));
@@ -108,7 +111,7 @@ class BadRequestTest {
     @Test
     void testInvalidUri() {
         // must fail on creation of bare request impl (URI.create())
-        String response = socketClient.sendAndReceive(Http.Method.GET,
+        String response = socketClient.sendAndReceive(Method.GET,
                                                       "/bad{",
                                                       null);
 
@@ -147,18 +150,18 @@ class BadRequestTest {
 
     private static DirectHandler.TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
                                                                      DirectHandler.EventType eventType,
-                                                                     Http.Status httpStatus,
+                                                                     Status httpStatus,
                                                                      ServerResponseHeaders responseHeaders,
                                                                      String message) {
         if (request.path().equals("/redirect")) {
             return DirectHandler.TransportResponse.builder()
-                    .status(Http.Status.TEMPORARY_REDIRECT_307)
+                    .status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/errorPage")
                     .build();
         }
         return DirectHandler.TransportResponse.builder()
-                .status(Http.Status.create(Http.Status.BAD_REQUEST_400.code(),
-                                           CUSTOM_REASON_PHRASE))
+                .status(Status.create(Status.BAD_REQUEST_400.code(),
+                                      CUSTOM_REASON_PHRASE))
                 .headers(responseHeaders)
                 .entity(CUSTOM_ENTITY)
                 .build();

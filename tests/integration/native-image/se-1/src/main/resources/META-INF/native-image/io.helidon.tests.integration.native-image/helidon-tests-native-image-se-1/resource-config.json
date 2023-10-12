@@ -1,0 +1,7 @@
+{
+    "resources": [
+        {
+            "pattern": "application-test.yaml"
+        }
+    ]
+}

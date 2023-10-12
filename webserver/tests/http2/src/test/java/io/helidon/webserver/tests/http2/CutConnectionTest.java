@@ -16,14 +16,6 @@
 
 package io.helidon.webserver.tests.http2;
 
-import io.helidon.http.Http;
-import io.helidon.logging.common.LogConfig;
-import io.helidon.webserver.http2.Http2Route;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,6 +33,15 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import io.helidon.http.Method;
+import io.helidon.logging.common.LogConfig;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http2.Http2Route;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -85,7 +86,7 @@ public class CutConnectionTest {
             WEBSERVER_LOGGER.addHandler(ASSERTING_HANDLER);
             WebServer server = WebServer.builder()
                     .host("localhost")
-                    .routing(r -> r.route(Http2Route.route(Http.Method.GET, "/stream", CutConnectionTest::stream)))
+                    .routing(r -> r.route(Http2Route.route(Method.GET, "/stream", CutConnectionTest::stream)))
                     .build();
             server.start();
 

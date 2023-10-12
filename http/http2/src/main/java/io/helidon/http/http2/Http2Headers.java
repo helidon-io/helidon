@@ -26,12 +26,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -61,12 +63,12 @@ public class Http2Headers {
     /**
      * Header name of the path pseudo header.
      */
-    public static final HeaderName PATH_NAME = Http.HeaderNames.create(PATH);
+    public static final HeaderName PATH_NAME = HeaderNames.create(PATH);
     static final String SCHEME = ":scheme";
     /**
      * Header name of the scheme pseudo header.
      */
-    public static final HeaderName SCHEME_NAME = Http.HeaderNames.create(SCHEME);
+    public static final HeaderName SCHEME_NAME = HeaderNames.create(SCHEME);
     static final String STATUS = ":status";
     /**
      * Header name of the status pseudo header.
@@ -106,6 +108,7 @@ public class Http2Headers {
      * @param stream  stream that owns these headers
      * @param table   dynamic table for this connection
      * @param huffman huffman decoder
+     * @param headers http2 headers
      * @param frames  frames of the headers
      * @return new headers parsed from the frames
      * @throws Http2Exception in case of protocol errors
@@ -113,6 +116,7 @@ public class Http2Headers {
     public static Http2Headers create(Http2Stream stream,
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
+                                      Http2Headers headers,
                                       Http2FrameData... frames) {
 
         if (frames.length == 0) {
@@ -135,7 +139,7 @@ public class Http2Headers {
             stream.priority(priority);
         }
 
-        WritableHeaders<?> headers = WritableHeaders.create();
+        WritableHeaders<?> writableHeaders = WritableHeaders.create(headers.httpHeaders());
 
         BufferData[] buffers = new BufferData[frames.length];
         for (int i = 0; i < frames.length; i++) {
@@ -151,15 +155,32 @@ public class Http2Headers {
                 if (padLength > 0) {
                     data.skip(padLength);
                 }
-                return create(ServerRequestHeaders.create(headers), pseudoHeaders);
+                return create(ServerRequestHeaders.create(writableHeaders), pseudoHeaders);
             }
 
             if (data.available() == 0) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Expecting more header bytes");
             }
 
-            lastIsPseudoHeader = readHeader(headers, pseudoHeaders, table, huffman, data, lastIsPseudoHeader);
+            lastIsPseudoHeader = readHeader(writableHeaders, pseudoHeaders, table, huffman, data, lastIsPseudoHeader);
         }
+    }
+
+    /**
+     * Create headers from HTTP request.
+     *
+     * @param stream  stream that owns these headers
+     * @param table   dynamic table for this connection
+     * @param huffman huffman decoder
+     * @param frames  frames of the headers
+     * @return new headers parsed from the frames
+     * @throws Http2Exception in case of protocol errors
+     */
+    public static Http2Headers create(Http2Stream stream,
+                                      DynamicTable table,
+                                      Http2HuffmanDecoder huffman,
+                                      Http2FrameData... frames) {
+        return create(stream, table, huffman, Http2Headers.create(WritableHeaders.create()), frames);
     }
 
     /**
@@ -190,7 +211,7 @@ public class Http2Headers {
      *
      * @return status or null if none defined
      */
-    public Http.Status status() {
+    public Status status() {
         return pseudoHeaders.status();
     }
 
@@ -208,7 +229,7 @@ public class Http2Headers {
      *
      * @return method or null if none defined
      */
-    public Http.Method method() {
+    public Method method() {
         return pseudoHeaders.method();
     }
 
@@ -247,7 +268,7 @@ public class Http2Headers {
      * @param method HTTP method of the request
      * @return updated headers
      */
-    public Http2Headers method(Http.Method method) {
+    public Http2Headers method(Method method) {
         this.pseudoHeaders.method(method);
         return this;
     }
@@ -317,7 +338,7 @@ public class Http2Headers {
         if (pseudoHeaders.hasStatus()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":status in request headers");
         }
-        if (headers.contains(Http.HeaderNames.CONNECTION)) {
+        if (headers.contains(HeaderNames.CONNECTION)) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Connection in request headers");
         }
         if (headers.contains(HeaderNames.TE)) {
@@ -349,7 +370,7 @@ public class Http2Headers {
      * @param status status to use
      * @return updated headers
      */
-    public Http2Headers status(Http.Status status) {
+    public Http2Headers status(Status status) {
         pseudoHeaders.status(status);
         return this;
     }
@@ -365,20 +386,20 @@ public class Http2Headers {
         // first write pseudoheaders
         if (pseudoHeaders.hasStatus()) {
             StaticHeader indexed = null;
-            Http.Status status = pseudoHeaders.status();
-            if (status == Http.Status.OK_200) {
+            Status status = pseudoHeaders.status();
+            if (status == Status.OK_200) {
                 indexed = StaticHeader.STATUS_200;
-            } else if (status == Http.Status.NO_CONTENT_204) {
+            } else if (status == Status.NO_CONTENT_204) {
                 indexed = StaticHeader.STATUS_204;
-            } else if (status == Http.Status.PARTIAL_CONTENT_206) {
+            } else if (status == Status.PARTIAL_CONTENT_206) {
                 indexed = StaticHeader.STATUS_206;
-            } else if (status == Http.Status.NOT_MODIFIED_304) {
+            } else if (status == Status.NOT_MODIFIED_304) {
                 indexed = StaticHeader.STATUS_304;
-            } else if (status == Http.Status.BAD_REQUEST_400) {
+            } else if (status == Status.BAD_REQUEST_400) {
                 indexed = StaticHeader.STATUS_400;
-            } else if (status == Http.Status.NOT_FOUND_404) {
+            } else if (status == Status.NOT_FOUND_404) {
                 indexed = StaticHeader.STATUS_404;
-            } else if (status == Http.Status.INTERNAL_SERVER_ERROR_500) {
+            } else if (status == Status.INTERNAL_SERVER_ERROR_500) {
                 indexed = StaticHeader.STATUS_500;
             }
             if (indexed == null) {
@@ -394,11 +415,11 @@ public class Http2Headers {
             }
         }
         if (pseudoHeaders.hasMethod()) {
-            Http.Method method = pseudoHeaders.method();
+            Method method = pseudoHeaders.method();
             StaticHeader indexed = null;
-            if (method == Http.Method.GET) {
+            if (method == Method.GET) {
                 indexed = StaticHeader.METHOD_GET;
-            } else if (method == Http.Method.POST) {
+            } else if (method == Method.POST) {
                 indexed = StaticHeader.METHOD_POST;
             }
             if (indexed == null) {
@@ -508,7 +529,7 @@ public class Http2Headers {
                                              "Received invalid pseudo-header field (or explicit value instead of indexed)\n"
                                                      + BufferData.create(name).debugDataHex());
                 }
-                headerName = Http.HeaderNames.create(name);
+                headerName = HeaderNames.create(name);
             } else {
                 headerName = record.headerName();
             }
@@ -572,7 +593,7 @@ public class Http2Headers {
             }
 
             if (!isPseudoHeader) {
-                headers.add(Http.Headers.create(headerName,
+                headers.add(HeaderValues.create(headerName,
                                                 !approach.addToIndex,
                                                 approach.neverIndex,
                                                 value));
@@ -738,52 +759,52 @@ public class Http2Headers {
         STATUS_404(13, STATUS_NAME, "404"),
         STATUS_500(14, STATUS_NAME, "500"),
         ACCEPT_CHARSET(15, HeaderNames.ACCEPT_CHARSET),
-        ACCEPT_ENCODING(16, Http.HeaderNames.ACCEPT_ENCODING, "gzip, deflate", false),
+        ACCEPT_ENCODING(16, HeaderNames.ACCEPT_ENCODING, "gzip, deflate", false),
         ACCEPT_LANGUAGE(17, HeaderNames.ACCEPT_LANGUAGE),
         ACCEPT_RANGES(18, HeaderNames.ACCEPT_RANGES),
         ACCEPT(19, HeaderNames.ACCEPT),
         ACCESS_CONTROL_ALLOW_ORIGIN(20, HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN),
         AGE(21, HeaderNames.AGE),
-        ALLOW(22, Http.HeaderNames.ALLOW),
-        AUTHORIZATION(23, Http.HeaderNames.AUTHORIZATION),
+        ALLOW(22, HeaderNames.ALLOW),
+        AUTHORIZATION(23, HeaderNames.AUTHORIZATION),
         CACHE_CONTROL(24, HeaderNames.CACHE_CONTROL),
-        CONTENT_DISPOSITION(25, Http.HeaderNames.CONTENT_DISPOSITION),
-        CONTENT_ENCODING(26, Http.HeaderNames.CONTENT_ENCODING),
-        CONTENT_LANGUAGE(27, Http.HeaderNames.CONTENT_LANGUAGE),
+        CONTENT_DISPOSITION(25, HeaderNames.CONTENT_DISPOSITION),
+        CONTENT_ENCODING(26, HeaderNames.CONTENT_ENCODING),
+        CONTENT_LANGUAGE(27, HeaderNames.CONTENT_LANGUAGE),
         CONTENT_LENGTH(28, HeaderNames.CONTENT_LENGTH),
         CONTENT_LOCATION(29, HeaderNames.CONTENT_LOCATION),
-        CONTENT_RANGE(30, Http.HeaderNames.CONTENT_RANGE),
-        CONTENT_TYPE(31, Http.HeaderNames.CONTENT_TYPE),
-        COOKIE(32, Http.HeaderNames.COOKIE),
+        CONTENT_RANGE(30, HeaderNames.CONTENT_RANGE),
+        CONTENT_TYPE(31, HeaderNames.CONTENT_TYPE),
+        COOKIE(32, HeaderNames.COOKIE),
         DATE(33, HeaderNames.DATE),
         ETAG(34, HeaderNames.ETAG),
         EXPECT(35, HeaderNames.EXPECT),
         EXPIRES(36, HeaderNames.EXPIRES),
         FROM(37, HeaderNames.FROM),
-        HOST(38, Http.HeaderNames.HOST),
-        IF_MATCH(39, Http.HeaderNames.IF_MATCH),
+        HOST(38, HeaderNames.HOST),
+        IF_MATCH(39, HeaderNames.IF_MATCH),
         IF_MODIFIED_SINCE(40, HeaderNames.IF_MODIFIED_SINCE),
         IF_NONE_MATCH(41, HeaderNames.IF_NONE_MATCH),
-        IF_RANGE(42, Http.HeaderNames.IF_RANGE),
+        IF_RANGE(42, HeaderNames.IF_RANGE),
         IF_UNMODIFIED_SINCE(43, HeaderNames.IF_UNMODIFIED_SINCE),
-        LAST_MODIFIED(44, Http.HeaderNames.LAST_MODIFIED),
+        LAST_MODIFIED(44, HeaderNames.LAST_MODIFIED),
         LINK(45, HeaderNames.LINK),
         LOCATION(46, HeaderNames.LOCATION),
-        MAX_FORWARDS(47, Http.HeaderNames.MAX_FORWARDS),
+        MAX_FORWARDS(47, HeaderNames.MAX_FORWARDS),
         PROXY_AUTHENTICATE(48, HeaderNames.PROXY_AUTHENTICATE),
-        PROXY_AUTHORIZATION(49, Http.HeaderNames.PROXY_AUTHORIZATION),
-        RANGE(50, Http.HeaderNames.CONTENT_LOCATION),
-        REFERER(51, Http.HeaderNames.REFERER),
-        REFRESH(52, Http.HeaderNames.REFRESH),
-        RETRY_AFTER(53, Http.HeaderNames.RETRY_AFTER),
+        PROXY_AUTHORIZATION(49, HeaderNames.PROXY_AUTHORIZATION),
+        RANGE(50, HeaderNames.CONTENT_LOCATION),
+        REFERER(51, HeaderNames.REFERER),
+        REFRESH(52, HeaderNames.REFRESH),
+        RETRY_AFTER(53, HeaderNames.RETRY_AFTER),
         SERVER(54, HeaderNames.SERVER),
         SET_COOKIE(55, HeaderNames.SET_COOKIE),
         STRICT_TRANSPORT_SECURITY(56, HeaderNames.STRICT_TRANSPORT_SECURITY),
-        TRANSFER_ENCODING(57, Http.HeaderNames.TRANSFER_ENCODING),
-        USER_AGENT(58, Http.HeaderNames.USER_AGENT),
+        TRANSFER_ENCODING(57, HeaderNames.TRANSFER_ENCODING),
+        USER_AGENT(58, HeaderNames.USER_AGENT),
         VARY(59, HeaderNames.VARY),
         VIA(60, HeaderNames.VIA),
-        WWW_AUTHENTICATE(61, Http.HeaderNames.WWW_AUTHENTICATE);
+        WWW_AUTHENTICATE(61, HeaderNames.WWW_AUTHENTICATE);
 
         /**
          * Maximal index of the static table of headers.
@@ -1273,10 +1294,10 @@ public class Http2Headers {
 
     private static class PseudoHeaders {
         private String authority;
-        private Http.Method method;
+        private Method method;
         private String path;
         private String scheme;
-        private Http.Status status;
+        private Status status;
         private int size;
 
         public int size() {
@@ -1301,10 +1322,10 @@ public class Http2Headers {
         }
 
         void method(String method) {
-            method(Http.Method.create(method));
+            method(Method.create(method));
         }
 
-        PseudoHeaders method(Http.Method method) {
+        PseudoHeaders method(Method method) {
             this.method = method;
             size++;
             return this;
@@ -1323,10 +1344,10 @@ public class Http2Headers {
         }
 
         void status(String status) {
-            status(Http.Status.create(Integer.parseInt(status)));
+            status(Status.create(Integer.parseInt(status)));
         }
 
-        PseudoHeaders status(Http.Status status) {
+        PseudoHeaders status(Status status) {
             this.status = status;
             size++;
             return this;
@@ -1344,7 +1365,7 @@ public class Http2Headers {
             return method != null;
         }
 
-        Http.Method method() {
+        Method method() {
             return method;
         }
 
@@ -1368,7 +1389,7 @@ public class Http2Headers {
             return status != null;
         }
 
-        Http.Status status() {
+        Status status() {
             return status;
         }
     }

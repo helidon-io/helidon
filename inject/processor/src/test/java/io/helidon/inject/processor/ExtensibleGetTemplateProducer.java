@@ -44,8 +44,8 @@ public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCr
     }
 
     @Override
-    public Set<String> annoTypes() {
-        return Set.of("io.helidon.inject.processor.testsubjects.ExtensibleGET");
+    public Set<TypeName> annoTypes() {
+        return Set.of(TypeName.create("io.helidon.inject.processor.testsubjects.ExtensibleGET"));
     }
 
     @Override

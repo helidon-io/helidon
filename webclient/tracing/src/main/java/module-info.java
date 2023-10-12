@@ -28,13 +28,17 @@ import io.helidon.webclient.tracing.WebClientTracingProvider;
          path = {"WebClient", "Tracing"}
 )
 module io.helidon.webclient.tracing {
-    requires static io.helidon.common.features.api;
 
     requires io.helidon.webclient;
-    requires io.helidon.tracing;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.tracing;
+    requires transitive io.helidon.webclient.api;
 
     exports io.helidon.webclient.tracing;
 
     provides io.helidon.webclient.spi.WebClientServiceProvider
             with io.helidon.webclient.tracing.WebClientTracingProvider;
+
 }

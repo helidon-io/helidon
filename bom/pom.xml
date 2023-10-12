@@ -376,7 +376,17 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
-                <artifactId>helidon-metrics-service-api</artifactId>
+                <artifactId>helidon-metrics-system-meters</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-provider-tests</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics.providers</groupId>
+                <artifactId>helidon-metrics-providers-micrometer</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -544,6 +554,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-hikari</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
                 <artifactId>helidon-dbclient-mongodb</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -564,7 +579,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.dbclient</groupId>
-                <artifactId>helidon-dbclient-metrics-jdbc</artifactId>
+                <artifactId>helidon-dbclient-metrics-hikari</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -745,11 +760,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-jedis</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jpa</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -804,6 +814,16 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-secrets-config-source</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-secrets-mp-config-source</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.oci.metrics</groupId>
                 <artifactId>helidon-integrations-oci-metrics</artifactId>
                 <version>${helidon.version}</version>
@@ -811,6 +831,11 @@
             <dependency>
                 <groupId>io.helidon.integrations.oci.metrics</groupId>
                 <artifactId>helidon-integrations-oci-metrics-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-tls-certificates</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -886,6 +911,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.openapi</groupId>
+                <artifactId>helidon-openapi-ui</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile.openapi</groupId>
                 <artifactId>helidon-microprofile-openapi</artifactId>
                 <version>${helidon.version}</version>
@@ -934,13 +964,13 @@
             </dependency>
             <!-- Testing -->
             <dependency>
-                <groupId>io.helidon.microprofile.tests</groupId>
-                <artifactId>helidon-microprofile-tests-junit5</artifactId>
+                <groupId>io.helidon.microprofile.testing</groupId>
+                <artifactId>helidon-microprofile-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.tests</groupId>
-                <artifactId>helidon-microprofile-tests-testng</artifactId>
+                <groupId>io.helidon.microprofile.testing</groupId>
+                <artifactId>helidon-microprofile-testing-testng</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Used for demonstrating and testing the Builder.
@@ -34,7 +34,7 @@ interface EdgeCasesBlueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption("test")
+    @Option.Default("test")
     Optional<String> optionalStringWithDefault();
 
     /**
@@ -42,7 +42,7 @@ interface EdgeCasesBlueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption("-1")
+    @Option.DefaultInt(-1)
     Optional<Integer> optionalIntegerWithDefault();
 
     /**
@@ -50,7 +50,7 @@ interface EdgeCasesBlueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Object> listOfObjects();
 
     /**
@@ -58,7 +58,7 @@ interface EdgeCasesBlueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<String, EdgeCases> mapOfEdgeCases();
 
 }

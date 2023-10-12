@@ -22,11 +22,11 @@ import java.util.stream.Stream;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
+import io.helidon.tests.integration.dbclient.common.model.Type;
+import io.helidon.tests.integration.harness.RemoteTestException;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.tests.integration.dbclient.common.model.Type;
-import io.helidon.tests.integration.harness.RemoteTestException;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -76,8 +76,8 @@ public class FlowControlService extends AbstractService {
             throw new RemoteTestException("Rows list size shall be 18.");
         }
         for (DbRow row : list) {
-            Integer id = row.column(1).as(Integer.class);
-            String name = row.column(2).as(String.class);
+            Integer id = row.column(1).get(Integer.class);
+            String name = row.column(2).get(String.class);
             Type type = new Type(id, name);
             if (!Type.TYPES.get(id).name().equals(name)) {
                 throw new RemoteTestException("Expected type name \"%s\", but got \"%s\".",

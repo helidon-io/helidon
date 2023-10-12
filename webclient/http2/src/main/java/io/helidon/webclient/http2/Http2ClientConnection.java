@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -33,6 +34,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.http2.ConnectionFlowControl;
+import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
@@ -70,11 +72,14 @@ class Http2ClientConnection {
     private final ConnectionFlowControl connectionFlowControl;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+    private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
     private final SocketContext ctx;
     private final Http2ConnectionWriter writer;
     private final DataReader reader;
     private final DataWriter dataWriter;
+    private final Semaphore pingPongSemaphore = new Semaphore(0);
+    private final Http2ClientConfig clientConfig;
     private volatile int lastStreamId;
 
     private Http2Settings serverSettings = Http2Settings.builder()
@@ -83,11 +88,9 @@ class Http2ClientConnection {
 
     private volatile boolean closed = false;
 
-    public boolean closed(){
-        return closed;
-    }
-
-    Http2ClientConnection(Http2ClientProtocolConfig protocolConfig, ClientConnection connection) {
+    Http2ClientConnection(Http2ClientImpl http2Client, ClientConnection connection) {
+        this.protocolConfig = http2Client.protocolConfig();
+        this.clientConfig = http2Client.clientConfig();
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
                 .maxFrameSize(protocolConfig.maxFrameSize())
                 .initialWindowSize(protocolConfig.initialWindowSize())
@@ -104,7 +107,7 @@ class Http2ClientConnection {
                                         ClientConnection connection,
                                         boolean sendSettings) {
 
-        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client.protocolConfig(), connection);
+        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection);
         h2conn.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
 
         return h2conn;
@@ -138,7 +141,8 @@ class Http2ClientConnection {
         Http2ClientStream stream = new Http2ClientStream(this,
                 serverSettings,
                 ctx,
-                config.timeout(),
+                config,
+                clientConfig,
                 streamIdSeq);
         return stream;
     }
@@ -172,7 +176,29 @@ class Http2ClientConnection {
         }
     }
 
-    void updateLastStreamId(int lastStreamId){
+    boolean closed() {
+        return closed || (protocolConfig.ping() && !ping());
+    }
+
+    boolean ping() {
+        Http2Ping ping = Http2Ping.create();
+        Http2FrameData frameData = ping.toFrameData();
+        sendListener.frameHeader(ctx, 0, frameData.header());
+        sendListener.frame(ctx, 0, ping);
+        try {
+            this.writer().writeData(frameData, FlowControl.Outbound.NOOP);
+            return pingPongSemaphore.tryAcquire(protocolConfig.pingTimeout().toMillis(), TimeUnit.MILLISECONDS);
+        } catch (UncheckedIOException | InterruptedException e) {
+            ctx.log(LOGGER, DEBUG, "Ping failed!", e);
+            return false;
+        }
+    }
+
+    void pong() {
+        pingPongSemaphore.release();
+    }
+
+    void updateLastStreamId(int lastStreamId) {
         this.lastStreamId = lastStreamId;
     }
 
@@ -211,13 +237,15 @@ class Http2ClientConnection {
             sendListener.frame(ctx, 0, http2Settings);
             writer.write(frameData);
         }
-        // First connection window update, with prefetch increment
-        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(config.prefetch());
-        Http2Flag.NoFlags flags = Http2Flag.NoFlags.create();
-        Http2FrameData frameData = windowUpdate.toFrameData(null, 0, flags);
-        sendListener.frameHeader(ctx, 0, frameData.header());
-        sendListener.frame(ctx, 0, windowUpdate);
-        writer.write(frameData);
+        // Initial window size for connection is not configurable, subsequent update win update is needed
+        int connectionWinSizeUpd = config.initialWindowSize() - WindowSize.DEFAULT_WIN_SIZE;
+        if (connectionWinSizeUpd > 0) {
+            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(connectionWinSizeUpd);
+            Http2FrameData frameData = windowUpdate.toFrameData(null, 0, Http2Flag.NoFlags.create());
+            sendListener.frameHeader(ctx, 0, frameData.header());
+            sendListener.frame(ctx, 0, windowUpdate);
+            writer.write(frameData);
+        }
     }
 
     private void start(Http2ClientProtocolConfig protocolConfig,
@@ -247,6 +275,7 @@ class Http2ClientConnection {
                 }
                 ctx.log(LOGGER, TRACE, "Client listener interrupted");
             } catch (Throwable t) {
+                closed = true;
                 ctx.log(LOGGER, DEBUG, "Failed to handle HTTP/2 client connection", t);
             }
         });
@@ -261,17 +290,23 @@ class Http2ClientConnection {
     }
 
     private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
-        if (streamId == 0){
+        if (streamId == 0) {
             writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             return;
         }
         if (streamId < lastStreamId) {
-            for (var s : streams.values()) {
-                if (s.streamId() > streamId && s.streamState() != Http2StreamState.IDLE) {
-                    // RC against parallel newer streams, data already buffered at client being read
-                    // There is no need to do request for more data as stream is no more usable
-                    return;
+            Lock lock = streamsLock.readLock();
+            lock.lock();
+            try {
+                for (var s : streams.values()) {
+                    if (s.streamId() > streamId && s.streamState() != Http2StreamState.IDLE) {
+                        // RC against parallel newer streams, data already buffered at client being read
+                        // There is no need to do request for more data as stream is no more usable
+                        return;
+                    }
                 }
+            } finally {
+                lock.unlock();
             }
         }
         Http2ClientStream stream = stream(streamId);
@@ -379,6 +414,8 @@ class Http2ClientConnection {
                                                                   Http2Flag.PingFlags.create(Http2Flag.ACK),
                                                                   0);
                 writer.write(new Http2FrameData(header, frame));
+            } else {
+                pong();
             }
             break;
 

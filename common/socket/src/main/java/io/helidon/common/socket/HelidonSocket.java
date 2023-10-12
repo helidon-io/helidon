@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,19 @@ public interface HelidonSocket extends SocketContext, Supplier<byte[]> {
      * Close the underlying socket.
      */
     void close();
+
+    /**
+     * Sets the socket to idle mode. Idle mode expects no bytes coming over the
+     * socket but keeps reading exactly one byte in case connection is severed.
+     * Idle mode should be used in case of client side connection caching.
+     */
+    void idle();
+
+    /**
+     * Check if socket is connected.
+     * @return true if connected
+     */
+    boolean isConnected();
 
     /**
      * Read bytes from the socket. This method blocks until at least 1 byte is available.

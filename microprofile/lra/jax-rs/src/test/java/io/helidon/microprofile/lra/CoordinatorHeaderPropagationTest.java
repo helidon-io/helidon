@@ -30,7 +30,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.microprofile.config.ConfigCdiExtension;
@@ -38,11 +41,11 @@ import io.helidon.microprofile.lra.resources.Work;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.DisableDiscovery;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpService;
@@ -105,7 +108,7 @@ class CoordinatorHeaderPropagationTest {
     private static final String PROPAGATED_HEADER = "xxx-tmm-propagated-header";
     private static final String EXTRA_COORDINATOR_PROPAGATED_HEADER = "xBb-tmm-extra-start-header";
     private static final String NOT_PROPAGATED_HEADER = "non-propagated-header";
-    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_CONTEXT_HEADER);
+    private static final HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = HeaderNames.create(LRA_HTTP_CONTEXT_HEADER);
 
     private static volatile int port = -1;
 
@@ -143,7 +146,7 @@ class CoordinatorHeaderPropagationTest {
 
                     lraMap.put(lraId, new ConcurrentHashMap<>());
 
-                    res.status(Http.Status.CREATED_201)
+                    res.status(Status.CREATED_201)
                             .header(LRA_HTTP_CONTEXT_HEADER_NAME, lraId)
                             .header(NOT_PROPAGATED_HEADER, "not this extra one!")
                             .header(EXTRA_COORDINATOR_PROPAGATED_HEADER, "yes extra start header!")
@@ -157,7 +160,7 @@ class CoordinatorHeaderPropagationTest {
                     closeHeadersCoordinator.putAll(req.headers().toMap());
                     String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
                             .pathParameters()
-                            .value("lraId");
+                            .get("lraId");
                     if (lraMap.get(lraId).get("complete") == null) {
                         //no complete resource
                         // after lra
@@ -165,14 +168,14 @@ class CoordinatorHeaderPropagationTest {
                             try (Http1ClientResponse clientResponse = Http1Client.builder()
                                     .baseUri(lraMap.get(lraId).get("after").toASCIIString())
                                     .build()
-                                    .method(Http.Method.PUT)
+                                    .method(Method.PUT)
                                     .header(LRA_HTTP_CONTEXT_HEADER_NAME, lraId)
                                     .headers(reqHeaders -> {
                                         // relay all incoming headers
                                         req.headers().forEach(reqHeaders::add);
                                     })
                                     .submit(LRAStatus.Closing.name())) {
-                                if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {
+                                if (clientResponse.status().family() != Status.Family.SUCCESSFUL) {
                                     res.status(clientResponse.status());
                                 }
                                 res.send();
@@ -187,14 +190,14 @@ class CoordinatorHeaderPropagationTest {
                     try (Http1ClientResponse clientResponse = Http1Client.builder()
                             .baseUri(lraMap.get(lraId).get("complete").toASCIIString())
                             .build()
-                            .method(Http.Method.PUT)
+                            .method(Method.PUT)
                             .header(LRA_HTTP_CONTEXT_HEADER_NAME, lraId)
                             .headers(reqHeaders -> {
                                 // relay all incoming headers
                                 req.headers().forEach(reqHeaders::add);
                             })
                             .request()) {
-                        if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {
+                        if (clientResponse.status().family() != Status.Family.SUCCESSFUL) {
                             res.status(clientResponse.status());
                         }
                         res.send();
@@ -204,19 +207,19 @@ class CoordinatorHeaderPropagationTest {
                     closeHeadersCoordinator.putAll(req.headers().toMap());
                     String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
                             .pathParameters()
-                            .value("lraId");
+                            .get("lraId");
 
                     try (Http1ClientResponse clientResponse = Http1Client.builder()
                             .baseUri(lraMap.get(lraId).get("compensate").toASCIIString())
                             .build()
-                            .method(Http.Method.PUT)
+                            .method(Method.PUT)
                             .header(LRA_HTTP_CONTEXT_HEADER_NAME, lraId)
                             .headers(reqHeaders -> {
                                 // relay all incoming headers
                                 req.headers().forEach(reqHeaders::add);
                             })
                             .request()) {
-                        if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {
+                        if (clientResponse.status().family() != Status.Family.SUCCESSFUL) {
                             res.status(clientResponse.status());
                         }
                         res.send();
@@ -227,7 +230,7 @@ class CoordinatorHeaderPropagationTest {
                     joinHeadersCoordinator.putAll(req.headers().toMap());
                     String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
                             .pathParameters()
-                            .value("lraId");
+                            .get("lraId");
                     String content = req.content().as(String.class);
 
                     for (String part : content.split(",")) {

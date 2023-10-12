@@ -17,7 +17,8 @@ package io.helidon.examples.security.digest;
 
 import java.util.Map;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -43,7 +44,7 @@ class WebClientAuthenticationService implements WebClientService {
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         WebClientServiceResponse response = chain.proceed(request);
-        if (response.status() != Http.Status.UNAUTHORIZED_401) {
+        if (response.status() != Status.UNAUTHORIZED_401) {
             return response;
         }
         Map<String, String> properties = request.properties();
@@ -52,7 +53,7 @@ class WebClientAuthenticationService implements WebClientService {
         if (username == null || password == null) {
             return response;
         }
-        String challenge = response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE).orElse(null);
+        String challenge = response.headers().first(HeaderNames.WWW_AUTHENTICATE).orElse(null);
         if (challenge == null) {
             return response;
         }
@@ -62,7 +63,7 @@ class WebClientAuthenticationService implements WebClientService {
         if (atz == null) {
             return response;
         }
-        request.headers().add(Http.HeaderNames.AUTHORIZATION, atz);
+        request.headers().add(HeaderNames.AUTHORIZATION, atz);
         return chain.proceed(request);
     }
 }

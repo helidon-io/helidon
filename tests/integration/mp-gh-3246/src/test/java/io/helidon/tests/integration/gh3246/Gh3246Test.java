@@ -19,9 +19,9 @@ package io.helidon.tests.integration.gh3246;
 import java.time.Instant;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.http.HeaderNames;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -86,7 +86,7 @@ public class Gh3246Test {
         String response = webTarget.path("/test/secured")
                 .queryParam("port", port)
                 .request()
-                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), "Bearer " + tokenContent)
+                .header(HeaderNames.AUTHORIZATION.defaultCase(), "Bearer " + tokenContent)
                 .get(String.class);
 
         assertThat(response, is("hello"));

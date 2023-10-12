@@ -59,8 +59,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml,subs=+macros]
 ----
 <dependency>
-    <groupId>io.helidon.integrations.openapi-ui</groupId>
-    <artifactId>helidon-integrations-openapi-ui</artifactId>
+    <groupId>io.helidon.openapi</groupId>
+    <artifactId>helidon-openapi-ui</artifactId>
 ifdef::mp-flavor[    <scope>runtime</scope>]
 </dependency>
 ----
@@ -124,7 +124,7 @@ To use configuration to control how the Helidon OpenAPI UI service behaves, add 
 ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
 ifdef::se-flavor[your configuration file, such as `application.yaml`.]
 
-include::{rootdir}/config/io_helidon_openapi_OpenApiUi.adoc[tag=config,leveloffset=+1]
+include::{rootdir}/config/io_helidon_openapi_OpenApiUi_Builder.adoc[tag=config,leveloffset=+1]
 The default UI `web-context` value is the web context for your `OpenAPISupport` service with the added suffix `/ui`. If you use the default web context for both `OpenAPISupport` and the UI, the UI responds at `/openapi/ui`.
 
 // end::config-intro[]

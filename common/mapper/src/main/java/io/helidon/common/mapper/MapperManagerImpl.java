@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.common.mapper;
 
 import java.util.Arrays;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.spi.MapperProvider;
@@ -63,16 +65,22 @@ final class MapperManagerImpl implements MapperManager {
         }
     }
 
+    @Override
+    public <SOURCE, TARGET> Optional<Mapper<SOURCE, TARGET>> mapper(GenericType<SOURCE> sourceType,
+                                                                    GenericType<TARGET> targetType,
+                                                                    String... qualifiers) {
+        Mapper<SOURCE, TARGET> mapper = findMapper(sourceType, targetType, false, qualifiers);
+        if (mapper instanceof NotFoundMapper) {
+            return Optional.empty();
+        }
+        return Optional.of(mapper);
+    }
+
+    @SuppressWarnings("unchecked")
     private static <SOURCE, TARGET> Mapper<SOURCE, TARGET> notFoundMapper(GenericType<SOURCE> sourceType,
                                                                           GenericType<TARGET> targetType,
                                                                           String... qualifier) {
-        String qualifierString = Arrays.toString(qualifier);
-        return source -> {
-            throw createMapperException(source,
-                                        sourceType,
-                                        targetType,
-                                        "Failed to find mapper. Qualifiers: " + qualifierString + ".");
-        };
+        return new NotFoundMapper(sourceType, targetType, qualifier);
     }
 
     private static RuntimeException createMapperException(Object source,
@@ -84,16 +92,6 @@ final class MapperManagerImpl implements MapperManager {
                                   targetType,
                                   "Failed to map source of class '" + source.getClass().getName() + "'",
                                   throwable);
-    }
-
-    private static RuntimeException createMapperException(Object source,
-                                                          GenericType<?> sourceType,
-                                                          GenericType<?> targetType,
-                                                          String message) {
-
-        throw new MapperException(sourceType,
-                                  targetType,
-                                  message + ", source of class '" + source.getClass().getName() + "'");
     }
 
     @SuppressWarnings("unchecked")
@@ -138,14 +136,36 @@ final class MapperManagerImpl implements MapperManager {
         return (Mapper<SOURCE, TARGET>) mapper;
     }
 
-    private <SOURCE, TARGET> Optional<Mapper<?, ?>> fromProviders(Class<SOURCE> sourceType,
-                                                                  Class<TARGET> targetType,
-                                                                  String... qualifiers) {
-        Mapper<?, ?> compatible = null;
+    private Optional<Mapper<?, ?>>
+    fromProviders(BiFunction<MapperProvider, String, MapperProvider.ProviderResponse> qualifiedMapper,
+                  String... qualifiers) {
 
-        for (String qualifier : qualifiers) {
+        Mapper<?, ?> compatible = null;
+        for (int i = 0; i < qualifiers.length; i++) {
+            String fullQ;
+            if (i == 0) {
+                fullQ = String.join("/", qualifiers);
+            } else {
+                fullQ = String.join("/", Arrays.copyOf(qualifiers, qualifiers.length - i));
+            }
             for (MapperProvider provider : providers) {
-                MapperProvider.ProviderResponse response = provider.mapper(sourceType, targetType, qualifier);
+                MapperProvider.ProviderResponse response = qualifiedMapper.apply(provider, fullQ);
+                switch (response.support()) {
+                case SUPPORTED -> {
+                    return Optional.of(response.mapper());
+                }
+                case COMPATIBLE -> {
+                    compatible = (compatible == null) ? response.mapper() : compatible;
+                }
+                default -> {
+                }
+                }
+            }
+        }
+
+        if (qualifiers.length == 0 || !qualifiers[0].isEmpty()) {
+            for (MapperProvider provider : providers) {
+                MapperProvider.ProviderResponse response = qualifiedMapper.apply(provider, "");
                 switch (response.support()) {
                 case SUPPORTED -> {
                     return Optional.of(response.mapper());
@@ -160,36 +180,51 @@ final class MapperManagerImpl implements MapperManager {
         }
 
         return Optional.ofNullable(compatible);
+
+    }
+
+    private <SOURCE, TARGET> Optional<Mapper<?, ?>> fromProviders(Class<SOURCE> sourceType,
+                                                                  Class<TARGET> targetType,
+                                                                  String... qualifiers) {
+
+        return fromProviders((provider, qualifier) -> provider.mapper(sourceType, targetType, qualifier),
+                             qualifiers);
     }
 
     private <SOURCE, TARGET> Optional<Mapper<?, ?>> fromProviders(GenericType<SOURCE> sourceType,
                                                                   GenericType<TARGET> targetType,
                                                                   String... qualifiers) {
 
-        Mapper<?, ?> compatible = null;
-
-        for (String qualifier : qualifiers) {
-            for (MapperProvider provider : providers) {
-                MapperProvider.ProviderResponse response = provider.mapper(sourceType, targetType, qualifier);
-                switch (response.support()) {
-                case SUPPORTED -> {
-                    return Optional.of(response.mapper());
-                }
-                case COMPATIBLE -> {
-                    compatible = (compatible == null) ? response.mapper() : compatible;
-                }
-                default -> {
-                }
-                }
-            }
-        }
-
-        return Optional.ofNullable(compatible);
+        return fromProviders((provider, qualifier) -> provider.mapper(sourceType, targetType, qualifier),
+                             qualifiers);
     }
 
     private record GenericCacheKey(GenericType<?> sourceType, GenericType<?> targetType, String... qualifiers) {
     }
 
     private record ClassCacheKey(Class<?> sourceType, Class<?> targetType, String... qualifiers) {
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static class NotFoundMapper implements Mapper {
+        private final GenericType sourceType;
+        private final GenericType targetType;
+        private final String qualifierString;
+
+        private NotFoundMapper(GenericType sourceType,
+                               GenericType targetType,
+                               String[] qualifier) {
+            this.sourceType = sourceType;
+            this.targetType = targetType;
+            this.qualifierString = String.join(",", qualifier);
+        }
+
+        @Override
+        public Object map(Object source) {
+            throw new MapperException(sourceType,
+                                      targetType,
+                                      "Failed to find mapper. Qualifiers: " + qualifierString
+                                              + ", source of class '" + source.getClass().getName() + "'");
+        }
     }
 }

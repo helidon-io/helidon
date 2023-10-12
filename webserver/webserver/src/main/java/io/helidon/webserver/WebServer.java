@@ -33,6 +33,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * The default server socket configuration name. All the default server socket
      * configuration such as {@link WebServer#port(String)}
      * is accessible using this name.
+     * The value is {@value}.
      */
     String DEFAULT_SOCKET_NAME = "@default";
 

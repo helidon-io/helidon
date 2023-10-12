@@ -21,9 +21,10 @@ import java.nio.charset.StandardCharsets;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.DirectHandler;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
 
@@ -78,10 +79,10 @@ public final class Http1Prologue {
                 .build();
     }
 
-    private static Http.Method readMethod(DataReader reader, int maxLen) {
+    private static Method readMethod(DataReader reader, int maxLen) {
         if (reader.startsWith(GET_BYTES)) {
             reader.skip(GET_BYTES.length);
-            return Http.Method.GET;
+            return Method.GET;
         }
         int firstSpace = reader.findOrNewLine(Bytes.SPACE_BYTE, maxLen);
         if (firstSpace < 0) {
@@ -89,7 +90,7 @@ public final class Http1Prologue {
         } else if (firstSpace == maxLen) {
             throw badRequest("Prologue size exceeded", "", "", "", "");
         }
-        Http.Method method = Http.Method.create(reader.readAsciiString(firstSpace));
+        Method method = Method.create(reader.readAsciiString(firstSpace));
         reader.skip(1);
         return method;
     }
@@ -98,7 +99,7 @@ public final class Http1Prologue {
         //   > GET /loom/slow HTTP/1.1
         String protocol;
         String path;
-        Http.Method method;
+        Method method;
         try {
             int maxLen = maxLength;
             try {
@@ -117,7 +118,7 @@ public final class Http1Prologue {
                 throw RequestException.builder()
                         .message("Request URI too long.")
                         .type(DirectHandler.EventType.BAD_REQUEST)
-                        .status(Http.Status.REQUEST_URI_TOO_LONG_414)
+                        .status(Status.REQUEST_URI_TOO_LONG_414)
                         .request(DirectTransportRequest.create("", method.text(), reader.readAsciiString(secondSpace)))
                         .build();
             }

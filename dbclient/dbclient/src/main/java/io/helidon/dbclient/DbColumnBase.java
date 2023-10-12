@@ -15,9 +15,13 @@
  */
 package io.helidon.dbclient;
 
+import java.util.Optional;
+import java.util.function.Function;
+
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Value;
 
 /**
  * Base {@link DbColumn} implementation.
@@ -51,7 +55,7 @@ public abstract class DbColumnBase implements DbColumn {
     }
 
     @Override
-    public <T> T as(Class<T> type) throws MapperException {
+    public <T> T get(Class<T> type) throws MapperException {
         if (null == value) {
             return null;
         }
@@ -62,7 +66,7 @@ public abstract class DbColumnBase implements DbColumn {
     }
 
     @Override
-    public <T> T as(GenericType<T> type) throws MapperException {
+    public <T> T get(GenericType<T> type) throws MapperException {
         if (null == value) {
             return null;
         }
@@ -73,6 +77,51 @@ public abstract class DbColumnBase implements DbColumn {
             }
         }
         return map(value, type);
+    }
+
+    @Override
+    public <N> Value<N> as(Class<N> type) throws MapperException {
+        return Value.create(mapperManager, name(), get(type), "dbclient", "column");
+    }
+
+    @Override
+    public <N> Value<N> as(GenericType<N> type) throws MapperException {
+        return Value.create(mapperManager, name(), get(type), "dbclient", "column");
+    }
+
+    @Override
+    public <N> Value<N> as(Function<? super Object, ? extends N> mapper) {
+        return Value.create(mapperManager, name(), mapper.apply(value), "dbclient", "column");
+    }
+
+    @Override
+    public Optional<Object> asOptional() throws MapperException {
+        return Optional.of(value);
+    }
+
+    @Override
+    public Value<Boolean> asBoolean() {
+        return as(Boolean.class);
+    }
+
+    @Override
+    public Value<String> asString() {
+        return as(String.class);
+    }
+
+    @Override
+    public Value<Integer> asInt() {
+        return as(Integer.class);
+    }
+
+    @Override
+    public Value<Long> asLong() {
+        return as(Long.class);
+    }
+
+    @Override
+    public Value<Double> asDouble() {
+        return as(Double.class);
     }
 
     /**

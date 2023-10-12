@@ -22,6 +22,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -84,7 +85,7 @@ interface KeysBlueprint {
      *
      * @return the certificate chain or empty list if not configured
      */
-    @Prototype.Singular("certChain")
+    @Option.Singular("certChain")
     List<X509Certificate> certChain();
 
     /**
@@ -92,7 +93,7 @@ interface KeysBlueprint {
      *
      * @return the certificates configured or empty list if none configured
      */
-    @Prototype.Singular("cert")
+    @Option.Singular
     List<X509Certificate> certs();
 
 }

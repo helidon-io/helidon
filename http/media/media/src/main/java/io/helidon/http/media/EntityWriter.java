@@ -29,6 +29,46 @@ import io.helidon.http.WritableHeaders;
  */
 public interface EntityWriter<T> {
     /**
+     * Whether this entity writer can provide more information about each entity instance, such as content length.
+     *
+     * @return whether {@code instanceWriter} methods are supported;
+     *         If not one of the {@code write} methods would be called instead
+     */
+    default boolean supportsInstanceWriter() {
+        return false;
+    }
+
+    /**
+     * Client request entity instance writer.
+     *
+     * @param type            type of entity
+     * @param object          object to write
+     * @param requestHeaders  request headers
+     * @return instance writer ready to write the provided entity
+     */
+    default InstanceWriter instanceWriter(GenericType<T> type,
+                                          T object,
+                                          WritableHeaders<?> requestHeaders) {
+        throw new UnsupportedOperationException("This writer does not support instance writers: " + getClass().getName());
+    }
+
+    /**
+     * Server response entity instance writer.
+     *
+     * @param type            type of entity
+     * @param object          object to write
+     * @param requestHeaders  request headers
+     * @param responseHeaders response headers
+     * @return instance writer ready to write the provided entity
+     */
+    default InstanceWriter instanceWriter(GenericType<T> type,
+                                          T object,
+                                          Headers requestHeaders,
+                                          WritableHeaders<?> responseHeaders) {
+        throw new UnsupportedOperationException("This writer does not support instance writers: " + getClass().getName());
+    }
+
+    /**
      * Write server response entity and close the stream.
      *
      * @param type            type of entity

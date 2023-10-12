@@ -26,25 +26,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
-import io.helidon.microprofile.server.RoutingBuilders;
+import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.servicecommon.FeatureSupport;
+import io.helidon.webserver.http.HttpRouting;
 
-import jakarta.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedMember;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
@@ -53,33 +47,31 @@ import jakarta.enterprise.inject.spi.ProcessProducerMethod;
 import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 
 /**
  * Abstract superclass of service-specific, REST-based CDI extensions.
  * <p>
- *     This class implements a substantial amount of the work many extensions must do to process
- *     annotated types for REST-based services.
+ * This class implements a substantial amount of the work many extensions must do to process
+ * annotated types for REST-based services.
  * </p>
  * <p>
- *     Each CDI extension is presumed to layer on an SE-style service support class which itself is a subclass of
- *     {@link io.helidon.webserver.servicecommon.HelidonFeatureSupport} with an associated {@code Builder} class.
- *     The service support base class and its builder are both type parameters to this class.
+ * Each CDI extension is presumed to layer on an SE-style service support class which itself is a subclass of
+ * {@link io.helidon.webserver.servicecommon.HelidonFeatureSupport} with an associated {@code Builder} class.
+ * The service support base class and its builder are both type parameters to this class.
  * </p>
  * <p>
- *     Each concrete implementation should:
- *     <ul>
- *         <li>Invoke {@link #recordAnnotatedType} for each class which bears an annotation of interest to the
- *         extension, often from a {@code ProcessAnnotatedType} observer method.</li>
- *         <li>Implement {@link #processManagedBean(ProcessManagedBean)} which this base class invokes to notify the
- *         implementation class of each managed bean type that was reported by the concrete extension but not vetoed by some
- *         other extension. Each extension can interpret "process" however it needs to. Metrics, for example, creates
- *         metrics and registers them with the appropriate metrics registry.</li>
- *     </ul>
- *
- * @param <T> type of {@code RestServiceSupport} used
+ * Each concrete implementation should:
+ * <ul>
+ *     <li>Invoke {@link #recordAnnotatedType} for each class which bears an annotation of interest to the
+ *     extension, often from a {@code ProcessAnnotatedType} observer method.</li>
+ *     <li>Implement {@link #processManagedBean(ProcessManagedBean)} which this base class invokes to notify the
+ *     implementation class of each managed bean type that was reported by the concrete extension but not vetoed by some
+ *     other extension. Each extension can interpret "process" however it needs to. Metrics, for example, creates
+ *     metrics and registers them with the appropriate metrics registry.</li>
+ * </ul>
  */
-public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implements Extension {
+public abstract class HelidonRestCdiExtension implements Extension {
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
@@ -87,25 +79,22 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
     private final Set<Class<?>> annotatedClassesProcessed = new HashSet<>();
 
     private final System.Logger logger;
-    private final Function<Config, T> serviceSupportFactory;
-    private final String configPrefix;
+    private final String[] configPrefixes;
 
-    private T serviceSupport = null;
+    private volatile Config rootConfig;
+    private volatile Config componentConfig;
 
     /**
      * Common initialization for concrete implementations.
      *
-     * @param logger                Logger instance to use for logging messages
-     * @param serviceSupportFactory function from config to the corresponding SE-style service support object
-     * @param configPrefix          prefix for retrieving config related to this extension
+     * @param logger         Logger instance to use for logging messages
+     * @param configPrefixes prefixes for retrieving config related to this extension
      */
     protected HelidonRestCdiExtension(
             System.Logger logger,
-            Function<Config, T> serviceSupportFactory,
-            String configPrefix) {
+            String... configPrefixes) {
         this.logger = logger;
-        this.serviceSupportFactory = serviceSupportFactory;
-        this.configPrefix = configPrefix;
+        this.configPrefixes = configPrefixes;
     }
 
     /**
@@ -148,7 +137,7 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
         logger.log(Level.DEBUG, () -> "Processing managed bean " + clazz.getName());
 
         processManagedBean(pmb);
-   }
+    }
 
     /**
      * Deals with a managed bean that survived vetoing, provided by concrete extension implementations.
@@ -158,9 +147,10 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
      * implementations to actually respond appropriately to the bean and whichever of its members are annotated.
      * </p>
      *
-     * @param processManagedBean      the managed bean, with at least one annotation of interest to the extension
+     * @param processManagedBean the managed bean, with at least one annotation of interest to the extension
      */
-    protected abstract void processManagedBean(ProcessManagedBean<?> processManagedBean);
+    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
+    }
 
     /**
      * Checks to make sure the annotated type is not abstract and is not an interceptor.
@@ -193,14 +183,14 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
      */
     protected void recordAnnotatedType(ProcessAnnotatedType<?> pat) {
         annotatedClasses.add(pat.getAnnotatedType()
-                    .getJavaClass());
+                                     .getJavaClass());
     }
 
     protected boolean isOwnProducerOrNonDefaultQualified(Bean<?> bean, Class<?> ownProducerClass) {
         return ownProducerClass.equals(bean.getBeanClass())
                 || bean.getQualifiers()
-                        .stream()
-                        .noneMatch(Default.class::isInstance);
+                .stream()
+                .noneMatch(Default.class::isInstance);
     }
 
     /**
@@ -226,47 +216,85 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
     }
 
     /**
-     * Registers the service-related endpoint, after security and as CDI initializes the app scope, returning the default routing
-     * for optional use by the caller.
+     * SE Configuration, root.
      *
-     * @param adv    app-scoped initialization event
-     * @param bm     BeanManager
-     * @param server the ServerCdiExtension
-     * @return default routing
+     * @return config instance
      */
-    // method needs to be public so it is registered for reflection (native image)
-    public HttpRules registerService(
-            @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
-            BeanManager bm, ServerCdiExtension server) {
-
-        Config config = seComponentConfig();
-        serviceSupport = serviceSupportFactory.apply(config);
-
-        RoutingBuilders routingBuilders = RoutingBuilders.create(config);
-
-        if (serviceSupport.enabled()) {
-            serviceSupport.setup(routingBuilders.defaultRoutingBuilder(), routingBuilders.routingBuilder());
+    protected Config rootConfig() {
+        if (rootConfig == null) {
+            rootConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         }
-
-        return routingBuilders.defaultRoutingBuilder();
+        return rootConfig;
     }
 
     /**
-     * Returns the SE config to use in setting up the component's SE service.
+     * SE Configuration of the current compoennt.
      *
-     * @return the SE config node for the component-specific configuration
+     * @return component configuration
      */
-    protected Config seComponentConfig() {
-        return MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(configPrefix);
+    protected Config componentConfig() {
+        return componentConfig(rootConfig());
     }
 
     /**
-     * Returns the SE service instance created during MP service registration.
+     * Find routing builder to use for this component to be registered on.
+     * Uses the {@code routing} key on the service level to choose the correct routing
+     * (listener).
      *
-     * @return the SE service support object used by this MP service
+     * @param server server CDI extension
+     * @return routing builder to use
      */
-    protected T serviceSupport() {
-        return serviceSupport;
+    protected HttpRouting.Builder routingBuilder(ServerCdiExtension server) {
+        String routingName = componentConfig(rootConfig()).get("routing")
+                .asString()
+                .filter(String::isBlank)
+                .orElse(DEFAULT_SOCKET_NAME);
+        return DEFAULT_SOCKET_NAME.equals(routingName)
+                ? server.serverRoutingBuilder()
+                : server.serverNamedRoutingBuilder(routingName);
+    }
+
+    /**
+     * Configure with runtime config.
+     *
+     * @param config config to use
+     */
+    public void prepareRuntime(@Observes @RuntimeStart Config config) {
+        // this method must be public, so it is registered for reflection by Helidon GraalVM feature
+        this.rootConfig = config;
+    }
+
+
+    private Config componentConfig(Config rootConfig) {
+        if (componentConfig == null) {
+            for (String configPrefix : configPrefixes) {
+                Config componentConfig = rootConfig.get(configPrefix);
+                if (componentConfig.exists()) {
+                    this.componentConfig = componentConfig;
+                }
+            }
+            if (this.componentConfig == null) {
+                if (configPrefixes.length == 0) {
+                    this.componentConfig = rootConfig;
+                } else {
+                    this.componentConfig = rootConfig.get(configPrefixes[0]);
+                }
+            }
+        }
+        return componentConfig;
+    }
+
+    /**
+     * Records producer fields and methods defined by the application. Ignores producers with non-default qualifiers and
+     * library producers.
+     *
+     * @param logPrefix typically denotes the method to distinguish whether fields or methods are being recorded
+     * @param member    the field or method
+     * @param bean      the bean which might bear producer members we are interested in
+     */
+    private void recordProducerMember(String logPrefix, AnnotatedMember<?> member, Bean<?> bean) {
+        logger.log(Level.DEBUG, () -> logPrefix + " " + bean.getBeanClass());
+        producers.put(bean, member);
     }
 
     /**
@@ -277,14 +305,14 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
      */
     protected static class WorkItemsManager<W> {
 
-        public static <W>  WorkItemsManager<W> create() {
-            return new WorkItemsManager<>();
-        }
+        private final Map<Executable, Map<Class<? extends Annotation>, List<W>>> workItemsByExecutable = new HashMap<>();
 
         private WorkItemsManager() {
         }
 
-        private final Map<Executable, Map<Class<? extends Annotation>, List<W>>> workItemsByExecutable = new HashMap<>();
+        public static <W> WorkItemsManager<W> create() {
+            return new WorkItemsManager<>();
+        }
 
         public void put(Executable executable, Class<? extends Annotation> annotationType, W workItem) {
             List<W> workItems = workItemsByExecutable
@@ -302,18 +330,5 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
                     .getOrDefault(executable, Collections.emptyMap())
                     .getOrDefault(annotationType, Collections.emptyList());
         }
-    }
-
-    /**
-     * Records producer fields and methods defined by the application. Ignores producers with non-default qualifiers and
-     * library producers.
-     *
-     * @param logPrefix typically denotes the method to distinguish whether fields or methods are being recorded
-     * @param member the field or method
-     * @param bean the bean which might bear producer members we are interested in
-     */
-    private void recordProducerMember(String logPrefix, AnnotatedMember<?> member, Bean<?> bean) {
-        logger.log(Level.DEBUG, () -> logPrefix + " " + bean.getBeanClass());
-        producers.put(bean, member);
     }
 }

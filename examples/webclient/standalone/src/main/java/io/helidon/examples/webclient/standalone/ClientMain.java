@@ -24,9 +24,11 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.http.Http;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.metrics.WebClientMetrics;
@@ -35,8 +37,6 @@ import io.helidon.webclient.spi.WebClientService;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * A simple WebClient usage class.
@@ -45,8 +45,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  */
 public class ClientMain {
 
-    private static final MetricRegistry METRIC_REGISTRY =
-            RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
+    private static final MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Map.of());
     private static final JsonObject JSON_NEW_GREETING;
 
@@ -95,7 +94,7 @@ public class ClientMain {
         clientMetricsExample(url, config);
     }
 
-    static Http.Status performPutMethod(WebClient client) {
+    static Status performPutMethod(WebClient client) {
         System.out.println("Put request execution.");
         try (HttpClientResponse response = client.put("/greeting").submit(JSON_NEW_GREETING)) {
             System.out.println("PUT request executed with status: " + response.status());
@@ -114,7 +113,7 @@ public class ClientMain {
     static String followRedirects(WebClient client) {
         System.out.println("Following request redirection.");
         try (HttpClientResponse response = client.get("/redirect").request()) {
-            if (response.status() != Http.Status.OK_200) {
+            if (response.status() != Status.OK_200) {
                 throw new IllegalStateException("Follow redirection failed!");
             }
             String result = response.as(String.class);
@@ -151,12 +150,12 @@ public class ClientMain {
     static String clientMetricsExample(String url, Config config) {
         //This part here is only for verification purposes, it is not needed to be done for actual usage.
         String counterName = "example.metric.GET.localhost";
-        Counter counter = METRIC_REGISTRY.counter(counterName);
-        System.out.println(counterName + ": " + counter.getCount());
+        Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(counterName));
+        System.out.println(counterName + ": " + counter.count());
 
         //Creates new metric which will count all GET requests and has format of example.metric.GET.<host-name>
         WebClientService clientService = WebClientMetrics.counter()
-                .methods(Http.Method.GET)
+                .methods(Method.GET)
                 .nameFormat("example.metric.%1$s.%2$s")
                 .build();
 
@@ -170,7 +169,7 @@ public class ClientMain {
         //Perform any GET request using this newly created WebClient instance.
         String result = performGetMethod(client);
         //Verification for example purposes that metric has been incremented.
-        System.out.println(counterName + ": " + counter.getCount());
+        System.out.println(counterName + ": " + counter.count());
         return result;
     }
 }

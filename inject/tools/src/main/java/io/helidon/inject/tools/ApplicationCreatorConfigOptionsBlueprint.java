@@ -18,6 +18,7 @@ package io.helidon.inject.tools;
 
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -47,7 +48,7 @@ interface ApplicationCreatorConfigOptionsBlueprint {
      *
      * @return the allow-listed named providers (which is the FQN of the underlying service type)
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<String> permittedProviderNames();
 
     /**
@@ -57,7 +58,7 @@ interface ApplicationCreatorConfigOptionsBlueprint {
      *
      * @return the allow-listed qualifier type names
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<TypeName> permittedProviderQualifierTypeNames();
 
 }

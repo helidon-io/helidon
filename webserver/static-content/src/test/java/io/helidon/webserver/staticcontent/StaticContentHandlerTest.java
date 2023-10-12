@@ -25,26 +25,28 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.configurable.LruCache;
-import io.helidon.http.Http;
-import io.helidon.http.HttpException;
-import io.helidon.http.HttpPrologue;
-import io.helidon.http.RoutedPath;
-import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.ServerResponseHeaders;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
+import io.helidon.http.RoutedPath;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static io.helidon.http.Http.HeaderNames.ETAG;
-import static io.helidon.http.Http.HeaderNames.IF_MATCH;
-import static io.helidon.http.Http.HeaderNames.IF_NONE_MATCH;
-import static io.helidon.http.Http.HeaderNames.LOCATION;
+import static io.helidon.http.HeaderNames.ETAG;
+import static io.helidon.http.HeaderNames.IF_MATCH;
+import static io.helidon.http.HeaderNames.IF_NONE_MATCH;
+import static io.helidon.http.HeaderNames.LOCATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -63,7 +65,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.get(IF_NONE_MATCH)).thenReturn(Http.Headers.create(IF_NONE_MATCH, "\"ccc\"", "\"ddd\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
         verify(res).set(ETAG, ETAG_VALUE);
@@ -74,9 +76,9 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.get(IF_NONE_MATCH)).thenReturn(Http.Headers.create(IF_NONE_MATCH, "\"ccc\"", "W/\"aaa\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"ccc\"", "W/\"aaa\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
-        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.NOT_MODIFIED_304);
+        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.NOT_MODIFIED_304);
         verify(res).set(ETAG, ETAG_VALUE);
     }
 
@@ -85,9 +87,9 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.get(IF_MATCH)).thenReturn(Http.Headers.create(IF_MATCH, "\"ccc\"", "\"ddd\""));
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
-        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.PRECONDITION_FAILED_412);
+        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.PRECONDITION_FAILED_412);
         verify(res).set(ETAG, ETAG_VALUE);
     }
 
@@ -96,7 +98,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.get(IF_MATCH)).thenReturn(Http.Headers.create(IF_MATCH, "\"ccc\"", "\"aaa\""));
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "\"ccc\"", "\"aaa\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
         verify(res).set(ETAG, ETAG_VALUE);
@@ -120,7 +122,7 @@ class StaticContentHandlerTest {
         Mockito.doReturn(Optional.empty()).when(req).ifUnmodifiedSince();
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
-                            Http.Status.NOT_MODIFIED_304);
+                            Status.NOT_MODIFIED_304);
     }
 
     @Test
@@ -141,7 +143,7 @@ class StaticContentHandlerTest {
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
-                            Http.Status.PRECONDITION_FAILED_412);
+                            Status.PRECONDITION_FAILED_412);
     }
 
     @Test
@@ -153,15 +155,15 @@ class StaticContentHandlerTest {
         when(req.query()).thenReturn(UriQuery.empty());
 
         CachedHandlerRedirect redirectHandler = new CachedHandlerRedirect("/foo/");
-        redirectHandler.handle(LruCache.create(), Http.Method.GET, req, res, "/foo");
-        verify(res).status(Http.Status.MOVED_PERMANENTLY_301);
+        redirectHandler.handle(LruCache.create(), Method.GET, req, res, "/foo");
+        verify(res).status(Status.MOVED_PERMANENTLY_301);
         verify(resh).set(LOCATION, "/foo/");
         verify(res).send();
     }
 
     @Test
     void handleRoot() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "/");
+        ServerRequest request = mockRequestWithPath(Method.GET, "/");
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(request, response);
@@ -171,7 +173,7 @@ class StaticContentHandlerTest {
 
     @Test
     void handleValid() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "/foo/some.txt");
+        ServerRequest request = mockRequestWithPath(Method.GET, "/foo/some.txt");
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(request, response);
@@ -182,7 +184,7 @@ class StaticContentHandlerTest {
 
     @Test
     void handleOutside() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "/../foo/some.txt");
+        ServerRequest request = mockRequestWithPath(Method.GET, "/../foo/some.txt");
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(request, response);
@@ -192,7 +194,7 @@ class StaticContentHandlerTest {
 
     @Test
     void handleNextOnFalse() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "/");
+        ServerRequest request = mockRequestWithPath(Method.GET, "/");
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(false);
         handler.handle(request, response);
@@ -202,7 +204,7 @@ class StaticContentHandlerTest {
 
     @Test
     void classpathHandleSpaces() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "foo/I have spaces.txt");
+        ServerRequest request = mockRequestWithPath(Method.GET, "foo/I have spaces.txt");
         ServerResponse response = mock(ServerResponse.class);
         TestClassPathContentHandler handler = TestClassPathContentHandler.create();
         handler.handle(request, response);
@@ -210,7 +212,7 @@ class StaticContentHandlerTest {
         assertThat(handler.counter.get(), is(1));
     }
 
-    private static void assertHttpException(Runnable runnable, Http.Status status) {
+    private static void assertHttpException(Runnable runnable, Status status) {
         try {
             runnable.run();
             throw new AssertionError("Expected HttpException was not thrown!");
@@ -222,7 +224,7 @@ class StaticContentHandlerTest {
         }
     }
 
-    private ServerRequest mockRequestWithPath(Http.Method method, String path) {
+    private ServerRequest mockRequestWithPath(Method method, String path) {
         UriPath uriPath = UriPath.create(path);
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
@@ -236,7 +238,7 @@ class StaticContentHandlerTest {
         when(request.path()).thenReturn(new RoutedPath() {
             @Override
             public Parameters pathParameters() {
-                return Parameters.empty("unit-template-params");
+                return Parameters.empty("http/path");
             }
 
             @Override
@@ -287,7 +289,7 @@ class StaticContentHandlerTest {
         }
 
         @Override
-        boolean doHandle(Http.Method method,
+        boolean doHandle(Method method,
                          String requestedResource,
                          ServerRequest req,
                          ServerResponse res,
@@ -315,7 +317,7 @@ class StaticContentHandlerTest {
         }
 
         @Override
-        boolean doHandle(Http.Method method, String path, ServerRequest request, ServerResponse response, boolean mapped)
+        boolean doHandle(Method method, String path, ServerRequest request, ServerResponse response, boolean mapped)
                 throws IOException, URISyntaxException {
             super.doHandle(method, path, request, response, mapped);
             this.counter.incrementAndGet();

@@ -18,6 +18,7 @@ package io.helidon.common.pki;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.metadata.Configured;
@@ -51,7 +52,7 @@ interface PemKeysBlueprint {
      * @return passphrase used to encrypt the private key
      */
     @ConfiguredOption(key = "key.passphrase")
-    @Prototype.Confidential
+    @Option.Confidential
     Optional<char[]> keyPassphrase();
 
     /**

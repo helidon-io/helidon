@@ -31,20 +31,20 @@ class StreamBuffer {
     private final Lock streamLock = new ReentrantLock();
     private final Semaphore dequeSemaphore = new Semaphore(1);
     private final Queue<Http2FrameData> buffer = new ArrayDeque<>();
+    private final Http2ClientStream stream;
     private final int streamId;
-    private final Duration timeout;
 
-    StreamBuffer(int streamId, Duration timeout) {
+    StreamBuffer(Http2ClientStream stream, int streamId) {
+        this.stream = stream;
         this.streamId = streamId;
-        this.timeout = timeout;
     }
 
-    Http2FrameData poll() {
+    Http2FrameData poll(Duration timeout) {
         try {
             // Block deque thread when queue is empty
             // avoid CPU burning
             if (!dequeSemaphore.tryAcquire(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
-                throw new StreamTimeoutException(streamId, timeout);
+                throw new StreamTimeoutException(stream, streamId, timeout);
             }
         } catch (InterruptedException e) {
             throw new IllegalStateException("Interrupted while waiting for data", e);

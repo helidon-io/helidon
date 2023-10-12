@@ -29,7 +29,7 @@ public class Catalog implements HttpService {
     @Override
     public void routing(HttpRules rules) {
         rules.get("/", this::list)
-                .get("/{id}", (req, res) -> getSingle(res, req.path().pathParameters().value("id")));
+                .get("/{id}", (req, res) -> getSingle(res, req.path().pathParameters().get("id")));
     }
 
     private void list(ServerRequest request, ServerResponse response) {

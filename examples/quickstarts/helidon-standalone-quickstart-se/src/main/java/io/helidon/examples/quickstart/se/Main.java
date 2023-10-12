@@ -16,7 +16,9 @@
 
 package io.helidon.examples.quickstart.se;
 
+import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
@@ -41,7 +43,12 @@ public final class Main {
         // load logging configuration
         LogConfig.configureRuntime();
 
+        // initialize global config from default configuration
+        Config config = Config.create();
+        Config.global(config);
+
         WebServer server = WebServer.builder()
+                .config(config.get("server"))
                 .routing(Main::routing)
                 .build()
                 .start();
@@ -53,8 +60,10 @@ public final class Main {
      * Updates HTTP Routing and registers observe providers.
      */
     static void routing(HttpRouting.Builder routing) {
-        GreetService greetService = new GreetService();
-        routing.register("/greet", greetService)
-                .addFeature(ObserveFeature.create());
+        Config config = Config.global();
+
+        routing.register("/greet", new GreetService())
+                .addFeature(OpenApiFeature.create(config.get("openapi")))
+                .addFeature(ObserveFeature.create(config.get("observe")));
     }
 }

@@ -23,8 +23,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
-        <artifactId>tests-project</artifactId>
+        <artifactId>helidon-microprofile-tests-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-arquillian</artifactId>
     <name>Helidon Microprofile Arquillian Integration</name>
@@ -53,13 +54,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.helidon.health</groupId>
-                    <artifactId>helidon-health-checks</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>helidon-microprofile-core</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -69,6 +64,14 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
         </dependency>
     </dependencies>
 </project>

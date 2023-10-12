@@ -18,18 +18,19 @@
  * {@link io.opentracing.contrib.tracerresolver.TracerResolver} tracing support.
  */
 module io.helidon.tracing.tracerresolver {
-    requires io.helidon.common;
-    requires io.helidon.common.config;
-    requires io.helidon.tracing;
-    requires io.helidon.tracing.providers.opentracing;
 
-    requires io.opentracing.util;
-    requires io.opentracing.noop;
-    requires io.opentracing.contrib.tracerresolver;
+    requires io.helidon.common.config;
+    requires io.helidon.common;
+    requires io.helidon.tracing.providers.opentracing;
+    requires io.helidon.tracing;
     requires io.opentracing.api;
+    requires io.opentracing.contrib.tracerresolver;
+    requires io.opentracing.noop;
+    requires io.opentracing.util;
 
     exports io.helidon.tracing.tracerresolver;
 
     provides io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider
             with io.helidon.tracing.tracerresolver.TracerResolverProvider;
+
 }

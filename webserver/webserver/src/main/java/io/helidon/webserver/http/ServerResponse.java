@@ -18,13 +18,18 @@ package io.helidon.webserver.http;
 
 import java.io.OutputStream;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseTrailers;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.spi.Sink;
 
 /**
@@ -37,7 +42,7 @@ public interface ServerResponse {
      * @param status HTTP status
      * @return this instance
      */
-    ServerResponse status(Http.Status status);
+    ServerResponse status(Status status);
 
     /**
      * Status of the response.
@@ -46,33 +51,33 @@ public interface ServerResponse {
      * @return this instance
      */
     default ServerResponse status(int status) {
-        return status(Http.Status.create(status));
+        return status(Status.create(status));
     }
 
     /**
-     * Configured HTTP status, if not configured, returns {@link Http.Status#OK_200}.
+     * Configured HTTP status, if not configured, returns {@link io.helidon.http.Status#OK_200}.
      *
      * @return status
      */
-    Http.Status status();
+    Status status();
 
     /**
      * Set a header. If the values are constant, please use
-     * {@link io.helidon.http.Http.Headers#create(io.helidon.http.Http.HeaderName, String...)} and store the header
-     * in a constant field and call {@link #header(io.helidon.http.Http.Header)}.
+     * {@link io.helidon.http.HeaderValues#create(io.helidon.http.HeaderName, String...)} and store the header
+     * in a constant field and call {@link #header(io.helidon.http.Header)}.
      *
      * @param name   header name
      * @param values value(s) of the header
      * @return this instance
      */
     default ServerResponse header(HeaderName name, String... values) {
-        return header(Http.Headers.create(name, values));
+        return header(HeaderValues.create(name, values));
     }
 
     /**
      * Not optimized method for setting a header.
      * Use for unknown headers, where {@link HeaderName} cannot be cached.
-     * Use {@link #header(io.helidon.http.Http.Header)} or {@link #header(HeaderName, String...)}
+     * Use {@link #header(io.helidon.http.Header)} or {@link #header(HeaderName, String...)}
      * otherwise.
      *
      * @param name   name of the header
@@ -80,7 +85,7 @@ public interface ServerResponse {
      * @return this instance
      */
     default ServerResponse header(String name, String... values) {
-        return header(Http.Headers.create(name, values));
+        return header(HeaderValues.create(name, values));
     }
 
     /**
@@ -90,7 +95,7 @@ public interface ServerResponse {
      * @return this instance
      * @see HeaderName
      */
-    ServerResponse header(Http.Header header);
+    ServerResponse header(Header header);
 
     /**
      * Send a response with no entity.
@@ -171,7 +176,7 @@ public interface ServerResponse {
     ServerResponse reroute(String path, UriQuery query);
 
     /**
-     * Continue processing with the next route (and if none found, return a {@link Http.Status#NOT_FOUND_404}).
+     * Continue processing with the next route (and if none found, return a {@link io.helidon.http.Status#NOT_FOUND_404}).
      * If any entity method was called, this method will throw an exception.
      *
      * @return this instance
@@ -185,6 +190,14 @@ public interface ServerResponse {
      * @return headers
      */
     ServerResponseHeaders headers();
+
+    /**
+     * Response trailers (mutable).
+     * @return trailers
+     * @throws java.lang.IllegalStateException if client didn't ask for trailers with {@code TE: trailers} header in request
+     * or response doesn't contain trailer declaration headers {@code Trailer: <trailer-name>}
+     */
+    ServerResponseTrailers trailers();
 
     /**
      * Description of the result of output stream processing.
@@ -202,7 +215,7 @@ public interface ServerResponse {
      * @param length content length
      */
     default void contentLength(long length) {
-        header(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(length)));
+        header(HeaderValues.create(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(length)));
     }
 
     /**
@@ -215,4 +228,11 @@ public interface ServerResponse {
     default <T extends Sink<?>> T sink(GenericType<T> sinkType) {
         throw new UnsupportedOperationException("No sink available for type " + sinkType);
     }
+
+    /**
+     * Configure a custom output stream to wrap the output stream of the response.
+     *
+     * @param filterFunction the function to replace output stream of this response with a user provided one
+     */
+    void streamFilter(UnaryOperator<OutputStream> filterFunction);
 }

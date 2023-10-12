@@ -18,16 +18,19 @@
  * Helidon ConfigBean Builder test Module (i.e., only common config and w/o config-driven services).
  */
 module io.helidon.builder.config.tests.test.config {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
-    requires static io.helidon.config.metadata;
-    requires io.helidon.common;
-    requires io.helidon.common.config;
+
     requires io.helidon.builder.api;
-    requires io.helidon.inject.configdriven.api;
+    requires io.helidon.common.config;
+    requires io.helidon.common;
     requires io.helidon.inject.api;
-    requires static io.helidon.inject.runtime;
+    requires io.helidon.inject.configdriven.api;
+
+    requires static io.helidon.config.metadata;
     requires static io.helidon.inject.configdriven.runtime;
+    requires static io.helidon.inject.runtime;
+    requires static jakarta.annotation;
+    requires static jakarta.inject;
 
     exports io.helidon.inject.configdriven.tests.config;
+
 }

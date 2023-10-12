@@ -19,8 +19,8 @@ package io.helidon.webserver.http;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 import io.helidon.webserver.Route;
@@ -58,7 +58,7 @@ public interface HttpRoute extends Route {
      * Fluent API builder for {@link HttpRoute}.
      */
     class Builder implements io.helidon.common.Builder<Builder, HttpRoute> {
-        private Predicate<Http.Method> methodPredicate = Http.Method.predicate();
+        private Predicate<Method> methodPredicate = Method.predicate();
         private PathMatcher pathMatcher = PathMatchers.any();
         private Handler handler;
 
@@ -77,8 +77,8 @@ public interface HttpRoute extends Route {
          * @param methods methods to handle
          * @return updated builder
          */
-        public Builder methods(Http.Method... methods) {
-            return methods(Http.Method.predicate(methods));
+        public Builder methods(Method... methods) {
+            return methods(Method.predicate(methods));
         }
 
         /**
@@ -87,7 +87,7 @@ public interface HttpRoute extends Route {
          * @param methodPredicate method predicate
          * @return updated builder
          */
-        public Builder methods(Predicate<Http.Method> methodPredicate) {
+        public Builder methods(Predicate<Method> methodPredicate) {
             this.methodPredicate = methodPredicate;
             return this;
         }
@@ -124,7 +124,7 @@ public interface HttpRoute extends Route {
             return this;
         }
 
-        Predicate<Http.Method> methodPredicate() {
+        Predicate<Method> methodPredicate() {
             return methodPredicate;
         }
 

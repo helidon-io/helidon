@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,19 +22,23 @@
  * @see
  * io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension
  */
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.datasource.hikaricp.cdi {
+
+    requires com.zaxxer.hikari;
+    requires jakarta.annotation;
+    requires microprofile.config.api;
+
+    requires static microprofile.metrics.api;
+
+    requires transitive io.helidon.integrations.datasource.cdi;
     requires transitive jakarta.cdi;
     requires transitive jakarta.inject;
     requires transitive java.sql;
-    requires jakarta.annotation;
-    requires microprofile.config.api;
-    requires transitive io.helidon.integrations.datasource.cdi;
-    requires static microprofile.metrics.api;
-    requires com.zaxxer.hikari;
 
     exports io.helidon.integrations.datasource.hikaricp.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension;
+
 }

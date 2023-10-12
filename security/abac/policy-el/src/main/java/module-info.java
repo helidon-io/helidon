@@ -18,14 +18,21 @@
  * Policy attribute validator.
  */
 module io.helidon.security.abac.policy.el {
-    requires io.helidon.security.providers.abac;
-    requires io.helidon.security.abac.policy;
+
+    requires io.helidon.security.util;
+    requires java.desktop;
+
     // expected to be provided by the actual EL implementation
     requires static jakarta.el;
-    requires java.desktop;
-    requires io.helidon.security.util;
+
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.security.abac.policy;
+    requires transitive io.helidon.security.providers.abac;
+    requires transitive io.helidon.security;
 
     exports io.helidon.security.abac.policy.el;
 
-    provides io.helidon.security.abac.policy.spi.PolicyExecutorService with io.helidon.security.abac.policy.el.JavaxElPolicyExecutorService;
+    provides io.helidon.security.abac.policy.spi.PolicyExecutorService
+            with io.helidon.security.abac.policy.el.JavaxElPolicyExecutorService;
+
 }

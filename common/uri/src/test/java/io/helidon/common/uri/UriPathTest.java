@@ -17,6 +17,8 @@
 package io.helidon.common.uri;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,5 +38,17 @@ class UriPathTest {
         UriPath path = UriPath.createFromDecoded("/my path");
         assertThat(path.path(), is("/my path"));
         assertThat(path.rawPath(), is("/my%20path"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "//foo/bar",
+            "//foo//bar",
+            "/foo//bar",
+            "/foo/bar",
+    })
+    void testDoubleSlash(String rawPath) {
+        UriPath path = UriPath.create(rawPath);
+        assertThat(path.path(), is("/foo/bar"));
     }
 }

@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 
 /**
  * Request to SPI {@link io.helidon.webclient.spi.WebClientService} that supports modification of the outgoing request.
@@ -35,12 +35,12 @@ public interface WebClientServiceRequest {
     ClientUri uri();
 
     /**
-     * Returns an HTTP request method. See also {@link io.helidon.http.Http.Method HTTP standard methods} utility class.
+     * Returns an HTTP request method. See also {@link io.helidon.http.Method HTTP standard methods} utility class.
      *
      * @return an HTTP method
-     * @see io.helidon.http.Http.Method
+     * @see io.helidon.http.Method
      */
-    Http.Method method();
+    Method method();
 
     /**
      * Returns an HTTP protocol ID, mapped to a specific version. This is the same ID that is used for ALPN

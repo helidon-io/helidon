@@ -15,8 +15,9 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.http.Http;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.http.Status;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
@@ -30,6 +31,8 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
+@AddConfig(key = "metrics.scoping.tag-enabled", value = "true")
+@AddConfig(key = "metrics.scoping.tag-name", value = "mp-config")
 class TestBasicPerformanceIndicators {
 
     @Inject
@@ -47,13 +50,13 @@ class TestBasicPerformanceIndicators {
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .get();
 
-        assertThat("Metrics /metrics/vendor URL HTTP status", response.getStatus(), is(Http.Status.OK_200.code()));
+        assertThat("Metrics /metrics/vendor URL HTTP status", response.getStatus(), is(Status.OK_200.code()));
 
         JsonObject vendorMetrics = response.readEntity(JsonObject.class);
 
         assertThat("Vendor metric requests.count present", vendorMetrics.containsKey("requests.count"), is(true));
 
-        // This test runs with extended KPI metrics disabled. Make sure the count and meter are still updated.
+        // This test runs with isExtended KPI metrics disabled. Make sure the count and meter are still updated.
         int count = vendorMetrics.getInt("requests.count");
         assertThat("requests.count", count, is(greaterThan(0)));
     }

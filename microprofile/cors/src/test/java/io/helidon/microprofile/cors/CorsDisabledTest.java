@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.cors;
 
-import io.helidon.http.Http;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.http.HeaderNames;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Entity;
@@ -28,7 +28,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.HeaderNames.ORIGIN;
+import static io.helidon.http.HeaderNames.ORIGIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -61,6 +61,6 @@ class CorsDisabledTest {
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat("Headers from successful response",
                    res.getHeaders().keySet(),
-                   not(hasItem(Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase())));
+                   not(hasItem(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase())));
     }
 }

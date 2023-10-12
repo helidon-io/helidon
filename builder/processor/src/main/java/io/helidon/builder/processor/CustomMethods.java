@@ -23,6 +23,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
+import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -227,9 +228,9 @@ record CustomMethods(List<CustomMethod> factoryMethods,
         // parameter and return type validation is to be done by method processor
         return customMethodsType.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isMethod)
-                .filter(TypeInfoPredicates::isStatic)
-                .filter(TypeInfoPredicates.hasAnnotation(requiredAnnotation))
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isStatic)
+                .filter(ElementInfoPredicates.hasAnnotation(requiredAnnotation))
                 .map(it -> {
                     // return type
                     TypeName returnType = it.typeName();
@@ -253,9 +254,7 @@ record CustomMethods(List<CustomMethod> factoryMethods,
 
                     // annotations to be added to generated code
                     List<String> annotations = it.findAnnotation(Types.PROTOTYPE_ANNOTATED_TYPE)
-                            .flatMap(Annotation::value)
-                            .map(annotation -> annotation.split(","))
-                            .map(List::of)
+                            .flatMap(Annotation::stringValues)
                             .orElseGet(List::of)
                             .stream()
                             .map(String::trim) // to remove spaces after commas when used

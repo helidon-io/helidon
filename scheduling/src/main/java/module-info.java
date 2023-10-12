@@ -26,11 +26,13 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "Scheduling"
 )
 module io.helidon.scheduling {
-    requires static io.helidon.common.features.api;
 
+    requires com.cronutils;
     requires io.helidon.common.config;
     requires io.helidon.common.configurable;
-    requires com.cronutils;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.scheduling;
+
 }

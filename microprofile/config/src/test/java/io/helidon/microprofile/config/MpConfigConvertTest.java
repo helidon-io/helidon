@@ -16,8 +16,9 @@
 package io.helidon.microprofile.config;
 
 import io.helidon.config.mp.MpConfig;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
+
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;

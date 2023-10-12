@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,10 @@ import io.github.classgraph.ScanResult;
 import io.github.classgraph.TypeArgument;
 import io.github.classgraph.TypeSignature;
 
-final class NativeUtil {
+/**
+ * Utilities to help with discovery and analysis of the image.
+ */
+public final class NativeUtil {
     private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_OBJECT = new HashMap<>();
 
     static {
@@ -73,6 +76,71 @@ final class NativeUtil {
         this.exclusion = exclusion;
     }
 
+    /**
+     * Create a new instance.
+     *
+     * @param tracer        tracer to log messages
+     * @param scan          classpath scan result
+     * @param classResolver resolver of class names to classes
+     * @param exclusion     excluded classes
+     * @return a new utility
+     */
+    public static NativeUtil create(NativeTrace tracer,
+                                    ScanResult scan,
+                                    Function<String, Class<?>> classResolver,
+                                    Function<Class<?>, Boolean> exclusion) {
+        return new NativeUtil(tracer, scan, classResolver, exclusion);
+    }
+
+    /**
+     * Get the type of the field.
+     *
+     * @param classResolver resolver of names to classes
+     * @param fieldInfo     field info to get type from
+     * @return class of the field
+     */
+    public Class<?> getSimpleType(Function<String, Class<?>> classResolver, FieldInfo fieldInfo) {
+        return getSimpleType(classResolver, fieldInfo::getTypeSignature, fieldInfo::getTypeDescriptor);
+    }
+
+    /**
+     * Find all classes annotated with the provided annotation.
+     *
+     * @param annotation annotation to look for
+     * @return set of annotated types
+     */
+    public Set<Class<?>> findAnnotated(String annotation) {
+        InclusionFilter inclusionFilter = new InclusionFilter(tracer, exclusion, "annotated by " + annotation);
+        ClassResolverMapper mapper = new ClassResolverMapper(tracer, classResolver, "annotated by " + annotation);
+
+        return scan.getClassesWithAnnotation(annotation)
+                .stream()
+                .map(mapper)
+                .filter(Objects::nonNull)
+                .filter(inclusionFilter)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Filter to exclude types that are marked as excluded.
+     *
+     * @param description filter description
+     * @return a new predicate
+     */
+    public Predicate<Class<?>> inclusionFilter(String description) {
+        return new InclusionFilter(tracer, exclusion, description);
+    }
+
+    /**
+     * Class mapper.
+     *
+     * @param description description of this instance
+     * @return a new mapper from class names to classes
+     */
+    public Function<String, Class<?>> classMapper(String description) {
+        return new StringClassResolverMapper(tracer, classResolver, description);
+    }
+
     Class<?> box(Class<?> primitiveClass) {
         Class<?> type = PRIMITIVES_TO_OBJECT.get(primitiveClass);
 
@@ -83,12 +151,15 @@ final class NativeUtil {
         return type;
     }
 
-    Class<?> getSimpleType(Function<String, Class<?>> classResolver, MethodParameterInfo paramInfo) {
+    /**
+     * Get the type of the parameter.
+     *
+     * @param classResolver resolver of names to classes
+     * @param paramInfo     parameter info to get type from
+     * @return class of the parameter
+     */
+    public Class<?> getSimpleType(Function<String, Class<?>> classResolver, MethodParameterInfo paramInfo) {
         return getSimpleType(classResolver, paramInfo::getTypeSignature, paramInfo::getTypeDescriptor);
-    }
-
-    Class<?> getSimpleType(Function<String, Class<?>> classResolver, FieldInfo fieldInfo) {
-        return getSimpleType(classResolver, fieldInfo::getTypeSignature, fieldInfo::getTypeDescriptor);
     }
 
     Class<?> getSimpleType(Function<String, Class<?>> classResolver,
@@ -138,12 +209,25 @@ final class NativeUtil {
         }
     }
 
-    boolean hasParams(Method method, Class<?>... params) {
+    /**
+     * Check if method has the required parameters.
+     *
+     * @param method method to check
+     * @param params parameters to expect
+     * @return {@code true} if parameters of the method match the expected parameters
+     */
+    public boolean hasParams(Method method, Class<?>... params) {
         Class<?>[] parameterTypes = method.getParameterTypes();
         return Arrays.equals(params, parameterTypes);
     }
 
-    Set<Class<?>> findSuperclasses(Class<?> aClass) {
+    /**
+     * Find all superclasses of this type.
+     *
+     * @param aClass type
+     * @return all super types
+     */
+    public Set<Class<?>> findSuperclasses(Class<?> aClass) {
         Set<Class<?>> result = new LinkedHashSet<>();
 
         Class<?> nextSuper = aClass.getSuperclass();
@@ -160,7 +244,13 @@ final class NativeUtil {
         return result;
     }
 
-    Set<Class<?>> findInterfaces(Class<?> aClass) {
+    /**
+     * Get all interfaces of the type.
+     *
+     * @param aClass class to get interfaces for
+     * @return set of interfaces with proper exclusions
+     */
+    public Set<Class<?>> findInterfaces(Class<?> aClass) {
         Set<Class<?>> result = new LinkedHashSet<>();
 
         for (Class<?> anInterface : aClass.getInterfaces()) {
@@ -229,19 +319,13 @@ final class NativeUtil {
                 });
     }
 
-    Set<Class<?>> findAnnotated(String annotation) {
-        InclusionFilter inclusionFilter = new InclusionFilter(tracer, exclusion, "annotated by " + annotation);
-        ClassResolverMapper mapper = new ClassResolverMapper(tracer, classResolver, "annotated by " + annotation);
-
-        return scan.getClassesWithAnnotation(annotation)
-                .stream()
-                .map(mapper)
-                .filter(Objects::nonNull)
-                .filter(inclusionFilter)
-                .collect(Collectors.toSet());
-    }
-
-    Set<Class<?>> findSubclasses(String superclassName) {
+    /**
+     * Find all direct subclasses of the provided type.
+     *
+     * @param superclassName type
+     * @return subclasses
+     */
+    public Set<Class<?>> findSubclasses(String superclassName) {
         ClassInfo superclass = scan.getClassInfo(superclassName);
 
         if (null == superclass) {
@@ -275,14 +359,6 @@ final class NativeUtil {
         } else {
             return subclasses;
         }
-    }
-
-    Predicate<Class<?>> inclusionFilter(String description) {
-        return new InclusionFilter(tracer, exclusion, description);
-    }
-
-    Function<String, Class<?>> classMapper(String description) {
-        return new StringClassResolverMapper(tracer, classResolver, description);
     }
 
     private static class InclusionFilter implements Predicate<Class<?>> {

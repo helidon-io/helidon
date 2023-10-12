@@ -30,10 +30,13 @@ import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.Status;
 
 /**
  * Request can be reused within a single thread, but it remembers all explicitly configured headers and URI.
@@ -100,7 +103,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param header header to set
      * @return updated request
      */
-    T header(Http.Header header);
+    T header(Header header);
 
     /**
      * Set an HTTP header.
@@ -109,8 +112,8 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param values header values
      * @return updated request
      */
-    default T header(Http.HeaderName name, String... values) {
-        return header(Http.Headers.create(name, true, false, values));
+    default T header(HeaderName name, String... values) {
+        return header(HeaderValues.create(name, true, false, values));
     }
 
     /**
@@ -120,8 +123,8 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param values header values
      * @return updated request
      */
-    default T header(Http.HeaderName name, List<String> values) {
-        return header(Http.Headers.create(name, values));
+    default T header(HeaderName name, List<String> values) {
+        return header(HeaderValues.create(name, values));
     }
 
     /**
@@ -276,10 +279,10 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      */
     default <E> E requestEntity(Class<E> type) throws HttpException {
         ClientResponseTyped<E> typedResponse = request(type);
-        if (typedResponse.status().family() == Http.Status.Family.SUCCESSFUL) {
+        if (typedResponse.status().family() == Status.Family.SUCCESSFUL) {
             return typedResponse.entity();
         }
-        if (typedResponse.status() == Http.Status.BAD_REQUEST_400) {
+        if (typedResponse.status() == Status.BAD_REQUEST_400) {
             throw new IllegalArgumentException("Failed to read entity, received bad request");
         }
         throw new IllegalStateException(typedResponse.status() + ": Failed to read entity, as response status is not success");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,5 +18,7 @@
  * Types that are security related and can be used across all components (servers, clients etc.).
  */
 module io.helidon.common.security {
+
     exports io.helidon.common.security;
+
 }

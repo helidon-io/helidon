@@ -15,16 +15,16 @@
  */
 package io.helidon.tests.integration.nativeimage.mp2;
 
+import io.helidon.common.Errors;
+import io.helidon.microprofile.cdi.Main;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 
-import io.helidon.common.Errors;
-import io.helidon.microprofile.cdi.Main;
-
-import static io.helidon.http.Http.Status.OK_200;
+import static io.helidon.http.Status.OK_200;
 
 /**
  * Main class of this integration test.

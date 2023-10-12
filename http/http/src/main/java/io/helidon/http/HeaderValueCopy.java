@@ -20,17 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 class HeaderValueCopy extends HeaderValueBase {
-    private final Http.Header original;
+    private final Header original;
     private List<String> values;
 
-    HeaderValueCopy(Http.Header header) {
-        super(header.headerName(), header.changing(), header.sensitive(), header.value());
+    HeaderValueCopy(Header header) {
+        super(header.headerName(), header.changing(), header.sensitive(), header.get());
 
         this.original = header;
     }
 
     @Override
-    public Http.HeaderValueWriteable addValue(String value) {
+    public HeaderWriteable addValue(String value) {
         if (values == null) {
             values = new ArrayList<>(original.allValues());
         }

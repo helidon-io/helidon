@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.auths.token;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.RestApi;
 
 class TokenAuthImpl implements TokenAuth {
@@ -32,14 +32,14 @@ class TokenAuthImpl implements TokenAuth {
     public CreateToken.Response createToken(CreateToken.Request request) {
         String apiPath = "/auth/" + path + "/create" + request.roleName().map(it -> "/" + it).orElse("");
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, CreateToken.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, CreateToken.Response.builder());
     }
 
     @Override
     public RenewToken.Response renew(RenewToken.Request request) {
         String apiPath = "/auth/" + path + "/renew";
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, RenewToken.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, RenewToken.Response.builder());
     }
 
     @Override

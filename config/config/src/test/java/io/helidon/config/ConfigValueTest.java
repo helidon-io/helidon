@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.config;
 
 import java.util.List;
@@ -21,6 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import io.helidon.common.GenericType;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -58,8 +61,18 @@ class ConfigValueTest {
             }
 
             @Override
-            public <N> ConfigValue<N> as(Function<CustomValue, N> mapper) {
+            public <N> ConfigValue<N> as(Function<? super CustomValue, ? extends N> mapper) {
                 return null;
+            }
+
+            @Override
+            public <N> io.helidon.common.config.ConfigValue<N> as(Class<N> type) {
+                throw new ConfigMappingException(key(), "test value cannot be mapped to other types.");
+            }
+
+            @Override
+            public <N> io.helidon.common.config.ConfigValue<N> as(GenericType<N> type) {
+                throw new ConfigMappingException(key(), "test value cannot be mapped to other types.");
             }
 
             @Override
@@ -89,8 +102,18 @@ class ConfigValueTest {
             }
 
             @Override
-            public <N> ConfigValue<N> as(Function<CustomValue, N> mapper) {
+            public <N> ConfigValue<N> as(Function<? super CustomValue, ? extends N> mapper) {
                 return null;
+            }
+
+            @Override
+            public <N> io.helidon.common.config.ConfigValue<N> as(Class<N> type) {
+                throw new ConfigMappingException(key(), "test value cannot be mapped to other types.");
+            }
+
+            @Override
+            public <N> io.helidon.common.config.ConfigValue<N> as(GenericType<N> type) {
+                throw new ConfigMappingException(key(), "test value cannot be mapped to other types.");
             }
 
             @Override

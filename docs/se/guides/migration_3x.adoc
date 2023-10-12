@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ available on the classpath.
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.webserver</groupId>
+    <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-reactive-webserver-http2</artifactId>
 </dependency>
 ----
@@ -91,7 +91,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.webserver</groupId>
+    <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-reactive-webserver-tyrus</artifactId>
 </dependency>
 ----
@@ -100,7 +100,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.webserver</groupId>
+    <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-reactive-webserver-websocket</artifactId>
 </dependency>
 ----

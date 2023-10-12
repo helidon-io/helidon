@@ -20,6 +20,7 @@ import java.net.SocketOption;
 import java.time.Duration;
 import java.util.Map;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -116,6 +117,6 @@ interface ConnectionConfigBlueprint {
      * @return socket options
      * @see java.net.StandardSocketOptions
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<SocketOption<?>, Object> socketOptions();
 }

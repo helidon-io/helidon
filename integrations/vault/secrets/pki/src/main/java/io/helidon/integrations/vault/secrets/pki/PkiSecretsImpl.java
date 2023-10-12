@@ -18,7 +18,7 @@ package io.helidon.integrations.vault.secrets.pki;
 
 import java.util.function.Function;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;
@@ -122,7 +122,7 @@ class PkiSecretsImpl implements PkiSecrets {
     public IssueCertificate.Response issueCertificate(IssueCertificate.Request request) {
         String apiPath = mount + "/issue/" + request.roleName();
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request,
+        return restApi.invokeWithResponse(Method.POST, apiPath, request,
                                           IssueCertificate.Response.builder()
                                                   .format(request.format()));
     }
@@ -131,7 +131,7 @@ class PkiSecretsImpl implements PkiSecrets {
     public SignCsr.Response signCertificateRequest(SignCsr.Request request) {
         String apiPath = mount + "/sign/" + request.roleName();
 
-        return restApi.invokeWithResponse(Http.Method.POST,
+        return restApi.invokeWithResponse(Method.POST,
                                           apiPath,
                                           request,
                                           SignCsr.Response.builder()
@@ -142,7 +142,7 @@ class PkiSecretsImpl implements PkiSecrets {
     public RevokeCertificate.Response revokeCertificate(RevokeCertificate.Request request) {
         String apiPath = mount + "/revoke";
 
-        return restApi.invokeWithResponse(Http.Method.POST,
+        return restApi.invokeWithResponse(Method.POST,
                                           apiPath,
                                           request,
                                           RevokeCertificate.Response.builder());

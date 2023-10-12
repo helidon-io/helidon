@@ -85,7 +85,7 @@ public interface RestServiceSettings {
     /**
      * Builder for {@link RestServiceSettings}.
      */
-    @Configured()
+    @Configured
     interface Builder extends io.helidon.common.Builder<Builder, RestServiceSettings> {
 
         /**
@@ -125,6 +125,7 @@ public interface RestServiceSettings {
          * @return updated builder
          */
         @ConfiguredOption(key = CorsEnabledServiceHelper.CORS_CONFIG_KEY,
+                          type = CrossOriginConfig.class,
                           kind = ConfiguredOption.Kind.MAP)
         Builder crossOriginConfig(CrossOriginConfig.Builder crossOriginConfigBuilder);
 

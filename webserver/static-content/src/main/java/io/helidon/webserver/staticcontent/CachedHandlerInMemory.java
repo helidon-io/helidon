@@ -23,10 +23,13 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpException;
+import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -38,11 +41,11 @@ record CachedHandlerInMemory(MediaType mediaType,
                              BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
                              byte[] bytes,
                              int contentLength,
-                             Http.Header contentLengthHeader) implements CachedHandler {
+                             Header contentLengthHeader) implements CachedHandler {
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
-                          Http.Method method,
+                          Method method,
                           ServerRequest request,
                           ServerResponse response,
                           String requestedResource) {
@@ -54,7 +57,7 @@ record CachedHandlerInMemory(MediaType mediaType,
 
         response.headers().contentType(mediaType);
 
-        if (method == Http.Method.GET) {
+        if (method == Method.GET) {
             send(request, response);
         } else {
             response.headers().set(contentLengthHeader());
@@ -67,21 +70,21 @@ record CachedHandlerInMemory(MediaType mediaType,
     private void send(ServerRequest request, ServerResponse response) {
         ServerRequestHeaders headers = request.headers();
 
-        if (headers.contains(Http.HeaderNames.RANGE)) {
+        if (headers.contains(HeaderNames.RANGE)) {
             long contentLength = contentLength();
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                    response,
-                                                                   headers.get(Http.HeaderNames.RANGE).values(),
+                                                                   headers.get(HeaderNames.RANGE).values(),
                                                                    contentLength);
             if (ranges.size() == 1) {
                 // single response
                 ByteRangeRequest range = ranges.get(0);
 
                 if (range.offset() > contentLength()) {
-                    throw new HttpException("Invalid range offset", Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+                    throw new HttpException("Invalid range offset", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
                 }
                 if (range.length() > (contentLength() - range.offset())) {
-                    throw new HttpException("Invalid length", Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+                    throw new HttpException("Invalid length", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
                 }
 
                 range.setContentRange(response);

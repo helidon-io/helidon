@@ -19,18 +19,17 @@ package io.helidon.webserver.http;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 
 class ServiceRules implements HttpRules {
-    private static final Predicate<Http.Method> ALWAYS_PREDICATE = new TruePredicate();
+    private static final Predicate<Method> ALWAYS_PREDICATE = new TruePredicate();
 
     private final HttpService theService;
     private final PathMatcher pathMatcher;
-    private final Predicate<Http.Method> methodPredicate;
+    private final Predicate<Method> methodPredicate;
     private final List<HttpRouteBase> routes = new LinkedList<>();
 
     ServiceRules() {
@@ -39,33 +38,29 @@ class ServiceRules implements HttpRules {
         this.methodPredicate = ALWAYS_PREDICATE;
     }
 
-    ServiceRules(HttpService theService, PathMatcher pathMatcher, Predicate<Http.Method> methodPredicate) {
+    ServiceRules(HttpService theService, PathMatcher pathMatcher, Predicate<Method> methodPredicate) {
         this.theService = theService;
         this.pathMatcher = pathMatcher;
         this.methodPredicate = methodPredicate;
     }
 
     @Override
-    public HttpRules register(Supplier<? extends HttpService>... services) {
-        for (Supplier<? extends HttpService> service : services) {
-            HttpService theService = service.get();
-            ServiceRules subRules = new ServiceRules(theService, PathMatchers.any(), ALWAYS_PREDICATE);
-            theService.routing(subRules);
+    public HttpRules register(HttpService... services) {
+        for (HttpService service : services) {
+            ServiceRules subRules = new ServiceRules(service, PathMatchers.any(), ALWAYS_PREDICATE);
+            service.routing(subRules);
             routes.add(subRules.build());
         }
-
         return this;
     }
 
     @Override
-    public HttpRules register(String pathPattern, Supplier<? extends HttpService>... services) {
-        for (Supplier<? extends HttpService> service : services) {
-            HttpService theService = service.get();
-            ServiceRules subRules = new ServiceRules(theService, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
-            theService.routing(subRules);
+    public HttpRules register(String pathPattern, HttpService... services) {
+        for (HttpService service : services) {
+            ServiceRules subRules = new ServiceRules(service, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
+            service.routing(subRules);
             routes.add(subRules.build());
         }
-
         return this;
     }
 
@@ -94,9 +89,9 @@ class ServiceRules implements HttpRules {
         }
     }
 
-    private static final class TruePredicate implements Predicate<Http.Method> {
+    private static final class TruePredicate implements Predicate<Method> {
         @Override
-        public boolean test(Http.Method httpMethod) {
+        public boolean test(Method httpMethod) {
             return true;
         }
 

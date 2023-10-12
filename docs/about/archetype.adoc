@@ -45,9 +45,9 @@ This option enables user to create Helidon project of their choice, suitable to 
 
 == Generated Application Structure
 
-User can scaffold a new Maven project based on these archetypes. See xref:cli.adoc[Helidon CLI] and our xref:../se/guides/quickstart.adoc[Helidon SE QuickStart Guide] or xref:../mp/guides/quickstart.adoc[Helidon MP QuickStart Guide] for details on usage.
+You can scaffold a new Maven project based on these archetypes. See xref:cli.adoc[Helidon CLI] and our xref:../se/guides/quickstart.adoc[Helidon SE QuickStart Guide] or xref:../mp/guides/quickstart.adoc[Helidon MP QuickStart Guide] for more information.
 
-Once the archetype is selected the other options have defaults and the project is generated in a directory named after the `artifactId` value. It mainly contains the following:
+Once the archetype is selected, the other options have defaults and the project is generated in a directory named after the `artifactId` value. It mainly contains the following:
 
 - Maven structure
 - skeletal application code
@@ -58,4 +58,4 @@ Once the archetype is selected the other options have defaults and the project i
 
 == Using Generated Application
 
-The easiest way to get started is follow instructions in README file and familiarize with layout and features provided to build upon them esp. look at the pom.xml. You will find the suitable Helidon parent pom, enabling the use of the different dependencies managed/provided by Helidon.
+The easiest way to get started is to follow the instructions in the `README` file and familiarize with layout and features provided to build upon them. In addition, look at the `pom.xml` files. You can find a suitable Helidon parent `pom` file that will enable you to use the different dependencies managed and provided by Helidon.

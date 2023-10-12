@@ -629,13 +629,13 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
             if (typeName == null) {
-                collector.fatal(getClass(), "Property \"type-name\" is required, but not set");
+                collector.fatal(getClass(), "Property \"typeName\" is required, but not set");
             }
             if (elementName == null) {
-                collector.fatal(getClass(), "Property \"element-name\" is required, but not set");
+                collector.fatal(getClass(), "Property \"elementName\" is required, but not set");
             }
             if (elementTypeKind == null) {
-                collector.fatal(getClass(), "Property \"element-type-kind\" is required, but not set");
+                collector.fatal(getClass(), "Property \"elementTypeKind\" is required, but not set");
             }
             collector.collect().checkValid();
         }

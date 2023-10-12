@@ -21,8 +21,8 @@ import java.util.Objects;
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
@@ -33,7 +33,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 
-import static io.helidon.http.Http.Headers.CONTENT_TYPE_JSON;
+import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
@@ -151,7 +151,7 @@ public class JsonbSupport implements MediaSupport {
         if (type.equals(JSON_OBJECT_TYPE)) {
             return WriterResponse.unsupported();
         }
-        if (requestHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
+        if (requestHeaders.contains(HeaderNames.CONTENT_TYPE)) {
             if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
                 return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
             }

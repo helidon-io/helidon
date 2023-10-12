@@ -75,7 +75,7 @@ is provided via the `ServerRequest` 's context object as shown next.
 
 [source,java]
 ----
-import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.webserver.ServerRequest;
 
 @Path("myresource")
 public class MyResource {

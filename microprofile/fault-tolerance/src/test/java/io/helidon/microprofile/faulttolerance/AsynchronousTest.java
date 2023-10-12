@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddBean;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

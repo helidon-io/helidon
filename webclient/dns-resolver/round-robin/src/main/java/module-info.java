@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.webclient.dns.resolver.roundrobin.RoundRobinDnsResolverProvider;
-import io.helidon.webclient.spi.DnsResolverProvider;
 
 /**
  * Helidon WebClient DNS Resolver Round Robin Support.
  * This implementation cycles through addresses from DNS lookup.
  */
 module io.helidon.webclient.dns.resolver.roundrobin {
-    requires io.helidon.webclient.api;
+
+    requires transitive io.helidon.webclient.api;
 
     exports io.helidon.webclient.dns.resolver.roundrobin;
 
-    provides DnsResolverProvider
-            with RoundRobinDnsResolverProvider;
+    provides io.helidon.webclient.spi.DnsResolverProvider
+            with io.helidon.webclient.dns.resolver.roundrobin.RoundRobinDnsResolverProvider;
+
 }

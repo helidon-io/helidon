@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@
  * Config Bundle module.
  */
 module io.helidon.bundles.config {
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.config.objectmapping;
+
     requires transitive io.helidon.config.hocon;
+    requires transitive io.helidon.config.objectmapping;
     requires transitive io.helidon.config.yaml;
+    requires transitive io.helidon.config;
+
 }

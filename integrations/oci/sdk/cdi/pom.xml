@@ -61,6 +61,14 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+          <groupId>io.helidon.config</groupId>
+          <artifactId>helidon-config-mp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.sdk</groupId>
+            <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
+        </dependency>
         <!-- For dependency convergence. To make sure we use Jersey version of org.apache.httpcomponents:httpclient and httpcore -->
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
@@ -141,8 +149,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.tests</groupId>
-            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

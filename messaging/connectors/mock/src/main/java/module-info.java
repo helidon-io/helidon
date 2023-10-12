@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,21 @@
 /**
  * Microprofile messaging MockConnector.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module helidon.messaging.mock {
+
+    requires hamcrest.all;
     requires java.logging;
+    requires microprofile.config.api;
+    requires org.reactivestreams;
 
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires org.reactivestreams;
-    requires io.helidon.common.reactive;
+
+    requires transitive io.helidon.common.reactive;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
-    requires hamcrest.all;
-    requires microprofile.config.api;
-
 
     exports io.helidon.messaging.connectors.mock;
+
 }

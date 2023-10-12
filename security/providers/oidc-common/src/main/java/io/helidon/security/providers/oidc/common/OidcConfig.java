@@ -307,6 +307,16 @@ import io.helidon.webclient.api.WebClientConfig;
  *     <td>Force https for redirects to identity provider.
  *     This is helpful if you have a frontend SSL or cloud load balancer in front and Helidon is serving plain http.</td>
  * </tr>
+ * <tr>
+ *     <td>{@code optional-audience}</td>
+ *     <td>{@code false}</td>
+ *     <td>Allow audience claim to be optional.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code check-audience}</td>
+ *     <td>{@code true}</td>
+ *     <td>Turn audience claim check on when {@code true} or off when {@code false}.</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig extends TenantConfigImpl {
@@ -625,44 +635,6 @@ public final class OidcConfig extends TenantConfigImpl {
      */
     public Duration tokenRefreshSkew() {
         return tokenRefreshSkew;
-    }
-
-    /**
-     * Cookie name.
-     *
-     * @return name of the cookie to use
-     * @see OidcConfig.Builder#cookieName(String)
-     * @deprecated use {@link #tokenCookieHandler()} instead
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public String cookieName() {
-        return tokenCookieHandler().cookieName();
-    }
-
-    /**
-     * Additional options of the cookie to use.
-     *
-     * @return cookie options to use in cookie string
-     * @see OidcConfig.Builder#cookieHttpOnly(Boolean)
-     * @see OidcConfig.Builder#cookieDomain(String)
-     * @deprecated please use {@link #tokenCookieHandler()} instead
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public String cookieOptions() {
-        return tokenCookieHandler().createCookieOptions();
-    }
-
-    /**
-     * Prefix of a cookie header formed by name and "=".
-     *
-     * @return prefix of cookie value
-     * @see OidcConfig.Builder#cookieName(String)
-     * @deprecated use {@link io.helidon.security.providers.oidc.common.OidcCookieHandler} instead, this method
-     * will no longer be avilable
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public String cookieValuePrefix() {
-        return tokenCookieHandler().cookieValuePrefix();
     }
 
     /**

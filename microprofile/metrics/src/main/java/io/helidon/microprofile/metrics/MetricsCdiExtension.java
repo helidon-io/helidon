@@ -42,17 +42,17 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
-import io.helidon.config.mp.MpConfig;
-import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.observe.metrics.MetricsFeature;
+import io.helidon.webserver.observe.metrics.MetricsObserver;
+import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -68,6 +68,7 @@ import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
@@ -103,49 +104,34 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * MetricsCdiExtension class.
  *
  * <p>
- *     Earlier versions of this class detected app-provided producer fields and methods and triggered creation and registration
- *     of the corresponding metrics upon such detection. As explained in this
- *     <a href="https://github.com/eclipse/microprofile-metrics/issues/456">MP metrics issue</a>
- *     and this <a href="https://github.com/eclipse/microprofile-metrics/pull/594">MP metrics PR</a>,
- *     this probably was never correct and does not work because {@code @Metric} no longer applies to producers per the
- *     MP metrics 3.0 spec. The issue and PR discussion explain how developers who provide their own producers should use
- *     CDI qualifiers on the producers (and, therefore, injection points) to avoid ambiguity between their own producers and
- *     producers written by vendors implementing MP metrics.
+ * Earlier versions of this class detected app-provided producer fields and methods and triggered creation and registration
+ * of the corresponding metrics upon such detection. As explained in this
+ * <a href="https://github.com/eclipse/microprofile-metrics/issues/456">MP metrics issue</a>
+ * and this <a href="https://github.com/eclipse/microprofile-metrics/pull/594">MP metrics PR</a>,
+ * this probably was never correct and does not work because {@code @Metric} no longer applies to producers per the
+ * MP metrics 3.0 spec. The issue and PR discussion explain how developers who provide their own producers should use
+ * CDI qualifiers on the producers (and, therefore, injection points) to avoid ambiguity between their own producers and
+ * producers written by vendors implementing MP metrics.
  *
- *     For Helidon, this means we no longer need to track producer fields and methods, nor do we need to augment injection points
- *     with our own {@code VendorProvided} qualifier to disambiguate, because we now rely on developers who write their own
- *     producers to avoid the ambiguity using qualifiers.
+ * For Helidon, this means we no longer need to track producer fields and methods, nor do we need to augment injection points
+ * with our own {@code VendorProvided} qualifier to disambiguate, because we now rely on developers who write their own
+ * producers to avoid the ambiguity using qualifiers.
  * </p>
  */
-public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature> {
-    private static final System.Logger LOGGER = System.getLogger(MetricsCdiExtension.class.getName());
-
+public class MetricsCdiExtension extends HelidonRestCdiExtension {
     static final Set<Class<? extends Annotation>> ALL_METRIC_ANNOTATIONS = Set.of(
             Counted.class, Timed.class, Gauge.class); // There is no annotation for histograms.
-
-    private static final Map<Class<? extends Annotation>, AnnotationLiteral<?>> INTERCEPTED_METRIC_ANNOTATIONS =
-            Map.of(
-                    Counted.class, InterceptorCounted.binding(),
-                    Timed.class, InterceptorTimed.binding());
-
-    private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
-            = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
-
-    private static final Set<Class<? extends Annotation>> METRIC_ANNOTATIONS_ON_ANY_ELEMENT =
-            new HashSet<>(ALL_METRIC_ANNOTATIONS) {
-                {
-                    remove(Gauge.class);
-                }
-            };
-
-
     static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "rest-request.enabled";
-    private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
-
     static final String SYNTHETIC_TIMER_METRIC_NAME = "REST.request";
     static final String SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME =
             SYNTHETIC_TIMER_METRIC_NAME + ".unmappedException.total";
-
+    static final Metadata SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA = Metadata.builder()
+            .withName(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME)
+            .withDescription("""
+                                     The total number of unmapped exceptions that occur from this RESTful resouce method since \
+                                     the start of the server.""")
+            .withUnit(MetricUnits.NONE)
+            .build();
     static final Metadata SYNTHETIC_TIMER_METADATA = Metadata.builder()
             .withName(SYNTHETIC_TIMER_METRIC_NAME)
             .withDescription("""
@@ -155,56 +141,135 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                                      duration and the 50th, 75th, 95th, 98th, 99th and 99.9th percentile.""")
             .withUnit(MetricUnits.NANOSECONDS)
             .build();
-
-    static final Metadata SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA = Metadata.builder()
-            .withName(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME)
-            .withDescription("""
-                                     The total number of unmapped exceptions that occur from this RESTful resouce method since \
-                                     the start of the server.""")
-            .withUnit(MetricUnits.NONE)
-            .build();
-
-    private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
-
+    private static final System.Logger LOGGER = System.getLogger(MetricsCdiExtension.class.getName());
+    private static final Map<Class<? extends Annotation>, AnnotationLiteral<?>> INTERCEPTED_METRIC_ANNOTATIONS =
+            Map.of(
+                    Counted.class, InterceptorCounted.binding(),
+                    Timed.class, InterceptorTimed.binding());
+    private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
+            = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
+    private static final Set<Class<? extends Annotation>> METRIC_ANNOTATIONS_ON_ANY_ELEMENT =
+            new HashSet<>(ALL_METRIC_ANNOTATIONS) {
+                {
+                    remove(Gauge.class);
+                }
+            };
+    private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
     private final List<RegistrationPrep> annotatedSites = new ArrayList<>();
-
-    private Errors.Collector errors = Errors.collector();
-
     private final Map<Class<?>, Set<Method>> methodsWithRestRequestMetrics = new HashMap<>();
     private final Set<Class<?>> restRequestMetricsClassesProcessed = new HashSet<>();
     private final Set<Method> restRequestMetricsToRegister = new HashSet<>();
-
     private final WorkItemsManager<MetricWorkItem> workItemsManager = WorkItemsManager.create();
-
     private final List<MetricAnnotationDiscoveryObserver> metricAnnotationDiscoveryObservers = new ArrayList<>();
     private final List<MetricRegistrationObserver> metricRegistrationObservers = new ArrayList<>();
-
     private final Map<Executable, List<MetricAnnotationDiscovery>> metricAnnotationDiscoveriesByExecutable = new HashMap<>();
-
     @SuppressWarnings("unchecked")
 
     // records stereotype annotations which have metrics annotations inside them
     private final Map<Class<?>, StereotypeMetricsInfo> stereotypeMetricsInfo = new HashMap<>();
-
-    @SuppressWarnings("unchecked")
-    private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
-        return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
-    }
+    private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
+    private Errors.Collector errors = Errors.collector();
 
     /**
      * Creates a new extension instance.
      */
     public MetricsCdiExtension() {
-        super(LOGGER, MetricsCdiExtension::createMetricsService, "metrics");
+        super(LOGGER, "observe.providers.metrics", "metrics");
     }
 
-    private static MetricsFeature createMetricsService(Config helidonConfig) {
-        MetricsFeature.Builder builder = MetricsFeature.builder()
-                .webContext("/metrics")
-                .config(helidonConfig);
+    /**
+     * Returns the real class of this object, skipping proxies.
+     *
+     * @param object The object.
+     * @return Its class.
+     */
+    static Class<?> getRealClass(Object object) {
+        Class<?> result = object.getClass();
+        while (result.isSynthetic()) {
+            result = result.getSuperclass();
+        }
+        return result;
+    }
 
-        return builder.build();
+    static MetricRegistry getMetricRegistry() {
+        return RegistryProducer.getDefaultRegistry();
+    }
+
+    static MetricRegistry getRegistryForSyntheticRestRequestMetrics() {
+        return RegistryProducer.getBaseRegistry();
+    }
+
+    /**
+     * Creates or looks up the {@code Timer} instance for measuring REST requests on any JAX-RS method.
+     *
+     * @param method the {@code Method} for which the Timer instance is needed
+     * @return the located or created {@code Timer}
+     */
+    static Timer restEndpointTimer(Method method) {
+        // By spec, the synthetic Timers are always in the base registry.
+        LOGGER.log(Level.DEBUG,
+                   () -> String.format("Registering synthetic SimpleTimer for %s#%s", method.getDeclaringClass().getName(),
+                                       method.getName()));
+        return getRegistryForSyntheticRestRequestMetrics()
+                .timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(method));
+    }
+
+    /**
+     * Creates or looks up the {@code Counter} instance for measuring REST requests on any JAX-RS method.
+     *
+     * @param method the {@code Method} for which the Counter instance is needed
+     * @return the located or created {@code Counter}
+     */
+    static Counter restEndpointCounter(Method method) {
+        LOGGER.log(Level.DEBUG,
+                   () -> String.format("Registering synthetic Counter for %s#%s", method.getDeclaringClass().getName(),
+                                       method.getName()));
+        return getRegistryForSyntheticRestRequestMetrics()
+                .counter(SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA, syntheticRestRequestMetricTags(method));
+    }
+
+    /**
+     * Creates the {@link MetricID} for the synthetic {@link Timed} metric we add to each JAX-RS method.
+     *
+     * @param method Java method of interest
+     * @return {@code MetricID} for the simpletimer for this Java method
+     */
+    static MetricID restEndpointTimerMetricID(Method method) {
+        return new MetricID(SYNTHETIC_TIMER_METRIC_NAME, syntheticRestRequestMetricTags(method));
+    }
+
+    /**
+     * Creates the {@link MetricID} for the synthetic {@link Counter} metric we add to each JAX-RS method.
+     *
+     * @param method Java method of interest
+     * @return {@code MetricID} for the counter for this Java method
+     */
+    static MetricID restEndpointCounterMetricID(Method method) {
+        return new MetricID(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME, syntheticRestRequestMetricTags(method));
+    }
+
+    /**
+     * Returns the {@code Tag} array for a synthetic {@code SimplyTimed} annotation.
+     *
+     * @param method the Java method of interest
+     * @return the {@code Tag}s indicating the class and method
+     */
+    static Tag[] syntheticRestRequestMetricTags(Method method) {
+        return new Tag[] {new Tag("class", method.getDeclaringClass().getName()),
+                new Tag("method", methodTagValueForSyntheticRestRequestMetric(method))};
+    }
+
+    /**
+     * Clears data structures.
+     * <p>
+     * CDI invokes the {@link #onShutdown(jakarta.enterprise.inject.spi.BeforeShutdown)} method when CDI is in play, but
+     * some tests do not use the CDI environment and need to invoke this method to do the clean-up.
+     * </p>
+     */
+    static void shutdown() {
+        MetricsFactory.closeAll();
+        RegistryFactory.closeAll();
     }
 
     /**
@@ -225,40 +290,58 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         metricRegistrationObservers.add(metricRegistrationObserver);
     }
 
-    private static <E extends Member & AnnotatedElement> void recordAnnotatedSite(
-            List<RegistrationPrep> sites,
-            E element,
-            Class<?> annotatedClass,
-            LookupResult<? extends Annotation> lookupResult,
-            Executable executable) {
-
-        Annotation annotation = lookupResult.getAnnotation();
-        RegistrationPrep registrationPrep = RegistrationPrep
-                .create(annotation, element, annotatedClass, lookupResult.getType(), executable);
-        sites.add(registrationPrep);
+    @Override
+    public void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
+        super.clearAnnotationInfo(adv);
+        methodsWithRestRequestMetrics.clear();
     }
 
-    private void registerMetricsForAnnotatedSites() {
-        for (RegistrationPrep registrationPrep : annotatedSites) {
-            metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable())
-                    .forEach(discovery -> {
-                        if (discovery.isActive()) { // All annotation discovery observers agreed to preserve the discovery.
-                            org.eclipse.microprofile.metrics.Metric metric =
-                                    registrationPrep.register(RegistryFactory
-                                                                      .getInstance()
-                                                                      .getRegistry(registrationPrep.scope()));
-                            MetricID metricID = new MetricID(registrationPrep.metricName(), registrationPrep.tags());
-                            metricRegistrationObservers.forEach(
-                                    o -> o.onRegistration(discovery, registrationPrep.metadata(), metricID, metric));
-                            workItemsManager.put(registrationPrep.executable(), registrationPrep.annotationType(),
-                                                 BasicMetricWorkItem
-                                                         .create(new MetricID(registrationPrep.metricName(),
-                                                                              registrationPrep.tags()),
-                                                                 metric));
-                        }
-                    });
+    // register metrics with server after security and when
+    // application scope is initialized
+
+    /**
+     * Register the Metrics observer with server observer feature.
+     * This is a CDI observer method invoked by CDI machinery.
+     *
+     * @param event  event object
+     * @param bm     CDI bean manager
+     * @param server Server CDI extension
+     */
+    public void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+                                Object event,
+                                BeanManager bm,
+                                ServerCdiExtension server) {
+        Errors problems = errors.collect();
+        errors = null;
+        if (problems.hasFatal()) {
+            throw new DeploymentException("Metrics module found issues with deployment: " + problems);
         }
-        annotatedSites.clear();
+
+        // this needs to be done early on, so the registry is configured before accessed
+        MetricsObserver observer = configure();
+
+        // Initialize our implementation
+        RegistryProducer.clearApplicationRegistry();
+
+        registerMetricsForAnnotatedSites();
+        registerAnnotatedGauges(bm);
+        registerRestRequestMetrics();
+
+        Set<String> vendorMetricsAdded = new HashSet<>();
+        vendorMetricsAdded.add(server.observeRouting());
+
+        // now we may have additional sockets we want to add vendor metrics to
+        componentConfig().get("vendor-metrics-routings")
+                .asList(String.class)
+                .orElseGet(List::of)
+                .forEach(routeName -> {
+                    if (!vendorMetricsAdded.contains(routeName)) {
+                        observer.configureVendorMetrics(server.serverNamedRoutingBuilder(routeName));
+                        vendorMetricsAdded.add(routeName);
+                    }
+                });
+
+        server.addObserver(observer);
     }
 
     @Override
@@ -297,19 +380,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
 
     }
 
-    private static Tag[] tags(String[] tagStrings) {
-        final List<Tag> result = new ArrayList<>();
-        for (int i = 0; i < tagStrings.length; i++) {
-            final int eq = tagStrings[i].indexOf("=");
-            if (eq > 0) {
-                final String tagName = tagStrings[i].substring(0, eq);
-                final String tagValue = tagStrings[i].substring(eq + 1);
-                result.add(new Tag(tagName, tagValue));
-            }
-        }
-        return result.toArray(new Tag[0]);
-    }
-
     Iterable<MetricWorkItem> workItems(Executable executable, Class<? extends Annotation> annotationType) {
         return workItemsManager.workItems(executable, annotationType);
     }
@@ -318,28 +388,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                                                      Class<? extends Annotation> annotationType,
                                                      Class<S> sClass) {
         return TypeFilteredIterable.create(workItems(executable, annotationType), sClass);
-    }
-
-    /**
-     * Returns the real class of this object, skipping proxies.
-     *
-     * @param object The object.
-     * @return Its class.
-     */
-    static Class<?> getRealClass(Object object) {
-        Class<?> result = object.getClass();
-        while (result.isSynthetic()) {
-            result = result.getSuperclass();
-        }
-        return result;
-    }
-
-    static MetricRegistry getMetricRegistry() {
-        return RegistryProducer.getDefaultRegistry();
-    }
-
-    static MetricRegistry getRegistryForSyntheticRestRequestMetrics() {
-        return RegistryProducer.getBaseRegistry();
     }
 
     /**
@@ -365,10 +413,176 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         restEndpointsMetricsEnabled = restEndpointsMetricsEnabled();
     }
 
+    boolean restEndpointsMetricsEnabled() {
+        try {
+            return chooseRestEndpointsSetting(((Config) (ConfigProvider.getConfig()))
+                                                      .get("metrics"));
+        } catch (Throwable t) {
+            LOGGER.log(Level.WARNING, "Error looking up config setting for enabling REST endpoints SimpleTimer metrics;"
+                    + " reporting 'false'", t);
+            return false;
+        }
+    }
+
     @Override
-    public void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
-        super.clearAnnotationInfo(adv);
-        methodsWithRestRequestMetrics.clear();
+    protected Config componentConfig() {
+        // Combine the Helidon-specific "metrics.xxx" settings with the MP
+        // "mp.metrics.xxx" settings into a single metrics config object.
+        Config rootConfig = rootConfig();
+
+        Map<String, String> mpConfigSettings = new HashMap<>();
+        Stream.of("tags", "appName")
+                .forEach(key -> {
+                    rootConfig.get("mp.metrics." + key)
+                            .asString()
+                            .ifPresent(value -> mpConfigSettings.put(key, value));
+                });
+
+        Config metricsConfig = super.componentConfig().detach();
+
+        Config.Builder builder = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource();
+        if (!mpConfigSettings.isEmpty()) {
+            builder.addSource(ConfigSources.create(mpConfigSettings));
+        }
+        if (metricsConfig.exists()) {
+            builder.addSource(ConfigSources.create(metricsConfig));
+        }
+        return builder.build();
+    }
+
+    private static <E extends Member & AnnotatedElement> void recordAnnotatedSite(
+            List<RegistrationPrep> sites,
+            E element,
+            Class<?> annotatedClass,
+            LookupResult<? extends Annotation> lookupResult,
+            Executable executable) {
+
+        Annotation annotation = lookupResult.getAnnotation();
+        RegistrationPrep registrationPrep = RegistrationPrep
+                .create(annotation, element, annotatedClass, lookupResult.getType(), executable);
+        sites.add(registrationPrep);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
+        return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
+    }
+
+    private static Tag[] tags(String[] tagStrings) {
+        final List<Tag> result = new ArrayList<>();
+        for (int i = 0; i < tagStrings.length; i++) {
+            final int eq = tagStrings[i].indexOf("=");
+            if (eq > 0) {
+                final String tagName = tagStrings[i].substring(0, eq);
+                final String tagValue = tagStrings[i].substring(eq + 1);
+                result.add(new Tag(tagName, tagValue));
+            }
+        }
+        return result.toArray(new Tag[0]);
+    }
+
+    private static boolean isStereotype(Annotation annotation) {
+        return annotation.annotationType().isAnnotationPresent(Stereotype.class);
+    }
+
+    private static String methodTagValueForSyntheticRestRequestMetric(Method method) {
+        StringBuilder methodTagValue = new StringBuilder(method.getName());
+        for (Parameter p : method.getParameters()) {
+            methodTagValue.append("_").append(prettyParamType(p));
+        }
+        return methodTagValue.toString();
+    }
+
+    private static String prettyParamType(Parameter parameter) {
+        return parameter.getType().isArray() || parameter.isVarArgs()
+                ? parameter.getType().getComponentType().getName() + "[]"
+                : parameter.getType().getName();
+    }
+
+    private static boolean chooseRestEndpointsSetting(Config metricsConfig) {
+        ConfigValue<Boolean> explicitRestEndpointsSetting =
+                metricsConfig.get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME).asBoolean();
+        boolean result = explicitRestEndpointsSetting.orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
+        if (explicitRestEndpointsSetting.isPresent()) {
+            LOGGER.log(Level.DEBUG, () -> String.format(
+                    "Support for MP REST.request metric and annotation handling explicitly set to %b in configuration",
+                    explicitRestEndpointsSetting.get()));
+        } else {
+            LOGGER.log(Level.DEBUG, () -> String.format(
+                    "Support for MP REST.request metric and annotation handling defaulted to %b",
+                    REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE));
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Number> typeToNumber(Class<?> clazz) {
+        Class<? extends Number> narrowedReturnType;
+        if (byte.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Byte.class;
+        } else if (short.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Short.class;
+        } else if (int.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Integer.class;
+        } else if (long.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Long.class;
+        } else if (float.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Float.class;
+        } else if (double.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = Double.class;
+        } else if (Number.class.isAssignableFrom(clazz)) {
+            narrowedReturnType = (Class<? extends Number>) clazz;
+        } else {
+            throw new IllegalArgumentException("Annotated gauge type must extend or be "
+                                                       + "assignment-compatible with Number but is " + clazz.getName());
+        }
+        return narrowedReturnType;
+    }
+
+    private MetricsObserver configure() {
+        Config config = componentConfig();
+
+        MetricsObserverConfig.Builder builder = MetricsObserver.builder();
+        builder.endpoint("/metrics")
+                .config(config);
+
+        // Initialize the metrics factory instance and, along with it, the system tags manager.
+        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+
+        Contexts.globalContext().register(metricsFactory);
+        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder().config(config);
+        MetricsConfig metricsConfig = metricsConfigBuilder.build();
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry(metricsConfig);
+        RegistryFactory.getInstance(meterRegistry); // initialize before first use
+        return builder.metricsConfig(metricsConfigBuilder)
+                .meterRegistry(meterRegistry)
+                .metricsConfig(MetricsConfig.builder(metricsConfig))
+                .build();
+    }
+
+    private void registerMetricsForAnnotatedSites() {
+        for (RegistrationPrep registrationPrep : annotatedSites) {
+            metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable())
+                    .forEach(discovery -> {
+                        if (discovery.isActive()) { // All annotation discovery observers agreed to preserve the discovery.
+                            org.eclipse.microprofile.metrics.Metric metric =
+                                    registrationPrep.register(RegistryFactory
+                                                                      .getInstance()
+                                                                      .getRegistry(registrationPrep.scope()));
+                            MetricID metricID = new MetricID(registrationPrep.metricName(), registrationPrep.tags());
+                            metricRegistrationObservers.forEach(
+                                    o -> o.onRegistration(discovery, registrationPrep.metadata(), metricID, metric));
+                            workItemsManager.put(registrationPrep.executable(), registrationPrep.annotationType(),
+                                                 BasicMetricWorkItem
+                                                         .create(new MetricID(registrationPrep.metricName(),
+                                                                              registrationPrep.tags()),
+                                                                 metric));
+                        }
+                    });
+        }
+        annotatedSites.clear();
     }
 
     /**
@@ -418,7 +632,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                                              pat.configureAnnotatedType().methods(),
                                              AnnotatedMethodConfigurator::getAnnotated,
                                              (BiFunction<AnnotatedMethodConfigurator<?>, Annotation,
-                                                       AnnotatedMethodConfigurator<?>>) AnnotatedMethodConfigurator::add);
+                                                     AnnotatedMethodConfigurator<?>>) AnnotatedMethodConfigurator::add);
     }
 
     private <T, C, A extends AnnotatedCallable<?>> void bindInterceptorsAndRecordDiscoveries(
@@ -468,10 +682,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 .forEach(this::recordIfMetricsRelatedStereotype);
     }
 
-    private static boolean isStereotype(Annotation annotation) {
-        return annotation.annotationType().isAnnotationPresent(Stereotype.class);
-    }
-
     private void recordIfMetricsRelatedStereotype(Annotation stereotypeAnnotation) {
         Class<? extends Annotation> candidateType = stereotypeAnnotation.annotationType();
         Set<Annotation> metricsRelatedAnnotations = Arrays.stream(candidateType.getAnnotations())
@@ -486,7 +696,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     /**
      * Collects all {@code LookupResult} objects for metrics annotations on a given annotated executable.
      *
-     * @param annotatedType the annotated type containing the constructor or method
+     * @param annotatedType   the annotated type containing the constructor or method
      * @param annotatedMember the constructor or method
      * @return {@code LookupResult} instances that apply to the executable
      */
@@ -501,15 +711,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         });
         return result;
     }
-
-//    private Set<Class<? extends Annotation>> metricsAnnotationClasses(Annotated annotated) {
-//        return annotated
-//                .getAnnotations()
-//                .stream()
-//                .map(Annotation::annotationType)
-//                .filter(METRIC_ANNOTATIONS::containsKey)
-//                .collect(Collectors.toSet());
-//    }
 
     /**
      * Checks to make sure the annotated type is not abstract and is not an interceptor.
@@ -541,9 +742,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
      */
     private void recordTimedForRestResources(@Observes
-                                                   @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class,
-                                                           DELETE.class, PATCH.class})
-                                                           ProcessAnnotatedType<?> pat) {
+                                             @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class,
+                                                     DELETE.class, PATCH.class})
+                                             ProcessAnnotatedType<?> pat) {
 
         /// Ignore abstract classes or interceptors. Make sure synthetic SimpleTimer creation is enabled, and if so record the
         // class and JAX-RS methods to use in later bean processing.
@@ -553,9 +754,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         }
 
         LOGGER.log(Level.DEBUG,
-                () -> "Processing @SyntheticRestRequest annotation for " + pat.getAnnotatedType()
-                        .getJavaClass()
-                        .getName());
+                   () -> "Processing @SyntheticRestRequest annotation for " + pat.getAnnotatedType()
+                           .getJavaClass()
+                           .getName());
 
         AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
         Class<?> clazz = configurator.getAnnotated()
@@ -567,53 +768,24 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember()
                                                                          .getModifiers()))
                 .forEach(annotatedMethodConfigurator ->
-                        JAX_RS_ANNOTATIONS.forEach(jaxRsAnnotation -> {
-                            AnnotatedMethod<?> annotatedMethod = annotatedMethodConfigurator.getAnnotated();
-                            if (annotatedMethod.isAnnotationPresent(jaxRsAnnotation)) {
-                                Method m = annotatedMethod.getJavaMember();
-                                // For methods, add the SyntheticRestRequest annotation only on the declaring
-                                // class, not subclasses.
-                                if (clazz.equals(m.getDeclaringClass())) {
+                                 JAX_RS_ANNOTATIONS.forEach(jaxRsAnnotation -> {
+                                     AnnotatedMethod<?> annotatedMethod = annotatedMethodConfigurator.getAnnotated();
+                                     if (annotatedMethod.isAnnotationPresent(jaxRsAnnotation)) {
+                                         Method m = annotatedMethod.getJavaMember();
+                                         // For methods, add the SyntheticRestRequest annotation only on the declaring
+                                         // class, not subclasses.
+                                         if (clazz.equals(m.getDeclaringClass())) {
 
-                                    LOGGER.log(Level.DEBUG, () -> String.format("Adding @SyntheticRestRequest to %s",
-                                            m.toString()));
-                                    annotatedMethodConfigurator.add(SyntheticRestRequest.Literal.getInstance());
-                                    methodsToRecord.add(m);
-                                }
-                            }
-                        }));
+                                             LOGGER.log(Level.DEBUG, () -> String.format("Adding @SyntheticRestRequest to %s",
+                                                                                         m.toString()));
+                                             annotatedMethodConfigurator.add(SyntheticRestRequest.Literal.getInstance());
+                                             methodsToRecord.add(m);
+                                         }
+                                     }
+                                 }));
         if (!methodsToRecord.isEmpty()) {
             methodsWithRestRequestMetrics.put(clazz, methodsToRecord);
         }
-    }
-
-    /**
-     * Creates or looks up the {@code Timer} instance for measuring REST requests on any JAX-RS method.
-     *
-     * @param method the {@code Method} for which the Timer instance is needed
-     * @return the located or created {@code Timer}
-     */
-    static Timer restEndpointTimer(Method method) {
-        // By spec, the synthetic Timers are always in the base registry.
-        LOGGER.log(Level.DEBUG,
-                () -> String.format("Registering synthetic SimpleTimer for %s#%s", method.getDeclaringClass().getName(),
-                        method.getName()));
-        return getRegistryForSyntheticRestRequestMetrics()
-                .timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(method));
-    }
-
-    /**
-     * Creates or looks up the {@code Counter} instance for measuring REST requests on any JAX-RS method.
-     *
-     * @param method the {@code Method} for which the Counter instance is needed
-     * @return the located or created {@code Counter}
-     */
-    static Counter restEndpointCounter(Method method) {
-        LOGGER.log(Level.DEBUG,
-                   () -> String.format("Registering synthetic Counter for %s#%s", method.getDeclaringClass().getName(),
-                                       method.getName()));
-        return getRegistryForSyntheticRestRequestMetrics()
-                .counter(SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA, syntheticRestRequestMetricTags(method));
     }
 
     private void registerAndSaveRestRequestMetrics(Method method) {
@@ -622,51 +794,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                                                                  restEndpointTimer(method),
                                                                  restEndpointCounterMetricID(method),
                                                                  restEndpointCounter(method)));
-    }
-
-    /**
-     * Creates the {@link MetricID} for the synthetic {@link Timed} metric we add to each JAX-RS method.
-     *
-     * @param method Java method of interest
-     * @return {@code MetricID} for the simpletimer for this Java method
-     */
-    static MetricID restEndpointTimerMetricID(Method method) {
-        return new MetricID(SYNTHETIC_TIMER_METRIC_NAME, syntheticRestRequestMetricTags(method));
-    }
-
-    /**
-     * Creates the {@link MetricID} for the synthetic {@link Counter} metric we add to each JAX-RS method.
-     *
-     * @param method Java method of interest
-     * @return {@code MetricID} for the counter for this Java method
-     */
-    static MetricID restEndpointCounterMetricID(Method method) {
-        return new MetricID(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME, syntheticRestRequestMetricTags(method));
-    }
-
-    /**
-     * Returns the {@code Tag} array for a synthetic {@code SimplyTimed} annotation.
-     *
-     * @param method the Java method of interest
-     * @return the {@code Tag}s indicating the class and method
-     */
-    static Tag[] syntheticRestRequestMetricTags(Method method) {
-        return new Tag[] {new Tag("class", method.getDeclaringClass().getName()),
-                new Tag("method", methodTagValueForSyntheticRestRequestMetric(method))};
-    }
-
-    private static String methodTagValueForSyntheticRestRequestMetric(Method method) {
-        StringBuilder methodTagValue = new StringBuilder(method.getName());
-        for (Parameter p : method.getParameters()) {
-            methodTagValue.append("_").append(prettyParamType(p));
-        }
-        return methodTagValue.toString();
-    }
-
-    private static String prettyParamType(Parameter parameter) {
-        return parameter.getType().isArray() || parameter.isVarArgs()
-                ? parameter.getType().getComponentType().getName() + "[]"
-                : parameter.getType().getName();
     }
 
     private void collectRestRequestMetrics(@Observes ProcessManagedBean<?> pmb) {
@@ -695,106 +822,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         }
         restRequestMetricsClassesProcessed.clear();
         restRequestMetricsToRegister.clear();
-    }
-
-    boolean restEndpointsMetricsEnabled() {
-        try {
-            return chooseRestEndpointsSetting(((Config) (ConfigProvider.getConfig()))
-                    .get("metrics"));
-        } catch (Throwable t) {
-            LOGGER.log(Level.WARNING, "Error looking up config setting for enabling REST endpoints SimpleTimer metrics;"
-                    + " reporting 'false'", t);
-            return false;
-        }
-    }
-
-    // register metrics with server after security and when
-    // application scope is initialized
-    @Override
-    public HttpRules registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
-                                               Object adv,
-                                               BeanManager bm,
-                                               ServerCdiExtension server) {
-        Errors problems = errors.collect();
-        errors = null;
-        if (problems.hasFatal()) {
-            throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
-        }
-
-        HttpRules defaultRouting = super.registerService(adv, bm, server);
-        MetricsFeature metricsSupport = serviceSupport();
-
-        // Initialize our implementation
-        RegistryProducer.clearApplicationRegistry();
-
-        registerMetricsForAnnotatedSites();
-        registerAnnotatedGauges(bm);
-        registerRestRequestMetrics();
-
-        Set<String> vendorMetricsAdded = new HashSet<>();
-        vendorMetricsAdded.add("@default");
-
-        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsSettings.Builder.METRICS_CONFIG_KEY);
-
-        // now we may have additional sockets we want to add vendor metrics to
-        config.get("vendor-metrics-routings")
-                .asList(String.class)
-                .orElseGet(List::of)
-                .forEach(routeName -> {
-                    if (!vendorMetricsAdded.contains(routeName)) {
-                        metricsSupport.configureVendorMetrics(server.serverNamedRoutingBuilder(routeName));
-                        vendorMetricsAdded.add(routeName);
-                    }
-                });
-
-        // registry factory is available in global
-        Contexts.globalContext().register(RegistryFactory.getInstance());
-
-        return defaultRouting;
-    }
-
-    @Override
-    protected Config seComponentConfig() {
-        // Combine the Helidon-specific "metrics.xxx" settings with the MP
-        // "mp.metrics.xxx" settings into a single metrics config object.
-        Config mpConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
-
-        Map<String, String> mpConfigSettings = new HashMap<>();
-        Stream.of("tags", "appName")
-                .forEach(key -> {
-                    mpConfig.get("mp.metrics." + key)
-                            .asString()
-                            .ifPresent(value -> mpConfigSettings.put(key, value));
-                });
-
-        Config metricsConfig = mpConfig.get("metrics").detach();
-
-        Config.Builder builder = Config.builder()
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource();
-        if (!mpConfigSettings.isEmpty()) {
-            builder.addSource(ConfigSources.create(mpConfigSettings));
-        }
-        if (metricsConfig.exists()) {
-            builder.addSource(ConfigSources.create(metricsConfig));
-        }
-        return builder.build();
-    }
-
-    private static boolean chooseRestEndpointsSetting(Config metricsConfig) {
-        ConfigValue<Boolean> explicitRestEndpointsSetting =
-                metricsConfig.get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME).asBoolean();
-        boolean result = explicitRestEndpointsSetting.orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
-        if (explicitRestEndpointsSetting.isPresent()) {
-            LOGGER.log(Level.DEBUG, () -> String.format(
-                    "Support for MP REST.request metric and annotation handling explicitly set to %b in configuration",
-                    explicitRestEndpointsSetting.get()));
-        } else {
-            LOGGER.log(Level.DEBUG, () -> String.format(
-                    "Support for MP REST.request metric and annotation handling defaulted to %b",
-                    REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE));
-        }
-        return result;
     }
 
     private void recordAnnotatedGaugeSite(@Observes ProcessManagedBean<?> pmb) {
@@ -829,7 +856,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                         LOGGER.log(Level.WARNING, String.format("""
                                                @Gauge is configured on a bean %s that is neither ApplicationScoped nor \
                                                Singleton. This is most likely a bug. You may set 'metrics.warn-dependent' \
-                                               configuration option to 'false' to remove this warning.""", clazz.getName()));
+                                               configuration option to 'false' to remove this warning.""",
+                                                                clazz.getName()));
                     }
                 }
 
@@ -844,6 +872,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 LOGGER.log(Level.DEBUG, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
             });
         }
+    }
+
+    private void onShutdown(@Observes BeforeShutdown shutdown) {
+        shutdown();
     }
 
     private void registerAnnotatedGauges(BeanManager bm) {
@@ -864,10 +896,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 Gauge gaugeAnnotation = siteAnnotation(site, Gauge.class);
                 if (gaugeAnnotation == null) {
                     gaugeProblems.add(new IllegalArgumentException(
-                               String.format("""
-                                             Unable to find expected @Gauge annotation at previously-identified site %s; \
-                                             ignoring site""",
-                                             site.getJavaMember())));
+                            String.format("""
+                                                  Unable to find expected @Gauge annotation at previously-identified site %s; \
+                                                  ignoring site""",
+                                          site.getJavaMember())));
                 } else {
                     Metadata md = Metadata.builder()
                             .withName(gaugeID.getName())
@@ -914,7 +946,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     }
 
     private DelegatingGauge<? extends Number> buildDelegatingGauge(String gaugeName,
-                                                                         AnnotatedMethod<?> site, BeanManager bm) {
+                                                                   AnnotatedMethod<?> site, BeanManager bm) {
         Bean<?> bean = bm.getBeans(site.getJavaMember().getDeclaringClass())
                 .stream()
                 .findFirst()
@@ -927,30 +959,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 site.getJavaMember(),
                 getReference(bm, bean.getBeanClass(), bean),
                 narrowedReturnType);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends Number> typeToNumber(Class<?> clazz) {
-        Class<? extends Number> narrowedReturnType;
-        if (byte.class.isAssignableFrom(clazz)) {
-            narrowedReturnType = Byte.class;
-        } else if (short.class.isAssignableFrom(clazz)) {
-            narrowedReturnType = Short.class;
-        } else if (int.class.isAssignableFrom(clazz)) {
-            narrowedReturnType = Integer.class;
-        } else if (long.class.isAssignableFrom(clazz)) {
-            narrowedReturnType = Long.class;
-        } else if (float.class.isAssignableFrom(clazz)) {
-            narrowedReturnType = Float.class;
-        } else if (double.class.isAssignableFrom(clazz)) {
-            narrowedReturnType = Double.class;
-        } else if (Number.class.isAssignableFrom(clazz)) {
-            narrowedReturnType = (Class<? extends Number>) clazz;
-        } else {
-            throw new IllegalArgumentException("Annotated gauge type must extend or be "
-                                                       + "assignment-compatible with Number but is " + clazz.getName());
-        }
-        return narrowedReturnType;
     }
 
     record StereotypeMetricsInfo(Set<Annotation> metricsAnnotations) {

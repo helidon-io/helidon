@@ -20,9 +20,9 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webclient.api.Proxy;
-import io.helidon.webclient.http1.Http1ClientRequest;
+import io.helidon.webclient.api.HttpClientRequest;
 
+import io.helidon.webclient.api.Proxy;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientProperties;
@@ -55,7 +55,7 @@ class ConfigTest {
                 .property(HelidonProperties.CONFIG, config.get("client"))
                 .build();
         HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
-        Http1ClientRequest request = connector.client().get();
+        HttpClientRequest request = connector.client().get();
         assertThat(request.followRedirects(), is(true));
     }
 
@@ -66,7 +66,7 @@ class ConfigTest {
                 .property(ClientProperties.FOLLOW_REDIRECTS, false)     // override
                 .build();
         HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
-        Http1ClientRequest request = connector.client().get();
+        HttpClientRequest request = connector.client().get();
         assertThat(request.followRedirects(), is(false));
     }
 

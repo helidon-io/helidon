@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -89,7 +90,7 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      * @return throwable classes to not be considered a failure
      * @see #applyOn()
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Class<? extends Throwable>> skipOn();
 
     /**
@@ -98,7 +99,7 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      * @return throwable classes to be considered a failure
      * @see #skipOn()
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Class<? extends Throwable>> applyOn();
 
     class BuilderDecorator implements Prototype.BuilderDecorator<CircuitBreakerConfig.BuilderBase<?, ?>> {

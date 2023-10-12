@@ -45,27 +45,26 @@ public final class Main {
 
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
+        Config.global(config);
 
-        WebServerConfig.Builder builder = WebServer.builder();
-        setup(builder, config);
-        WebServer server = builder.build().start();
+        WebServer server = WebServer.builder()
+                .config(config.get("server"))
+                .update(Main::setup)
+                .build()
+                .start();
+
         System.out.println("WEB server is up! http://localhost:" + server.port());
     }
 
     /**
      * Set up the server.
      */
-    static void setup(WebServerConfig.Builder server, Config config) {
+    static void setup(WebServerConfig.Builder server) {
         // Build server using three ports:
         // default public port, admin port, private port
-        server.config(config.get("server"))
-                .routing(Main::publicRouting)
-                // Add a set of routes on the named socket "admin"
-                .putSocket("admin", socket -> socket.from(server.sockets().get("admin"))
-                        .routing(Main::adminSocket))
-                // Add a set of routes on the named socket "private"
-                .putSocket("private", socket -> socket.from(server.sockets().get("admin"))
-                        .routing(Main::privateSocket));
+        server.routing(Main::publicRouting)
+                .routing("admin", Main::adminSocket)
+                .routing("private", Main::privateSocket);
     }
 
     /**

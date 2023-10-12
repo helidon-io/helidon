@@ -15,17 +15,18 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import java.lang.reflect.Method;
+
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
+
 import org.eclipse.microprofile.metrics.MetricID;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
-import java.lang.reflect.Method;
 
 @HelidonTest
 @Disabled // Need to revisit clearing out the repo of REST.request metrics between tests

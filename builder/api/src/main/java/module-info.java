@@ -18,8 +18,11 @@
  * The Builder API module.
  */
 module io.helidon.builder.api {
+
     requires transitive io.helidon.common;
+
     requires static io.helidon.common.config;
 
     exports io.helidon.builder.api;
+	
 }

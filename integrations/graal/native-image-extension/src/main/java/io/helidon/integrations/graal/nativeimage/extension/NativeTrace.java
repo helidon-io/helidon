@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,45 @@ package io.helidon.integrations.graal.nativeimage.extension;
 
 import java.util.function.Supplier;
 
-class NativeTrace {
+/**
+ * Tracing tool for native image analysis and registration of reflection.
+ */
+public class NativeTrace {
     private static final boolean TRACE_PARSING = NativeConfig.option("reflection.trace-parsing", false);
     private static final boolean TRACE = NativeConfig.option("reflection.trace", false);
 
-    void parsing(Supplier<String> message) {
+    /**
+     * Trace parsing message.
+     *
+     * @param message message
+     */
+    public void parsing(Supplier<String> message) {
         if (TRACE_PARSING) {
             System.out.println(message.get());
+        }
+    }
+
+    /**
+     * Trace the message.
+     *
+     * @param message message
+     */
+    public void trace(Supplier<String> message) {
+        if (TRACE) {
+            System.out.println(message.get());
+        }
+    }
+
+    /**
+     * Start a new section.
+     *
+     * @param message section name
+     */
+    public void section(Supplier<String> message) {
+        if (TRACE) {
+            System.out.println("***********************************");
+            System.out.println("** " + message.get());
+            System.out.println("***********************************");
         }
     }
 
@@ -32,20 +64,6 @@ class NativeTrace {
         if (TRACE_PARSING) {
             System.out.println(message.get());
             e.printStackTrace();
-        }
-    }
-
-    void trace(Supplier<String> message) {
-        if (TRACE) {
-            System.out.println(message.get());
-        }
-    }
-
-    void section(Supplier<String> message) {
-        if (TRACE) {
-            System.out.println("***********************************");
-            System.out.println("** " + message.get());
-            System.out.println("***********************************");
         }
     }
 }

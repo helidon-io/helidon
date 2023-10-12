@@ -16,13 +16,13 @@
 
 package io.helidon.examples.webserver.tutorial;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,10 +50,19 @@ public class MainTest {
     }
 
     @Test
-    public void testShutDown() {
+    public void testShutDown() throws InterruptedException {
         try (Http1ClientResponse response = client.post("/mgmt/shutdown").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(server.isRunning(), is(false));
+            assertThat(response.status(), is(Status.OK_200));
         }
+        // there may be some delay between the request being completed, and the server shutting down
+        // let's give it a second to shut down, then fail
+        for (int i = 0; i < 10; i++) {
+            if (server.isRunning()) {
+                Thread.sleep(100);
+            } else {
+                break;
+            }
+        }
+        assertThat(server.isRunning(), is(false));
     }
 }

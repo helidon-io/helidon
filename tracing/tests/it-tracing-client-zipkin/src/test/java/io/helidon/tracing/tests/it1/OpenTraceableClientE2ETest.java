@@ -26,15 +26,15 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.tracing.TracingFeature;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.providers.opentracing.OpenTracing;
 import io.helidon.tracing.providers.zipkin.ZipkinTracer;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.tracing.TracingFeature;
 
 import brave.Tracing;
 import brave.opentracing.BraveSpanContext;
@@ -47,7 +47,6 @@ import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -68,7 +67,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  */
 @ServerTest
-@Disabled("https://github.com/helidon-io/helidon/issues/7203")
 class OpenTraceableClientE2ETest {
     /**
      * We expect two client spans and two server spans.
@@ -129,7 +127,9 @@ class OpenTraceableClientE2ETest {
             fail("Timed out waiting to detect expected "
                     + EXPECTED_TRACE_EVENTS_COUNT
                     + "; remaining latch count: "
-                    + eventsLatch.getCount());
+                    + eventsLatch.getCount()
+                    + ", server spans: " + printSpans(SERVER_SPANS)
+                    + ", client spans: " + printSpans(CLIENT_SPANS));
         }
 
         assertThat("Client spans reported. Client: " + printSpans(CLIENT_SPANS) + ", Server: " + printSpans(SERVER_SPANS),

@@ -15,25 +15,19 @@
  */
 package io.helidon.microprofile.examples.cors;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
+import io.helidon.http.Method;
 import io.helidon.microprofile.server.Server;
-import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -56,11 +50,6 @@ import static org.hamcrest.Matchers.not;
 // 'java.util.List io.smallrye.jandex.ClassInfo.unsortedFields()'
 public class TestCORS {
 
-    private static final String JSON_MESSAGE_RESPONSE_LABEL = "message";
-    private static final String JSON_NEW_GREETING_LABEL = "greeting";
-
-    private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
-
     private static Http1Client client;
     private static Server server;
 
@@ -75,7 +64,6 @@ public class TestCORS {
                 .start();
         client = Http1Client.builder()
                 .baseUri("http://localhost:" + server.port())
-                .addMediaSupport(JsonpSupport.create())
                 .build();
     }
 
@@ -137,9 +125,9 @@ public class TestCORS {
 
         // Send the pre-flight request and check the response.
 
-        Http1ClientRequest req = client.method(Http.Method.OPTIONS)
+        Http1ClientRequest req = client.method(Method.OPTIONS)
                 .header(HeaderNames.ORIGIN, "http://foo.com")
-                .header(Http.HeaderNames.HOST, "here.com")
+                .header(HeaderNames.HOST, "here.com")
                 .header(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
         List<String> allowOrigins;
@@ -218,14 +206,14 @@ public class TestCORS {
     }
 
     private static String fromPayload(Http1ClientResponse response) {
-        JsonObject json = response.entity().as(JsonObject.class);
-        return json.getString(JSON_MESSAGE_RESPONSE_LABEL);
+        GreetingMessage message = response
+                .entity()
+                .as(GreetingMessage.class);
+        return message.getMessage();
     }
 
-    private static JsonObject toPayload(String message) {
-        JsonObjectBuilder builder = JSON_BF.createObjectBuilder();
-        return builder.add(JSON_NEW_GREETING_LABEL, message)
-                      .build();
+    private static GreetingMessage toPayload(String message) {
+        return  new GreetingMessage(message);
     }
 
     private static Http1ClientResponse putResponse(String path, String message) {

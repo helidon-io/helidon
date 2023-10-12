@@ -29,16 +29,19 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
+import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.BadRequestException;
+import io.helidon.http.DateTime;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Headers;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -49,6 +52,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 
+import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -109,7 +113,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
-        this.lastRequestTimestamp = Http.DateTime.timestamp();
+        this.lastRequestTimestamp = DateTime.timestamp();
     }
 
     @Override
@@ -130,17 +134,20 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 currentlyReadingPrologue = true;
                 HttpPrologue prologue = http1prologue.readPrologue();
                 currentlyReadingPrologue = false;
-                lastRequestTimestamp = Http.DateTime.timestamp();
+                lastRequestTimestamp = DateTime.timestamp();
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
+                ctx.remotePeer().tlsCertificates()
+                        .flatMap(TlsUtils::parseCn)
+                        .ifPresent(name -> headers.set(X_HELIDON_CN, name));
                 recvListener.headers(ctx, headers);
 
                 if (canUpgrade) {
-                    if (headers.contains(Http.HeaderNames.UPGRADE)) {
-                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(Http.HeaderNames.UPGRADE).value());
+                    if (headers.contains(HeaderNames.UPGRADE)) {
+                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(HeaderNames.UPGRADE).get());
                         if (upgrader != null) {
                             ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
                             // upgrader may decide not to upgrade this connection
@@ -158,9 +165,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 }
                 if (requestSemaphore.tryAcquire()) {
                     try {
-                        this.lastRequestTimestamp = Http.DateTime.timestamp();
+                        this.lastRequestTimestamp = DateTime.timestamp();
                         route(prologue, headers);
-                        this.lastRequestTimestamp = Http.DateTime.timestamp();
+                        this.lastRequestTimestamp = DateTime.timestamp();
                     } finally {
                         requestSemaphore.release();
                     }
@@ -168,7 +175,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
                     throw RequestException.builder()
                             .setKeepAlive(false)
-                            .status(Http.Status.SERVICE_UNAVAILABLE_503)
+                            .status(Status.SERVICE_UNAVAILABLE_503)
                             .type(EventType.OTHER)
                             .message("Too Many Concurrent Requests")
                             .build();
@@ -199,7 +206,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     @Override
     public Duration idleTime() {
         if (upgradeConnection == null) {
-            return Duration.between(lastRequestTimestamp, Http.DateTime.timestamp());
+            return Duration.between(lastRequestTimestamp, DateTime.timestamp());
         }
         return upgradeConnection.idleTime();
     }
@@ -245,7 +252,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         if (maxPayloadSize != -1 && currentEntitySizeRead > maxPayloadSize) {
             throw RequestException.builder()
                     .type(EventType.BAD_REQUEST)
-                    .status(Http.Status.REQUEST_ENTITY_TOO_LARGE_413)
+                    .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
                     .request(DirectTransportRequest.create(prologue, headers))
                     .setKeepAlive(false)
                     .build();
@@ -282,16 +289,16 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private void route(HttpPrologue prologue, WritableHeaders<?> headers) {
         EntityStyle entity = EntityStyle.NONE;
 
-        if (headers.contains(Headers.TRANSFER_ENCODING_CHUNKED)) {
+        if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             entity = EntityStyle.CHUNKED;
             this.currentEntitySize = -1;
-        } else if (headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+        } else if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
             try {
-                this.currentEntitySize = headers.get(Http.HeaderNames.CONTENT_LENGTH).value(long.class);
+                this.currentEntitySize = headers.get(HeaderNames.CONTENT_LENGTH).get(long.class);
                 if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
                     throw RequestException.builder()
                             .type(EventType.BAD_REQUEST)
-                            .status(Http.Status.REQUEST_ENTITY_TOO_LARGE_413)
+                            .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
                             .request(DirectTransportRequest.create(prologue, headers))
                             .setKeepAlive(false)
                             .build();
@@ -319,7 +326,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    writer,
                                                                    request,
                                                                    !request.headers()
-                                                                           .contains(Headers.CONNECTION_CLOSE),
+                                                                           .contains(HeaderValues.CONNECTION_CLOSE),
                                                                    http1Config.validateResponseHeaders());
 
             routing.route(ctx, request, response);
@@ -330,7 +337,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         boolean expectContinue = false;
 
         // Expect: 100-continue
-        if (headers.contains(Headers.EXPECT_100)) {
+        if (headers.contains(HeaderValues.EXPECT_100)) {
             if (this.http1Config.continueImmediately()) {
                 writer.writeNow(BufferData.create(CONTINUE_100));
             }
@@ -340,8 +347,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         ContentDecoder decoder;
         if (contentEncodingContext.contentDecodingEnabled()) {
             // there may be some decoder used
-            if (headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
-                String contentEncoding = headers.get(Http.HeaderNames.CONTENT_ENCODING).value();
+            if (headers.contains(HeaderNames.CONTENT_ENCODING)) {
+                String contentEncoding = headers.get(HeaderNames.CONTENT_ENCODING).get();
                 if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
                     decoder = contentEncodingContext.decoder(contentEncoding);
                 } else {
@@ -356,7 +363,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             }
         } else {
             // Check whether Content-Encoding header is present when headers validation is enabled
-            if (http1Config.validateRequestHeaders() && headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
+            if (http1Config.validateRequestHeaders() && headers.contains(HeaderNames.CONTENT_ENCODING)) {
                 throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
                         .request(DirectTransportRequest.create(prologue, headers))
@@ -383,7 +390,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                writer,
                                                                request,
                                                                !request.headers()
-                                                                       .contains(Headers.CONNECTION_CLOSE),
+                                                                       .contains(HeaderValues.CONNECTION_CLOSE),
                                                                http1Config.validateResponseHeaders());
 
         routing.route(ctx, request, response);
@@ -402,7 +409,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response) {
-        if (response.headers().contains(Headers.CONNECTION_CLOSE) || request.content().consumed()) {
+        if (response.headers().contains(HeaderValues.CONNECTION_CLOSE) || request.content().consumed()) {
             // we do not care about request entity if connection is getting closed
             return;
         }
@@ -410,7 +417,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             request.content().consume();
         } catch (Exception e) {
-            boolean keepAlive = request.content().consumed() && response.headers().contains(Headers.CONNECTION_KEEP_ALIVE);
+            boolean keepAlive = request.content().consumed() && response.headers().contains(HeaderValues.CONNECTION_KEEP_ALIVE);
             // we must close connection, as we could not consume request
             if (!response.isSent()) {
                 throw new InternalServerException(e.getMessage(), e, keepAlive);
@@ -433,10 +440,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         BufferData buffer = BufferData.growing(128);
         ServerResponseHeaders headers = response.headers();
         if (!e.keepAlive()) {
-            headers.set(Http.Headers.CONNECTION_CLOSE);
+            headers.set(HeaderValues.CONNECTION_CLOSE);
         }
         byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
-        headers.set(Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
 
         Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive(),
                                            http1Config.validateResponseHeaders());
@@ -444,11 +451,12 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             buffer.write(message);
         }
 
+        sendListener.status(ctx, response.status());
         sendListener.headers(ctx, headers);
         sendListener.data(ctx, buffer);
         writer.write(buffer);
 
-        if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {
+        if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);
         }
     }

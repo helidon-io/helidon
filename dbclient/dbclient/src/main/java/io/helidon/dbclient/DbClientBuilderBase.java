@@ -34,6 +34,8 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
         implements DbClientBuilder<T> {
 
     private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
+    private final MapperManager.Builder mapperBuilder = MapperManager.builder();
+
     private String url;
     private String username;
     private String password;
@@ -53,6 +55,9 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
     public DbClient build() {
         if (dbMapperManager == null) {
             dbMapperManager = dbMapperBuilder.build();
+        }
+        if (mapperManager == null) {
+            mapperManager = mapperBuilder.build();
         }
         return doBuild();
     }

@@ -35,18 +35,25 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http1HeadersParser;
-import io.helidon.http.WritableHeaders;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
+import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.Proxy;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,16 +74,27 @@ class Http1ClientTest {
     public static final String VALID_HEADER_NAME = "Valid-Header-Name";
     public static final String BAD_HEADER_PATH = "/badHeader";
     public static final String HEADER_NAME_VALUE_DELIMETER = "->";
-    private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.create(
-            Http.HeaderNames.create("X-Req-Chunked"), "true");
-    private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.create(
-            Http.HeaderNames.create("X-Req-Expect100"), "true");
-    private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
+    private static final Header REQ_CHUNKED_HEADER = HeaderValues.create(
+            HeaderNames.create("X-Req-Chunked"), "true");
+    private static final Header REQ_EXPECT_100_HEADER_NAME = HeaderValues.create(
+            HeaderNames.create("X-Req-Expect100"), "true");
+    private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
     private static final Http1Client client = Http1Client.builder()
             .sendExpectContinue(false)
             .build();
     private static final int dummyPort = 1234;
+    private static final String TARGET_HOST = "www.oracle.com";
+    private static final String TARGET_URI_PATH = "/test";
+    public static final String PROXY_HOST = "http://www-proxy-hqdc.us.oracle.com";
+    public static final String PROXY_PORT = "80";
+
+    private enum RelativeUrisValue {
+        TRUE, FALSE, DEFAULT
+    }
+    private enum ProxyConfiguration {
+        UNSET, NO_PROXY, HTTP, HTTP_SET_NO_PROXY_HOST, SYSTEM_UNSET, SYSTEM_SET_PROXY, SYSTEM_SET_PROXY_AND_NON_PROXY_HOST
+    }
 
     @Test
     void testMaxHeaderSizeFail() {
@@ -122,7 +140,7 @@ class Http1ClientTest {
     void testChunk() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test");
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -134,8 +152,8 @@ class Http1ClientTest {
         String[] requestEntityParts = {"First"};
         long contentLength = requestEntityParts[0].length();
 
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
+                .header(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -146,7 +164,7 @@ class Http1ClientTest {
     void testForcedChunkNoContentLength() {
         String[] requestEntityParts = {"First"};
 
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test");
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -157,8 +175,8 @@ class Http1ClientTest {
     void testForcedChunkTransferEncodingChunked() {
         String[] requestEntityParts = {"First"};
 
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
+                .header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -167,6 +185,7 @@ class Http1ClientTest {
 
     @Test
     void testExpect100() {
+        LogConfig.configureRuntime();
         String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1Client client = Http1Client.builder()
@@ -200,7 +219,7 @@ class Http1ClientTest {
     @Test
     void testSkipUrlEncoding() {
         //Fill with chars which should be encoded
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/ěščžř")
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/ěščžř")
                 .queryParam("specialChar+", "someValue,").fragment("someFragment,");
         URI uri = request.resolvedUri().toUri();
         assertThat(uri.getRawPath(), is("/%C4%9B%C5%A1%C4%8D%C5%BE%C5%99"));
@@ -216,24 +235,59 @@ class Http1ClientTest {
 
     @ParameterizedTest
     @MethodSource("relativeUris")
-    void testRelativeUris(boolean relativeUris, boolean outputStream, String requestUri, String expectedUriStart) {
-        Http1Client client = Http1Client.builder().relativeUris(relativeUris).build();
-        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
-        Http1ClientRequest request = client.put(requestUri);
-        request.connection(connection);
-        HttpClientResponse response;
-        if (outputStream) {
-            response = getHttp1ClientResponseFromOutputStream(request, new String[] {"Sending Something"});
-        } else {
-            response = request.submit("Sending Something");
+    void testRelativeUris(ProxyConfiguration proxyConfig, RelativeUrisValue relativeUris, boolean outputStream, String requestUri, String expectedUriStart) {
+        Proxy proxy = null;
+        switch (proxyConfig) {
+        case UNSET -> {} // proxy is already initialized to null which is the goal of this condition, so no-op
+        case NO_PROXY -> proxy = Proxy.noProxy();
+            case HTTP -> proxy = createHttpProxyBuilder().build();
+            case HTTP_SET_NO_PROXY_HOST -> proxy = createHttpProxyBuilder().addNoProxy(TARGET_HOST).build();
+            case SYSTEM_UNSET -> proxy = Proxy.create();
+            case SYSTEM_SET_PROXY -> {
+                proxy = Proxy.create();
+                System.setProperty("http.proxyHost", PROXY_HOST);
+                System.setProperty("http.proxyPort", PROXY_PORT);
+            }
+            case SYSTEM_SET_PROXY_AND_NON_PROXY_HOST -> {
+                proxy = Proxy.create();
+                System.setProperty("http.proxyHost", PROXY_HOST);
+                System.setProperty("http.proxyPort", PROXY_PORT);
+                System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1|10.*.*.*|*.example.com|etc|" + TARGET_HOST);
+            }
         }
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        Http1Client client;
+        switch (relativeUris) {
+            case TRUE -> client = Http1Client.builder().relativeUris(true).build();
+            case FALSE -> client = Http1Client.builder().relativeUris(false).build();
+            default -> client = Http1Client.create();   // Don't set relativeUris and accept whatever is the default
+        }
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1ClientRequest request = proxy != null ? client.put(requestUri).proxy(proxy) : client.put(requestUri);
+        request.connection(connection);
+        HttpClientResponse response = outputStream
+                ? getHttp1ClientResponseFromOutputStream(request, new String[] {"Sending Something"})
+                : request.submit("Sending Something");
+
+        assertThat(response.status(), is(Status.OK_200));
         StringTokenizer st = new StringTokenizer(connection.getPrologue(), " ");
         // skip method part
         st.nextToken();
         // Validate URI part
         assertThat(st.nextToken(), startsWith(expectedUriStart));
+
+        // Clear proxy system properties that were set
+        switch (proxyConfig) {
+            case SYSTEM_SET_PROXY -> {
+                System.clearProperty("http.proxyHost");
+                System.clearProperty("http.proxyPort");
+            }
+            case SYSTEM_SET_PROXY_AND_NON_PROXY_HOST -> {
+                System.clearProperty("http.proxyHost");
+                System.clearProperty("http.proxyPort");
+                System.clearProperty("http.nonProxyHosts");
+            }
+        }
     }
 
     @ParameterizedTest
@@ -246,11 +300,11 @@ class Http1ClientTest {
                 })
                 .build();
         Http1ClientRequest request = clientValidateRequestHeaders.get("http://localhost:" + dummyPort + "/test");
-        request.header(Http.Headers.create("HeaderName", headerValues));
+        request.header(HeaderValues.create("HeaderName", headerValues));
         request.connection(new FakeHttp1ClientConnection());
         if (expectsValid) {
             HttpClientResponse response = request.request();
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.request());
         }
@@ -258,7 +312,7 @@ class Http1ClientTest {
 
     @ParameterizedTest
     @MethodSource("headers")
-    void testHeaders(Http.Header header, boolean expectsValid) {
+    void testHeaders(Header header, boolean expectsValid) {
         Http1Client clientValidateRequestHeaders = Http1Client.builder()
                 .protocolConfig(it -> {
                     it.validateRequestHeaders(true);
@@ -270,7 +324,7 @@ class Http1ClientTest {
         request.header(header);
         if (expectsValid) {
             HttpClientResponse response = request.request();
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.request());
         }
@@ -278,7 +332,7 @@ class Http1ClientTest {
 
     @ParameterizedTest
     @MethodSource("headers")
-    void testDisableHeaderValidation(Http.Header header, boolean expectsValid) {
+    void testDisableHeaderValidation(Header header, boolean expectsValid) {
         Http1Client clientWithDisabledHeaderValidation = Http1Client.builder()
                 .protocolConfig(it -> {
                     it.validateRequestHeaders(false);
@@ -290,9 +344,9 @@ class Http1ClientTest {
         request.connection(new FakeHttp1ClientConnection());
         HttpClientResponse response = request.submit("Sending Something");
         if (expectsValid) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         } else {
-            assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
         }
     }
 
@@ -310,8 +364,8 @@ class Http1ClientTest {
         String headerNameAndValue = headerName + HEADER_NAME_VALUE_DELIMETER + headerValue;
         if (expectsValid) {
             HttpClientResponse response = request.submit(headerNameAndValue);
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            assertThat(response.status(), is(Status.OK_200));
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.submit(headerNameAndValue));
@@ -330,8 +384,8 @@ class Http1ClientTest {
         Http1ClientRequest request = clientWithNoHeaderValidation.put("http://localhost:" + dummyPort + BAD_HEADER_PATH);
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = request.submit(headerName + HEADER_NAME_VALUE_DELIMETER + headerValue);
-        assertThat(response.status(), is(Http.Status.OK_200));
-        String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+        assertThat(response.status(), is(Status.OK_200));
+        String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
         assertThat(responseHeaderValue, is(headerValue.trim()));
     }
 
@@ -343,7 +397,7 @@ class Http1ClientTest {
         }
         Http1ClientResponse response = request.submit(requestEntity);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity().as(String.class), is(requestEntity));
     }
 
@@ -360,7 +414,7 @@ class Http1ClientTest {
     }
 
     private static void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         if (contentLength == NO_CONTENT_LENGTH) {
             assertThat(response.headers(), noHeader(REQ_CONTENT_LENGTH_HEADER_NAME));
         } else {
@@ -375,7 +429,7 @@ class Http1ClientTest {
         assertThat(responseEntity, is(entity));
     }
 
-    private static Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
+    private static Http1ClientRequest getHttp1ClientRequest(Method method, String uriPath) {
         return client.method(method).uri("http://localhost:" + dummyPort + uriPath);
     }
 
@@ -390,26 +444,82 @@ class Http1ClientTest {
         return response;
     }
 
+    private static Proxy.Builder createHttpProxyBuilder() {
+        return Proxy.builder()
+                .type(Proxy.ProxyType.HTTP)
+                .host(PROXY_HOST)
+                .port(Integer.parseInt(PROXY_PORT));
+    }
+
     private static Stream<Arguments> relativeUris() {
+        // Request type
+        boolean isOutputStream = true;
+        boolean isEntity = !isOutputStream;
+
         return Stream.of(
                 // OutputStream (chunk request)
-                arguments(false, true, "http://www.dummy.com/test", "http://www.dummy.com:80/"),
-                arguments(false, true, "http://www.dummy.com:1111/test", "http://www.dummy.com:1111/"),
-                arguments(false, true, "https://www.dummy.com/test", "https://www.dummy.com:443/"),
-                arguments(false, true, "https://www.dummy.com:1111/test", "https://www.dummy.com:1111/"),
-                arguments(true, true, "http://www.dummy.com/test", "/test"),
-                arguments(true, true, "http://www.dummy.com:1111/test", "/test"),
-                arguments(true, true, "https://www.dummy.com/test", "/test"),
-                arguments(true, true, "https://www.dummy.com:1111/test", "/test"),
+                // Expects absolute URI
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isOutputStream,
+                          "https://" + TARGET_HOST + TARGET_URI_PATH, "https://" + TARGET_HOST + ":443/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isOutputStream,
+                          "http://" + TARGET_HOST + ":1111/test", TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + ":1111/test", "http://" + TARGET_HOST + ":1111/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.DEFAULT, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                arguments(ProxyConfiguration.SYSTEM_SET_PROXY, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                // Expects relative URI
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isOutputStream,
+                          "https://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP_SET_NO_PROXY_HOST, RelativeUrisValue.DEFAULT, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.DEFAULT, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.DEFAULT, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.SYSTEM_UNSET, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.SYSTEM_SET_PROXY_AND_NON_PROXY_HOST, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
                 // non-OutputStream (single entity request)
-                arguments(false, false, "http://www.dummy.com/test", "http://www.dummy.com:80/"),
-                arguments(false, false, "http://www.dummy.com:1111/test", "http://www.dummy.com:1111/"),
-                arguments(false, false, "https://www.dummy.com/test", "https://www.dummy.com:443/"),
-                arguments(false, false, "https://www.dummy.com:1111/test", "https://www.dummy.com:1111/"),
-                arguments(true, false, "http://www.dummy.com/test", "/test"),
-                arguments(true, false, "http://www.dummy.com:1111/test", "/test"),
-                arguments(true, false, "https://www.dummy.com/test", "/test"),
-                arguments(true, false, "https://www.dummy.com:1111/test", "/test"));
+                // Expects absolute URI
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isEntity,
+                          "https://" + TARGET_HOST + TARGET_URI_PATH, "https://" + TARGET_HOST + ":443/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isEntity,
+                          "http://" + TARGET_HOST + ":1111/test", TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + ":1111/test", "http://" + TARGET_HOST + ":1111/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.DEFAULT, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                arguments(ProxyConfiguration.SYSTEM_SET_PROXY, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                // Expects relative URI
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isEntity,
+                          "https://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP_SET_NO_PROXY_HOST, RelativeUrisValue.DEFAULT, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.DEFAULT, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.DEFAULT, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.SYSTEM_UNSET, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.SYSTEM_SET_PROXY_AND_NON_PROXY_HOST, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH)
+        );
     }
 
     private static Stream<Arguments> headerValues() {
@@ -428,31 +538,31 @@ class Http1ClientTest {
     private static Stream<Arguments> headers() {
         return Stream.of(
                 // Valid headers
-                arguments(Http.Headers.ACCEPT_RANGES_BYTES, true),
-                arguments(Http.Headers.CONNECTION_KEEP_ALIVE, true),
-                arguments(Http.Headers.CONTENT_TYPE_TEXT_PLAIN, true),
-                arguments(Http.Headers.ACCEPT_TEXT, true),
-                arguments(Http.Headers.CACHE_NO_CACHE, true),
-                arguments(Http.Headers.TE_TRAILERS, true),
-                arguments(Http.Headers.create("!#$Custom~%&\'*Header+^`|", "!Header\tValue~"), true),
-                arguments(Http.Headers.create("Custom_0-9_a-z_A-Z_Header",
+                arguments(HeaderValues.ACCEPT_RANGES_BYTES, true),
+                arguments(HeaderValues.CONNECTION_KEEP_ALIVE, true),
+                arguments(HeaderValues.CONTENT_TYPE_TEXT_PLAIN, true),
+                arguments(HeaderValues.ACCEPT_TEXT, true),
+                arguments(HeaderValues.CACHE_NO_CACHE, true),
+                arguments(HeaderValues.TE_TRAILERS, true),
+                arguments(HeaderValues.create("!#$Custom~%&\'*Header+^`|", "!Header\tValue~"), true),
+                arguments(HeaderValues.create("Custom_0-9_a-z_A-Z_Header",
                                               "\u0080Header Value\u00ff"), true),
                 // Invalid headers
-                arguments(Http.Headers.create(VALID_HEADER_NAME, "H\u001ceaderValue1"), false),
-                arguments(Http.Headers.create(VALID_HEADER_NAME,
+                arguments(HeaderValues.create(VALID_HEADER_NAME, "H\u001ceaderValue1"), false),
+                arguments(HeaderValues.create(VALID_HEADER_NAME,
                                               "HeaderValue1, Header\u007fValue"), false),
-                arguments(Http.Headers.create(VALID_HEADER_NAME,
+                arguments(HeaderValues.create(VALID_HEADER_NAME,
                                               "HeaderValue1\u001f, HeaderValue2"), false),
-                arguments(Http.Headers.create("Header\u001aName", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("Header\u000EName", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("HeaderName\r\n", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("HeaderName\u00FF\u0124", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("(Header:Name)", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("<Header?Name>", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("{Header=Name}", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("\"HeaderName\"", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("[\\HeaderName]", VALID_HEADER_VALUE), false),
-                arguments(Http.Headers.create("@Header,Name;", VALID_HEADER_VALUE), false)
+                arguments(HeaderValues.create("Header\u001aName", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("Header\u000EName", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("HeaderName\r\n", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("HeaderName\u00FF\u0124", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("(Header:Name)", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("<Header?Name>", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("{Header=Name}", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("\"HeaderName\"", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("[\\HeaderName]", VALID_HEADER_VALUE), false),
+                arguments(HeaderValues.create("@Header,Name;", VALID_HEADER_VALUE), false)
         );
     }
 
@@ -648,8 +758,8 @@ class Http1ClientTest {
             WritableHeaders<?> reqHeaders = null;
             try {
                 reqHeaders = Http1HeadersParser.readHeaders(serverReader, 16384, false);
-                for (Iterator<Http.Header> it = reqHeaders.iterator(); it.hasNext(); ) {
-                    Http.Header header = it.next();
+                for (Iterator<Header> it = reqHeaders.iterator(); it.hasNext(); ) {
+                    Header header = it.next();
                     header.validate();
                 }
             } catch (IllegalArgumentException e) {
@@ -658,11 +768,11 @@ class Http1ClientTest {
 
             int entitySize = 0;
             if (!requestFailed) {
-                if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+                if (reqHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                     // Send 100-Continue if requested
-                    if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
+                    if (reqHeaders.contains(HeaderValues.EXPECT_100)) {
                         serverWriter.write(
-                                BufferData.create("HTTP/1.1 100 Continue\r\n".getBytes(StandardCharsets.UTF_8)));
+                                BufferData.create("HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8)));
                     }
 
                     // Assemble the entity from the chunks
@@ -678,8 +788,8 @@ class Http1ClientTest {
                         serverReader.skip(2);
                         entitySize += chunkLength;
                     }
-                } else if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-                    entitySize = reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value(int.class);
+                } else if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+                    entitySize = reqHeaders.get(HeaderNames.CONTENT_LENGTH).get(int.class);
                     if (entitySize > 0) {
                         entity.write(serverReader.getBuffer(entitySize));
                     }
@@ -687,17 +797,17 @@ class Http1ClientTest {
             }
 
             WritableHeaders<?> resHeaders = WritableHeaders.create();
-            resHeaders.add(Http.Headers.CONNECTION_KEEP_ALIVE);
+            resHeaders.add(HeaderValues.CONNECTION_KEEP_ALIVE);
 
             if (reqHeaders != null) {
                 // Send headers that can be validated if Expect-100-Continue, Content_Length, and Chunked request headers exist
-                if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
+                if (reqHeaders.contains(HeaderValues.EXPECT_100)) {
                     resHeaders.set(REQ_EXPECT_100_HEADER_NAME);
                 }
-                if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-                    resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value());
+                if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+                    resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(HeaderNames.CONTENT_LENGTH).get());
                 }
-                if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+                if (reqHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                     resHeaders.set(REQ_CHUNKED_HEADER);
                 }
             }
@@ -705,17 +815,17 @@ class Http1ClientTest {
             // if prologue contains "/badHeader" path, send back the entity (name and value delimited by ->) as a header
             if (getPrologue().contains(BAD_HEADER_PATH)) {
                 String[] header = entity.readString(entitySize, StandardCharsets.US_ASCII).split(HEADER_NAME_VALUE_DELIMETER);
-                resHeaders.add(Http.Headers.create(header[0], header[1]));
+                resHeaders.add(HeaderValues.create(header[0], header[1]));
             }
 
             String responseMessage = !requestFailed ? "HTTP/1.1 200 OK\r\n" : "HTTP/1.1 400 Bad Request\r\n";
             serverWriter.write(BufferData.create(responseMessage.getBytes(StandardCharsets.UTF_8)));
 
             // Send the headers
-            resHeaders.add(Http.HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
+            resHeaders.add(HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
             BufferData entityBuffer = BufferData.growing(128);
-            for (Http.Header header : resHeaders) {
-                header.writeHttp1Header(entityBuffer);
+            for (Header header : resHeaders) {
+header.writeHttp1Header(entityBuffer);
             }
             entityBuffer.write(Bytes.CR_BYTE);
             entityBuffer.write(Bytes.LF_BYTE);
@@ -733,6 +843,16 @@ class Http1ClientTest {
         @Override
         public void close() {
 
+        }
+
+        @Override
+        public void idle() {
+
+        }
+
+        @Override
+        public boolean isConnected() {
+            return true;
         }
 
         @Override

@@ -18,7 +18,7 @@ package io.helidon.integrations.vault.secrets.kv2;
 
 import java.util.Optional;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;
@@ -69,7 +69,7 @@ class Kv2SecretsImpl implements Kv2Secrets {
         }
         String apiPath = mount + "/data/" + path;
 
-        return restApi.invokeWithResponse(Http.Method.POST,
+        return restApi.invokeWithResponse(Method.POST,
                                           apiPath,
                                           request,
                                           UpdateKv2.Response.builder());

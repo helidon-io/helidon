@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
-import io.helidon.webserver.observe.info.InfoObserveProvider;
-import io.helidon.webserver.observe.spi.ObserveProvider;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer Observability Info Support.
  * Info allows configuration of custom properties to be available to users.
  * Info endpoint is unprotected by default and is available at {@code /observe/info} (configurable).
  */
+@Feature(value = "Info",
+         description = "WebServer Info observability support",
+         in = HelidonFlavor.SE,
+         path = {"Observe", "Info"})
 module io.helidon.webserver.observe.info {
-    requires io.helidon.config;
-    requires transitive io.helidon.webserver.observe;
-    requires io.helidon.webserver;
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.http.media.jsonp;
+    requires io.helidon.webserver;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.webserver.observe;
 
     exports io.helidon.webserver.observe.info;
 
-    provides ObserveProvider with InfoObserveProvider;
+    provides io.helidon.webserver.observe.spi.ObserveProvider
+            with io.helidon.webserver.observe.info.InfoObserveProvider;
+
 }

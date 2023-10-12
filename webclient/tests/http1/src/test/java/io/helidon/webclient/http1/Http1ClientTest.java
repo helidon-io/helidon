@@ -29,15 +29,18 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.GenericType;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientRequest;
@@ -48,6 +51,8 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,9 +61,11 @@ import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
 This class uses package local API to validate connection cache, and at the same time benefits from @ServerTest
@@ -66,19 +73,21 @@ that is why this tests is in this module, but in the wrong package
  */
 @ServerTest
 class Http1ClientTest {
-    private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
-            Http.HeaderNames.create("X-Req-Chunked"), "true");
-    private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
-            Http.HeaderNames.create("X-Req-Expect100"), "true");
-    private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
+    private static final Header REQ_CHUNKED_HEADER = HeaderValues.createCached(
+            HeaderNames.create("X-Req-Chunked"), "true");
+    private static final Header REQ_EXPECT_100_HEADER_NAME = HeaderValues.createCached(
+            HeaderNames.create("X-Req-Expect100"), "true");
+    private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
     private static final long NO_CONTENT_LENGTH = -1L;
 
     private final String baseURI;
     private final WebClient injectedHttp1client;
+    private final int plainPort;
 
     Http1ClientTest(WebServer webServer, WebClient client) {
         baseURI = "http://localhost:" + webServer.port();
+        plainPort = webServer.port();
         injectedHttp1client = client;
     }
 
@@ -136,7 +145,7 @@ class Http1ClientTest {
     void testChunk() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test");
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
@@ -146,11 +155,11 @@ class Http1ClientTest {
     void testChunkAndChunkResponse() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/chunkresponse");
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/chunkresponse");
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
-        assertThat(response.headers(), hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
+        assertThat(response.headers(), hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
     }
 
     @Test
@@ -158,8 +167,8 @@ class Http1ClientTest {
         String[] requestEntityParts = {"First"};
         long contentLength = requestEntityParts[0].length();
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
+                .header(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, false, contentLength, requestEntityParts[0]);
@@ -169,7 +178,7 @@ class Http1ClientTest {
     void testForcedChunkNoContentLength() {
         String[] requestEntityParts = {"First"};
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test");
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
@@ -179,8 +188,8 @@ class Http1ClientTest {
     void testForcedChunkTransferEncodingChunked() {
         String[] requestEntityParts = {"First"};
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
+                .header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
@@ -334,12 +343,12 @@ class Http1ClientTest {
         try (HttpClientResponse response = injectedHttp1client.put("/redirect")
                 .followRedirects(false)
                 .submit("Test entity")) {
-            assertThat(response.status(), is(Http.Status.FOUND_302));
+            assertThat(response.status(), is(Status.FOUND_302));
         }
 
         try (HttpClientResponse response = injectedHttp1client.put("/redirect")
                 .submit("Test entity")) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.lastEndpointUri().path().path(), is("/afterRedirect"));
             assertThat(response.as(String.class), is(EXPECTED_GET_AFTER_REDIRECT_STRING));
         }
@@ -350,13 +359,13 @@ class Http1ClientTest {
         try (HttpClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
                 .followRedirects(false)
                 .submit("Test entity")) {
-            assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
+            assertThat(response.status(), is(Status.TEMPORARY_REDIRECT_307));
         }
 
         try (HttpClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
                 .submit("Test entity")) {
             assertThat(response.lastEndpointUri().path().path(), is("/afterRedirect"));
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
     }
 
@@ -365,7 +374,7 @@ class Http1ClientTest {
         String testEntity = "Test entity";
         try (HttpClientResponse response = injectedHttp1client.put("/delayedEndpoint")
                 .submit(testEntity)) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(testEntity));
         }
 
@@ -376,12 +385,28 @@ class Http1ClientTest {
         assertThat(ste.getCause(), instanceOf(SocketTimeoutException.class));
     }
 
+    @Test
+    void testSchemeValidation() {
+        try (var r = Http1Client.builder()
+                .baseUri("test://localhost:" + plainPort + "/")
+                .shareConnectionCache(false)
+                .build()
+                .get("/")
+                .request()) {
+
+            fail("Should have failed because of invalid scheme.");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), startsWith("Not supported scheme test"));
+        }
+    }
+
+
     private static void validateSuccessfulResponse(Http1Client client) {
         String requestEntity = "Sending Something";
         Http1ClientRequest request = client.put("/test");
         ClientResponseTyped<String> response = request.submit(requestEntity, String.class);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is(requestEntity));
     }
 
@@ -393,7 +418,7 @@ class Http1ClientTest {
     }
 
     private static void validateChunkTransfer(HttpClientResponse response, boolean chunked, long contentLength, String entity) {
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         if (contentLength == NO_CONTENT_LENGTH) {
             assertThat(response.headers(), noHeader(REQ_CONTENT_LENGTH_HEADER_NAME));
         } else {
@@ -409,20 +434,20 @@ class Http1ClientTest {
     }
 
     private static void redirect(ServerRequest req, ServerResponse res) {
-        res.status(Http.Status.FOUND_302)
-                .header(Http.HeaderNames.LOCATION, "/afterRedirect")
+        res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, "/afterRedirect")
                 .send();
     }
 
     private static void redirectKeepMethod(ServerRequest req, ServerResponse res) {
-        res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                .header(Http.HeaderNames.LOCATION, "/afterRedirect")
+        res.status(Status.TEMPORARY_REDIRECT_307)
+                .header(HeaderNames.LOCATION, "/afterRedirect")
                 .send();
     }
 
     private static void afterRedirectGet(ServerRequest req, ServerResponse res) {
         if (req.content().hasEntity()) {
-            res.status(Http.Status.BAD_REQUEST_400)
+            res.status(Status.BAD_REQUEST_400)
                     .send("GET after redirect endpoint reached with entity");
             return;
         }
@@ -432,11 +457,11 @@ class Http1ClientTest {
     private static void afterRedirectPut(ServerRequest req, ServerResponse res) {
         String entity = req.content().as(String.class);
         if (!entity.equals("Test entity")) {
-            res.status(Http.Status.BAD_REQUEST_400)
+            res.status(Status.BAD_REQUEST_400)
                     .send("Entity was not kept the same after the redirect");
             return;
         }
-        res.status(Http.Status.NO_CONTENT_204)
+        res.status(Status.NO_CONTENT_204)
                 .send();
     }
 
@@ -455,13 +480,13 @@ class Http1ClientTest {
 
     private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) throws IOException {
         Headers reqHeaders = req.headers();
-        if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
+        if (reqHeaders.contains(HeaderValues.EXPECT_100)) {
             res.headers().set(REQ_EXPECT_100_HEADER_NAME);
         }
-        if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value());
+        if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(HeaderNames.CONTENT_LENGTH).get());
         }
-        if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+        if (reqHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             res.headers().set(REQ_CHUNKED_HEADER);
         }
 
@@ -497,7 +522,7 @@ class Http1ClientTest {
         });
     }
 
-    private HttpClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
+    private HttpClientRequest getHttp1ClientRequest(Method method, String uriPath) {
         return injectedHttp1client.method(method).uri(uriPath);
     }
 

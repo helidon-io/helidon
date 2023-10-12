@@ -24,13 +24,11 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-Helidon SE is a compact toolkit that embraces the latest Java SE features:
-reactive streams, asynchronous and functional programming, and fluent-style
-APIs.
+Helidon SE is Helidon's foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking.
 
 == Components
 
-The REST framework for Helidon SE is the Helidon WebServer. It is built on top of Netty and uses a straight forward request routing API.
+The REST framework for Helidon SE is the Helidon WebServer. It was built from the ground up to take full advantage of Java 21's virtual threads.
 
 Helidon SE supports a number of additional Helidon features:
 
@@ -64,7 +62,7 @@ Add support for CORS to your application using a Helidon module.
 .DB Client
 [icon=storage,link=dbclient.adoc]
 --
-Provides a unified, reactive API for working with databases in non-blocking way.
+Unified API for working with databases.
 --
 //GraphQL
 [CARD]
@@ -136,7 +134,7 @@ Profile and monitor your applications across multiple services.
 .WebClient
 [icon=http,link=webclient.adoc]
 --
-HTTP client that handles responses to the HTTP requests in a reactive way.
+A programmatic API to make HTTP requests.
 --
 
 //WebServer
@@ -144,12 +142,14 @@ HTTP client that handles responses to the HTTP requests in a reactive way.
 .WebServer
 [icon=settings_ethernet,link=webserver.adoc]
 --
-A programmatic HTTP API with reactive features, powered by Netty.
+A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests.
+// Each request runs in its own dedicated thread so it is free to perform blocking operations in a simple synchronous way without blocking a platform thread or starving other requests.
+
 --
 //WebSocket
 [CARD]
 .WebSocket
-[icon=timeline,link=websocket.adoc]
+[icon=sync_alt,link=websocket.adoc]
 --
 Enables Java applications to participate in WebSocket interactions as both servers and clients.
 --
@@ -160,10 +160,23 @@ Enables Java applications to participate in WebSocket interactions as both serve
 
 == Migration
 
-In case you need to upgrade the version of Helidon, follow the `upgrade guides`.
+Use the Helidon migration guides to upgrade your current version of Helidon.
 
 [PILLARS]
 ====
+[CARD]
+.Helidon SE 4x Migration Guide
+[icon=upgrade,link=guides/migration_3x.adoc]
+--
+Follow this guide to migrate your application from Helidon 3x to 4x.
+--
+[CARD]
+.Helidon SE 3x Migration Guide
+[icon=upgrade,link=guides/migration_3x.adoc]
+--
+Follow this guide to migrate your application from Helidon 2x to 3x.
+--
+
 [CARD]
 .Helidon SE 2x Migration Guide
 [icon=upgrade,link=guides/migration.adoc]
@@ -171,12 +184,7 @@ In case you need to upgrade the version of Helidon, follow the `upgrade guides`.
 Follow this guide to migrate your application from Helidon 1x to 2x.
 --
 
-[CARD]
-.Helidon SE 3x Migration Guide
-[icon=upgrade,link=guides/migration_3x.adoc]
---
-Follow this guide to migrate your application from Helidon 2x to 3x.
---
+
 
 ====
 

@@ -33,7 +33,7 @@ import io.helidon.webserver.http.HttpService;
  * Serves 'static content' (files) from filesystem or using a classloader to the
  * {@link io.helidon.webserver.WebServer WebServer}
  * {@link io.helidon.webserver.http.HttpRouting}. It is possible to
- * {@link io.helidon.webserver.http.HttpRouting.Builder#register(java.util.function.Supplier[]) register} it on the routing.
+ * {@link io.helidon.webserver.http.HttpRouting.Builder#register(HttpService[]) register} it on the routing.
  * <pre>{@code
  * // Serve content of attached '/static/pictures' on '/pics'
  * Routing.builder()

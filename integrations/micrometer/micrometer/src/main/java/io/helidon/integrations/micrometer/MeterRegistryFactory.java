@@ -29,7 +29,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -234,7 +234,7 @@ public final class MeterRegistryFactory {
                 .flatMap(Optional::stream)
                 .findFirst()
                 .orElse((req, res) -> res
-                        .status(Http.Status.NOT_ACCEPTABLE_406)
+                        .status(Status.NOT_ACCEPTABLE_406)
                         .send(NO_MATCHING_REGISTRY_ERROR_MESSAGE));
     }
 

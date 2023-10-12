@@ -121,7 +121,7 @@ final class MongoDbRow implements DbRow {
             }
             sb.append(col.name());
             sb.append(':');
-            sb.append(col.value().toString());
+            sb.append(col.get().toString());
         }
         sb.append('}');
         return sb.toString();

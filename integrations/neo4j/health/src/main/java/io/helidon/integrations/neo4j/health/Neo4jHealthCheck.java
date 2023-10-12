@@ -69,7 +69,7 @@ public class Neo4jHealthCheck implements HealthCheck {
                 var serverInfo = resultSummary.server();
 
                 var responseBuilder = builder
-                        .detail("server", serverInfo.version() + "@" + serverInfo.address())
+                        .detail("server", serverInfo.protocolVersion() + "@" + serverInfo.address())
                         .detail("edition", edition);
 
                 var databaseInfo = resultSummary.database();

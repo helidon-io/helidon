@@ -21,11 +21,12 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.common.uri.UriFragment;
 import io.helidon.common.tls.Tls;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Header;
+import io.helidon.http.Headers;
+import io.helidon.http.Method;
 
 import org.junit.jupiter.api.Test;
 
@@ -37,16 +38,16 @@ class HttpClientTest {
     // Validate that the Http Shortcut methods are using their corresponding HTTP Method
     @Test
     void testHttpMethodShortcuts() {
-        Map<Http.Method, FakeHttpClientRequest> map = Map.of(Http.Method.GET, new FakeHttpClient().get(),
-                                                             Http.Method.POST, new FakeHttpClient().post(),
-                                                             Http.Method.PUT, new FakeHttpClient().put(),
-                                                             Http.Method.DELETE, new FakeHttpClient().delete(),
-                                                             Http.Method.HEAD, new FakeHttpClient().head(),
-                                                             Http.Method.OPTIONS, new FakeHttpClient().options(),
-                                                             Http.Method.TRACE, new FakeHttpClient().trace(),
-                                                             Http.Method.PATCH, new FakeHttpClient().patch());
+        Map<Method, FakeHttpClientRequest> map = Map.of(Method.GET, new FakeHttpClient().get(),
+                                                        Method.POST, new FakeHttpClient().post(),
+                                                        Method.PUT, new FakeHttpClient().put(),
+                                                        Method.DELETE, new FakeHttpClient().delete(),
+                                                        Method.HEAD, new FakeHttpClient().head(),
+                                                        Method.OPTIONS, new FakeHttpClient().options(),
+                                                        Method.TRACE, new FakeHttpClient().trace(),
+                                                        Method.PATCH, new FakeHttpClient().patch());
 
-        for (Map.Entry<Http.Method, FakeHttpClientRequest> entry : map.entrySet()) {
+        for (Map.Entry<Method, FakeHttpClientRequest> entry : map.entrySet()) {
             assertThat(entry.getValue().getMethod(), is(entry.getKey()));
         }
     }
@@ -55,20 +56,20 @@ class HttpClientTest {
     @Test
     void testHttpMethodShortcutsWithUri() {
         String baseURI = "http://localhost:1234";
-        Map<Http.Method, FakeHttpClientRequest> map = Map.of(
+        Map<Method, FakeHttpClientRequest> map = Map.of(
                 // use the method name as the path of the URL passed as argument to the http method shortcut
                 // ex. http://localhost:1234/GET
-                Http.Method.GET, new FakeHttpClient().get(baseURI + "/" + Http.Method.GET.text()),
-                Http.Method.POST, new FakeHttpClient().post(baseURI + "/" + Http.Method.POST.text()),
-                Http.Method.PUT, new FakeHttpClient().put(baseURI + "/" + Http.Method.PUT.text()),
-                Http.Method.DELETE, new FakeHttpClient().delete(baseURI + "/" + Http.Method.DELETE.text()),
-                Http.Method.HEAD, new FakeHttpClient().head(baseURI + "/" + Http.Method.HEAD.text()),
-                Http.Method.OPTIONS, new FakeHttpClient().options(baseURI + "/" + Http.Method.OPTIONS.text()),
-                Http.Method.TRACE, new FakeHttpClient().trace(baseURI + "/" + Http.Method.TRACE.text()),
-                Http.Method.PATCH, new FakeHttpClient().patch(baseURI + "/" + Http.Method.PATCH.text())
+                Method.GET, new FakeHttpClient().get(baseURI + "/" + Method.GET.text()),
+                Method.POST, new FakeHttpClient().post(baseURI + "/" + Method.POST.text()),
+                Method.PUT, new FakeHttpClient().put(baseURI + "/" + Method.PUT.text()),
+                Method.DELETE, new FakeHttpClient().delete(baseURI + "/" + Method.DELETE.text()),
+                Method.HEAD, new FakeHttpClient().head(baseURI + "/" + Method.HEAD.text()),
+                Method.OPTIONS, new FakeHttpClient().options(baseURI + "/" + Method.OPTIONS.text()),
+                Method.TRACE, new FakeHttpClient().trace(baseURI + "/" + Method.TRACE.text()),
+                Method.PATCH, new FakeHttpClient().patch(baseURI + "/" + Method.PATCH.text())
         );
 
-        for (Map.Entry<Http.Method, FakeHttpClientRequest> entry : map.entrySet()) {
+        for (Map.Entry<Method, FakeHttpClientRequest> entry : map.entrySet()) {
             assertThat(entry.getValue().getMethod(), is(entry.getKey()));
             // validate that the URL path is the method name as passed on to the shortcut method during map init above
             assertThat(entry.getValue().getUri().getPath(), is("/" + entry.getKey().text()));
@@ -77,20 +78,20 @@ class HttpClientTest {
 
     static class FakeHttpClient implements HttpClient<FakeHttpClientRequest> {
         @Override
-        public FakeHttpClientRequest method(Http.Method method) {
+        public FakeHttpClientRequest method(Method method) {
             return new FakeHttpClientRequest(method);
         }
     }
 
     static class FakeHttpClientRequest implements ClientRequest<FakeHttpClientRequest> {
-        private final Http.Method method;
+        private final Method method;
         private URI uri;
 
-        FakeHttpClientRequest(Http.Method method) {
+        FakeHttpClientRequest(Method method) {
             this.method = method;
         }
 
-        public Http.Method getMethod() {
+        public Method getMethod() {
             return this.method;
         }
 
@@ -140,7 +141,7 @@ class HttpClientTest {
         }
 
         @Override
-        public FakeHttpClientRequest header(Http.Header header) {
+        public FakeHttpClientRequest header(Header header) {
             return this;
         }
 

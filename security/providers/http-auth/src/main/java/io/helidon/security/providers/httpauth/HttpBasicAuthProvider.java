@@ -56,16 +56,6 @@ import io.helidon.security.util.TokenHandler;
  * Provides support for username and password authentication, with support for roles list.
  */
 public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSecurityProvider {
-    /**
-     * Configure this for outbound requests to override user to use.
-     */
-    public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
-
-    /**
-     * Configure this for outbound requests to override password to use.
-     */
-    public static final String EP_PROPERTY_OUTBOUND_PASSWORD = "io.helidon.security.outbound.password";
-
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
     static final String BASIC_PREFIX = "basic ";
@@ -129,7 +119,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                                        EndpointConfig outboundEp) {
 
         // explicitly overridden username and/or password
-        if (outboundEp.abacAttributeNames().contains(EP_PROPERTY_OUTBOUND_USER)) {
+        if (outboundEp.abacAttributeNames().contains(EndpointConfig.PROPERTY_OUTBOUND_ID)) {
             return true;
         }
 
@@ -142,7 +132,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                                                      EndpointConfig outboundEp) {
 
         // explicit username in request properties
-        Optional<Object> maybeUsername = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
+        Optional<Object> maybeUsername = outboundEp.abacAttribute(EndpointConfig.PROPERTY_OUTBOUND_ID);
         if (maybeUsername.isPresent()) {
             String username = maybeUsername.get().toString();
             char[] password = passwordFromEndpoint(outboundEp);
@@ -182,7 +172,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                         .flatMap(this::credentialsFromSubject);
             }
 
-            Optional<char[]> overridePassword = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+            Optional<char[]> overridePassword = outboundEp.abacAttribute(EndpointConfig.PROPERTY_OUTBOUND_SECRET)
                     .map(String::valueOf)
                     .map(String::toCharArray);
 
@@ -201,7 +191,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
     }
 
     private char[] passwordFromEndpoint(EndpointConfig outboundEp) {
-        return outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+        return outboundEp.abacAttribute(EndpointConfig.PROPERTY_OUTBOUND_SECRET)
                 .map(String::valueOf)
                 .map(String::toCharArray)
                 .orElse(HttpBasicOutboundConfig.EMPTY_PASSWORD);

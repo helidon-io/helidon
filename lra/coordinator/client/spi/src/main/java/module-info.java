@@ -18,7 +18,9 @@
  * Abstract coordinator spi for easy switching used coordinator implementation.
  */
 module io.helidon.lra.coordinator.client {
+
     requires microprofile.lra.api;
 
     exports io.helidon.lra.coordinator.client;
+
 }

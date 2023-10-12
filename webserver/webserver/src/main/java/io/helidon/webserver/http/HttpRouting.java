@@ -29,12 +29,13 @@ import java.util.function.Supplier;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Weights;
 import io.helidon.http.DirectHandler;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerLifecycle;
@@ -85,7 +86,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
     }
 
     /**
-     * Empty routing (all requests will return {@link io.helidon.http.Http.Status#NOT_FOUND_404}.
+     * Empty routing (all requests will return {@link io.helidon.http.Status#NOT_FOUND_404}.
      *
      * @return empty routing
      */
@@ -142,10 +143,105 @@ public final class HttpRouting implements Routing, Prototype.Api {
      */
     public interface Builder extends HttpRules, io.helidon.common.Builder<Builder, HttpRouting> {
         @Override
-        Builder register(Supplier<? extends HttpService>... service);
+        Builder register(HttpService... service);
 
         @Override
-        Builder register(String path, Supplier<? extends HttpService>... service);
+        default Builder register(Supplier<? extends HttpService> service) {
+            HttpRules.super.register(service);
+            return this;
+        }
+
+        @Override
+        default Builder register(Supplier<? extends HttpService> service1, Supplier<? extends HttpService> service2) {
+            HttpRules.super.register(service1, service2);
+            return this;
+        }
+
+        @Override
+        default Builder register(Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3) {
+            HttpRules.super.register(service1, service2, service3);
+            return this;
+        }
+
+        @Override
+        default Builder register(Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3,
+                                 Supplier<? extends HttpService> service4) {
+            HttpRules.super.register(service1, service2, service3, service4);
+            return this;
+        }
+
+        @Override
+        default Builder register(Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3,
+                                 Supplier<? extends HttpService> service4,
+                                 Supplier<? extends HttpService> service5) {
+            HttpRules.super.register(service1, service2, service3, service4, service5);
+            return this;
+        }
+
+        @Override
+        default Builder register(List<Supplier<? extends HttpService>> services) {
+            HttpRules.super.register(services);
+            return this;
+        }
+
+        @Override
+        Builder register(String path, HttpService... service);
+
+        @Override
+        default Builder register(String pathPattern, Supplier<? extends HttpService> service) {
+            HttpRules.super.register(pathPattern, service);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern,
+                                 Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2) {
+            HttpRules.super.register(pathPattern, service1, service2);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern,
+                                 Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3) {
+            HttpRules.super.register(pathPattern, service1, service2, service3);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern,
+                                 Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3,
+                                 Supplier<? extends HttpService> service4) {
+            HttpRules.super.register(pathPattern, service1, service2, service3, service4);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern,
+                                 Supplier<? extends HttpService> service1,
+                                 Supplier<? extends HttpService> service2,
+                                 Supplier<? extends HttpService> service3,
+                                 Supplier<? extends HttpService> service4,
+                                 Supplier<? extends HttpService> service5) {
+            HttpRules.super.register(pathPattern, service1, service2, service3, service4, service5);
+            return this;
+        }
+
+        @Override
+        default Builder register(String pathPattern, List<Supplier<? extends HttpService>> services) {
+            HttpRules.super.register(pathPattern, services);
+            return this;
+        }
 
         @Override
         Builder route(HttpRoute route);
@@ -156,7 +252,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        default Builder route(Http.Method method, String pathPattern, Handler handler) {
+        default Builder route(Method method, String pathPattern, Handler handler) {
             return route(HttpRoute.builder()
                                  .methods(method)
                                  .path(pathPattern)
@@ -164,7 +260,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        default Builder route(Http.Method method, PathMatcher pathMatcher, Handler handler) {
+        default Builder route(Method method, PathMatcher pathMatcher, Handler handler) {
             return route(HttpRoute.builder()
                                  .path(pathMatcher)
                                  .methods(method)
@@ -172,7 +268,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        default Builder route(Predicate<Http.Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
+        default Builder route(Predicate<Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
             return route(HttpRoute.builder()
                                  .path(pathMatcher)
                                  .methods(methodPredicate)
@@ -180,7 +276,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        default Builder route(Http.Method method, Handler handler) {
+        default Builder route(Method method, Handler handler) {
             return route(HttpRoute.builder()
                                  .methods(method)
                                  .handler(handler));
@@ -189,7 +285,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder get(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.GET, pathPattern, handler);
+                route(Method.GET, pathPattern, handler);
             }
             return this;
         }
@@ -197,7 +293,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder get(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.GET, handler);
+                route(Method.GET, handler);
             }
             return this;
         }
@@ -205,7 +301,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder post(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.POST, pathPattern, handler);
+                route(Method.POST, pathPattern, handler);
             }
             return this;
         }
@@ -213,7 +309,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder post(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.POST, handler);
+                route(Method.POST, handler);
             }
             return this;
         }
@@ -221,7 +317,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder put(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.PUT, pathPattern, handler);
+                route(Method.PUT, pathPattern, handler);
             }
             return this;
         }
@@ -229,7 +325,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder put(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.PUT, handler);
+                route(Method.PUT, handler);
             }
             return this;
         }
@@ -237,7 +333,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder delete(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.DELETE, pathPattern, handler);
+                route(Method.DELETE, pathPattern, handler);
             }
             return this;
         }
@@ -245,7 +341,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder delete(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.DELETE, handler);
+                route(Method.DELETE, handler);
             }
             return this;
         }
@@ -253,7 +349,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder head(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.HEAD, pathPattern, handler);
+                route(Method.HEAD, pathPattern, handler);
             }
             return this;
         }
@@ -261,7 +357,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder head(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.HEAD, handler);
+                route(Method.HEAD, handler);
             }
             return this;
         }
@@ -269,7 +365,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder options(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.OPTIONS, pathPattern, handler);
+                route(Method.OPTIONS, pathPattern, handler);
             }
             return this;
         }
@@ -277,7 +373,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder options(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.OPTIONS, handler);
+                route(Method.OPTIONS, handler);
             }
             return this;
         }
@@ -285,7 +381,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder trace(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.TRACE, pathPattern, handler);
+                route(Method.TRACE, pathPattern, handler);
             }
             return this;
         }
@@ -293,7 +389,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder trace(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.TRACE, handler);
+                route(Method.TRACE, handler);
             }
             return this;
         }
@@ -301,7 +397,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder patch(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.PATCH, pathPattern, handler);
+                route(Method.PATCH, pathPattern, handler);
             }
             return this;
         }
@@ -309,7 +405,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         @Override
         default Builder patch(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.PATCH, handler);
+                route(Method.PATCH, handler);
             }
             return this;
         }
@@ -334,7 +430,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        default Builder route(Http.Method method, String pathPattern, Consumer<ServerRequest> handler) {
+        default Builder route(Method method, String pathPattern, Consumer<ServerRequest> handler) {
             return route(HttpRoute.builder()
                                  .methods(method)
                                  .path(pathPattern)
@@ -342,7 +438,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        default Builder route(Http.Method method, String pathPattern, Function<ServerRequest, ?> handler) {
+        default Builder route(Method method, String pathPattern, Function<ServerRequest, ?> handler) {
             return route(HttpRoute.builder()
                                  .methods(method)
                                  .path(pathPattern)
@@ -350,7 +446,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        default Builder route(Http.Method method, String pathPattern, Supplier<?> handler) {
+        default Builder route(Method method, String pathPattern, Supplier<?> handler) {
             return route(HttpRoute.builder()
                                  .methods(method)
                                  .path(pathPattern)
@@ -437,13 +533,13 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        public Builder register(Supplier<? extends HttpService>... service) {
+        public Builder register(HttpService... service) {
             mainRouting.service(service);
             return this;
         }
 
         @Override
-        public Builder register(String path, Supplier<? extends HttpService>... service) {
+        public Builder register(String path, HttpService... service) {
             mainRouting.service(path, service);
             return this;
         }
@@ -527,7 +623,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
                     LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than " + maxReRouteCount
                             + " times. Will not attempt further routing");
 
-                    throw new HttpException("Too many reroutes", Http.Status.INTERNAL_SERVER_ERROR_500, true);
+                    throw new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
                 }
 
                 result = doRoute(ctx, request, response);
@@ -619,13 +715,13 @@ public final class HttpRouting implements Routing, Prototype.Api {
         }
 
         @Override
-        public Builder register(Supplier<? extends HttpService>... service) {
+        public Builder register(HttpService... service) {
             rootRules.register(service);
             return this;
         }
 
         @Override
-        public Builder register(String pathPattern, Supplier<? extends HttpService>... service) {
+        public Builder register(String pathPattern, HttpService... service) {
             rootRules.register(pathPattern, service);
             return this;
         }
