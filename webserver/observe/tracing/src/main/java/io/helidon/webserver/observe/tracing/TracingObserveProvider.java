@@ -46,10 +46,10 @@ public class TracingObserveProvider implements ObserveProvider {
 
     @Override
     public Observer create(Config config, String name) {
+        Config tracingConfig = config.root().get("tracing");
         Tracer tracer = Contexts.globalContext()
                 .get(Tracer.class)
                 .orElseGet(() -> {
-                    Config tracingConfig = config.root().get("tracing");
                     if (tracingConfig.exists()) {
                         return TracerBuilder.create(tracingConfig)
                                 .build();
@@ -59,7 +59,8 @@ public class TracingObserveProvider implements ObserveProvider {
 
         return TracingObserverConfig.builder()
                 .tracer(tracer)
-                .config(config)
+                .config(tracingConfig) // read from root `tracing`
+                .config(config) // update with server.features.observe.tracing
                 .name(name)
                 .build();
     }

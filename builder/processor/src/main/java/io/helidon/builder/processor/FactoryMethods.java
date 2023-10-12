@@ -197,6 +197,20 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             }
         }
 
+        // if there is a "public static T create(io.helidon.commmon.config.Config)" method available, just use it
+        for (TypeInfo typeInfo : candidates) {
+            // similar to above - but we first want to find the best candidate, this is a fallback
+            TypeName candidateTypeName = typeInfo.typeName();
+            Optional<FactoryMethod> foundMethod = BuilderInfoPredicates.findMethod(
+                            new MethodSignature(candidateTypeName, createMethod, List.of(CONFIG_TYPE)),
+                            Set.of(TypeValues.MODIFIER_STATIC, TypeValues.MODIFIER_PUBLIC),
+                            typeInfo)
+                    .map(it -> new FactoryMethod(candidateTypeName, candidateTypeName, createMethod, CONFIG_TYPE));
+            if (foundMethod.isPresent()) {
+                return foundMethod;
+            }
+        }
+
         // this a best effort guess - it is a wrong type (we do not have a package)
         // if this ever fails, please file an issue, and we will improve this "algorithm"
         // we can actually find out if a type is not yet generated (it has Kind ERROR on its mirror)
