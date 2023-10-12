@@ -1,0 +1,30 @@
+name: Examples Check Badge
+on: [pull_request]
+
+jobs:
+  binder:
+    if: |
+      (
+        (github.event.issue.author_association == 'OWNER') ||
+        (github.event.issue.author_association == 'COLLABORATOR') ||
+        (github.event.issue.author_association == 'CONTRIBUTOR') ||
+        (github.event.issue.author_association == 'MEMBER')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps: 
+    - name: comment on PR with Binder link
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          var BRANCH_NAME = process.env.BRANCH_NAME;
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/${context.repo.owner}/${context.repo.repo}/${BRANCH_NAME}) :point_left: Launch a binder notebook on this branch`
+          }) 
+      env:
+        BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
