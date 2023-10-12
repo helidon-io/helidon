@@ -38,6 +38,7 @@
         <module>metrics</module>
         <module>objectstorage</module>
         <module>objectstorage-cdi</module>
+        <module>oci-secrets-mp-config-source</module>
         <module>vault</module>
         <module>vault-cdi</module>
     </modules>
