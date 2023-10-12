@@ -33,7 +33,6 @@ module io.helidon.webserver {
     requires io.helidon.common.uri;
     requires io.helidon.inject.api;  // needed to compile injection generated classes
     requires io.helidon.logging.common;
-    requires jakarta.annotation;
     requires java.logging; // only used to keep logging active until shutdown hook finishes
     requires java.management;
 
@@ -41,6 +40,7 @@ module io.helidon.webserver {
     requires static io.helidon.inject.configdriven.runtime;
     requires static io.helidon.inject.runtime;
     requires static jakarta.inject;
+    requires static jakarta.annotation;
     requires static java.compiler;
 
     requires transitive io.helidon.common.buffers;

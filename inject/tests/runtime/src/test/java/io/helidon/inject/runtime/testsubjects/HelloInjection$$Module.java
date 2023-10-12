@@ -18,14 +18,14 @@ package io.helidon.inject.runtime.testsubjects;
 
 import java.util.Optional;
 
+import io.helidon.common.Generated;
 import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.api.ServiceBinder;
 
-import jakarta.annotation.Generated;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
-@Generated(value = "example", comments = "API Version: n")
+@Generated(value = "example", comments = "API Version: n", trigger = "io.helidon.inject.tools.ActivatorCreatorDefault")
 @Singleton
 @Named(HelloInjection$$Module.NAME)
 public final class HelloInjection$$Module implements ModuleComponent {

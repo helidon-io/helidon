@@ -22,7 +22,6 @@ module io.helidon.webserver.security {
     requires io.helidon.common.context;
     requires io.helidon.security.integration.common;
     requires io.helidon.webserver;
-    requires jakarta.annotation;
     requires java.logging;
 
     requires transitive io.helidon.common.config;

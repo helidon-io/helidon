@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package io.helidon.config;
 
-import jakarta.annotation.Priority;
+import io.helidon.common.Weight;
 
 /**
  * Lower-priority of two auto-loaded filters identical except for their priorities
  * and their expected filtered values.
  */
-@Priority(AutoLoadedConfigPriority.LOW_PRIORITY_VALUE)
+@Weight(AutoLoadedConfigPriority.LOW_PRIORITY_VALUE)
 public class AutoLoadedConfigLowPriority extends AutoLoadedConfigPriority {
 
     private static final String EXPECTED_FILTERED_VALUE = "lowerPriorityValue";

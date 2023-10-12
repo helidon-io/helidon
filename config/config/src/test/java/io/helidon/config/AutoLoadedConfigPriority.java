@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ public abstract class AutoLoadedConfigPriority implements ConfigFilter {
     public static final String KEY_SUBJECT_TO_AUTO_FILTERING = "key1.subjectToPrioritizedAutoloadedFilter";
 
     public static final int HIGH_PRIORITY_VALUE = 10;
-    public static final int LOW_PRIORITY_VALUE = HIGH_PRIORITY_VALUE + 1;
+    public static final int LOW_PRIORITY_VALUE = HIGH_PRIORITY_VALUE - 1;
 
     @Override
     public String apply(Config.Key key, String stringValue) {
-        // the original implementation was wrong (priorities were inversed and this test was wrong)
+        // the original implementation was wrong (priorities were reversed and this test was wrong)
         // the new approach makes sure the filter with higher priority modifies the value, and
         // any filter down the filter chain sees the modified value, and ignores it
         if (key.toString().equals(KEY_SUBJECT_TO_AUTO_FILTERING)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  * given {@code Builder} by invoking
  * {@link io.helidon.config.Config.Builder#disableParserServices()}.
  * <p>
- * A parser can specify a {@link io.helidon.common.Weight}. If no priority is
+ * A parser can specify a {@link io.helidon.common.Weight}. If no weight is
  * explicitly assigned, the value of {@value io.helidon.common.Weighted#DEFAULT_WEIGHT} is assumed.
  * <p>
  * Parser is used by the config system and a config source provides data as an input stream.
