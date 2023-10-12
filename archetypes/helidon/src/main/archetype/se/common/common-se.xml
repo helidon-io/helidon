@@ -114,16 +114,19 @@ app:
          // load logging configuration
         LogConfig.configureRuntime();
 
-        {{#Main-main}}
-        {{.}}
-        {{/Main-main}}
-
         // initialize global config from default configuration
         Config config = Config.create();
         Config.global(config);
 
+        {{#Main-main}}
+        {{.}}
+        {{/Main-main}}
+
         WebServer server = WebServer.builder()
                 .config(Config.global().get("server"))
+                {{#Main-server-builder}}
+                {{.}}
+                {{/Main-server-builder}}
                 .routing(Main::routing)
                 .build()
                 .start();

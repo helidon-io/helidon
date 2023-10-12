@@ -175,7 +175,7 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                                         <value>io.helidon.dbclient.metrics.DbClientMetrics</value>
                                         <value>io.helidon.dbclient.tracing.DbClientTracing</value>
                                         <value>io.helidon.webserver.observe.ObserveFeature</value>
-                                        <value>io.helidon.webserver.tracing.TracingFeature</value>
+                                        <value>io.helidon.webserver.observe.tracing.TracingObserver</value>
                                         <value>io.helidon.tracing.Tracer</value>
                                         <value>io.helidon.tracing.TracerBuilder</value>
                                     </list>
@@ -192,13 +192,15 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                 // add an interceptor to all statements
                 .addService(DbClientTracing.create())
                 .build();
-
-        Tracer tracer = TracerBuilder.create("mongo-db").build();
 ]]></value>
                                     </list>
+                                    <list key="Main-server-builder">
+                                        <value><![CDATA[.addFeature(ObserveFeature.builder()
+                        .addObserver(TracingObserver.create(tracer))
+                        .build())]]></value>
+                                    </list>
                                     <list key="Main-routing-builder">
-                                        <value><![CDATA[.register("/db", new PokemonService(dbClient))
-                .addFeature(TracingFeature.create(tracer))]]></value>
+                                        <value><![CDATA[.register("/db", new PokemonService(dbClient))]]></value>
                                     </list>
                                     <list key="application-yaml-entries">
                                         <value><![CDATA[
@@ -364,8 +366,21 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         <list key="Main-helidon-imports" if="${server} != 'mongo'">
                             <value>io.helidon.dbclient.DbClient</value>
                             <value>io.helidon.webserver.observe.ObserveFeature</value>
-                            <value>io.helidon.webserver.tracing.TracingFeature</value>
+                            <value>io.helidon.webserver.observe.tracing.TracingObserver</value>
+                            <value>io.helidon.tracing.Tracer</value>
                             <value>io.helidon.tracing.TracerBuilder</value>
+                        </list>
+                        <list key="Main-main">
+                            <value><![CDATA[
+Tracer tracer = TracerBuilder.create(config.get("tracing"))
+                            .registerGlobal(true)
+                            .build();
+]]></value>
+                        </list>
+                        <list key="Main-server-builder" if="${server} != 'mongodb'">
+                            <value><![CDATA[                .addFeature(ObserveFeature.builder()
+                        .addObserver(TracingObserver.create(tracer))
+                        .build())]]></value>
                         </list>
                         <list key="Main-routing-builder" if="${server} != 'mongodb'">
                             <value><![CDATA[.register("/db", new PokemonService(DbClient.create(config.get("db"))))]]></value>
@@ -379,7 +394,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         <list key="modules">
                             <value>io.helidon.dbclient</value>
                             <value>io.helidon.tracing</value>
-                            <value>io.helidon.webserver.tracing</value>
+                            <value>io.helidon.webserver.observe.tracing</value>
                             <value>io.helidon.dbclient.metrics</value>
                             <value>io.helidon.dbclient.tracing</value>
                             <value if="${media.json-lib} == 'jackson'">jakarta.json</value>

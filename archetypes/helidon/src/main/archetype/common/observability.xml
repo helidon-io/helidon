@@ -255,7 +255,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                 <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                     <value>io.helidon.webserver.observe.ObserveFeature</value>
                                 </list>
-                                <list key="Main-routing-builder" if="${flavor} == 'se'">
+                                <list key="Main-server-builder" if="${flavor} == 'se'">
                                     <value>.addFeature(ObserveFeature.create())</value>
                                 </list>
                                 <list key="dependencies">
@@ -303,6 +303,21 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                             </model>
                         </output>
                     </boolean>
+                    <output>
+                        <model>
+                            <list key="application-yaml-entries">
+                                <value><![CDATA[
+metrics:
+  permit-all: true
+                                ]]></value>
+                            </list><list key="config-test">
+                                <value><![CDATA[
+metrics:
+  permit-all: true
+                                ]]></value>
+                            </list>
+                        </model>
+                    </output>
                 </inputs>
             </boolean>
             <boolean id="health"

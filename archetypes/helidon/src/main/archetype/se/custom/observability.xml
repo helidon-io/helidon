@@ -24,7 +24,7 @@
             <list key="Main-helidon-imports">
                 <value>io.helidon.webserver.observe.ObserveFeature</value>
             </list>
-            <list key="Main-routing">
+            <list key="Main-main">
                 <value template="mustache" if="${health}"><![CDATA[
         ObserveFeature observe = ObserveFeature.builder()
                                                .observersDiscoverServices(false)
@@ -33,8 +33,16 @@
                                                {{/Observe-feature-builder}}
                                                .build();
 ]]></value>
+                <value if="${tracing}"><![CDATA[
+        tracer = TracerBuilder.create(config.get("tracing"))
+                                    .registerGlobal(true)
+                                    .build();
+]]></value>
             </list>
-            <list key="Main-routing-builder">
+            <list key="main-class-fields" if="${tracing}">
+                <value><![CDATA[    private static Tracer tracer;]]></value>
+            </list>
+            <list key="Main-server-builder">
                 <value>.addFeature(observe)</value>
             </list>
             <list key="dependencies">
@@ -59,7 +67,7 @@
                 <value>io.helidon.webserver.http.ServerRequest</value>
                 <value>io.helidon.webserver.http.ServerResponse</value>
                 <value>io.helidon.webserver.http1.Http1Route</value>
-                <value>io.helidon.webserver.tracing.TracingFeature</value>
+                <value>io.helidon.webserver.observe.tracing.TracingObserver</value>
                 <value>io.helidon.tracing.Span</value>
                 <value>io.helidon.tracing.Tracer</value>
                 <value>io.helidon.tracing.TracerBuilder</value>
@@ -68,13 +76,13 @@
                 <value>static io.helidon.http.Method.GET</value>
             </list>
             <list key="Main-routing-builder" if="${tracing}">
-                <value if="${tracing}"><![CDATA[.addFeature(TracingFeature.create(tracer))
-                .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
+                <value if="${tracing}"><![CDATA[.route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
                 .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))]]></value>
             </list>
-            <list key="Main-routing" if="${tracing}">
-                <value><![CDATA[Tracer tracer = TracerBuilder.create("server").build();
-]]></value>
+            <list key="Main-server-builder" if="${tracing}">
+                <value if="${tracing}"><![CDATA[.addFeature(ObserveFeature.builder()
+                        .addObserver(TracingObserver.create(tracer))
+                        .build())]]></value>
             </list>
             <list key="main-class-content" if="${tracing}">
                 <value><![CDATA[
@@ -104,7 +112,7 @@
             <list key="modules">
                 <value>io.helidon.webserver.observe</value>
                 <value if="${tracing}">io.helidon.webserver.http2</value>
-                <value if="${tracing}">io.helidon.webserver.tracing</value>
+                <value if="${tracing}">io.helidon.webserver.observe.tracing</value>
                 <value if="${tracing}">io.helidon.tracing</value>
             </list>
         </model>
