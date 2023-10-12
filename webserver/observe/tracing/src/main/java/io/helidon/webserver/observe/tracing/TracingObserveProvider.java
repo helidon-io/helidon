@@ -19,6 +19,7 @@ package io.helidon.webserver.observe.tracing;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Tracer;
+import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
@@ -47,7 +48,14 @@ public class TracingObserveProvider implements ObserveProvider {
     public Observer create(Config config, String name) {
         Tracer tracer = Contexts.globalContext()
                 .get(Tracer.class)
-                .orElseGet(Tracer::global);
+                .orElseGet(() -> {
+                    Config tracingConfig = config.root().get("tracing");
+                    if (tracingConfig.exists()) {
+                        return TracerBuilder.create(tracingConfig)
+                                .build();
+                    }
+                    return Tracer.global();
+                });
 
         return TracingObserverConfig.builder()
                 .tracer(tracer)

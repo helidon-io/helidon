@@ -492,7 +492,8 @@ final class GenerateAbstractBuilder {
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
                                     .add(property.name())
-                                    .add("DiscoverServices")
+                                    .add("DiscoverServices, ")
+                                    .add(property.name())
                                     .addLine("));");
                         } else {
                             preBuildBuilder.add("discoverService(config, \"")
@@ -503,7 +504,9 @@ final class GenerateAbstractBuilder {
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
                                     .add(property.name())
-                                    .add("DiscoverServices).ifPresent(this::")
+                                    .add("DiscoverServices, @java.util.Optional@.ofNullable(")
+                                    .add(property.name())
+                                    .add(")).ifPresent(this::")
                                     .add(property.setterName())
                                     .addLine(");");
                         }

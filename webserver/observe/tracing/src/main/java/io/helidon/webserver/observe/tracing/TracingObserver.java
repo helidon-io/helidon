@@ -397,7 +397,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
         }
     }
 
-    private class TracingFeature implements HttpFeature, Weighted {
+    private static class TracingFeature implements HttpFeature, Weighted {
         private final TracingObserverConfig config;
         private final String socketTag;
 
