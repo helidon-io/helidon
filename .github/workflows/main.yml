@@ -2,14 +2,7 @@ name: Examples Check Badge
 on: [pull_request]
 
 jobs:
-  binder:
-    if: |
-      (
-        (github.event.issue.author_association == 'OWNER') ||
-        (github.event.issue.author_association == 'COLLABORATOR') ||
-        (github.event.issue.author_association == 'CONTRIBUTOR') ||
-        (github.event.issue.author_association == 'MEMBER')
-      )
+  examples:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
