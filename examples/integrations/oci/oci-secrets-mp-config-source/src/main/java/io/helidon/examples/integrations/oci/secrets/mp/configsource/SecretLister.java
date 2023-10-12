@@ -42,7 +42,9 @@ public final class SecretLister {
         if (args.length == 0) {
             System.out.println("(No configuration property name supplied as a command-line argument.)");
         } else {
-            System.out.println(ConfigProvider.getConfig().getOptionalValue(args[0], String.class).orElse("No such configuration property: " + args[0]));
+            System.out.println(ConfigProvider.getConfig()
+                               .getOptionalValue(args[0], String.class)
+                               .orElse("No such configuration property: " + args[0]));
         }
     }
 
