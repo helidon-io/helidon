@@ -48,8 +48,6 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ServerFeature;
 
-import jakarta.annotation.PreDestroy;
-
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
@@ -136,7 +134,6 @@ class LoomServer implements WebServer {
     }
 
     @Override
-    @PreDestroy
     public WebServer stop() {
         try {
             lifecycleLock.lockInterruptibly();
