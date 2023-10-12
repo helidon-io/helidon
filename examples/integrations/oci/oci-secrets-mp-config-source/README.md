@@ -292,7 +292,7 @@ gathered. It is no longer needed.
 In the root directory of your computer's copy of this project, open a shell and type:
 
 ```sh
-`mvn clean verify`
+mvn clean verify
 ```
 
 ## Run The Example
@@ -311,7 +311,7 @@ java -jar target/helidon-examples-integrations-oci-secrets-mp-config-source.jar 
 but `java.home` will be resolved from Helidon's system properties configuration source.)
 
 You can run the same example with logging if you want to experiment with levels. Edit your local copy of
-`logging.properties` appropriately, and then run:
+`logging.properties` in the root directory of this project appropriately, and then run:
 
 ```sh
 java -Djava.util.logging.config.file=logging.properties -jar target/helidon-examples-integrations-oci-secrets-mp-config-source.jar java.home
