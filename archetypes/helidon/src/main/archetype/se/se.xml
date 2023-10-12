@@ -32,15 +32,15 @@
                         description="Sample Helidon Nima project that includes multiple REST operations">
                     <exec src="quickstart/quickstart-se.xml"/>
                 </option>
-                <option value="custom"
-                        name="Custom"
-                        description="Custom Helidon SE project">
-                    <exec src="custom/custom-se.xml"/>
-                </option>
                 <option value="database"
                         name="Database"
                         description="Helidon SE application that uses a database with JPA">
                     <exec src="database/database-se.xml"/>
+                </option>
+                <option value="custom"
+                        name="Custom"
+                        description="Custom Helidon SE project">
+                    <exec src="custom/custom-se.xml"/>
                 </option>
             </enum>
         </inputs>

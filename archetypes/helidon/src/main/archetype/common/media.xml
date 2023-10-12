@@ -22,7 +22,8 @@
 
     <step name="Media Support" optional="true">
         <variables>
-            <text path="media.default-json-lib">jsonb</text>
+            <text path="media.default-json-lib" if="${flavor} == 'mp'">jsonb</text>
+            <text path="media.default-json-lib" if="${flavor} == 'se'">jsonp</text>
         </variables>
         <inputs>
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/699 -->

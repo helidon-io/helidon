@@ -37,5 +37,6 @@
         <boolean path="docker.jlink-image">true</boolean>
         <boolean path="k8s">true</boolean>
         <boolean path="v8o">false</boolean>
+        <boolean path="jpms">false</boolean>
     </presets>
 </archetype-script>
