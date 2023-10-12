@@ -32,6 +32,7 @@ module io.helidon.security.providers.jwt {
     requires io.helidon.security.util;
 
     requires static io.helidon.common.features.api;
+    requires static jakarta.annotation;
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.security.jwt;
