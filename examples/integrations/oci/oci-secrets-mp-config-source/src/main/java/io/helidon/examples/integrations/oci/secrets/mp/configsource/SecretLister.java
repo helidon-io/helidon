@@ -18,9 +18,16 @@ package io.helidon.examples.integrations.oci.secrets.mp.configsource;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
- * A main class that
+ * A main class that retrieves configuration property values using various Helidon Microprofile Config implementation
+ * classes.
+ *
+ * @see io.helidon.integrations.oci.secrets.mp.configsource.OciSecretsMpMetaConfigProvider
  */
 public final class SecretLister {
+
+    private SecretLister() {
+        super();
+    }
 
     /**
      * Asks the Helidon MicroProfile Config implementation to retrieve a configuration property whose name is supplied
