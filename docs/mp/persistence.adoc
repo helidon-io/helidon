@@ -1081,24 +1081,64 @@ Weaving] in the Eclipselink documentation.
 
 To configure Helidon MP's Jakarta Persistence integration, you author
 a
-link:{jakarta-persistence-spec-url}#persistence-xml-file[`src/main/resources/META-INF/persistence.xml`
+link:{jakarta-persistence-spec-url}#persistence-xml-file[`META-INF/persistence.xml`
 file].  It contains a mix of standardized elements and JPA
 provider-specific properties.
+
+If you are writing a component or a library, then you place this in
+your Maven project's `src/test/resources` directory (because a library
+or component is not itself an application, and by definition can be
+included in many applications, so it is inappropriate to put
+application-level configuration in your component).  If you are
+working on a project that contains the `main` method (or similar) that
+starts your application, then and only then do you place a
+`META-INF/persistence.xml` in your persistence-oriented Maven
+project's `src/main/resources` directory.
 
 For details about the structure and syntax of the
 `META-INF/persistence.xml` file, see
 link:{jakarta-persistence-spec-url}#persistence-xml-file[persistence.xml
 file] in the Jakarta Persistence specification.
 
+==== Use Only One `META-INF/persistence.xml` Per Application
+
+Like any configuration, a `META-INF/persistence.xml` file is normally
+an _application-level_ concern, not a _component-level_ concern. In
+other words, your Java application, made up of various components, or
+libraries, some of which you may have written, and many of which you
+have not, should normally have exactly one `META-INF/persistence.xml`
+on its classpath, describing the persistence-related aspects of the
+application in its particular environment. There are very few use
+cases where multiple `META-INF/persistence.xml` classpath resources
+are called for.
+
+A common mistake is to write a component or library&mdash;by
+definition intended for use in possibly more than one
+application&mdash;and include a
+`src/main/resources/META-INF/persistence.xml` in its Maven project.
+If two components or libraries containing `META-INF/persistence.xml`
+classpath resources like this are deployed as part of an application,
+it can make for a confusing state of affairs at application runtime,
+and may lead to exceptions indicating more _persistence units_ are
+present than are expected.
+
+Most library projects that work with JPA artifacts should probably
+have a `src/test/resources/META-INF/persistence.xml` in their Maven
+projects instead. This allows you to test your JPA-centric work
+against a test configuration, rather than a "main" or production one,
+which is almost certainly what you want in nearly all cases.
+
+==== Persistence Units
+
 Fundamentally, a `META-INF/persistence.xml` file contains a collection
 of _persistence units_.  A persistence unit represents a collection of
 entities in a relational database loosely coupled to a <<DS, named
 data source>> that knows how to connect to it.
 
-Your `src/main/resources/META-INF/persistence.xml` file must begin
+Your `META-INF/persistence.xml` file must begin
 (and end) with the following XML:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
@@ -1126,16 +1166,16 @@ code, and represents a collection of entities in a relational database.
 
 ===== Example: Persistence Unit Skeleton
 
-Here is a partial example of a persistence unit named `prod` with a
+Here is a partial example of a persistence unit named `test` with a
 helpful description:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... -->
 
-<persistence-unit name="prod" transaction-type="JTA"> <!--1-->
-    <description>The production database</description>
+<persistence-unit name="test" transaction-type="JTA"> <!--1-->
+    <description>A testing database</description>
 
     <!--2-->
 
@@ -1174,16 +1214,16 @@ configured>>.
 
 ====== Example: Persistence Unit with JTA Data Source
 
-Here is a partial example of a persistence unit named `prod`, with a
+Here is a partial example of a persistence unit named `test`, with a
 helpful description, linked with a JTA data source named `main`:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... --->
 
-<persistence-unit name="prod" transaction-type="JTA">
-    <description>The production database</description>
+<persistence-unit name="test" transaction-type="JTA">
+    <description>A testing database</description>
     <jta-data-source>main</jta-data-source> <!--1-->
 
     <!--2-->
@@ -1226,17 +1266,17 @@ given JPA provider.
 
 ====== Example: Persistence Unit with Class Elements
 
-Here is a partial example of a persistence unit named `prod`, with a
+Here is a partial example of a persistence unit named `test`, with a
 helpful description, linked with a JTA data source named `main`,
 containing two entity classes:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... --->
 
-<persistence-unit name="prod" transaction-type="JTA">
-    <description>The production database</description>
+<persistence-unit name="test" transaction-type="JTA">
+    <description>A testing database</description>
     <jta-data-source>main</jta-data-source>
     <class>com.example.ExampleEntity0</class> <!--1-->
     <class>com.example.ExampleEntity1</class>
@@ -1269,19 +1309,19 @@ Data Source>> section above for how a persistence unit is linked to a
 
 ====== Example: Persistence Unit with Properties
 
-Here is a partial exmaple of a persistence unit named `prod`, with a
-helpful description, linked with a JTA data source named `main`,
+Here is a partial exmaple of a persistence unit named `test`, with a
+helpful description, linked with a JTA data source named `sample`,
 containing two entity classes, configuring a Hibernate ORM-specific
 property:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... --->
 
-<persistence-unit name="prod" transaction-type="JTA">
-    <description>The production database</description>
-    <jta-data-source>main</jta-data-source> <!--1-->
+<persistence-unit name="test" transaction-type="JTA">
+    <description>A testing database</description>
+    <jta-data-source>sample</jta-data-source> <!--1-->
     <class>com.example.ExampleEntity0</class>
     <class>com.example.ExampleEntity1</class>
     <properties>
