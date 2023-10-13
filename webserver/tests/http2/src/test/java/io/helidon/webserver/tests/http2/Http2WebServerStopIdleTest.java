@@ -36,25 +36,29 @@ import static org.hamcrest.Matchers.lessThan;
 
 class Http2WebServerStopIdleTest {
 
-    private final Tls insecureTls;
+    private final Tls clientTls;
 
-    Http2WebServerStopIdleTest() {;
-        this.insecureTls = Tls.builder()
-                // insecure setup, as we have self-signed certificate
-                .trustAll(true)
+    Http2WebServerStopIdleTest() {
+        this.clientTls = Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
                 .build();
     }
 
     @Test
     void stopWhenIdleExpectTimelyStopHttp2() throws IOException, InterruptedException {
         Keys privateKeyConfig = Keys.builder()
-                .keystore(keystore -> keystore
-                .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase("helidon"))
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create("server.p12")))
                 .build();
+
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
                 .build();
         WebServer webServer = WebServer.builder()
                 .putSocket("https", socketBuilder -> socketBuilder.tls(tls))
@@ -65,7 +69,7 @@ class Http2WebServerStopIdleTest {
         int port = webServer.port("https");
         HttpResponse<String> response = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
-                .sslContext(insecureTls.sslContext())
+                .sslContext(clientTls.sslContext())
                 .connectTimeout(Duration.ofSeconds(5))
                 .build()
                 .send(HttpRequest.newBuilder()

@@ -91,9 +91,11 @@ class Http2WebClientTest {
             .shareConnectionCache(false)
             .baseUri("https://localhost:" + tlsPort + "/versionspecific")
             .tls(Tls.builder()
-                         .enabled(true)
-                         .trustAll(true)
-                         .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                    .trust(trust -> trust
+                            .keystore(store -> store
+                                    .passphrase("password")
+                                    .trustStore(true)
+                                    .keystore(Resource.create("client.p12"))))
                          .build())
             .build();
 
@@ -108,8 +110,8 @@ class Http2WebClientTest {
 
         Keys privateKeyConfig =
                 Keys.builder()
-                        .keystore(keystore -> keystore.keystore(Resource.create("certificate.p12"))
-                                .passphrase("helidon"))
+                        .keystore(keystore -> keystore.keystore(Resource.create("server.p12"))
+                                .passphrase("password"))
                         .build();
 
         Tls tls = Tls.builder()

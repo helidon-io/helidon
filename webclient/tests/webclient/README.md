@@ -40,7 +40,7 @@ openssl pkcs12 \
 	-inkey client.key \
 	-in <(cat client.crt ca.crt) \
 	-export \
-	-out src/main/resources/client.p12 \
+	-out src/test/resources/client.p12 \
 	-passin pass:password \
 	-passout pass:password
 ```
@@ -68,7 +68,7 @@ openssl pkcs12 \
 	-inkey server.key \
 	-in <(cat server.crt ca.crt) \
 	-export \
-	-out src/main/resources/server.p12 \
+	-out src/test/resources/server.p12 \
 	-passin pass:password \
 	-passout pass:password
 ```
@@ -95,7 +95,7 @@ openssl pkcs12 \
 	-inkey server2.key \
 	-in <(cat server2.crt ca.crt) \
 	-export \
-	-out src/main/resources/second-valid/server.p12 \
+	-out src/test/resources/second-valid/server.p12 \
 	-passin pass:password \
 	-passout pass:password
 ```
@@ -108,7 +108,7 @@ keytool -import \
     -file ca.crt \
     -storetype PKCS12 \
     -alias truststoreCA \
-    -keystore src/main/resources/client.p12 \
+    -keystore src/test/resources/client.p12 \
     -storepass password
 ```
 
@@ -119,7 +119,7 @@ keytool -import \
     -file ca.crt \
     -storetype PKCS12 \
     -alias truststoreCA \
-    -keystore src/main/resources/server.p12 \
+    -keystore src/test/resources/server.p12 \
     -storepass password
 
 keytool -import \
@@ -127,6 +127,6 @@ keytool -import \
     -file ca.crt \
     -storetype PKCS12 \
     -alias truststoreCA \
-    -keystore src/main/resources/second-valid/server.p12 \
+    -keystore src/test/resources/second-valid/server.p12 \
     -storepass password
 ```

@@ -1,0 +1,14 @@
+[ req ]
+prompt = no
+default_md = sha256
+distinguished_name = dn
+
+[ dn ]
+C=US
+ST=California
+L=Santa Clara
+O=Oracle
+OU=Helidon
+emailAddress=info@helidon.io
+CN = helidon-test-certificate
+

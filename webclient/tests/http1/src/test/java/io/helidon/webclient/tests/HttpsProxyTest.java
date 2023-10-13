@@ -57,20 +57,23 @@ class HttpsProxyTest {
 
     HttpsProxyTest(WebServer server) {
         int port = server.port();
-
-        Tls tls = Tls.builder()
-                .trustAll(true)
-                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+        Tls clientTls = Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
                 .build();
 
         this.clientHttp1 = Http1Client.builder()
                 .baseUri("https://localhost:" + port)
-                .tls(tls)
+                .tls(clientTls)
                 .proxy(Proxy.noProxy())
                 .build();
         this.clientHttp2 = Http2Client.builder()
                 .baseUri("https://localhost:" + port)
-                .tls(tls)
+                .shareConnectionCache(false)
+                .tls(clientTls)
                 .proxy(Proxy.noProxy())
                 .build();
     }
@@ -90,19 +93,17 @@ class HttpsProxyTest {
     @SetUpServer
     static void server(Builder builder) {
         Keys privateKeyConfig = Keys.builder()
-                .keystore(keystore -> keystore
-                        .keystore(Resource.create("server.p12"))
-                        .passphrase("password"))
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create("server.p12")))
                 .build();
 
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
-                .trustAll(true)
-                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
                 .build();
 
-        builder.tls(tls);
+        builder.host("localhost").tls(tls);
     }
 
     @SetUpRoute
