@@ -27,16 +27,11 @@
             <list key="Main-main">
                 <value template="mustache" if="${health}"><![CDATA[
         ObserveFeature observe = ObserveFeature.builder()
-                                               .observersDiscoverServices(false)
+                                               .observersDiscoverServices(true)
                                                {{#Observe-feature-builder}}
                                                {{.}}
                                                {{/Observe-feature-builder}}
                                                .build();
-]]></value>
-                <value if="${tracing}"><![CDATA[
-        tracer = TracerBuilder.create(config.get("tracing"))
-                                    .registerGlobal(true)
-                                    .build();
 ]]></value>
             </list>
             <list key="main-class-fields" if="${tracing}">
@@ -78,11 +73,6 @@
             <list key="Main-routing-builder" if="${tracing}">
                 <value if="${tracing}"><![CDATA[.route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
                 .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))]]></value>
-            </list>
-            <list key="Main-server-builder" if="${tracing}">
-                <value if="${tracing}"><![CDATA[.addFeature(ObserveFeature.builder()
-                        .addObserver(TracingObserver.create(tracer))
-                        .build())]]></value>
             </list>
             <list key="main-class-content" if="${tracing}">
                 <value><![CDATA[
