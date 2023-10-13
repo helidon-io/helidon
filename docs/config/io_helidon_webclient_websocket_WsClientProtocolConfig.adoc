@@ -17,17 +17,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.metrics.api.ScopingConfig
-:keywords: helidon, config, io.helidon.metrics.api.ScopingConfig
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.metrics.api.ScopingConfig
+:description: Configuration of io.helidon.webclient.websocket.WsClientProtocolConfig
+:keywords: helidon, config, io.helidon.webclient.websocket.WsClientProtocolConfig
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webclient.websocket.WsClientProtocolConfig
 include::{rootdir}/includes/attributes.adoc[]
 
-= ScopingConfig (metrics.api) Configuration
+= WsClientProtocolConfig (webclient.websocket) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/ScopingConfig.html[io.helidon.metrics.api.ScopingConfig]
+Type: link:{javadoc-base-url}/io.helidon.webclient.websocket/io/helidon/webclient/websocket/WsClientProtocolConfig.html[io.helidon.webclient.websocket.WsClientProtocolConfig]
 
 
 
@@ -42,16 +42,8 @@ Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/Scop
 |===
 |key |type |default value |description
 
-|`default` |string |`application` |Default scope value to associate with meters that are registered without an explicit setting; no setting means meters
- are assigned scope `io.helidon.metrics.api.Meter.Scope#DEFAULT`.
-
- @return default scope value
-|`scopes` |xref:{rootdir}/config/io_helidon_metrics_api_ScopeConfig.adoc[Map&lt;string, ScopeConfig&gt;] |{nbsp} |Settings for individual scopes.
-
- @return scope settings
-|`tag-name` |string |`scope` |Tag name for storing meter scope values in the underlying implementation meter registry.
-
- @return tag name for storing scope values
+|`name` |string |`websocket` |
+|`sub-protocols` |string[&#93; |{nbsp} |
 
 |===
 

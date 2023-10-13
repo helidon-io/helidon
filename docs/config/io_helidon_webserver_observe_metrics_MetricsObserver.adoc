@@ -17,21 +17,25 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.webserver.observe.metrics.MetricsFeature
-:keywords: helidon, config, io.helidon.webserver.observe.metrics.MetricsFeature
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.observe.metrics.MetricsFeature
+:description: Configuration of io.helidon.webserver.observe.metrics.MetricsObserver
+:keywords: helidon, config, io.helidon.webserver.observe.metrics.MetricsObserver
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.observe.metrics.MetricsObserver
 include::{rootdir}/includes/attributes.adoc[]
 
-= MetricsFeature (webserver.observe.metrics) Configuration
+= MetricsObserver (webserver.observe.metrics) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.webserver.observe.metrics/io/helidon/webserver/observe/metrics/MetricsFeature.html[io.helidon.webserver.observe.metrics.MetricsFeature]
+Type: link:{javadoc-base-url}/io.helidon.webserver.observe.metrics/io/helidon/webserver/observe/metrics/MetricsObserver.html[io.helidon.webserver.observe.metrics.MetricsObserver]
 
 
 This is a standalone configuration type, prefix from configuration root: `metrics`
 
+
+This type provides the following service implementations:
+
+- `io.helidon.webserver.observe.spi.ObserveProvider`
 
 
 == Configuration options
@@ -50,23 +54,28 @@ This is a standalone configuration type, prefix from configuration root: `metric
 |`app-tag-name` |string |{nbsp} |Name for the application tag to be added to each meter ID.
 
  @return application tag name
-|`cross-origin-config` |xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Set the CORS config from the specified `CrossOriginConfig` object.
 |`enabled` |boolean |`true` |Whether metrics functionality is enabled.
 
  @return if metrics are configured to be enabled
+|`endpoint` |string |`metrics` |
 |`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.adoc[KeyPerformanceIndicatorMetricsConfig] |{nbsp} |Key performance indicator metrics settings.
 
  @return key performance indicator metrics settings
+|`permit-all` |boolean |{nbsp} |Whether metrics endpoint should be authorized.
+
+ @return if metrics are configured to be authorized
 |`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
 
  @return true/false
+|`roles` |string[&#93; |{nbsp} |Hints for role names the user is expected to be in.
+
+ @return list of hints
 |`scoping` |xref:{rootdir}/config/io_helidon_metrics_api_ScopingConfig.adoc[ScopingConfig] |{nbsp} |Settings related to scoping management.
 
  @return scoping settings
 |`tags` |xref:{rootdir}/config/io_helidon_metrics_api_Tag.adoc[Tag[&#93;] |{nbsp} |Global tags.
 
  @return name/value pairs for global tags
-|`web-context` |string |{nbsp} |Set the root context for the REST API of the service.
 
 |===
 

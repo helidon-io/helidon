@@ -17,19 +17,23 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.metrics.api.ScopingConfig
-:keywords: helidon, config, io.helidon.metrics.api.ScopingConfig
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.metrics.api.ScopingConfig
+:description: Configuration of io.helidon.webserver.observe.info.InfoObserver
+:keywords: helidon, config, io.helidon.webserver.observe.info.InfoObserver
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.observe.info.InfoObserver
 include::{rootdir}/includes/attributes.adoc[]
 
-= ScopingConfig (metrics.api) Configuration
+= InfoObserver (webserver.observe.info) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/ScopingConfig.html[io.helidon.metrics.api.ScopingConfig]
+Type: link:{javadoc-base-url}/io.helidon.webserver.observe.info/io/helidon/webserver/observe/info/InfoObserver.html[io.helidon.webserver.observe.info.InfoObserver]
 
 
+
+This type provides the following service implementations:
+
+- `io.helidon.webserver.observe.spi.ObserveProvider`
 
 
 == Configuration options
@@ -42,16 +46,10 @@ Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/Scop
 |===
 |key |type |default value |description
 
-|`default` |string |`application` |Default scope value to associate with meters that are registered without an explicit setting; no setting means meters
- are assigned scope `io.helidon.metrics.api.Meter.Scope#DEFAULT`.
+|`endpoint` |string |`info` |
+|`values` |Map&lt;string, string&gt; |{nbsp} |Values to be exposed using this observability endpoint.
 
- @return default scope value
-|`scopes` |xref:{rootdir}/config/io_helidon_metrics_api_ScopeConfig.adoc[Map&lt;string, ScopeConfig&gt;] |{nbsp} |Settings for individual scopes.
-
- @return scope settings
-|`tag-name` |string |`scope` |Tag name for storing meter scope values in the underlying implementation meter registry.
-
- @return tag name for storing scope values
+ @return value map
 
 |===
 

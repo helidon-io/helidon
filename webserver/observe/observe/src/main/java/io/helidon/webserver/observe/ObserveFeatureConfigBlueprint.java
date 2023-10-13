@@ -25,12 +25,14 @@ import io.helidon.common.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * Configuration for observability feature itself.
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.Provides(ServerFeatureProvider.class)
 interface ObserveFeatureConfigBlueprint extends Prototype.Factory<ObserveFeature> {
 
     /**

@@ -23,8 +23,6 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -34,7 +32,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  */
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ServerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.CustomMethods.class)
-@Configured(root = true, prefix = "server")
+@Prototype.Configured("server")
 interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
     /**
      * When true the webserver registers a shutdown hook with the JVM Runtime.
@@ -43,7 +41,8 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      *
      * @return whether to register a shutdown hook
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean shutdownHook();
 
     /**
@@ -53,7 +52,7 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      *
      * @return map of listener configurations, except for the default one
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular
     Map<String, ListenerConfig> sockets();
 
@@ -73,7 +72,7 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      *
      * @return server features
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular
     @Option.Provider(ServerFeatureProvider.class)
     List<ServerFeature> features();

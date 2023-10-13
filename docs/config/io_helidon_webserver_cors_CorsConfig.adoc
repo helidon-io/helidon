@@ -17,19 +17,23 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.integrations.openapi.ui.OpenApiUi
-:keywords: helidon, config, io.helidon.integrations.openapi.ui.OpenApiUi
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.integrations.openapi.ui.OpenApiUi
+:description: Configuration of io.helidon.webserver.cors.CorsFeature
+:keywords: helidon, config, io.helidon.webserver.cors.CorsFeature
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.cors.CorsFeature
 include::{rootdir}/includes/attributes.adoc[]
 
-= OpenApiUi (openapi.ui) Configuration
+= CorsFeature (webserver.cors) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.openapi.ui/io/helidon/openapi/ui/OpenApiUi.html[io.helidon.integrations.openapi.ui.OpenApiUi]
+Type: link:{javadoc-base-url}/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsFeature.html[io.helidon.webserver.cors.CorsFeature]
 
 
+
+This type provides the following service implementations:
+
+- `io.helidon.webserver.spi.ServerFeatureProvider`
 
 
 == Configuration options
@@ -42,15 +46,16 @@ Type: link:{javadoc-base-url}/io.helidon.openapi.ui/io/helidon/openapi/ui/OpenAp
 |===
 |key |type |default value |description
 
-|`enabled` |boolean |`true` |Sets whether the service should be enabled.
+|`enabled` |boolean |`true` |This feature can be disabled.
 
- @return `true` if enabled, `false` otherwise
-|`options` |Map&lt;string, string&gt; |{nbsp} |Merges implementation-specific UI options.
+ @return whether the feature is enabled
+|`sockets` |string[&#93; |{nbsp} |List of sockets to register this feature on. If empty, it would get registered on all sockets.
 
- @return options for the UI to merge
-|`web-context` |string |{nbsp} |Full web context (not just the suffix).
+ @return socket names to register on, defaults to empty (all available sockets)
+|`weight` |double |`950.0` |Weight of the CORS feature. As it is used by other features, the default is quite high:
+ `CorsFeature#WEIGHT`.
 
- @return full web context path
+ @return weight of the feature
 
 |===
 

@@ -17,21 +17,25 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.webserver.observe.health.HealthFeature
-:keywords: helidon, config, io.helidon.webserver.observe.health.HealthFeature
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.observe.health.HealthFeature
+:description: Configuration of io.helidon.webserver.observe.health.HealthObserver
+:keywords: helidon, config, io.helidon.webserver.observe.health.HealthObserver
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.observe.health.HealthObserver
 include::{rootdir}/includes/attributes.adoc[]
 
-= HealthFeature (webserver.observe.health) Configuration
+= HealthObserver (webserver.observe.health) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.webserver.observe.health/io/helidon/webserver/observe/health/HealthFeature.html[io.helidon.webserver.observe.health.HealthFeature]
+Type: link:{javadoc-base-url}/io.helidon.webserver.observe.health/io/helidon/webserver/observe/health/HealthObserver.html[io.helidon.webserver.observe.health.HealthObserver]
 
 
 This is a standalone configuration type, prefix from configuration root: `health`
 
+
+This type provides the following service implementations:
+
+- `io.helidon.webserver.observe.spi.ObserveProvider`
 
 
 == Configuration options
@@ -44,7 +48,6 @@ This is a standalone configuration type, prefix from configuration root: `health
 |===
 |key |type |default value |description
 
-|`cross-origin-config` |xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Set the CORS config from the specified `CrossOriginConfig` object.
 |`details` |boolean |`false` |Whether details should be printed.
  By default, health only returns a io.helidon.http.Status#NO_CONTENT_204 for success,
  io.helidon.http.Status#SERVICE_UNAVAILABLE_503 for health down,
@@ -52,8 +55,13 @@ This is a standalone configuration type, prefix from configuration root: `health
  When details are enabled, health returns io.helidon.http.Status#OK_200 for success, same codes
  otherwise
  and a JSON entity with detailed information about each health check executed.
-|`enabled` |boolean |`true` |Whether "observe health" should be enabled.
-|`web-context` |string |{nbsp} |Set the root context for the REST API of the service.
+
+ @return set to `true` to enable details
+|`endpoint` |string |`health` |
+|`use-system-services` |boolean |`true` |Whether to use services discovered by java.util.ServiceLoader.
+ By default, all io.helidon.health.spi.HealthCheckProvider based health checks are added.
+
+ @return set to `false` to disable discovery
 
 |===
 

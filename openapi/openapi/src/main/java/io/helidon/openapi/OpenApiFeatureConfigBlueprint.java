@@ -27,12 +27,14 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.openapi.spi.OpenApiManagerProvider;
 import io.helidon.openapi.spi.OpenApiServiceProvider;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * {@link OpenApiFeature} prototype.
  */
 @Prototype.Blueprint
 @Configured(root = true, prefix = "openapi")
+@Prototype.Provides(ServerFeatureProvider.class)
 interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature> {
     /**
      * Weight of the OpenAPI feature. This is quite low, to be registered after routing.

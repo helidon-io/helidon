@@ -69,10 +69,6 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.http2/io/helidon/webclient/ht
  Defaults to `PT0.5S`, which means 500 milliseconds.
 
  @return timeout
-|`prefetch` |int |`33554432` |First connection window update increment sent right after the connection is established.
- Defaults to `33_554_432`.
-
- @return number of bytes the client is prepared to receive as data from all the streams combined
 |`prior-knowledge` |boolean |`false` |Prior knowledge of HTTP/2 capabilities of the server. If server we are connecting to does not
  support HTTP/2 and prior knowledge is set to `false`, only features supported by HTTP/1 will be available
  and attempts to use HTTP/2 specific will throw an UnsupportedOperationException.

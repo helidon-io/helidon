@@ -17,19 +17,23 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.metrics.api.ScopingConfig
-:keywords: helidon, config, io.helidon.metrics.api.ScopingConfig
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.metrics.api.ScopingConfig
+:description: Configuration of io.helidon.webserver.context.ContextFeature
+:keywords: helidon, config, io.helidon.webserver.context.ContextFeature
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.context.ContextFeature
 include::{rootdir}/includes/attributes.adoc[]
 
-= ScopingConfig (metrics.api) Configuration
+= ContextFeature (webserver.context) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/ScopingConfig.html[io.helidon.metrics.api.ScopingConfig]
+Type: link:{javadoc-base-url}/io.helidon.webserver.context/io/helidon/webserver/context/ContextFeature.html[io.helidon.webserver.context.ContextFeature]
 
 
+
+This type provides the following service implementations:
+
+- `io.helidon.webserver.spi.ServerFeatureProvider`
 
 
 == Configuration options
@@ -42,16 +46,13 @@ Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/Scop
 |===
 |key |type |default value |description
 
-|`default` |string |`application` |Default scope value to associate with meters that are registered without an explicit setting; no setting means meters
- are assigned scope `io.helidon.metrics.api.Meter.Scope#DEFAULT`.
+|`sockets` |string[&#93; |{nbsp} |List of sockets to register this feature on. If empty, it would get registered on all sockets.
 
- @return default scope value
-|`scopes` |xref:{rootdir}/config/io_helidon_metrics_api_ScopeConfig.adoc[Map&lt;string, ScopeConfig&gt;] |{nbsp} |Settings for individual scopes.
+ @return socket names to register on, defaults to empty (all available sockets)
+|`weight` |double |`1100.0` |Weight of the context feature. As it is used by other features, the default is quite high:
+ `io.helidon.webserver.context.ContextFeature#WEIGHT`.
 
- @return scope settings
-|`tag-name` |string |`scope` |Tag name for storing meter scope values in the underlying implementation meter registry.
-
- @return tag name for storing scope values
+ @return weight of the feature
 
 |===
 

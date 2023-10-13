@@ -20,12 +20,14 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * Configuration of context feature.
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.Provides(ServerFeatureProvider.class)
 interface ContextFeatureConfigBlueprint extends Prototype.Factory<ContextFeature> {
 
     /**

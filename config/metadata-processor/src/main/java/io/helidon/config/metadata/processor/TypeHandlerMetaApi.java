@@ -204,6 +204,7 @@ class TypeHandlerMetaApi extends TypeHandlerMetaApiBase implements TypeHandler {
                                                                                                    data.optional(),
                                                                                                    data.kind(),
                                                                                                    data.provider(),
+                                                                                                   data.providerType(),
                                                                                                    data.deprecated(),
                                                                                                    data.merge(),
                                                                                                    data.allowedValues());

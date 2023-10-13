@@ -24,6 +24,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.TracingConfig;
 import io.helidon.webserver.observe.ObserverConfigBase;
+import io.helidon.webserver.observe.spi.ObserveProvider;
 
 /**
  * Configuration of Tracing observer.
@@ -32,7 +33,8 @@ import io.helidon.webserver.observe.ObserverConfigBase;
  * @see io.helidon.webserver.observe.tracing.TracingObserver#builder()
  */
 @Prototype.Blueprint(decorator = TracingObserverSupport.TracingObserverDecorator.class)
-@Prototype.Configured("observe.observers.tracing")
+@Prototype.Configured
+@Prototype.Provides(ObserveProvider.class)
 interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<TracingObserver> {
     @Option.Default("tracing")
     @Override

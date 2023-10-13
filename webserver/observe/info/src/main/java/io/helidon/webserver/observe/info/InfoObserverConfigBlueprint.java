@@ -21,12 +21,14 @@ import java.util.Map;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.observe.ObserverConfigBase;
+import io.helidon.webserver.observe.spi.ObserveProvider;
 
 /**
  * Info Observer configuration.
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.Provides(ObserveProvider.class)
 interface InfoObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<InfoObserver> {
     @Option.Configured
     @Option.Default("info")

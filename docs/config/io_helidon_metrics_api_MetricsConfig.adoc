@@ -56,9 +56,15 @@ This is a standalone configuration type, prefix from configuration root: `metric
 |`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.adoc[KeyPerformanceIndicatorMetricsConfig] |{nbsp} |Key performance indicator metrics settings.
 
  @return key performance indicator metrics settings
+|`permit-all` |boolean |{nbsp} |Whether metrics endpoint should be authorized.
+
+ @return if metrics are configured to be authorized
 |`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
 
  @return true/false
+|`roles` |string[&#93; |{nbsp} |Hints for role names the user is expected to be in.
+
+ @return list of hints
 |`scoping` |xref:{rootdir}/config/io_helidon_metrics_api_ScopingConfig.adoc[ScopingConfig] |{nbsp} |Settings related to scoping management.
 
  @return scoping settings

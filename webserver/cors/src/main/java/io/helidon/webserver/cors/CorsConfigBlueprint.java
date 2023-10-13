@@ -22,12 +22,14 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * Configuration of CORS feature.
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.Provides(ServerFeatureProvider.class)
 interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature> {
 
     /**

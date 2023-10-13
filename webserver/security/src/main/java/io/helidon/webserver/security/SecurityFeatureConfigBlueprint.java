@@ -21,12 +21,14 @@ import java.util.List;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.security.Security;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * Configuration of security feature fow webserver.
  */
 @Prototype.Blueprint(decorator = SecurityConfigSupport.SecurityFeatureConfigDecorator.class)
 @Prototype.Configured
+@Prototype.Provides(ServerFeatureProvider.class)
 interface SecurityFeatureConfigBlueprint extends Prototype.Factory<SecurityFeature> {
     /**
      * Weight of the security feature. Value is:

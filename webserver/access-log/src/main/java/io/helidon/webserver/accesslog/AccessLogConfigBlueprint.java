@@ -23,6 +23,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * Configuration of access log feature.
@@ -30,6 +31,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Blueprint(decorator = AccessLogConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(AccessLogConfigSupport.CustomMethods.class)
+@Prototype.Provides(ServerFeatureProvider.class)
 interface AccessLogConfigBlueprint extends Prototype.Factory<AccessLogFeature> {
     /**
      * Common log format, see {@link io.helidon.webserver.accesslog.AccessLogConfig.Builder#commonLogFormat()}.
@@ -76,7 +78,7 @@ interface AccessLogConfigBlueprint extends Prototype.Factory<AccessLogFeature> {
     Clock clock();
 
     /**
-     * Name of the logger use to obtain access log logger from {@link System#getLogger(String)}.
+     * Name of the logger used to obtain access log logger from {@link System#getLogger(String)}.
      * Defaults to {@value AccessLogFeature#DEFAULT_LOGGER_NAME}.
      *
      * @return name of the logger to use
