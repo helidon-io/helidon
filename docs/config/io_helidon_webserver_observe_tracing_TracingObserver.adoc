@@ -46,10 +46,10 @@ This type provides the following service implementations:
 |===
 |key |type |default value |description
 
-|`env-config` |xref:{rootdir}/config/io_helidon_tracing_config_TracingConfig.adoc[TracingConfig] |`TracingConfig.ENABLED` |Use the provided configuration as a default for any request.
+|`env-config` |TracingConfig |`TracingConfig.ENABLED` |Use the provided configuration as a default for any request.
 
  @return default web server tracing configuration
-|`path-configs` |xref:{rootdir}/config/io_helidon_webserver_observe_tracing_PathTracingConfig.adoc[PathTracingConfig[&#93;] |`new @java.util.ArrayList@(@java.util.List@.of(PathTracingConfig.builder()
+|`path-configs` |PathTracingConfig[&#93; |`new @java.util.ArrayList@(@java.util.List@.of(PathTracingConfig.builder()
                                   .path(&quot;/metrics/*&quot;)
                                   .tracingConfig(TracingConfig.DISABLED)
                                   .build(),                                   PathTracingConfig.builder()

@@ -79,7 +79,7 @@ Such as:
 |`environment.server-time` |xref:{rootdir}/config/io_helidon_security_SecurityTime.adoc[SecurityTime] |{nbsp} |Server time to use when evaluating security policies that depend on time.
 |`provider-policy.class-name` |Class |{nbsp} |Provider selection policy class name, only used when type is set to CLASS
 |`provider-policy.type` |ProviderSelectionPolicyType (FIRST, COMPOSITE, CLASS) |`FIRST` |Type of the policy.
-|`secrets` |xref:{rootdir}/config/io_helidon_common_config_Config.adoc[Config[&#93;] |{nbsp} |Configured secrets
+|`secrets` |Map&lt;string, string&gt; (documented for specific cases) |{nbsp} |Configured secrets
 |`secrets.*.config` |io.helidon.security.SecretsProviderConfig (service provider interface) |{nbsp} |Configuration specific to the secret provider
 |`secrets.*.name` |string |{nbsp} |Name of the secret, used for lookup
 |`secrets.*.provider` |string |{nbsp} |Name of the secret provider

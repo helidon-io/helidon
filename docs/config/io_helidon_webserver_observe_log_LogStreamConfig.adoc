@@ -42,7 +42,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.observe.log/io/helidon/webser
 |===
 |key |type |default value |description
 
-|`content-type` |xref:{rootdir}/config/io_helidon_http_HttpMediaType.adoc[HttpMediaType] |`@io.helidon.http.HttpMediaTypes@.PLAINTEXT_UTF_8` |
+|`content-type` |HttpMediaType |`@io.helidon.http.HttpMediaTypes@.PLAINTEXT_UTF_8` |
 |`enabled` |boolean |`true` |Whether stream is enabled.
 
  @return whether to allow streaming of log statements

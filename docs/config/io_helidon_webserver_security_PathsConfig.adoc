@@ -69,7 +69,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.security/io/helidon/webserver
  Will enable authorization.
 
  @return name of authorizer as configured in io.helidon.security.Security
-|`methods` |xref:{rootdir}/config/io_helidon_http_Method.adoc[Method[&#93;] |{nbsp} |
+|`methods` |Method[&#93; |{nbsp} |
 |`path` |string |{nbsp} |
 |`roles-allowed` |string[&#93; |{nbsp} |An array of allowed roles for this path - must have a security provider supporting roles (either authentication
  or authorization provider).
