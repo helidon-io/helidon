@@ -31,6 +31,9 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 @Prototype.CustomMethods(AccessLogConfigSupport.CustomMethods.class)
 interface AccessLogConfigBlueprint extends Prototype.Factory<AccessLogFeature> {
+    /**
+     * Common log format, see {@link io.helidon.webserver.accesslog.AccessLogConfig.Builder#commonLogFormat()}.
+     */
     List<AccessLogEntry> COMMON_FORMAT = List.of(
             HostLogEntry.create(),
             UserIdLogEntry.create(),
@@ -41,6 +44,9 @@ interface AccessLogConfigBlueprint extends Prototype.Factory<AccessLogFeature> {
             SizeLogEntry.create()
     );
 
+    /**
+     * Helidon log format, see {@link io.helidon.webserver.accesslog.AccessLogConfig.Builder#defaultLogFormat()}.
+     */
     List<AccessLogEntry> HELIDON_FORMAT = List.of(
             HostLogEntry.create(),
             UserLogEntry.create(),

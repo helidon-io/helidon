@@ -33,6 +33,10 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
+            <artifactId>helidon-logging-jul</artifactId>
+            <groupId>io.helidon.logging</groupId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

@@ -51,10 +51,6 @@
             <artifactId>helidon-common-media-type</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.logging</groupId>
-            <artifactId>helidon-logging-jul</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-api</artifactId>
         </dependency>

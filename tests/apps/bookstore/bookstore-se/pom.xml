@@ -51,6 +51,10 @@
             <artifactId>helidon-webserver-http2</artifactId>
         </dependency>
         <dependency>
+            <artifactId>helidon-logging-jul</artifactId>
+            <groupId>io.helidon.logging</groupId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-jsonp</artifactId>
         </dependency>
