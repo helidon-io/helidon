@@ -36,9 +36,11 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  * is empty)</li>
  * <li>replaceConfigSourcesWithMp: (Optional) defaults to false: whether to replace config sources with microprofile if it
  * exists</li>
+ * <li>inWebContainer: (Optional) defaults to false: loads WEB-INF/beans.xml and find any
+ * jakarta.ws.rs.core.Application in the webapp classes</li>
  * <li>useBeanXmlTemplate: (Optional) defaults to true: will create the default templates/beans.xml when beans.xml is missing</li>
  * <li>includeWarContextPath: (Optional) defaults to false: will include the war name as a root context.
- * For example, if a example.war is deployed, the root context is going to be /example. Restful TCKs requires this.</li>
+ * For example, if a example.war is deployed, the root context is going to be /example.</li>
  * </ul>
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
@@ -48,7 +50,12 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private boolean deleteTmp = true;
     private boolean useRelativePath = false;
     private boolean useParentClassloader = true;
+    private boolean inWebContainer = false;
     private boolean useBeanXmlTemplate = true;
+    /*
+     *  Restful requires it, but core profile don't (because rest used to be deployed in a
+     *  web container together with other apps and in core profile there is only one app)
+     */
     private boolean includeWarContextPath = false;
     private final List<Consumer<ConfigBuilder>> builderConsumers = new ArrayList<>();
 
@@ -107,6 +114,14 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setUseParentClassloader(boolean useParentClassloader) {
         this.useParentClassloader = useParentClassloader;
+    }
+
+    public boolean isInWebContainer() {
+        return inWebContainer;
+    }
+
+    public void setInWebContainer(boolean inWebContainer) {
+        this.inWebContainer = inWebContainer;
     }
 
     public boolean isUseBeanXmlTemplate() {

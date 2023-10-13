@@ -224,12 +224,14 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 Path libDir = webInfDir.resolve("lib");
                 ensureBeansXml(classesDir, webInfDir);
                 addServerClasspath(classPath, classesDir, libDir, rootDir);
-                if (containerConfig.isIncludeWarContextPath()) {
-                    context.rootContext = archive.getName().split("\\.")[0];
-                }
-                if (!loadApplicationFromWebXml(context, webInfDir)) {
-                    // Search Application in classes
-                    loadApplicationFromClasses(context, archive);
+                if (containerConfig.isInWebContainer()) {
+                    if (containerConfig.isIncludeWarContextPath()) {
+                        context.rootContext = archive.getName().split("\\.")[0];
+                    }
+                    if (!loadApplicationFromWebXml(context, webInfDir)) {
+                        // Search Application in classes
+                        loadApplicationFromClasses(context, archive);
+                    }
                 }
             }
 
@@ -510,7 +512,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         if (null != metaInfPath) {
             Files.createDirectories(metaInfPath);
         }
-        if (webinfDir != null) {
+        if (containerConfig.isInWebContainer() && webinfDir != null) {
             // In case exists WEB-INF/beans.xml, then move it to classes/META-INF/beans.xml
             Path webInfBeansPath = webinfDir.resolve("beans.xml");
             if (Files.exists(webInfBeansPath)) {
