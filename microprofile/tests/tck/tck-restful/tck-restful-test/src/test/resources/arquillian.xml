@@ -29,7 +29,6 @@
     <container qualifier="helidon-embedded" default="true">
         <configuration>
             <property name="useRelativePath">false</property>
-            <property name="inWebContainer">true</property>
             <property name="includeWarContextPath">true</property>
         </configuration>
     </container>
