@@ -336,16 +336,6 @@ metrics:
                                         <value key="artifactId">helidon-microprofile-health</value>
                                     </map>
                                 </list>
-                                <list key="Main-createRouting" if="${flavor} == 'mp'">
-                                    <value template="mustache" order="0"><![CDATA[
-        HealthObserver health = HealthObserver.builder()
-                .addChecks(HealthChecks.healthChecks()) // Adds a convenient set of checks
-{{#Main-healthBuilder}}
-{{.}}
-{{/Main-healthBuilder}}
-                .build();]]>
-                                    </value>
-                                </list>
                                 <list key="MainTest-methods" if="${flavor} == 'mp'">
                                     <value><![CDATA[
     @Test

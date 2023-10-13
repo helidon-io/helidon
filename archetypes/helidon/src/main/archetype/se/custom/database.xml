@@ -194,11 +194,6 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                 .build();
 ]]></value>
                                     </list>
-                                    <list key="Main-server-builder">
-                                        <value><![CDATA[.addFeature(ObserveFeature.builder()
-                        .addObserver(TracingObserver.create(tracer))
-                        .build())]]></value>
-                                    </list>
                                     <list key="Main-routing-builder">
                                         <value><![CDATA[.register("/db", new PokemonService(dbClient))]]></value>
                                     </list>
@@ -369,18 +364,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             <value>io.helidon.webserver.observe.tracing.TracingObserver</value>
                             <value>io.helidon.tracing.Tracer</value>
                             <value>io.helidon.tracing.TracerBuilder</value>
-                        </list>
-                        <list key="Main-main">
-                            <value><![CDATA[
-Tracer tracer = TracerBuilder.create(config.get("tracing"))
-                            .registerGlobal(true)
-                            .build();
-]]></value>
-                        </list>
-                        <list key="Main-server-builder" if="${server} != 'mongodb'">
-                            <value><![CDATA[                .addFeature(ObserveFeature.builder()
-                        .addObserver(TracingObserver.create(tracer))
-                        .build())]]></value>
                         </list>
                         <list key="Main-routing-builder" if="${server} != 'mongodb'">
                             <value><![CDATA[.register("/db", new PokemonService(DbClient.create(config.get("db"))))]]></value>

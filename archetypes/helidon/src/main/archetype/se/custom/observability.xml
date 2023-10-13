@@ -27,17 +27,14 @@
             <list key="Main-main">
                 <value template="mustache" if="${health}"><![CDATA[
         ObserveFeature observe = ObserveFeature.builder()
-                                               .observersDiscoverServices(true)
+                                               .config(config.get("server.features.observe"))
                                                {{#Observe-feature-builder}}
                                                {{.}}
                                                {{/Observe-feature-builder}}
                                                .build();
 ]]></value>
             </list>
-            <list key="main-class-fields" if="${tracing}">
-                <value><![CDATA[    private static Tracer tracer;]]></value>
-            </list>
-            <list key="Main-server-builder">
+            <list key="Main-server-builder" if="${health}">
                 <value>.addFeature(observe)</value>
             </list>
             <list key="dependencies">
@@ -70,9 +67,24 @@
             <list key="Main-static-imports" if="${tracing}">
                 <value>static io.helidon.http.Method.GET</value>
             </list>
-            <list key="Main-routing-builder" if="${tracing}">
-                <value if="${tracing}"><![CDATA[.route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
-                .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))]]></value>
+            <list key="Main-main" if="${tracing}" order="1000">
+                <value order="1000"><![CDATA[
+        Tracer tracer = TracerBuilder.create("helidon")
+                .build();
+]]></value>
+            </list>
+            <list key="Observe-feature-builder" if="${tracing} &amp;&amp; ${health}">
+                <value><![CDATA[.addObserver(TracingObserver.create(tracer))]]></value>
+            </list>
+            <list key="Main-server-builder" if="${tracing} &amp;&amp; !(${health})">
+                <value><![CDATA[.addFeature(ObserveFeature.builder()
+                        .addObserver(TracingObserver.create(tracer))
+                        .build())]]></value>
+            </list>
+            <list key="Main-server-builder" if="${tracing}">
+                <value if="${tracing}"><![CDATA[.routing(router -> router
+                .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
+                .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route"))))]]></value>
             </list>
             <list key="main-class-content" if="${tracing}">
                 <value><![CDATA[
