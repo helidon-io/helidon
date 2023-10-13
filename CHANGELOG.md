@@ -21,6 +21,7 @@ Java 21 is required to use Helidon 4.0.0-RC1.
 
 ### CHANGES
 
+- Config: Replace usage of Priority with Weight in helidon-config [7776](https://github.com/helidon-io/helidon/pull/7776)
 - JPA: Fixes a jar-only URL resolution bug [7748](https://github.com/helidon-io/helidon/pull/7748)
 - JPA: Remove exclusion of jandex dependency now that hibernate has been upgraded [7778](https://github.com/helidon-io/helidon/pull/7778)
 - JPA: Switches default JPA CDI portable extension to PersistenceExtension from JpaExtension [7719](https://github.com/helidon-io/helidon/pull/7719)
@@ -40,6 +41,7 @@ Java 21 is required to use Helidon 4.0.0-RC1.
 - WebServer: Move SSL handshake logic from listener thread to connection thread [7764](https://github.com/helidon-io/helidon/pull/7764)
 - WebServer: Update HttpRules API to not have varargs with generics [7687](https://github.com/helidon-io/helidon/pull/7687)
 - WebServer: named routing [7705](https://github.com/helidon-io/helidon/pull/7705)
+- WebServer: Server Features [7777](https://github.com/helidon-io/helidon/pull/7777)
 - Build: Fix build noise [7740](https://github.com/helidon-io/helidon/pull/7740)
 - Build: Java 21 follow up [7732](https://github.com/helidon-io/helidon/pull/7732)
 - Build: release updates [7682](https://github.com/helidon-io/helidon/pull/7682)
@@ -51,10 +53,12 @@ Java 21 is required to use Helidon 4.0.0-RC1.
 - Dependencies: Upgrades Hibernate to version 6.3.1.Final [7742](https://github.com/helidon-io/helidon/pull/7742)
 - Dependencies: Upgrades ojdbc8 to 21.4.0.0 and fixes JAXP parser conflict [7762](https://github.com/helidon-io/helidon/pull/7762)
 - Deprecations: Remove older deprecated methods and types. [7728](https://github.com/helidon-io/helidon/pull/7728)
-- Docs:  global config [7681](https://github.com/helidon-io/helidon/pull/7681)
+- Docs: Add Helidon Connector to sitegen.yaml [7767](https://github.com/helidon-io/helidon/pull/7767)
+- Docs: global config [7681](https://github.com/helidon-io/helidon/pull/7681)
 - Docs: Fix occurences of reactive in the docs [7684](https://github.com/helidon-io/helidon/pull/7684)
 - Docs: Fixes user-reported typo in persistence guide [7750](https://github.com/helidon-io/helidon/pull/7750)
 - Docs: Initial documentation for the new Helidon connector. [7641](https://github.com/helidon-io/helidon/pull/7641)
+- Docs: Makes it more clear in documentation that persistence.xml files are application-level concerns, not component-level concerns [7771](https://github.com/helidon-io/helidon/pull/7771)
 - Docs: Reactive streams doc alignment #6458 [7723](https://github.com/helidon-io/helidon/pull/7723)
 - Docs: Update maven, gradle, jlink, native-image guides [7704](https://github.com/helidon-io/helidon/pull/7704)
 - Docs: updates to the general doc [7673](https://github.com/helidon-io/helidon/pull/7673)
