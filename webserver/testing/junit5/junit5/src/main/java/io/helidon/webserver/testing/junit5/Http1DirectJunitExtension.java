@@ -100,12 +100,13 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             DirectClient directClient = clients.get(socketName);
 
             if (directClient == null) {
+                // there is no routing specified
                 if (DEFAULT_SOCKET_NAME.equals(socketName)) {
                     throw new IllegalStateException("There is no default routing specified. Please add static method "
                                                             + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
                                                             + " or HttpRules");
                 } else {
-                    throw new IllegalStateException("There is no default routing specified for socket \"" + socketName + "\"."
+                    throw new IllegalStateException("There is no routing specified for socket \"" + socketName + "\"."
                                                             + " Please add static method "
                                                             + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
                                                             + " or HttpRules, and add @Socket(\"" + socketName + "\") "
