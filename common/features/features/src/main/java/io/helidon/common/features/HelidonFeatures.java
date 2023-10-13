@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,14 +60,14 @@ import io.helidon.common.features.api.HelidonFlavor;
  * </pre>
  */
 public final class HelidonFeatures {
+    static final AtomicBoolean PRINTED = new AtomicBoolean();
+    static final AtomicReference<HelidonFlavor> CURRENT_FLAVOR = new AtomicReference<>();
     private static final System.Logger LOGGER = System.getLogger(HelidonFeatures.class.getName());
     private static final System.Logger INCUBATING = System.getLogger(HelidonFeatures.class.getName() + ".incubating");
     private static final System.Logger PREVIEW = System.getLogger(HelidonFeatures.class.getName() + ".preview");
     private static final System.Logger DEPRECATED = System.getLogger(HelidonFeatures.class.getName() + ".deprecated");
     private static final System.Logger INVALID = System.getLogger(HelidonFeatures.class.getName() + ".invalid");
-    private static final AtomicBoolean PRINTED = new AtomicBoolean();
     private static final AtomicBoolean SCANNED = new AtomicBoolean();
-    private static final AtomicReference<HelidonFlavor> CURRENT_FLAVOR = new AtomicReference<>();
     private static final Map<HelidonFlavor, Set<FeatureDescriptor>> FEATURES = new EnumMap<>(HelidonFlavor.class);
     private static final Map<HelidonFlavor, Map<String, Node>> ROOT_FEATURE_NODES = new EnumMap<>(HelidonFlavor.class);
     private static final List<FeatureDescriptor> ALL_FEATURES = new LinkedList<>();
@@ -166,7 +166,7 @@ public final class HelidonFeatures {
         ALL_FEATURES.add(featureDescriptor);
     }
 
-    private static void features(HelidonFlavor flavor, String version, boolean details) {
+    static void features(HelidonFlavor flavor, String version, boolean details) {
         CURRENT_FLAVOR.compareAndSet(null, HelidonFlavor.SE);
 
         HelidonFlavor currentFlavor = CURRENT_FLAVOR.get();
@@ -203,25 +203,29 @@ public final class HelidonFeatures {
 
         if (details) {
             LOGGER.log(Level.INFO, "Detailed feature tree:");
-            FEATURES.get(currentFlavor)
-                    .forEach(feature -> printDetails(feature.name(),
-                                                     ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]),
-                                                     0));
+            if (FEATURES.containsKey(currentFlavor)) {
+                FEATURES.get(currentFlavor)
+                        .forEach(feature -> printDetails(feature.name(),
+                                                         ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]),
+                                                         0));
+            }
         } else {
             List<FeatureDescriptor> allIncubating = new ArrayList<>();
             List<FeatureDescriptor> allDeprecated = new ArrayList<>();
             List<FeatureDescriptor> allPreview = new ArrayList<>();
 
             if (ROOT_FEATURE_NODES.containsKey(currentFlavor)) {
-                FEATURES.get(currentFlavor)
-                        .forEach(feature -> {
-                            gatherIncubating(allIncubating,
-                                             ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
-                            gatherDeprecated(allDeprecated,
-                                             ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
-                            gatherPreview(allPreview,
-                                          ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
-                        });
+                if (FEATURES.containsKey(currentFlavor)) {
+                    FEATURES.get(currentFlavor)
+                            .forEach(feature -> {
+                                gatherIncubating(allIncubating,
+                                                 ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                                gatherDeprecated(allDeprecated,
+                                                 ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                                gatherPreview(allPreview,
+                                              ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                            });
+                }
             }
 
             if (!allIncubating.isEmpty()) {
@@ -230,15 +234,15 @@ public final class HelidonFeatures {
                 allIncubating
                         .forEach(it -> INCUBATING.log(Level.INFO,
                                                       "\tIncubating feature: "
-                                                                + it.name()
-                                                                + " since " + it.since()
-                                                                + " ("
-                                                                + it.stringPath()
-                                                                + ")"));
+                                                              + it.name()
+                                                              + " since " + it.since()
+                                                              + " ("
+                                                              + it.stringPath()
+                                                              + ")"));
             }
             if (!allDeprecated.isEmpty()) {
                 DEPRECATED.log(Level.WARNING,
-                                 "You are using deprecated features. These APIs will be removed from Helidon!");
+                               "You are using deprecated features. These APIs will be removed from Helidon!");
                 allDeprecated
                         .forEach(it -> DEPRECATED.log(Level.INFO,
                                                       "\tDeprecated feature: "
@@ -251,15 +255,15 @@ public final class HelidonFeatures {
             if (!allDeprecated.isEmpty()) {
                 PREVIEW.log(Level.INFO,
                             "You are using preview features. These APIs are production ready, yet may change more "
-                                       + "frequently. Please follow Helidon release changelog!");
+                                    + "frequently. Please follow Helidon release changelog!");
                 allPreview
                         .forEach(it -> PREVIEW.log(Level.INFO,
                                                    "\tPreview feature: "
-                                                              + it.name()
-                                                              + " since " + it.since()
-                                                              + " ("
-                                                              + it.stringPath()
-                                                              + ")"));
+                                                           + it.name()
+                                                           + " since " + it.since()
+                                                           + " ("
+                                                           + it.stringPath()
+                                                           + ")"));
             }
         }
     }
@@ -397,5 +401,4 @@ public final class HelidonFeatures {
             this.descriptor = featureDescriptor;
         }
     }
-
 }
