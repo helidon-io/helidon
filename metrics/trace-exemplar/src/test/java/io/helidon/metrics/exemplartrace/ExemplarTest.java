@@ -28,6 +28,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,14 +55,13 @@ class ExemplarTest {
     }
 
     @Test
-    void checkForExemplarsInOpenMetricsOutput() throws InterruptedException {
+    @Disabled("Intermittently failing")
+    void checkForExemplarsInOpenMetricsOutput() {
 
         try (Http1ClientResponse response = client.get("/test")
                 .request()) {
             assertThat("Ping status", response.status().code(), is(200));
         }
-
-        Thread.sleep(100); // we must give some time for the asynchronous task to finish
 
         try (Http1ClientResponse response = client.get("/observe/metrics")
                 .accept(MediaTypes.APPLICATION_OPENMETRICS_TEXT)

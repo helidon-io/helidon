@@ -24,9 +24,6 @@ observe:
       # as config replaces list values, we need to configure it here again
       secrets: ["app.some-secret-text", ".*password"]
 
-metrics:
-  permit-all: true
-
 app:
   some-secret-text: "should not be seen"
   some-password: "should not be seen"

@@ -300,21 +300,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                             </model>
                         </output>
                     </boolean>
-                    <output>
-                        <model>
-                            <list key="application-yaml-entries">
-                                <value><![CDATA[
-metrics:
-  permit-all: true
-                                ]]></value>
-                            </list><list key="config-test">
-                                <value><![CDATA[
-metrics:
-  permit-all: true
-                                ]]></value>
-                            </list>
-                        </model>
-                    </output>
                 </inputs>
             </boolean>
             <boolean id="health"

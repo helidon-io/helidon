@@ -20,6 +20,3 @@ server:
 
 app:
   greeting: "Hello"
-
-metrics:
-  permit-all: true

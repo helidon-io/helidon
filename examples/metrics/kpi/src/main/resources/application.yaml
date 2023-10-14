@@ -26,4 +26,3 @@ metrics:
     extended: true
     long-running:
       threshold-ms: 2000 # two seconds
-  permit-all: true

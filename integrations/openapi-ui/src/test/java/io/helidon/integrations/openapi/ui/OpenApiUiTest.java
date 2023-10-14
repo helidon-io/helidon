@@ -70,7 +70,6 @@ class OpenApiUiTest {
                                   .staticFile("src/test/resources/greeting.yml")
                                   .cors(cors -> cors.enabled(false))
                                   .addService(OpenApiUi.create())
-                                  .permitAll(true)
                                   .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
@@ -79,7 +78,6 @@ class OpenApiUiTest {
                                     .name("openapi-greeting")
                                     .cors(cors -> cors.enabled(false))
                                     .addService(OpenApiUi.create())
-                                    .permitAll(true)
                                     .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
@@ -89,7 +87,6 @@ class OpenApiUiTest {
                                                         .webContext("/my-ui")
                                                         .build())
                                     .name("openapi-ui")
-                                    .permitAll(true)
                                     .build());
     }
 

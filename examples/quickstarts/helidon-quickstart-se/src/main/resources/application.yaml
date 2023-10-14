@@ -29,8 +29,3 @@ server:
   #      metrics:
   #      health:
   #        enabled: false
-    openapi:
-      permit-all: true
-
-metrics:
-  permit-all: true

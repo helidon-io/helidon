@@ -22,8 +22,8 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 * CorsFeature is a new WebServer feature
 * TracingFeature is now an observability feature
 * Features use common config dependency - can still pass `io.helidon.Config` instance to them, only changes in SPI
-* Metrics in SE now require user in `observe` role, or `metrics.permit-all` set to `true`, otherwise 403 is returned
-* OpeanAPI in SE now requires user in `openapi` role, or `openapi.permit-all` set to `true`, otherwise 403 is returned
+* Metrics in SE endpoint is permitted to all, unless `metrics.permit-all` is set to `false`
+* OpeanAPI in SE endpoint is permitted to all, unless `openapi.permit-all` is set to `false`
 
 ## [4.0.0-RC1]
 
