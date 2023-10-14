@@ -95,7 +95,6 @@ class OpenApiUiTest {
 
     @SetUpRoute
     static void setup(HttpRouting.Builder routing) {
-        routing.get("/greet", (req, res) -> res.send("hi"));
     }
 
     @Test

@@ -50,7 +50,6 @@ class SnakeYAMLV1Test {
     }
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
-        routing.get("/greet", (req, res) -> res.send("Hi!"));
     }
 
     @Test
