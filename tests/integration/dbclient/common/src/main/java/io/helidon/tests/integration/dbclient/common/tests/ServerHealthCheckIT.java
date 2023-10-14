@@ -28,7 +28,7 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthObserver;
 
@@ -66,7 +66,7 @@ public class ServerHealthCheckIT {
     @BeforeAll
     public static void setup(DbClient dbClient, Config config) {
         SERVER = WebServer.builder()
-                .routing(builder -> routing(dbClient, config, builder))
+                .update(builder -> routing(dbClient, config, builder))
                 .config(config.get("server"))
                 .build()
                 .start();
@@ -77,7 +77,7 @@ public class ServerHealthCheckIT {
     // Add 2 endpoints:
     // - HealthCheck /noDetails/health with details turned off
     // - HealthCheck /details/health with details turned on
-    private static void routing(DbClient dbClient, Config config, HttpRouting.Builder router) {
+    private static void routing(DbClient dbClient, Config config, WebServerConfig.Builder router) {
         router.addFeature(
                 createObserveFeature(dbClient, config, "healthNoDetails", "noDetails", false));
         router.addFeature(
@@ -88,6 +88,7 @@ public class ServerHealthCheckIT {
         return ObserveFeature.builder()
                 .observersDiscoverServices(false)
                 .endpoint(endpoint)
+                .name(name)
                 .addObserver(HealthObserver.builder()
                                      .addCheck(DbClientHealthCheck.builder(dbClient)
                                                        .config(config.get("db.health-check"))

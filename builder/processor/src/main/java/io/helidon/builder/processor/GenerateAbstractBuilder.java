@@ -243,7 +243,8 @@ final class GenerateAbstractBuilder {
                 }
                 // now we have a method called config with wrong return type - this is not supported
                 throw new IllegalArgumentException("Configured property named \"config\" can only be of type "
-                                                           + CONFIG_TYPE.fqName() + ", but is: " + child.typeName().fqName());
+                                                           + CONFIG_TYPE.declaredName() + ", but is: "
+                                                           + child.typeName().declaredName());
             }
             /*
             String host() {
@@ -491,7 +492,8 @@ final class GenerateAbstractBuilder {
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
                                     .add(property.name())
-                                    .add("DiscoverServices")
+                                    .add("DiscoverServices, ")
+                                    .add(property.name())
                                     .addLine("));");
                         } else {
                             preBuildBuilder.add("discoverService(config, \"")
@@ -502,7 +504,9 @@ final class GenerateAbstractBuilder {
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
                                     .add(property.name())
-                                    .add("DiscoverServices).ifPresent(this::")
+                                    .add("DiscoverServices, @java.util.Optional@.ofNullable(")
+                                    .add(property.name())
+                                    .add(")).ifPresent(this::")
                                     .add(property.setterName())
                                     .addLine(");");
                         }

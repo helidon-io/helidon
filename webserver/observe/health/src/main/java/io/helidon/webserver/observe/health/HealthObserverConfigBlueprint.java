@@ -24,6 +24,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.webserver.observe.ObserverConfigBase;
+import io.helidon.webserver.observe.spi.ObserveProvider;
 
 /**
  * Configuration of Health observer.
@@ -34,10 +35,10 @@ import io.helidon.webserver.observe.ObserverConfigBase;
 @Prototype.Blueprint
 @Prototype.Configured("health")
 @Prototype.CustomMethods(HealthObserverSupport.CustomMethods.class)
+@Prototype.Provides(ObserveProvider.class)
 interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<HealthObserver> {
     @Option.Configured
     @Option.Default("health")
-    @Override
     String endpoint();
 
     @Override

@@ -26,8 +26,8 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
-import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
@@ -417,7 +417,7 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Create a new instance from {@link Config}.
+     * Create a new instance from {@link io.helidon.common.config.Config}.
      * The config instance has to be on the node containing keys used by this class (e.g. client-id).
      *
      * @param config configuration used to obtain OIDC integration values
@@ -963,7 +963,7 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
 
-            config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
+            config.get("cors").map(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
             config.get("token-refresh-before-expiration").as(Duration.class).ifPresent(this::tokenRefreshSkew);
 

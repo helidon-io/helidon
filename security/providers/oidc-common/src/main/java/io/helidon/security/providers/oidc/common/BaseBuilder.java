@@ -22,8 +22,8 @@ import java.util.Collections;
 
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
+import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
-import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -101,10 +101,10 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         config.get("identity-uri").as(URI.class).ifPresent(this::identityUri);
 
         // OIDC server configuration
-        config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
+        config.get("oidc-metadata.resource").map(Resource::create).ifPresent(this::oidcMetadata);
         config.get("base-scopes").asString().ifPresent(this::baseScopes);
         // backward compatibility
-        config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
+        config.get("oidc-metadata.resource").map(Resource::create).ifPresent(this::oidcMetadata);
         config.get("oidc-metadata-well-known").asBoolean().ifPresent(this::oidcMetadataWellKnown);
 
         config.get("scope-audience").asString().ifPresent(this::scopeAudience);
@@ -116,7 +116,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         config.get("token-endpoint-uri").as(URI.class).ifPresent(this::tokenEndpointUri);
         config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
 
-        config.get("sign-jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+        config.get("sign-jwk.resource").map(Resource::create).ifPresent(this::signJwk);
 
         config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
         config.get("validate-with-jwk").asBoolean().ifPresent(this::validateJwtWithJwk);

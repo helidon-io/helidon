@@ -19,10 +19,7 @@ package io.helidon.examples.webserver.observe;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.security.SecurityFeature;
 
 /**
  * Register observe support with all available observers and NO security.
@@ -45,7 +42,7 @@ public class ObserveMain {
 
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
-                .routing(it -> routing(config, it))
+                .routing(ObserveMain::routing)
                 .build()
                 .start();
 
@@ -58,10 +55,7 @@ public class ObserveMain {
      *
      * @param router HTTP routing builder
      */
-    static void routing(Config config, HttpRouting.Builder router) {
-        router.addFeature(SecurityFeature.create(config.get("security")))
-                .addFeature(ContextFeature.create(config.get("context")))
-                .addFeature(ObserveFeature.create(config.get("observe")))
-                .get("/", (req, res) -> res.send("WebServer Works!"));
+    static void routing(HttpRouting.Builder router) {
+        router.get("/", (req, res) -> res.send("WebServer Works!"));
     }
 }

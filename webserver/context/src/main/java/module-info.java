@@ -24,10 +24,14 @@
 module io.helidon.webserver.context {
 
     requires io.helidon.common.context;
-    requires io.helidon.common;
     requires io.helidon.webserver;
 
-    requires transitive io.helidon.config;
+    requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.common.config;
+
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+            with io.helidon.webserver.context.ContextFeatureProvider;
 
     exports io.helidon.webserver.context;
 

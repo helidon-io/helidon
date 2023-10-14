@@ -95,6 +95,14 @@ public interface Config {
     Config get(String key) throws ConfigException;
 
     /**
+     * Get the root of the configuration tree.
+     * In case this node is part of {@link #detach() detached} tree, this method returns the node that was detached.
+     *
+     * @return root of this configuration tree
+     */
+    Config root();
+
+    /**
      * Returns the single sub-node for the specified sub-key.
      *
      * @param key sub-key of requested sub-node
@@ -262,6 +270,15 @@ public interface Config {
      * @throws io.helidon.common.config.ConfigException in case the node is Type#MISSING.
      */
     ConfigValue<Map<String, String>> asMap() throws ConfigException;
+
+    /**
+     * Returns existing current config node as {@link io.helidon.common.config.ConfigValue}.
+     *
+     * @return current config node as {@link io.helidon.common.config.ConfigValue}
+     */
+    default ConfigValue<? extends Config> asNode() {
+        return as(Config.class);
+    }
 
     /**
      * String typed value.

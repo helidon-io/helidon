@@ -26,6 +26,7 @@ import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.dbclient.metrics.DbClientMetrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.tests.integration.dbclient.app.tests.FlowControlService;
 import io.helidon.tests.integration.dbclient.app.tests.HealthCheckService;
 import io.helidon.tests.integration.dbclient.app.tests.InterceptorService;
@@ -67,8 +68,12 @@ public class Main {
      */
     public static WebServer startServer(String configFile) {
 
-        Config config = Config.create(ConfigSources.classpath(configFile));
+        Config config = Config.create(ConfigSources.classpath("common.yaml"),
+                                      ConfigSources.classpath(configFile));
+        Config.global(config);
+
         Config dbConfig = config.get("db");
+        MetricsFactory.getInstance(config.get("metrics"));
 
         // Client services are added through a service loader - see mongoDB example for explicit services
         DbClient dbClient = DbClient.builder(dbConfig)
@@ -97,8 +102,9 @@ public class Main {
 
         // Prepare routing for the server
         WebServer server = WebServer.builder()
+                .featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.builder().addObserver(health).build())
                 .routing(routing -> routing
-                        .addFeature(ObserveFeature.builder().addObserver(health))
                         .register("/Init", new InitService(dbClient, dbConfig))
                         .register("/Exit", exitResource)
                         .register("/Verify", new VerifyService(dbClient, config))

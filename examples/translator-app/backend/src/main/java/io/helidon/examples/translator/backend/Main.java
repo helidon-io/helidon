@@ -23,7 +23,8 @@ import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.tracing.TracingFeature;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.tracing.TracingObserver;
 
 /**
  * Translator application backend main class.
@@ -43,8 +44,10 @@ public class Main {
                 .build();
 
         server.port(9080)
+                .addFeature(ObserveFeature.builder()
+                                    .addObserver(TracingObserver.create(tracer))
+                                    .build())
                 .routing(routing -> routing
-                        .addFeature(TracingFeature.create(tracer))
                         .register(new TranslatorBackendService()));
     }
 

@@ -18,13 +18,9 @@ package io.helidon.examples.metrics.exemplar;
 
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.tracing.Tracer;
-import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.tracing.TracingFeature;
 
 /**
  * The application main class.
@@ -73,10 +69,6 @@ public final class Main {
      * @param routing routing builder
      */
     static void routing(HttpRouting.Builder routing) {
-        Config config = Config.global();
-        Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
-        routing.addFeature(ObserveFeature.create())
-                .addFeature(TracingFeature.create(tracer))
-                .register("/greet", new GreetService());
+        routing.register("/greet", new GreetService());
     }
 }

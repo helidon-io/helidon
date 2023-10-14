@@ -18,10 +18,8 @@ package io.helidon.examples.quickstart.se;
 
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * The application main class.
@@ -62,8 +60,6 @@ public final class Main {
     static void routing(HttpRouting.Builder routing) {
         Config config = Config.global();
 
-        routing.register("/greet", new GreetService())
-                .addFeature(OpenApiFeature.create(config.get("openapi")))
-                .addFeature(ObserveFeature.create(config.get("observe")));
+        routing.register("/greet", new GreetService());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,12 +101,11 @@ public class MapConfigSourceTest {
                 "app.name", "app-name",
                 "app.port", "8080");
 
-        Config config = Config.builder()
-                .sources(ConfigSources.create(map))
-                .build()
+        Config config = Config.just(ConfigSources.create(map))
                 .get("app");
 
-        assertThat(config.asNodeList()
+        assertThat("Map of config is: " + config.asMap().get(),
+                   config.asNodeList()
                            .get()
                            .size(),
                    is(2));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,9 +124,7 @@ public class MapConfigSourcePropertiesTest {
         properties.setProperty("app.name", "app-name");
         properties.setProperty("app.port", "8080");
 
-        Config config = Config.builder()
-                .sources(ConfigSources.create(properties))
-                .build()
+        Config config = Config.just(ConfigSources.create(properties))
                 .get("app");
 
         assertThat(config.asNodeList().get().size(), is(2));
@@ -160,9 +158,7 @@ public class MapConfigSourcePropertiesTest {
         properties.setProperty("app.0", "zero");
         properties.setProperty("app.1", "one");
 
-        Config config = Config.builder()
-                .sources(ConfigSources.create(properties))
-                .build();
+        Config config = Config.just(ConfigSources.create(properties));
 
         assertThat(config.get("app").asNodeList().get().size(), CoreMatchers.is(2));
     }

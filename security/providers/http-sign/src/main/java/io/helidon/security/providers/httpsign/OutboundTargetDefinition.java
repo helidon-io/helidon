@@ -21,8 +21,8 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.pki.Keys;
-import io.helidon.config.Config;
 import io.helidon.security.util.TokenHandler;
 
 /**
@@ -311,8 +311,8 @@ public final class OutboundTargetDefinition {
         public Builder config(Config config) {
             this.keyId(config.get("key-id").asString().get());      // mandatory
             config.get("header").asString().map(HttpSignHeader::valueOf).ifPresent(this::header);
-            config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(this::signedHeaders);
-            config.get("private-key").as(Keys::create).ifPresent(this::privateKeyConfig);
+            config.get("sign-headers").map(SignedHeadersConfig::create).ifPresent(this::signedHeaders);
+            config.get("private-key").map(Keys::create).ifPresent(this::privateKeyConfig);
             config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
 
             // last, as we configure defaults based on configuration

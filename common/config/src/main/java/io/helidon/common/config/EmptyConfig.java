@@ -183,6 +183,12 @@ final class EmptyConfig {
         }
 
         @Override
+        public Config root() {
+            // empty config can just return the root empty config
+            return EMPTY;
+        }
+
+        @Override
         public Config get(Key key) throws ConfigException {
             return new EmptyNode(this.key.child(key));
         }

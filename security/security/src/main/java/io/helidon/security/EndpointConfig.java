@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.AbacSupport;
 

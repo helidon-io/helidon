@@ -22,11 +22,8 @@ server:
   port: -1
   host: 0.0.0.0
 
-observe:
-  observers:
-    health:
-      endpoint: "/health"
-#  ssl:
+metrics:
+  permit-all: true
 #    private-key:
 #      keystore-resource-path: "certificate.p12"
 #      keystore-passphrase: "helidon"

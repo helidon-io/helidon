@@ -35,7 +35,7 @@ public final class TimestampLogEntry extends AbstractLogEntry {
      * Create a new Timestamp log entry.
      *
      * @return a new access log entry for Timestamp
-     * @see AccessLogFeature.Builder#add(AccessLogEntry)
+     * @see AccessLogConfig.Builder#addEntry(AccessLogEntry)
      */
     public static TimestampLogEntry create() {
         return builder().build();

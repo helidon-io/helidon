@@ -18,11 +18,15 @@ package io.helidon.webserver.observe.config;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Config Observer configuration.
@@ -93,9 +97,23 @@ public class ConfigObserver implements Observer, RuntimeType.Api<ConfigObserverC
     }
 
     @Override
-    public void register(HttpRouting.Builder routing, String endpoint) {
-        // register the service itself
-        routing.register(endpoint, new ConfigService(patterns, findProfile(), config.permitAll()));
+    public void register(ServerFeature.ServerFeatureContext featureContext,
+                         List<HttpRouting.Builder> observeEndpointRouting,
+                         UnaryOperator<String> endpointFunction) {
+
+        String endpoint = endpointFunction.apply(config.endpoint());
+        if (config.enabled()) {
+            for (HttpRouting.Builder routing : observeEndpointRouting) {
+                // register the service itself
+                routing.register(endpoint, new ConfigService(patterns, findProfile(), config.permitAll()));
+            }
+        } else {
+            for (HttpRouting.Builder builder : observeEndpointRouting) {
+                builder.any(endpoint + "/*", (req, res) -> {
+                    throw new HttpException("Config endpoint is disabled", Status.SERVICE_UNAVAILABLE_503, true);
+                });
+            }
+        }
     }
 
     private static String findProfile() {

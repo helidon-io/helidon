@@ -18,8 +18,6 @@ package io.helidon.cors;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 
@@ -52,7 +50,7 @@ import io.helidon.common.config.Config;
 public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B>,
         B extends CorsSupportBase.Builder<Q, R, T, B>> {
 
-    private static final Logger LOGGER = Logger.getLogger(CorsSupportBase.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CorsSupportBase.class.getName());
 
     private final String name;
     private final CorsSupportHelper<Q, R> helper;
@@ -239,20 +237,20 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @param secondaryLookupSupplier supplier of a CrossOriginConfig
          * @return updated builder
          */
-        protected Builder<Q, R, T, B> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
+        protected B secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
             helperBuilder.secondaryLookupSupplier(secondaryLookupSupplier);
-            return this;
+            return identity();
         }
 
-        protected Builder requestDefaultBehaviorIfNone() {
+        protected B requestDefaultBehaviorIfNone() {
             requestDefaultBehaviorIfNone = true;
-            return this;
+            return identity();
         }
 
         private void reportUseOfMissingConfig(Config config) {
             if (!config.exists()) {
-                LOGGER.log(Level.INFO,
-                        String.format(
+                LOGGER.log(System.Logger.Level.TRACE,
+                           String.format(
                                 "Attempt to load %s using empty config with key '%s'; continuing with default CORS information",
                                 getClass().getSuperclass().getSimpleName(), config.key().toString()));
             }

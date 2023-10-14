@@ -16,7 +16,7 @@
 
 package io.helidon.security.providers.oidc.common.spi;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Java {@link java.util.ServiceLoader} service interface for multitenancy support.

@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.observe.info;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.http.NotFoundException;
@@ -37,8 +38,8 @@ class InfoService implements HttpService {
 
     private final Map<String, Object> info;
 
-    InfoService(Map<String, Object> info) {
-        this.info = info;
+    InfoService(Map<String, String> info) {
+        this.info = Map.copyOf(new HashMap<>(info));
     }
 
     @Override

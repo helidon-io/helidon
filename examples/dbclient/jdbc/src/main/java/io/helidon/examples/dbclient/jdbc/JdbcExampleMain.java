@@ -19,11 +19,8 @@ package io.helidon.examples.dbclient.jdbc;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.tracing.TracingFeature;
 
 /**
  * Simple Hello World rest application.
@@ -59,9 +56,7 @@ public final class JdbcExampleMain {
     }
 
     static void routing(HttpRouting.Builder routing, Config config) {
-        routing.addFeature(ObserveFeature.create(config))
-                .addFeature(TracingFeature.create(TracerBuilder.create(config.get("tracing")).build()))
-                .register("/db", new PokemonService(DbClient.create(config.get("db"))))
+        routing.register("/db", new PokemonService(DbClient.create(config.get("db"))))
                 .build();
     }
 }

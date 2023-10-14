@@ -534,6 +534,9 @@ public interface Config extends io.helidon.common.config.Config {
         return get(ConfigKeyImpl.of(key));
     }
 
+    @Override
+    Config root();
+
     /**
      * Returns the single sub-node for the specified sub-key.
      *
@@ -855,11 +858,9 @@ public interface Config extends io.helidon.common.config.Config {
     }
 
     /**
-     * Returns existing current config node as a {@link Optional} instance
-     * or {@link Optional#empty()} in case of {@link Type#MISSING} node.
+     * Returns existing current config node as {@link io.helidon.config.ConfigValue}.
      *
-     * @return current config node as a {@link Optional} instance
-     *         or {@link Optional#empty()} in case of {@link Type#MISSING} node.
+     * @return current config node as {@link io.helidon.config.ConfigValue}
      */
     default ConfigValue<Config> asNode() {
         return ConfigValues.create(this,

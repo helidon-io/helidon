@@ -32,6 +32,7 @@ import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.accesslog.AccessLogFeature;
 import io.helidon.webserver.accesslog.HostLogEntry;
 import io.helidon.webserver.accesslog.RequestLineLogEntry;
@@ -41,6 +42,7 @@ import io.helidon.webserver.accesslog.UserLogEntry;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -62,19 +64,22 @@ class AccessLogTest {
         this.socketClient = socketClient;
     }
 
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        // we cannot use the "time taken" entry, as that is changing between invocations
+        server.addFeature(AccessLogFeature.builder()
+                                  .clock(Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), ZoneId.of("UTC")))
+                                  .addEntry(HostLogEntry.create())
+                                  .addEntry(UserLogEntry.create())
+                                  .addEntry(TimestampLogEntry.create())
+                                  .addEntry(RequestLineLogEntry.create())
+                                  .addEntry(StatusLogEntry.create())
+                                  //.add(SizeLogEntry.create()) - size changes depending on date (1 or 2 characters for day)
+                                  .build());
+    }
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        // we cannot use the "time taken" entry, as that is changing between invocations
-        router.addFeature(AccessLogFeature.builder()
-                                 .clock(Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), ZoneId.of("UTC")))
-                                 .add(HostLogEntry.create())
-                                 .add(UserLogEntry.create())
-                                 .add(TimestampLogEntry.create())
-                                 .add(RequestLineLogEntry.create())
-                                 .add(StatusLogEntry.create())
-                                 //.add(SizeLogEntry.create()) - size changes depending on date (1 or 2 characters for day)
-                                 .build())
-                .get("/access", (req, res) -> res.send("Hello World!"));
+        router.get("/access", (req, res) -> res.send("Hello World!"));
     }
 
     // IMPORTANT - DO NOT ADD ADDITIONAL TESTS TO THIS CLASS

@@ -84,8 +84,17 @@ public final class Main {
                 .scoping(ScopingConfig.builder()
                                  .putScope(Meter.Scope.APPLICATION, scopeConfig));
 
-        server.config(config.get("server"))
-              .routing(r -> routing(r, metricsConfigBuilder));
+        MeterRegistry meterRegistry = MetricsFactory.getInstance(config).globalRegistry(metricsConfigBuilder.build());
+
+        MetricsObserver metrics = MetricsObserver.builder()
+                .meterRegistry(meterRegistry)
+                .metricsConfig(metricsConfigBuilder)
+                .build();
+
+        server.featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.just(metrics))
+                .config(config.get("server"))
+                .routing(r -> routing(r, meterRegistry));
     }
 
     /**
@@ -93,17 +102,9 @@ public final class Main {
      *
      * @param routing routing builder
      */
-    static void routing(HttpRouting.Builder routing, MetricsConfig.Builder metricsConfigBuilder) {
-        Config config = Config.global();
-
-        MeterRegistry meterRegistry = MetricsFactory.getInstance(config).globalRegistry(metricsConfigBuilder.build());
-
-        MetricsObserver metrics = MetricsObserver.builder()
-                .metricsConfig(metricsConfigBuilder)
-                .build();
+    static void routing(HttpRouting.Builder routing, MeterRegistry meterRegistry) {
         GreetService greetService = new GreetService(meterRegistry);
 
-        routing.addFeature(ObserveFeature.just(metrics))
-                .register("/greet", greetService);
+        routing.register("/greet", greetService);
     }
 }

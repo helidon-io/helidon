@@ -241,10 +241,10 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
         routerBuilders.forEach((socketName, routerBuilder) -> {
             if (DEFAULT_SOCKET_NAME.equals(socketName)) {
-                builder.addRoutings(routerBuilder.build().routings());
+                builder.addRoutings(routerBuilder.routings());
             } else {
                 listenerConfigs.computeIfAbsent(socketName, it -> ListenerConfig.builder())
-                        .addRoutings(routerBuilder.build().routings());
+                        .addRoutings(routerBuilder.routings());
             }
         });
 

@@ -134,7 +134,7 @@ To use configuration to control how the Helidon OpenAPI UI service behaves, add 
 ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
 ifdef::se-flavor[your configuration file, such as `application.yaml`.]
 
-include::{rootdir}/config/io_helidon_openapi_OpenApiUi_Builder.adoc[tag=config,leveloffset=+1]
+include::{rootdir}/config/io_helidon_integrations_openapi_ui_OpenApiUi.adoc[tag=config,leveloffset=+1]
 The default UI `web-context` value is the web context for your `OpenAPISupport` service with the added suffix `/ui`. If you use the default web context for both `OpenAPISupport` and the UI, the UI responds at `/openapi/ui`.
 
 // end::config-intro[]

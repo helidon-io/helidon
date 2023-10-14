@@ -352,16 +352,14 @@ abstract class ValidationTask {
                                   "As " + configObjectType.fqName() + " implements "
                                           + Types.PROTOTYPE_FACTORY_TYPE.classNameWithEnclosingNames()
                                           + "<"
-                                          + runtimeTypeInfo.typeName()
-                                          .fqName() + ">, the type " + runtimeTypeInfo.typeName().className()
+                                          + runtimeTypeInfo.typeName().resolvedName() + ">, the type "
+                                          + runtimeTypeInfo.typeName().className()
                                           + " must implement the following "
                                           + "method:\n"
                                           + "static "
                                           + runtimeTypeInfo.typeName().className()
-                                          + " create(" + consumerArgument.fqName() + " consumer) {\n"
-                                          + "  var builder = " + configObjectType.className() + ".builder();\n"
-                                          + "  consumer.accept(builder);"
-                                          + "  return builder.build();"
+                                          + " create(" + consumerArgument.resolvedName() + " consumer) {\n"
+                                          + "  return builder().update(consumer).build();"
                                           + "}");
         }
     }

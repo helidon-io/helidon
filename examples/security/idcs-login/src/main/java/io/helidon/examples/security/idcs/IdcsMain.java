@@ -29,7 +29,6 @@ import io.helidon.security.Subject;
 import io.helidon.security.providers.oidc.OidcFeature;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.security.SecurityFeature;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -77,7 +76,6 @@ public final class IdcsMain {
 
         server.config(config)
                 .routing(routing -> routing
-                        .addFeature(SecurityFeature.create(security, config.get("security")))
                         // IDCS requires a web resource for redirects
                         .addFeature(OidcFeature.create(config))
                         // web server does not (yet) have possibility to configure routes in config files, so explicit...

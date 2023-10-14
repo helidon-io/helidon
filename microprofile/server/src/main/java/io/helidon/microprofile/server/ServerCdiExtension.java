@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import io.helidon.common.Builder;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -51,9 +52,10 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.webserver.observe.ObserveConfig;
 import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.ObserveFeatureConfig;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
 import jakarta.annotation.Priority;
@@ -99,8 +101,9 @@ public class ServerCdiExtension implements Extension {
     // build time
     private WebServerConfig.Builder serverBuilder = WebServer.builder()
             .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
+            .featuresDiscoverServices(false) // we need to explicitly configure features, as they use different sources of config
             .port(7001);
-    private ObserveConfig.Builder observeBuilder = ObserveFeature.builder();
+    private ObserveFeatureConfig.Builder observeBuilder = ObserveFeature.builder();
     private HttpRouting.Builder routingBuilder = HttpRouting.builder();
     private Map<String, HttpRouting.Builder> namedRoutings = new HashMap<>();
     private Map<String, Router.Builder> namedRouters = new HashMap<>();
@@ -116,7 +119,6 @@ public class ServerCdiExtension implements Extension {
     private volatile boolean started;
 
     private Context context;
-    private String observeRouting;
 
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.
@@ -153,8 +155,8 @@ public class ServerCdiExtension implements Extension {
      *
      * @param routing routing to add, such as WebSocket routing
      */
-    public void addRouting(Routing routing) {
-        addRouting(routing, DEFAULT_SOCKET_NAME, false, null);
+    public void addRouting(Builder<?, ? extends Routing> routing) {
+        this.serverBuilder.addRouting(routing);
     }
 
     /**
@@ -167,20 +169,25 @@ public class ServerCdiExtension implements Extension {
      * @param required is the socket required to be present, validated against configured sockets
      * @param appName name of the application, to provide meaningful error messages
      */
-    public void addRouting(Routing routing, String socketName, boolean required, String appName) {
-        boolean hasRouting = serverBuilder.sockets().containsKey(socketName);
-        if (required && !hasRouting) {
-            throw new IllegalStateException("Application requires configured listener (socket name) "
-                                                    + socketName
-                                                    + " to exist, yet such a socket is not configured for web server"
-                                                    + " for app: " + appName);
+    public void addRouting(Builder<?, ? extends Routing> routing, String socketName, boolean required, String appName) {
+        if (DEFAULT_SOCKET_NAME.equals(socketName)) {
+            serverBuilder.addRouting(routing);
+        } else {
+            boolean hasRouting = serverBuilder.sockets().containsKey(socketName);
+            if (required && !hasRouting) {
+                throw new IllegalStateException("Application requires configured listener (socket name) "
+                                                        + socketName
+                                                        + " to exist, yet such a socket is not configured for web server"
+                                                        + " for app: " + appName);
+            }
+            if (!hasRouting) {
+                LOGGER.log(Level.INFO, "Routing " + socketName + " does not exist, using default routing instead for " + appName);
+                serverBuilder.addRouting(routing);
+            } else {
+                namedRouters.computeIfAbsent(socketName, it -> Router.builder())
+                        .addRouting(routing);
+            }
         }
-        if (!hasRouting && !DEFAULT_SOCKET_NAME.equals(socketName)) {
-            LOGGER.log(Level.INFO, "Routing " + socketName + " does not exist, using default routing instead for " + appName);
-        }
-
-        namedRouters.computeIfAbsent(socketName, it -> Router.builder())
-                .addRouting(routing);
     }
 
     /**
@@ -192,17 +199,6 @@ public class ServerCdiExtension implements Extension {
      */
     public void addObserver(Observer observer) {
         observeBuilder.addObserver(observer);
-    }
-
-    /**
-     * Name of the routing the observe feature will be registered on.
-     * Observe feature can only be registered on a single routing (which is usually served on a dedicated listener of
-     * the same name). Various observers may register additional components on other routings if required.
-     *
-     * @return name of the observe feature routing, may be {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME}
-     */
-    public String observeRouting() {
-        return observeRouting == null ? DEFAULT_SOCKET_NAME : observeRouting;
     }
 
     /**
@@ -251,6 +247,15 @@ public class ServerCdiExtension implements Extension {
      */
     public void basePath(String basePath) {
         this.basePath = basePath;
+    }
+
+    /**
+     * Add a server feature.
+     *
+     * @param feature feature to add
+     */
+    public void addFeature(ServerFeature feature) {
+        serverBuilder.addFeature(feature);
     }
 
     /**
@@ -331,9 +336,13 @@ public class ServerCdiExtension implements Extension {
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.serverBuilder.config(config.get("server"));
-        this.observeBuilder.config(config.get("observe"));
-        this.observeRouting = config.get("observe").get("routing").asString().orElse(DEFAULT_SOCKET_NAME);
+        this.observeBuilder.config(config.get("server.features.observe"));
         this.config = config;
+
+        if (!config.get("server.features.context").exists()) {
+            // not created automatically from configuration, create it manually
+            serverBuilder.addFeature(ContextFeature.create());
+        }
     }
 
     // Priority must ensure that these handlers are added before the MetricsSupport KPI metrics handler.
@@ -400,16 +409,22 @@ public class ServerCdiExtension implements Extension {
         // JAX-RS applications (and resources)
         registerJaxRsApplications(beanManager);
 
-        // support for Helidon common Context
-        routingBuilder.addFeature(ContextFeature.create());
-        namedRoutings.forEach((name, value) -> value.addFeature(ContextFeature.create()));
-
-        serverNamedRoutingBuilder(observeRouting)
-                .addFeature(observeBuilder.build());
-
+        serverBuilder.addFeature(observeBuilder.build());
 
         // start the webserver
-        serverBuilder.routing(routingBuilder.build());
+        serverBuilder.routing(routingBuilder);
+
+        namedRouters.forEach((name, routerBuilder) -> {
+            ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
+            ListenerConfig.Builder builder;
+            if (listenerConfig == null) {
+                builder = ListenerConfig.builder();
+            } else {
+                builder = ListenerConfig.builder(listenerConfig);
+            }
+            builder.addRoutings(routerBuilder.routings());
+            serverBuilder.putSocket(name, builder.build());
+        });
 
         namedRoutings.forEach((name, value) -> {
             ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
@@ -419,9 +434,23 @@ public class ServerCdiExtension implements Extension {
             } else {
                 builder = ListenerConfig.builder(listenerConfig);
             }
-            builder.routing(value.build());
+            builder.routing(value);
             serverBuilder.putSocket(name, builder.build());
         });
+
+        Set<String> socketNames = serverBuilder.sockets().keySet();
+        for (String socketName : socketNames) {
+            if (DEFAULT_SOCKET_NAME.equals(socketName)) {
+                continue;
+            }
+            if (namedRoutings.get(socketName) == null) {
+                if (!observeBuilder.sockets().contains(socketName)) {
+                    // retain original behavior
+                    serverBuilder.routing(socketName, serverBuilder.routing().orElseGet(HttpRouting::builder).copy());
+                }
+
+            }
+        }
 
         if (this.context == null) {
             this.context = Contexts.context().orElse(Context.builder()

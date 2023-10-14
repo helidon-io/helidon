@@ -41,4 +41,7 @@ module io.helidon.openapi {
 
     uses io.helidon.openapi.spi.OpenApiServiceProvider;
     uses io.helidon.openapi.spi.OpenApiManagerProvider;
+
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+            with io.helidon.openapi.OpenApiFeatureProvider;
 }

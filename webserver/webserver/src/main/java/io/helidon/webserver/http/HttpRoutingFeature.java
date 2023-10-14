@@ -56,6 +56,10 @@ class HttpRoutingFeature implements HttpFeature, Weighted {
         this.registrations.add(new RouteReg(route));
     }
 
+    void copyFrom(HttpRoutingFeature mainRouting) {
+        this.registrations.addAll(mainRouting.registrations);
+    }
+
     private interface Registration {
         void register(HttpRouting.Builder routing);
     }

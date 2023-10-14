@@ -11,6 +11,20 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.0]
+
+* WebServer no longer falls back to the default routing for additional sockets (in Helidon SE)
+* Introduced `ServerFeature` concept, server feature can access routing builders for all sockets on WebServer
+* SecurityFeature is now a WebServer feature
+* ContextFeature is now a WebServer feature
+* ObserveFeature is now a WebServer feature
+* OpenApiFeature is now a WebServer feature
+* CorsFeature is a new WebServer feature
+* TracingFeature is now an observability feature
+* Features use common config dependency - can still pass `io.helidon.Config` instance to them, only changes in SPI
+* Metrics in SE now require user in `observe` role, or `metrics.permit-all` set to `true`, otherwise 403 is returned
+* OpeanAPI in SE now requires user in `openapi` role, or `openapi.permit-all` set to `true`, otherwise 403 is returned
+
 ## [4.0.0-RC1]
 
 This is the first RC build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental.

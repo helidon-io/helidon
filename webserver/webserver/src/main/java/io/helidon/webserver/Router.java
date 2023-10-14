@@ -17,7 +17,6 @@
 package io.helidon.webserver;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Router for server.
@@ -87,16 +86,13 @@ public interface Router {
          * @param routing routing to add, such as {@code io.helidon.webserver.http.HttpRouting}
          * @return updated builder
          */
-        B addRouting(Routing routing);
+        B addRouting(io.helidon.common.Builder<?, ? extends Routing> routing);
 
         /**
-         * Add a new routing to this router.
+         * List of all routing builders registered with this router builder.
          *
-         * @param routing routing to add, such as {@code io.helidon.webserver.http.HttpRouting}
-         * @return updated builder
+         * @return routing builder list
          */
-        default B addRouting(Supplier<? extends Routing> routing) {
-            return addRouting(routing.get());
-        }
+        List<io.helidon.common.Builder<?, ? extends Routing>> routings();
     }
 }

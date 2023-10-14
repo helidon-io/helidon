@@ -27,8 +27,8 @@ import io.helidon.webserver.WebServer;
  * Multiple methods may exist, each configuring a different socket (see {@link #value()}).
  *
  * Supported signatures:
- * {@code static void routing(Router.Builder builder)}
- * {@code static void routing(Router.Builder builder, ListenerConfiguration.Builder builder)}
+ * {@code static void routing(HttpRouting.Builder builder)}
+ * {@code static void routing(HttpRouting.Builder builder, ListenerConfiguration.Builder builder)}
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

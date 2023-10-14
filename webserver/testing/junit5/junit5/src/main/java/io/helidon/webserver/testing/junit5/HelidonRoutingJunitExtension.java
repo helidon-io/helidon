@@ -25,8 +25,12 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.testing.junit5.spi.DirectJunitExtension;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -38,6 +42,8 @@ import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+
+import static io.helidon.webserver.testing.junit5.Junit5Util.withStaticMethods;
 
 /**
  * JUnit5 extension to support Helidon WebServer in tests.
@@ -51,6 +57,7 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
                    ParameterResolver {
 
     private final List<DirectJunitExtension> extensions;
+    private WebServerConfig serverConfig;
 
     HelidonRoutingJunitExtension() {
         this.extensions = HelidonServiceLoader.create(ServiceLoader.load(DirectJunitExtension.class)).asList();
@@ -68,7 +75,14 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
                                                     + RoutingTest.class.getName() + " annotation");
         }
 
+        WebServerConfig.Builder builder = WebServer.builder()
+                .config(GlobalConfig.config().get("server"))
+                .host("localhost");
+
         extensions.forEach(it -> it.beforeAll(context));
+
+        setupServer(builder);
+        serverConfig = builder.buildPrototype();
 
         initRoutings();
     }
@@ -124,15 +138,18 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
     }
 
     private void initRoutings() {
+        List<ServerFeature> features = serverConfig.features();
+
         Junit5Util.withStaticMethods(testClass(), SetUpRoute.class, (
                 (setUpRoute, method) -> {
                     String socketName = setUpRoute.value();
-                    SetUpRouteHandler methodConsumer = createRoutingMethodCall(method);
+                    SetUpRouteHandler methodConsumer = createRoutingMethodCall(features, method);
                     methodConsumer.handle(socketName);
                 }));
     }
 
-    private SetUpRouteHandler createRoutingMethodCall(Method method) {
+    private SetUpRouteHandler createRoutingMethodCall(List<ServerFeature> features, Method method) {
+
         // @SetUpRoute may have parameters handled by different extensions
         List<DirectJunitExtension.ParamHandler> handlers = new ArrayList<>();
         for (Parameter parameter : method.getParameters()) {
@@ -140,7 +157,7 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
             boolean found = false;
             for (DirectJunitExtension extension : extensions) {
                 Optional<? extends DirectJunitExtension.ParamHandler> paramHandler =
-                        extension.setUpRouteParamHandler(parameter.getType());
+                        extension.setUpRouteParamHandler(features, parameter.getType());
                 if (paramHandler.isPresent()) {
                     // we care about the extension with the highest priority only
                     handlers.add(paramHandler.get());
@@ -173,6 +190,26 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
                 handler.handle(method, socketName, value);
             }
         };
+    }
+
+    private void setupServer(WebServerConfig.Builder builder) {
+        withStaticMethods(testClass(), SetUpServer.class, (setUpServer, method) -> {
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            if (parameterTypes.length != 1) {
+                throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
+                                                           + " does not have exactly one parameter (WebServerConfig.Builder)");
+            }
+            if (!parameterTypes[0].equals(WebServerConfig.Builder.class)) {
+                throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
+                                                           + " does not have exactly one parameter (WebServerConfig.Builder)");
+            }
+            try {
+                method.setAccessible(true);
+                method.invoke(null, builder);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new IllegalStateException("Could not invoke method " + method, e);
+            }
+        });
     }
 
     private interface SetUpRouteHandler {

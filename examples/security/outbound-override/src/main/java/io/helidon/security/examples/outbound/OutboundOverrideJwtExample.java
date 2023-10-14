@@ -25,8 +25,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
-import io.helidon.webserver.security.SecurityFeature;
+import io.helidon.webserver.security.SecurityHttpFeature;
 
 /**
  * Creates two services.
@@ -87,15 +86,13 @@ public final class OutboundOverrideJwtExample {
         Config backendConfig = Config.create(ConfigSources.classpath("backend-service-jwt.yaml"));
 
         server.routing(routing -> routing
-                        .addFeature(ContextFeature.create())
-                        .addFeature(SecurityFeature.create(clientConfig.get("security")))
+                        .addFeature(SecurityHttpFeature.create(clientConfig.get("security.web-server")))
                         .register(new JwtOverrideService()))
 
                 // backend that prints the current user
                 .putSocket("backend", socket -> socket
                         .routing(routing -> routing
-                                .addFeature(ContextFeature.create())
-                                .addFeature(SecurityFeature.create(backendConfig.get("security")))
+                                .addFeature(SecurityHttpFeature.create(backendConfig.get("security.web-server")))
                                 .get("/hello", (req, res) -> {
 
                                     // This is the token. It should be bearer <signed JWT base64 encoded>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import io.helidon.common.Errors;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.abac.AbacAnnotation;
@@ -63,12 +63,12 @@ public interface AbacValidator<T extends AbacValidatorConfig> {
     /**
      * Key of a configuration entry that maps to this validator's configuration.
      *
-     * @return key in a config {@link Config}
+     * @return key in a config {@link io.helidon.common.config.Config}
      */
     String configKey();
 
     /**
-     * Load configuration class instance from {@link Config}.
+     * Load configuration class instance from {@link io.helidon.common.config.Config}.
      *
      * @param config configuration located on the key this validator expects in {@link #configKey()}
      * @return instance of configuration class

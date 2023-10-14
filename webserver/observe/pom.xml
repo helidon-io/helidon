@@ -36,5 +36,6 @@
         <module>info</module>
         <module>metrics</module>
         <module>log</module>
+        <module>tracing</module>
     </modules>
 </project>

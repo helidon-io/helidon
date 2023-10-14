@@ -255,9 +255,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                 <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                     <value>io.helidon.webserver.observe.ObserveFeature</value>
                                 </list>
-                                <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                    <value>.addFeature(ObserveFeature.create())</value>
-                                </list>
                                 <list key="dependencies">
                                     <map if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.webserver.observe</value>
@@ -303,6 +300,21 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                             </model>
                         </output>
                     </boolean>
+                    <output>
+                        <model>
+                            <list key="application-yaml-entries">
+                                <value><![CDATA[
+metrics:
+  permit-all: true
+                                ]]></value>
+                            </list><list key="config-test">
+                                <value><![CDATA[
+metrics:
+  permit-all: true
+                                ]]></value>
+                            </list>
+                        </model>
+                    </output>
                 </inputs>
             </boolean>
             <boolean id="health"
@@ -323,16 +335,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value key="groupId">io.helidon.microprofile.health</value>
                                         <value key="artifactId">helidon-microprofile-health</value>
                                     </map>
-                                </list>
-                                <list key="Main-createRouting" if="${flavor} == 'mp'">
-                                    <value template="mustache" order="0"><![CDATA[
-        HealthObserver health = HealthObserver.builder()
-                .addChecks(HealthChecks.healthChecks()) // Adds a convenient set of checks
-{{#Main-healthBuilder}}
-{{.}}
-{{/Main-healthBuilder}}
-                .build();]]>
-                                    </value>
                                 </list>
                                 <list key="MainTest-methods" if="${flavor} == 'mp'">
                                     <value><![CDATA[

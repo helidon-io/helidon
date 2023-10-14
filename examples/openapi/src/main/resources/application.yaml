@@ -20,3 +20,9 @@ app:
 server:
   port: 8080
   host: 0.0.0.0
+  features:
+    openapi:
+      permit-all: true
+
+metrics:
+  permit-all: true

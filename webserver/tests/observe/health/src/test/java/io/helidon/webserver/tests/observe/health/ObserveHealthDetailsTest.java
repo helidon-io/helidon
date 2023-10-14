@@ -23,11 +23,11 @@ import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -50,16 +50,16 @@ class ObserveHealthDetailsTest {
         this.httpClient = httpClient;
     }
 
-    @SetUpRoute
-    static void routing(HttpRouting.Builder routing) {
+    @SetUpServer
+    static void server(WebServerConfig.Builder builder) {
         healthCheck = new MyHealthCheck();
-        routing.addFeature(ObserveFeature.just(HealthObserver
-                                                         .builder()
-                                                         .addCheck(healthCheck)
-                                                         .details(true)
-                                                         .build()));
+        builder.featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.just(HealthObserver
+                                                        .builder()
+                                                        .addCheck(healthCheck)
+                                                        .details(true)
+                                                        .build()));
     }
-
     @BeforeEach
     void resetStatus() {
         healthCheck.status(HealthCheckResponse.Status.UP);

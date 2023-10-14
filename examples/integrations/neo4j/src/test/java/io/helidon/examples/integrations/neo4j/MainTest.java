@@ -19,14 +19,17 @@ package io.helidon.examples.integrations.neo4j;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.JsonArray;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.neo4j.driver.Config;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
 
@@ -39,58 +42,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 public class MainTest {
-
-    private final Http1Client webClient;
-
-    private static Neo4j embeddedDatabaseServer;
-
-    public MainTest(Http1Client webClient) {
-        this.webClient = webClient;
-    }
-
-    @SetUpRoute
-    static void routing(HttpRouting.Builder builder) {
-        //Setup embedded Neo4j Server and inject in routing
-        embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
-                                              .withDisabledServer()
-                                              .withFixture(FIXTURE)
-                                              .build();
-
-        System.setProperty("neo4j.uri", embeddedDatabaseServer.boltURI().toString());
-
-        Main.routing(builder);
-    }
-
-    @BeforeAll
-    static void startServer() {
-        //Setup embedded Neo4j Server and inject in routing
-        embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
-                                              .withDisabledServer()
-                                              .withFixture(FIXTURE)
-                                              .build();
-
-        System.setProperty("neo4j.uri", embeddedDatabaseServer.boltURI().toString());
-    }
-
-    @AfterAll
-    static void stopServer() {
-        if (embeddedDatabaseServer != null) {
-            embeddedDatabaseServer.close();
-        }
-    }
-
-    @Test
-    void testMovies() {
-        JsonArray result = webClient.get("/api/movies").requestEntity(JsonArray.class);
-        assertThat(result.getJsonObject(0).getString("title"), containsString("The Matrix"));
-    }
-
-    @Test
-    public void testHealth() {
-        try (Http1ClientResponse response = webClient.get("/observe/health").request()) {
-            assertThat(response.status(), is(Status.NO_CONTENT_204));
-        }
-    }
 
     static final String FIXTURE = """
             CREATE (TheMatrix:Movie {title:'The Matrix', released:1999, tagline:'Welcome to the Real World'})
@@ -110,10 +61,10 @@ public class MainTest {
             (LillyW)-[:DIRECTED]->(TheMatrix),
             (LanaW)-[:DIRECTED]->(TheMatrix),
             (JoelS)-[:PRODUCED]->(TheMatrix)
-            
+                        
             CREATE (Emil:Person {name:"Emil Eifrem", born:1978})
             CREATE (Emil)-[:ACTED_IN {roles:["Emil"]}]->(TheMatrix)
-            
+                        
             CREATE (TheMatrixReloaded:Movie {title:'The Matrix Reloaded', released:2003, tagline:'Free your mind'})
             CREATE
             (Keanu)-[:ACTED_IN {roles:['Neo']}]->(TheMatrixReloaded),
@@ -123,7 +74,7 @@ public class MainTest {
             (LillyW)-[:DIRECTED]->(TheMatrixReloaded),
             (LanaW)-[:DIRECTED]->(TheMatrixReloaded),
             (JoelS)-[:PRODUCED]->(TheMatrixReloaded)
-            
+                        
             CREATE (TheMatrixRevolutions:Movie {title:'The Matrix Revolutions', released:2003,
             tagline:'Everything that has a beginning has an end'})
             CREATE
@@ -135,4 +86,57 @@ public class MainTest {
             (LillyW)-[:DIRECTED]->(TheMatrixRevolutions),
             (LanaW)-[:DIRECTED]->(TheMatrixRevolutions),
             (JoelS)-[:PRODUCED]->(TheMatrixRevolutions)""";
+    private static Neo4j embeddedDatabaseServer;
+    private final Http1Client webClient;
+
+    public MainTest(Http1Client webClient) {
+        this.webClient = webClient;
+    }
+
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        //Setup embedded Neo4j Server and inject in routing
+        embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
+                .withDisabledServer()
+                .withFixture(FIXTURE)
+                .build();
+
+        Driver driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI(), Config.builder()
+                .withDriverMetrics()
+                .build());
+        server.features(Main.features(driver))
+                .routing(it -> Main.routing(it, driver));
+
+    }
+
+    @BeforeAll
+    static void startServer() {
+        //Setup embedded Neo4j Server and inject in routing
+        embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder()
+                .withDisabledServer()
+                .withFixture(FIXTURE)
+                .build();
+
+        System.setProperty("neo4j.uri", embeddedDatabaseServer.boltURI().toString());
+    }
+
+    @AfterAll
+    static void stopServer() {
+        if (embeddedDatabaseServer != null) {
+            embeddedDatabaseServer.close();
+        }
+    }
+
+    @Test
+    public void testHealth() {
+        try (Http1ClientResponse response = webClient.get("/observe/health").request()) {
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+        }
+    }
+
+    @Test
+    void testMovies() {
+        JsonArray result = webClient.get("/api/movies").requestEntity(JsonArray.class);
+        assertThat(result.getJsonObject(0).getString("title"), containsString("The Matrix"));
+    }
 }

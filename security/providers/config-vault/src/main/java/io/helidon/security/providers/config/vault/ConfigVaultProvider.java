@@ -23,8 +23,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.Base64Value;
+import io.helidon.common.config.Config;
 import io.helidon.common.crypto.SymmetricCipher;
-import io.helidon.config.Config;
 import io.helidon.config.encryption.ConfigProperties;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;

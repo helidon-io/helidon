@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.Status;
 import io.helidon.security.Security;
@@ -35,7 +36,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 /**
- * Unit test for {@link SecurityFeature}.
+ * Unit test for {@link SecurityHttpFeature}.
  */
 @ServerTest
 public class WebSecurityProgrammaticTest extends WebSecurityTests {
@@ -49,7 +50,7 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
         UnitTestAuditProvider myAuditProvider = new UnitTestAuditProvider();
         WebSecurityTestUtil.auditLogFinest();
 
-        Config config = Config.create();
+        Config config = Config.just(ConfigSources.classpath("security-application.yaml"));
 
         Security security = Security.builder(config.get("security"))
                 .addAuditProvider(myAuditProvider).build();
@@ -57,20 +58,21 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
         Context context = Context.create();
         context.register(myAuditProvider);
 
-        SecurityFeature securityFeature = SecurityFeature.create(security)
-                .securityDefaults(SecurityHandler.create()
-                        .queryParam("jwt", TokenHandler.builder()
-                                .tokenHeader("BEARER_TOKEN")
-                                .tokenPattern(Pattern.compile("bearer (.*)"))
-                                .build())
-                        .queryParam("name", TokenHandler.builder()
-                                .tokenHeader("NAME_FROM_REQUEST")
-                                .build()));
-
         serverBuilder.serverContext(context)
+                .featuresDiscoverServices(false)
+                .addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.builder()
+                                    .security(security)
+                                    .defaults(SecurityHandler.create()
+                                                      .queryParam("jwt", TokenHandler.builder()
+                                                              .tokenHeader("BEARER_TOKEN")
+                                                              .tokenPattern(Pattern.compile("bearer (.*)"))
+                                                              .build())
+                                                      .queryParam("name", TokenHandler.builder()
+                                                              .tokenHeader("NAME_FROM_REQUEST")
+                                                              .build()))
+                                    .build())
                 .routing(routing -> routing
-                        .addFeature(ContextFeature.create())
-                        .addFeature(securityFeature)
                         .get("/noRoles", SecurityFeature.secure())
                         .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
                         .get("/admin", SecurityFeature.rolesAllowed("admin"))

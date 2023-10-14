@@ -70,8 +70,7 @@ public final class Main {
                         // register rest endpoint for sending to Jms
                         .register("/rest/messages", sendingService))
                 .addRouting(WsRouting.builder()
-                        .endpoint("/ws/messages", new WebSocketEndpoint())
-                        .build())
+                        .endpoint("/ws/messages", new WebSocketEndpoint()))
                 .config(config.get("server"))
                 .build();
 

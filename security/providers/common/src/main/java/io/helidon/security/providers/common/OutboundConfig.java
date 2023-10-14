@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.EndpointConfig;
@@ -85,7 +85,7 @@ public final class OutboundConfig {
     static OutboundConfig createFromConfig(Config providerConfig, OutboundTarget[] defaults) {
         Config config = providerConfig.get(CONFIG_OUTBOUND);
 
-        List<OutboundTarget> configuredTargets = config.asList(OutboundTarget::create).orElse(List.of());
+        List<OutboundTarget> configuredTargets = config.mapList(OutboundTarget::create).orElse(List.of());
 
         boolean useDefaults = configuredTargets.stream().noneMatch(targetConfig -> "default".equals(targetConfig.name()))
                 && (null != defaults);

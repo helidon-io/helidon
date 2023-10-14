@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.integrations.common.rest.RestApi;

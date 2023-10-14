@@ -23,6 +23,7 @@ import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -123,13 +124,15 @@ class MultiPortTest {
 
     @Test
     void compositeSingleRoutingServer() {
+        HttpRouting.Builder routing = HttpRouting.builder()
+                .get("/overridden", (req, res) -> res.send("Overridden BOTH"))
+                .get("/", commonHandler)
+                .get("/variable", (req, res) -> res.send("Variable BOTH"));
+
         // start all of the servers
         server = WebServer.builder()
-                .routing(routing -> routing.get("/overridden", (req, res) -> res.send("Overridden BOTH"))
-                        .get("/", commonHandler)
-                        .get("/variable", (req, res) -> res.send("Variable BOTH")))
-                .putSocket("second", builder -> {
-                })
+                .routing(routing)
+                .putSocket("second", builder -> builder.routing(routing.copy()))
                 .build()
                 .start();
 

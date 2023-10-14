@@ -22,7 +22,6 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * Simple Hello World rest application.
@@ -94,7 +93,6 @@ public final class PokemonMain {
         // Initialize database schema
         InitializeDb.init(dbClient, !mongo);
 
-        routing.register("/db", new PokemonService(dbClient))
-                .addFeature(ObserveFeature.create());
+        routing.register("/db", new PokemonService(dbClient));
     }
 }

@@ -97,6 +97,13 @@ class Http2ServerTest {
                 .route(Http2Route.route(GET, "/query", Http2ServerTest::queryEndpoint));
     }
 
+    @SetUpRoute("https")
+    static void routerHttps(HttpRouting.Builder router) {
+        // explicitly on HTTP/2 only, to make sure we do upgrade
+        router.route(Http2Route.route(GET, "/", (req, res) -> res.header(TEST_HEADER).send(MESSAGE)))
+                .route(Http2Route.route(GET, "/query", Http2ServerTest::queryEndpoint));
+    }
+
     @Test
     void testHttp1() {
         // make sure the HTTP/1 route is not working

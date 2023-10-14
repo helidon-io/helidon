@@ -93,8 +93,22 @@ public final class Main {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
+        HealthObserver health = HealthObserver.builder()
+                .useSystemServices(false)
+                .addCheck(HeapMemoryHealthCheck.create())
+                .addCheck(DiskSpaceHealthCheck.create())
+                .addCheck(DeadlockHealthCheck.create())
+                .details(true)
+                .endpoint("/health")
+                .build();
+        MetricsObserver metrics = MetricsObserver.builder()
+                .endpoint("/metrics")
+                .build();
+
         // Build server config based on params
         serverBuilder
+                // Health at "/health", and metrics at "/metrics"
+                .addFeature(ObserveFeature.just(health, metrics))
                 .addRouting(createRouting(config))
                 .config(config.get("server"))
                 .update(it -> configureJsonSupport(it, config))
@@ -152,26 +166,10 @@ public final class Main {
      * @param config configuration of this server
      * @return routing configured with JSON support, a health check, and a service
      */
-    private static Routing createRouting(Config config) {
+    private static HttpRouting.Builder createRouting(Config config) {
 
-        HealthObserver health = HealthObserver.builder()
-                .useSystemServices(false)
-                .addCheck(HeapMemoryHealthCheck.create())
-                .addCheck(DiskSpaceHealthCheck.create())
-                .addCheck(DeadlockHealthCheck.create())
-                .details(true)
-                .endpoint("/health")
-                .build();
-        MetricsObserver metrics = MetricsObserver.builder()
-                .endpoint("/metrics")
-                .build();
-
-        HttpRouting.Builder builder = HttpRouting.builder()
-                // Health at "/health", and metrics at "/metrics"
-                .addFeature(ObserveFeature.just(health, metrics))
+        return HttpRouting.builder()
                 .register(SERVICE_PATH, new BookService(config));
-
-        return builder.build();
     }
 
     enum JsonLibrary {

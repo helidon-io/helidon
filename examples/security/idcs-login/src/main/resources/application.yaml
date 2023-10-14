@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,16 @@
 
 server:
   port: 7987
+  features:
+    security:
+      # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
+      paths:
+        - path: "/rest/profile"
+          methods: [ "get" ]
+          authenticate: true
+          roles-allowed: [ "my_admins" ]
+          # abac:
+          # scopes: ["first_scope", "second_scope"]
 
 security:
   config.require-encryption: false
@@ -54,13 +64,4 @@ security:
         client-id: "${security.properties.idcs-client-id}"
         client-secret: "${security.properties.idcs-client-secret}"
         identity-uri: "${security.properties.idcs-uri}"
-  web-server:
-    # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
-    paths:
-      - path: "/rest/profile"
-        methods: ["get"]
-        authenticate: true
-        roles-allowed: ["my_admins"]
-#        abac:
-#          scopes: ["first_scope", "second_scope"]
 

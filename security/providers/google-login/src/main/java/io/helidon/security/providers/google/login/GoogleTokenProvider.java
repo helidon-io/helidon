@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -545,9 +545,9 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
             config.get("proxy-host").asString().ifPresent(this::proxyHost);
             config.get("proxy-port").asInt().ifPresent(this::proxyPort);
             config.get("realm").asString().ifPresent(this::realm);
-            config.get("token").as(TokenHandler::create).ifPresent(this::tokenProvider);
+            config.get("token").map(TokenHandler::create).ifPresent(this::tokenProvider);
             // OutboundConfig.create() expects provider configuration, not outbound
-            config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(config)));
+            config.get("outbound").asNode().ifPresent(outbound -> outboundConfig(OutboundConfig.create(config)));
 
             return this;
         }

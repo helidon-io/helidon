@@ -115,6 +115,7 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
                                                                                            optional,
                                                                                            type.kind(),
                                                                                            data.provider(),
+                                                                                           data.providerType(),
                                                                                            deprecated,
                                                                                            data.merge(),
                                                                                            allowedValues);

@@ -42,4 +42,6 @@ module io.helidon.webserver.observe {
 
     uses io.helidon.webserver.observe.spi.ObserveProvider;
 
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+            with io.helidon.webserver.observe.ObserveFeatureProvider;
 }

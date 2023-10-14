@@ -30,6 +30,7 @@ module io.helidon.webserver.accesslog {
     requires io.helidon.common.security;
     requires io.helidon.webserver;
     requires java.logging;
+    requires io.helidon.logging.jul;
 
     requires static io.helidon.common.features.api;
 

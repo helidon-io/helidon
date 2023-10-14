@@ -20,18 +20,18 @@ import java.util.stream.Stream;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.security.Security;
+import io.helidon.security.providers.common.OutboundTarget;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientConfig;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.security.Security;
-import io.helidon.security.providers.common.OutboundTarget;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 /**
  * Parent class for integration tests.
@@ -51,9 +51,9 @@ class TestParent {
         this.client = createNewClient();
     }
 
-    @SetUpServer
-    static void startTheServer(WebServerConfig.Builder builder) {
-        Main.setup(builder, null);
+    @SetUpRoute
+    static void routing(HttpRouting.Builder routing) {
+        routing.register("/greet", new GreetService());
     }
 
     protected WebClient noServiceClient(WebClientService... services) {

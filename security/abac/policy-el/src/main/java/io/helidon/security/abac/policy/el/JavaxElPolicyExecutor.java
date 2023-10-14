@@ -22,7 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.Errors;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;

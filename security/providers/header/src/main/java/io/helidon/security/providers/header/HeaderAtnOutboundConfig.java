@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.security.providers.header;
 
 import java.util.Optional;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.util.TokenHandler;
 
@@ -124,7 +124,7 @@ public class HeaderAtnOutboundConfig {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("outbound-token").as(TokenHandler::create)
+            config.get("outbound-token").map(TokenHandler::create)
                     .ifPresent(this::tokenHandler);
             config.get("username").asString().ifPresent(this::explicitUser);
 

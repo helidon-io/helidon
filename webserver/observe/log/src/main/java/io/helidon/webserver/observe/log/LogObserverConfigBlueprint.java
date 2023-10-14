@@ -19,16 +19,17 @@ package io.helidon.webserver.observe.log;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.observe.ObserverConfigBase;
+import io.helidon.webserver.observe.spi.ObserveProvider;
 
 /**
  * Log Observer configuration.
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.Provides(ObserveProvider.class)
 interface LogObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<LogObserver> {
     @Option.Configured
     @Option.Default("log")
-    @Override
     String endpoint();
 
     @Override

@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.Weight;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.oidc.common.spi.TenantIdFinder;
 import io.helidon.security.providers.oidc.common.spi.TenantIdProvider;
