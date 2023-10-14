@@ -23,7 +23,7 @@ server:
   # default behavior to discover Server features (observability, openapi, metrics)
   # features-discovers-services: true
   # all of the below is discovered automatically
-  features:
+  # features:
   #  observe:
   #    observers:
   #      metrics:
