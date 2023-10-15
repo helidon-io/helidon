@@ -65,7 +65,6 @@ class OpenApiFeatureTest {
                                   .staticFile("src/test/resources/greeting.yml")
                                   .webContext("/openapi-greeting")
                                   .cors(cors -> cors.enabled(false))
-                                  .permitAll(true)
                                   .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
@@ -73,7 +72,6 @@ class OpenApiFeatureTest {
                                     .webContext("/openapi-time")
                                     .name("openapi-time")
                                     .cors(cors -> cors.allowOrigins("http://foo.bar", "http://bar.foo"))
-                                    .permitAll(true)
                                     .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
@@ -81,7 +79,6 @@ class OpenApiFeatureTest {
                                     .webContext("/openapi-petstore")
                                     .name("openapi-petstore")
                                     .cors(cors -> cors.enabled(false))
-                                    .permitAll(true)
                                     .build());
 
     }

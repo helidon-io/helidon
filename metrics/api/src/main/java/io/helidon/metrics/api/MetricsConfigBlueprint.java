@@ -131,11 +131,13 @@ interface MetricsConfigBlueprint {
     boolean enabled();
 
     /**
-     * Whether metrics endpoint should be authorized.
+     * Whether to allow anybody to access the endpoint.
      *
-     * @return if metrics are configured to be authorized
+     * @return whether to permit access to metrics endpoint to anybody, defaults to {@code true}
+     * @see #roles()
      */
     @ConfiguredOption
+    @Option.DefaultBoolean(true)
     boolean permitAll();
 
     /**

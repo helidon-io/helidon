@@ -45,7 +45,6 @@ class SnakeYAMLV1Test {
     static void server(WebServerConfig.Builder server) {
         server.addFeature(OpenApiFeature.builder()
                                   .staticFile("target/test-classes/petstore.yaml")
-                                  .permitAll(true)
                                   .build());
     }
     @SetUpRoute
