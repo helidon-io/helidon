@@ -23,7 +23,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 * TracingFeature is now an observability feature
 * Features use common config dependency - can still pass `io.helidon.Config` instance to them, only changes in SPI
 * Metrics in SE endpoint is permitted to all, unless `metrics.permit-all` is set to `false`
-* OpeanAPI in SE endpoint is permitted to all, unless `openapi.permit-all` is set to `false`
+* OpenAPI in SE endpoint is permitted to all, unless `openapi.permit-all` is set to `false`
 
 ## [4.0.0-RC1]
 
