@@ -639,8 +639,9 @@ public class Proxy {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            if (this.type != ProxyType.SYSTEM) {
-                config.get("type").asString().map(ProxyType::valueOf).ifPresentOrElse(this::type, () -> type(ProxyType.HTTP));
+            config.get("type").asString().map(ProxyType::valueOf).ifPresent(this::type);
+
+            if (this.type != ProxyType.SYSTEM && this.type != ProxyType.NONE) {
                 config.get("host").asString().ifPresent(this::host);
                 config.get("port").asInt().ifPresent(this::port);
                 config.get("username").asString().ifPresent(this::username);
