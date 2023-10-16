@@ -48,14 +48,14 @@ There are two steps to configure security with WebServer:
 .Example using builders
 ----
 // web server's Routing
-Routing.builder()
+HttpRouting.builder()
     // This is step 1 - register security instance with web server processing
     // security - instance of security either from config or from a builder
     // securityDefaults - default enforcement for each route that has a security definition
-    .register(WebSecurity.create(security).securityDefaults(WebSecurity.authenticate()))
+    .addFeature(SecurityFeature.create(security).securityDefaults(SecurityFeature.authenticate()))
     // this is step 2 - protect a route
     // protect this route with authentication (from defaults) and role "user"
-    .get("/service1", WebSecurity.rolesAllowed("user"), (req, res) -> {
+    .get("/service1", SecurityFeature.rolesAllowed("user"), (req, res) -> {
         processService1Request(req, res);
     })
     .build();
@@ -64,9 +64,9 @@ Routing.builder()
 [source,java]
 .Example using configuration
 ----
-Routing.builder()
+HttpRouting.builder()
     // helper method to load both security and web server security from configuration
-    .register(WebSecurity.create(config))
+    .addFeature(SecurityFeature.create(config))
     // continue with web server route configuration
     .build();
 ----

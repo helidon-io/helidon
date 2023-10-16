@@ -307,12 +307,19 @@ import io.helidon.security.annotations.Authenticated;
 [source,java]
 .Add `@Authenticated` to secure `getDefaultMessage`
 ----
-    @Authenticated
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getDefaultMessage() {
-        return createResponse("World");
-    }
+@Authenticated
+@GET
+@Produces(MediaType.APPLICATION_JSON)
+public JsonObject getDefaultMessage() {
+    return createResponse("World");
+}
+----
+
+It is also needed to add the following line to the `module-info.java` file:
+[source,java]
+.Add security annotations module requirement
+----
+requires io.helidon.security.annotations;
 ----
 
 When a client will send an HTTP GET request at the endpoint `http://localhost:7987/greet`, he will be redirected to keycloak.
@@ -407,65 +414,51 @@ Excluding oidc dependency during the test leaves only basic authentication secur
 </plugin>
 ----
 
-In the `MainTest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
+In the `MainTest.java` file, tests need to be modified to pass the application security when accessing `/greet` path with a
 `GET` method.
 
-First step is to configure the server with the new application.yaml.
-
-[source,java]
-.Import the Config class
-----
-import io.helidon.config.Config;
-----
-
-[source,java]
-.Replace the startTheServer method by this one:
-----
-@BeforeAll
-    public static void startTheServer() {
-        server = Server.builder()
-                .config(Config.create())
-                .build()
-                .start();
-        serverUrl = "http://localhost:" + server.port();
-    }
-----
-
 The server has now one security provider, basic authentication configured.
-Next step is to modify the test to check that the application is correctly protected.
+Next step is to create the test to check that the application is correctly protected.
+
+Firstly, create new test method `testHelloWorld`
 
 [source,java]
-.Replace the JsonObject declaration into testHelloWorld method by this code:
+.Add this method to the test class
 ----
-JsonObject jsonObject;
-Response response = client
-        .target(serverUrl)
-        .path("/greet")
+@Test
+void testHellowWorld() {
+
+}
+----
+
+Now we can add the first test:
+
+[source,java]
+.Add this code into `testHelloWorld` method:
+----
+try (Response r = target
+        .path("greet")
         .request()
-        .get(Response.class);
-
-Assertions.assertEquals(401, response.getStatus());
+        .get()) {
+    assertThat(r.getStatus(), is(401));
+}
 ----
 
-This piece of code uses the webclient to access the application on `/greet` path with a `GET` method. The http basic
+This piece of code uses the JAX-RS client to access the application on `/greet` path with a `GET` method. The http basic
 authentication security provider protects this path, so the client should receive an HTTP 401 code for unauthorized.
 
 Only `jack` user has access to this part of the application.
 
 [source,java]
-.Add new check to the testHelloWorld method:
+.Change the testHelloWorld method:
 ----
 String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
-
-jsonObject = client
-        .target(serverUrl)
-        .path("/greet")
+Message jsonMessage = target
+        .path("greet")
         .request()
-        .header(Http.Header.AUTHORIZATION, "Basic " + encoding)
-        .get(JsonObject.class);
-
-Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
-                "default message");
+        .header(HttpHeaders.AUTHORIZATION, "Basic " + encoding)
+        .get(Message.class);
+assertThat(jsonMessage.getMessage(), is("Hello World!"));
 ----
 
 The username and password are encoded and placed inside the header in order to authenticate as jack to access the application.
@@ -488,7 +481,7 @@ resources the user is allowed to access. Once expired, the refresh token allows 
 token. As these tokens contain sensitive information, they are valid for a very short period. It is possible to make them
 last longer in order to let you manipulate them with Postman. To do so:
 
-1. Open the Postman Console.
+1. Open the Keycloak Console.
 2. Click on the `Realm Setting` in the left menu.
 3. Navigate to the `Tokens` tab.
 You can increase the access token lifespan.
@@ -581,34 +574,33 @@ Then, add a user and roles to the `helidon-quickstart-mp/src/test/resources/appl
 .Add jack roles and create a new user named john:
 ----
 - http-basic-auth:
-        users:
-          - login: "jack"
-            password: "jackIsGreat"
-            roles: [ "admin", "user" ]
-          - login: "john"
-            password: "johnPassword"
-            roles: [ "user" ]
+    users:
+      - login: "jack"
+        password: "jackIsGreat"
+        roles: [ "admin", "user" ]
+      - login: "john"
+        password: "johnPassword"
+        roles: [ "user" ]
 ----
 
-Now, only Jack has access to secure endpoint as he has an `admin` role. Jhon, as a simple user, can not access it.
+Now, only Jack has access to secure endpoint as he has an `admin` role. John, as a simple user, can not access it.
 Once it is done, go to the tests to check the application behavior.
 The test from previous section is still passing because jack has access.
 
 The user `john` has only the `user` role so when accessing protected endpoint, a 403 (Forbidden) http code is returned.
 
 [source,java]
-.Check that jhon does not have access
+.Check that john does not have access
 ----
 encoding = Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
 
-response = client
-        .target(serverUrl)
-        .path("/greet")
+try (Response r = target
+        .path("greet")
         .request()
-        .header(Http.Header.AUTHORIZATION, "Basic " + encoding)
-        .get(Response.class);
-
-Assertions.assertEquals(403, response.getStatus());
+        .header(HttpHeaders.AUTHORIZATION, "Basic " + encoding)
+        .get()) {
+    assertThat(r.getStatus(), is(403));
+}
 ----
 
 [source,bash]

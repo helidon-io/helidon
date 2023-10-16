@@ -32,9 +32,6 @@ The component has the following extension points:
 
 == Security Providers
 You can build a custom provider for each type of security concept supported.
-By default, each provider is asynchronous. For simple cases, a class
-exists in "spi" package to help implement a synchronous approach:
- `SynchronousProvider`.
 
 You have two options:
 
