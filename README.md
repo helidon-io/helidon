@@ -26,7 +26,7 @@ new Helidon Níma WebServer that has been written from the ground up to
 use Java 21 Virtual Threads.
 
 In Helidon 4 each request is processed by a dedicated virtual thread so
-your code is free to perform blocking operations without impacting your servers
+your code is free to perform blocking operations without impacting your server's
 ability to handle other requests. You get all the throughput of a reactive
 server with none of the complexity.
 
