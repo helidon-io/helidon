@@ -81,10 +81,6 @@
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-idcs-mapper</value>
                                         </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.config</value>
-                                            <value key="artifactId">helidon-config-encryption</value>
-                                        </map>
                                     </list>
                                     <list key="Main-java-imports" if="${flavor} == 'se'">
                                         <value>java.util.Optional</value>
@@ -125,10 +121,10 @@
                         })
                         .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]></value>
                                     </list>
-                                    <list key="modules" if="${flavor} == 'se'">
+                                    <list key="module-requires" if="${flavor} == 'se'">
                                         <value>io.helidon.security.providers.oidc</value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value if="${flavor} == 'se'">io.helidon.security</value>
                                     </list>
                                 </model>
@@ -136,9 +132,16 @@
                         </option>
                         <option value="jwt" name="JWT" description="JSON Web Token">
                             <output>
+                                <files>
+                                    <directory>files</directory>
+                                    <includes>
+                                        <include>src/*/resources/**/signing-jwk.json</include>
+                                        <include>src/*/resources/**/verifying-jwk.json</include>
+                                    </includes>
+                                </files>
                                 <model>
                                     <list key="providers-config-entries">
-                                        <value file="files/application.jwt.yaml" if="${flavor} == 'mp'"/>
+                                        <value file="files/application.jwt.yaml"/>
                                     </list>
                                     <list key="dependencies">
                                         <map if="${flavor} == 'mp'">
@@ -162,7 +165,7 @@
                                             <value key="artifactId">helidon-bundles-config</value>
                                         </map>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value if="${flavor} == 'se'">io.helidon.webclient.security</value>
                                         <value>io.helidon.security.providers.jwt</value>
                                         <value>io.helidon.webserver.context</value>
@@ -203,10 +206,6 @@
                                             <value key="artifactId">helidon-security-providers-google-login</value>
                                         </map>
                                         <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.config</value>
-                                            <value key="artifactId">helidon-config-encryption</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.bundles</value>
                                             <value key="artifactId">helidon-bundles-config</value>
                                         </map>
@@ -216,11 +215,11 @@
                                         </map>
                                     </list>
                                     <list key="paths-config-entries">
-                                        <value><![CDATA[   - path: "/rest/profile"
-             methods: ["get"]
-             authenticate: true]]></value>
+                                        <value><![CDATA[    - path: "/rest/profile"
+      methods: ["get"]
+      authenticate: true]]></value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value>io.helidon.webserver.context</value>
                                         <value>io.helidon.webserver.staticcontent</value>
                                         <value>io.helidon.security.providers.google.login</value>
@@ -257,12 +256,8 @@
                                             <value key="groupId">io.helidon.config</value>
                                             <value key="artifactId">helidon-config-hocon</value>
                                         </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.config</value>
-                                            <value key="artifactId">helidon-config-hocon</value>
-                                        </map>
                                     </list>
-                                    <list key="modules" if="${flavor} == 'se'">
+                                    <list key="module-requires" if="${flavor} == 'se'">
                                         <value>io.helidon.webclient.http1</value>
                                         <value>io.helidon.common.pki</value>
                                         <value>io.helidon.webserver.context</value>
@@ -318,9 +313,9 @@
                             </map>
                         </list>
                         <list key="paths-config-entries">
-                            <value if="${flavor} == 'mp'"><![CDATA[   - path: "/simple-greet"
-             methods: ["get"]
-             authenticate: true]]></value>
+                            <value if="${flavor} == 'mp'"><![CDATA[    - path: "/simple-greet"
+      methods: ["get"]
+      authenticate: true]]></value>
                         </list>
                         <list key="config-test" if="${flavor} == 'se'">
                             <value><![CDATA[
@@ -341,7 +336,7 @@ security:
         {{/paths-config-entries}}
 ]]></value>
                         </list>
-                        <list key="modules" if="${flavor} == 'se'">
+                        <list key="module-requires" if="${flavor} == 'se'">
                             <value>io.helidon.security.integration.common</value>
                             <value>io.helidon.webserver.security</value>
                         </list>

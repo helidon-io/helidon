@@ -374,7 +374,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         <list key="config-test">
                             <value file="../database/files/application-test.yaml"/>
                         </list>
-                        <list key="modules">
+                        <list key="module-requires">
                             <value>io.helidon.dbclient</value>
                             <value>io.helidon.tracing</value>
                             <value>io.helidon.webserver.observe.tracing</value>

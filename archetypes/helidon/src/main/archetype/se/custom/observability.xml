@@ -37,6 +37,12 @@
             <list key="Main-server-builder" if="${health}">
                 <value>.addFeature(observe)</value>
             </list>
+            <list key="application-yaml-entries" if="${tracing}">
+                <value><![CDATA[
+tracing:
+  service: helidon-tracing-service
+]]></value>
+            </list>
             <list key="dependencies">
                 <map if="${tracing}">
                     <value key="groupId">io.helidon.webserver.observe</value>
@@ -111,7 +117,7 @@
     }
 ]]></value>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.webserver.observe</value>
                 <value if="${tracing}">io.helidon.webserver.http2</value>
                 <value if="${tracing}">io.helidon.webserver.observe.tracing</value>

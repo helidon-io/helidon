@@ -187,7 +187,7 @@
     }
 ]]></value>
             </list>
-            <list key="modules" if="${extra} contains 'fault-tolerance'">
+            <list key="module-requires" if="${extra} contains 'fault-tolerance'">
                 <value>io.helidon.faulttolerance</value>
             </list>
         </model>
