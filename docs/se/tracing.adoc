@@ -94,38 +94,6 @@ ServerConfiguration.builder()
 <1> The name of the application (service) to associate with the tracing events
 <2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
 
-=== Setup gRPC Server
-
-[source,java]
-.Configuring `Tracer`
-----
-Tracer tracer = TracerBuilder.create("Server")
-        .collectorUri(URI.create("http://10.0.0.18:9411"))   // <1>
-        .build();
-----
-<1> If using zipkin tracing system, the endpoint would be: `http://10.0.0.18:9411/api/v2/spans`
-
-[source,java]
-.Configuring Tracing Attributes
-----
-GrpcTracingConfig tracingConfig = new GrpcTracingConfig.Builder()
-                .withStreaming()
-                .withVerbosity()
-                .withTracedAttributes(ServerRequestAttribute.CALL_ATTRIBUTES,
-                     ServerRequestAttribute.HEADERS,
-                     ServerRequestAttribute.METHOD_NAME)
-                .build();
-----
-
-[source,java]
-.Configuring gRPC Server
-----
-GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
-                .tracer(tracer)
-                .tracingConfig(tracingConfig)
-                .build();
-----
-
 === Creating Custom Spans
 
 To create a custom span that is a child of the WebServer request:
@@ -145,7 +113,6 @@ Span span = request.tracer()
         }
 
 ----
-
 
 == Helidon Spans
 
@@ -208,7 +175,11 @@ tracing:
 [source,java]
 .Use the configuration in web server
 ----
-routing.register(WebTracingConfig.create(config.get("tracing")));
+Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
+
+server.addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer))
+                            .build())
 ----
 
 ==== Path-based Configuration in Helidon WebServer
@@ -244,18 +215,25 @@ tracing:
 [source,java]
 .Configuration with Web Server
 ----
-routingBuilder.register(WebTracingConfig.create(config.get("tracing"));
+Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
+
+server.addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer))
+                            .build())
 ----
 
 [source,java]
 .Configuration with Web Server using a builder
 ----
-routingBuilder.register(WebTracingConfig.builder()
+Tracer tracer = WebTracingConfig.builder()
     .addPathConfig(PathTracingConfig.builder()
         .path("/metrics")
         .tracingConfig(TracingConfig.DISABLED)
         .build();
-    .build());
+
+server.addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer))
+                            .build())
 ----
 
 ==== Renaming top level span using request properties

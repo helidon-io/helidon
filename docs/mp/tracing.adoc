@@ -675,11 +675,6 @@ curl -i http://localhost:8080/greet/outbound # <1>
 
 Refresh the Zipkin UI trace listing page and notice that there is a trace across two services.
 
-.Tracing multiple service list view
-image::guides/12_tracing_top_2_services.png[Traces]
-
-Click on the trace with two services to see the detail view.
-
 .Tracing across multiple services detail view
 image::guides/12_tracing_detail_2_services.png[Traces]
 
@@ -690,7 +685,7 @@ You can now stop your second service, it is no longer used in this guide.
 
 == Integration with Kubernetes
 
-The following example demonstrate how to use Zipkin from a Helidon application running in Kubernetes.
+The following example demonstrates how to use Zipkin from a Helidon application running in Kubernetes.
 
 [source,bash]
 .Update `application.yaml`:

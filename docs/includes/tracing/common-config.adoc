@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 === Configuration using Helidon Config [[Tracing-config]]
 
-There is a set of common configuration options that this section describes. In addition each tracer implementation
+There is a set of common configuration options that this section describes. In addition, each tracer implementation
 may have additional configuration options - please see the documentation of each of them.
 
 Each implementation may provide defaults for these options.
@@ -31,7 +31,7 @@ All common configuration options:
 |===
 |key |description
 
-|service |Name of the service sending the tracing information. This is usually visible in the trace data to distinguish actors in a conversation (e.g. when multiple microservices are connected together)
+|service |Name of the service sending the tracing information. This is usually visible in the trace data to distinguish actors in a conversation, (e.g. when multiple microservices are connected together)
 |protocol |Protocol of the tracing collector (e.g. `http`, `https`)
 |host |Host of the tracing collector (e.g. `localhost`)
 |port |Port of the tracing collector (e.g. `9411`)

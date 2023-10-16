@@ -26,7 +26,7 @@ The Jaeger builder is loaded through `ServiceLoader` and configured. You could
 also use the Jaeger builder directly, though this would create a source-code dependency
 on the Jaeger tracer.
 
-Since Helidon 3.0.0, we use Jaeger OpenTelemetry Tracing client to
+We use Jaeger OpenTelemetry Tracing client to
 integrate with Jaeger tracer.
 
 include::{rootdir}/includes/dependencies.adoc[]
