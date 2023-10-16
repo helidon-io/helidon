@@ -29,6 +29,7 @@ include::{rootdir}/includes/attributes.adoc[]
 * <<Helidon Flavors, Helidon Flavors>>
 ** <<What flavor shall I use?, What flavor shall I use?>>
 * <<Prerequisites, Prerequisites>>
+* <<Upgrade, Upgrade>>
 * <<Next Steps, Next Steps>>
 
 == What is Helidon?
@@ -127,27 +128,18 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-table-details]
 // end::prereqs[]
 We also strongly suggest installing the xref:cli.adoc[Helidon CLI] (command line interface) which helps in generating and building Helidon projects.
 
-== Migration
+== Upgrade
 
-To upgrade your current version of Helidon, follow the `Migration Guides`:
+To upgrade your current version of Helidon, follow the `Upgrade Guides`:
 
-To migrate from from Helidon 3.x to 4.x:
+To upgrade from from Helidon 3.x to 4.x:
 
-//Mitia to create these guides for 4x
+
 
 * link to SE 4x migration guide [tbd]
 * link to MP 4x migration guide [tbd]
 
 
-To migrate from Helidon 2.x to 3.x:
-
-* xref:{rootdir}/se/guides/migration_3x.adoc[Helidon SE 3x Migration Guide]
-* xref:{rootdir}/mp/guides/migration_3x.adoc[Helidon MP 3x Migration Guide]
-
-To migrate from Helidon 1.x to 2.x:
-
-* xref:{rootdir}/se/guides/migration.adoc[Helidon SE 2x Migration Guide]
-* xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
 
 
 

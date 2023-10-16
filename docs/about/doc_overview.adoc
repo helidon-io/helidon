@@ -71,7 +71,7 @@ xref:{rootdir}/se/guides/quickstart.adoc[Using the SE Quick Start Guide]
 .Upgrading Helidon
 [icon=storage]
 --
-Use the migration guides to help you upgrade your existing Helidon applications to the latest version of Helidon.
+Use the Helidon upgrade guides to help you upgrade your existing Helidon applications to the latest version of Helidon.
 
 xref:{rootdir}/mp/guides/migration_3x.adoc[Upgrade From Helidon MP 3.x]
 
