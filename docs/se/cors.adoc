@@ -116,11 +116,11 @@ The following code shows one way to prepare your application's routing to suppor
 ----
 static void routing(HttpRouting.Builder routing) {
     CorsSupport corsSupport = CorsSupport.builder()  // <1>
-            .addCrossOriginConfig(CrossOriginConfig.builder() // <2>
+            .addCrossOrigin(CrossOriginConfig.builder() // <2>
                         .allowOrigins("http://foo.com", "http://there.com") // <3>
                         .allowMethods("PUT", "DELETE") // <4>
                         .build()) // <5>
-            .addCrossOriginConfig(CrossOriginConfig.create()) // <6>
+            .addCrossOrigin(CrossOriginConfig.create()) // <6>
             .build(); // <7>
     routing.register("/greet", corsSupport, new GreetService()); // <8>
 }
@@ -192,7 +192,7 @@ static void routing(HttpRouting.Builder routing) {
             .ifExists(builder::mappedConfig);
     config.get("restrictive-cors") // <2>
             .ifExists(builder::config);
-    builder.addCrossOriginConfig(CrossOriginConfig.create()); // <3>
+    builder.addCrossOrigin(CrossOriginConfig.create()); // <3>
 
     CorsSupport corsSupport = builder.build(); // <4>
 
