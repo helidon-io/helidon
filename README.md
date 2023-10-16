@@ -2,11 +2,11 @@
     <img src="./etc/images/Primary_logo_blue.png">
 </p>
 <p align="center">
-    <a href="https://github.com/oracle/helidon/tags">
-        <img src="https://img.shields.io/github/tag/oracle/helidon.svg" alt="latest version">
+    <a href="https://github.com/heldon-io/helidon/tags">
+        <img src="https://img.shields.io/github/tag/helidon-io/helidon.svg" alt="latest version">
     </a>
-    <a href="https://github.com/oracle/helidon/issues">
-        <img src="https://img.shields.io/github/issues/oracle/helidon.svg" alt="latest version">
+    <a href="https://github.com/helidon-io/helidon/issues">
+        <img src="https://img.shields.io/github/issues/helidon-io/helidon.svg" alt="latest version">
     </a>
     <a href="https://twitter.com/intent/follow?screen_name=helidon_project">
         <img src="https://img.shields.io/twitter/follow/helidon_project.svg?style=social&logo=twitter" alt="follow on Twitter">
@@ -18,14 +18,17 @@
 Project Helidon is a set of Java Libraries for writing microservices.
 Helidon supports two programming models:
 
-* Helidon MP: [MicroProfile](https://microprofile.io/) 3.3
+* Helidon MP: [MicroProfile 6.0](https://microprofile.io/compatible/6-0/)
 * Helidon SE: a small, functional style API
 
-In either case your application is just a Java SE program.
+In either case your application is a Java SE program running on the
+new Helidon Níma WebServer that has been written from the ground up to
+use Java 21 Virtual Threads.
 
-## Early access branch
-This branch requires Java 21 early access release.
-Kindly use latest official release to work with Java 17, unless you are interested in the newest and greatest!
+In Helidon 4 each request is processed by a dedicated virtual thread so
+your code is free to perform blocking operations without impacting your servers
+ability to handle other requests. You get all the throughput of a reactive
+server with none of the complexity.
 
 ## License
 
@@ -48,7 +51,7 @@ See Getting Started at <https://helidon.io>.
 
 ## Helidon CLI
 
-MacOS:
+macOS:
 ```bash
 curl -O https://helidon.io/cli/latest/darwin/helidon
 chmod +x ./helidon
@@ -71,13 +74,9 @@ See this [document](HELIDON-CLI.md) for more info.
 
 ## Build
 
-You need JDK 17+ to build Helidon.
+You need JDK 21 to build Helidon 4.
 
-You also need Maven. We recommend 3.6.1 or newer.
-
-Building the documentation requires the `dot` utility from Graphviz.
-This is included in many Linux distributions. For other platforms
-see <https://www.graphviz.org/>.
+You also need Maven. We recommend 3.8.0 or newer.
 
 **Full build**
 ```bash
@@ -86,22 +85,29 @@ $ mvn install
 
 **Checkstyle**
 ```bash
-# Cd to the component you want to check
+# cd to the component you want to check
 $ mvn validate  -Pcheckstyle
 ```
 
 **Copyright**
 
 ```bash
-# Cd to the component you want to check
+# cd to the component you want to check
 $ mvn validate  -Pcopyright
 ```
 
 **Spotbugs**
 
 ```bash
-# Cd to the component you want to check
+# cd to the component you want to check
 $ mvn verify  -Pspotbugs
+```
+
+**Documentatonn**
+
+```bash
+# At the root of the project
+$ mvn site
 ```
 
 **Build Scripts**
