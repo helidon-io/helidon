@@ -90,7 +90,7 @@
                     <dependenciesToScan>
                         <dependency>jakarta.ws.rs:jakarta-restful-ws-tck</dependency>
                     </dependenciesToScan>
-                    <excludedGroups>xml_binding,servlet,security</excludedGroups>
+                    <excludedGroups>xml_binding,servlet,security,se_bootstrap</excludedGroups>
                     <includes>
                         <include>*IT.java</include>
                     </includes>

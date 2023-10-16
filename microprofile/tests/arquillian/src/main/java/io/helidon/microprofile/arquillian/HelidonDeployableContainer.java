@@ -308,6 +308,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                     NodeList childs = nodes.item(i).getChildNodes();
                     Class<Application> application = application(childs);
                     if (application != null) {
+                        context.explicitRsApplication = Optional.of(application);
                         context.applications.add(application);
                         return true;
                     }
@@ -442,8 +443,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         }
 
         context.runnerClass
-                .getDeclaredMethod("start", Config.class, Integer.TYPE)
-                .invoke(context.runner, config, containerConfig.getPort());
+                .getDeclaredMethod("start", Config.class, Integer.TYPE, Optional.class)
+                .invoke(context.runner, config, containerConfig.getPort(), context.explicitRsApplication);
     }
 
     private URL[] toUrls(Path[] classPath) {
@@ -677,6 +678,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         // existing class loader
         private ClassLoader oldClassLoader;
         private String rootContext;
+        // It is explicit when it is defined in web.xml. CDI has nothing to do with that.
+        private Optional<Class<Application>> explicitRsApplication = Optional.empty();
         private Set<Class<Application>> applications = new HashSet<>();
     }
 

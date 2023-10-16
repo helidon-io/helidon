@@ -18,12 +18,14 @@ package io.helidon.microprofile.arquillian;
 
 import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.microprofile.server.Server;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
 import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
@@ -56,18 +58,20 @@ public class ServerRunner {
      *
      * @param config configuration
      * @param port port to start the server on
+     * @param explicitRsApplication defined in web.xml
      */
-    public void start(Config config, int port) {
+    public void start(Config config, int port, Optional<Class<? extends Application>> explicitRsApplication) {
         // attempt a stop
         stop();
 
         ConfigProviderResolver.instance()
                 .registerConfig(config, Thread.currentThread().getContextClassLoader());
 
-        server = Server.builder()
+        Server.Builder builder = Server.builder()
                 .port(port)
-                .config(config)
-                .build()
+                .config(config);
+        explicitRsApplication.ifPresent(c -> builder.addApplication(c));
+        server = builder.build()
                 // this is a blocking operation, we will be released once the server is started
                 // or it fails to start
                 .start();
