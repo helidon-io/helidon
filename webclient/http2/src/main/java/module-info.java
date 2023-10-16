@@ -39,4 +39,6 @@ module io.helidon.webclient.http2 {
 
     provides io.helidon.webclient.spi.HttpClientSpiProvider
             with io.helidon.webclient.http2.Http2ClientSpiProvider;
+    provides io.helidon.webclient.spi.ProtocolConfigProvider
+            with io.helidon.webclient.http2.Http2ProtocolConfigProvider;
 }

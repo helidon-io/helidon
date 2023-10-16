@@ -14,19 +14,10 @@
 # limitations under the License.
 #
 
-no-proxy:
-  proxy:
-    type: "NONE"
-
-system-proxy:
-  proxy:
-    type: "SYSTEM"
-
-http-proxy:
-  proxy:
-    type: "HTTP"
-    host: "proxy.host.example"
-    port: 9999
-    username: "user"
-    password: "password"
-    no-proxy: ".helidon.io"
+client:
+  protocol-configs:
+    http_1_1:
+      max-header-size: 20000
+      validate-request-headers: false
+    h2:
+      prior-knowledge: true
