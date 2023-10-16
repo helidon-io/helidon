@@ -68,7 +68,7 @@ curl -X GET http://localhost:8080/simple-greet
 ```
 ]]></value>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.logging.common</value>
             </list>
         </model>

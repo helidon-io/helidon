@@ -142,7 +142,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     @Inject
     private MetricRegistry registry;]]></value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value>io.helidon.microprofile.metrics</value>
                                     </list>
                                 </model>
@@ -238,7 +238,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <list key="MainTest-static-imports">
                                         <value>static org.junit.jupiter.api.Assertions.assertEquals</value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value>io.helidon.microprofile.metrics</value>
                                     </list>
                                 </model>
@@ -276,7 +276,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     }
 ]]></value>
                                 </list>
-                                <list key="modules">
+                                <list key="module-requires">
                                     <value if="${flavor} == 'se'">io.helidon.webserver.observe.metrics</value>
                                     <value if="${flavor} == 'se'">io.helidon.metrics.api</value>
                                 </list>
@@ -421,7 +421,7 @@ curl -X GET http://localhost:8080/observe/observe/health/ready
 
 ]]></value>
                                 </list>
-                                <list key="modules" if="${flavor} == 'se'">
+                                <list key="module-requires" if="${flavor} == 'se'">
                                     <value>io.helidon.webserver.observe.health</value>
                                     <value>io.helidon.health.checks</value>
                                 </list>

@@ -28,7 +28,7 @@
                 </map>
             </list>
             <list key="microprofile-config-entries">
-                <value>tracing.service=helidon-service</value>
+                <value>tracing.service=helidon-tracing-service</value>
                 <value>tracing.components.web-server.spans.0.name="HTTP Request"</value>
             </list>
             <list if="${tracing.provider} == 'jaeger'" key="microprofile-config-entries">

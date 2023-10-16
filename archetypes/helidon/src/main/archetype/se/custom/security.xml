@@ -40,8 +40,6 @@
             <includes>
                 <include if="${security.atn} == 'jwt'">src/*/resources/**/backend-service-jwt.yaml</include>
                 <include if="${security.atn} == 'jwt'">src/*/resources/**/client-service-jwt.yaml</include>
-                <include if="${security.atn} == 'jwt'">src/*/resources/**/signing-jwk.json</include>
-                <include if="${security.atn} == 'jwt'">src/*/resources/**/verifying-jwk.json</include>
                 <include if="${security.atn} == 'google'">src/*/resources/**/google.js/google-app.js</include>
                 <include>/**/trick-to-avoid-empty-tag</include>
             </includes>

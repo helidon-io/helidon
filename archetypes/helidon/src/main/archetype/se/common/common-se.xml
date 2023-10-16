@@ -74,7 +74,7 @@
             <list key="GreetService-imports">
                 <value>io.helidon.config.Config</value>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.webserver</value>
                 <value>io.helidon.http</value>
                 <value>io.helidon.config</value>

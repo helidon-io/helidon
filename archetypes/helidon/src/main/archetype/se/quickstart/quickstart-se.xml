@@ -49,7 +49,7 @@ curl -X GET http://localhost:8080/greet/Jose
                     <value key="artifactId">helidon-webclient</value>
                 </map>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.webclient</value>
             </list>
         </model>

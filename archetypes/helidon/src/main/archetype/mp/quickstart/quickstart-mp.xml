@@ -96,7 +96,7 @@
                     <value key="artifactId">helidon-microprofile-openapi</value>
                 </map>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.microprofile.openapi</value>
             </list>
         </model>
