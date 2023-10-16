@@ -45,7 +45,7 @@ The MP OpenTracing specification is no longer required by MicroProfile. This fea
 Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
 within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work,
 which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing
-through the https://opentracing.io[OpenTracing API]. Tracing is integrated with WebServer, gRPC Server,
+through the https://opentracing.io[OpenTracing API]. Tracing is integrated with WebServer,
 and Security.
 
 include::{rootdir}/includes/dependencies.adoc[]

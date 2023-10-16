@@ -197,7 +197,7 @@ endif::[]
 :config-mapping-javadoc-base-url: {javadoc-base-url}/io.helidon.config.objectmapping
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
-:grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server
+:grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
 :integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 :media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonp
