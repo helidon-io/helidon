@@ -17,7 +17,7 @@ This is the second RC build of Helidon 4.0.0 and is intended as a preview releas
 
 The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a ground up webserver implementation based on JDK Project Loom virtual threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
 
-Java 21 is required to use Helidon 4.0.0-RC1.
+Java 21 is required to use Helidon 4.0.0-RC2.
 
 ### CHANGES
 
