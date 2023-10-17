@@ -367,7 +367,7 @@ webClient.get("/proxiedresource").proxy(proxy).request()
 Proxy can also be configured in WebClient through the `application.yaml` configuration file.
 
 [source,yaml]
-.WebClient TLS configuration file `application.yaml`
+.WebClient Proxy configuration in `application.yaml`
 ----
 webclient:
   proxy:
@@ -411,7 +411,7 @@ WebClient.builder()
 Another way to configure TLS in WebClient is through the `application.yaml` configuration file.
 
 [source,yaml]
-.WebClient TLS configuration file `application.yaml`
+.WebClient TLS configuration in `application.yaml`
 ----
 webclient:
   tls:
@@ -460,7 +460,7 @@ WebClient client = WebClient.builder()
 Adding service in WebClient can also be done through the `application.yaml` configuration file.
 
 [source,yaml]
-.WebClient TLS configuration file `application.yaml`
+.WebClient Service configuration in `application.yaml`
 ----
 webclient:
   services:
