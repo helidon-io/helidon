@@ -184,3 +184,8 @@ Now is:
     <scope>test</scope>
 </dependency>
 ----
+
+
+== Conclusion
+
+Please proceed to xref:../introduction.adoc[Helidon MP Introduction] to find more information and documentation about each module.

@@ -21,7 +21,7 @@
 :keywords: helidon, porting, migration, upgrade, incompatibilities
 :rootdir: {docdir}/../..
 
-In Helidon 4.x we have made some major changes to Helidon. Reactive engine has been removed. APIS and implementations rewritten in "blocking" paradigm. This guide will help you upgrade a Helidon MP 3.x application to 4.x.
+In Helidon 4.x we have made some major changes to Helidon. Reactive engine has been removed. APIS and implementations are rewritten in "blocking" paradigm. This guide will help you upgrade a Helidon MP 3.x application to 4.x.
 
 
 == Java 21 Runtime
@@ -31,13 +31,13 @@ Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Pleas
 Helidon 4 no more uses Netty. Helidon SE is now running on Helidon WebServer which is based on Virtual threads technology, available in Java 21.
 
 
-== Deprecations
+== Programming paradigm
 
 Helidon SE has changed from an asynchronous style API to an imperative/blocking style API that is optimized for use with virtual threads. Currently, there is no compatibility API available
 
 == Server initialization and start up
 
-In Helidon 1.x-3.x to star a server the following actions should be done:
+In Helidon 1.x-3.x to star a server, the following actions should be done:
 
 [source, java]
 .Start Helidon SE 3.x Server
@@ -65,11 +65,11 @@ static Single<WebServer> startServer() {
     return webserver;
 }
 ----
-<1> Server is started in asynchronous way. A `Single` object is returned.
-<2> Wait for the Server to start and print the message in asynchronous way.
+<1> Server is started in an asynchronous way. A `Single` object is returned.
+<2> Wait for the Server to start and print the message in an asynchronous way.
 <3> Gracefully handle exceptions if they occur during the initialization process.
 
-Since Helidon SE in 3.x was reactive, during the start a `Single` object is returned, the server has been started in asynchronous way. We have to use reactive methods like `thenAccept` to wait for the server to start and the to perform the desired action. The exception handling should also be done in reactive way using the corresponding method.
+Since Helidon SE in 3.x was reactive, during the start a `Single` object is returned, the server has been started in asynchronous way. We have to use reactive methods like `thenAccept` to wait for the server to start and then to perform the desired action. The exception handling should also be done in reactive way using the corresponding method.
 
 In Helidon 4.x there are no more Reactive APIs, so the Server startup is much simpler:
 
@@ -94,7 +94,7 @@ public static void main(String[] args) {
 <2> Start the Server. No reactive objects returned.
 <3> Print a message when the Server is started.
 
-Just create it, configure it, and wait for it to start. If any exceptions happen they are handled the traditional way using available language constructions.
+Just create it, configure it, and wait for it to start. If any exceptions happen, they are handled the traditional way using available language constructions.
 
 
 == Routing configuration
@@ -127,7 +127,7 @@ private static Routing createRouting(Config config) {
 
 Services are created and assigned to the desired path. Observability and other features are being created as usual Helidon `services`, available as part of the framework. Uses defined services are also registered the same way.
 
-In Helidon 4 the routing is configured the following way:
+In Helidon 4, the routing is configured the following way:
 
 [source, java]
 .Start Helidon SE 4.x Server
@@ -144,14 +144,14 @@ static void routing(HttpRouting.Builder routing) {
 <2> Add `Feature` for Observability and OpenAPI.
 
 
-`Feature` encapsulates a set of endpoints, services and/or filters. It is similar to `HttpService` but gives more freedom in setup. Main difference is that a feature can add `Filters` and it cannot be registered on a path. Features are not registered immediately - each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher weighted features are registered first. This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
+`Feature` encapsulates a set of endpoints, services and/or filters. It is similar to `HttpService` but gives more freedom in setup. Main difference is that a feature can add `Filters` and it cannot be registered on a path. Features are not registered immediately—each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher-weighted features are registered first. This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
 
 
 == Services
 
 There are also significant changes in Helidon `Service`.
 
-In prior versions a service look this way:
+In prior versions, a service looks this way:
 
 [source, java]
 .Helidon SE 3.x Service
@@ -176,7 +176,7 @@ public class GreetService implements Service {
 <1> Use `update()` method to set up routing.
 <2> Handle a `Request` and return a `Responce`.
 
-In Helidon 4 the same service:
+In Helidon 4, the same service:
 
 [source, java]
 .Helidon SE 4.x Service
@@ -212,7 +212,7 @@ Learn more about `HttpService` and `Routing` at xref:../webserver.adoc[Helidon S
 
 ==== Testing
 
-There a new testing framework for Helidon SE.
+There is a new testing framework for Helidon SE.
 
 [source, xml]
 ----
@@ -243,7 +243,7 @@ Observability features of Helidon have now moved to different package. For `Heat
 
 Observability has new endpoints.
 
-For System Metrics please use:
+For System Metrics, please use:
 
 [source, xml]
 ----

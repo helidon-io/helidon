@@ -25,7 +25,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Introduction
 
-Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime that allows the Jakarta EE community to run microservices in a portable way. It designed for ease of use and provides Spring Boot like development experience with heavily usage of dependency injection and annotations. 
+Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime that allows the Jakarta EE community to run microservices in a portable way. It is designed for ease of use and provides Spring Boot like development experience with heavy usage of dependency injection and annotations.
 
 == Supported Jakarta EE Specifications
 
