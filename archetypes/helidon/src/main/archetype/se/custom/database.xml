@@ -161,10 +161,6 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                                             <value key="artifactId">helidon-common</value>
                                         </map>
                                         <map>
-                                            <value key="groupId">io.helidon.dbclient</value>
-                                            <value key="artifactId">helidon-dbclient-mongodb</value>
-                                        </map>
-                                        <map>
                                             <value key="groupId">io.helidon.common</value>
                                             <value key="artifactId">helidon-common-mapper</value>
                                         </map>
@@ -175,7 +171,6 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                                         <value>io.helidon.dbclient.metrics.DbClientMetrics</value>
                                         <value>io.helidon.dbclient.tracing.DbClientTracing</value>
                                         <value>io.helidon.webserver.observe.ObserveFeature</value>
-                                        <value>io.helidon.webserver.observe.tracing.TracingObserver</value>
                                         <value>io.helidon.tracing.Tracer</value>
                                         <value>io.helidon.tracing.TracerBuilder</value>
                                     </list>
@@ -274,18 +269,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         <value key="database">true</value>
                         <value key="server">${server}</value>
                         <list key="dependencies">
-                            <map if="${server} != 'mongodb'">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-jdbc</value>
-                            </map>
-                            <map if="${server} != 'mongodb'">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-hikari</value>
-                            </map>
-                            <map if="${server} != 'mongodb'">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-metrics-hikari</value>
-                            </map>
                             <map>
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-jsonp</value>
@@ -306,23 +289,15 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-health</value>
                             </map>
-                            <map>
-                                <value key="groupId">io.helidon.tracing</value>
-                                <value key="artifactId">helidon-tracing</value>
-                            </map>
-                            <map>
-                                <value key="groupId">io.helidon.tracing.providers</value>
-                                <value key="artifactId">helidon-tracing-providers-zipkin</value>
-                            </map>
-                            <map>
+                            <map if="${media.json-lib} != 'jsonp'">
                                 <value key="groupId">io.helidon.http.media</value>
                                 <value key="artifactId">helidon-http-media-jsonp</value>
                             </map>
-                            <map>
+                            <map if="${media.json-lib} != 'jsonb'">
                                 <value key="groupId">io.helidon.http.media</value>
                                 <value key="artifactId">helidon-http-media-jsonb</value>
                             </map>
-                            <map>
+                            <map if="${media.json-lib} != 'jsonp' &amp;&amp; !(${media} contains 'multipart')">
                                 <value key="groupId">jakarta.json</value>
                                 <value key="artifactId">jakarta.json-api</value>
                             </map>
@@ -330,17 +305,17 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="groupId">org.slf4j</value>
                                 <value key="artifactId">slf4j-jdk14</value>
                             </map>
-                            <map>
-                                <value key="groupId">io.helidon.webserver.observe</value>
-                                <value key="artifactId">helidon-webserver-observe-health</value>
+                            <map if="${server} != 'mongodb'">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-jdbc</value>
                             </map>
-                            <map>
-                                <value key="groupId">io.helidon.webserver.observe</value>
-                                <value key="artifactId">helidon-webserver-observe-tracing</value>
+                            <map if="${server} != 'mongodb'">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-hikari</value>
                             </map>
-                            <map>
-                                <value key="groupId">io.helidon.config</value>
-                                <value key="artifactId">helidon-config-yaml</value>
+                            <map if="${server} != 'mongodb'">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-metrics-hikari</value>
                             </map>
                             <map if="${server} != 'h2'">
                                 <value key="groupId">com.h2database</value>
@@ -361,7 +336,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         <list key="Main-helidon-imports" if="${server} != 'mongo'">
                             <value>io.helidon.dbclient.DbClient</value>
                             <value>io.helidon.webserver.observe.ObserveFeature</value>
-                            <value>io.helidon.webserver.observe.tracing.TracingObserver</value>
                             <value>io.helidon.tracing.Tracer</value>
                             <value>io.helidon.tracing.TracerBuilder</value>
                         </list>
@@ -376,8 +350,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         </list>
                         <list key="module-requires">
                             <value>io.helidon.dbclient</value>
-                            <value>io.helidon.tracing</value>
-                            <value>io.helidon.webserver.observe.tracing</value>
                             <value>io.helidon.dbclient.metrics</value>
                             <value>io.helidon.dbclient.tracing</value>
                             <value if="${media.json-lib} == 'jackson'">jakarta.json</value>

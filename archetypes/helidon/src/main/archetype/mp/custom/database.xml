@@ -442,10 +442,6 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                 <value key="artifactId">helidon-common</value>
                             </map>
                             <map>
-                                <value key="groupId">jakarta.xml.bind</value>
-                                <value key="artifactId">jakarta.xml.bind-api</value>
-                            </map>
-                            <map>
                                 <value key="groupId">com.h2database</value>
                                 <value key="artifactId">h2</value>
                             </map>
@@ -468,6 +464,10 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                 <value key="groupId">org.glassfish</value>
                                 <value key="artifactId">jakarta.el</value>
                                 <value key="scope">runtime</value>
+                            </map>
+                            <map if="${media.json-lib} != 'jackson'">
+                                <value key="groupId">jakarta.xml.bind</value>
+                                <value key="artifactId">jakarta.xml.bind-api</value>
                             </map>
                         </list>
                         <list key="module-requires">

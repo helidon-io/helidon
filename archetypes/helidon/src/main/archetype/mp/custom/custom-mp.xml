@@ -21,6 +21,7 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
+    <exec src="/mp/common/common-mp.xml"/>
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
     <exec src="/common/security.xml"/>
@@ -28,7 +29,6 @@
     <source src="/common/extra.xml"/>
     <source src="/common/observability.xml"/>
     <exec src="/common/packaging.xml"/>
-    <exec src="/mp/common/common-mp.xml"/>
     <source src="/mp/custom/observability.xml"/>
     <output>
         <model>
