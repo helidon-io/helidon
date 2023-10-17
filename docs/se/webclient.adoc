@@ -237,6 +237,8 @@ Webclient provides three DNS resolver implementations out of the box:
 </dependency>
 ----
 
+=== Adding Service
+
 
 == Configuring the WebClient
 
@@ -432,7 +434,36 @@ WebClient webClient = WebClient.create(config.get("webclient"));
 
 === Adding Service to WebClient
 
-WebClient currently supports 3 services namely `metrics`, `tracing` and `security`.
+WebClient currently supports 3 built-in services namely `metrics`, `tracing` and `security`.
+
+==== Enabling the service
+
+In order for a service to function, their dependency needs to be added in the application's pom.xml. Below are examples on how to enable the built-in services:
+
+* `metrics`
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-metrics</artifactId>
+</dependency>
+----
+* `tracing`
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-tracing</artifactId>
+</dependency>
+----
+* `security`
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-security</artifactId>
+</dependency>
+----
 
 ==== Adding a service in your code
 
