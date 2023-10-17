@@ -210,16 +210,17 @@ To recap, you have, in dependency order:
 
 * Created a group ("helidon-examples-group")
 
-* Added the user to the group
+* Added the user named "helidon-examples" to the group named "helidon-examples-group"
 
 * Created a compartment ("helidon-examples")
 
 * Created a vault in the compartment ("helidon-examples-vault")
 
-* Created a secret in the vault ("helidon-examples-secret")
+* Created a secret in the vault ("helidon-examples-secret"), with a value of "secret value"
 
 * Created a policy that lets your group's users manipulate secrets found in your compartment
-  ("helidon-examples-group-manipulate-secrets")
+  ("helidon-examples-group-manipulate-secrets"), with an effective value of "Allow group **helidon-examples-group** to
+  use secret-family in **compartment helidon-examples**"
 
 Your OCI resources should be ready to go.
 
@@ -257,9 +258,9 @@ These steps should only need to be performed once.
 The resulting file should look similar to this (with trailing explanatory comments):
 
 ```
-add-default-sources: false
-add-discovered-converters: false
-add-discovered-sources: false
+add-default-sources: false       # don't load anything not specified below
+add-discovered-converters: false # don't load anything not specified below
+add-discovered-sources: false    # don't load anything not specified below
 
 sources:
   - type: 'environment-variables'

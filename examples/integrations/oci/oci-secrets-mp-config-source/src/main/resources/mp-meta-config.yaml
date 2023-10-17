@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-add-default-sources: false
-add-discovered-converters: false
-add-discovered-sources: false
+add-default-sources: false       # don't load anything not specified below
+add-discovered-converters: false # don't load anything not specified below
+add-discovered-sources: false    # don't load anything not specified below
 
 sources:
   - type: 'environment-variables'
