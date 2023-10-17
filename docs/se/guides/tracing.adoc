@@ -40,7 +40,7 @@ Distributed tracing is a critical feature of micro-service based applications, s
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
 which helps you identify performance and operational issues.  Helidon SE includes support for distributed tracing
 through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer, gRPC Server,
-and Security using either the https://zipkin.io[Jaeger] or https://www.jaegertracing.io[Jaeger] tracers.
+and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
 
 === Tracing Concepts
 
@@ -227,7 +227,7 @@ You can examine span details by clicking on the span row.  Refer to the image be
 You can see times for each space relative to the root span.  These rows are annotated with `Server Start` and `Server Finish`, as shown in the third column.
 
 .Span detail page
-image::guides/12_tracing_se_span_detail.png[Span Details]
+image::guides/12_tracing_span_detail.png[Span Details]
 
 
 === Tracing Across Services

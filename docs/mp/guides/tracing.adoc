@@ -39,7 +39,7 @@ Distributed tracing is a critical feature of micro-service based applications, s
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
 which helps you identify performance and operational issues.  Helidon MP includes support for distributed tracing
 through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer, gRPC Server,
-and Security using either the https://zipkin.io[Jaeger] or https://www.jaegertracing.io[Jaeger] tracers.
+and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
 
 === Tracing Concepts
 

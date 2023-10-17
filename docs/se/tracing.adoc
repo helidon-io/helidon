@@ -32,8 +32,8 @@ include::{rootdir}/includes/se.adoc[]
 - <<Configuration, Configuration>>
 - <<Additional Information, Additional Information>>
 ** <<Span Propagation, Span Propagation>>
-** <<Zipkin Tracing, Zipkin Tracing>>
 ** <<Jaeger Tracing, Jaeger Tracing>>
+** <<Zipkin Tracing, Zipkin Tracing>>
 - <<Reference, Reference>>
 
 == Overview
@@ -293,11 +293,6 @@ Single<String> response = client.get()
     .request(String.class);
 ----
 
-=== Zipkin Tracing [[zipkin-tracing]]
-
-include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
-include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
-
 === Jaeger Tracing [[jaeger-tracing]]
 
 include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-dependency]
@@ -306,6 +301,13 @@ include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-configuration]
 === Jaeger Tracing Metrics [[jaeger-tracing-metrics]]
 
 As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger tracing in your Helidon application.
+
+
+=== Zipkin Tracing [[zipkin-tracing]]
+
+include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
+include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
+
 
 == Reference
 
