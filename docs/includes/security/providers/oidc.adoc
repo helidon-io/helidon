@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ security:
             header: "X-Internal-Auth"
 ----
 
+[[oidc-workflow]]
 === How does it work?
 At Helidon startup, if OIDC provider is configured, the following will happen:
 
@@ -78,6 +79,79 @@ introspection endpoint depending on configuration
 4. A subject is created from the JWT, including scopes from the token
 5. We validate that we have sufficient scopes to proceed, and return `403` if not
 6. Handling is returned to security to process other security providers
+
+[[tenant-enable]]
+=== Multiple tenants
+The OIDC provider also supports multiple tenants. To enable this feature, it is required to do several steps.
+
+1. To enable the default multi-tenant support, add the `multi-tenant: true` option to the
+OIDC provider configuration
+2. Specify the desired way to provide the tenant name. This step is done over adding
+the `tenant-id-style` configuration option. For more information, see the table below
+3. Add the tenants section to the OIDC provider configuration
+
+[source, yaml]
+----
+tenants:
+   - name: "example-tenant"
+     ... tenant configuration options
+----
+
+There are four ways to provide the required tenant information to Helidon by default.
+
+.Possible `tenant-id-style` configuration options
+[cols="2,4a,3a"]
+|===
+|key |description |additional config options
+
+|`host-header` |Tenant configuration will be selected based on your host present in the `Host` header value. |{nbsp}
+
+|`domain`
+|Similar to the `host-header` style, but now the tenant name is identified just as
+a part of the host name. By default, it selects the third domain level.
+
+Example: Host header value from inbound request is `my.helidon.com` -> domain level 3 is `my`,
+domain level 2 is `helidon` and domain level 1 is `com`.
+|[source, yaml]
+----
+tenant-id-domain-level: <domain level>
+----
+
+|`token-handler`
+|The tenant name information is expected to be provided through the configured custom header value.
+|[source, yaml]
+----
+tenant-id-handler:
+  header: "my-custom-header"
+----
+
+|`none`|No tenant name finding is used. Default tenant name `@default` is used instead.|
+|===
+
+You can also implement a custom way of discovering the tenant name and tenant configuration.
+The custom tenant name discovery from request can be done by implementing SPI:
+
+`io.helidon.security.providers.oidc.common.spi.TenantIdProvider`
+
+and the custom tenant configuration discovery can be provided by implementing SPI:
+
+`io.helidon.security.providers.oidc.common.spi.TenantConfigProvider`
+
+==== Available tenant config options
+include::{rootdir}/config/io_helidon_security_providers_oidc_common_TenantConfig.adoc[leveloffset=+3,tag=config]
+
+==== How does that work?
+Multitenant support requires to obtain tenant name from the incoming request. OIDC configuration is selected
+based on the received tenant name. The way this tenant name has to be provided is configured via `tenant-id-style`
+configuration. See <<tenant-enable, How to enable tenants>> for more information. After matching tenant configuration
+with the received name, the rest of the OIDC flow if exactly the same as in <<oidc-workflow, How does OIDC work>>.
+
+Base OIDC configuration is treated as a default tenant, which is used, if no tenant name is provided. This default
+tenant is having `@default` name specified.
+
+It is also important to note, that each tenant configuration is based on the default tenant configuration (base OIDC configuration),
+and therefore its configuration do not need to change all the properties, if they do not differ from the base OIDC
+configuration.
 
 [[cors]]
 == CORS Settings
