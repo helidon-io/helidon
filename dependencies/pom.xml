@@ -123,8 +123,7 @@
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
-        <version.lib.netty>4.1.94.Final</version.lib.netty>
-        <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
+        <version.lib.netty>4.1.100.Final</version.lib.netty>
         <version.lib.oci>3.21.0</version.lib.oci>
         <version.lib.ojdbc8>21.4.0.0</version.lib.ojdbc8>
         <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
@@ -1196,13 +1195,6 @@
             </dependency>
             <!-- END OF Section 2: third party dependencies used by examples -->
 
-            <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
-            <dependency>
-                <groupId>io.netty.incubator</groupId>
-                <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-                <version>${version.lib.netty-io_uring}</version>
-                <classifier>linux-x86_64</classifier>
-            </dependency>
             <dependency>
                 <!-- required for dependency convergence, used from guava and perfmark-api -->
                 <groupId>com.google.errorprone</groupId>
@@ -1370,6 +1362,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- For dependency convergence of transitive deps on netty -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
