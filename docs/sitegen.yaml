@@ -316,6 +316,7 @@ backend:
                   - "tracing.adoc"
                   - "migration.adoc"
                   - "migration_3x.adoc"
+                  - "migration_4x.adoc"
                   - "maven-build.adoc"
                   - "gradle-build.adoc"
                   - "graalnative.adoc"
