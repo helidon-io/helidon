@@ -28,7 +28,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * Configuration of CORS feature.
  */
 @Prototype.Blueprint
-@Prototype.Configured
+@Prototype.Configured(value = CorsFeature.CORS_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)
 interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature> {
 

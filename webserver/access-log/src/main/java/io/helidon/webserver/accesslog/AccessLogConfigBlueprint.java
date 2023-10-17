@@ -29,7 +29,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * Configuration of access log feature.
  */
 @Prototype.Blueprint(decorator = AccessLogConfigSupport.BuilderDecorator.class)
-@Prototype.Configured
+@Prototype.Configured(value = AccessLogFeature.ACCESS_LOG_ID, root = false)
 @Prototype.CustomMethods(AccessLogConfigSupport.CustomMethods.class)
 @Prototype.Provides(ServerFeatureProvider.class)
 interface AccessLogConfigBlueprint extends Prototype.Factory<AccessLogFeature> {

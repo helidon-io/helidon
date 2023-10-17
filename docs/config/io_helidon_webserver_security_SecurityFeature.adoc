@@ -30,6 +30,12 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.webserver.security/io/helidon/webserver/security/SecurityFeature.html[io.helidon.webserver.security.SecurityFeature]
 
 
+[source,text]
+.Config key
+----
+security
+----
+
 
 This type provides the following service implementations:
 

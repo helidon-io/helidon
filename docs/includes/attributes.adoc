@@ -188,6 +188,7 @@ endif::[]
 
 // Helidon component javadoc base URLs
 :http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
+:uri-javadoc-base-url: {javadoc-base-url}/io.helidon.common.uri
 :common-javadoc-base-url: {javadoc-base-url}/io.helidon.common
 :config-javadoc-base-url: {javadoc-base-url}/io.helidon.config
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable

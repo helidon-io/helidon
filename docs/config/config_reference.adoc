@@ -37,6 +37,7 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_metrics_api_ComponentMetricsSettings.adoc[ComponentMetricsSettings (metrics.api)]
 - xref:{rootdir}/config/io_helidon_webserver_observe_config_ConfigObserver.adoc[ConfigObserver (webserver.observe.config)]
 - xref:{rootdir}/config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.adoc[ConfigUser (security.providers.httpauth.ConfigUserStore)]
+- xref:{rootdir}/config/io_helidon_webserver_ConnectionConfig.adoc[ConnectionConfig (webserver)]
 - xref:{rootdir}/config/io_helidon_http_encoding_ContentEncodingContext.adoc[ContentEncodingContext (http.encoding)]
 - xref:{rootdir}/config/io_helidon_webserver_context_ContextFeature.adoc[ContextFeature (webserver.context)]
 - xref:{rootdir}/config/io_helidon_webserver_cors_CorsConfig.adoc[CorsConfig (webserver.cors)]

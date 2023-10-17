@@ -22,12 +22,12 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration of a server connection (for each connection created by clients).
  */
 @Prototype.Blueprint
+@Prototype.Configured
 interface ConnectionConfigBlueprint {
     /**
      * Default read timeout duration.
@@ -40,7 +40,7 @@ interface ConnectionConfigBlueprint {
     /**
      * Default SO buffer size.
      */
-    String DEFAULT_SO_BUFFER_SIZE = "32768";
+    int DEFAULT_SO_BUFFER_SIZE = 32768;
 
     /**
      * Read timeout.
@@ -48,7 +48,8 @@ interface ConnectionConfigBlueprint {
      *
      * @return read timeout
      */
-    @ConfiguredOption(DEFAULT_READ_TIMEOUT_DURATION)
+    @Option.Configured
+    @Option.Default(DEFAULT_READ_TIMEOUT_DURATION)
     Duration readTimeout();
 
     /**
@@ -57,7 +58,8 @@ interface ConnectionConfigBlueprint {
      *
      * @return connect timeout
      */
-    @ConfiguredOption(DEFAULT_CONNECT_TIMEOUT_DURATION)
+    @Option.Configured
+    @Option.Default(DEFAULT_CONNECT_TIMEOUT_DURATION)
     Duration connectTimeout();
 
     /**
@@ -67,7 +69,8 @@ interface ConnectionConfigBlueprint {
      * @return buffer size, in bytes
      * @see java.net.StandardSocketOptions#SO_SNDBUF
      */
-    @ConfiguredOption(DEFAULT_SO_BUFFER_SIZE)
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_SO_BUFFER_SIZE)
     int sendBufferSize();
 
     /**
@@ -77,7 +80,8 @@ interface ConnectionConfigBlueprint {
      * @return buffer size, in bytes
      * @see java.net.StandardSocketOptions#SO_RCVBUF
      */
-    @ConfiguredOption(DEFAULT_SO_BUFFER_SIZE)
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_SO_BUFFER_SIZE)
     int receiveBufferSize();
 
     /**
@@ -87,7 +91,8 @@ interface ConnectionConfigBlueprint {
      * @return keep alive
      * @see java.net.StandardSocketOptions#SO_KEEPALIVE
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean keepAlive();
 
     /**
@@ -97,7 +102,8 @@ interface ConnectionConfigBlueprint {
      * @return whether to reuse address
      * @see java.net.StandardSocketOptions#SO_REUSEADDR
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean reuseAddress();
 
     /**
@@ -107,7 +113,8 @@ interface ConnectionConfigBlueprint {
      * @return whether to use TCP_NODELAY, defaults to {@code false}
      * @see java.net.StandardSocketOptions#TCP_NODELAY
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean tcpNoDelay();
 
     /**

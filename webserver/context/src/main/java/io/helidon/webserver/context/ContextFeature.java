@@ -35,6 +35,7 @@ public class ContextFeature implements ServerFeature, RuntimeType.Api<ContextFea
      * Default weight of the feature. It is quite high, as context is used by a lot of other features.
      */
     public static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 1000;
+    static final String CONTEXT_ID = "context";
 
     private final ContextFeatureConfig config;
 
@@ -115,7 +116,7 @@ public class ContextFeature implements ServerFeature, RuntimeType.Api<ContextFea
 
     @Override
     public String type() {
-        return "context";
+        return CONTEXT_ID;
     }
 
     @Override

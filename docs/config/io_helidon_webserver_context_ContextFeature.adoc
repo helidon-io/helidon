@@ -30,6 +30,12 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.webserver.context/io/helidon/webserver/context/ContextFeature.html[io.helidon.webserver.context.ContextFeature]
 
 
+[source,text]
+.Config key
+----
+context
+----
+
 
 This type provides the following service implementations:
 
