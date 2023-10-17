@@ -1195,6 +1195,7 @@
             </dependency>
             <!-- END OF Section 2: third party dependencies used by examples -->
 
+            <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
             <dependency>
                 <!-- required for dependency convergence, used from guava and perfmark-api -->
                 <groupId>com.google.errorprone</groupId>
