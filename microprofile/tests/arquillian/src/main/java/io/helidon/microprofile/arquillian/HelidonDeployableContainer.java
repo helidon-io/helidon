@@ -189,79 +189,81 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     @Override
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        // Because helidon doesn't have a dynamic war deployment model, we need to actually start the server here.
-        RunContext context = new RunContext();
-        contexts.put(archive.getId(), context);
+        if (containerConfig.isMultipleDeployments() || (!containerConfig.isMultipleDeployments() && contexts.isEmpty())) {
+            // Because helidon doesn't have a dynamic war deployment model, we need to actually start the server here.
+            RunContext context = new RunContext();
+            contexts.put(archive.getId(), context);
 
-        // Is it a JavaArchive?
-        boolean isJavaArchive = archive instanceof JavaArchive;
-
-        try {
-            // Create the temporary deployment directory.
-            if (containerConfig.getUseRelativePath()) {
-                context.deployDir = Paths.get("target/helidon-arquillian-test");
-            } else {
-                context.deployDir = Files.createTempDirectory("helidon-arquillian-test");
-            }
-            LOGGER.log(Level.INFO, "Running Arquillian tests in directory: " + context.deployDir.toAbsolutePath());
-
-            copyArchiveToDeployDir(archive, context.deployDir);
-
-            for (Archive<?> additionalArchive : additionalArchives) {
-                copyArchiveToDeployDir(additionalArchive, context.deployDir);
-            }
-
-            List<Path> classPath = new ArrayList<>();
-
-            Path rootDir = context.deployDir.resolve("");
-            if (isJavaArchive) {
-                ensureBeansXml(rootDir, null);
-                classPath.add(rootDir);
-            } else {
-                // Prepare the launcher files
-                Path webInfDir = context.deployDir.resolve("WEB-INF");
-                Path classesDir = webInfDir.resolve("classes");
-                Path libDir = webInfDir.resolve("lib");
-                ensureBeansXml(classesDir, webInfDir);
-                addServerClasspath(classPath, classesDir, libDir, rootDir);
-                if (containerConfig.isInWebContainer()) {
-                    if (containerConfig.isIncludeWarContextPath()) {
-                        context.rootContext = archive.getName().split("\\.")[0];
-                    }
-                    if (!loadApplicationFromWebXml(context, webInfDir)) {
-                        // Search Application in classes
-                        loadApplicationFromClasses(context, archive);
-                    }
-                }
-            }
-
-            startServer(context, classPath.toArray(new Path[0]));
-        } catch (IOException | SAXException | ParserConfigurationException e) {
-            LOGGER.log(Level.INFO, "Failed to start container", e);
-            throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
-        } catch (InvocationTargetException e) {
+            // Is it a JavaArchive?
+            boolean isJavaArchive = archive instanceof JavaArchive;
 
             try {
-                context.runnerClass
-                        .getDeclaredMethod("abortedCleanup")
-                        .invoke(context.runner);
-            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ex) {
-                ex.printStackTrace();
+                // Create the temporary deployment directory.
+                if (containerConfig.getUseRelativePath()) {
+                    context.deployDir = Paths.get("target/helidon-arquillian-test");
+                } else {
+                    context.deployDir = Files.createTempDirectory("helidon-arquillian-test");
+                }
+                LOGGER.log(Level.INFO, "Running Arquillian tests in directory: " + context.deployDir.toAbsolutePath());
+
+                copyArchiveToDeployDir(archive, context.deployDir);
+
+                for (Archive<?> additionalArchive : additionalArchives) {
+                    copyArchiveToDeployDir(additionalArchive, context.deployDir);
+                }
+
+                List<Path> classPath = new ArrayList<>();
+
+                Path rootDir = context.deployDir.resolve("");
+                if (isJavaArchive) {
+                    ensureBeansXml(rootDir, null);
+                    classPath.add(rootDir);
+                } else {
+                    // Prepare the launcher files
+                    Path webInfDir = context.deployDir.resolve("WEB-INF");
+                    Path classesDir = webInfDir.resolve("classes");
+                    Path libDir = webInfDir.resolve("lib");
+                    ensureBeansXml(classesDir, webInfDir);
+                    addServerClasspath(classPath, classesDir, libDir, rootDir);
+                    if (containerConfig.isInWebContainer()) {
+                        if (containerConfig.isIncludeWarContextPath()) {
+                            context.rootContext = archive.getName().split("\\.")[0];
+                        }
+                        if (!loadApplicationFromWebXml(context, webInfDir)) {
+                            // Search Application in classes
+                            loadApplicationFromClasses(context, archive);
+                        }
+                    }
+                }
+
+                startServer(context, classPath.toArray(new Path[0]));
+            } catch (IOException | SAXException | ParserConfigurationException e) {
+                LOGGER.log(Level.INFO, "Failed to start container", e);
+                throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
+            } catch (InvocationTargetException e) {
+
+                try {
+                    context.runnerClass
+                            .getDeclaredMethod("abortedCleanup")
+                            .invoke(context.runner);
+                } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ex) {
+                    ex.printStackTrace();
+                }
+
+                throw lookForSupressedDeploymentException(e.getTargetException())
+                        .map(d ->
+                            new org.jboss.arquillian.container.spi.client.container.DeploymentException("Deployment failure!", d))
+                        .orElseThrow(() -> new DefinitionException(e));
+            } catch (ReflectiveOperationException e) {
+                LOGGER.log(Level.INFO, "Failed to start container", e);
+                throw new DefinitionException(e);        // validation exceptions
             }
 
-            throw lookForSupressedDeploymentException(e.getTargetException())
-                    .map(d ->
-                            new org.jboss.arquillian.container.spi.client.container.DeploymentException("Deployment failure!", d))
-                    .orElseThrow(() -> new DefinitionException(e));
-        } catch (ReflectiveOperationException e) {
-            LOGGER.log(Level.INFO, "Failed to start container", e);
-            throw new DefinitionException(e);        // validation exceptions
+            // Server has started, so we're done.
+            //        ProtocolMetaData pm = new ProtocolMetaData();
+            //        pm.addContext(new HTTPContext("Helidon", "localhost", containerConfig.getPort()));
+            //        return pm;
         }
-
-        // Server has started, so we're done.
-        //        ProtocolMetaData pm = new ProtocolMetaData();
-        //        pm.addContext(new HTTPContext("Helidon", "localhost", containerConfig.getPort()));
-        //        return pm;
         return new ProtocolMetaData();
     }
 

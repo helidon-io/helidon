@@ -41,6 +41,8 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  * <li>useBeanXmlTemplate: (Optional) defaults to true: will create the default templates/beans.xml when beans.xml is missing</li>
  * <li>includeWarContextPath: (Optional) defaults to false: will include the war name as a root context.
  * For example, if a example.war is deployed, the root context is going to be /example.</li>
+ * <li>multipleDeployments: (Optional) defaults to true: workaround for tests that unintentionally
+ * executes 1+ times @org.jboss.arquillian.container.test.api.Deployment</li>
  * </ul>
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
@@ -52,6 +54,7 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private boolean useParentClassloader = true;
     private boolean inWebContainer = false;
     private boolean useBeanXmlTemplate = true;
+    private boolean multipleDeployments = true;
     /*
      *  Restful requires it, but core profile don't (because rest used to be deployed in a
      *  web container together with other apps and in core profile there is only one app)
@@ -138,6 +141,14 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setIncludeWarContextPath(boolean includeWarContextPath) {
         this.includeWarContextPath = includeWarContextPath;
+    }
+
+    public boolean isMultipleDeployments() {
+        return multipleDeployments;
+    }
+
+    public void setMultipleDeployments(boolean multipleDeployments) {
+        this.multipleDeployments = multipleDeployments;
     }
 
     @Override

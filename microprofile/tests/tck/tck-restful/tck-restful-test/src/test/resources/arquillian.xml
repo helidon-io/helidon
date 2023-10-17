@@ -31,6 +31,7 @@
             <property name="useRelativePath">false</property>
             <property name="inWebContainer">true</property>
             <property name="includeWarContextPath">true</property>
+            <property name="multipleDeployments">false</property>
         </configuration>
     </container>
 </arquillian>
