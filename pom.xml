@@ -65,7 +65,6 @@
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
-        <version.lib.netty.tcnative>2.0.61.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.2.10</version.lib.rxjava>
@@ -950,11 +949,6 @@
                 <groupId>com.xebialabs.restito</groupId>
                 <artifactId>restito</artifactId>
                 <version>${version.lib.restito}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-tcnative-boringssl-static</artifactId>
-                <version>${version.lib.netty.tcnative}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
