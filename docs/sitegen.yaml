@@ -415,6 +415,12 @@ backend:
                   - "openapi-generator.adoc"
                   - "openapi-ui.adoc"
               - type: "PAGE"
+                title: "Observability"
+                source: "observability.adoc"
+                glyph:
+                  type: "icon"
+                  value: "search"
+              - type: "PAGE"
                 title: "Reactive Messaging"
                 source: "reactive-messaging.adoc"
                 glyph:
