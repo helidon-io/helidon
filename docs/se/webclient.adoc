@@ -285,25 +285,24 @@ client:
   default-headers: <3>
     Accept: '"application/json","text/plain"'
   services: <4>
-    config:
-      metrics:
-        - methods: ["PUT", "POST", "DELETE"]
-        - type: METER
-          name-format: "client.meter.overall"
-        - type: TIMER
-          # meter per method
-          name-format: "client.meter.%1$s"
-        - methods: ["GET"]
-          type: COUNTER
-          errors: false
-          name-format: "client.counter.%1$s.success"
-          description: "Counter of successful GET requests"
-        - methods: ["PUT", "POST", "DELETE"]
-          type: COUNTER
-          success: false
-          name-format: "wc.counter.%1$s.error"
-          description: "Counter of failed PUT, POST and DELETE requests"
-      tracing:
+    metrics:
+      - methods: ["PUT", "POST", "DELETE"]
+      - type: METER
+        name-format: "client.meter.overall"
+      - type: TIMER
+        # meter per method
+        name-format: "client.meter.%1$s"
+      - methods: ["GET"]
+        type: COUNTER
+        errors: false
+        name-format: "client.counter.%1$s.success"
+        description: "Counter of successful GET requests"
+      - methods: ["PUT", "POST", "DELETE"]
+        type: COUNTER
+        success: false
+        name-format: "wc.counter.%1$s.error"
+        description: "Counter of failed PUT, POST and DELETE requests"
+    tracing:
   protocol-configs: <5>
     http_1_1:
       max-header-size: 20000
