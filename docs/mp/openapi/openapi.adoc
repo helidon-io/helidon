@@ -85,10 +85,12 @@ include::{incdir}/openapi.adoc[tag=usage-access-endpoint]
 include::{incdir}/openapi.adoc[tag=api]
 
 == Configuration
-//
-// Helidon OpenAPI configuration supports the following settings:
-//
-//include::{rootdir}/config/io_helidon_microprofile_openapi_MPOpenAPISupport.adoc[leveloffset=+1,tag=config]
+
+Helidon OpenAPI configuration supports the following settings:
+
+include::{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[leveloffset=+1,tag=config]
+
+Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in link:{microprofile-open-api-spec-url}#_configuration[the MicroProfile OpenAPI specification].
 
 == Examples
 

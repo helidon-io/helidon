@@ -46,7 +46,11 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 SmallRye offers an link:{smallrye-openapi-ui-base-url}[OpenAPI user interface component] which displays a web page based on your application's OpenAPI document.
 Through that UI, users can invoke the operations declared in the document.
-While not generally suitable for end-users, the OpenAPI UI can be useful for demonstrating and "test driving" your service's endpoints.
+
+[NOTE]
+====
+The Helidon team discourages including the OpenAPI UI in production applications. The OpenAPI UI _can_ be useful for demonstrating and "test driving" your service's endpoints prior to deployment.
+====
 
 The Helidon OpenAPI component allows you to integrate the SmallRye UI into your application, adding the UI web page to your application very simply.
 
@@ -59,15 +63,15 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml,subs=+macros]
 ----
 <dependency>
-    <groupId>io.helidon.openapi</groupId>
-    <artifactId>helidon-openapi-ui</artifactId>
+    <groupId>io.helidon.integrations.openapi-ui</groupId>
+    <artifactId>helidon-integrations-openapi-ui</artifactId>
 ifdef::mp-flavor[    <scope>runtime</scope>]
 </dependency>
 ----
 
 And add a runtime dependency on the SmallRye UI.
 
-[source,xml,subs=+macros]
+[source,xml]
 ----
 <dependency>
     <groupId>io.smallrye</groupId>
@@ -81,7 +85,7 @@ And add a runtime dependency on the SmallRye UI.
 // tag::usage-start[]
 == Usage
 ifdef::se-flavor[]
-Make sure your application creates a Helidon `OpenAPISupport` instance and registers it for routing (described in detail in link:{openapi-page}[the Helidon OpenAPI documentation]). `OpenAPISupport` automatically prepares the OpenAPI UI with default settings if you also declare a dependency on the Helidon OpenAPI UI integration component as explained above. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the UI behavior.
+Make sure your application incorporates Helidon OpenAPI support as  described in detail in link:{openapi-page}[the Helidon OpenAPI documentation]). Helidon automatically prepares the OpenAPI UI with default settings if you also declare a dependency on the Helidon OpenAPI UI integration component as explained above. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the UI behavior.
 endif::se-flavor[]
 
 After you modify, build, and start your Helidon {flavor-uc} service, you can access the OpenAPI UI by default at `http://your-host:your-port/openapi/ui`.
@@ -135,7 +139,7 @@ ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
 ifdef::se-flavor[your configuration file, such as `application.yaml`.]
 
 include::{rootdir}/config/io_helidon_integrations_openapi_ui_OpenApiUi.adoc[tag=config,leveloffset=+1]
-The default UI `web-context` value is the web context for your `OpenAPISupport` service with the added suffix `/ui`. If you use the default web context for both `OpenAPISupport` and the UI, the UI responds at `/openapi/ui`.
+The default UI `web-context` value is the web context for your `OpenApiFeature` service with the added suffix `/ui`. If you use the default web context for both `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
 
 // end::config-intro[]
 
@@ -185,7 +189,7 @@ endif::mp-flavor[]
 +
 [NOTE]
 ====
-The `openapi.ui.web-context` setting assigns the _entire_ web-context for the UI, not the suffix appended to the `OpenAPISupport` endpoint.
+The `openapi.ui.web-context` setting assigns the _entire_ web-context for the UI, not the suffix appended to the `OpenApiFeature` endpoint.
 ====
 With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
 
