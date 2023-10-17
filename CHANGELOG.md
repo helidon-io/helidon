@@ -15,7 +15,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 This is the second RC build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental.
 
-The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a ground up webserver implementation based on JDK Project Loom virtual threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
+The big news in Helidon 4.0.0 is the introduction of Helidon Níma -- a ground up webserver implementation based on JDK Project Loom virtual threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
 
 Java 21 is required to use Helidon 4.0.0-RC2.
 
