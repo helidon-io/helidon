@@ -190,6 +190,9 @@ endif::[]
 :http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
 :common-javadoc-base-url: {javadoc-base-url}/io.helidon.common
 :config-javadoc-base-url: {javadoc-base-url}/io.helidon.config
+:config-etcd-javadoc-base-url: {javadoc-base-url}/io.helidon.config.etcd
+:config-git-javadoc-base-url: {javadoc-base-url}/io.helidon.config.git
+:config-mapping-javadoc-base-url: {javadoc-base-url}/io.helidon.config.objectmapping
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server
