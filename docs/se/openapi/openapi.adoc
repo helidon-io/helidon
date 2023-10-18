@@ -34,7 +34,6 @@ include::{rootdir}/includes/se.adoc[]
 - <<API, API>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
-- <<Additional Information, Additional Information>>
 
 == Overview
 
@@ -54,38 +53,24 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-You can very simply add support for OpenAPI to your Helidon SE application. This
-document shows what changes you need to make to your application and how to access
-the OpenAPI document for your application at runtime.
+=== Automatic Registration (default)
+Simply by adding the dependency described above you add support for OpenAPI to your Helidon SE application. Because Helidon automatically discovers the OpenAPI feature, you do not have to make any changes to your application code.
 
-=== Changing your application
+=== Explicit Registration
+To control the behavior of the OpenAPI feature programmatically, you can add and configure the OpenAPI feature explicitly as explained below.
 
-==== Register `OpenAPISupport` in your application routing
+==== Create and Register `OpenApiFeature` in your application
 
-Helidon SE provides the link:{javadoc-path}/OpenAPISupport.html[`OpenAPISupport`] class which your application uses to assemble the in-memory model and expose the `/openapi` endpoint to clients. You can create an instance either using a static `create` method or by instantiating its link:{javadoc-path}/OpenAPISupport.Builder.html[`Builder`]. The xref:#register_openapisupport[example below]  illustrates one way to do this.
+Helidon SE provides the link:{openapi-javadoc-base-url}/OpenApiFeature.html[`OpenApiFeature`] class which your application uses to assemble the in-memory model and expose the `/openapi` endpoint to clients. You can create an instance either using a static `create` method or by instantiating its link:{openapi-javadoc-base-url}/OpenApiFeature.Builder.html[`Builder`]. The xref:#register_openapifeature[example below]  illustrates one way to do this.
+
 
 include::{incdir}/openapi.adoc[tag=furnish-openapi-info]
-
-==== Add OpenAPI dependency
-If you implement either a model reader or a filter, add this dependency to your
-`pom.xml`:
-
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>org.eclipse.microprofile.openapi</groupId>
-    <artifactId>microprofile-openapi-api</artifactId>
-    <version>{microprofile-openapi-version}</version>
-</dependency>
-----
 
 include::{incdir}/openapi.adoc[tag=usage-access-endpoint]
 
 == API
 
-include::{incdir}/openapi.adoc[tag=api]
-
-Helidon {flavor-uc} provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients at the `/openapi` path. Use either static methods on link:{javadoc-path}/OpenAPISupport.html[`OpenAPISupport`]  or use its link:{javadoc-base}/OpenAPISupport.Builder.html[`Builder`] to create an instance of `OpenAPISupport`. Then add that instance to your application's routing. The <<#register_openapisupport,example>> below shows how to do this.
+Helidon {flavor-uc} provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients at the `/openapi` path. Use either static methods on link:{openapi-javadoc-base-url}/OpenApiFeature.html[`OpenApiFeature`]  or use its link:{openapi-javadoc-base-url}/OpenApiFeature.Builder.html[`Builder`]. Then add that instance or builder to your application's routing. The <<#register_openapifeature,example>> below shows how to do this.
 
 [[config]]
 == Configuration
@@ -99,28 +84,27 @@ include::{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[leveloffset=+1,
 == Examples
 
 Helidon SE provides a link:{helidon-github-tree-url}/examples/openapi[complete OpenAPI example]
-based on the SE QuickStart sample app which includes a model reader and a filter.
+based on the SE QuickStart sample app.
 
-Most Helidon {flavor-uc} applications need only to create and register `OpenAPISupport`.
+Most Helidon {flavor-uc} applications need only add the dependency as explained above; Helidon discovers and registers OpenAPI automatically.  The example below shows how to create and register `OpenApiFeature` explicitly instead.
 
-[#register_openapisupport]
-=== Register `OpenAPISupport`
+[#register_openapifeature]
+=== Register `OpenApiFeature` explicitly
 
-.Java Code to Register `OpenAPISupport` for Routing
+.Java Code to Create and Register `OpenAPISupport`
 [source,java]
 ----
-Config config = Config.create();
-return Routing.builder()
-        .register(JsonSupport.create())
-        .register(OpenAPISupport.create(config)) // <1>
-        .register(health)                   // Health at "/health"
-        .register(metrics)                  // Metrics at "/metrics"
-        .register("/greet", greetService)
-        .build();
+Config config = Config.create(); // <1>
+Config.global(config);
+
+WebServer server = WebServer.builder()
+        .config(config.get("server"))
+        .addFeature(OpenApiFeature.create(Config.global().get("openapi"))) // <2>
+        .routing(Main::routing)
+        .build()
+        .start();
 ----
-<1> Adds the `OpenAPISupport` service to your server.
+<1> Initializes the global `Config` instance from the default configuration.
+<2> Adds the `OpenApiFeature` service to your server using the `openapi` section from configuration.
 
-If you need more control over the `OpenAPISupport` instance, invoke `OpenAPISupport.builder()` to get an `OpenAPISupport.Builder` object and work with it.
-
-== Additional Information
-include::{incdir}/openapi.adoc[tag=additional-building-jandex]
+If you need programmatic control over the `OpenApiFeature` instance, invoke `OpenApiFeature.builder()` to get an `OpenApiFeature.Builder` object and work with it, then invoke the builder's `build` method and pass the resulting `OpenApiFeature` instance to the `WebServer.Builder` `addFeature` method.

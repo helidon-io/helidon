@@ -37,36 +37,41 @@ Also, make sure your project has the following dependency.
 
 include::{docdir}/openapi.adoc[tag=depc]
 
-This dependency allows your application to create, configure, and register the `OpenAPISupport` service.
+This dependency allows your application to create, configure, and register the `OpenApiFeature` service.
 
 include::{ui-inc}[tag=usage]
 
 == API
-=== Creating `OpenAPISupport` with Automatic UI Behavior
-With the Helidon OpenAPI UI dependency in your `pom.xml` file, any `OpenAPISupport` object your application builds prepares the default OpenAPI UI behavior, possibly modified by any UI settings you have in your configuration.
+With the Helidon OpenAPI UI dependency in your `pom.xml` file, Helidon's OpenAPI support automatically includes the default UI behavior, possibly modified by any UI settings you have in your configuration.
+You do not have to do anything else to enable the UI.
+
+=== Creating `OpenApiFeature` with Automatic UI Behavior
+Some applications explicitly create the `OpenApiFeature` object to tailor its behavior before registering it with the server.
+If your `pom.xml` includes a dependency on the OpenAPI UI component, then any `OpenApiFeature` object your application builds prepares the default OpenAPI UI behavior, possibly modified as above by any UI settings you have in your configuration.
 
 [source,java]
-.Create `OpenAPISupport` with automatic UI
+.Create `OpenApiFeature` with automatic UI
 ----
 Config config = Config.create(); // <1>
-Config openApiConfig = config.get(OpenAPISupport.Builder.CONFIG_KEY)); // <2>
+Config.global(config);
 
-OpenAPISupport openApiSupport =
-    OpenAPISupport.builder()
-        .config(openApiConfig) // <3>
-        .build();
+WebServer server = WebServer.builder()
+        .config(config.get("server"))
+        .addFeature(OpenApiFeature.create(Config.global().get("openapi"))) // <2>
+        .routing(Main::routing)
+        .build()
+        .start();
 ----
-<1> Load the configuration.
-<2> Extract the `OpenAPISupport` configuration.
-<3> Build the `OpenAPISupport` instance using the configuration.
+<1> Load and set the global configuration.
+<2> Add the OpenAPI feature to the server, configured using the `openapi` section of the configuration.
 
-If your code invokes the `OpenAPISupport.Builder` `config` method, Helidon automatically applies the `ui` section of the `openapi` configuration to the UI.
+If your code invokes the `OpenApiFeature.Builder` `config` method, Helidon automatically applies the `ui` section of the `openapi` configuration to the UI.
 
 === Customizing the UI Behavior
 You can control some of the behavior of the UI programmatically in two steps:
 
-. Create an link:{javadoc-path}/OpenApiUi.Builder.html[`OpenApiUi.Builder`] and invoke methods on it to set the UI behavior.
-. Invoke the `ui` method on link:{openapi-javadoc-base-url}/io.helidon.openapi.OpenAPISupport.Builder.html[`OpenAPISupport.Builder`], passing the `OpenApiUi.Builder` you prepared above.
+. Create an link:{javadoc-path}/OpenApiUi.Builder.html[`OpenApiUi.Builder`] and invoke methods on it to set the UI behavior, then invoke the builder's `build` method to create the `OpenApiUi` object.
+. Invoke the `addService` method on link:{openapi-javadoc-base-url}/io.helidon.openapi.OpenApiFeature.Builder.html[`OpenApiFeature.Builder`], passing the `OpenApiUi` object you prepared above.
 
 The following example illustrates these steps, combining configuration with explicit programmatic settings.
 
@@ -74,31 +79,34 @@ The following example illustrates these steps, combining configuration with expl
 .Create `OpenApiUi` and `OpenAPISupport` instances
 ----
 Config config = Config.create(); // <1>
-Config openApiConfig = config.get(OpenAPISupport.Builder.CONFIG_KEY)); // <2>
+Config.global(config);
 
-OpenApiUi.Builder uiBuilder =
-    OpenApiUi.builder() // <3>
-        .webContext("/my-openapi-ui"); // <4>
-
-OpenAPISupport openApiSupport =
-    OpenAPISupport.builder() // <5>
-        .ui(uiBuilder)
-        .config(openApiConfig) // <6>
-        .build();
-
-
+Config openApiConfig = Config.global().get("openapi"); // <2>
+WebServer server = WebServer.builder()
+        .config(config.get("server"))
+        .addFeature(OpenApiFeature.builder() // <3>
+                            .addService(OpenApiUi.builder() // <4>
+                                                .webContext("my-ui") // <5>
+                                                .config(openApiConfig.get("ui")) // <6>
+                                                .build()) // <7>
+                            .config(openApiConfig)
+                            .build()) // <8>
+        .routing(Main::routing)
+        .build()
+        .start();
 ----
-<1> Load the configuration.
-<2> Extract the `OpenAPISupport` configuration.
-<3> Create the `OpenApiUi.Builder` instance.
-<4> Explicitly set the web context where the UI should respond.
-<5> Create the `OpenAPISupport` instance using the `OpenApiUi.Builder` just created.
-You can refine the behavior of the `OpenAPISupport` object by invoking additional methods on its builder before invoking its `build` method.
-<6> Apply the `openapi` configuration to the `OpenAPISupport` builder. This also automatically applies any `openapi.ui` configuration to the UI.
+<1> Load and set global configuration.
+<2> Extract the `openapi` config.
+<3> Begin setting up the `OpenApiFeature` builder.
+<4> Create the UI builder.
+<5> Set UI behavior programmatically.
+<6> Set additional UI behavior based on UI configuration.
+<7> Build the `OpenApiUi` object.
+<8> Build the `OpenApiFeature` object.
 
-The order in which your code invokes the methods on `OpenApiUi.Builder` and `OpenAPISupport.Builder` determines the outcome.
-For instance, the example above sets the UI on the `OpenAPISupport.Builder` _before_ applying configuration.
-If the configuration contains a setting for the UI's `web-context` value then the UI uses the configured value, not the programmatic value, because your code applied the configuration later.
+The order in which your code invokes the methods on `OpenApiUi.Builder` and `OpenApiFeature.Builder` determines the outcome.
+For instance, the example above adds the UI service to the `OpenApiFeature.Builder` _before_ applying configuration to the `OpenApiFeature.Builder`.
+If the configuration contains a setting for the UI's `web-context` value, then the UI uses the configured value and not the programmatic value because your code applies the configuration later.
 Your code should typically apply configuration _after_ setting any values programmatically.
 Doing so allows users or deployers of your service to set the behavior using configuration according to their particular needs which your code might not be able to anticipate.
 
@@ -107,21 +115,6 @@ Doing so allows users or deployers of your service to set the behavior using con
 The `webContext(String)` method on `OpenApiUi.Builder`  sets the web context where the UI should respond instead of the default `/openapi/ui`.
 Helidon uses the provided string to set the _entire_ web context for the UI, not as a suffix appended to the web context for the `OpenAPISupport` service.
 ====
-
-=== Registering `OpenAPISupport`
-Whether or not your code tailors the UI or `OpenAPISupport` behavior, it must register the resulting `OpenAPISupport` instance so that the OpenAPI and UI endpoints can respond correctly.
-
-[source,java]
-.Register services for routing
-----
-Routing.builder()
-        .register(openApiSupport)
-        // Add registrations of your service(s) and other Helidon services you need.
-        .build();
-----
-
-The UI is implemented as part of the `OpenAPISupport` service which registers the UI automatically.
-Your code does not register the UI explicitly.
 
 include::{ui-inc}[tag=config-intro]
 
