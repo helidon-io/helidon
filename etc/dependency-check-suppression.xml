@@ -171,5 +171,14 @@
    <cve>CVE-2023-4759</cve>
 </suppress>
 
+<!--
+    These are FPs.
+    See https://github.com/jeremylong/DependencyCheck/issues/5973
+-->
+<suppress>
+    <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus\-(cipher|classworlds|component-annotations|interpolation|container-default|sec-dispatcher)@.*$</packageUrl>
+    <cve>CVE-2022-4244</cve>
+    <cve>CVE-2022-4245</cve>
+</suppress>
 
 </suppressions>
