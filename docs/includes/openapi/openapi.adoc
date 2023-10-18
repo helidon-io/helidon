@@ -142,11 +142,11 @@ endif::se-flavor[]
 
 // tag::usage-access-endpoint[]
 === Accessing the REST Endpoint
-Once you add the {flavor-uc} OpenAPI dependency to your
-ifdef::mp-flavor[project,]
-ifdef::se-flavor[project and, if you are not using auto-discovery, add code to register the `OpenApiFeature` object with your routing,]
+Once you have added the {flavor-uc} OpenAPI dependency to your
+ifdef::mp-flavor[project, then ]
+ifdef::se-flavor[project, if you are using auto-discovery--or if you are not using auto-discovery and you have added code to register the `OpenApiFeature` object with your routing--then ]
 your application responds to the built-in endpoint --
-`/openapi` -- and it returns the OpenAPI document describing the endpoints
+`/openapi` -- and returns the OpenAPI document describing the endpoints
 in your application.
 
 ifdef::mp-flavor[Per the MicroProfile OpenAPI spec, the]

@@ -57,7 +57,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 Simply by adding the dependency described above you add support for OpenAPI to your Helidon SE application. Because Helidon automatically discovers the OpenAPI feature, you do not have to make any changes to your application code.
 
 === Explicit Registration
-On the other hand, to control the behavior of the OpenAPI feature programmatically you can add and configure the OpenAPI feature explicitly as explained below.
+To control the behavior of the OpenAPI feature programmatically, you can add and configure the OpenAPI feature explicitly as explained below.
 
 ==== Create and Register `OpenApiFeature` in your application
 

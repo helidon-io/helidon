@@ -96,7 +96,7 @@ WebServer server = WebServer.builder()
         .start();
 ----
 <1> Load and set global configuration.
-<2> For convenience extract the `openapi` config.
+<2> Extract the `openapi` config.
 <3> Begin setting up the `OpenApiFeature` builder.
 <4> Create the UI builder.
 <5> Set UI behavior programmatically.
@@ -105,8 +105,8 @@ WebServer server = WebServer.builder()
 <8> Build the `OpenApiFeature` object.
 
 The order in which your code invokes the methods on `OpenApiUi.Builder` and `OpenApiFeature.Builder` determines the outcome.
-For instance, the example above add the UI service to the `OpenApiFeature.Builder` _before_ applying configuration to the `OpenApiFeature.Builder`.
-If the configuration contains a setting for the UI's `web-context` value then the UI uses the configured value, not the programmatic value, because your code applied the configuration later.
+For instance, the example above adds the UI service to the `OpenApiFeature.Builder` _before_ applying configuration to the `OpenApiFeature.Builder`.
+If the configuration contains a setting for the UI's `web-context` value, then the UI uses the configured value and not the programmatic value because your code applies the configuration later.
 Your code should typically apply configuration _after_ setting any values programmatically.
 Doing so allows users or deployers of your service to set the behavior using configuration according to their particular needs which your code might not be able to anticipate.
 

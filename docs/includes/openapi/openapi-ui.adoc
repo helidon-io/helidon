@@ -49,7 +49,7 @@ Through that UI, users can invoke the operations declared in the document.
 
 [NOTE]
 ====
-The Helidon team discourages including the OpenAPI UI in production applications. The OpenAPI UI _can_ be useful for demonstrating and "test driving" your service's endpoints prior to deployment.
+The Helidon team discourages including the OpenAPI UI in production applications. The OpenAPI UI _can_ be useful for demonstrating and testing your service's endpoints prior to deployment.
 ====
 
 The Helidon OpenAPI component allows you to integrate the SmallRye UI into your application, adding the UI web page to your application very simply.
