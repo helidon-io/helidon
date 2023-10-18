@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,27 +17,26 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Mock Connector
-:toc:
-:toc-placement: preamble
 :description: Reactive Messaging Mock connector for testing
 :keywords: helidon, mp, messaging, test, mock
 :feature-name: Mock Connector
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
 
+include::{rootdir}/includes/mp.adoc[]
+
 == Contents
 
 - <<Overview, Overview>>
-- <<Emitting data, Emitting data>>
-- <<Asserting data, Asserting data>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
 - <<Configuration, Configuration>>
-- <<Helidon test with Mock Connector, Helidon Test>>
+- <<Helidon Test with Mock Connector, Helidon Test>>
 
 == Overview
 Mock connector is a simple application scoped bean that can be used for emitting to a channel
 or asserting received data in a test environment. All data received are kept in memory only.
 
-include::{rootdir}/includes/mp.adoc[]
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -47,6 +46,8 @@ include::{rootdir}/includes/dependencies.adoc[]
     <artifactId>helidon-messaging-mock</artifactId>
 </dependency>
 ----
+
+== Usage
 
 WARNING: Mock connector should be used in the test environment only!
 
@@ -58,7 +59,7 @@ For injecting Mock Connector use `@TestConnector` qualifier:
 MockConnector mockConnector;
 ----
 
-=== Emitting data
+=== Emitting Data
 
 .Emitting String values `a`, `b`, `c`
 [source,java]
@@ -69,7 +70,7 @@ mockConnector
 ----
 <1> Get incoming channel of given name and payload type
 
-=== Asserting data
+=== Asserting Data
 
 .Awaiting and asserting payloads with custom mapper
 [source,java]
@@ -81,18 +82,18 @@ mockConnector
 <1> Get outgoing channel of given name and payload type
 <2> Request number of expected items and block the thread until items arrive then assert the payloads
 
-=== Configuration
+== Configuration
 |===
 |Key            |Default value   | Description
 |mock-data      |                | Initial data emitted to the channel immediately after subscription
 |mock-data-type |java.lang.String| Type of the emitted initial data to be emitted
 |===
 
-== Helidon test with Mock Connector
+== Helidon Test with Mock Connector
 Mock connector works great with built-in Helidon test support for
-link:/{rootdir}/testing/testing.adoc[JUnit 5] or link:/{rootdir}/testing/testing-ng.adoc[Test NG].
+link:/{rootdir}/testing/testing.adoc[JUnit 5] or link:/{rootdir}/testing/testing-ng.adoc[TestNG].
 
-As Helidon test support makes a bean out of your test, you can inject MockConnector right in to it.
+As Helidon test support makes a bean out of your test, you can inject MockConnector directly into it.
 
 [source,java]
 ----
