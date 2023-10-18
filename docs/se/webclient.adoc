@@ -206,7 +206,7 @@ Users can also create their own Custom Media Support library and make them work 
 ----
 WebClient webclient = WebClient.builder()
         .mediaContext(MediaContext.builder()
-                .addMediaSupport(CustomMediaSupport.create()) // <1>
+                .addMediaSupport(CustomMediaSupport.create())   <1>
                 .build())
         .build()
 ----
@@ -289,7 +289,7 @@ client:
   services: <4>
     metrics:
       - methods: ["PUT", "POST", "DELETE"]
-      - type: METER
+        type: METER
         name-format: "client.meter.overall"
       - type: TIMER
         # meter per method
