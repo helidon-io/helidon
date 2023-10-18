@@ -459,4 +459,4 @@ with port `8070` defined in the snippet above you need to configure your Helidon
 * https://github.com/eclipse/microprofile-lra[MicroProfile LRA GitHub Repository]
 * {microprofile-lra-spec-url}[{spec-name}]
 * https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/apidocs/org/eclipse/microprofile/lra/[Microprofile LRA JavaDoc]
-* https://helidon.io/docs/v2/apidocs/io.helidon.lra.coordinator.client/module-summary.html[Helidon LRA Client JavaDoc]
+* https://helidon.io/docs/v3/apidocs/io.helidon.lra.coordinator.client/module-summary.html[Helidon LRA Client JavaDoc]

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -73,6 +73,9 @@ To include health checks for Messaging add the following dependency:
 - <<Channels, Channels>>
 - <<Emitter, Emitter>>
 - <<Connector, Connector>>
+- <<Message, Message>>
+- <<Acknowledgement, Acknowledgement>>
+- <<Health Check, Health Check>>
 
 
 === Channels
@@ -280,98 +283,6 @@ public class ExampleConnector implements IncomingConnectorFactory, OutgoingConne
 }
 ----
 
-== Configuration
-
-The channel must be configured to use connector as its upstream or downstream.
-
-[source,yaml]
-.Example of channel to connector mapping config:
-----
-mp.messaging.outgoing.to-connector-channel.connector: example-connector #<1>
-mp.messaging.incoming.from-connector-channel.connector: example-connector #<2>
-----
-
-<1> Use connector `example-connector` as a downstream for channel `to-connector-channel` to consume the messages from the channel
-<2> Use connector `example-connector` as an upstream for channel `to-connector-channel` to produce messages to the channel
-
-[source,java]
-.Example producing to connector:
-----
-@Outgoing("to-connector-channel")
-public Publisher<String> produce() {
-   return Flowable.just("fee", "fie");
-}
-
-> Connector says: fee
-> Connector says: fie
-----
-
-
-[source,java]
-.Example consuming from connector:
-----
-@Incoming("from-connector-channel")
-public void consume(String value) {
-   System.out.println("Consuming: " + value);
-}
-
-> Consuming: foo
-> Consuming: bar
-----
-
-When the connector constructs a publisher or subscriber for a given channel,
-it can access general connector configuration and channel-specific properties merged together with
-special synthetic property `channel-name`.
-
-image::msg/connector-config.svg[Connector config]
-
-Connector specific config (1)  merged together with global connector config (2).
-
-[source,java]
-.Example connector accessing configuration:
-----
-@ApplicationScoped
-@Connector("example-connector")
-public class ExampleConnector implements IncomingConnectorFactory {
-
-    @Override
-    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
-
-        String firstPropValue = config.getValue("channel-specific-prop", String.class); //<1>
-        String secondPropValue = config.getValue("connector-specific-prop", String.class);
-        String secondPropValue = config.getValue("channel-name", String.class); //<2>
-
-        return ReactiveStreams.of(firstPropValue, secondPropValue)
-                .map(Message::of);
-    }
-}
-----
-<1> Config context is merged from channel and connector contexts
-<2> Name of the channel requesting publisher as it's upstream from this connector
-
-[source,yaml]
-.Example of channel to connector mapping config with custom properties:
-----
-mp.messaging.incoming.from-connector-channel.connector: example-connector<1>
-mp.messaging.incoming.from-connector-channel.channel-specific-prop: foo<2>
-mp.messaging.connector.example-connector.connector-specific-prop: bar<3>
-----
-<1> Channel -> Connector mapping
-<2> Channel configuration properties
-<3> Connector configuration properties
-
-[source,java]
-.Example consuming from connector:
-----
-@Incoming("from-connector-channel")
-public void consume(String value) {
-   System.out.println("Consuming: " + value);
-}
-
-> Consuming: foo
-> Consuming: bar
-----
-
 === Message
 The Reactive Messaging link:{microprofile-reactive-messaging-spec-url}#_message[Message]
 class can be used to wrap or unwrap data items between methods and connectors.
@@ -501,7 +412,7 @@ public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
 }
 ----
 
-=== Health check
+=== Health Check
 
 Messaging in Helidon has built in health probes for liveness and readiness. To activate it
 add the <<maven-coordinates,health check dependency>>.
@@ -525,11 +436,104 @@ every messaging channel to have its own probe.
 }
 ----
 
-Caution: Due to the nack support are exceptions thrown in messaging methods NOT translated to error and cancel signals implicitly anymore
+CAUTION: Due to the nack support are exceptions thrown in messaging methods NOT translated to error and cancel signals implicitly anymore
+
+
+== Configuration
+
+The channel must be configured to use connector as its upstream or downstream.
+
+[source,yaml]
+.Example of channel to connector mapping config:
+----
+mp.messaging.outgoing.to-connector-channel.connector: example-connector #<1>
+mp.messaging.incoming.from-connector-channel.connector: example-connector #<2>
+----
+
+<1> Use connector `example-connector` as a downstream for channel `to-connector-channel` to consume the messages from the channel
+<2> Use connector `example-connector` as an upstream for channel `to-connector-channel` to produce messages to the channel
+
+[source,java]
+.Example producing to connector:
+----
+@Outgoing("to-connector-channel")
+public Publisher<String> produce() {
+   return Flowable.just("fee", "fie");
+}
+
+> Connector says: fee
+> Connector says: fie
+----
+
+
+[source,java]
+.Example consuming from connector:
+----
+@Incoming("from-connector-channel")
+public void consume(String value) {
+   System.out.println("Consuming: " + value);
+}
+
+> Consuming: foo
+> Consuming: bar
+----
+
+When the connector constructs a publisher or subscriber for a given channel,
+it can access general connector configuration and channel-specific properties merged together with
+special synthetic property `channel-name`.
+
+image::msg/connector-config.svg[Connector config]
+
+Connector specific config (1)  merged together with global connector config (2).
+
+[source,java]
+.Example connector accessing configuration:
+----
+@ApplicationScoped
+@Connector("example-connector")
+public class ExampleConnector implements IncomingConnectorFactory {
+
+    @Override
+    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
+
+        String firstPropValue = config.getValue("channel-specific-prop", String.class); //<1>
+        String secondPropValue = config.getValue("connector-specific-prop", String.class);
+        String secondPropValue = config.getValue("channel-name", String.class); //<2>
+
+        return ReactiveStreams.of(firstPropValue, secondPropValue)
+                .map(Message::of);
+    }
+}
+----
+<1> Config context is merged from channel and connector contexts
+<2> Name of the channel requesting publisher as it's upstream from this connector
+
+[source,yaml]
+.Example of channel to connector mapping config with custom properties:
+----
+mp.messaging.incoming.from-connector-channel.connector: example-connector<1>
+mp.messaging.incoming.from-connector-channel.channel-specific-prop: foo<2>
+mp.messaging.connector.example-connector.connector-specific-prop: bar<3>
+----
+<1> Channel -> Connector mapping
+<2> Channel configuration properties
+<3> Connector configuration properties
+
+[source,java]
+.Example consuming from connector:
+----
+@Incoming("from-connector-channel")
+public void consume(String value) {
+   System.out.println("Consuming: " + value);
+}
+
+> Consuming: foo
+> Consuming: bar
+----
 
 == Reference
 
-* link:https://helidon.io/docs/v2/apidocs/io.helidon.microprofile.messaging/module-summary.html[Helidon MicroProfile Reactive Messaging]
+* link:https://helidon.io/docs/v3/apidocs/io.helidon.microprofile.messaging/module-summary.html[Helidon MicroProfile Reactive Messaging]
 * link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging Specification]
 * link:https://github.com/eclipse/microprofile-reactive-messaging[MicroProfile Reactive Messaging on GitHub]
 
@@ -538,5 +542,5 @@ Caution: Due to the nack support are exceptions thrown in messaging methods NOT 
 === Upgrading to Messaging 3.0
 .Non-backward compatible changes:
 * Exceptions thrown in messaging methods are not propagated as error or cancel signals to the stream(use `mp.messaging.helidon.propagate-errors=true` for backward compatible mode) - errors are propagated only to the upstream by `nack` functionality.
-* Default acknowledgement strategies changed for selected signatures(all with Message as a parameter or return type) - See the specification issue link:{https://github.com/eclipse/microprofile-reactive-messaging/pull/97}[#97]
+* Default acknowledgement strategies changed for selected signatures(all with Message as a parameter or return type) - See the specification issue link:https://github.com/eclipse/microprofile-reactive-messaging/pull/97[#97]
 
