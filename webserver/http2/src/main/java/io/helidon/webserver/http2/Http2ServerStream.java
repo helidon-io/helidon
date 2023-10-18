@@ -43,6 +43,7 @@ import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameTypes;
+import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
@@ -180,21 +181,26 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     @Override
-    public void rstStream(Http2RstStream rstStream) {
+    public boolean rstStream(Http2RstStream rstStream) {
         if (state == Http2StreamState.IDLE) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                      "Received RST_STREAM for stream "
                                              + streamId + " in IDLE state");
         }
         // TODO interrupt
+        boolean rapidReset = writeState == WriteState.INIT;
         this.state = Http2StreamState.CLOSED;
+        return rapidReset;
     }
 
     @Override
     public void windowUpdate(Http2WindowUpdate windowUpdate) {
+        //5.1/3
         if (state == Http2StreamState.IDLE) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received WINDOW_UPDATE for stream "
-                    + streamId + " in state IDLE");
+            String msg = "Received WINDOW_UPDATE for stream " + streamId + " in state IDLE";
+            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, msg);
+            writer.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, msg);
         }
         //6.9/2
         if (windowUpdate.windowSizeIncrement() == 0) {
@@ -202,7 +208,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
             writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
         }
         //6.9.1/3
-        if (flowControl.outbound().incrementStreamWindowSize(windowUpdate.windowSizeIncrement()) > WindowSize.MAX_WIN_SIZE) {
+        long size = flowControl.outbound().incrementStreamWindowSize(windowUpdate.windowSizeIncrement());
+        if (size > WindowSize.MAX_WIN_SIZE || size < 0L) {
             Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
             writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
         }

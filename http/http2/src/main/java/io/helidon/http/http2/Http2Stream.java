@@ -27,8 +27,9 @@ public interface Http2Stream {
      * Close the stream.
      *
      * @param rstStream rst stream frame
+     * @return true if rapid reset(rst received before any data are sent)
      */
-    void rstStream(Http2RstStream rstStream);
+    boolean rstStream(Http2RstStream rstStream);
 
     /**
      * Flow control window update.
