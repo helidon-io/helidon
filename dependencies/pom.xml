@@ -132,6 +132,8 @@
         <version.lib.oci>3.21.0</version.lib.oci>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
+        <!-- Manage okio version for dependency convergence -->
+        <version.lib.okio>3.6.0</version.lib.okio>
         <!-- Force upgrade okhttp3 transitive dependency -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry>1.22.0</version.lib.opentelemetry>
@@ -1326,6 +1328,14 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
                 <version>${version.lib.google-protobuf}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <!-- For dependency convergence. Used by okhttp -->
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio-bom</artifactId>
+                <version>${version.lib.okio}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
