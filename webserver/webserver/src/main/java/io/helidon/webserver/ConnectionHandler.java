@@ -34,7 +34,6 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.PlainSocket;
-import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.InterruptableTask;

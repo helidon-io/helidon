@@ -21,41 +21,92 @@ package io.helidon.webserver;
 public interface ProxyProtocolData {
 
     /**
-     * The protocol family options.
+     * Protocol family.
      */
-    enum ProtocolFamily {
+    enum Family {
         /**
-         * TCP version 4.
+         * Unknown family.
          */
-        TCP4,
+        UNKNOWN,
 
         /**
-         * TCP version 6.
+         * IP version 4.
          */
-        TCP6,
+        IPv4,
 
         /**
-         * Protocol family is unknown.
+         * IP version 6.
          */
-        UNKNOWN
+        IPv6,
+
+        /**
+         * Unix.
+         */
+        UNIX;
+
+        static Family fromString(String s) {
+            return switch (s) {
+                case "TCP4" -> IPv4;
+                case "TCP6" -> IPv6;
+                case "UNIX" -> UNIX;
+                case "UNKNOWN" -> UNKNOWN;
+                default -> throw new IllegalArgumentException("Unknown family " + s);
+            };
+        }
     }
 
     /**
-     * Protocol family from protocol header.
-     *
-     * @return protocol family
+     * Protocol type.
      */
-    ProtocolFamily protocolFamily();
+    enum Protocol {
+        /**
+         * Unknown protocol.
+         */
+        UNKNOWN,
+
+        /**
+         * TCP streams protocol.
+         */
+        TCP,
+
+        /**
+         * UDP datagram protocol.
+         */
+        UDP;
+
+        static Protocol fromString(String s) {
+            return switch (s) {
+                case "TCP4", "TCP6" -> TCP;
+                case "UDP" -> UDP;
+                case "UNKNOWN" -> UNKNOWN;
+                default -> throw new IllegalArgumentException("Unknown protocol " + s);
+            };
+        }
+    }
 
     /**
-     * Source address that is either IPv4 or IPv6 depending on {@link #protocolFamily()}}.
+     * Family from protocol header.
+     *
+     * @return family
+     */
+    Family family();
+
+    /**
+     * Protocol from protocol header.
+     *
+     * @return protocol
+     */
+    Protocol protocol();
+
+    /**
+     * Source address that is either IP4 or IP6 depending on {@link #family()}.
      *
      * @return source address
      */
     String sourceAddress();
 
     /**
-     * Destination address that is either IPv4 or IPv6 depending on {@link #protocolFamily()}}.
+     * Destination address that is either IP4 or IP46 depending on {@link #family()}.
      *
      * @return source address
      */

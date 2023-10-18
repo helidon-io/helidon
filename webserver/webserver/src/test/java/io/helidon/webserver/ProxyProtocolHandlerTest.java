@@ -30,12 +30,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ProxyProtocolHandlerTest {
 
+    static final String V2_PREFIX_2 = "\0x0D\0x0A\0x51\0x55\0x49\0x54\0x0A";
+
     @Test
     void basicV1Test() throws IOException {
         String header = " TCP4 192.168.0.1 192.168.0.11 56324 443\r\n";     // excludes PROXY prefix
         ProxyProtocolData data = ProxyProtocolHandler.handleV1Protocol(new PushbackInputStream(
                 new ByteArrayInputStream(header.getBytes(StandardCharsets.US_ASCII))));
-        assertThat(data.protocolFamily(), is(ProxyProtocolData.ProtocolFamily.TCP4));
+        assertThat(data.family(), is(ProxyProtocolData.Family.IPv4));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
         assertThat(data.sourceAddress(), is("192.168.0.1"));
         assertThat(data.destAddress(), is("192.168.0.11"));
         assertThat(data.sourcePort(), is(56324));
@@ -47,7 +50,8 @@ class ProxyProtocolHandlerTest {
         String header = " UNKNOWN\r\n";     // excludes PROXY prefix
         ProxyProtocolData data = ProxyProtocolHandler.handleV1Protocol(new PushbackInputStream(
                 new ByteArrayInputStream(header.getBytes(StandardCharsets.US_ASCII))));
-        assertThat(data.protocolFamily(), is(ProxyProtocolData.ProtocolFamily.UNKNOWN));
+        assertThat(data.family(), is(ProxyProtocolData.Family.UNKNOWN));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.UNKNOWN));
         assertThat(data.sourceAddress(), nullValue());
         assertThat(data.destAddress(), nullValue());
         assertThat(data.sourcePort(), is(-1));
@@ -72,5 +76,37 @@ class ProxyProtocolHandlerTest {
         assertThrows(RequestException.class, () ->
                 ProxyProtocolHandler.handleV1Protocol(new PushbackInputStream(
                         new ByteArrayInputStream(header4.getBytes(StandardCharsets.US_ASCII)))));
+    }
+
+    @Test
+    void basicV2Test() throws IOException {
+        String header = V2_PREFIX_2
+                + "\0x20\0x11\0x00\0x0C"    // version, family/protocol, length
+                + "\0xC0\0xA8\0x00\0x01"    // 192.168.0.1
+                + "\0xC0\0xA8\0x00\0x0B"    // 192.168.0.11
+                + "\0xDC\0x04"              // 56324
+                + "\0x01\0xBB";             // 443
+        ProxyProtocolData data = ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
+                new ByteArrayInputStream(decodeHexString(header))));
+        assertThat(data.family(), is(ProxyProtocolData.Family.IPv4));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
+        assertThat(data.sourceAddress(), is("192.168.0.1"));
+        assertThat(data.destAddress(), is("192.168.0.11"));
+        assertThat(data.sourcePort(), is(56324));
+        assertThat(data.destPort(), is(443));
+    }
+
+    private static byte[] decodeHexString(String s) {
+        assert !s.isEmpty() && s.length() % 4 == 0;
+
+        byte[] bytes = new byte[s.length() / 4];
+        for (int i = 0, j = 0; i < s.length(); i += 4) {
+            char c1 = s.charAt(i + 2);
+            byte b1 = (byte) (Character.isDigit(c1) ? c1 - '0' : c1 - 'A' + 10);
+            char c2 = s.charAt(i + 3);
+            byte b2 = (byte) (Character.isDigit(c2) ? c2 - '0' : c2 - 'A' + 10);
+            bytes[j++] = (byte) (((b1 << 4) & 0xF0) | (b2 & 0x0F));
+        }
+        return bytes;
     }
 }

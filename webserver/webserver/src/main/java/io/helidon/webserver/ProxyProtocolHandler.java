@@ -16,6 +16,7 @@
 package io.helidon.webserver;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
@@ -25,11 +26,14 @@ import java.util.function.Supplier;
 
 import io.helidon.http.DirectHandler;
 import io.helidon.http.RequestException;
+import io.helidon.webserver.ProxyProtocolData.Family;
+import io.helidon.webserver.ProxyProtocolData.Protocol;
 
 class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
     private static final System.Logger LOGGER = System.getLogger(ProxyProtocolHandler.class.getName());
 
     private static final int MAX_V1_FIELD_LENGTH = 40;
+    private static final int MAX_V2_ADDRESS_LENGTH = 216;
 
     static final byte[] V1_PREFIX = {
             (byte) 'P',
@@ -39,12 +43,15 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             (byte) 'Y',
     };
 
-    static final byte[] V2_PREFIX = {
+    static final byte[] V2_PREFIX_1 = {
             (byte) 0x0D,
             (byte) 0x0A,
             (byte) 0x0D,
             (byte) 0x0A,
             (byte) 0x00,
+    };
+
+    static final byte[] V2_PREFIX_2 = {
             (byte) 0x0D,
             (byte) 0x0A,
             (byte) 0x51,
@@ -80,7 +87,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             }
             if (arrayEquals(prefix, V1_PREFIX, V1_PREFIX.length)) {
                 return handleV1Protocol(inputStream);
-            } else if (arrayEquals(prefix, V2_PREFIX, V1_PREFIX.length)) {
+            } else if (arrayEquals(prefix, V2_PREFIX_1, V2_PREFIX_1.length)) {
                 return handleV2Protocol(inputStream);
             } else {
                 throw BAD_PROTOCOL_EXCEPTION;
@@ -99,12 +106,14 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
             // protocol and family
             n = readUntil(inputStream, buffer, (byte) ' ', (byte) '\r');
-            var family = ProxyProtocolData.ProtocolFamily.valueOf(new String(buffer, 0, n));
-            byte b = (byte) inputStream.read();
+            String familyProtocol = new String(buffer, 0, n);
+            var family = Family.fromString(familyProtocol);
+            var protocol = Protocol.fromString(familyProtocol);
+            byte b = readNext(inputStream);
             if (b == (byte) '\r') {
                 // special case for just UNKNOWN family
-                if (family == ProxyProtocolData.ProtocolFamily.UNKNOWN) {
-                    return new ProxyProtocolDataImpl(ProxyProtocolData.ProtocolFamily.UNKNOWN,
+                if (family == ProxyProtocolData.Family.UNKNOWN) {
+                    return new ProxyProtocolDataImpl(Family.UNKNOWN, Protocol.UNKNOWN,
                             null, null, -1, -1);
                 }
             }
@@ -132,10 +141,101 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             match(inputStream, (byte) '\r');
             match(inputStream, (byte) '\n');
 
-            return new ProxyProtocolDataImpl(family, sourceAddress, destAddress, sourcePort, destPort);
+            return new ProxyProtocolDataImpl(family, protocol, sourceAddress, destAddress, sourcePort, destPort);
         } catch (IllegalArgumentException e) {
             throw BAD_PROTOCOL_EXCEPTION;
         }
+    }
+
+    static ProxyProtocolData handleV2Protocol(PushbackInputStream inputStream) throws IOException {
+        // match rest of prefix
+        match(inputStream, V2_PREFIX_2);
+
+        // only accept version 2, ignore LOCAL/PROXY
+        int b = readNext(inputStream);
+        if (b >>> 4 != 0x02) {
+            throw BAD_PROTOCOL_EXCEPTION;
+        }
+
+        // protocol and family
+        b = readNext(inputStream);
+        var family = switch (b >>> 4) {
+            case 0x1 -> Family.IPv4;
+            case 0x2 -> Family.IPv6;
+            case 0x3 -> Family.UNIX;
+            default -> Family.UNKNOWN;
+        };
+        var protocol = switch (b & 0x0F) {
+            case 0x1 -> Protocol.TCP;
+            case 0x2 -> Protocol.UDP;
+            default -> Protocol.UNKNOWN;
+        };
+
+        // length
+        b = readNext(inputStream);
+        int headerLength = ((b << 8) & 0xFF00) | (readNext(inputStream) & 0xFF);
+
+        // decode addresses and ports
+        String sourceAddress = null;
+        String destAddress = null;
+        int sourcePort = -1;
+        int destPort = -1;
+        byte[] buffer = new byte[MAX_V2_ADDRESS_LENGTH];
+        switch (family) {
+            case IPv4 -> {
+                int n = inputStream.read(buffer, 0, 12);
+                if (n < 12) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                sourceAddress = (buffer[0] & 0xFF)
+                        + "." + (buffer[1] & 0xFF)
+                        + "." + (buffer[2] & 0xFF)
+                        + "." + (buffer[3] & 0xFF);
+                destAddress = (buffer[4] & 0xFF)
+                        + "." + (buffer[5] & 0xFF)
+                        + "." + (buffer[6] & 0xFF)
+                        + "." + (buffer[7] & 0xFF);
+                sourcePort = buffer[9] & 0xFF
+                        | ((buffer[8] << 8) & 0xFF00);
+                destPort = buffer[11] & 0xFF
+                        | ((buffer[10] << 8) & 0xFF00);
+                headerLength -= 12;
+            }
+            case IPv6 -> {
+                int n = inputStream.read(buffer, 0, 36);
+                if (n < 36) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                headerLength -= 36;
+
+            }
+            case UNIX -> {
+                int n = inputStream.read(buffer, 0, 216);
+                if (n < 216) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                headerLength -= 216;
+            }
+            default -> {
+                // falls through
+            }
+        }
+
+        // skip any TLV vectors
+        while (headerLength > 0) {
+            headerLength -= (int) inputStream.skip(headerLength);
+        }
+
+        return new ProxyProtocolDataImpl(family, protocol, sourceAddress, destAddress,
+                sourcePort, destPort);
+    }
+
+    private static byte readNext(InputStream inputStream) throws IOException {
+        int b = inputStream.read();
+        if (b < 0) {
+            throw BAD_PROTOCOL_EXCEPTION;
+        }
+        return (byte) b;
     }
 
     private static void match(byte a, byte b) {
@@ -150,26 +250,28 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         }
     }
 
+    private static void match(PushbackInputStream inputStream, byte... bs) throws IOException {
+        for (byte b : bs) {
+            int c = inputStream.read();
+            if (((byte) c) != b) {
+                throw BAD_PROTOCOL_EXCEPTION;
+            }
+        }
+    }
+
     private static int readUntil(PushbackInputStream inputStream, byte[] buffer, byte... delims) throws IOException {
         int n = 0;
         do {
-            int b = inputStream.read();
-            if (b < 0) {
-                throw BAD_PROTOCOL_EXCEPTION;
-            }
-            if (arrayContains(delims, (byte) b)) {
+            byte b = readNext(inputStream);
+            if (arrayContains(delims, b)) {
                 inputStream.unread(b);
                 return n;
             }
-            buffer[n++] = (byte) b;
+            buffer[n++] = b;
             if (n >= buffer.length) {
                 throw BAD_PROTOCOL_EXCEPTION;
             }
         } while (true);
-    }
-
-    static ProxyProtocolData handleV2Protocol(PushbackInputStream inputStream) throws IOException {
-        return null;
     }
 
     private static boolean arrayEquals(byte[] array1, byte[] array2, int prefix) {
@@ -185,7 +287,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         return false;
     }
 
-    record ProxyProtocolDataImpl(ProtocolFamily protocolFamily,
+    record ProxyProtocolDataImpl(Family family,
+                                 Protocol protocol,
                                  String sourceAddress,
                                  String destAddress,
                                  int sourcePort,
