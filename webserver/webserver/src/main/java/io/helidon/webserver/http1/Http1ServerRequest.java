@@ -211,7 +211,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
 
     @Override
     public Optional<ProxyProtocolData> proxyProtocolData() {
-        return Optional.ofNullable(ctx.proxyProtocolData());
+        return ctx.proxyProtocolData();
     }
 
     private UriInfo createUriInfo() {

@@ -328,6 +328,15 @@ interface ListenerConfigBlueprint {
     Optional<Context> listenerContext();
 
     /**
+     * Enable support for proxy protocol for this socket.
+     * Default is {@code false}.
+     *
+     * @return proxy support status
+     */
+    @ConfiguredOption("false")
+    boolean enableProxyProtocol();
+
+    /**
      * Requested URI discovery context.
      *
      * @return discovery context

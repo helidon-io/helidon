@@ -110,15 +110,6 @@ interface SocketOptionsBlueprint {
     boolean tcpNoDelay();
 
     /**
-     * Enable support for proxy protocol for this socket.
-     * Default is {@code false}.
-     *
-     * @return proxy support status
-     */
-    @ConfiguredOption("false")
-    boolean enableProxyProtocol();
-
-    /**
      * Configure socket with defined socket options.
      *
      * @param socket socket to update

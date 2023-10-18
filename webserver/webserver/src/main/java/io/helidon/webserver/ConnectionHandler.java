@@ -22,6 +22,7 @@ import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 
@@ -65,7 +66,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final String serverChannelId;
     private final Router router;
     private final Tls tls;
-    private final SocketOptions connectionOptions;
+    private final ListenerConfig listenerConfig;
 
     private ServerConnection connection;
     private HelidonSocket helidonSocket;
@@ -82,7 +83,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       String serverChannelId,
                       Router router,
                       Tls tls,
-                      SocketOptions connectionOptions) {
+                      ListenerConfig listenerConfig) {
         this.listenerContext = listenerContext;
         this.connectionSemaphore = connectionSemaphore;
         this.requestSemaphore = requestSemaphore;
@@ -93,7 +94,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         this.serverChannelId = serverChannelId;
         this.router = router;
         this.tls = tls;
-        this.connectionOptions = connectionOptions;
+        this.listenerConfig = listenerConfig;
     }
 
     @Override
@@ -106,7 +107,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         String channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
 
         // proxy protocol before SSL handshake
-        if (connectionOptions.enableProxyProtocol()) {
+        if (listenerConfig.enableProxyProtocol()) {
             ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
             proxyProtocolData = handler.get();
         }
@@ -238,8 +239,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     }
 
     @Override
-    public ProxyProtocolData proxyProtocolData() {
-        return proxyProtocolData;
+    public Optional<ProxyProtocolData> proxyProtocolData() {
+        return Optional.ofNullable(proxyProtocolData);
     }
 
     private ServerConnection identifyConnection() {

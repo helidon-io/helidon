@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.DataReader;
@@ -65,10 +66,10 @@ public interface ConnectionContext extends SocketContext {
     /**
      * Proxy protocol header data.
      *
-     * @return header data or {@code null} if proxy protocol not enabled on socket
+     * @return protocol header data if proxy protocol is enabled on socket
      * @see SocketOptions#enableProxyProtocol()
      */
-    default ProxyProtocolData proxyProtocolData() {
-        return null;
+    default Optional<ProxyProtocolData> proxyProtocolData() {
+        return Optional.empty();
     }
 }
