@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.common.socket.SocketOptions;
 
 /**
  * Server connection context.
@@ -60,4 +61,14 @@ public interface ConnectionContext extends SocketContext {
      * @return rouer
      */
     Router router();
+
+    /**
+     * Proxy protocol header data.
+     *
+     * @return header data or {@code null} if proxy protocol not enabled on socket
+     * @see SocketOptions#enableProxyProtocol()
+     */
+    default ProxyProtocolData proxyProtocolData() {
+        return null;
+    }
 }

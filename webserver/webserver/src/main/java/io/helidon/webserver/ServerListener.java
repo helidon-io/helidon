@@ -346,7 +346,8 @@ class ServerListener implements ListenerContext {
                                                     socket,
                                                     serverChannelId,
                                                     router,
-                                                    tls);
+                                                    tls,
+                                                    connectionOptions);
                     readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");

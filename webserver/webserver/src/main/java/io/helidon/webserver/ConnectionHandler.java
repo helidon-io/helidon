@@ -33,6 +33,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.PlainSocket;
+import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.InterruptableTask;
@@ -64,11 +65,13 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final String serverChannelId;
     private final Router router;
     private final Tls tls;
+    private final SocketOptions connectionOptions;
 
     private ServerConnection connection;
     private HelidonSocket helidonSocket;
     private DataReader reader;
     private SocketWriter writer;
+    private ProxyProtocolData proxyProtocolData;
 
     ConnectionHandler(ListenerContext listenerContext,
                       Semaphore connectionSemaphore,
@@ -78,7 +81,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       Socket socket,
                       String serverChannelId,
                       Router router,
-                      Tls tls) {
+                      Tls tls,
+                      SocketOptions connectionOptions) {
         this.listenerContext = listenerContext;
         this.connectionSemaphore = connectionSemaphore;
         this.requestSemaphore = requestSemaphore;
@@ -89,6 +93,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         this.serverChannelId = serverChannelId;
         this.router = router;
         this.tls = tls;
+        this.connectionOptions = connectionOptions;
     }
 
     @Override
@@ -99,6 +104,12 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public final void run() {
         String channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
+
+        // proxy protocol before SSL handshake
+        if (connectionOptions.enableProxyProtocol()) {
+            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
+            proxyProtocolData = handler.get();
+        }
 
         // handle SSL and init helidonSocket, reader and writer
         try {
@@ -224,6 +235,11 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public Router router() {
         return router;
+    }
+
+    @Override
+    public ProxyProtocolData proxyProtocolData() {
+        return proxyProtocolData;
     }
 
     private ServerConnection identifyConnection() {
