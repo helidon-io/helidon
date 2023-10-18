@@ -255,10 +255,9 @@ sources gives your application a way to access all config elements distinctly ev
 if their keys would otherwise conflict.
 
 ===== Merging Strategies
-When creating config from multiple sources it is possible, that the same key comes from multiple
-sources. By default, earlier sources in the list have higher priority than later ones, meaning
-that if the same key appears in two or more sources the source earlier in the
-list prevails.
+When creating config from multiple sources, it is possible that the same key comes from multiple
+sources. By default, earlier sources in the list have higher priority than later ones. This means
+that if the same key appears in two or more sources, then the source earlier in the list prevails.
 
 The config system provides the
 `FallbackMergingStrategy`
@@ -624,7 +623,7 @@ Each of these uses an executor to perform its work. The config system provides d
 executors, but your application can specify different ones if necessary.
 
 === Executors for Polling Strategy
-The method `PollingStrategies.regular(Duration)` return builder for polling strategy.
+The method `PollingStrategies.regular(Duration)` returns builder for polling strategy.
 This builder provides `executor` method which your application can invoke, passing a
 `java.util.concurrent.ScheduledExecutorService` instance it requires for the
 polling work. By default, each polling strategy instance uses a separate thread

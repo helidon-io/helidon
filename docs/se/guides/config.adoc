@@ -147,7 +147,7 @@ curl http://localhost:8080/greet
 
 ===== Environment Variable Override
 
-A environment property has a higher precedence than `application.yaml`.
+An environment property has a higher precedence than `application.yaml`.
 
 [source,bash]
 .Set the environment variable and restart the application:
@@ -172,7 +172,7 @@ curl http://localhost:8080/greet
 
 ===== System Property Override
 
-An system variable has a higher precedence than the environment property.
+A system variable has a higher precedence than the environment property.
 
 [source,bash]
 .Restart the application with a system property.  The `APP_GREETING` environment variable is still set:
