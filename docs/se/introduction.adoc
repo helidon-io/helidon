@@ -158,35 +158,32 @@ Enables Java applications to participate in WebSocket interactions as both serve
 
 
 
-== Migration
+== Upgrade
 
 In case you need to upgrade the version of Helidon, follow the `upgrade guides`.
 
 [PILLARS]
 ====
 [CARD]
-.Helidon SE 2.x Migration Guide
-[icon=upgrade,link=guides/migration.adoc]
+.Helidon SE 2.x Upgrade Guide
+[icon=upgrade,link=guides/upgrade.adoc]
 --
 Follow this guide to migrate your application from Helidon 1.x to 2.x.
 --
 
 [CARD]
-.Helidon SE 3x Migration Guide
-[icon=upgrade,link=guides/migration_3x.adoc]
+.Helidon SE 3x Upgrade Guide
+[icon=upgrade,link=guides/upgrade_3x.adoc]
 --
 Follow this guide to migrate your application from Helidon 2.x to 3.x.
 --
 
-
 [CARD]
-.Helidon SE 4x Migration Guide
-[icon=upgrade,link=guides/migration_4x.adoc]
+.Helidon SE 4x Upgrade Guide
+[icon=upgrade,link=guides/upgrade_4x.adoc]
 --
 Follow this guide to migrate your application from Helidon 3.x to 4.x.
 --
-
-
 ====
 
 

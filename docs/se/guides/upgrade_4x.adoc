@@ -35,7 +35,7 @@ Helidon 4 no more uses Netty. Helidon SE is now running on Helidon WebServer whi
 
 Helidon SE has changed from an asynchronous style API to an imperative/blocking style API that is optimized for use with virtual threads. Currently, there is no compatibility API available
 
-== Server initialization and start up
+== Server Initialization and Start Up
 
 In Helidon 1.x-3.x to star a server, the following actions should be done:
 
@@ -97,7 +97,7 @@ public static void main(String[] args) {
 Just create it, configure it, and wait for it to start. If any exceptions happen, they are handled the traditional way using available language constructions.
 
 
-== Routing configuration
+== Routing Configuration
 
 In Helidon 1.x-3.x the routing config was done the following way:
 
@@ -125,7 +125,7 @@ private static Routing createRouting(Config config) {
 <3> Register `Metrics` and `Heath` support as Helidon Services.
 <4> Register the regular Greeting service.
 
-Services are created and assigned to the desired path. Observability and other features are being created as usual Helidon `services`, available as part of the framework. Uses defined services are also registered the same way.
+Services are created and assigned to the desired path. Observability and other features are being created as usual Helidon `services`, available as part of the framework. User-defined services are also registered the same way.
 
 In Helidon 4, the routing is configured the following way:
 
@@ -204,11 +204,11 @@ public class GreetService implements HttpService {  <1>
 
 Helidon 4 introduced `HttpService` that should be implemented in order to process HTTP requests. To set up routing, the method `routing(HttpRules rules)` should now be used. It receives `HttpRules` object with routes description.
 
-These changes make Helidon 4 incompatible with previous versions.
+WARNING: These changes make Helidon 4 incompatible with previous versions.
 
 Learn more about `HttpService` and `Routing` at xref:../webserver.adoc[Helidon SE WebServer]
 
-=== Significant changes
+=== Significant Changes
 
 ==== Testing
 
@@ -223,11 +223,11 @@ There is a new testing framework for Helidon SE.
 </dependency>
 ----
 
-Find more information proceed to xref:../introduction.adoc[Helidon SE testing]
+Find more information, see xref:../introduction.adoc[Helidon SE testing]
 
 ==== Observability
 
-Observability features of Helidon have now moved to different package. For `Heath` and `Metrics` please use:
+Observability features of Helidon have now moved to different package. For `Health` and `Metrics` please use:
 
 [source, xml]
 ----
@@ -241,7 +241,7 @@ Observability features of Helidon have now moved to different package. For `Heat
 </dependency>
 ----
 
-Observability has new endpoints.
+Observability has new endpoints. See them xref:../observability.adoc[here].
 
 For System Metrics, please use:
 

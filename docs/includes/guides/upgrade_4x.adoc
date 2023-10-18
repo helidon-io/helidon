@@ -27,5 +27,5 @@ include::../attributes.adoc[]
 Helidon 4.x is not fully backwards compatible with Helidon 3.x. For information
 concerning upgrading from Helidon 3.x to 4.x see the following upgrade guides:
 
-* xref:../mp/guides/migration_4x.adoc[Helidon MP 4.x Upgrade Guide]
-* xref:../se/guides/migration_4x.adoc[Helidon SE 4.x Upgrade Guide]
+* xref:../mp/guides/upgrade_4x.adoc[Helidon MP 4.x Upgrade Guide]
+* xref:../se/guides/upgrade_4x.adoc[Helidon SE 4.x Upgrade Guide]

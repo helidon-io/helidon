@@ -29,7 +29,7 @@ will help you migrate a Helidon MP 1.x application to 2.x.
 
 
 
-include::{rootdir}/includes/guides/migration.adoc[]
+include::{rootdir}/includes/guides/upgrade.adoc[]
 
 == MicroProfile Bundles
 

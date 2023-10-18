@@ -76,7 +76,7 @@ Learn how to build a Helidon MicroProfile (MP) application from scratch.
 
 [CARD]
 .Helidon MP Upgrade guide
-[link=migration.adoc]
+[link=upgrade.adoc]
 --
 Learn how to upgrade your Helidon MP application from 1.x to 2.x.
 --
