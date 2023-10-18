@@ -39,8 +39,8 @@ WebClient is an HTTP client for Helidon SE. It can be used to send requests and 
 
 Helidon WebClient provides the following features:
 
-* *Synchronous approach* +
-The Webclient uses the blocking approach to synchronously process a request and its correspond response. For HTTP/1.1, it runs in the thread of the user. For HTTP/2, virtual thread is employed to manage the connection.
+* *Blocking approach* +
+The Webclient uses the blocking approach to synchronously process a request and its correspond response. Both `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the user. Additionally, for `HTTP/2`, virtual thread is employed to manage the connection.
 
 * *Builder-like setup and execution* +
 Creates every client and request as a builder pattern. This improves readability and code maintenance.
