@@ -71,7 +71,7 @@ from the root directory of your project (helidon-quickstart-se).
 
 Handling health checks is part of Helidon's observability support.
 By default, when you add the dependency for the built-in health checks, Helidon automatically registers the built-in checks.
-But the generated project does otherwise to illustrate how you can tailor its handling of health checks as you see fit.
+But the generated project explicitly suppresses the build-in health checks, thereby highlighting the custom health checks it adds.
 
 [source,java]
 .Excerpt from `Main.main`:

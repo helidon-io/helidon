@@ -174,7 +174,7 @@ Generate Helidon MP Quickstart project following these xref:guides/quickstart.ad
 
 === Using the Built-In Health Checks
 
-Helidon has a set of built-in health checks which report various
+Helidon has a set of built-in health checks that can report various
 conditions:
 
 * deadlock detection
