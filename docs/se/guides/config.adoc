@@ -86,7 +86,7 @@ In your application code, Helidon uses the default configuration when you create
 See the following code from the project you created.
 
 [source,Java]
-.View `Main.startServer`:
+.View `Main.main`:
 ----
 Config config = Config.create(); // <1>
 ----
@@ -145,39 +145,15 @@ curl http://localhost:8080/greet
 ----
 <1> The new `app.greeting` value in `application.yaml` is used.
 
-===== System Property Override
-
-A system property has a higher precedence than `application.yaml`.
-
-[source,bash]
-.Restart the application with a system property.  The `app.greeting` environment variable is still set:
-----
-java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-se.jar
-----
-
-[source,bash]
-.Invoke the endpoint below and check the response:
-----
-curl http://localhost:8080/greet
-----
-
-[source,json]
-----
-{
-  "message": "HelloFromSystemProperty World!" // <1>
-}
-----
-<1> The system property took precedence over `application.yaml`.
-
 ===== Environment Variable Override
 
-An environment variable has a higher precedence than the system property.
+An environment property has a higher precedence than `application.yaml`.
 
 [source,bash]
 .Set the environment variable and restart the application:
 ----
 export APP_GREETING=HelloFromEnvironment
-java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-se.jar
+java -jar target/helidon-quickstart-se.jar
 ----
 
 [source,bash]
@@ -192,7 +168,32 @@ curl http://localhost:8080/greet
   "message": "HelloFromEnvironment World!" // <1>
 }
 ----
-<1> The environment variable `APP_GREETING` took precedence over the system property and the value in `application.yaml`.
+<1> The environment property took precedence over `application.yaml`.
+
+===== System Property Override
+
+A system variable has a higher precedence than the environment property.
+
+[source,bash]
+.Restart the application with a system property.  The `APP_GREETING` environment variable is still set:
+----
+export APP_GREETING=HelloFromEnvironment
+java -Dapp.greeting="HelloFromSystemProperty" -jar target/helidon-quickstart-se.jar
+----
+
+[source,bash]
+.Invoke the endpoint below and check the response:
+----
+curl http://localhost:8080/greet
+----
+
+[source,json]
+----
+{
+  "message": "HelloFromSystemProperty World!" // <1>
+}
+----
+<1> The system variable `app.greeting` took precedence over the environment property and the value in `application.yaml`.
 
 == Custom Configuration Sources
 
@@ -237,7 +238,7 @@ app.greeting=HelloFrom-config.properties
 import static io.helidon.config.ConfigSources.classpath; // <1>
 //...
 
-    static WebServer startServer() throws IOException {
+    public static void main(final String[] args) {
 //...
         Config config =  buildConfig(); // <2>
 
@@ -564,8 +565,8 @@ key can be composite as shown below:
 [source,java]
 .View the `GreetService` constructor:
 ----
-    GreetService(Config config) {
-        greeting.set(config.get("app.greeting").asString().orElse("Ciao")); // <1>
+    GreetService() {
+        greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao")); // <1>
     }
 ----
 <1> Get the `app.greeting` node using a composite key.
@@ -575,8 +576,8 @@ You can also access the same greeting by navigating the nodes.
 [source,java]
 .Replace the `GreetService` constructor with the following code:
 ----
-    GreetService(Config config) {
-        greeting.set(config.get("app").get("greeting").asString().orElse("Ciao")); // <1>
+    GreetService() {
+        greeting.set(Config.global().get("app").get("greeting").asString().orElse("Ciao")); // <1>
     }
 ----
 <1> Get the `app` node, then get the child node, `greeting`.
@@ -625,11 +626,12 @@ app:
 import java.util.List;
 import java.util.stream.Collectors;
 
-    GreetService(Config config) {
-        List<Config> appGreetings =  config.get("app")
+    GreetService() {
+        List<Config> appGreetings = Config.global()
+            .get("app")
             .traverse()  // <2>
             .filter(node -> node.name().equals("greeting")) // <3>
-            .collect(Collectors.toList()); // <4>
+            .toList(); // <4>
 
         greeting.set(appGreetings.get(0).asString().get());
     }
@@ -678,10 +680,10 @@ sources:
 import java.util.function.Consumer;
 ...
 
-    GreetService(Config config) {
-        Config greetingConfig = config.get("app.greeting"); // <1>
+    GreetService() {
+        Config greetingConfig = Config.global().get("app.greeting"); // <1>
         greeting.set(greetingConfig.asString().orElse("Ciao"));
-        greetingConfig.onChange((Consumer<Config>) cfg -> greeting.set(cfg.asString().orElse("Ciao"))); // <2>
+        greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao"))); // <2>
     }
 ----
 <1> Get the greeting `Config` node.
@@ -749,8 +751,8 @@ app:
 [source,java]
 .Replace the `GreetService` constructor with the following code:
 ----
-    GreetService(Config config) {
-        greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
+    GreetService() {
+        greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao"));
     }
 ----
 

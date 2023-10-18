@@ -279,8 +279,10 @@ accompanying `properties`.
 |Type |Usage |Properties
 
 |`file`
-| Filesystem monitoring - See link:{config-javadoc-base-url}/io/helidon/config/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method
+| Filesystem monitoring - See link:{config-javadoc-base-url}/io/helidon/config/FileSystemWatcher.html[`FileSystemWatcher`] class
 | `initial-delay-millis` - delay between the start of the watcher and first check for changes
+
+`delay-millis` - how often do we check the watcher service for changes
 
 |===
 
@@ -311,6 +313,6 @@ You can then use any custom properties - these are provided as a `Config` instan
 the `create` method of the Provider implementation.
 
 See link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`RetryPolicy`],
-link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`ChangeWatcher`], and
+link:{config-javadoc-base-url}/io/helidon/config/spi/ChangeWatcher.html[`ChangeWatcher`], and
 link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
 sections.
