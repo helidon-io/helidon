@@ -127,12 +127,6 @@ backend:
                   type: "icon"
                   value: "warning"
               - type: "PAGE"
-                title: "GraalVM Native Image"
-                source: "aot.adoc"
-                glyph:
-                  type: "icon"
-                  value: "save"
-              - type: "PAGE"
                 title: "GraphQL Server"
                 source: "graphql.adoc"
                 glyph:
@@ -355,12 +349,6 @@ backend:
                 glyph:
                   type: "icon"
                   value: "warning"
-              - type: "PAGE"
-                title: "GraalVM Native Image"
-                source: "aot.adoc"
-                glyph:
-                  type: "icon"
-                  value: "save"
               - type: "PAGE"
                 title: "GraphQL Server"
                 source: "graphql.adoc"
