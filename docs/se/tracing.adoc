@@ -43,7 +43,7 @@ within a service and across multiple services. This provides insight to sequence
 which helps you identify performance and operational issues.
 Helidon includes support for distributed tracing through its own API, backed by either
 through the https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API], or by
-https://opentracing.io[OpenTracing API]. Tracing is integrated with WebServer, and Security.
+https://opentracing.io[OpenTracing API]. Tracing is integrated with WebServer and Security.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
