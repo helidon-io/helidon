@@ -27,6 +27,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static io.helidon.common.testing.junit5.HexStringDecoder.decodeHexString;
 
 class ProxyProtocolHandlerTest {
 
@@ -116,17 +117,63 @@ class ProxyProtocolHandlerTest {
         assertThat(data.destPort(), is(443));
     }
 
-    private static byte[] decodeHexString(String s) {
-        assert !s.isEmpty() && s.length() % 4 == 0;
+    @Test
+    void unknownV2Test() throws IOException {
+        String header = V2_PREFIX_2
+                + "\0x20\0x00\0x00\0x40"    // version, family/protocol, length=64
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD";
+        ProxyProtocolData data = ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
+                new ByteArrayInputStream(decodeHexString(header))));
+        assertThat(data.family(), is(ProxyProtocolData.Family.UNKNOWN));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.UNKNOWN));
+        assertThat(data.sourceAddress(), nullValue());
+        assertThat(data.destAddress(), nullValue());
+        assertThat(data.sourcePort(), is(-1));
+        assertThat(data.destPort(), is(-1));
+    }
 
-        byte[] bytes = new byte[s.length() / 4];
-        for (int i = 0, j = 0; i < s.length(); i += 4) {
-            char c1 = s.charAt(i + 2);
-            byte b1 = (byte) (Character.isDigit(c1) ? c1 - '0' : c1 - 'A' + 10);
-            char c2 = s.charAt(i + 3);
-            byte b2 = (byte) (Character.isDigit(c2) ? c2 - '0' : c2 - 'A' + 10);
-            bytes[j++] = (byte) (((b1 << 4) & 0xF0) | (b2 & 0x0F));
-        }
-        return bytes;
+    @Test
+    void badV2Test() {
+        String header1 = V2_PREFIX_2
+                + "\0x20\0x21\0x00\0x0C"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB"    // bad source
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xDC\0x04"
+                + "\0x01\0xBB";
+        assertThrows(RequestException.class, () ->
+                ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
+                        new ByteArrayInputStream(decodeHexString(header1)))));
+
+        String header2 = V2_PREFIX_2
+                + "\0x20\0x21\0x0F\0xFF"    // bad length, over our limit
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xDC\0x04"
+                + "\0x01\0xBB";
+        assertThrows(RequestException.class, () ->
+                ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
+                        new ByteArrayInputStream(decodeHexString(header2)))));
+
+        String header3 = V2_PREFIX_2
+                + "\0x20\0x21\0x00\0x0C"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xDC\0x04";             // missing dest port
+        assertThrows(RequestException.class, () ->
+                ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
+                        new ByteArrayInputStream(decodeHexString(header3)))));
     }
 }

@@ -35,6 +35,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
     private static final System.Logger LOGGER = System.getLogger(ProxyProtocolHandler.class.getName());
 
     private static final int MAX_V1_FIELD_LENGTH = 40;
+    private static final int MAX_TLV_BYTES_TO_SKIP = 128 * 4;        // 128 entries
 
     static final byte[] V1_PREFIX = {
             (byte) 'P',
@@ -239,7 +240,10 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             }
         }
 
-        // skip any TLV vectors
+        // skip any TLV vectors up to our max for security reasons
+        if (headerLength > MAX_TLV_BYTES_TO_SKIP) {
+            throw BAD_PROTOCOL_EXCEPTION;
+        }
         while (headerLength > 0) {
             headerLength -= (int) inputStream.skip(headerLength);
         }
