@@ -28,7 +28,6 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -89,20 +88,6 @@ class AdminTest {
     @Test
     void testAdminResource4() {
         Response response = target.apply("/admin;").request().get();
-        assertThat(response.getStatus(), is(Status.UNAUTHORIZED_401.code()));
-    }
-
-    @Test
-    @Disabled
-    void testAdminResource5() {
-        Response response = target.apply("/admin/;").request().get();
-        assertThat(response.getStatus(), is(Status.UNAUTHORIZED_401.code()));
-    }
-
-    @Test
-    @Disabled
-    void testAdminResource6() {
-        Response response = target.apply("/admin/;/").request().get();
         assertThat(response.getStatus(), is(Status.UNAUTHORIZED_401.code()));
     }
 
