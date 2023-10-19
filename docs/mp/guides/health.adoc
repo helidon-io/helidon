@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -51,8 +51,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 === Using the Built-In Health Checks
 
-Helidon has a set of built-in health checks that are automatically enabled to report various
-health check statuses that are commonly used:
+Helidon has a set of built-in health checks:
 
 * deadlock detection
 * available disk space
@@ -61,10 +60,14 @@ health check statuses that are commonly used:
 The following example will demonstrate how to use the built-in health checks.  These examples are all executed
 from the root directory of your project (helidon-quickstart-mp).
 
+[source,xml]
+.Include dependency for the built-in health checks
+include::{rootdir}/mp/health.adoc[tag=built-in-health-checks-depc]
+
 [source,bash]
-.Build the application, skipping unit tests, then run it:
+.Build the application then run it:
 ----
-mvn package -DskipTests=true
+mvn package
 java -jar target/helidon-quickstart-mp.jar
 ----
 
@@ -488,9 +491,9 @@ The example below will change the root path.
 .Create a file named `application.yaml` in the `resources` directory with the following contents:
 ----
 health:
-  web-context: "myhealth"  // <1>
+  endpoint: "/myhealth"  // <1>
 ----
-<1> The web-context specifies a new root path for the health endpoint.
+<1> The `endpoint` settings specifies the root path for the health endpoint.
 
 [source,bash]
 .Build and run the application, then verify that the health endpoint is using the new `/myhealth` root:
@@ -507,20 +510,21 @@ The following example will change the root path and the health port.
 .Update application.yaml to use a different port and root path for the health endpoint:
 ----
 server:
-  port: 8080  // <1>
-  host: "localhost"
+  port: 8080            // <1>
   sockets:
-    health: // <2>
-      port: 8081 // <3>
-      bind-address: "localhost"
+    - name: "admin"     // <2>
+      port: 8081        // <3>
+  features:
+    observe:
+      sockets: "admin"  // <4>
 health:
-  routing: "health" // <4>
-  web-context: "myhealth"
+  endpoint: "/myhealth" // <5>
+
 ----
 <1> The default port for the application.
-<2> The name of the new socket, it can be any name, this example uses `health`.
-<3> The port for the new health socket.
-<4> The health endpoint routing uses the new socket `health`.
+<2> The name of the new socket, it can be any name, this example uses `admin`.
+<3> The port for the `admin` socket.
+<4> The health endpoint, as part of Helidon's observability support, uses the socket `admin`.
 
 
 [source,bash]
