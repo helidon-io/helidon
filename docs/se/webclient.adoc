@@ -419,7 +419,10 @@ webclient:
         resource:
           resource-path: "client.p12"
 ----
-Then, in your application code, load the configuration from that file.
+
+NOTE: The `passphrase` value on the config file can be encrypted if stronger security is required. For more information on how secrets can be encrypted using a master password and store them in a configuration file, please see xref:{rootdir}/mp/security/configuration-secrets.adoc[Configuration Secrets].
+
+In the application code, load the settings from the configuration file.
 
 [source,java]
 .WebClient initialization using the `application.yaml` file located on the classpath
