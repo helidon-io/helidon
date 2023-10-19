@@ -169,6 +169,8 @@ Your Helidon SE application can also control the KPI settings programmatically.
 
 // end of Controlling Metrics section
 
+include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-metadata]
+
 === Application-Specific Metrics Data
 
 This section demonstrates how to use application-specific {metrics} and integrate them with Helidon, starting from a Helidon SE QuickStart application.

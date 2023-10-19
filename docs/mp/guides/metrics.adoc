@@ -104,6 +104,7 @@ Note that the applications you generate using the full Helidon archetype _do_ en
 generated config file.
 You can see the results in the sample output shown in earlier example runs.
 
+include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-metadata]
 
 === Application-Specific Metrics Data
 
