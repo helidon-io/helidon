@@ -253,6 +253,21 @@ For System Metrics, please use:
 </dependency>
 ----
 
+==== Security
+
+* Changed modules:
+- `helidon-security-integration-jersey` moved to the module `helidon-microprofile-security`
+- `helidon-security-integration-jersey-client` moved to the module `helidon-microprofile-security`
+- `helidon-security-integration-grpc` was removed
+- `helidon-security-integration-webserver` moved to the module `helidon-webserver-security`
+
+* Significant class name changes:
+- `OidcSupport` renamed to `OidcFeature`
+- `WebSecurity` renamed to `SecurityFeature`
+
+* Other:
+- `SynchronousProvider removed` - `SynchronousProvider` usage is no longer needed, since all security providers are synchronous.
+
 === Global Configuration
 
 The global configuration represents a single instance of the `Config` class, which is implicitly employed by certain Helidon components. Furthermore, it offers a handy approach for your application to access configuration information from any part of your code.
