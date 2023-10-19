@@ -313,9 +313,7 @@ restrictive-cors:
                                 <value>io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN</value>
                                 <value>io.helidon.http.HeaderNames.HOST</value>
                                 <value>io.helidon.http.HeaderNames.ORIGIN</value>
-                            </list>
-                            <list key="MainTest-static-imports">
-                                <value if="${flavor} == 'se'">org.hamcrest.CoreMatchers.containsString</value>
+                                <value>org.hamcrest.CoreMatchers.containsString</value>
                             </list>
                             <list key="Abstract-tests" if="${flavor} == 'se'">
                                 <value><![CDATA[

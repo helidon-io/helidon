@@ -53,12 +53,6 @@ tracing:
                     <value key="artifactId">helidon-webserver-http2</value>
                 </map>
             </list>
-            <list key="Main-helidon-imports" if="${health}">
-                <value>io.helidon.health.checks.DeadlockHealthCheck</value>
-                <value>io.helidon.health.checks.DiskSpaceHealthCheck</value>
-                <value>io.helidon.health.checks.HeapMemoryHealthCheck</value>
-                <value>io.helidon.webserver.observe.health.HealthObserver</value>
-            </list>
             <list key="Main-helidon-imports" if="${tracing}">
                 <value>io.helidon.webserver.http2.Http2Route</value>
                 <value>io.helidon.webserver.http.Handler</value>
