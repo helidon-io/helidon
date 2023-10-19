@@ -377,12 +377,12 @@ endif::se-flavor[]
 Each {metric} has associated metadata that includes:
 
 1. name: The name of the {metric}.
-2. units: The unit of the {metric} such as time (seconds, millisecond), size (bytes, megabytes), etc.
+2. units: The unit of the {metric} such as time (seconds, milliseconds), size (bytes, megabytes), etc.
 3. a description of the {metric}.
 
-You can get the metadata for any scope, such as `/metrics/base`, as shown below:
+You can get the metadata for any scope, such as `{metrics-endpoint}?scope=base`, as shown below:
 
-[source,bash]
+[source,bash, subs="attributes+"]
 .Get the metrics metadata using HTTP OPTIONS method:
 ----
  curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=base'
