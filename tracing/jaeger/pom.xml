@@ -41,9 +41,26 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
         </dependency>
+        <!-- For dependency convergence of kotlin-stdlib -->
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-jaeger</artifactId>
+            <exclusions>
+                <!-- For dependency convergence. This excludes the transitive dep
+                     on kotlin from okhttp. We defer to the transitive dep from okio -->
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
