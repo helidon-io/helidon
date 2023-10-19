@@ -194,9 +194,7 @@ backend:
                   value: "av_timer"
                 sources:
                   - "metrics.adoc"
-                  - "micrometer.adoc"
                   - "prometheus-exemplar-support.adoc"
-                  - "metrics-capable-components.adoc"
               - type: "MENU"
                 title: "OpenAPI"
                 dir: "openapi"
@@ -402,9 +400,7 @@ backend:
                   value: "av_timer"
                 sources:
                   - "metrics.adoc"
-                  - "micrometer.adoc"
                   - "prometheus-exemplar-support.adoc"
-                  - "metrics-capable-components.adoc"
               - type: "MENU"
                 title: "OpenAPI"
                 dir: "openapi"
