@@ -41,7 +41,7 @@ A value such as the total time consumed by a given REST endpoint which can be in
 
 Tracing, on the other hand, captures the usage of _multiple_ parts of your code as your service responds to a _single_ request.
 
-Metrics and tracing come together in Helidon's support for examplars.
+Metrics and tracing come together in Helidon's support for exemplars.
 
 [NOTE]
 --
