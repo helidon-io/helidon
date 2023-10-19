@@ -20,7 +20,9 @@ import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
+import java.net.Inet6Address;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
@@ -33,7 +35,6 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
     private static final System.Logger LOGGER = System.getLogger(ProxyProtocolHandler.class.getName());
 
     private static final int MAX_V1_FIELD_LENGTH = 40;
-    private static final int MAX_V2_ADDRESS_LENGTH = 216;
 
     static final byte[] V1_PREFIX = {
             (byte) 'P',
@@ -180,11 +181,11 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         String destAddress = null;
         int sourcePort = -1;
         int destPort = -1;
-        byte[] buffer = new byte[MAX_V2_ADDRESS_LENGTH];
         switch (family) {
             case IPv4 -> {
-                int n = inputStream.read(buffer, 0, 12);
-                if (n < 12) {
+                byte[] buffer = new byte[12];
+                int n = inputStream.read(buffer, 0, buffer.length);
+                if (n < buffer.length) {
                     throw BAD_PROTOCOL_EXCEPTION;
                 }
                 sourceAddress = (buffer[0] & 0xFF)
@@ -199,22 +200,39 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                         | ((buffer[8] << 8) & 0xFF00);
                 destPort = buffer[11] & 0xFF
                         | ((buffer[10] << 8) & 0xFF00);
-                headerLength -= 12;
+                headerLength -= buffer.length;
             }
             case IPv6 -> {
-                int n = inputStream.read(buffer, 0, 36);
-                if (n < 36) {
+                byte[] buffer = new byte[16];
+                int n = inputStream.read(buffer, 0, buffer.length);
+                if (n < buffer.length) {
                     throw BAD_PROTOCOL_EXCEPTION;
                 }
-                headerLength -= 36;
-
+                sourceAddress = Inet6Address.getByAddress(buffer).getHostAddress();
+                n = inputStream.read(buffer, 0, buffer.length);
+                if (n < buffer.length) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                destAddress = Inet6Address.getByAddress(buffer).getHostAddress();
+                n = inputStream.read(buffer, 0, 4);
+                if (n < 4) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                sourcePort = buffer[1] & 0xFF
+                        | ((buffer[0] << 8) & 0xFF00);
+                destPort = buffer[3] & 0xFF
+                        | ((buffer[2] << 8) & 0xFF00);
+                headerLength -= 2 * buffer.length + 4;
             }
             case UNIX -> {
-                int n = inputStream.read(buffer, 0, 216);
-                if (n < 216) {
+                byte[] buffer = new byte[216];
+                int n = inputStream.read(buffer, 0, buffer.length);
+                if (n < buffer.length) {
                     throw BAD_PROTOCOL_EXCEPTION;
                 }
-                headerLength -= 216;
+                sourceAddress = new String(buffer, 0, 108, StandardCharsets.US_ASCII);
+                destAddress = new String(buffer, 108, buffer.length, StandardCharsets.US_ASCII);
+                headerLength -= buffer.length;
             }
             default -> {
                 // falls through

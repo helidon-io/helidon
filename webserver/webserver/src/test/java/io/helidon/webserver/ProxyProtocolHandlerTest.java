@@ -79,7 +79,7 @@ class ProxyProtocolHandlerTest {
     }
 
     @Test
-    void basicV2Test() throws IOException {
+    void basicV2TestIPv4() throws IOException {
         String header = V2_PREFIX_2
                 + "\0x20\0x11\0x00\0x0C"    // version, family/protocol, length
                 + "\0xC0\0xA8\0x00\0x01"    // 192.168.0.1
@@ -92,6 +92,26 @@ class ProxyProtocolHandlerTest {
         assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
         assertThat(data.sourceAddress(), is("192.168.0.1"));
         assertThat(data.destAddress(), is("192.168.0.11"));
+        assertThat(data.sourcePort(), is(56324));
+        assertThat(data.destPort(), is(443));
+    }
+
+    @Test
+    void basicV2TestIPv6() throws IOException {
+        String header = V2_PREFIX_2
+                + "\0x20\0x21\0x00\0x0C"    // version, family/protocol, length
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"    // source
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
+                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"    // dest
+                + "\0xDC\0x04"              // 56324
+                + "\0x01\0xBB";             // 443
+        ProxyProtocolData data = ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
+                new ByteArrayInputStream(decodeHexString(header))));
+        assertThat(data.family(), is(ProxyProtocolData.Family.IPv6));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
+        assertThat(data.sourceAddress(), is("aaaa:bbbb:cccc:dddd:aaaa:bbbb:cccc:dddd"));
+        assertThat(data.destAddress(), is("aaaa:bbbb:cccc:dddd:aaaa:bbbb:cccc:dddd"));
         assertThat(data.sourcePort(), is(56324));
         assertThat(data.destPort(), is(443));
     }
