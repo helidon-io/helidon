@@ -170,9 +170,6 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                                         <value>io.helidon.dbclient.DbStatementType</value>
                                         <value>io.helidon.dbclient.metrics.DbClientMetrics</value>
                                         <value>io.helidon.dbclient.tracing.DbClientTracing</value>
-                                        <value>io.helidon.webserver.observe.ObserveFeature</value>
-                                        <value>io.helidon.tracing.Tracer</value>
-                                        <value>io.helidon.tracing.TracerBuilder</value>
                                     </list>
                                     <list key="Main-routing">
                                         <value><![CDATA[
@@ -335,9 +332,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         </list>
                         <list key="Main-helidon-imports" if="${server} != 'mongo'">
                             <value>io.helidon.dbclient.DbClient</value>
-                            <value>io.helidon.webserver.observe.ObserveFeature</value>
-                            <value>io.helidon.tracing.Tracer</value>
-                            <value>io.helidon.tracing.TracerBuilder</value>
                         </list>
                         <list key="Main-routing-builder" if="${server} != 'mongodb'">
                             <value><![CDATA[.register("/db", new PokemonService(DbClient.create(config.get("db"))))]]></value>

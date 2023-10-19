@@ -252,9 +252,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                              optional="true">
                         <output>
                             <model>
-                                <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                    <value>io.helidon.webserver.observe.ObserveFeature</value>
-                                </list>
                                 <list key="dependencies">
                                     <map if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.webserver.observe</value>

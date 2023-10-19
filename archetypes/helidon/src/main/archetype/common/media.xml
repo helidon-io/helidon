@@ -179,7 +179,6 @@
                                 <value>jersey.media.multipart</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                <value>io.helidon.http.Header</value>
                                 <value>io.helidon.http.Status</value>
                                 <value>io.helidon.http.HeaderNames</value>
                                 <value>io.helidon.http.HeaderValues</value>
