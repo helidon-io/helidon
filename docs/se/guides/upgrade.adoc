@@ -26,7 +26,7 @@ include::{rootdir}/includes/se.adoc[]
 In Helidon 2 we have made some changes to APIs and runtime behavior. This guide
 will help you migrate a Helidon SE 1.x application to 2.x.
 
-include::{rootdir}/includes/guides/migration.adoc[]
+include::{rootdir}/includes/guides/upgrade.adoc[]
 
 == Getters
 

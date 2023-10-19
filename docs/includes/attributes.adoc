@@ -52,9 +52,11 @@ endif::[]
 :version-lib-microprofile-rs-operators-api: 3.1.1
 :version-lib-microprofile-rest-client: 3.0
 :version.lib.microprofile-telemetry-tck: 1.0
+:version-lib-microprofile-telemetry: 1.0
 :version-lib-microprofile-tracing: 3.0
 
 // jakarta specifications
+:version-lib-jakarta-core: 10
 :version-lib-jakarta-cdi: 4.0.1
 :version-lib-jakarta-websockets-api: 2.1.0
 :version-lib-jakarta-bean-validation: 3.0

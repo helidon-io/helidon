@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ Learn how to build a Helidon MicroProfile (MP) application from scratch.
 
 [CARD]
 .Helidon MP Upgrade guide
-[link=migration.adoc]
+[link=upgrade.adoc]
 --
 Learn how to upgrade your Helidon MP application from 1.x to 2.x.
 --
