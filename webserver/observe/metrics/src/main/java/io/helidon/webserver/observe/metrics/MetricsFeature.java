@@ -112,6 +112,20 @@ class MetricsFeature {
         return formatter.format();
     }
 
+    Optional<?> outputMetadata(MediaType mediaType,
+                       Iterable<String> scopeSelection,
+                       Iterable<String> nameSelection) {
+        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
+                                                           mediaType,
+                                                           SystemTagsManager.instance().scopeTagName(),
+                                                           scopeSelection,
+                                                           nameSelection);
+
+        return formatter.formatMetadata();
+    }
+
+
+
     private static MediaType bestAccepted(ServerRequest req) {
         return req.headers()
                 .bestAccepted(MediaTypes.TEXT_PLAIN,
@@ -261,9 +275,9 @@ class MetricsFeature {
             res.send();
         }
 
-        getOrOptionsMatching(mediaType, res, () -> output(mediaType,
-                                                          scopeSelection,
-                                                          nameSelection));
+        getOrOptionsMatching(mediaType, res, () -> outputMetadata(mediaType,
+                                                                  scopeSelection,
+                                                                  nameSelection));
     }
 
     private void setUpDisabledEndpoints(HttpRules rules) {
