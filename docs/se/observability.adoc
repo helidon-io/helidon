@@ -35,7 +35,7 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-In Helidon 4 all observability features were moved to one logical module `observe`. The observability support groups all observe endpoints together under a single context root (the default behavior) `/observe`.
+In Helidon 4 all observability features were moved to one logical module: `observe`. The observability support groups all observe endpoints together under a single context root (the default behavior) `/observe`.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -290,11 +290,11 @@ Clients can also limit the report by appending the metric type to the path:
 * `/observe/metrics/vendor`
 * `/observe/metrics/application`
 
-For more information, please, check xref:{rootdir}/se/metrics/metrics.adoc[Metrics] documentation.
+For more information see xref:{rootdir}/se/metrics/metrics.adoc[Metrics] documentation.
 
 == Configuration
 
-To customize endpoint of an observer:
+To customize the endpoint of an observer:
 
 1. Configure a custom endpoint through configuration to modify the `ObserveProvider` setup (such as `observe.health.endpoint`)
 2. Configure a custom endpoint through a builder on the specific `Observer` (`HealthObserver.builder().endpoint("myhealth")`)
