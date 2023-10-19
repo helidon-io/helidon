@@ -111,9 +111,9 @@ for native image.
 |✅ |{nbsp} |Multi-part |{nbsp}
 |❓ |{nbsp} |Prometheus |Not yet tested.
 |✅ |{nbsp} |Websocket |Server only.
-|✅ |gRPC Server |gRPC Server |Since GraalVM 21.0.0
+|✅ |gRPC Server |gRPC Server |{nbsp}
 |✅ |{nbsp} |Metrics |{nbsp}
-|✅ |gRPC Client |gRPC Client |Since GraalVM 21.0.0
+|✅ |gRPC Client |gRPC Client |{nbsp}
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |Scheduling |Scheduling |{nbsp}
 |✅ |OCI |OCI Integration |Modules with group id `io.helidon.integrations.oci`

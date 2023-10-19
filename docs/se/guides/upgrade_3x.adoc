@@ -203,6 +203,8 @@ Deprecations:
 
 More information in the following link:https://github.com/oracle/helidon/issues/4367[Task].
 
+gRPC scope is temporarily smaller in Helidon, please follow issue
+https://github.com/helidon-io/helidon/issues/5418
 
 === LRA
 
