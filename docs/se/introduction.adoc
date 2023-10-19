@@ -34,13 +34,6 @@ Helidon SE supports a number of additional Helidon features:
 
 [PILLARS]
 ====
-//aot
-[CARD]
-.Ahead-of-Time Compilation (AOT)
-[icon=save,link=aot.adoc]
---
-Use GraalVM native image to compile Helidon applications into a native executable.
---
 //config
 [CARD]
 .Config
