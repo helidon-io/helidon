@@ -99,7 +99,7 @@ WebClient offers a set of request methods that are used to specify the type of a
 * `put()`
 * `method(String methodName)`
 
-Check out link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClient.html[HttpClient.html] API to learn more about request methods. These methods will create a new instance of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest] which can then be configured to add optional settings that will customize the behavior of the request.
+Check out link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClient.html[HttpClient] API to learn more about request methods. These methods will create a new instance of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest] which can then be configured to add optional settings that will customize the behavior of the request.
 
 === Customizing the Request
 
@@ -147,8 +147,8 @@ ClientResponseTyped<String> response = webClient.get()
 String entityString = response.entity();
 ----
 
-=== Protocol used
-Webclient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the rules on which specific protocol will be used:
+=== Protocol Used
+WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the rules on which specific protocol will be used:
 
 * Using plain socket triggers WebClient to process a request using `HTTP/1.1`.
 * When using TLS, the client will use ALPN (protocol negotiation) to use appropriate HTTP version (either 1.1, or 2). `HTTP/2` has a higher weight, so it is chosen if supported by both sides.
@@ -162,7 +162,7 @@ String result = webClient.get()
 * If `HTTP/2` is used, an upgrade attempt will be performed. If it fails, the client falls-back to `HTTP/1.1`.
 * The parameter `prior-knowledge` can be defined using `HTTP/2` protocol configuration. Please refer to <<Setting Protocol configuration>> on how to customize `HTTP/2`. In such a case, `prior-knowledge` will be used and fail if it is unable to switch to `HTTP/2`.
 
-=== Adding Media Support to the WebClient
+=== Adding Media Support
 
 Webclient supports the following built-in Helidon Media Support libraries:
 
@@ -236,9 +236,6 @@ Webclient provides three DNS resolver implementations out of the box:
     <artifactId>helidon-webclient-dns-resolver-round-robin</artifactId>
 </dependency>
 ----
-
-=== Adding Service
-
 
 == Configuring the WebClient
 
@@ -385,8 +382,7 @@ Config config = Config.create();
 WebClient webClient = WebClient.create(config.get("webclient"));
 ----
 
-
-=== WebClient TLS setup
+=== WebClient TLS Setup
 
 Configure TLS either programmatically or by the Helidon configuration framework.
 
