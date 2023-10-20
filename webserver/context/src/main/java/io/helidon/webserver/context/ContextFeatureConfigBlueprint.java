@@ -26,7 +26,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * Configuration of context feature.
  */
 @Prototype.Blueprint
-@Prototype.Configured
+@Prototype.Configured(value = ContextFeature.CONTEXT_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)
 interface ContextFeatureConfigBlueprint extends Prototype.Factory<ContextFeature> {
 
@@ -53,6 +53,6 @@ interface ContextFeatureConfigBlueprint extends Prototype.Factory<ContextFeature
      *
      * @return instance name
      */
-    @Option.Default("context")
+    @Option.Default(ContextFeature.CONTEXT_ID)
     String name();
 }

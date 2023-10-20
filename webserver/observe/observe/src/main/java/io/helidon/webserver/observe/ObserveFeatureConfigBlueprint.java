@@ -31,7 +31,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * Configuration for observability feature itself.
  */
 @Prototype.Blueprint
-@Prototype.Configured
+@Prototype.Configured(value = ObserveFeature.OBSERVE_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)
 interface ObserveFeatureConfigBlueprint extends Prototype.Factory<ObserveFeature> {
 
@@ -110,6 +110,6 @@ interface ObserveFeatureConfigBlueprint extends Prototype.Factory<ObserveFeature
      *
      * @return instance name
      */
-    @Option.Default("observe")
+    @Option.Default(ObserveFeature.OBSERVE_ID)
     String name();
 }

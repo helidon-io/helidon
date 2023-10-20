@@ -266,12 +266,21 @@ public final class Prototype {
     @Retention(RetentionPolicy.CLASS)
     public @interface Configured {
         /**
-         * Root configuration this type is read from, if it is read from root.
-         * Do not fill this otherwise (e.g. when nested in another configuration type).
+         * Configuration node this type is read from.
+         * This implies a root configuration node by default, can be overridden using {@link #root()}.
          *
          * @return configuration key of this type, from the root of configuration
          */
         String value() default "";
+
+        /**
+         * If {@link #value()} is specified, it is considered to be a root configuration node.
+         * Set this property to {@code false} to explicitly mark this configuration as non-root.
+         * This is useful for services that provide an implementation of a provider.
+         *
+         * @return whether this is a root node, ignored if {@link #value()} is an empty string
+         */
+        boolean root() default true;
     }
 
     /**

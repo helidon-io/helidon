@@ -30,6 +30,12 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.webserver.accesslog/io/helidon/webserver/accesslog/AccessLogFeature.html[io.helidon.webserver.accesslog.AccessLogFeature]
 
 
+[source,text]
+.Config key
+----
+access-log
+----
+
 
 This type provides the following service implementations:
 

@@ -36,7 +36,7 @@ public class ContextFeatureProvider implements ServerFeatureProvider<ContextFeat
 
     @Override
     public String configKey() {
-        return "context";
+        return ContextFeature.CONTEXT_ID;
     }
 
     @Override

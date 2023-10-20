@@ -31,8 +31,6 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -45,7 +43,7 @@ import io.helidon.webserver.spi.ServerConnectionSelector;
 /**
  * Configuration of a server listener (server socket).
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
 interface ListenerConfigBlueprint {
@@ -66,8 +64,9 @@ interface ListenerConfigBlueprint {
      *
      * @return all defined protocol configurations, loaded from service loader by default
      */
-    @ConfiguredOption(provider = true, providerType = ProtocolConfigProvider.class)
+    @Option.Configured
     @Option.Singular
+    @Option.Provider(ProtocolConfigProvider.class)
     List<ProtocolConfig> protocols();
 
     /**
@@ -94,7 +93,8 @@ interface ListenerConfigBlueprint {
      *
      * @return name of the socket
      */
-    @ConfiguredOption("@default")
+    @Option.Configured
+    @Option.Default(WebServer.DEFAULT_SOCKET_NAME)
     String name();
 
     /**
@@ -102,7 +102,8 @@ interface ListenerConfigBlueprint {
      *
      * @return host address to listen on (for the default socket)
      */
-    @ConfiguredOption("0.0.0.0")
+    @Option.Configured
+    @Option.Default("0.0.0.0")
     String host();
 
     /**
@@ -118,7 +119,8 @@ interface ListenerConfigBlueprint {
      *
      * @return port to listen on (for the default socket)
      */
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int port();
 
     /**
@@ -126,7 +128,8 @@ interface ListenerConfigBlueprint {
      *
      * @return backlog
      */
-    @ConfiguredOption("1024")
+    @Option.Configured
+    @Option.DefaultInt(1024)
     int backlog();
 
     /**
@@ -138,7 +141,8 @@ interface ListenerConfigBlueprint {
      *
      * @return maximal number of bytes of entity
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultInt(-1)
     long maxPayloadSize();
 
     /**
@@ -146,7 +150,7 @@ interface ListenerConfigBlueprint {
      *
      * @return buffer size in bytes
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Integer> receiveBufferSize();
 
     /**
@@ -154,7 +158,8 @@ interface ListenerConfigBlueprint {
      *
      * @return maximal number of queued writes, defaults to 0
      */
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int writeQueueLength();
 
     /**
@@ -163,7 +168,8 @@ interface ListenerConfigBlueprint {
      *
      * @return initial buffer size used for writing
      */
-    @ConfiguredOption("512")
+    @Option.Configured
+    @Option.DefaultInt(512)
     int writeBufferSize();
 
     /**
@@ -173,7 +179,8 @@ interface ListenerConfigBlueprint {
      *
      * @return grace period
      */
-    @ConfiguredOption("PT0.5S")
+    @Option.Configured
+    @Option.Default("PT0.5S")
     Duration shutdownGracePeriod();
 
     /**
@@ -181,6 +188,7 @@ interface ListenerConfigBlueprint {
      *
      * @return connection configuration
      */
+    @Option.Configured
     Optional<ConnectionConfig> connectionConfig();
 
     /**
@@ -188,7 +196,7 @@ interface ListenerConfigBlueprint {
      *
      * @return tls of this configuration
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Tls> tls();
 
     /**
@@ -198,7 +206,7 @@ interface ListenerConfigBlueprint {
      *
      * @return content encoding context
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<ContentEncodingContext> contentEncoding();
 
     /**
@@ -208,7 +216,7 @@ interface ListenerConfigBlueprint {
      *
      * @return media context
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<MediaContext> mediaContext();
 
     /**
@@ -217,7 +225,7 @@ interface ListenerConfigBlueprint {
      *
      * @return socket options
      */
-    @ConfiguredOption
+    @Option.Configured
     SocketOptions connectionOptions();
 
     /**
@@ -226,7 +234,8 @@ interface ListenerConfigBlueprint {
      *
      * @return number of TCP connections that can be opened to this listener, regardless of protocol
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultInt(-1)
     int maxTcpConnections();
 
     /**
@@ -237,7 +246,8 @@ interface ListenerConfigBlueprint {
      *
      * @return number of requests that can be processed on this listener, regardless of protocol
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultInt(-1)
     int maxConcurrentRequests();
 
     /**
@@ -248,7 +258,8 @@ interface ListenerConfigBlueprint {
      *
      * @return timeout of idle connections
      */
-    @ConfiguredOption("PT5M")
+    @Option.Configured
+    @Option.Default("PT5M")
     Duration idleConnectionTimeout();
 
     /**
@@ -257,7 +268,8 @@ interface ListenerConfigBlueprint {
      *
      * @return period of checking for idle connections
      */
-    @ConfiguredOption("PT2M")
+    @Option.Configured
+    @Option.Default("PT2M")
     Duration idleConnectionPeriod();
 
     /**
@@ -272,7 +284,8 @@ interface ListenerConfigBlueprint {
      *
      * @return maximal number of bytes to buffer in memory for supported writers
      */
-    @ConfiguredOption("131072")
+    @Option.Configured
+    @Option.DefaultInt(131072)
     int maxInMemoryEntity();
 
     /**

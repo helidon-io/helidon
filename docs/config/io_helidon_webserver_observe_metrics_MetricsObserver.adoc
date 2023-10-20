@@ -61,9 +61,10 @@ This type provides the following service implementations:
 |`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.adoc[KeyPerformanceIndicatorMetricsConfig] |{nbsp} |Key performance indicator metrics settings.
 
  @return key performance indicator metrics settings
-|`permit-all` |boolean |{nbsp} |Whether metrics endpoint should be authorized.
+|`permit-all` |boolean |{nbsp} |Whether to allow anybody to access the endpoint.
 
- @return if metrics are configured to be authorized
+ @return whether to permit access to metrics endpoint to anybody, defaults to `true`
+ @see #roles()
 |`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
 
  @return true/false

@@ -27,7 +27,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * Configuration of security feature fow webserver.
  */
 @Prototype.Blueprint(decorator = SecurityConfigSupport.SecurityFeatureConfigDecorator.class)
-@Prototype.Configured
+@Prototype.Configured(value = SecurityFeature.SECURITY_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)
 interface SecurityFeatureConfigBlueprint extends Prototype.Factory<SecurityFeature> {
     /**
