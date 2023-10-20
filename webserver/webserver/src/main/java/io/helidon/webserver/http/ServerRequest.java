@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.socket.SocketOptions;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webserver.ListenerContext;
@@ -118,7 +117,7 @@ public interface ServerRequest extends HttpRequest {
      * Access proxy protocol data for the connection on which this request was sent.
      *
      * @return proxy protocol data, if available
-     * @see SocketOptions#enableProxyProtocol()
+     * @see io.helidon.webserver.ListenerConfig#enableProxyProtocol()
      */
     Optional<ProxyProtocolData> proxyProtocolData();
 }

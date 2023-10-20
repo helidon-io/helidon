@@ -47,11 +47,14 @@ import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 
+import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
+import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
@@ -128,6 +131,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     public void handle(Semaphore requestSemaphore) throws InterruptedException {
         this.myThread = Thread.currentThread();
         try {
+            // look for protocol data
+            ProxyProtocolData proxyProtocolData = ctx.proxyProtocolData().orElse(null);
+
             // handle connection until an exception (or explicit connection close)
             while (canRun) {
                 // prologue (first line of request)
@@ -144,6 +150,18 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));
                 recvListener.headers(ctx, headers);
+
+                // proxy protocol related headers X-Forwarded-For and X-Forwarded-Port
+                if (proxyProtocolData != null) {
+                    String sourceAddress = proxyProtocolData.sourceAddress();
+                    if (!sourceAddress.isEmpty()) {
+                        headers.add(X_FORWARDED_FOR, sourceAddress);
+                    }
+                    int sourcePort = proxyProtocolData.sourcePort();
+                    if (sourcePort != -1) {
+                        headers.add(X_FORWARDED_PORT, sourcePort);
+                    }
+                }
 
                 if (canUpgrade) {
                     if (headers.contains(HeaderNames.UPGRADE)) {

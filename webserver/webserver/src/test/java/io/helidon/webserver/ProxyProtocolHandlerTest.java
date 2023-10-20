@@ -24,7 +24,6 @@ import io.helidon.http.RequestException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static io.helidon.common.testing.junit5.HexStringDecoder.decodeHexString;
@@ -53,8 +52,8 @@ class ProxyProtocolHandlerTest {
                 new ByteArrayInputStream(header.getBytes(StandardCharsets.US_ASCII))));
         assertThat(data.family(), is(ProxyProtocolData.Family.UNKNOWN));
         assertThat(data.protocol(), is(ProxyProtocolData.Protocol.UNKNOWN));
-        assertThat(data.sourceAddress(), nullValue());
-        assertThat(data.destAddress(), nullValue());
+        assertThat(data.sourceAddress(), is(""));
+        assertThat(data.destAddress(), is(""));
         assertThat(data.sourcePort(), is(-1));
         assertThat(data.destPort(), is(-1));
     }
@@ -133,8 +132,8 @@ class ProxyProtocolHandlerTest {
                 new ByteArrayInputStream(decodeHexString(header))));
         assertThat(data.family(), is(ProxyProtocolData.Family.UNKNOWN));
         assertThat(data.protocol(), is(ProxyProtocolData.Protocol.UNKNOWN));
-        assertThat(data.sourceAddress(), nullValue());
-        assertThat(data.destAddress(), nullValue());
+        assertThat(data.sourceAddress(), is(""));
+        assertThat(data.destAddress(), is(""));
         assertThat(data.sourcePort(), is(-1));
         assertThat(data.destPort(), is(-1));
     }

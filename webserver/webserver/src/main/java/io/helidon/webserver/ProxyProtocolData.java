@@ -101,14 +101,14 @@ public interface ProxyProtocolData {
     /**
      * Source address that is either IP4 or IP6 depending on {@link #family()}.
      *
-     * @return source address
+     * @return source address or {@code ""} if not provided
      */
     String sourceAddress();
 
     /**
      * Destination address that is either IP4 or IP46 depending on {@link #family()}.
      *
-     * @return source address
+     * @return source address or (@code ""} if not provided
      */
     String destAddress();
 

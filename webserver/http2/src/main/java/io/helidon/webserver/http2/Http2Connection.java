@@ -64,6 +64,8 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
 
+import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
+import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static io.helidon.http.http2.Http2Util.PREFACE_LENGTH;
 import static java.lang.System.Logger.Level.DEBUG;
@@ -614,6 +616,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             ctx.remotePeer().tlsCertificates()
                     .flatMap(TlsUtils::parseCn)
                     .ifPresent(cn -> connectionHeaders.add(X_HELIDON_CN, cn));
+
+            // proxy protocol related headers X-Forwarded-For and X-Forwarded-Port
+            ctx.proxyProtocolData().ifPresent(proxyProtocolData -> {
+                String sourceAddress = proxyProtocolData.sourceAddress();
+                if (!sourceAddress.isEmpty()) {
+                    connectionHeaders.add(X_FORWARDED_FOR, sourceAddress);
+                }
+                int sourcePort = proxyProtocolData.sourcePort();
+                if (sourcePort != -1) {
+                    connectionHeaders.set(X_FORWARDED_PORT, sourcePort);
+                }
+            });
+
             initConnectionHeaders = false;
         }
 

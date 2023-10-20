@@ -15,6 +15,9 @@
  */
 package io.helidon.common.testing.junit5;
 
+/**
+ * Utility class to decode hex strings.
+ */
 public final class HexStringDecoder {
 
     private HexStringDecoder() {

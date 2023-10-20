@@ -116,7 +116,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                 // special case for just UNKNOWN family
                 if (family == ProxyProtocolData.Family.UNKNOWN) {
                     return new ProxyProtocolDataImpl(Family.UNKNOWN, Protocol.UNKNOWN,
-                            null, null, -1, -1);
+                            "", "", -1, -1);
                 }
             }
 
@@ -178,8 +178,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         int headerLength = ((b << 8) & 0xFF00) | (readNext(inputStream) & 0xFF);
 
         // decode addresses and ports
-        String sourceAddress = null;
-        String destAddress = null;
+        String sourceAddress = "";
+        String destAddress = "";
         int sourcePort = -1;
         int destPort = -1;
         switch (family) {

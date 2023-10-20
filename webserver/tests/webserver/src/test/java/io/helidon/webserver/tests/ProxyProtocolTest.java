@@ -16,6 +16,7 @@
 package io.helidon.webserver.tests;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webserver.ProxyProtocolData;
@@ -57,7 +58,9 @@ class ProxyProtocolTest {
                     && data.sourceAddress().equals("192.168.0.1")
                     && data.destAddress().equals("192.168.0.11")
                     && data.sourcePort() == 56324
-                    && data.destPort() == 443) {
+                    && data.destPort() == 443
+                    && "192.168.0.1".equals(req.headers().first(HeaderNames.X_FORWARDED_FOR).orElse(null))
+                    && "56324".equals(req.headers().first(HeaderNames.X_FORWARDED_PORT).orElse(null))) {
                 res.status(Status.OK_200).send();
                 return;
             }
