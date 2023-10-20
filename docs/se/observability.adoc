@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Tracing
+= Observability
 :description: Helidon SE Observability
 :feature-name: Helidon Observability
 :keywords: helidon, observability
