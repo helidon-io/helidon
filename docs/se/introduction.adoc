@@ -127,7 +127,7 @@ Profile and monitor your applications across multiple services.
 .WebClient
 [icon=http,link=webclient.adoc]
 --
-HTTP client that handles responses to the HTTP requests in a reactive way.
+HTTP client that handles responses to the HTTP requests.
 --
 
 //WebServer
@@ -153,15 +153,15 @@ Enables Java applications to participate in WebSocket interactions as both serve
 
 == Upgrade
 
-In case you need to upgrade the version of Helidon, follow the `upgrade guides`.
+In case you need to upgrade the version of Helidon, follow the upgrade guides:
 
 [PILLARS]
 ====
 [CARD]
-.Helidon SE 2.x Upgrade Guide
-[icon=upgrade,link=guides/upgrade.adoc]
+.Helidon SE 4x Upgrade Guide
+[icon=upgrade,link=guides/upgrade_4x.adoc]
 --
-Follow this guide to migrate your application from Helidon 1.x to 2.x.
+Follow this guide to migrate your application from Helidon 3.x to 4.x.
 --
 
 [CARD]
@@ -170,13 +170,16 @@ Follow this guide to migrate your application from Helidon 1.x to 2.x.
 --
 Follow this guide to migrate your application from Helidon 2.x to 3.x.
 --
-
 [CARD]
-.Helidon SE 4x Upgrade Guide
-[icon=upgrade,link=guides/upgrade_4x.adoc]
+.Helidon SE 2.x Upgrade Guide
+[icon=upgrade,link=guides/upgrade.adoc]
 --
-Follow this guide to migrate your application from Helidon 3.x to 4.x.
+Follow this guide to migrate your application from Helidon 1.x to 2.x.
 --
+
+
+
+
 ====
 
 
