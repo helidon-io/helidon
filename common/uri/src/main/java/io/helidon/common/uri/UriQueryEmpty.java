@@ -39,22 +39,22 @@ final class UriQueryEmpty implements UriQuery {
 
     @Override
     public String getRaw(String name) throws NoSuchElementException {
-        throw new UnsupportedOperationException("Empty query");
+        throw new NoSuchElementException("Empty query");
     }
 
     @Override
     public List<String> getAllRaw(String name) {
-        throw new UnsupportedOperationException("Empty query");
+        throw new NoSuchElementException("Empty query");
     }
 
     @Override
     public List<String> all(String name) {
-        throw new UnsupportedOperationException("Empty query");
+        throw new NoSuchElementException("Empty query");
     }
 
     @Override
     public String get(String name) {
-        throw new UnsupportedOperationException("Empty query");
+        throw new NoSuchElementException("Empty query");
     }
 
     @Override
