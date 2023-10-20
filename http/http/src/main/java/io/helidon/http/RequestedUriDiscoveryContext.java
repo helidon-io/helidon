@@ -78,28 +78,6 @@ public interface RequestedUriDiscoveryContext {
                     UriQuery query,
                     boolean isSecure);
 
-//    /**
-//     * Indicates if requested URI discovery is enabled.
-//     *
-//     * @return whether discovery is enabled
-//     */
-//    boolean enabled();
-//
-//    /**
-//     * Returns the requested URI discovery discoveryTypes set up.
-//     *
-//     * @return the {@link RequestedUriDiscoveryContext.RequestedUriDiscoveryType}s set up
-//     */
-//    List<RequestedUriDiscoveryType> discoveryTypes();
-//
-//    /**
-//     * Returns the intermediaries deemed to be trustworthy.
-//     *
-//     * @return the {@link io.helidon.common.configurable.AllowList} reflecting those proxies to be trusted
-//     */
-//    AllowList trustedProxies();
-
-
     /**
      * Builder for {@link RequestedUriDiscoveryContext}.
      */
