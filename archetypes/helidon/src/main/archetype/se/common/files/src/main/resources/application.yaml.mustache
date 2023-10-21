@@ -7,11 +7,12 @@ server:
     {{.}}
     {{/server-features}}
   {{/features}}
-
 {{#application-yaml-entries}}
+
 {{.}}
 {{/application-yaml-entries}}
 {{#security}}
+
 security:
   config.require-encryption: false
   properties:

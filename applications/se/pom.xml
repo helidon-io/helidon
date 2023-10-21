@@ -31,6 +31,10 @@
     <name>Helidon SE applications parent pom</name>
     <description>Parent pom for Helidon SE applications</description>
 
+    <properties>
+        <helidon.test.config.profile>test</helidon.test.config.profile>
+    </properties>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -40,7 +44,7 @@
                     <version>${version.plugin.surefire}</version>
                     <configuration>
                         <systemPropertyVariables>
-                            <helidon.config.profile>test</helidon.config.profile>
+                            <helidon.config.profile>${helidon.test.config.profile}</helidon.config.profile>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>

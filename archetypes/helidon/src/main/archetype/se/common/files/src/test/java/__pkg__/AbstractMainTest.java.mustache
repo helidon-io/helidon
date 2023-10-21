@@ -17,6 +17,9 @@ import static {{.}};
 {{/MainTest-static-imports}}
 
 abstract class AbstractMainTest {
+{{#MainTest-static-fields}}
+    private static final {{.}};
+{{/MainTest-static-fields}}
     private final Http1Client client;
 
     protected AbstractMainTest(Http1Client client) {

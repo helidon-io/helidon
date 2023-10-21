@@ -28,6 +28,7 @@
 
     <properties>
         <helidon.version>4.0.0-SNAPSHOT</helidon.version>
+        <helidon.test.config.profile>test</helidon.test.config.profile>
         <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
 
         <maven.compiler.source>21</maven.compiler.source>
@@ -140,6 +141,7 @@
                         <useModulePath>false</useModulePath>
                         <systemPropertyVariables>
                             <java.util.logging.config.file>${project.build.outputDirectory}/logging.properties</java.util.logging.config.file>
+                            <helidon.config.profile>${helidon.test.config.profile}</helidon.config.profile>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>

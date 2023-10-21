@@ -1,0 +1,7 @@
+db:
+  connection:
+    url: jdbc:h2:mem:test
+{{#db-health-check-test-stmt}}
+  statements:
+    {{.}}
+{{/db-health-check-test-stmt}}

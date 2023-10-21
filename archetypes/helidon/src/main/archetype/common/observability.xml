@@ -350,43 +350,8 @@ curl -s -X GET http://localhost:8080/health
                                         <value key="artifactId">helidon-health-checks</value>
                                     </map>
                                 </list>
-                                <list key="Observe-feature-builder" if="${flavor} == 'se'">
-                                    <value><![CDATA[.addObserver(HealthObserver.builder()
-                                               .details(true)
-                                               .useSystemServices(false)
-                                               .addCheck(() -> HealthCheckResponse.builder()
-                                                        .status(HealthCheckResponse.Status.UP)
-                                                        .detail("time", System.currentTimeMillis())
-                                                        .build(), HealthCheckType.READINESS)
-                                               .addCheck(() -> HealthCheckResponse.builder()
-                                                        .status(isStarted())
-                                                        .detail("time", System.currentTimeMillis())
-                                                        .build(), HealthCheckType.STARTUP)
-                                               .build())]]></value>
-                                </list>
-                                <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                    <value>io.helidon.health.HealthCheckResponse</value>
-                                    <value>io.helidon.health.HealthCheckType</value>
-                                    <value>io.helidon.webserver.observe.health.HealthObserver</value>
-                                </list>
                                 <list key="MainTest-static-imports" if="${flavor} == 'se'">
                                     <value>org.hamcrest.CoreMatchers.containsString</value>
-                                </list>
-                                <list key="Main-java-imports" if="${flavor} == 'se'">
-                                    <value>java.time.Duration</value>
-                                </list>
-                                <list key="main-class-fields" if="${flavor} == 'se'">
-                                    <value><![CDATA[    private static long serverStartTime;]]></value>
-                                </list>
-                                <list key="Main-main" if="${flavor} == 'se'">
-                                    <value><![CDATA[serverStartTime = System.currentTimeMillis();]]></value>
-                                </list>
-                                <list key="main-class-content" if="${flavor} == 'se'">
-                                    <value><![CDATA[
-    private static boolean isStarted() {
-        return Duration.ofMillis(System.currentTimeMillis() - serverStartTime).getSeconds() >= 8;
-    }
-]]></value>
                                 </list>
                                 <list key="Abstract-test" if="${flavor} == 'se'">
                                     <value><![CDATA[
@@ -412,8 +377,8 @@ Note the port number reported by the application.
 Probe the health endpoints:
 
 ```bash
-curl -X GET http://localhost:8080/observe/observe/health/
-curl -X GET http://localhost:8080/observe/observe/health/ready
+curl -X GET http://localhost:8080/observe/health
+curl -X GET http://localhost:8080/observe/health/ready
 ```
 
 ]]></value>

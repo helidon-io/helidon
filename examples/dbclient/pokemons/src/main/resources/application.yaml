@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
 #
 
 server:
-  port: 8079
+  port: 8080
   host: 0.0.0.0
-  features:
-    print-details: true
 
 tracing:
   service: jdbc-db
@@ -33,7 +31,6 @@ db:
     url: "jdbc:oracle:thin:@localhost:1521/XE"
     username: "system"
     password: "oracle"
-    poolName: "oracle"
     #
     # MySQL configuration
     #
@@ -59,7 +56,7 @@ db:
     tracing:
       - enabled: true
     metrics:
-      - type: METER
+      - type: TIMER
   health-check:
     type: "query"
     statementName: "health-check"
@@ -68,25 +65,15 @@ db:
 #    health-check: "SELECT 0"
     # Health check query statement for Oracle database
     health-check: "SELECT 1 FROM DUAL"
-    ## Create database schema (table "Types" is system in H2)
     create-types: "CREATE TABLE PokeTypes (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES PokeTypes(id))"
-    # Select all types
     select-all-types: "SELECT id, name FROM PokeTypes"
-    # Select all pokemons without type information
     select-all-pokemons: "SELECT id, name, id_type FROM Pokemons"
-    # Select pokemon by id
     select-pokemon-by-id: "SELECT id, name, id_type FROM Pokemons WHERE id = :id"
-    # Select pokemon by name
     select-pokemon-by-name: "SELECT id, name, id_type FROM Pokemons WHERE name = ?"
-    # Insert records into database
     insert-type: "INSERT INTO PokeTypes(id, name) VALUES(?, ?)"
     insert-pokemon: "INSERT INTO Pokemons(id, name, id_type) VALUES(?, ?, ?)"
-    # Update name of pokemon specified by id
     update-pokemon-by-id: "UPDATE Pokemons SET name = :name, id_type = :idType WHERE id = :id"
-    # Delete pokemon by id
     delete-pokemon-by-id: "DELETE FROM Pokemons WHERE id = :id"
-    # Delete all types
     delete-all-types: "DELETE FROM PokeTypes"
-    # Delete all pokemons
     delete-all-pokemons: "DELETE FROM Pokemons"

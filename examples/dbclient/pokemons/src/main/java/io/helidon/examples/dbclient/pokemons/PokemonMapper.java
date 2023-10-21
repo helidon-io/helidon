@@ -40,18 +40,18 @@ public class PokemonMapper implements DbMapper<Pokemon> {
     @Override
     public Map<String, Object> toNamedParameters(Pokemon value) {
         Map<String, Object> map = new HashMap<>(3);
-        map.put("id", value.getId());
-        map.put("name", value.getName());
-        map.put("idType", value.getIdType());
+        map.put("id", value.id());
+        map.put("name", value.name());
+        map.put("idType", value.idType());
         return map;
     }
 
     @Override
     public List<Object> toIndexedParameters(Pokemon value) {
         List<Object> list = new ArrayList<>(3);
-        list.add(value.getId());
-        list.add(value.getName());
-        list.add(value.getIdType());
+        list.add(value.id());
+        list.add(value.name());
+        list.add(value.idType());
         return list;
     }
 }

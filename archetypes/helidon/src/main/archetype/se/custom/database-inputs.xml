@@ -19,12 +19,22 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-    <exec src="tracing.xml" if="${tracing}" />
-    <output>
-        <model if="${health} || ${metrics} || ${tracing}">
-            <list key="module-requires">
-                <value>io.helidon.webserver.observe</value>
-            </list>
-        </model>
-    </output>
+    <step name="Database" optional="true">
+        <inputs>
+            <boolean id="db"
+                     name="Database Support"
+                     description="Manage data in your application"
+                     default="false"
+                     optional="true">
+                <inputs>
+                    <enum id="server" name="Select a Database Server" default="h2" optional="true">
+                        <option value="h2" name="H2" description="In-memory relational database" />
+                        <option value="mysql" name="MySQL" description="Relational database" />
+                        <option value="oracledb" name="Oracle DB" description="Multi-model database" />
+                        <option value="mongodb" name="MongoDB" description="NoSQL / Document database" />
+                    </enum>
+                </inputs>
+            </boolean>
+        </inputs>
+    </step>
 </archetype-script>
