@@ -34,6 +34,7 @@
     <output>
         <model>
             <value key="helidon-test">true</value>
+            <value key="mainClass" if="${jpms}">${package}.Main</value>
             <list key="microprofile-config-entries">
                 <value file="files/microprofile-config.properties"/>
             </list>
