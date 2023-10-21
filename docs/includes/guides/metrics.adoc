@@ -201,18 +201,14 @@ ifdef::se-flavor[]
 [source,yaml]
 .Configuration properties file disabling metrics
 ----
-server:
-  features:
-    observe:
-      observers:
-        metrics:
-          enabled: false
+metrics:
+  enabled: false
 ----
 endif::se-flavor[]
 // end::disabling-whole-intro[]
 
 // tag::disabling-whole-summary[]
-With metrics processing disabled, Helidon never updates any {metrics} and the `{metrics-endpoint}` endpoints respond with `404`.
+With metrics processing disabled, Helidon never updates any {metrics} and the `{metrics-endpoint}` endpoint responds with `404` and a message indicating metrics are disabled.
 // end::disabling-whole-summary[]
 // end::disabling-whole[]
 
@@ -357,15 +353,11 @@ endif::mp-flavor[]
 ifdef::se-flavor[]
 [source,yaml]
 ----
-server:
-  features:
-    observe:
-      observers:
-        metrics:
-          key-performance-indicators:
-            extended: true
-            long-running:
-              threshold-ms: 2000
+metrics:
+  key-performance-indicators:
+    extended: true
+    long-running:
+      threshold-ms: 2000
 ----
 endif::se-flavor[]
 // end::KPI[]
