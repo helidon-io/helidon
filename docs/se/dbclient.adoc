@@ -129,13 +129,13 @@ The DB Client must be configured before you begin. In the example below we'll us
 [source,yaml]
 ----
 db:
-  source: "jdbc" // <1>
+  source: "jdbc" # <1>
   connection:
-    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" // <2>
+    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" # <2>
     username: "user"
     password: "password"
-  statements: // <3>
-    ping: "DO 0" // <4>
+  statements: # <3>
+    ping: "DO 0" # <4>
     select-all-pokemons: "SELECT id, name FROM Pokemons"
 
 ----
@@ -153,12 +153,11 @@ results. The following sections describe the options you can use to build and ex
 
 `DBClient` class has two methods to select whether statements will be executed in transaction or not:
 
-* `execute(Function<DbExecute, T> executor)`
+* `execute()`
 
-* `inTransaction(Function<DbTransaction, T> executor)`
+* `transaction()`
 
-Both methods provide an executor (either `DbExecute` or `DbTransaction`) and expect either `Single` or a `Multi` result,
-usually returned by one of their methods.
+Both methods provide an executor: either `DbExecute` or `DbTransaction`.
 
 === Statement Building and Execution
 DbExecute class offers many methods for various statements builders:
@@ -237,22 +236,20 @@ JDBC query with ordered parameters and query that does not run in the transactio
 
 [source,java]
 ----
-dbClient.execute(exec -> exec
+dbClient.execute()
     .createQuery("SELECT name FROM Pokemons WHERE id = ?")
     .params(1)
-    .execute()
-);
+    .execute();
 ----
 
 JDBC query with named parameters and the query runs in transaction:
 
 [source,java]
 ----
-dbClient.inTransaction(tx -> tx
+dbClient.transaction()
     .createQuery("SELECT name FROM Pokemons WHERE id = :id")
     .addParam("id", 1)
-    .execute()
-);
+    .execute();
 ----
 
 Both examples will return `Multi<DbRow>` with rows returned by the query.
@@ -261,46 +258,40 @@ This example shows a MongoDB update statement with named parameters and the quer
 
 [source,java]
 ----
-dbClient.execute(exec -> exec
+dbClient.execute()
     .createUpdate("{\"collection\": \"pokemons\","
         + "\"value\":{$set:{\"name\":$name}},"
         + "\"query\":{id:$id}}")
     .addParam("id", 1)
     .addParam("name", "Pikachu")
-    .execute()
-);
+    .execute();
 ----
 
-This update statement will return `Single<Long>` with the number of modified records in the database.
+This update statement will return a `long` with the number of modified records in the database.
 
 ==== DML Statement Result
 
-Execution of DML statements will always return `Single<Long>` with the number of modified records in the database.
+Execution of DML statements will always return a `long` with the number of modified records in the database.
 
 In following example, the number of modified records is printed to standard output:
 
 [source,java]
 ----
-dbClient.execute(exec -> exec
+long count = dbClient.execute()
     .insert("INSERT INTO Pokemons (id, name) VALUES(?, ?)",
-        1, "Pikachu"))
-    .thenAccept(count ->
-        System.out.printf("Inserted %d records\n", count));
+        1, "Pikachu"));
+System.out.printf("Inserted %d records\n", count)
 ----
 
 ==== Query Statement Result
 
-Execution of a query statement will always return `Multi<DbRow>>`. `Multi` has several useful properties:
+Execution of a query statement will always return `Stream<DbRow>>`.
 
-* It is an implementation of `Flow.Publisher` to process individual result rows using `Flow.Subscriber<DbRow>`
-* `Single<List<DbRow>> collectList()` to collect all rows and return them as a promise of `List<DbRow>`
-* `<U> Multi<U> map(…)` to map returned result using provided mapper
+* The stream is populated lazily, result rows can be processed individually
+* Use `.map(…)` to map returned result
+* Use `.toList()` on the stream to collect all rows
 
 == Additional Information
 
 Now that you understand how to build and execute statements, try it for yourself.
 link:{helidon-github-tree-url}/examples/dbclient[DB Client Examples].
-
-
-
-
