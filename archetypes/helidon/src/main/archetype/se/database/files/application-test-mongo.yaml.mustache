@@ -1,27 +1,12 @@
 db:
-  source: jdbc
+  source: "jdbc"
   connection:
-{{#db-connection}}
-{{.}}
-{{/db-connection}}
-    initializationFailTimeout: -1
-    connectionTimeout: 2000
-{{#db-metrics}}
-    helidon:
-      pool-metrics:
-        enabled: true
-        # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
-        name-prefix: "hikari."
-{{/db-metrics}}
-{{#db-health-check}}
-  health-check:
-    type: "query"
-    statementName: "health-check"
-{{/db-health-check}}
+    url: jdbc:h2:mem:test
+  init-schema: true
   statements:
-{{#db-health-check-stmt}}
-    health-check: "{{.}}"
-{{/db-health-check-stmt}}
+{{#db-health-check-test-stmt}}
+    {{.}}
+{{/db-health-check-test-stmt}}
     create-types: "CREATE TABLE PokeTypes (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES PokeTypes(id))"
     select-all-types: "SELECT id, name FROM PokeTypes"

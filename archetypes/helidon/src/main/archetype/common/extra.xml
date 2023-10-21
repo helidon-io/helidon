@@ -274,13 +274,13 @@ restrictive-cors:
 ]]></value>
                             </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(config), new GreetService())
+                                <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(), new GreetService())
 ]]></value>
                             </list>
                             <list key="main-class-content" if="${flavor} == 'se'">
                                 <value><![CDATA[
-    private static CorsSupport corsSupportForGreeting(Config config) {
-        Config restrictiveConfig = config.get("restrictive-cors");
+    private static CorsSupport corsSupportForGreeting() {
+        Config restrictiveConfig = Config.global().get("restrictive-cors");
         if (!restrictiveConfig.exists()) {
             Logger.getLogger(Main.class.getName())
                     .warning("Missing restrictive config; continuing with default CORS support");
@@ -288,7 +288,7 @@ restrictive-cors:
 
         CorsSupport.Builder corsBuilder = CorsSupport.builder();
 
-        config.get("cors")
+        Config.global().get("cors")
                 .ifExists(c -> {
                     Logger.getLogger(Main.class.getName()).info("Using the override configuration");
                     corsBuilder.mappedConfig(c);

@@ -102,9 +102,9 @@
                                     </list>
                                     <list key="Main-routing" if="${flavor} == 'se'">
                                         <value><![CDATA[
-        if (config.get("security.enabled").asBoolean().orElse(true)) {
+        if (Config.global().get("security.enabled").asBoolean().orElse(true)) {
             // IDCS requires a web resource for redirects
-            routing.addFeature(OidcFeature.create(config));
+            routing.addFeature(OidcFeature.create(Config.global()));
         }
 ]]></value>
                                     </list>
@@ -168,7 +168,6 @@
                                         <value if="${flavor} == 'se'">io.helidon.webclient.security</value>
                                         <value>io.helidon.security.providers.jwt</value>
                                         <value>io.helidon.webserver.context</value>
-                                        <value>io.helidon.webclient.http1</value>
                                     </list>
                                 </model>
                             </output>
@@ -316,7 +315,7 @@
       methods: ["get"]
       authenticate: true]]></value>
                         </list>
-                        <list key="config-test" if="${flavor} == 'se'">
+                        <list key="application-test-yaml-entries" if="${flavor} == 'se'">
                             <value><![CDATA[
 security:
   enabled: false

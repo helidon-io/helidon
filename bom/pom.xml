@@ -724,6 +724,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.db</groupId>
+                <artifactId>helidon-integrations-db-mysql</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-delegates</artifactId>
                 <version>${helidon.version}</version>

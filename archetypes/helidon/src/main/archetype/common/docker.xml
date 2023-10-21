@@ -68,8 +68,8 @@
                     <list key="src-dirs" if="!${multi-module}">
                         <value>src</value>
                     </list>
-                    <list key="native-sections" if="${db} &amp;&amp; ${flavor} == 'mp'">
-                        <value file="files/README.native.md.mustache" if="${docker.native-image}" template="mustache"/>
+                    <list key="native-sections" if="${docker.native-image}">
+                        <value file="files/README.native.md"/>
                     </list>
                     <list key="readme-sections">
                         <value order="50" template="mustache">

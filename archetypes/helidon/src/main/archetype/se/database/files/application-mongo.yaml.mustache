@@ -1,40 +1,21 @@
-#
-# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-server:
-  port: 8079
-  host: 0.0.0.0
-
-tracing:
-  service: "mongo-db"
-
-# docker run --rm --name mongo -p 27017:27017 mongo
 db:
   source: "mongoDb"
   connection:
     url: "mongodb://127.0.0.1:27017/pokemon"
+  init-schema: false
+{{#db-health-check}}
   health-check:
     type: "query"
     statementName: "health-check"
+{{/db-health-check}}
   statements:
-    # Health check statement. HealthCheck statement type must be query.
+{{#db-health-check}}
+    # Health check statement. HealthCheck statement type must be a query.
     health-check: '{
             "operation": "command",
             "query": { ping: 1 }
         }'
+{{/db-health-check}}
     # Insert operation contains collection name, operation type and data to be inserted.
     # Name variable is stored as MongoDB primary key attribute _id
     insert2: '{
@@ -54,10 +35,6 @@ db:
               "_id": ?
             }
         }'
-    delete-all: '{
-            "collection": "pokemons",
-            "operation": "delete"
-        }'
     update: '{
             "collection": "pokemons",
             "query": {
@@ -73,4 +50,3 @@ db:
                 "_id": ?
             }
         }'
-

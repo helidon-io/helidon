@@ -16,17 +16,21 @@
 
 package io.helidon.examples.dbclient.pokemons;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
 
 /**
  * Simple Hello World rest application.
  */
-public final class PokemonMain {
+public final class Main {
 
     /**
      * MongoDB configuration. Default configuration file {@code application.yaml} contains JDBC configuration.
@@ -41,7 +45,7 @@ public final class PokemonMain {
     /**
      * Cannot be instantiated.
      */
-    private PokemonMain() {
+    private Main() {
     }
 
     /**
@@ -67,13 +71,23 @@ public final class PokemonMain {
 
         // By default, this will pick up application.yaml from the classpath
         Config config = mongo ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
+        Config.global(config);
 
+        // Client services are added through a service loader - see mongoDB example for explicit services
+        DbClient dbClient = DbClient.create(config.get("db"));
+        Contexts.globalContext().register(dbClient);
 
-        // load logging configuration
-        LogConfig.configureRuntime();
+        ObserveFeature observe = ObserveFeature.builder()
+                .config(config.get("server.features.observe"))
+                .addObserver(HealthObserver.builder()
+                                     .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
+                                     .build())
+                .build();
 
         WebServer server = WebServer.builder()
-                .routing(routing -> PokemonMain.routing(routing, config))
+                .config(config.get("server"))
+                .addFeature(observe)
+                .routing(Main::routing)
                 .build()
                 .start();
 
@@ -83,16 +97,7 @@ public final class PokemonMain {
     /**
      * Updates HTTP Routing.
      */
-    static void routing(HttpRouting.Builder routing, Config config) {
-        Config dbConfig = config.get("db");
-
-        // Client services are added through a service loader - see mongoDB example for explicit services
-        DbClient dbClient = DbClient.builder(dbConfig)
-                .build();
-
-        // Initialize database schema
-        InitializeDb.init(dbClient, !mongo);
-
-        routing.register("/db", new PokemonService(dbClient));
+    static void routing(HttpRouting.Builder routing) {
+        routing.register("/db", new PokemonService());
     }
 }
