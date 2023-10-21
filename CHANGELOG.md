@@ -43,6 +43,7 @@ Java 21 is required to use Helidon 4.0.0
 - Docs: Observability endpoints documentation [7768](https://github.com/helidon-io/helidon/pull/7768)
 - Docs: Refreshes persistence.adoc for Helidon 4.x [7834](https://github.com/helidon-io/helidon/pull/7834)
 - Docs: Tracing documentation [7813](https://github.com/helidon-io/helidon/pull/7813)
+- Docs: Update dbclient docs [7874](https://github.com/helidon-io/helidon/pull/7874)
 - Docs: Update Helidon Webclient Guide documentation [7847](https://github.com/helidon-io/helidon/pull/7847)
 - Docs: Update to WebServer documentation for Helidon 4 [7817](https://github.com/helidon-io/helidon/pull/7817)
 - Docs: Update to gRPC documentation for Helidon 4 [7809](https://github.com/helidon-io/helidon/pull/7809)
@@ -56,6 +57,7 @@ Java 21 is required to use Helidon 4.0.0
 - Examples: Fix Archetype native-image.properties path [7846](https://github.com/helidon-io/helidon/pull/7846)
 - Examples: Fix MP quickstart native image build [7826](https://github.com/helidon-io/helidon/pull/7826)
 - Examples: Fix java.lang.ClassNotFoundException: io.helidon.logging.jul.HelidonConsoleHandler[7866](https://github.com/helidon-io/helidon/pull/7866)
+- Examples: Update archetypes and dbclient examples [7873](https://github.com/helidon-io/helidon/pull/7873)
 - Tests: Removes two disabled tests in tests/integration/security/path-params per direction [7832](https://github.com/helidon-io/helidon/pull/7832)
 
 ## [4.0.0-RC2]
