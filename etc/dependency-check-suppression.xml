@@ -279,4 +279,18 @@
    <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
 </suppress>
 
+<!--
+    This is a FP. We have upgrade jgit to a fixed version, but it is still getting flagged.
+    Probably due to the funky version string used by jgit. See
+    https://github.com/jeremylong/DependencyCheck/issues/5943
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: org.eclipse.jgit-6.7.0.202309050840-r.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit@.*$</packageUrl>
+   <cve>CVE-2023-4759</cve>
+</suppress>
+
+
 </suppressions>
