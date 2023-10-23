@@ -6,7 +6,7 @@ name: "Release"
 on:
   push:
     branches:
-      - 'test-release-*'
+      - 'release-*'
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRO: 'temurin'
@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -41,8 +41,8 @@ jobs:
         with:
           token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
           fetch-depth: '0'
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3.11.0
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -61,6 +61,6 @@ jobs:
       - name: Upload Staged Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: io-helidon-staged-artifacts
+          name: io-helidon-artifacts-${{ github.ref_name }}
           path: parent/target/nexus-staging/
           retention-days: 90
