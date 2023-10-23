@@ -108,7 +108,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
             // protocol and family
             n = readUntil(inputStream, buffer, (byte) ' ', (byte) '\r');
-            String familyProtocol = new String(buffer, 0, n);
+            String familyProtocol = new String(buffer, 0, n, StandardCharsets.US_ASCII);
             var family = Family.fromString(familyProtocol);
             var protocol = Protocol.fromString(familyProtocol);
             byte b = readNext(inputStream);
@@ -124,22 +124,22 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
             // source address
             n = readUntil(inputStream, buffer, (byte) ' ');
-            var sourceAddress = new String(buffer, 0, n);
+            var sourceAddress = new String(buffer, 0, n, StandardCharsets.US_ASCII);
             match(inputStream, (byte) ' ');
 
             // destination address
             n = readUntil(inputStream, buffer, (byte) ' ');
-            var destAddress = new String(buffer, 0, n);
+            var destAddress = new String(buffer, 0, n, StandardCharsets.US_ASCII);
             match(inputStream, (byte) ' ');
 
             // source port
             n = readUntil(inputStream, buffer, (byte) ' ');
-            int sourcePort = Integer.parseInt(new String(buffer, 0, n));
+            int sourcePort = Integer.parseInt(new String(buffer, 0, n, StandardCharsets.US_ASCII));
             match(inputStream, (byte) ' ');
 
             // destination port
             n = readUntil(inputStream, buffer, (byte) '\r');
-            int destPort = Integer.parseInt(new String(buffer, 0, n));
+            int destPort = Integer.parseInt(new String(buffer, 0, n, StandardCharsets.US_ASCII));
             match(inputStream, (byte) '\r');
             match(inputStream, (byte) '\n');
 
