@@ -9,6 +9,24 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.4]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- Security: TargetKeys Map changed to ConcurrentHashMap [7601](https://github.com/helidon-io/helidon/pull/7601)
+- JPA: Adds zero-argument non-private constructors to NonTransactionalEntityManager and ExtendedEntityManager [7559](https://github.com/helidon-io/helidon/pull/7559)
+- Build: Prepare release workflow for 2.x release [7880](https://github.com/helidon-io/helidon/pull/7880)
+- Build: remove Jenkinsfile [7840](https://github.com/helidon-io/helidon/pull/7840)
+- Build: Upgrade dependency-check-maven plugin and add suppression [7574](https://github.com/helidon-io/helidon/pull/7574)
+- Dependencies: Upgrade OCI sdk to version 3.26.0 [7883](https://github.com/helidon-io/helidon/pull/7883)
+- Dependencies: upgrade kafka-clients, okhttp3 [7861](https://github.com/helidon-io/helidon/pull/7861)
+- Dependencies: Upgrade Netty to 4.1.100.Final [7819](https://github.com/helidon-io/helidon/pull/7819)
+- Dependencies: Upgrade jboss logging to 3.5.3.Final [7597](https://github.com/helidon-io/helidon/pull/7597)
+- Dependencies: Upgrade jgit to 6.7.0 [7593](https://github.com/helidon-io/helidon/pull/7593)
+- Tests: Replace try/catch in tests on assertThrows [7376](https://github.com/helidon-io/helidon/pull/7376)
+
 ## [2.6.3]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2171,6 +2189,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.4]: https://github.com/oracle/helidon/compare/2.6.3...2.6.4
 [2.6.3]: https://github.com/oracle/helidon/compare/2.6.2...2.6.3
 [2.6.2]: https://github.com/oracle/helidon/compare/2.6.1...2.6.2
 [2.6.1]: https://github.com/oracle/helidon/compare/2.6.0...2.6.1
