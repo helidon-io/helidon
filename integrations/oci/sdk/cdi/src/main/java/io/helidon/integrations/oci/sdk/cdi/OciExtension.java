@@ -1321,7 +1321,6 @@ public final class OciExtension implements Extension {
 
     }
 
-    // private enum EndpointAdjuster implements ClientConfigurator, ClientRequestFilter, Predicate<ClientRequestContext> {
     private enum EndpointAdjuster implements ClientBuilderDecorator, ClientRequestFilter, Predicate<ClientRequestContext> {
 
 
@@ -1433,13 +1432,6 @@ public final class OciExtension implements Extension {
          */
 
 
-        /*
-        @Override // ClientConfigurator
-        public void customizeClient(HttpClientBuilder builder) {
-            builder.register(this, Map.of(ClientRequestFilter.class, Integer.valueOf(Priorities.AUTHENTICATION - 500)));
-        }
-        */
-
         @Override // ClientBuilderDecorator
         public Client finish(ClientBuilder builder) {
             builder.register(this, Map.of(ClientRequestFilter.class, Integer.valueOf(Priorities.AUTHENTICATION - 500)));
@@ -1467,12 +1459,6 @@ public final class OciExtension implements Extension {
         private void adjust(ClientRequestContext crc, String hostname) {
             crc.setUri(UriBuilder.fromUri(crc.getUri()).host(this.adjuster.apply(hostname)).build());
         }
-
-        /*
-        @Override // ClientConfigurator
-        public void customizeClient(Client client) {
-        }
-        */
 
 
         /*
