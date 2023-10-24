@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,7 +190,7 @@ class TestSpike {
                             // isn't; see the comments in the
                             // constructor body below.  It should be
                             // unsatisfied.
-                            Instance<com.oracle.bmc.circuitbreaker.JaxRsCircuitBreaker> unresolvedJaxRsCircuitBreakerInstance,
+                            Instance<com.oracle.bmc.circuitbreaker.OciCircuitBreaker> unresolvedOciCircuitBreakerInstance,
                             // Streaming turns out to be the only
                             // convention-violating service in the
                             // entire portfolio, and the violation is
@@ -217,26 +217,26 @@ class TestSpike {
                             StreamClient streamingServiceClient, // oddball
                             StreamClientBuilder streamingServiceClientBuilder) { // oddball
             super();
-            // unresolvedJaxRsCircuitBreakerInstance
-            // (Instance<com.oracle.bmc.circuitbreaker.JaxRsCircuitBreaker>)
+            // unresolvedOciCircuitBreakerInstance
+            // (Instance<com.oracle.bmc.circuitbreaker.OciCircuitBreaker>)
             // is an example of something that seems like it obeys the
             // OCI client service pattern.  But it deviates in a
             // couple ways.
             //
-            // First, JaxRsCircuitBreaker is part of the common
+            // First, OciCircuitBreaker is part of the common
             // runtime (see
             // https://docs.oracle.com/en-us/iaas/tools/java/latest/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime),
             // and hence is not a service itself.
             //
-            // Second, there are no JaxRsCircuitBreakerAsync,
-            // JaxRsCircuitBreakerAsyncClient,
-            // JaxRsCircuitBreakerAsyncClient$Builder,
-            // JaxRsCircuitBreakerClient or
-            // JaxRsCircuitBreakerClient$Builder classes.
+            // Second, there are no OciCircuitBreakerAsync,
+            // OciCircuitBreakerAsyncClient,
+            // OciCircuitBreakerAsyncClient$Builder,
+            // OciCircuitBreakerClient or
+            // OciCircuitBreakerClient$Builder classes.
             //
             // For all these reasons it should be excluded from
             // processing (and is, or this test would fail).
-            assertTrue(unresolvedJaxRsCircuitBreakerInstance.isUnsatisfied());
+            assertTrue(unresolvedOciCircuitBreakerInstance.isUnsatisfied());
         }
 
         private static void customizeAsyncBuilder(@Observes AIServiceLanguageAsyncClient.Builder asyncClientBuilder) {
