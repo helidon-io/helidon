@@ -34,6 +34,12 @@ public interface UriPath {
      * @return a new path representing the new relative path
      */
     static UriPath createRelative(UriPath uriPath, String relativePath) {
+        if (uriPath instanceof UriPathMatrix) {
+            String rawPath = uriPath.rawPath();
+            int idx = rawPath.indexOf(relativePath);
+            rawPath = rawPath.substring(idx);
+            return new UriPathMatrix(rawPath, relativePath);
+        }
         return new UriPathNoParam(uriPath.absolute(), relativePath);
     }
 

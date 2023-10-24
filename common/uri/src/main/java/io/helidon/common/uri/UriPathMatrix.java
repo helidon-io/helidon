@@ -30,6 +30,11 @@ class UriPathMatrix extends UriPathNoParam {
         this.rawPath = rawPath;
     }
 
+    UriPathMatrix(String rawPath, String noParamPath, UriPath absolute) {
+        super(noParamPath, absolute);
+        this.rawPath = rawPath;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -51,4 +51,11 @@ class UriPathTest {
         UriPath path = UriPath.create(rawPath);
         assertThat(path.path(), is("/foo/bar"));
     }
+
+    @Test
+    void testMatrix() {
+        UriPath raw = UriPath.create("/jaxrs_spec/resource/entitymatrix;param=ASDFGHJKLQWERTYUIOPPPPPPP");
+        UriPath relative = (UriPathMatrix) UriPath.createRelative(raw, "/resource/entitymatrix");
+        assertThat(relative.rawPath(), is("/resource/entitymatrix;param=ASDFGHJKLQWERTYUIOPPPPPPP"));
+    }
 }
