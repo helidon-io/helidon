@@ -73,6 +73,16 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <!-- For dependency convergence. To make sure we use Jersey version of org.apache.httpcomponents:httpclient and httpcore -->
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
@@ -165,5 +175,5 @@
             </plugin>
         </plugins>
     </build>
-    
+
 </project>
