@@ -93,10 +93,7 @@
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
         <version.lib.junit>5.7.0</version.lib.junit>
-        <version.lib.kafka>3.4.0</version.lib.kafka>
-        <!-- Force upgrade of snappy. This should be removed once kafka-clients is upgraded -->
-        <!-- to 3.4.2 or newer. See https://issues.apache.org/jira/browse/KAFKA-15096 -->
-        <version.lib.snappy>1.1.10.1</version.lib.snappy>
+        <version.lib.kafka>3.6.0</version.lib.kafka>
         <version.lib.log4j>2.17.1</version.lib.log4j>
         <version.lib.logback>1.2.10</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
@@ -127,13 +124,14 @@
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.100.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.19.Final</version.lib.netty-io_uring>
-        <version.lib.oci>2.60.1</version.lib.oci>
+        <version.lib.oci>2.66.0</version.lib.oci>
         <version.lib.oci-java-sdk-objectstorage>${version.lib.oci}</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
-        <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
-        <!-- Force upgrade to more current version -->
-        <version.lib.okio>3.4.0</version.lib.okio>
+        <!-- Manage okio version for dependency convergence -->
+        <version.lib.okio>3.6.0</version.lib.okio>
+        <!-- Force upgrade okhttp3 transitive dependency -->
+        <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -919,13 +917,6 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
             </dependency>
-            <!-- Force upgrade of snappy. This should be removed once kafka-clients is upgraded -->
-            <!-- to 3.4.2 or newer. See https://issues.apache.org/jira/browse/KAFKA-15096 -->
-            <dependency>
-                <groupId>org.xerial.snappy</groupId>
-                <artifactId>snappy-java</artifactId>
-                <version>${version.lib.snappy}</version>
-            </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-json-binding</artifactId>
@@ -1266,24 +1257,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- 4.x versions cause problems with native-image This is used by jaeger-client -->
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${version.lib.okhttp3}</version>
-            </dependency>
-            <dependency>
-                <!-- required for dependency convergence
-                used from both
-                com.squareup.okhttp3:mockwebserver:3.13.1
-                com.squareup.moshi:moshi:1.8.0
-                both referenced by
-                io.zipkin.zipkin2:zipkin-junit:2.12.5
-                -->
-                <groupId>com.squareup.okio</groupId>
-                <artifactId>okio</artifactId>
-                <version>${version.lib.okio}</version>
-            </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
             <!-- Section 4: Testing -->
@@ -1390,6 +1363,22 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
                 <version>${version.lib.google-protobuf}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <!-- Force upgrade and for dependency convergence. -->
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp-bom</artifactId>
+                <version>${version.lib.okhttp3}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <!-- For dependency convergence. Used by okhttp -->
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio-bom</artifactId>
+                <version>${version.lib.okio}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
