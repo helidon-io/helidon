@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ import javax.ws.rs.core.UriBuilder;
 import com.oracle.bmc.Service;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.common.ClientBuilderBase;
-import com.oracle.bmc.http.ClientConfigurator;
+import com.oracle.bmc.http.client.jersey.ClientBuilderDecorator;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -1065,7 +1065,7 @@ public final class OciExtension implements Extension {
     private static void customizeEndpointResolution(ClientBuilderBase<?, ?> clientBuilder) {
         EndpointAdjuster ea = EndpointAdjuster.of(clientBuilder.getClass().getName());
         if (ea != null) {
-            clientBuilder.additionalClientConfigurator(ea);
+            clientBuilder.clientConfigurator(b -> b.property(ClientBuilderDecorator.PROPERTY, ea));
         }
     }
 
@@ -1321,7 +1321,7 @@ public final class OciExtension implements Extension {
 
     }
 
-    private enum EndpointAdjuster implements ClientConfigurator, ClientRequestFilter, Predicate<ClientRequestContext> {
+    private enum EndpointAdjuster implements ClientBuilderDecorator, ClientRequestFilter, Predicate<ClientRequestContext> {
 
 
         /*
@@ -1432,9 +1432,10 @@ public final class OciExtension implements Extension {
          */
 
 
-        @Override // ClientConfigurator
-        public void customizeBuilder(ClientBuilder builder) {
+        @Override // ClientBuilderDecorator
+        public Client finish(ClientBuilder builder) {
             builder.register(this, Map.of(ClientRequestFilter.class, Integer.valueOf(Priorities.AUTHENTICATION - 500)));
+            return builder.build();
         }
 
         @Override // Predicate<ClientRequestContext>
@@ -1457,10 +1458,6 @@ public final class OciExtension implements Extension {
 
         private void adjust(ClientRequestContext crc, String hostname) {
             crc.setUri(UriBuilder.fromUri(crc.getUri()).host(this.adjuster.apply(hostname)).build());
-        }
-
-        @Override // ClientConfigurator
-        public void customizeClient(Client client) {
         }
 
 
