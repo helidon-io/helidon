@@ -31,7 +31,7 @@ class UriPathMatrix extends UriPathNoParam {
     }
 
     UriPathMatrix(String rawPath, String noParamPath, UriPath absolute) {
-        super(noParamPath, absolute);
+        super(absolute, noParamPath);
         this.rawPath = rawPath;
     }
 

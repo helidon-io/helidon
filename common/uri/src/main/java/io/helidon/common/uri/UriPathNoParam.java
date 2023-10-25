@@ -35,12 +35,9 @@ class UriPathNoParam implements UriPath {
         this.absolute = this;
     }
 
-    UriPathNoParam(String rawPath, UriPath absolute) {
-        this.rawPath = rawPath;
-        this.absolute = absolute;
-    }
-
     UriPathNoParam(UriPath absolute, String relativePath) {
+        // relativePath is always decoded, so rawPath will become decoded here.
+        // This is not really the meaning of rawPath.
         this.rawPath = relativePath;
         this.decodedPath = relativePath;
         this.absolute = absolute;

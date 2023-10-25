@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.parameters.Parameters;
+import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriPath;
 
 /**
@@ -276,8 +277,9 @@ public final class PathMatchers {
         private final String pathWithTrailingSlash;
 
         ExactPathMatcher(String path) {
-            this.path = path;
-            this.pathWithTrailingSlash = path + "/";
+            // We work with decoded URIs
+            this.path = UriEncoding.decodeUri(path);
+            this.pathWithTrailingSlash = this.path + "/";
         }
 
         @Override

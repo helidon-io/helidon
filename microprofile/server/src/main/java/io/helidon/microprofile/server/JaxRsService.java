@@ -204,6 +204,13 @@ class JaxRsService implements HttpService {
 
         String rawPath = req.path().rawPath();
         rawPath = rawPath.startsWith("/") ? rawPath.substring(1) : rawPath;
+        /*
+         * rawPath could be a decoded path here because of UriPathNoParam(41).
+         * Paths generated from decoded URIs could contain whitespace,
+         * and URIs cannot be created with whitespace (it throws one IllegalException).
+         * I didn't find a better solution than the next.
+         */
+        rawPath = rawPath.replaceAll(" ", "%20");
         if (req.query().isEmpty()) {
             requestUri = baseUri.resolve(rawPath);
         } else {

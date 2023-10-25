@@ -58,6 +58,7 @@ import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.DefinitionException;
 import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -417,7 +418,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 Map<String, String> properties = new HashMap<>();
                 for (Class<Application> app : context.applications) {
                     String key = app.getName() + ".routing-path.path";
+                    ApplicationPath path = app.getDeclaredAnnotation(ApplicationPath.class);
                     String value = "/" + context.rootContext;
+                    if (path != null && !"/".equals(path.value())) {
+                        value = value + "/" + path.value();
+                    }
                     properties.put(key, value);
                 }
                 configBuilder.withSources(MpConfigSources.create(properties));
