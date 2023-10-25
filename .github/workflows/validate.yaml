@@ -19,6 +19,9 @@ env:
   JAVA_VERSION: '17'
   JAVA_DISTRO: 'oracle'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
+  HELIDON_EXAMPLES_REPOSITORY: 'helidon-io/helidon-examples.git'  # external examples repository
+  HELIDON_EXAMPLES_BUILD_BRANCH: 'dev-3.x'                        # validation branch for examples
+  HELIDON_EXAMPLES_CHECKOUT_FOLDER: 'helidon-examples'                 # local checkout folder for validation branch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -121,12 +124,13 @@ jobs:
         run: etc/scripts/github-tck.sh
   examples:
     timeout-minutes: 30
+    continue-on-error: true
     strategy:
       matrix:
         os: [ ubuntu-20.04, macos-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.11.0
         with:
@@ -135,8 +139,16 @@ jobs:
           cache: maven
       - name: Maven build
         run: |
-          mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
-          echo "TBD: validate examples from external repository"
+          mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install
+      - name: Examples checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          repository: ${{ env.HELIDON_EXAMPLES_REPOSITORY }}
+          ref: ${{ env.HELIDON_EXAMPLES_BUILD_BRANCH }}
+          path: ${{ env.HELIDON_EXAMPLES_CHECKOUT_FOLDER }}
+      - name: Examples build
+        run: etc/scripts/build-examples.sh
   archetypes:
     timeout-minutes: 30
     strategy:
