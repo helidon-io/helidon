@@ -31,6 +31,9 @@ Helidon 4 supports MicroProfile 6. This means your existing Helidon MP 3.x appli
 
 New to Helidon? Then jump in and [get started](https://helidon.io/docs/v4/#/about/prerequisites).
 
+Java 21 is required to use Helidon 4.
+
+
 ## License
 
 Helidon is available under Apache License 2.0.
