@@ -288,7 +288,7 @@ WebClient client = WebClient.builder()
     .addService(WebClientTracing.create())
     .build();
 
-Single<String> response = client.get()
+String response = client.get()
     .uri(uri)
     .request(String.class);
 ----
