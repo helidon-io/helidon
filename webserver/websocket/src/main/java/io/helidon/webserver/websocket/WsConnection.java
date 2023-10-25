@@ -245,6 +245,8 @@ public class WsConnection implements ServerConnection, WsSession {
         try {
             // TODO check may payload size, danger of oom
             return ClientWsFrame.read(ctx, dataReader, Integer.MAX_VALUE);
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            throw new CloseConnectionException("Socket closed by the other side", e);
         } catch (WsCloseException e) {
             close(e.closeCode(), e.getMessage());
             throw new CloseConnectionException("WebSocket failed to read client frame", e);
