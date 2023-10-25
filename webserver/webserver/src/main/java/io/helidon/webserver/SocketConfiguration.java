@@ -600,7 +600,7 @@ public interface SocketConfiguration {
             config.get("backlog").asInt().ifPresent(this::backlog);
             config.get("max-header-size").asInt().ifPresent(this::maxHeaderSize);
             config.get("max-initial-line-length").asInt().ifPresent(this::maxInitialLineLength);
-            config.get("max-payload-size").asInt().ifPresent(this::maxPayloadSize);
+            config.get("max-payload-size").asLong().ifPresent(this::maxPayloadSize);
 
             DeprecatedConfig.get(config, "timeout-millis", "timeout")
                     .asInt()
