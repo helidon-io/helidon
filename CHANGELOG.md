@@ -11,6 +11,55 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.0]
+
+We are pleased to announce the release of Helidon 4.0.0. The big news in Helidon 4.0.0 is the introduction of Helidon Níma -- a ground up webserver implementation based on JDK Project Loom virtual threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
+
+The Helidon SE API in 4.0.0 has changed significantly from Helidon 3. The use of virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Existing Helidon SE code will require modification to run on these new APIs. For more information see the [Helidon SE Upgrade Guide](https://helidon.io/docs/v4/#/se/guides/upgrade_4x).
+
+Helidon 4 supports MicroProfile 6. This means your existing Helidon MP 3.x applications will run on Helidon 4 with only minor modifications. And since Helidon’s MicroProfile server is based on the new Níma WebServer you get all the benefits of running on virtual threads. For more information see the [Helidon MP Upgrade Guide](https://helidon.io/docs/v4/#/mp/guides/upgrade_4x).
+
+New to Helidon? Then jump in and [get started](https://helidon.io/docs/v4/#/about/prerequisites).
+
+Java 21 is required to use Helidon 4.0.0
+
+### CHANGES
+
+- DBClient: Fix DbClient JSON mapping [7844](https://github.com/helidon-io/helidon/pull/7844)
+- DBClient: UriQueryEmpty + NoSuchElementException [7869](https://github.com/helidon-io/helidon/pull/7869)
+- Http: Remove commented-out code [7868](https://github.com/helidon-io/helidon/pull/7868)
+- Metrics: Restore percentile and bucket data to JSON metrics output [7849](https://github.com/helidon-io/helidon/pull/7849)
+- Build: remove Jenkinsfile [7839](https://github.com/helidon-io/helidon/pull/7839)
+- Dependencies: Update build-tools to 4.0.0 [7872](https://github.com/helidon-io/helidon/pull/7872)
+- Dependencies: Upgrade kafka-clients to 3.6.0 [7833](https://github.com/helidon-io/helidon/pull/7833)
+- Docs: AOT update, remove aot site, update guides for native image [7859](https://github.com/helidon-io/helidon/pull/7859)
+- Docs: Config documentation update [7814](https://github.com/helidon-io/helidon/pull/7814)
+- Docs: Final updates intros [7864](https://github.com/helidon-io/helidon/pull/7864)
+- Docs: Health doc updates [7828](https://github.com/helidon-io/helidon/pull/7828)
+- Docs: JWT Auth configuration properties updated [7816](https://github.com/helidon-io/helidon/pull/7816)
+- Docs: Messaging doc update [7837](https://github.com/helidon-io/helidon/pull/7837)
+- Docs: Metrics doc update [7851](https://github.com/helidon-io/helidon/pull/7851)
+- Docs: Migration guides [7715](https://github.com/helidon-io/helidon/pull/7715)
+- Docs: Observability endpoints documentation [7768](https://github.com/helidon-io/helidon/pull/7768)
+- Docs: Refreshes persistence.adoc for Helidon 4.x [7834](https://github.com/helidon-io/helidon/pull/7834)
+- Docs: Tracing documentation [7813](https://github.com/helidon-io/helidon/pull/7813)
+- Docs: Update dbclient docs [7874](https://github.com/helidon-io/helidon/pull/7874)
+- Docs: Update Helidon Webclient Guide documentation [7847](https://github.com/helidon-io/helidon/pull/7847)
+- Docs: Update to WebServer documentation for Helidon 4 [7817](https://github.com/helidon-io/helidon/pull/7817)
+- Docs: Update to gRPC documentation for Helidon 4 [7809](https://github.com/helidon-io/helidon/pull/7809)
+- Docs: Update webclient documentation [7812](https://github.com/helidon-io/helidon/pull/7812)
+- Docs: Updated OpenAPI and OpenAPI UI doc for 4.0 [7823](https://github.com/helidon-io/helidon/pull/7823)
+- Docs: Updates for MP upgrade guide [7863](https://github.com/helidon-io/helidon/pull/7863)
+- Docs: fix github links, microprofile version, SE upgrade guide [7871](https://github.com/helidon-io/helidon/pull/7871)
+- Docs: json metadata fix [7858](https://github.com/helidon-io/helidon/pull/7858)
+- Docs: webclient doc part2 4.x [7845](https://github.com/helidon-io/helidon/pull/7845)
+- Examples: Archetype fix application yaml test and some unused import [7860](https://github.com/helidon-io/helidon/pull/7860)
+- Examples: Fix Archetype native-image.properties path [7846](https://github.com/helidon-io/helidon/pull/7846)
+- Examples: Fix MP quickstart native image build [7826](https://github.com/helidon-io/helidon/pull/7826)
+- Examples: Fix java.lang.ClassNotFoundException: io.helidon.logging.jul.HelidonConsoleHandler[7866](https://github.com/helidon-io/helidon/pull/7866)
+- Examples: Update archetypes and dbclient examples [7873](https://github.com/helidon-io/helidon/pull/7873)
+- Tests: Removes two disabled tests in tests/integration/security/path-params per direction [7832](https://github.com/helidon-io/helidon/pull/7832)
+
 ## [4.0.0-RC2]
 
 This is the second RC build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental.
@@ -796,6 +845,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.0-RC2]: https://github.com/oracle/helidon/compare/4.0.0-RC2...4.0.0
 [4.0.0-RC2]: https://github.com/oracle/helidon/compare/4.0.0-RC1...4.0.0-RC2
 [4.0.0-RC1]: https://github.com/oracle/helidon/compare/4.0.0-M2...4.0.0-RC1
 [4.0.0-M2]: https://github.com/oracle/helidon/compare/4.0.0-M1...4.0.0-M2
