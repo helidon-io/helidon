@@ -95,23 +95,24 @@ ServerConfiguration.builder()
 
 === Creating Custom Spans
 
-To create a custom span that is a child of the WebServer request:
+To create a custom span from tracer:
 
 [source,java]
 ----
-Span span = request.tracer()
-        .spanBuilder("my-operation")
-        .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent))
-                         .start();
-         try {
-            // Do some work and send a normal response.
-            span.end();
-        } catch (Throwable t) {
-            // Send an error response.
-            span.end(t);
-        }
+Span span = tracer.spanBuilder("name")  <1>
+        .tag("key", "value")
+        .start();
 
+try (...){                              <2>
+    //do some work
+    span.end();
+} catch (Exception e) {                 <3>
+    span.end(e);
+}
 ----
+<1> Create span from tracer.
+<2> Do some work and end span.
+<3> End span with exception.
 
 == Helidon Spans
 
@@ -287,7 +288,7 @@ WebClient client = WebClient.builder()
     .addService(WebClientTracing.create())
     .build();
 
-Single<String> response = client.get()
+String response = client.get()
     .uri(uri)
     .request(String.class);
 ----
