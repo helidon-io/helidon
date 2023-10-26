@@ -17,6 +17,7 @@ This is a bugfix release of Helidon. It is recommended for all users of Helidon 
 
 - Security: TargetKeys Map changed to ConcurrentHashMap [7601](https://github.com/helidon-io/helidon/pull/7601)
 - JPA: Adds zero-argument non-private constructors to NonTransactionalEntityManager and ExtendedEntityManager [7559](https://github.com/helidon-io/helidon/pull/7559)
+- WebServer: Fix #7783: max-payload-size is parsed as an Integer [7897](https://github.com/helidon-io/helidon/pull/7897)
 - Build: Prepare release workflow for 2.x release [7880](https://github.com/helidon-io/helidon/pull/7880)
 - Build: remove Jenkinsfile [7840](https://github.com/helidon-io/helidon/pull/7840)
 - Build: Upgrade dependency-check-maven plugin and add suppression [7574](https://github.com/helidon-io/helidon/pull/7574)
@@ -25,6 +26,7 @@ This is a bugfix release of Helidon. It is recommended for all users of Helidon 
 - Dependencies: Upgrade Netty to 4.1.100.Final [7819](https://github.com/helidon-io/helidon/pull/7819)
 - Dependencies: Upgrade jboss logging to 3.5.3.Final [7597](https://github.com/helidon-io/helidon/pull/7597)
 - Dependencies: Upgrade jgit to 6.7.0 [7593](https://github.com/helidon-io/helidon/pull/7593)
+- Dependencies: Upgrade log4j to 2.21.1 [7899](https://github.com/helidon-io/helidon/pull/7899)
 - Tests: Replace try/catch in tests on assertThrows [7376](https://github.com/helidon-io/helidon/pull/7376)
 
 ## [2.6.3]
