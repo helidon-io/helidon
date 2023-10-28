@@ -21,7 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 == Introduction
 
 While most of Helidon's examples use Maven, you can also use Helidon
-with a Gradle project. We recommend Gradle 8.4+.
+with a Gradle project. Gradle 8.4+ is required to build Helidon 4 projects.
 
 == Gradle Example
 
