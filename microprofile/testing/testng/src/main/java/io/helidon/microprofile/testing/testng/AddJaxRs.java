@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.microprofile.testing.testng;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * JUnit5 extension module to run CDI tests.
+ * Add JaxRS support for Request-scoped beans.
  */
-module io.helidon.microprofile.testing.junit5 {
-
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml.mp;
-    requires io.helidon.microprofile.cdi;
-    requires jakarta.inject;
-    requires jersey.cdi1x;
-    requires jersey.weld2.se;
-    requires org.junit.jupiter.api;
-
-    requires transitive jakarta.cdi;
-    requires transitive jakarta.ws.rs;
-
-    exports io.helidon.microprofile.testing.junit5;
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface AddJaxRs {
 }

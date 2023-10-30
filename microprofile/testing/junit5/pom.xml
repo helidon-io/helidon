@@ -45,6 +45,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jersey.ext.cdi</groupId>
+            <artifactId>jersey-weld2-se</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-client</artifactId>
         </dependency>
@@ -57,6 +62,7 @@
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
 </project>

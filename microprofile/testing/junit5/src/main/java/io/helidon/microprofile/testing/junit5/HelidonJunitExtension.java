@@ -47,6 +47,7 @@ import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
+import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.client.Client;
@@ -80,7 +81,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                        InvocationInterceptor,
                                        ParameterResolver {
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
-            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class);
+            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
 
     private static final List<String> YAML_SUFFIXES = List.of(".yml", ".yaml");
@@ -136,6 +137,13 @@ class HelidonJunitExtension implements BeforeAllCallback,
             return;
         }
         validatePerClass();
+
+        // add beans when using JaxRS
+        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+        if (addJaxRsAnnotation != null){
+            classLevelExtensions.add(AddExtensionJaxRsLiteral.INSTANCE);
+            classLevelBeans.add(AddBeanJaxRsLiteral.INSTANCE);
+        }
 
         configure(classLevelConfigMeta);
 
@@ -232,6 +240,13 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                                        + "test methods on the class. Method " + method
                                                        + " has an annotation that modifies container behavior.");
                 }
+            }
+        }
+
+        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+        if (addJaxRsAnnotation != null){
+            if (testClass.getAnnotation(DisableDiscovery.class) == null){
+                throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
             }
         }
     }
@@ -621,4 +636,42 @@ class HelidonJunitExtension implements BeforeAllCallback,
             return methodMeta;
         }
     }
+
+
+    /**
+     * Add JaxRs Bean when {@code AddJaxRs} annotation is used.
+     */
+    private static final class AddBeanJaxRsLiteral extends AnnotationLiteral<AddBean> implements AddBean {
+
+        static final AddBeanJaxRsLiteral INSTANCE = new AddBeanJaxRsLiteral();
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<?> value() {
+            return org.glassfish.jersey.weld.se.WeldRequestScope.class;
+        }
+
+        @Override
+        public Class<? extends Annotation> scope() {
+            return RequestScoped.class;
+        }
+    }
+
+
+    /**
+     * Add JaxRs Extension when {@code AddJaxRs} annotation is used.
+     */
+    private static final class AddExtensionJaxRsLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
+
+        static final AddExtensionJaxRsLiteral INSTANCE = new AddExtensionJaxRsLiteral();
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<? extends Extension> value() {
+            return org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class;
+        }
+    }
+
 }

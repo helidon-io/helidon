@@ -49,6 +49,7 @@ import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.InjectionTarget;
 import jakarta.enterprise.inject.spi.InjectionTargetFactory;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
+import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.client.Client;
@@ -174,6 +175,14 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                 methodLevelDisableDiscovery = discovery.value();
             }
 
+
+            // add beans when using JaxRS
+            AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+            if (addJaxRsAnnotation != null){
+                classLevelExtensions.add(AddExtensionJaxRsLiteral.INSTANCE);
+                classLevelBeans.add(AddBeanJaxRsLiteral.INSTANCE);
+            }
+
             startContainer(methodLevelBeans, methodLevelExtensions, methodLevelDisableDiscovery);
         }
     }
@@ -244,6 +253,14 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                             + "test methods on the class. Do not use @Inject annotation"
                             + "over constructor. Use it on each field.");
                 }
+            }
+        }
+
+
+        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+        if (addJaxRsAnnotation != null){
+            if (testClass.getAnnotation(DisableDiscovery.class) == null){
+                throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
             }
         }
     }
@@ -503,6 +520,44 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             methodMeta.profile = this.profile;
 
             return methodMeta;
+        }
+    }
+
+
+
+    /**
+     * Add JaxRs Bean when {@code AddJaxRs} annotation is used.
+     */
+    private static final class AddBeanJaxRsLiteral extends AnnotationLiteral<AddBean> implements AddBean {
+
+        static final AddBeanJaxRsLiteral INSTANCE = new AddBeanJaxRsLiteral();
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<?> value() {
+            return org.glassfish.jersey.weld.se.WeldRequestScope.class;
+        }
+
+        @Override
+        public Class<? extends Annotation> scope() {
+            return RequestScoped.class;
+        }
+    }
+
+
+    /**
+     * Add JaxRs Extension when {@code AddJaxRs} annotation is used.
+     */
+    private static final class AddExtensionJaxRsLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
+
+        static final AddExtensionJaxRsLiteral INSTANCE = new AddExtensionJaxRsLiteral();
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<? extends Extension> value() {
+            return org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class;
         }
     }
 }
