@@ -24,8 +24,8 @@ version = '1.0-SNAPSHOT'
 
 description = """helidon-quickstart-se"""
 
-sourceCompatibility = 20
-targetCompatibility = 20
+sourceCompatibility = 21
+targetCompatibility = 21
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
@@ -49,7 +49,8 @@ dependencies {
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
     implementation 'io.helidon.webserver:helidon-webserver'
     implementation 'io.helidon.http.media:helidon-http-media-jsonp'
-    implementation 'io.helidon.webserver.observe:helidon-observe-health'
+    implementation 'io.helidon.webserver.observe:helidon-webserver-observe-health'
+    implementation 'io.helidon.webserver.observe:helidon-webserver-observe-metrics'
     implementation 'io.helidon.config:helidon-config-yaml'
     implementation 'io.helidon.health:helidon-health-checks'
 
