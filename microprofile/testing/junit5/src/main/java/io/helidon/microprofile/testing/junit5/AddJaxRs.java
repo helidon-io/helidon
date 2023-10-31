@@ -24,6 +24,6 @@ import java.lang.annotation.Target;
  * Add JaxRS support for Request-scoped beans.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE})
 public @interface AddJaxRs {
 }

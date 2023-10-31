@@ -125,6 +125,13 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
         validatePerClass();
 
+        // add beans when using JaxRS
+        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+        if (addJaxRsAnnotation != null){
+            classLevelExtensions.add(AddExtensionJaxRsLiteral.INSTANCE);
+            classLevelBeans.add(AddBeanJaxRsLiteral.INSTANCE);
+        }
+
         configure(classLevelConfigMeta);
 
         if (!classLevelConfigMeta.useExisting) {
@@ -173,14 +180,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             DisableDiscovery discovery = method.getAnnotation(DisableDiscovery.class);
             if (discovery != null) {
                 methodLevelDisableDiscovery = discovery.value();
-            }
-
-
-            // add beans when using JaxRS
-            AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
-            if (addJaxRsAnnotation != null){
-                classLevelExtensions.add(AddExtensionJaxRsLiteral.INSTANCE);
-                classLevelBeans.add(AddBeanJaxRsLiteral.INSTANCE);
             }
 
             startContainer(methodLevelBeans, methodLevelExtensions, methodLevelDisableDiscovery);
