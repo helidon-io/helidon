@@ -256,6 +256,7 @@
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
                         <source>${version.java}</source>
+                        <sourcepath>src/main/java;target/generated-sources</sourcepath>
                         <failOnError>true</failOnError>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
