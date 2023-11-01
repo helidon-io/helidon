@@ -36,10 +36,36 @@ import org.hibernate.service.spi.ServiceContributor;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
 
 /**
- * A {@link DialectFactory} implementation (and a {@link ServiceContributor}, and a {@link StandardServiceInitiator})
- * that introspects {@link DatabaseMetaData} from a configured {@link DataSource}.
+ * A {@link DialectFactory} implementation (and a {@link ServiceContributor}, and a {@link StandardServiceInitiator
+ * StandardServiceInitiator&lt;DialectFactory&gt;}) that introspects {@link DatabaseMetaData} from a configured {@link
+ * DataSource}.
+ *
+ * <p>Hibernate is <a
+ * href="https://docs.jboss.org/hibernate/orm/current/integrationguide/html_single/Hibernate_Integration_Guide.html#services-overriding"
+ * target="_top">guaranteed</a> to perform each of the following invocations, once, ever, in order:</p>
+ *
+ * <ol>
+ *
+ * <li>(The {@linkplain #DataSourceBackedDialectFactory() zero-argument constructor})</li>
+ *
+ * <li>The {@link #contribute(StandardServiceRegistryBuilder)} method</li>
+ *
+ * <li>The {@link #initiateService(Map, ServiceRegistryImplementor)} method (if applicable)</li>
+ *
+ * </ol>
+ *
+ * <p>Then, at application runtime, after the sole instance of this class has been installed following the protocol
+ * above, Hibernate will call the {@link #buildDialect(Map, DialectResolutionInfoSource)} method as appropriate.</p>
+ *
+ * @see #contribute(StandardServiceRegistryBuilder)
+ *
+ * @see #initiateService(Map, ServiceRegistryImplementor)
  *
  * @see #buildDialect(Map, DialectResolutionInfoSource)
+ *
+ * @see <a
+ * href="https://docs.jboss.org/hibernate/orm/current/integrationguide/html_single/Hibernate_Integration_Guide.html#services-overriding"
+ * target="_top">Custom {@code Service} Implementations (overriding) in the Hibernate Integration Guide</a>
  */
 public final class DataSourceBackedDialectFactory
     implements DialectFactory, ServiceContributor, StandardServiceInitiator<DialectFactory> {
@@ -62,11 +88,15 @@ public final class DataSourceBackedDialectFactory
 
 
     /**
-     * An instance of Hibernate's standard {@link DialectFactory} implementation to which real work is delegated.
+     * An instance of Hibernate's standard {@link DialectFactory} implementation ({@link DialectFactoryImpl}) to which
+     * all "real work" is delegated.
      *
-     * <p>This field is set once by the {@link #initiateService(Map, ServiceRegistryImplementor)} method.</p>
+     * <p>This field is set once, ever, to a non-{@code null} value, by the {@link #initiateService(Map,
+     * ServiceRegistryImplementor)} method, which Hibernate calls as part of its bootstrap protocol.</p>
      *
      * @see #initiateService(Map, ServiceRegistryImplementor)
+     *
+     * @see StandardServiceInitiator#initiateService(Map, ServiceRegistryImplementor)
      *
      * @see DialectFactoryImpl#buildDialect(Map, DialectResolutionInfoSource)
      */
@@ -140,12 +170,30 @@ public final class DataSourceBackedDialectFactory
                 dialectResolutionInfoSource = () -> dri;
             }
         }
+        // No null check needed for this.dfi because it is guaranteed to have been set by the initiateService(Map,
+        // ServiceRegistryImplementor) method (q.v.).
         return this.dfi.buildDialect(settings, dialectResolutionInfoSource);
     }
 
     /**
      * {@linkplain StandardServiceRegistryBuilder#addInitiator(StandardServiceInitiator) Contributes} this {@link
-     * DataSourceBackedDialectFactory} as a {@link StandardServiceInitiator StandardServiceInitiator&lt;DialectFactory&gt;}.
+     * DataSourceBackedDialectFactory} as a {@link StandardServiceInitiator
+     * StandardServiceInitiator&lt;DialectFactory&gt;} if and only if certain requirements are met.
+     *
+     * <p>This method will call {@link StandardServiceRegistryBuilder#addInitiator(StandardServiceInitiator)
+     * standardServiceRegistryBuilder.addInitiator(this)} if and only if all of the following preconditions hold:</p>
+     *
+     * <ul>
+     *
+     * <li>{@code settings.get(}{@link JdbcSettings#DIALECT DIALECT}{@code )} returns an object that is either {@code
+     * null} or a {@linkplain String#isBlank() blank} {@link String}</li>
+     *
+     * <li>{@code settings.get(}{@link JdbcSettings#JAKARTA_JTA_DATASOURCE JAKARTA_JTA_DATASOURCE}{@code )} returns a
+     * non-{@code null} {@link DataSource}</li>
+     *
+     * </ul>
+     *
+     * <p>If any other state of affairs holds, this method takes no action.</p>
      *
      * @param standardServiceRegistryBuilder a {@link StandardServiceRegistryBuilder} whose {@link
      * StandardServiceRegistryBuilder#addInitiator(StandardServiceInitiator)} may be called with {@code this} as its
@@ -165,9 +213,12 @@ public final class DataSourceBackedDialectFactory
     }
 
     /**
-     * Returns {@link Class Class&lt;DialectFactory&gt;} when invoked.
+     * Returns {@link Class Class&lt;DialectFactory&gt;} when invoked, thus describing the type of service the {@link
+     * #initiateService(Map, ServiceRegistryImplementor)} will initiate.
      *
      * @return {@link Class Class&lt;DialectFactory&gt;} when invoked
+     *
+     * @see StandardServiceInitiator#getServiceInitiated()
      *
      * @deprecated For Hibernate use only.
      */
@@ -192,6 +243,13 @@ public final class DataSourceBackedDialectFactory
     @Override // StandardServiceInitiator<DialectFactory>
     public DataSourceBackedDialectFactory initiateService(Map<String, Object> settings,
                                                           ServiceRegistryImplementor serviceRegistry) {
+        // This method is kind of like a @PostConstruct method. The initiateService(Map, ServiceRegistryImplementor)
+        // method is called only once, ever, by Hibernate, in a guaranteed bootstrap protocol. Consequently this is the
+        // only place where the dfi instance field will ever be set. No null check for this.dfi is therefore needed in
+        // the buildDialect(Map, DialectResolutionInfoSource) method.
+        //
+        // Additionally, ServiceInitiators are not required to be thread-safe, so the dfi instance variable is not, and
+        // need not be, volatile.
         this.dfi = new DialectFactoryImpl();
         this.dfi.injectServices(serviceRegistry);
         return this;
