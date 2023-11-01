@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.cdi.hibernate;
 
+import java.lang.System.Logger;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -34,6 +35,8 @@ import org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo;
 import org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfoSource;
 import org.hibernate.service.spi.ServiceContributor;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
+
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * A {@link DialectFactory} implementation (and a {@link ServiceContributor}, and a {@link StandardServiceInitiator
@@ -74,6 +77,14 @@ public final class DataSourceBackedDialectFactory
     /*
      * Static fields.
      */
+
+
+    /**
+     * A {@link Logger} for instances of this class.
+     *
+     * @see Logger
+     */
+    private static final Logger LOGGER = System.getLogger(DataSourceBackedDialectFactory.class.getName());
 
 
     /**
@@ -159,7 +170,11 @@ public final class DataSourceBackedDialectFactory
     public Dialect buildDialect(Map<String, Object> settings, DialectResolutionInfoSource dialectResolutionInfoSource) {
         if (dialectResolutionInfoSource == null) {
             DataSource ds = getDataSource(settings);
-            if (ds != null) {
+            if (ds == null) {
+                if (LOGGER.isLoggable(WARNING)) {
+                    LOGGER.log(WARNING, "No DataSource found under key " + JdbcSettings.JAKARTA_JTA_DATASOURCE);
+                }
+            } else {
                 DatabaseMetaData dmd;
                 try (Connection c = ds.getConnection()) {
                     dmd = c.getMetaData();
