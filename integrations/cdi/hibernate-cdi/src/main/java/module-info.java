@@ -46,6 +46,9 @@ module io.helidon.integrations.cdi.hibernate {
 
     exports io.helidon.integrations.cdi.hibernate;
 
+    provides org.hibernate.service.spi.ServiceContributor
+            with io.helidon.integrations.cdi.hibernate.DataSourceBackedDialectFactory;
+    
     provides org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider
             with io.helidon.integrations.cdi.hibernate.CDISEJtaPlatformProvider;
 

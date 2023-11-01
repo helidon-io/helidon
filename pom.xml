@@ -162,6 +162,7 @@
         <javadoc.link.weld>https://javadoc.io/doc/org.jboss.weld/weld-spi/${version.lib.weld-api}</javadoc.link.weld>
         <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
+        <javadoc.link.hibernate>https://docs.jboss.org/hibernate/orm/${version.lib.hibernate.family}/javadocs/</javadoc.link.hibernate>
 
         <javadoc.jackson.version>2.14</javadoc.jackson.version>
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
@@ -390,6 +391,10 @@
                             <offlineLink>
                                 <url>${javadoc.link.eclipselink}</url>
                                 <location>${javadoc.packagelist.dir}/eclipselink</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.hibernate}</url>
+                                <location>${javadoc.packagelist.dir}/hibernate</location>
                             </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
