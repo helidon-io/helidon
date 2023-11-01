@@ -88,7 +88,7 @@ public final class CDISEJtaPlatformProvider implements JtaPlatformProvider {
             cdi = CDI.current();
         } catch (IllegalStateException e) {
             if (LOGGER.isLoggable(WARNING)) {
-                LOGGER.log(WARNING, "CDI is not available.");
+                LOGGER.log(WARNING, "CDI is not available.", e);
             }
             return null;
         }
