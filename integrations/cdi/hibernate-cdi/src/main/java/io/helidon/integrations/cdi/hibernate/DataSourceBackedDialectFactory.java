@@ -170,11 +170,7 @@ public final class DataSourceBackedDialectFactory
     public Dialect buildDialect(Map<String, Object> settings, DialectResolutionInfoSource dialectResolutionInfoSource) {
         if (dialectResolutionInfoSource == null) {
             DataSource ds = getDataSource(settings);
-            if (ds == null) {
-                if (LOGGER.isLoggable(WARNING)) {
-                    LOGGER.log(WARNING, "No DataSource found under key " + JdbcSettings.JAKARTA_JTA_DATASOURCE);
-                }
-            } else {
+            if (ds != null) {
                 DatabaseMetaData dmd;
                 try (Connection c = ds.getConnection()) {
                     dmd = c.getMetaData();
@@ -288,7 +284,14 @@ public final class DataSourceBackedDialectFactory
      * @exception NullPointerException if {@code settings} is {@code null}
      */
     private static DataSource getDataSource(Map<?, ?> settings) {
-        return settings.get(JdbcSettings.JAKARTA_JTA_DATASOURCE) instanceof DataSource ds ? ds : null;
+        Object ds = settings.get(JdbcSettings.JAKARTA_JTA_DATASOURCE);
+        if (!(ds instanceof DataSource)) {
+            if (LOGGER.isLoggable(WARNING)) {
+                LOGGER.log(WARNING, "No DataSource found under key " + JdbcSettings.JAKARTA_JTA_DATASOURCE);
+            }
+            return null;
+        }
+        return (DataSource) ds;
     }
 
 }

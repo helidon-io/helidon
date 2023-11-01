@@ -15,9 +15,13 @@
  */
 package io.helidon.integrations.cdi.hibernate;
 
+import java.lang.System.Logger;
+
 import jakarta.enterprise.inject.spi.CDI;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider;
+
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * A {@link JtaPlatformProvider} that uses a {@link CDI} instance to {@linkplain CDI#select(Class,
@@ -32,6 +36,23 @@ import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider;
  */
 public final class CDISEJtaPlatformProvider implements JtaPlatformProvider {
 
+
+    /*
+     * Static fields.
+     */
+
+
+    /**
+     * A {@link Logger} for instances of this class.
+     */
+    private static final Logger LOGGER = System.getLogger(CDISEJtaPlatformProvider.class.getName());
+
+
+    /*
+     * Constructors.
+     */
+
+
     /**
      * Creates a new {@link CDISEJtaPlatformProvider}.
      *
@@ -41,6 +62,12 @@ public final class CDISEJtaPlatformProvider implements JtaPlatformProvider {
     public CDISEJtaPlatformProvider() {
         super();
     }
+
+
+    /*
+     * Instance methods.
+     */
+
 
     /**
      * Returns a {@link JtaPlatform}.
@@ -60,6 +87,9 @@ public final class CDISEJtaPlatformProvider implements JtaPlatformProvider {
         try {
             cdi = CDI.current();
         } catch (IllegalStateException e) {
+            if (LOGGER.isLoggable(WARNING)) {
+                LOGGER.log(WARNING, "CDI is not available.");
+            }
             return null;
         }
         return cdi.select(JtaPlatform.class).get();
