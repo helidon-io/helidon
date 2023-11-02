@@ -26,6 +26,7 @@
 @SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
 module io.helidon.integrations.cdi.hibernate {
 
+    requires static java.naming; // or tests (representing usage) cannot run
     requires transitive jakarta.cdi;
     requires transitive jakarta.inject;
     requires jakarta.persistence;
@@ -33,6 +34,9 @@ module io.helidon.integrations.cdi.hibernate {
     requires transitive org.hibernate.orm.core;
 
     exports io.helidon.integrations.cdi.hibernate;
+
+    provides org.hibernate.service.spi.ServiceContributor
+            with io.helidon.integrations.cdi.hibernate.DataSourceBackedDialectFactory;
 
     provides org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider
             with io.helidon.integrations.cdi.hibernate.CDISEJtaPlatformProvider;
