@@ -29,4 +29,20 @@
         -->
         <Bug pattern="NP_NONNULL_RETURN_VIOLATION"/>
     </Match>
+    <Match>
+        <Class name="io.helidon.integrations.cdi.hibernate.DataSourceBackedDialectFactory"/>
+        <!--
+            In the following construct:
+
+                try (Connection c = ds.getConnection()) {
+                    dmd = c.getMetaData();
+                } catch (SQLException e) {
+                    throw BasicSQLExceptionConverter.INSTANCE.convert(e);
+                }
+
+            Spotbugs reports an unnecessary null check on the line containing "catch (SQLException e)". My guess is it
+            is confused by the bytecodes emitted by the try-with-resources source construct. In any event, it is wrong.
+        -->
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+    </Match>
 </FindBugsFilter>
