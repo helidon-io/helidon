@@ -84,7 +84,7 @@
         <version.lib.jakarta.persistence-api>3.0.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
-        <version.lib.jakarta.websockets-api>2.0.0</version.lib.jakarta.websockets-api>
+        <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>2.4.3.Final</version.lib.jandex>
@@ -151,7 +151,7 @@
         <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
-        <version.lib.tyrus>2.0.4</version.lib.tyrus>
+        <version.lib.tyrus>2.1.4</version.lib.tyrus>
         <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
         <version.lib.weld>4.0.3.Final</version.lib.weld>
         <version.lib.yasson>2.0.4</version.lib.yasson>
