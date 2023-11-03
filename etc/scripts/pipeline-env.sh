@@ -44,12 +44,16 @@ require_env() {
         return 1
     fi
 }
+
+
+MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
+MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
+MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS}"
+
 if [ -n "${JENKINS_HOME}" ] ; then
-    export JAVA_HOME="/tools/jdk11"
-    MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-    MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
-    MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
-    export MAVEN_OPTS
+    export PIPELINE="true"
+    export JAVA_HOME="/tools/jdk11.0.12"
     export PATH="/tools/apache-maven-3.6.3/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
     if [ -n "${GITHUB_SSH_KEY}" ] ; then
         export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY}"
@@ -61,8 +65,6 @@ if [ -n "${JENKINS_HOME}" ] ; then
     if [ -n "${NPM_CONFIG_REGISTRY}" ] ; then
         MAVEN_ARGS="${MAVEN_ARGS} -Dnpm.download.root=${NPM_CONFIG_REGISTRY}/npm/-/"
     fi
-    export MAVEN_ARGS
-
     if [ -n "${https_proxy}" ] && [[ ! "${https_proxy}" =~ ^http:// ]] ; then
         export https_proxy="http://${https_proxy}"
     fi
@@ -97,3 +99,31 @@ if [ -n "${JENKINS_HOME}" ] ; then
         /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
     fi
 fi
+
+if [ -n "${RELEASE_WORKFLOW}" ] ; then
+    if [ -n "${MAVEN_SETTINGS}" ] ; then
+        export MAVEN_SETTINGS_FILE="${HOME}/.m2/settings.xml"
+        echo "${MAVEN_SETTINGS}" > "${MAVEN_SETTINGS_FILE}"
+        MAVEN_ARGS="${MAVEN_ARGS} -s ${MAVEN_SETTINGS_FILE}"
+    fi
+    if [ -n "${GPG_PUBLIC_KEY}" ] ; then
+        tmpfile=$(mktemp /tmp/pub.XXXXXX.key)
+        echo "${GPG_PUBLIC_KEY}" > "${tmpfile}"
+        gpg --import --no-tty --batch "${tmpfile}"
+        rm "$tmpfile"
+    fi
+    if [ -n "${GPG_PRIVATE_KEY}" ] ; then
+        tmpfile=$(mktemp /tmp/pri.XXXXXX.key)
+        echo "${GPG_PRIVATE_KEY}" > "${tmpfile}"
+        gpg --allow-secret-key-import --import --no-tty --batch "${tmpfile}"
+        rm "$tmpfile"
+    fi
+    if [ -n "${GPG_PASSPHRASE}" ] ; then
+        echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+        gpg-connect-agent reloadagent /bye
+        GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
+        /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
+    fi
+fi
+export MAVEN_ARGS
+export MAVEN_OPTS
