@@ -10,14 +10,9 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
-import io.helidon.webserver.http.HttpRouting;
 import io.helidon.security.CompositeProviderFlag;
 import io.helidon.security.CompositeProviderSelectionPolicy;
 import io.helidon.security.Security;
-import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -25,11 +20,15 @@ import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.security.providers.httpsign.HttpSignProvider;
 import io.helidon.security.providers.httpsign.InboundClientDefinition;
 import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.security.SecurityFeature;
+import io.helidon.webserver.security.SecurityHttpFeature;
 
 /**
  * Example of authentication of service with http signatures, using configuration file as much as possible.
  */
-@SuppressWarnings("DuplicatedCode")
 public class SignatureMain {
 
     private static final Map<String, SecureUserStore.User> USERS = new HashMap<>();
@@ -110,20 +109,18 @@ public class SignatureMain {
     }
 
     private static void routing2(HttpRouting.Builder routing) {
-        SecurityFeature security = SecurityFeature.create(security2())
+        SecurityHttpFeature security = SecurityHttpFeature.create(security2())
                 .securityDefaults(SecurityFeature.authenticate());
 
-        routing.addFeature(ContextFeature.create())
-                .addFeature(security)
+        routing.addFeature(security)
                 .get("/service2*", SecurityFeature.rolesAllowed("user"))
                 .register(new Service2());
     }
 
     private static void routing1(HttpRouting.Builder routing) {
-        SecurityFeature security = SecurityFeature.create(security1())
+        SecurityHttpFeature security = SecurityHttpFeature.create(security1())
                 .securityDefaults(SecurityFeature.authenticate());
-        routing.addFeature(ContextFeature.create())
-                .addFeature(security)
+        routing.addFeature(security)
                 .get("/service1*", SecurityFeature.rolesAllowed("user"))
                 .register(new Service1());
     }

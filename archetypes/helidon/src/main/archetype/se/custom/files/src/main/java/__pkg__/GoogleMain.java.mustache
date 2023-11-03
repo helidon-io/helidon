@@ -5,15 +5,15 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
-import io.helidon.webserver.staticcontent.StaticContentService;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.security.providers.google.login.GoogleTokenProvider;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.security.SecurityFeature;
+import io.helidon.webserver.staticcontent.StaticContentService;
 
 /**
  * Google login button example main class using builders.
@@ -55,11 +55,14 @@ public final class GoogleMain {
                 .addProvider(GoogleTokenProvider.builder()
                         .clientId("your-client-id.apps.googleusercontent.com"))
                 .build();
-        server.routing(routing -> routing
+        server.featuresDiscoverServices(false)
                 .addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(security))
+                .addFeature(SecurityFeature.builder()
+                                    .security(security)
+                                    .build())
+                .routing(routing -> routing
                 .get("/rest/profile", SecurityFeature.authenticate(),
-                        (req, res) -> {
+                     (req, res) -> {
                             Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                             res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
                             res.send("Response from builder based service, you are: \n" + securityContext

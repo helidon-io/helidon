@@ -31,6 +31,7 @@
     <exec src="/common/packaging.xml"/>
     <source src="observability.xml"/>
     <exec src="database-outputs.xml" if="${db}"/>
+    <source src="security-outputs.xml" if="${security}"/>
     <output>
         <model>
             <value key="helidon-test">true</value>

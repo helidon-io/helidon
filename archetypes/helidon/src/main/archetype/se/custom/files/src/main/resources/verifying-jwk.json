@@ -2,7 +2,7 @@
     "keys": [
         {
             "kty": "oct",
-            "kid": "example",
+            "kid": "helidon",
             "alg": "HS256",
             "key_ops": [
                 "sign",
