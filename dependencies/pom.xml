@@ -80,7 +80,7 @@
         <version.lib.jakarta.persistence-api>3.1.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
-        <version.lib.jakarta.websockets-api>2.1.0</version.lib.jakarta.websockets-api>
+        <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.0</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.1.2</version.lib.jandex>
