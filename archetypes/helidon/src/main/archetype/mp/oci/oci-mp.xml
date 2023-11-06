@@ -51,6 +51,12 @@ This will mount `~/.oci` as a volume in the running docker container.
     <exec src="/common/common.xml"/>
     <exec src="/common/packaging.xml"/>
     <output>
+        <templates engine="mustache" transformations="mustache,module-dir">
+            <directory>../custom/files</directory>
+            <includes>
+                <include>src/*/resources/**/application.yaml.mustache</include>
+            </includes>
+        </templates>
         <templates engine="mustache" transformations="mustache,packaged">
             <directory>files</directory>
             <includes>
