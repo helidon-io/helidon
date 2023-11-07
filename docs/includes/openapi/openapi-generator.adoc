@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -51,13 +51,13 @@ Each of these generators supports two _libraries_:
 * `mp` - for Helidon MP code generation
 * `se` - for Helidon SE code generation
 
-//Use the Helidon _client_ generator and its `{flavor-lc}` library to create a
-//ifdef::mp-flavor[]
-//xref:{helidon-client-xref}[Helidon MicroProfile REST client].
-//endif::mp-flavor[]
-//ifdef::se-flavor[]
-//Helidon SE client based on xref:{helidon-client-xref}[Helidon WebClients].
-//endif::se-flavor[]
+Use the Helidon _client_ generator and its `{flavor-lc}` library to create a
+ifdef::mp-flavor[]
+xref:{helidon-client-xref}[Helidon MicroProfile REST client].
+endif::mp-flavor[]
+ifdef::se-flavor[]
+Helidon SE client based on xref:{helidon-client-xref}[Helidon WebClients].
+endif::se-flavor[]
 The resulting client library works with any server that implements the API declared in the OpenAPI document you specified when you ran the generator.
 The client library provides an abstraction similar to remote procedure calls (RPC).
 To access a remote service that implements the endpoints declared in the OpenAPI document, your code uses the generated client library first to establish a connection to the remote service and then to call remote service endpoints by invoking local methods passing POJO business objects or Java types as arguments.
@@ -121,11 +121,11 @@ For complete lists see these pages:
 * link:{openapi-generator-tool-generators-docs-url}/java-helidon-client.md[Helidon client generator options] and
 * link:{openapi-generator-tool-generators-docs-url}/java-helidon-server.md[Helidon server generator options]
 
-The OpenAPI generator divides its settings into two types:
+The OpenAPI generator loosely divides its settings into three types:
 
-* _options_
+* _global properties_
 +
-These high-level settings generally govern the overall behavior of the tool.
+These settings generally govern the overall behavior of the tool, regardless of which specific generator you use.
 +
 For the CLI, use the common option style:
 +
@@ -141,9 +141,38 @@ For the Maven plug-in, use elements within the `<configuration>` section of the 
     <inputSpec>petstore.yaml</inputSpec>
 </configuration>
 ----
+* _options_
++
+These settings typically affect how particular generators operate.
++
+For the CLI, specify config options as additional properties:
++
+`--additional-properties=groupId=com.mycompany.test,artifactId=my-example`
++
+or
++
+[source,bash]
+----
+-p groupId=com.mycompany.test
+-p artifactId=my-example
+----
++
+For the Maven plug-in, use the `<configOptions>` section within `<configuration>`:
++
+[source,xml]
+----
+<configuration>
+    ...
+    <configOptions>
+        <groupId>com.mycompany.test</groupId>
+        <artifactId>my-example</artifactId>
+    </configOptions>
+    ...
+</configuration>
+----
 * _additional properties_
 +
-These settings typically affect how a specific generator or library generates the code.
+Settings in this category typically are passed to the templates used in generating the files, although generators can use additional properties in deciding how to generate the files.
 +
 For the CLI:
 +
@@ -157,20 +186,20 @@ or
 -p returnResponse=true
 ----
 +
-For the Maven plug-in, use elements within the `<configuration><configOptions>` section:
+For the Maven plug-in, use an `<additionalProperties>` section within the `<configuration>` section for the plug-in:
 +
 [source,xml]
 ----
 <configuration>
     ....
-    <configOptions>
-        <useAbstractClasses>false</useAbstractClasses>
-        <returnResponse>true</returnResponse>
-    </configOptions>
+    <additionalProperties>
+        <additionalProperty>useAbstractClasses=false</additionalProperty>
+        <additionalProperty>returnResponse=true</additionalProperty>
+    </additionalProperties>
 </configuration>
 ----
 
-Keep this distinction between options and additional properties in mind so you know how to express the configuration you want.
+Keep this distinction among global options, config options, and additional properties in mind so you know how to express the configuration you want.
 The <<links-to-settings,earlier links>> to the lists of configuration options for the Helidon generators groups options and additional properties in separate tables.
 
 The next few sections describe, in turn, required settings, settings we recommend, and other common settings most developers will want to use.
@@ -472,6 +501,9 @@ The plug-in execution in the following example is equivalent to the CLI example 
                     <modelPackage>io.helidon.examples.openapigen.{flavor-lc}.{example-project-type}.model</modelPackage>
                     <invokerPackage>io.helidon.examples.openapigen.{flavor-lc}.{example-project-type}</invokerPackage>
                 </configOptions>
+                <additionalProperties>
+                    <additionalProperty>returnResponse=true</additionalProperty>
+                </additionalProperties>
             </configuration>
         </execution>
     </executions>
@@ -533,11 +565,8 @@ The generated client code represents a true library. Typically, you do not need 
 // end::using-generated-code-client-intro[]
 
 // tag::common-references[]
-
 == References
 * link:{openapi-generator-tool-site-url}[OpenAPI Generator Official Website]
-
 * link:{openapi-generator-tool-base-url}[OpenAPI Generator GitHub Repository]
-
 * link:{openapi-spec-url}[OpenAPI specification]
 // end::common-references[]
