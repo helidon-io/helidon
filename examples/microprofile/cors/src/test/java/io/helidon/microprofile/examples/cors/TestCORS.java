@@ -23,6 +23,7 @@ import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.media.jsonb.JsonbSupport;
 import io.helidon.microprofile.server.Server;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -46,8 +47,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@Disabled("3.0.0-JAKARTA") // OpenAPI: Caused by: java.lang.NoSuchMethodError:
-// 'java.util.List io.smallrye.jandex.ClassInfo.unsortedFields()'
 public class TestCORS {
 
     private static Http1Client client;
@@ -55,7 +54,8 @@ public class TestCORS {
 
     @BeforeAll
     static void init() {
-        Config serverConfig = Config.create().get("server");
+        Config config = Config.create();
+        Config serverConfig = config.get("server");
         Server.Builder serverBuilder = Server.builder();
         serverConfig.ifExists(serverBuilder::config);
         server = serverBuilder
@@ -64,6 +64,7 @@ public class TestCORS {
                 .start();
         client = Http1Client.builder()
                 .baseUri("http://localhost:" + server.port())
+                .addMediaSupport(JsonbSupport.create(config))
                 .build();
     }
 
@@ -184,7 +185,7 @@ public class TestCORS {
     @Test
     void testGreetingChangeWithCorsAndOtherOrigin() {
         Http1ClientRequest req = client.put()
-                .header(HeaderNames.ORIGIN, "http://foo.com")
+                .header(HeaderNames.ORIGIN, "http://other.com")
                 .header(HeaderNames.HOST, "here.com");
 
         try (Http1ClientResponse r = putResponse("/greet/greeting", "Ahoy", req)) {
@@ -213,7 +214,7 @@ public class TestCORS {
     }
 
     private static GreetingMessage toPayload(String message) {
-        return  new GreetingMessage(message);
+        return new GreetingMessage(message);
     }
 
     private static Http1ClientResponse putResponse(String path, String message) {

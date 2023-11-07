@@ -94,10 +94,10 @@ public class GreetResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RequestBody(name = "greeting",
+    @RequestBody(name = "message",
             required = true,
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(type = SchemaType.OBJECT, requiredProperties = { "greeting" })))
+                    schema = @Schema(type = SchemaType.OBJECT, requiredProperties = { "message" })))
     @APIResponses({
             @APIResponse(name = "normal", responseCode = "204", description = "Greeting updated"),
             @APIResponse(name = "missing 'greeting'", responseCode = "400",
