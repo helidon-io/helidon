@@ -36,10 +36,10 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
-Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
+Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
 which helps you identify performance and operational issues.  Helidon SE includes support for distributed tracing
-through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer
+through the https://opentracing.io[OpenTracing API] and the https://opentelemetry.io[OpenTelemety API].  Tracing is integrated with WebServer
 and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
 
 === Tracing Concepts
@@ -52,8 +52,7 @@ A span is associated to a single service, but its descendants can belong to diff
 A _trace_ contains a collection of spans from one or more services, running on one or more hosts. For example,
 if you trace a service endpoint that calls another service, then the trace would contain spans from both services.
 Within a trace, spans are organized as a directed acyclic graph (DAG) and
-can belong to multiple services, running on multiple hosts.  The _OpenTracing Data Model_ describes the details
-at https://opentracing.io/specification[The OpenTracing Semantic Specification].
+can belong to multiple services, running on multiple hosts.
 Spans are automatically created by Helidon as needed during execution of the REST request.
 
 == Getting Started with Tracing
@@ -115,7 +114,7 @@ section (*not* `<dependencyManagement>`). This will enable Helidon to use Jaeger
 default host and port, `localhost:14250`.
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
  <dependency>
      <groupId>io.helidon.tracing</groupId>
@@ -154,7 +153,7 @@ tracing:
 ----
 
 [source,java]
-.Update the `Main` class; Add Tracer to the WebServer builder
+.Update the `Main` class. Add Tracer to the WebServer builder
 ----
 import io.helidon.tracing.TracerBuilder;
 ...
@@ -216,7 +215,7 @@ curl http://localhost:8080/greet
 
 === Viewing Tracing Using Jaeger UI
 
-The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents
+The tracing output data is verbose and can be challenging to interpret using the REST API, especially since it represents
 a structure of spans. Jaeger provides a web-based UI at http://localhost:16686/search, where you can see a visual
 representation of the same data and the relationship between spans within a trace.
 
@@ -232,13 +231,13 @@ longer duration since there is one-time initialization that occurs.
 .Tracing list view
 image::guides/12_tracing_se_top.png[Traces]
 
-Click on a trace and you will see the trace detail page where the spans are listed.  You can clearly
+Click on a trace, and you will see the trace detail page where the spans are listed. You can clearly
 see the root span and the relationship among all the spans in the trace, along with timing information.
 
 .Trace detail page
 image::guides/12_tracing_se_detail.png[Trace Detail]
 
-NOTE: A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see
+NOTE: For OpenTracing, a parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see
 https://github.com/opentracing/specification/blob/master/specification.md[Open Tracing Semantic Spec].
 
 You can examine span details by clicking on the span row.  Refer to the image below, which shows the span details, including timing information.
@@ -250,10 +249,10 @@ image::guides/12_tracing_span_detail.png[Span Details]
 
 === Tracing Across Services
 
-Helidon automatically traces across services, providing that the services use the same tracer, for example, the same instance of Jaeger.
-This means a single trace can include spans from multiple services and hosts.  OpenTracing uses a `SpanContext` to
+Helidon automatically traces across services if the services use the same tracer, for example, the same instance of Jaeger.
+This means a single trace can include spans from multiple services and hosts.  Helidon uses a `Span.context()` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
+internally call OpenTracing APIs to propagate the Span Context. There is nothing you need to do in your application to make this work.
 
 To demonstrate distributed tracing, you will need to create a second project, where the server listens on port 8081.
 Create a new root directory to hold this new project, then do the following steps, similar to
@@ -280,17 +279,24 @@ cd helidon-quickstart-se-2
 ----
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
-</dependency>
+ <dependency>
+     <groupId>io.helidon.tracing</groupId>
+     <artifactId>helidon-tracing</artifactId>   <1>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.webserver.observe</groupId>
+     <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.tracing.providers</groupId>
+     <artifactId>helidon-tracing-providers-jaeger</artifactId>  <3>
+ </dependency>
 ----
+<1> Helidon Tracing dependencies.
+<2> Observability features for tracing.
+<3> Jaeger tracing provider.
 
 [source,bash]
 .Replace `resources/application.yaml` with the following:
@@ -334,7 +340,7 @@ WebServer server = WebServer.builder(createRouting(config))
 <2> Add an observability feature using the created `Tracer`.
 
 [source,java]
-.Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class. Replace the `getDefaultMessageHandler` method:
 ----
 import io.opentracing.Span;
 //...
@@ -401,26 +407,6 @@ call it.
 [source,java]
 .Replace the `GreetService` class with the following code:
 ----
-package io.helidon.examples.quickstart.se;
-
-import io.helidon.http.Http;
-import io.helidon.config.Config;
-import io.helidon.tracing.jersey.client.ClientTracingFilter;
-import io.helidon.webserver.HttpRules;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.opentracing.Span;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.WebTarget;
-
 public class GreetService implements HttpService {
 
   private final AtomicReference<String> greeting = new AtomicReference<>();
@@ -674,7 +660,7 @@ Access the Jaeger UI at http://localhost:9412/jaeger and click on the refresh ic
 
 === Cleanup
 
-You can now delete the Kubernetes resources that were just created during this example.
+You can now delete the Kubernetes resources just created during this example.
 
 [source,bash]
 .Delete the Kubernetes resources:
