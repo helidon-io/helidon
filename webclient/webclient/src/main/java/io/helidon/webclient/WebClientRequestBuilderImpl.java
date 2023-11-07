@@ -89,10 +89,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private static final Logger LOGGER = Logger.getLogger(WebClientRequestBuilderImpl.class.getName());
 
-    private static final Map<ConnectionIdent, Set<ChannelRecord>> CHANNEL_CACHE = new ConcurrentHashMap<>();
     private static final List<DataPropagationProvider> PROPAGATION_PROVIDERS = HelidonServiceLoader
             .builder(ServiceLoader.load(DataPropagationProvider.class)).build().asList();
 
+    static final Map<ConnectionIdent, Set<ChannelRecord>> CHANNEL_CACHE = new ConcurrentHashMap<>();
     static final AttributeKey<WebClientRequestImpl> REQUEST = AttributeKey.valueOf("request");
     static final AttributeKey<CompletableFuture<WebClientServiceResponse>> RECEIVED = AttributeKey.valueOf("received");
     static final AttributeKey<CompletableFuture<WebClientServiceResponse>> COMPLETED = AttributeKey.valueOf("completed");
@@ -242,7 +242,16 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             LOGGER.finest(() -> "Removing from channel cache. Connection ident ->  " + key
                     + ", channel -> " + channel.hashCode());
         }
-        CHANNEL_CACHE.get(key).remove(new ChannelRecord(channel));
+        Set<ChannelRecord> channelSet = CHANNEL_CACHE.get(key);
+        if (channelSet != null) {
+            // remove entry from set
+            channelSet.remove(new ChannelRecord(channel));
+
+            // remove set from map if empty
+            if (channelSet.isEmpty()) {
+                CHANNEL_CACHE.remove(key);
+            }
+        }
     }
 
     @Override
@@ -958,17 +967,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         }
     }
 
-    private static class ChannelRecord {
+    static class ChannelRecord {
 
         private final ChannelFuture channelFuture;
         private final Channel channel;
 
-        private ChannelRecord(ChannelFuture channelFuture) {
+        ChannelRecord(ChannelFuture channelFuture) {
             this.channelFuture = channelFuture;
             this.channel = channelFuture.channel();
         }
 
-        private ChannelRecord(Channel channel) {
+        ChannelRecord(Channel channel) {
             this.channelFuture = null;
             this.channel = channel;
         }
