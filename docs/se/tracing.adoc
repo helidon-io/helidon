@@ -52,7 +52,51 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 <dependency>
     <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
+    <artifactId>helidon-tracing</artifactId>    <1>
+</dependency>
+    <dependency>
+        <groupId>io.helidon.webserver.observe</groupId>
+        <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+    </dependency>
+----
+<1> Helidon tracing dependency.
+<2> Observability dependencies for tracing.
+
+For further processing of the tracing data, different providers are used.
+
+For Jaeger:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+</dependency>
+----
+
+For Zipkin:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-zipkin</artifactId>
+</dependency>
+----
+
+For OpenTelemetry:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+</dependency>
+----
+
+For OpenTracing:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-jaeger</artifactId>
 </dependency>
 ----
 // end::tracing-dependency[]
@@ -82,16 +126,21 @@ Helidon provides such an implementation for:
 === Setup WebServer
 
 [source,java]
-.Configuring OpenTracing `Tracer`
+.Configuring `Tracer`
 ----
-ServerConfiguration.builder()
-         .tracer(TracerBuilder.create("my-application")                    // <1>
-                       .collectorUri(URI.create("http://10.0.0.18:9411"))  // <2>
-                       .build())
-         .build()
+Tracer tracer = TracerBuilder.create("helidon") <1>
+                .build();
+
+WebServer.builder()
+        .addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
+        ...
+        .build()
+        .start();
 ----
-<1> The name of the application (service) to associate with the tracing events
-<2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
+<1> Create a `Tracer`.
+<2> Add an observability feature using the created `Tracer`.
 
 === Creating Custom Spans
 

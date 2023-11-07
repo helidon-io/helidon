@@ -117,66 +117,84 @@ default host and port, `localhost:14250`.
 [source,xml]
 .Add the following dependency to `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
-</dependency>
+ <dependency>
+     <groupId>io.helidon.tracing</groupId>
+     <artifactId>helidon-tracing</artifactId>   <1>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.webserver.observe</groupId>
+     <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.tracing.providers</groupId>
+     <artifactId>helidon-tracing-providers-jaeger</artifactId>  <3>
+ </dependency>
 ----
+<1> Helidon Tracing dependencies.
+<2> Observability features for tracing.
+<3> Jaeger tracing provider.
 
 All spans sent by Helidon to Jaeger need to be associated with a service.  Specify the service name below.
 
 [source,bash]
-.Add the following line to `resources/application.yaml`:
+.Add the following lines to `resources/application.yaml`:
 ----
 tracing:
   service: helidon-se-1
+  protocol: http
+  port: 14250
+  path: /api/traces
+  tags:
+    env: development
+  enabled: true
+  sampler-type: "const"
+  sampler-param: 1
+  log-spans: true
+  propagation: b3
 ----
 
 [source,java]
 .Update the `Main` class; Add Tracer to the WebServer builder
 ----
-import io.helidon.tracing.TracerBuilder; // <1>
+import io.helidon.tracing.TracerBuilder;
 ...
+
+Tracer tracer = TracerBuilder.create("helidon") <1>
+                .build();
+
 WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build()) // <2>
+                .addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 ----
-<1> Add a new import statement.
-<2> Build and register a `Tracer` object using the tracing configuration.
+<1> Create the `Tracer` object.
+<2> Add an observability feature using the created `Tracer`.
 
 [source,java]
 .Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span; // <1>
-...
-    private void getDefaultMessageHandler(ServerRequest request,
-                                   ServerResponse response) {
+private void getDefaultMessageHandler(ServerRequest request,
+                                      ServerResponse response) {
+    var spanBuilder = Tracer.global().spanBuilder("mychildSpan"); <1>
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder)); <2>
+    var span = spanBuilder.start(); <3>
 
-        var spanBuilder = request.tracer()  // <2>
-                .buildSpan("getDefaultMessageHandler");  // <3>
-        request.spanContext().ifPresent(spanBuilder::asChildOf);  // <4>
-        Span span = spanBuilder.start();  // <5>
-
-        try {
-            sendResponse(response, "World");
-        } finally {
-            span.finish();  // <6>
-        }
+    try {
+        sendResponse(response, "World");
+        span.end(); <4>
+    } catch (Throwable t) {
+        span.end(t);    <5>
     }
+}
 ----
-<1> Add new import statement.
-<2> Get the `Tracer` object from the request.
-<3> Build a new span named `getDefaultMessageHandler`.
-<4> Make the new span a child of the current span.
-<5> Start the span.  The current timestamp is used as the starting time for the span.
-<6> Finish the span.  The current timestamp is used as the ending time for the span.
-
+<1> Create a new `Span` using Global Tracer.
+<2> Set Parent Span, if available in the `Request`.
+<3> Start the span.
+<4> End the span when the response is sent.
+<5> Record an exception in the span if happened.
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -281,7 +299,17 @@ app:
   greeting: "Hello From SE-2"
 
 tracing:
-  service: "helidon-se-2"
+  service: helidon-se-2
+  protocol: http
+  port: 14250
+  path: /api/traces
+  tags:
+    env: development
+  enabled: true
+  sampler-type: "const"
+  sampler-param: 1
+  log-spans: true
+  propagation: b3
 
 server:
   port: 8081
@@ -291,14 +319,19 @@ server:
 [source,java]
 .Update the `Main` class; Add Tracer to the WebServer builder
 ----
-import io.helidon.tracing.TracerBuilder;
-...
+Tracer tracer = TracerBuilder.create("helidon") <1>
+                .build();
+
 WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build())
+                .addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 ----
+<1> Create the `Tracer` object.
+<2> Add an observability feature using the created `Tracer`.
 
 [source,java]
 .Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
@@ -411,16 +444,15 @@ public class GreetService implements HttpService {
   }
 
   private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-
-    var spanBuilder = request.tracer()
-                .buildSpan("getDefaultMessageHandler");
-    request.spanContext().ifPresent(spanBuilder::asChildOf);
-    Span span = spanBuilder.start();
+    var spanBuilder = Tracer.global().spanBuilder("getDefaultMessageHandler");
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder));
+    var span = spanBuilder.start();
 
     try {
-      sendResponse(response, "World");
-    } finally {
-      span.finish();
+        sendResponse(response, "World");
+        span.end();
+    } catch (Throwable t) {
+        span.end(t);
     }
   }
 
@@ -447,21 +479,19 @@ public class GreetService implements HttpService {
   private void outboundMessageHandler(ServerRequest request, ServerResponse response) {
     Invocation.Builder requestBuilder = webTarget.request();
 
-    // <2>
-    var spanBuilder = request.tracer()
-                .buildSpan("outboundMessageHandler");
-    request.spanContext().ifPresent(spanBuilder::asChildOf);
-    Span span = spanBuilder.start();
+    var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder));
+    var span = spanBuilder.start();     // <2>
 
     try {
       requestBuilder.property(
-          ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext());  // <3>
+          ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, span.context());  // <3>
 
       String result = requestBuilder   // <4>
           .get(String.class);
       response.send(result);
     } finally {
-      span.finish();   // <5>
+      span.end();   // <5>
     }
   }
 
@@ -494,7 +524,7 @@ In the image above, you can see that the trace includes spans from two services.
 which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
 see that the delay no longer exists.
 
-You can now stop your second service, it is not longer used in this guide.
+You can now stop your second service, it is no longer used in this guide.
 
 == Integration with Kubernetes
 
