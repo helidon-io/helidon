@@ -144,7 +144,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.perfmark-api>0.25.0</version.lib.perfmark-api>
-        <version.lib.parsson>1.0.2</version.lib.parsson>
+        <version.lib.parsson>1.0.5</version.lib.parsson>
         <version.lib.postgresql>42.4.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
