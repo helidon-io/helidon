@@ -261,13 +261,13 @@ There is a new testing framework for Helidon SE.
 [source, xml]
 ----
 <dependency>
-    <groupId>io.helidon.microprofile.testing</groupId>
-    <artifactId>helidon-microprofile-testing-junit5</artifactId>
+    <groupId>io.helidon.testing.junit5</groupId>
+    <artifactId>helidon-testing-junit5-webserver</artifactId>
     <scope>test</scope>
 </dependency>
 ----
 
-Find more information, see xref:../introduction.adoc[Helidon SE testing]
+Find more information, see xref:../testing.adoc[Helidon SE testing]
 
 ==== Observability
 
