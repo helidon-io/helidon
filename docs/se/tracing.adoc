@@ -233,12 +233,12 @@ server.addFeature(ObserveFeature.builder()
 
 ==== Path-based Configuration in Helidon WebServer
 
-For WebServer we have path-based support for configuring tracing, in addition
+For Web Server we have path-based support for configuring tracing, in addition
 to the configuration described above.
 
 Configuration of path can use any path string supported by the
 WebServer. The configuration itself has the same possibilities
- as traced configuration described above. The path specific configuration
+ as traced configuration described above. The path-specific configuration
  will be merged with global configuration (path is the "newer" configuration, global is the "older")
 
 [source,yaml]
@@ -311,7 +311,7 @@ Parameters provided:
 
 == Additional Information
 
-=== Span Propagation
+=== WebClient Span Propagation
 
 Span propagation is supported with Helidon WebClient.
 Tracing propagation is automatic as long as the current span context is available in Helidon Context
@@ -361,4 +361,5 @@ include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
 == Reference
 
 * link:https://opentracing.io/[Opentracing Project]
+* link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
 * link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]

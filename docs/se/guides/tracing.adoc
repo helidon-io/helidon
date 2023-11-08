@@ -38,9 +38,9 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
-which helps you identify performance and operational issues.  Helidon SE includes support for distributed tracing
-through the https://opentracing.io[OpenTracing API] and the https://opentelemetry.io[OpenTelemety API].  Tracing is integrated with WebServer
-and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
+which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either
+through the https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API], or by
+https://opentracing.io[OpenTracing API].
 
 === Tracing Concepts
 
@@ -59,7 +59,7 @@ Spans are automatically created by Helidon as needed during execution of the RES
 
 The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace
 across multiple services, and how to integrate with tracing with Kubernetes. All examples use Jaeger and traces
-will be viewed using both the Jaeger UI.
+will be viewed using the Jaeger UI.
 
 === Create a Sample Helidon SE Project
 
@@ -173,7 +173,7 @@ WebServer server = WebServer.builder(createRouting(config))
 <2> Add an observability feature using the created `Tracer`.
 
 [source,java]
-.Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class: replace the `getDefaultMessageHandler` method:
 ----
 private void getDefaultMessageHandler(ServerRequest request,
                                       ServerResponse response) {
@@ -252,7 +252,7 @@ image::guides/12_tracing_span_detail.png[Span Details]
 Helidon automatically traces across services if the services use the same tracer, for example, the same instance of Jaeger.
 This means a single trace can include spans from multiple services and hosts.  Helidon uses a `Span.context()` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTracing APIs to propagate the Span Context. There is nothing you need to do in your application to make this work.
+internally call OpenTelemetry APIs to propagate the Span Context. There is nothing you need to do in your application to make this work.
 
 To demonstrate distributed tracing, you will need to create a second project, where the server listens on port 8081.
 Create a new root directory to hold this new project, then do the following steps, similar to
@@ -342,22 +342,20 @@ WebServer server = WebServer.builder(createRouting(config))
 [source,java]
 .Update the `GreetService` class. Replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span;
-//...
-    private void getDefaultMessageHandler(ServerRequest request,
-                                   ServerResponse response) {
+private void getDefaultMessageHandler(ServerRequest request,
+                               ServerResponse response) {
 
-        var spanBuilder = request.tracer()
-                .buildSpan("getDefaultMessageHandler");
-        request.spanContext().ifPresent(spanBuilder::asChildOf);
-        Span span = spanBuilder.start();
+    var spanBuilder = request.tracer()
+            .buildSpan("getDefaultMessageHandler");
+    request.spanContext().ifPresent(spanBuilder::asChildOf);
+    Span span = spanBuilder.start();
 
-        try {
-            sendResponse(response, "World");
-        } finally {
-            span.finish();
-        }
+    try {
+        sendResponse(response, "World");
+    } finally {
+        span.finish();
     }
+}
 ----
 
 [source,bash]
