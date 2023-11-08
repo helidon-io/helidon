@@ -17,11 +17,13 @@
 package io.helidon.webclient.http1;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
@@ -33,13 +35,14 @@ import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.spi.ClientConnectionCache;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * Cache of HTTP/1.1 connections for keep alive.
  */
-class Http1ConnectionCache {
+class Http1ConnectionCache extends ClientConnectionCache {
     private static final System.Logger LOGGER = System.getLogger(Http1ConnectionCache.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final String HTTPS = "https";
@@ -47,6 +50,7 @@ class Http1ConnectionCache {
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
     private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new ConcurrentHashMap<>();
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     static Http1ConnectionCache shared() {
         return SHARED;
@@ -71,6 +75,16 @@ class Http1ConnectionCache {
         }
     }
 
+    @Override
+    public void closeResource() {
+        if (closed.getAndSet(true)) {
+            return;
+        }
+        cache.values().stream()
+                .flatMap(Collection::stream)
+                .forEach(TcpClientConnection::closeResource);
+    }
+
     private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {
         if (headers.contains(HeaderValues.CONNECTION_CLOSE)) {
             return false;
@@ -90,6 +104,11 @@ class Http1ConnectionCache {
                                                  Tls tls,
                                                  ClientUri uri,
                                                  Proxy proxy) {
+
+        if (closed.get()) {
+            throw new IllegalStateException("Connection cache is closed");
+        }
+
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
         ConnectionKey connectionKey = new ConnectionKey(uri.scheme(),
