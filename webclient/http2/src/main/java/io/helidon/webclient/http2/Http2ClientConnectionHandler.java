@@ -77,7 +77,7 @@ class Http2ClientConnectionHandler {
         // this is to prevent concurrent modification (connections remove themselves from the map)
         Set<Http2ClientConnection> toClose = new HashSet<>(allConnections.keySet());
         toClose.forEach(Http2ClientConnection::close);
-        this.activeConnection.set(null);
+        this.activeConnection.getAndSet(null).close();
         this.allConnections.clear();
     }
 

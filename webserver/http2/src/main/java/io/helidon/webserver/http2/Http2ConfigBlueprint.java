@@ -128,6 +128,15 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     int maxRapidResets();
 
     /**
+     * Maximum number of consecutive empty frames allowed on connection.
+     *
+     * @return max number of consecutive empty frames
+     * @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2019-9518">CVE-2019-9518</a>
+     */
+    @ConfiguredOption("10")
+    int maxEmptyFrames();
+
+    /**
      * If set to false, any path is accepted (even containing illegal characters).
      *
      * @return whether to validate path

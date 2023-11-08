@@ -81,6 +81,11 @@ class HttpClientTest {
         public FakeHttpClientRequest method(Method method) {
             return new FakeHttpClientRequest(method);
         }
+
+        @Override
+        public void closeResource() {
+            //nothing to close
+        }
     }
 
     static class FakeHttpClientRequest implements ClientRequest<FakeHttpClientRequest> {
