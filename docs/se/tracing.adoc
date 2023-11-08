@@ -31,7 +31,6 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Additional Information, Additional Information>>
-** <<Span Propagation, Span Propagation>>
 ** <<Jaeger Tracing, Jaeger Tracing>>
 ** <<Zipkin Tracing, Zipkin Tracing>>
 - <<Reference, Reference>>
