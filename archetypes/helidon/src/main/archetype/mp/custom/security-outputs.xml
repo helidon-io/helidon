@@ -22,6 +22,12 @@
     <methods>
         <method name="security-oidc">
             <output if="${security.atn} contains ['oidc']">
+                <templates engine="mustache" transformations="mustache,packaged">
+                    <directory>files</directory>
+                    <includes>
+                        <include>**/OidcResource.java.mustache</include>
+                    </includes>
+                </templates>
                 <model>
                     <list key="dependencies">
                         <map>
@@ -31,6 +37,20 @@
                     </list>
                     <list key="providers-config-entries">
                         <value file="files/application.oidc.yaml"/>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.security</value>
+                        <value>io.helidon.security.annotations</value>
+                    </list>
+                    <list key="readme-sections">
+                        <value><![CDATA[
+## Security integration with OIDC
+
+This example demonstrates integration with OIDC (Open ID Connect) providers.
+
+To configure it, you need to replace the default values from configuration
+to your tenant and application configuration.
+]]></value>
                     </list>
                 </model>
             </output>

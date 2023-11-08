@@ -1,15 +1,16 @@
     - oidc:
-        client-id: "client-id-of-this-service"
-        # See [EncryptionFilter](https://helidon.io/docs/latest/apidocs/io.helidon.config.encryption/io/helidon/config/encryption/EncryptionFilter.html) for details about encrypting passwords in configuration files.
-        client-secret: "client-secret-of-this-service"
-        identity-uri: "http://your-tenant.identity-server.com"
-        frontend-uri: "http://my-service:8080"
-        audience: "http://my-service"
-        cors:
-          allow-origins: ["http://foo.com", "http://there.com"]
-          allow-methods: ["PUT", "DELETE"]
-        outbound:
-          - name: "internal-services"
-            hosts: ["*.example.org"]
-            outbound-token:
-              header: "X-Internal-Auth"
+        # use a custom name, so it does not clash with other examples
+        cookie-name: "OIDC_EXAMPLE_COOKIE"
+        # support for "Authorization" header with bearer token
+        header-use: true
+        # the default redirect-uri, where the webserver listens on redirects from identity server
+        redirect-uri: "/oidc/redirect"
+        issuer: "https://tenant.some-server.com/oauth2/default"
+        audience: "configured audience"
+        client-id: "some client id"
+        client-secret: "some client secret"
+        identity-uri: "https://tenant.some-server.com/oauth2/default"
+        frontend-uri: "http://localhost:7987"
+        server-type: "@default"
+        # We want to redirect to login page (and token can be received either through cookie or header)
+        redirect: true
