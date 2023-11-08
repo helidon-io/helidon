@@ -151,7 +151,6 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.cors</value>
                                 <value if="${flavor} == 'se'">io.helidon.webserver.cors</value>
                                 <value if="${flavor} == 'se'">io.helidon.cors</value>
-                                <value if="${flavor} == 'se'">java.logging</value>
                             </list>
                             <list key="FileServiceTest-annotations" if="${media} contains 'multipart'">
                                 <value if="${flavor} == 'mp'">@AddExtension(CorsCdiExtension.class)</value>
@@ -256,9 +255,6 @@ Note that the tests in the example `MainTest` class follow these same steps.
                                 <value>io.helidon.cors.CrossOriginConfig</value>
                                 <value>io.helidon.webserver.cors.CorsSupport</value>
                             </list>
-                            <list key="Main-java-imports" if="${flavor} == 'se'">
-                                <value>java.util.logging.Logger</value>
-                            </list>
                             <list key="application-yaml-entries" if="${flavor} == 'se'">
                                 <value><![CDATA[
 restrictive-cors:
@@ -282,15 +278,14 @@ restrictive-cors:
     private static CorsSupport corsSupportForGreeting() {
         Config restrictiveConfig = Config.global().get("restrictive-cors");
         if (!restrictiveConfig.exists()) {
-            Logger.getLogger(Main.class.getName())
-                    .warning("Missing restrictive config; continuing with default CORS support");
+            System.out.println("Missing restrictive config; continuing with default CORS support");
         }
 
         CorsSupport.Builder corsBuilder = CorsSupport.builder();
 
         Config.global().get("cors")
                 .ifExists(c -> {
-                    Logger.getLogger(Main.class.getName()).info("Using the override configuration");
+                    System.out.println("Using the override configuration");
                     corsBuilder.mappedConfig(c);
                 });
         corsBuilder

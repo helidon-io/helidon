@@ -104,10 +104,7 @@
 ]]></value>
             </list>
             <list key="main-method-content">
-                <value template="mustache"><![CDATA[
-        // load logging configuration
-        LogConfig.configureRuntime();
-
+                <value template="mustache" order="50"><![CDATA[
         // initialize global config from default configuration
         Config config = Config.create();
         Config.global(config);

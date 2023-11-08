@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <methods>
+        <method name="logging-jul">
+            <output if="${logging.log-impl} == 'jul'">
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.logging</value>
+                            <value key="artifactId">helidon-logging-jul</value>
+                            <value key="scope">runtime</value>
+                        </map>
+                    </list>
+                    <list key="Main-java-imports">
+                        <value>java.util.concurrent.ExecutorService</value>
+                        <value>java.util.concurrent.Executors</value>
+                        <value>java.util.concurrent.Future</value>
+                        <value>java.util.logging.Logger</value>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.common.context.Context</value>
+                        <value>io.helidon.common.context.Contexts</value>
+                        <value>io.helidon.logging.common.HelidonMdc</value>
+                        <value>io.helidon.logging.common.LogConfig</value>
+                    </list>
+                    <list key="main-class-fields">
+                        <value><![CDATA[    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());]]></value>
+                    </list>
+                    <list key="main-method-content">
+                        <value><![CDATA[LogConfig.configureRuntime();]]></value>
+                    </list>
+                    <list key="Main-main">
+                        <value><![CDATA[
+        // the Helidon context is used to propagate MDC across threads
+        // if running within Helidon WebServer, you do not need to runInContext, as that is already
+        // done by the webserver
+        Contexts.runInContext(Context.create(), Main::logging);
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[.get("/logging", (req, res) -> {
+                    HelidonMdc.set("name", String.valueOf(req.id()));
+                    LOGGER.info("Running in webserver, id:");
+                    res.send("Hello");
+                })]]>
+                        </value>
+                    </list>
+                    <list key="main-class-content">
+                        <value><![CDATA[
+    private static void logging() {
+        HelidonMdc.set("name", "startup");
+        LOGGER.info("Starting up");
+
+        // now let's see propagation across executor service boundary
+        HelidonMdc.set("name", "propagated");
+        // wrap executor so it supports Helidon context, this is done for all built-in executors in Helidon
+        ExecutorService es = Contexts.wrap(Executors.newSingleThreadExecutor());
+
+        Future<?> submit = es.submit(() -> {
+            LOGGER.info("Running on another thread");
+        });
+        try {
+            submit.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        es.shutdown();
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="logging-entries">
+                        <value><![CDATA[
+handlers=io.helidon.logging.jul.HelidonConsoleHandler
+
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s "%X{name}"%n
+]]>
+                        </value>
+                    </list>
+                    <list key="module-requires">
+                        <value>java.logging</value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="logging-log4j">
+            <output if="${logging.log-impl} == 'log4j'">
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.logging</value>
+                            <value key="artifactId">helidon-logging-log4j</value>
+                        </map>
+                        <map>
+                            <value key="groupId">org.apache.logging.log4j</value>
+                            <value key="artifactId">log4j-api</value>
+                        </map>
+                        <map>
+                            <value key="groupId">org.apache.logging.log4j</value>
+                            <value key="artifactId">log4j-core</value>
+                        </map>
+                        <map>
+                            <value key="groupId">org.apache.logging.log4j</value>
+                            <value key="artifactId">log4j-jul</value>
+                        </map>
+                    </list>
+                    <list key="Main-java-imports">
+                        <value>java.util.concurrent.ExecutorService</value>
+                        <value>java.util.concurrent.Executors</value>
+                        <value>java.util.concurrent.Future</value>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.common.context.Context</value>
+                        <value>io.helidon.common.context.Contexts</value>
+                        <value>io.helidon.logging.common.HelidonMdc</value>
+                        <value>io.helidon.logging.common.LogConfig</value>
+                    </list>
+                    <list key="Main-other-imports">
+                        <value>org.apache.logging.log4j.Level</value>
+                        <value>org.apache.logging.log4j.LogManager</value>
+                        <value>org.apache.logging.log4j.Logger</value>
+                        <value>org.apache.logging.log4j.ThreadContext</value>
+                        <value>org.apache.logging.log4j.core.appender.ConsoleAppender</value>
+                        <value>org.apache.logging.log4j.core.config.Configurator</value>
+                        <value>org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory</value>
+                    </list>
+                    <list key="main-class-fields">
+                        <value><![CDATA[
+    private static System.Logger systemLogger;
+    private static Logger logger;
+]]>
+                        </value>
+                    </list>
+                    <list key="main-method-content">
+                        <value><![CDATA[configureLog4j();
+        LogConfig.configureRuntime();]]>
+                        </value>
+                    </list>
+                    <list key="Main-main">
+                        <value><![CDATA[
+        // get logger after configuration
+        logger = LogManager.getLogger(Main.class);
+        systemLogger = System.getLogger(Main.class.getName());
+
+        // the Helidon context is used to propagate MDC across threads
+        // if running within Helidon WebServer, you do not need to runInContext, as that is already
+        // done by the webserver
+        Contexts.runInContext(Context.create(), Main::logging);
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[.get("/logging", (req, res) -> {
+            HelidonMdc.set("name", String.valueOf(req.id()));
+            logger.info("Running in webserver, id:");
+            res.send("Hello");
+        })]]>
+                        </value>
+                    </list>
+                    <list key="main-class-content">
+                        <value><![CDATA[
+    private static void logging() {
+        HelidonMdc.set("name", "startup");
+        logger.info("Starting up");
+        systemLogger.log(System.Logger.Level.INFO, "Using System logger");
+
+        // now let's see propagation across executor service boundary, we can also use Log4j's ThreadContext
+        ThreadContext.put("name", "propagated");
+        // wrap executor so it supports Helidon context, this is done for all built-in executors in Helidon
+        ExecutorService es = Contexts.wrap(Executors.newSingleThreadExecutor());
+
+        Future<?> submit = es.submit(Main::log);
+        try {
+            submit.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        es.shutdown();
+    }
+
+    private static void log() {
+        logger.info("Running on another thread");
+    }
+
+    private static void configureLog4j() {
+        // configure log4j
+        final var builder = ConfigurationBuilderFactory.newConfigurationBuilder();
+        builder.setConfigurationName("root");
+        builder.setStatusLevel(Level.INFO);
+        final var appenderComponentBuilder = builder.newAppender("Stdout", "CONSOLE")
+                .addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
+        appenderComponentBuilder.add(builder.newLayout("PatternLayout")
+                                             .addAttribute("pattern", "%d{HH:mm:ss.SSS} %-5level [%t] %logger{36} - %msg "
+                                                     + "\"%X{name}\"%n"));
+        builder.add(appenderComponentBuilder);
+        builder.add(builder.newRootLogger(Level.INFO)
+                            .add(builder.newAppenderRef("Stdout")));
+        Configurator.initialize(builder.build());
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.logging.log4j</value>
+                        <value>org.apache.logging.log4j</value>
+                        <value>org.apache.logging.log4j.core</value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="logging-slf4j">
+            <output if="${logging.log-impl} == 'slf4j'">
+                <file source="files/src/main/resources/logback.xml" target="src/main/resources/logback.xml"/>
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.logging</value>
+                            <value key="artifactId">helidon-logging-slf4j</value>
+                        </map>
+                        <map>
+                            <value key="groupId">org.slf4j</value>
+                            <value key="artifactId">slf4j-api</value>
+                        </map>
+                        <map>
+                            <value key="groupId">ch.qos.logback</value>
+                            <value key="artifactId">logback-classic</value>
+                        </map>
+                    </list>
+                    <list key="Main-java-imports">
+                        <value>java.util.concurrent.ExecutorService</value>
+                        <value>java.util.concurrent.Executors</value>
+                        <value>java.util.concurrent.Future</value>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.common.context.Context</value>
+                        <value>io.helidon.common.context.Contexts</value>
+                        <value>io.helidon.logging.common.HelidonMdc</value>
+                        <value>io.helidon.logging.common.LogConfig</value>
+                    </list>
+                    <list key="Main-other-imports">
+                        <value>org.slf4j.Logger</value>
+                        <value>org.slf4j.LoggerFactory</value>
+                        <value>org.slf4j.MDC</value>
+                    </list>
+                    <list key="main-class-fields">
+                        <value><![CDATA[
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+    private static final System.Logger SYSTEM_LOGGER = System.getLogger(Main.class.getName());
+]]>
+                        </value>
+                    </list>
+                    <list key="main-method-content">
+                        <value><![CDATA[LogConfig.configureRuntime();]]></value>
+                    </list>
+                    <list key="Main-main">
+                        <value><![CDATA[
+        // the Helidon context is used to propagate MDC across threads
+        // if running within Helidon WebServer, you do not need to runInContext, as that is already
+        // done by the webserver
+        Contexts.runInContext(Context.create(), Main::logging);
+]]></value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[.get("/logging", (req, res) -> {
+                    HelidonMdc.set("name", String.valueOf(req.id()));
+                    LOGGER.info("Running in webserver, id:");
+                    res.send("Hello");
+                })]]></value>
+                    </list>
+                    <list key="main-class-content">
+                        <value><![CDATA[
+    private static void logging() {
+        HelidonMdc.set("name", "startup");
+        LOGGER.info("Starting up");
+        SYSTEM_LOGGER.log(System.Logger.Level.INFO, "Using System logger");
+
+        MDC.put("name", "propagated");
+
+        ExecutorService es = Contexts.wrap(Executors.newSingleThreadExecutor());
+
+        Future<?> submit = es.submit(Main::log);
+        try {
+            submit.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        es.shutdown();
+    }
+
+    private static void log() {
+        LOGGER.info("Running on another thread");
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="module-requires">
+                        <value>org.slf4j</value>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <call method="logging-jul"/>
+    <call method="logging-log4j"/>
+    <call method="logging-slf4j"/>
+</archetype-script>
