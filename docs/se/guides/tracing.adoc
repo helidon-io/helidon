@@ -189,11 +189,12 @@ private void getDefaultMessageHandler(ServerRequest request,
     }
 }
 ----
-<1> Create a new `Span` using Global Tracer.
-<2> Set Parent Span, if available in the `Request`.
+<1> Create a new `Span` using the global tracer.
+<2> Set the parent of the new span to the span from the `Request` if available.
 <3> Start the span.
-<4> End the span when the response is sent.
-<5> Record an exception in the span if happened.
+<4> End the span normally after the response is sent.
+<5> End the span with an exception if one was thrown.
+
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -250,11 +251,11 @@ image::guides/12_tracing_span_detail.png[Span Details]
 === Tracing Across Services
 
 Helidon automatically traces across services if the services use the same tracer, for example, the same instance of Jaeger.
-This means a single trace can include spans from multiple services and hosts.  Helidon uses a `Span.context()` to
+This means a single trace can include spans from multiple services and hosts.  Helidon uses a `SpanContext` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTelemetry APIs to propagate the Span Context. There is nothing you need to do in your application to make this work.
+internally call OpenTelemetry APIs or OpenTracing APIs to propagate the Span Context. There is nothing you need to do in your application to make this work.
 
-To demonstrate distributed tracing, you will need to create a second project, where the server listens on port 8081.
+To demonstrate distributed tracing, you will need to create a second project, where the server listens to on port 8081.
 Create a new root directory to hold this new project, then do the following steps, similar to
 what you did at the start of this guide:
 
@@ -294,7 +295,7 @@ cd helidon-quickstart-se-2
      <artifactId>helidon-tracing-providers-jaeger</artifactId>  <3>
  </dependency>
 ----
-<1> Helidon Tracing dependencies.
+<1> Helidon Tracing API dependencies.
 <2> Observability features for tracing.
 <3> Jaeger tracing provider.
 
@@ -321,6 +322,8 @@ server:
   port: 8081
   host: 0.0.0.0
 ----
+
+NOTE: The settings above are for development and experimental purposes only. For production environment, please see the link:../tracing.adoc[Tracing documentation].
 
 [source,java]
 .Update the `Main` class; Add Tracer to the WebServer builder
@@ -352,8 +355,8 @@ private void getDefaultMessageHandler(ServerRequest request,
 
     try {
         sendResponse(response, "World");
-    } finally {
-        span.finish();
+    } catch (Throwable t) {
+        span.end(t);
     }
 }
 ----
@@ -474,8 +477,8 @@ public class GreetService implements HttpService {
       String result = requestBuilder   // <4>
           .get(String.class);
       response.send(result);
-    } finally {
-      span.end();   // <5>
+    } catch (Throwandle t) {
+      span.end(t);   // <5>
     }
   }
 
@@ -684,5 +687,6 @@ Refer to the following references for additional information:
 
 - link:{microprofile-tracing-spec-url}[MicroProfile OpenTracing specification]
 - link:{microprofile-tracing-javadoc-url}[MicroProfile OpenTracing Javadoc]
+* link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
 - link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
 

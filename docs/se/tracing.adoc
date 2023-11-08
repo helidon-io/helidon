@@ -87,7 +87,7 @@ For OpenTelemetry:
 ----
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
 </dependency>
 ----
 
@@ -96,7 +96,7 @@ For OpenTracing:
 ----
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+    <artifactId>helidon-tracing-providers-opentracing</artifactId>
 </dependency>
 ----
 // end::tracing-dependency[]
@@ -155,8 +155,8 @@ Span span = tracer.spanBuilder("name")  <1>
 try (...){                              <2>
     //do some work
     span.end();
-} catch (Exception e) {                 <3>
-    span.end(e);
+} catch (Throwable t) {                 <3>
+    span.end(t);
 }
 ----
 <1> Create span from tracer.
@@ -224,12 +224,14 @@ tracing:
 [source,java]
 .Use the configuration in web server
 ----
-Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
+Tracer tracer = TracerBuilder.create(config.get("tracing")).build();    <1>
 
 server.addFeature(ObserveFeature.builder()
-                            .addObserver(TracingObserver.create(tracer))
+                            .addObserver(TracingObserver.create(tracer)) <2>
                             .build())
 ----
+<1> Create `Tracer` using `TracerBuilder` from configuration.
+<2> Add the `Tracer` as an observability feature.
 
 ==== Path-based Configuration in Helidon WebServer
 
@@ -264,26 +266,14 @@ tracing:
 [source,java]
 .Configuration with Web Server
 ----
-Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
+Tracer tracer = TracerBuilder.create(config.get("tracing")).build();    <1>
 
 server.addFeature(ObserveFeature.builder()
-                            .addObserver(TracingObserver.create(tracer))
+                            .addObserver(TracingObserver.create(tracer)) <2>
                             .build())
 ----
-
-[source,java]
-.Configuration with Web Server using a builder
-----
-Tracer tracer = WebTracingConfig.builder()
-    .addPathConfig(PathTracingConfig.builder()
-        .path("/metrics")
-        .tracingConfig(TracingConfig.DISABLED)
-        .build();
-
-server.addFeature(ObserveFeature.builder()
-                            .addObserver(TracingObserver.create(tracer))
-                            .build())
-----
+<1> Create `Tracer` using `TracerBuilder` from configuration.
+<2> Add the `Tracer` as an observability feature.
 
 ==== Renaming top level span using request properties
 
