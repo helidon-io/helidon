@@ -948,7 +948,17 @@ Add a new `Dockerfile` in the project root directory with the following content:
 [source,bash]
 .Dockerfile content
 ----
-FROM maven:3.8.4-openjdk-17-slim as build <1>
+FROM container-registry.oracle.com/java/openjdk:21 as build <1>
+
+# Install maven
+WORKDIR /usr/share
+RUN set -x && \
+    curl -O https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz && \
+    tar -xvf apache-maven-*-bin.tar.gz  && \
+    rm apache-maven-*-bin.tar.gz && \
+    mv apache-maven-* maven && \
+    ln -s /usr/share/maven/bin/mvn /bin/
+
 WORKDIR /helidon
 
 ADD pom.xml .
@@ -958,13 +968,13 @@ ADD src src
 RUN mvn package -DskipTests <3>
 RUN echo "done!"
 
-FROM openjdk:17-jdk-slim <4>
+FROM container-registry.oracle.com/java/openjdk:21
 WORKDIR /helidon
 
-COPY --from=build /helidon/target/helidon-mp-tutorial.jar ./ <5>
+COPY --from=build /helidon/target/helidon-mp-tutorial.jar ./ <4>
 COPY --from=build /helidon/target/libs ./libs
 
-CMD ["java", "-jar", "helidon-mp-tutorial.jar"] <6>
+CMD ["java", "-jar", "helidon-mp-tutorial.jar"] <5>
 EXPOSE 8080
 ----
 
@@ -977,9 +987,8 @@ EXPOSE 8080
  builds faster because they will use this cached layer rather than downloading
  everything again.
 <3> Add the source code and do the real build.
-<4> Start a second stage using a much smaller runtime image.
-<5> Copy the binary and libraries from the first stage.
-<6> Set the initial command and expose port 8080.
+<4> Copy the binary and libraries from the first stage.
+<5> Set the initial command and expose port 8080.
 
 To create the Docker image, use the following command:
 
