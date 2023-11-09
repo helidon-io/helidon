@@ -34,7 +34,7 @@
                     </list>
                     <value key="db-health-check-stmt" if="${health}">SELECT 0</value>
                     <list key="db-connection">
-                        <value><![CDATA[    url: "jdbc:h2:tcp://localhost:9092/~test"
+                        <value><![CDATA[    url: "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE"
     username: sa
     password:]]></value>
                     </list>
