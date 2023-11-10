@@ -78,7 +78,7 @@ Java service loader service `io.helidon.security.providers.httpauth.spi.UserStor
  users to the provider, such as when validated against an internal database or LDAP server.
 The user store is defined so you never need the clear text password of the user.
 
-_Note on security of HTTP Digest Authenticaton_
+_Note on security of HTTP Digest Authentication_
 
 These authentication schemes
 should be _obsolete_, though they provide a very easy way to test a protected resource.
