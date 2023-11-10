@@ -131,10 +131,10 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                 return Optional.empty();
             }
 
-            String prometheusOutput = filter(prometheusMeterRegistry.get()
-                                                     .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(
-                                                                     resultMediaType),
-                                                             meterNamesOfInterest));
+            String prometheusOutput = prometheusMeterRegistry.get()
+                    .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(
+                                    resultMediaType),
+                            meterNamesOfInterest);
 
             return prometheusOutput.isBlank() ? Optional.empty() : Optional.of(prometheusOutput);
         }
@@ -216,16 +216,6 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                             .forEach(suffix -> result.add(normalizedMeterName + units + suffix)));
         }
         return result;
-    }
-
-    /**
-     * Filter the Prometheus-format report.
-     *
-     * @param output Prometheus-format report
-     * @return output filtered
-     */
-    private static String filter(String output) {
-        return output.replaceFirst("# EOF\r?\n?", "");
     }
 
     private static Optional<PrometheusMeterRegistry> prometheusMeterRegistry(MeterRegistry meterRegistry) {
