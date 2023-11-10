@@ -84,9 +84,6 @@
                         <option value="abac" name="ABAC" description="Attribute Based Access Control">
                             <output>
                                 <model>
-                                    <list key="providers-config-entries">
-                                        <value file="files/application.abac.yaml"/>
-                                    </list>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>

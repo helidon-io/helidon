@@ -99,7 +99,17 @@ to your tenant and application configuration.
                 </model>
             </output>
         </method>
+        <method name="security-abac">
+            <output if="${security.atz} contains ['abac']">
+                <model>
+                    <list key="providers-config-entries">
+                        <value file="files/application.abac.yaml"/>
+                    </list>
+                </model>
+            </output>
+        </method>
     </methods>
+    <call method="security-abac"/>
     <call method="security-oidc"/>
     <call method="security-jwt"/>
     <call method="security-google"/>
