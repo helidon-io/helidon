@@ -33,6 +33,9 @@ tracing:
   service: helidon-tracing-service
 ]]></value>
             </list>
+            <list key="config-properties" if="${tracing.provider} == 'jaeger'">
+                <value>tracing.global=false</value>
+            </list>
             <list key="dependencies">
                 <map>
                     <value key="groupId">io.helidon.webserver.observe</value>
@@ -42,8 +45,16 @@ tracing:
                     <value key="groupId">io.helidon.webserver</value>
                     <value key="artifactId">helidon-webserver-http2</value>
                 </map>
+                <map if="${tracing.provider} == 'jaeger'">
+                    <value key="groupId">io.helidon.tracing.providers</value>
+                    <value key="artifactId">helidon-tracing-providers-jaeger</value>
+                </map>
+                <map if="${tracing.provider} == 'zipkin'">
+                    <value key="groupId">io.helidon.tracing.providers</value>
+                    <value key="artifactId">helidon-tracing-providers-zipkin</value>
+                </map>
             </list>
-            <list key="Main-routing-builder" if="${tracing}">
+            <list key="Main-routing-builder">
                 <value>.register("/traced", new TracedService())</value>
             </list>
             <list key="readme-exercise-the-application">
