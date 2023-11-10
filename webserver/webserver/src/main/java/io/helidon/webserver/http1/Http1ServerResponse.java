@@ -197,10 +197,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
+
+        OutputStream encodedOutputStream = contentEncode(outputStream);
+        // Headers can be augmented by encoders
+        bos.checkResponseHeaders();
         if (outputStreamFilter == null) {
-            return contentEncode(outputStream);
+            return encodedOutputStream;
         } else {
-            return outputStreamFilter.apply(contentEncode(outputStream));
+            return outputStreamFilter.apply(encodedOutputStream);
         }
     }
 
@@ -383,7 +387,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private final Http1ServerRequest request;
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
-        private final boolean forcedChunked;
+        private boolean forcedChunked;
 
         private BufferData firstBuffer;
         private boolean closed;
@@ -414,13 +418,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.responseCloseRunnable = responseCloseRunnable;
             this.ctx = ctx;
             this.sendListener = sendListener;
-            this.isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
             this.contentLength = headers.contentLength().orElse(-1);
             this.request = request;
             this.keepAlive = keepAlive;
+            this.validateHeaders = validateHeaders;
+        }
+
+        void checkResponseHeaders(){
+            this.isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
             this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)
                     || headers.contains(HeaderNames.TRAILER);
-            this.validateHeaders = validateHeaders;
         }
 
         @Override
