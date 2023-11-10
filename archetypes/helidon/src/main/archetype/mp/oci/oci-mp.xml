@@ -397,13 +397,14 @@ Mount this volume as part of your application containers specification
                                 ]]></value>
             </list>
             <list key="poms">
-                <value>client/pom.xml</value>
-                <value>server/pom.xml</value>
+                <value>ADD pom.xml pom.xml</value>
+                <value>ADD client/pom.xml client/pom.xml</value>
+                <value>ADD server/pom.xml server/pom.xml</value>
             </list>
             <list key="src-dirs">
-                <value>client/src</value>
-                <value>server/src</value>
-                <value>spec/api.yaml</value>
+                <value>ADD client/src client/src</value>
+                <value>ADD server/src server/src</value>
+                <value>ADD spec/api.yaml spec/api.yaml</value>
             </list>
         </model>
     </output>

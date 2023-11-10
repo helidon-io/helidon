@@ -142,7 +142,7 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 Start the application:
 
 ```
-./target/helidon-quickstart-se-jri/bin/start
+./target/helidon-standalone-quickstart-se-jri/bin/start
 ```
 
 ### Multi-stage Docker build
@@ -150,17 +150,17 @@ Start the application:
 Build the JRI as a Docker Image
 
 ```
-docker build -t helidon-quickstart-se-jri -f Dockerfile.jlink .
+docker build -t helidon-standalone-quickstart-se-jri -f Dockerfile.jlink .
 ```
 
 Start the application:
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-se-jri:latest
+docker run --rm -p 8080:8080 helidon-standalone-quickstart-se-jri:latest
 ```
 
 See the start script help:
 
 ```
-docker run --rm helidon-quickstart-se-jri:latest --help
+docker run --rm helidon-standalone-quickstart-se-jri:latest --help
 ```
