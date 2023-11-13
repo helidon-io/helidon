@@ -13,32 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.microprofile.testing.jaxrs;
+package io.helidon.microprofile.testing.common;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.testing.common.CommonAddBean;
-import io.helidon.microprofile.testing.common.CommonCdiExtension;
-
-import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
-
 /**
- * JAX_RS Testing annotation.
+ * A repeatable container for {@link CommonAddBean}.
+ * No need to use this annotation, just repeat {@link CommonAddBean} annotation
+ * on test class.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
-@CommonCdiExtension(ServerCdiExtension.class)
-@CommonCdiExtension(JaxRsCdiExtension.class)
-@CommonCdiExtension(CdiComponentProvider.class)
-@CommonCdiExtension(org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class)
-@CommonAddBean(org.glassfish.jersey.weld.se.WeldRequestScope.class)
-public @interface AddJaxRs {
+@Target({ElementType.TYPE})
+public @interface CommonAddBeans {
+    /**
+     * Beans to be added.
+     * @return add bean annotations
+     */
+    CommonAddBean[] value();
 }

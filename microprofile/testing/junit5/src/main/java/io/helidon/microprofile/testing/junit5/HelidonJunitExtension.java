@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.testing.junit5;
 
-import java.io.Serial;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -31,10 +30,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
-import io.helidon.microprofile.testing.common.CdiExtension;
+import io.helidon.microprofile.testing.common.CommonAddBean;
+import io.helidon.microprofile.testing.common.CommonAddBeans;
+import io.helidon.microprofile.testing.common.CommonCdiExtension;
+import io.helidon.microprofile.testing.common.CommonCdiExtensions;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -49,7 +52,6 @@ import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
-import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.client.Client;
@@ -140,13 +142,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
         validatePerClass();
 
-        // add beans when using JaxRS
-//        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
-//        if (addJaxRsAnnotation != null){
-//            classLevelExtensions.add(AddProcessAnnotatedTypesLiteral.INSTANCE);
-//            classLevelBeans.add(AddWeldRequestScopeLiteral.INSTANCE);
-//        }
-
         configure(classLevelConfigMeta);
 
         if (!classLevelConfigMeta.useExisting) {
@@ -158,14 +153,33 @@ class HelidonJunitExtension implements BeforeAllCallback,
     }
 
     @SuppressWarnings("unchecked")
-    private Class<? extends Extension>[] getFeatureExtensions(Class<?> testClass) {
+    private List<Class<? extends Extension>> getFeatureExtensions(Class<?> testClass) {
         return Arrays.stream(testClass.getDeclaredAnnotations())
-                .flatMap(a -> Arrays.stream(a.getClass().getDeclaredAnnotations()))
-                .filter(a -> a.annotationType() == CdiExtension.class)
-                .map(CdiExtension.class::cast)
-                .map(CdiExtension::value)
-                .toList()
-                .toArray(new Class[0]);
+                .flatMap(a -> Arrays.stream(a.annotationType().getDeclaredAnnotations()))
+                .filter(a -> a instanceof CommonCdiExtensions)
+                .map(CommonCdiExtensions.class::cast)
+                .flatMap(e -> Arrays.stream(e.value()))
+                .map(CommonCdiExtension::value)
+                .collect(Collectors.toList());
+    }
+
+    private List<Class<?>> getFeatureBeans(Class<?> testClass) {
+
+        ArrayList<Class<?>> result = new ArrayList<>(Arrays.stream(testClass.getDeclaredAnnotations())
+                .flatMap(a -> Arrays.stream(a.annotationType().getDeclaredAnnotations()))
+                .filter(a -> a instanceof CommonAddBean)
+                .map(CommonAddBean.class::cast)
+                .map(CommonAddBean::value)
+                .collect(Collectors.toList()));
+
+        result.addAll(Arrays.stream(testClass.getDeclaredAnnotations())
+                .flatMap(a -> Arrays.stream(a.annotationType().getDeclaredAnnotations()))
+                .filter(a -> a instanceof CommonAddBeans)
+                .map(CommonAddBeans.class::cast)
+                .flatMap(e -> Arrays.stream(e.value()))
+                .map(CommonAddBean::value)
+                .collect(Collectors.toList()));
+        return result;
     }
 
     private <T extends Annotation> T[] getAnnotations(Class<?> testClass, Class<T> annotClass) {
@@ -254,29 +268,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 }
             }
         }
-
-//        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
-//        if (addJaxRsAnnotation != null){
-//            if (testClass.getAnnotation(DisableDiscovery.class) == null){
-//                throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
-//            }
-//
-//            List<? extends Class<?>> beans = classLevelBeans.stream().map(AddBean::value).toList();
-//            if (beans.contains(org.glassfish.jersey.weld.se.WeldRequestScope.class)) {
-//                throw new RuntimeException("@AddJaxRs annotation already includes `WeldRequestScope` bean");
-//            }
-//
-//            List<? extends Class<?>> extensions = classLevelExtensions.stream().map(AddExtension::value).toList();
-//            if (!extensions.isEmpty()) {
-//                if (extensions.contains(org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class)) {
-//                    throw new RuntimeException("@AddJaxRs annotation already includes `ProcessAllAnnotatedTypes` extension");
-//                }
-//                if (extensions.contains(CdiExtension.class)) {
-//                    throw new RuntimeException("@AddJaxRs annotation already includes `CDI` extension");
-//                }
-//            }
-//
-//        }
     }
 
     private boolean hasHelidonTestAnnotation(AnnotatedElement element) {
@@ -370,7 +361,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             initializer.disableDiscovery();
         }
 
-        initializer.addExtensions(new AddBeansExtension(testClass, beanAnnotations));
+        initializer.addExtensions(new AddBeansExtension(testClass, beanAnnotations, getFeatureBeans(testClass)));
 
         for (AddExtension addExtension : extensionAnnotations) {
             Class<? extends Extension> extensionClass = addExtension.value();
@@ -381,6 +372,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                         .getName() + " is not");
             }
         }
+
+        getFeatureExtensions(testClass).forEach(initializer::addExtensions);
 
         container = initializer.initialize();
     }
@@ -523,12 +516,14 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private static class AddBeansExtension implements Extension {
         private final Class<?> testClass;
         private final List<AddBean> addBeans;
+        private final List<Class<?>> featureBeans;
 
         private final HashMap<String, Annotation> socketAnnotations = new HashMap<>();
 
-        private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
+        private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans, List<Class<?>> featureBeans) {
             this.testClass = testClass;
             this.addBeans = addBeans;
+            this.featureBeans = featureBeans;
         }
 
 
@@ -603,6 +598,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     configurator.add(scope);
                 }
             }
+
+            featureBeans.forEach(e -> event.addAnnotatedType(e, e.getName()));
         }
 
         private boolean hasBda(Class<?> value) {

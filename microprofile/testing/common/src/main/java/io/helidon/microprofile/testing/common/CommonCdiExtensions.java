@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.testing.common;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -25,13 +26,14 @@ import java.lang.annotation.Target;
  * Common CDI Extensions for testing.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface CdiExtensions {
+@Target({ElementType.TYPE})
+@Inherited
+public @interface CommonCdiExtensions {
 
     /**
      * Return CDI Extension.
      *
      * @return CDIExtension[]
      */
-    CdiExtension[] value();
+    CommonCdiExtension[] value();
 }

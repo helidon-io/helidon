@@ -14,28 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.testing.common;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import jakarta.enterprise.inject.spi.Extension;
-
-
 /**
- * Common CDI Extension.
+ * JAX-RS Extension for Testing.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-@Repeatable(CdiExtensions.class)
-public @interface CdiExtension {
-
-    /**
-     * CDI Extension.
-     *
-     * @return The CDI Extension Class.
-     */
-    Class<? extends Extension> value();
-}
+package io.helidon.microprofile.testing.jaxrs;

@@ -15,23 +15,6 @@
  */
 
 /**
- * JUnit5 extension module to run CDI tests.
+ * Common Testing Extensions.
  */
-module io.helidon.microprofile.testing.jaxrs {
-
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml.mp;
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.testing.common;
-    requires jakarta.inject;
-    requires jersey.cdi1x;
-    requires org.junit.jupiter.api;
-
-    requires transitive jakarta.cdi;
-    requires transitive jakarta.ws.rs;
-    requires jersey.weld2.se;
-
-    exports io.helidon.microprofile.testing.jaxrs;
-
-}
+package io.helidon.microprofile.testing.common;

@@ -14,31 +14,30 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.testing.jaxrs;
-
+package io.helidon.microprofile.testing.common;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.testing.common.CommonAddBean;
-import io.helidon.microprofile.testing.common.CommonCdiExtension;
+import jakarta.enterprise.inject.spi.Extension;
 
-import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 
 /**
- * JAX_RS Testing annotation.
+ * Common CDI Extension.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE})
+@Repeatable(CommonCdiExtensions.class)
 @Inherited
-@CommonCdiExtension(ServerCdiExtension.class)
-@CommonCdiExtension(JaxRsCdiExtension.class)
-@CommonCdiExtension(CdiComponentProvider.class)
-@CommonCdiExtension(org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class)
-@CommonAddBean(org.glassfish.jersey.weld.se.WeldRequestScope.class)
-public @interface AddJaxRs {
+public @interface CommonCdiExtension {
+
+    /**
+     * CDI Extension.
+     *
+     * @return The CDI Extension Class.
+     */
+    Class<? extends Extension> value();
 }
