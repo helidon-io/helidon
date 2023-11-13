@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.observe.health;
 
+import java.util.function.Supplier;
+
 import io.helidon.builder.api.Prototype;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
@@ -44,6 +46,33 @@ final class HealthObserverSupport {
             } else {
                 builder.addCheck(new TypedCheck(check, type));
             }
+        }
+
+        /**
+         * Add a health check using the provided response supplier, type, and name.
+         *
+         * @param builder          required for the custom method
+         * @param responseSupplier supplier of the health check response
+         * @param type             type to use
+         * @param name             name to use for the health check
+         */
+        @Prototype.BuilderMethod
+        static void addCheck(HealthObserverConfig.BuilderBase<?, ?> builder,
+                             Supplier<HealthCheckResponse> responseSupplier,
+                             HealthCheckType type,
+                             String name) {
+            addCheck(builder, new HealthCheck() {
+                         @Override
+                         public HealthCheckResponse call() {
+                             return responseSupplier.get();
+                         }
+
+                         @Override
+                         public String name() {
+                             return name;
+                         }
+                     },
+                     type);
         }
 
         /**
