@@ -253,7 +253,7 @@ image::guides/12_tracing_span_detail.png[Span Details]
 Helidon automatically traces across services if the services use the same tracer, for example, the same instance of Jaeger.
 This means a single trace can include spans from multiple services and hosts.  Helidon uses a `SpanContext` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTelemetry APIs or OpenTracing APIs to propagate the Span Context. There is nothing you need to do in your application to make this work.
+internally call OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
 
 To demonstrate distributed tracing, you will need to create a second project, where the server listens to on port 8081.
 Create a new root directory to hold this new project, then do the following steps, similar to
@@ -295,7 +295,7 @@ cd helidon-quickstart-se-2
      <artifactId>helidon-tracing-providers-jaeger</artifactId>  <3>
  </dependency>
 ----
-<1> Helidon Tracing API dependencies.
+<1> Helidon Tracing API.
 <2> Observability features for tracing.
 <3> Jaeger tracing provider.
 
@@ -477,6 +477,7 @@ public class GreetService implements HttpService {
       String result = requestBuilder   // <4>
           .get(String.class);
       response.send(result);
+      spa.end();
     } catch (Throwandle t) {
       span.end(t);   // <5>
     }
