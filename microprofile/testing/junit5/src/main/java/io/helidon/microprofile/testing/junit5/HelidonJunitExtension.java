@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.testing.junit5;
 
+import java.io.Serial;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -33,6 +34,7 @@ import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
+import io.helidon.microprofile.testing.common.CdiExtension;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -81,7 +83,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                        InvocationInterceptor,
                                        ParameterResolver {
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
-            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
+            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
 
     private static final List<String> YAML_SUFFIXES = List.of(".yml", ".yaml");
@@ -139,11 +141,11 @@ class HelidonJunitExtension implements BeforeAllCallback,
         validatePerClass();
 
         // add beans when using JaxRS
-        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
-        if (addJaxRsAnnotation != null){
-            classLevelExtensions.add(AddExtensionJaxRsLiteral.INSTANCE);
-            classLevelBeans.add(AddBeanJaxRsLiteral.INSTANCE);
-        }
+//        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+//        if (addJaxRsAnnotation != null){
+//            classLevelExtensions.add(AddProcessAnnotatedTypesLiteral.INSTANCE);
+//            classLevelBeans.add(AddWeldRequestScopeLiteral.INSTANCE);
+//        }
 
         configure(classLevelConfigMeta);
 
@@ -156,6 +158,16 @@ class HelidonJunitExtension implements BeforeAllCallback,
     }
 
     @SuppressWarnings("unchecked")
+    private Class<? extends Extension>[] getFeatureExtensions(Class<?> testClass) {
+        return Arrays.stream(testClass.getDeclaredAnnotations())
+                .flatMap(a -> Arrays.stream(a.getClass().getDeclaredAnnotations()))
+                .filter(a -> a.annotationType() == CdiExtension.class)
+                .map(CdiExtension.class::cast)
+                .map(CdiExtension::value)
+                .toList()
+                .toArray(new Class[0]);
+    }
+
     private <T extends Annotation> T[] getAnnotations(Class<?> testClass, Class<T> annotClass) {
         // inherited does not help, as it only returns annot from superclass if
         // child has none
@@ -243,12 +255,28 @@ class HelidonJunitExtension implements BeforeAllCallback,
             }
         }
 
-        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
-        if (addJaxRsAnnotation != null){
-            if (testClass.getAnnotation(DisableDiscovery.class) == null){
-                throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
-            }
-        }
+//        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+//        if (addJaxRsAnnotation != null){
+//            if (testClass.getAnnotation(DisableDiscovery.class) == null){
+//                throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
+//            }
+//
+//            List<? extends Class<?>> beans = classLevelBeans.stream().map(AddBean::value).toList();
+//            if (beans.contains(org.glassfish.jersey.weld.se.WeldRequestScope.class)) {
+//                throw new RuntimeException("@AddJaxRs annotation already includes `WeldRequestScope` bean");
+//            }
+//
+//            List<? extends Class<?>> extensions = classLevelExtensions.stream().map(AddExtension::value).toList();
+//            if (!extensions.isEmpty()) {
+//                if (extensions.contains(org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class)) {
+//                    throw new RuntimeException("@AddJaxRs annotation already includes `ProcessAllAnnotatedTypes` extension");
+//                }
+//                if (extensions.contains(CdiExtension.class)) {
+//                    throw new RuntimeException("@AddJaxRs annotation already includes `CDI` extension");
+//                }
+//            }
+//
+//        }
     }
 
     private boolean hasHelidonTestAnnotation(AnnotatedElement element) {
@@ -636,42 +664,44 @@ class HelidonJunitExtension implements BeforeAllCallback,
             return methodMeta;
         }
     }
-
-
-    /**
-     * Add JaxRs Bean when {@code AddJaxRs} annotation is used.
-     */
-    private static final class AddBeanJaxRsLiteral extends AnnotationLiteral<AddBean> implements AddBean {
-
-        static final AddBeanJaxRsLiteral INSTANCE = new AddBeanJaxRsLiteral();
-
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public Class<?> value() {
-            return org.glassfish.jersey.weld.se.WeldRequestScope.class;
-        }
-
-        @Override
-        public Class<? extends Annotation> scope() {
-            return RequestScoped.class;
-        }
-    }
-
-
-    /**
-     * Add JaxRs Extension when {@code AddJaxRs} annotation is used.
-     */
-    private static final class AddExtensionJaxRsLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
-
-        static final AddExtensionJaxRsLiteral INSTANCE = new AddExtensionJaxRsLiteral();
-
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public Class<? extends Extension> value() {
-            return org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class;
-        }
-    }
+//
+//
+//    /**
+//     * Add Weld Request Scope Bean Literal when {@code AddJaxRs} annotation is used.
+//     */
+//    private static final class AddWeldRequestScopeLiteral extends AnnotationLiteral<AddBean> implements AddBean {
+//
+//        static final AddWeldRequestScopeLiteral INSTANCE = new AddWeldRequestScopeLiteral();
+//
+//        @Serial
+//        private static final long serialVersionUID = 1L;
+//
+//        @Override
+//        public Class<?> value() {
+//            return org.glassfish.jersey.weld.se.WeldRequestScope.class;
+//        }
+//
+//        @Override
+//        public Class<? extends Annotation> scope() {
+//            return RequestScoped.class;
+//        }
+//    }
+//
+//
+//    /**
+//     * Add Process Annotated Types Literal when {@code AddJaxRs} annotation is used.
+//     */
+//    private static final class AddProcessAnnotatedTypesLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
+//
+//        static final AddProcessAnnotatedTypesLiteral INSTANCE = new AddProcessAnnotatedTypesLiteral();
+//
+//        @Serial
+//        private static final long serialVersionUID = 1L;
+//
+//        @Override
+//        public Class<? extends Extension> value() {
+//            return org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class;
+//        }
+//    }
 
 }

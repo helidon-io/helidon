@@ -120,7 +120,13 @@ In addition to this simplification, the following annotations are supported:
 |to disable automated discovery of beans and extensions
 
 |Used `@io.helidon.microprofile.testing.junit5.AddJaxRs`
-|add JaxRs support to the test class. Useful for `@RequestScoped`  beans. Only used with `@DisableDiscovery` annotation, otherwise an exception will be thrown.
+a|add JaxRs support to the test class. Only used with `@DisableDiscovery` annotation, otherwise an exception will be thrown. Automatically adds the following Beans and Extensions to the test class:
+
+* `ServerCdiExtension`
+* `JaxRsCdiExtension`
+* `CdiComponentProvider`
+* `org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes`
+* `org.glassfish.jersey.weld.se.WeldRequestScope`
 |===
 
 == Examples
@@ -162,9 +168,6 @@ To test `@RequestScoped` bean with JaxRs support:
 
 @HelidonTest    <1>
 @DisableDiscovery <2>
-@AddExtension(ServerCdiExtension.class)
-@AddExtension(JaxRsCdiExtension.class)
-@AddExtension(CdiComponentProvider.class)
 
 @AddJaxRs <3>
 @AddBean(TestReqScopeDisabledDiscovery.MyController.class)

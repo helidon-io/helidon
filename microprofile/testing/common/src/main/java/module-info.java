@@ -17,18 +17,11 @@
 /**
  * JUnit5 extension module to run CDI tests.
  */
-module io.helidon.microprofile.testing.junit5 {
+module io.helidon.microprofile.testing.common {
 
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml.mp;
-    requires org.junit.jupiter.api;
     requires jakarta.inject;
-    requires io.helidon.microprofile.testing.common;
-
     requires transitive jakarta.cdi;
-    requires transitive jakarta.ws.rs;
 
-    exports io.helidon.microprofile.testing.junit5;
+    exports io.helidon.microprofile.testing.common;
 
 }

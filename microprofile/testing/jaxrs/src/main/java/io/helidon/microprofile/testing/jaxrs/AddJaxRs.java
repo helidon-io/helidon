@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package io.helidon.microprofile.testing.jaxrs;
+
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.testing.common.CdiExtension;
+
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 
 /**
- * Add JaxRS support for Request-scoped beans.
+ * JAX_RS Testing annotation.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
+@CdiExtension(ServerCdiExtension.class)
+@CdiExtension(JaxRsCdiExtension.class)
+@CdiExtension(CdiComponentProvider.class)
 public @interface AddJaxRs {
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.testing.testng;
 
+import java.io.Serial;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -32,6 +33,7 @@ import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
+import io.helidon.microprofile.testing.jaxrs.AddJaxRs;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -58,6 +60,7 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.testng.IClassListener;
 import org.testng.ITestClass;
 import org.testng.ITestListener;
@@ -128,8 +131,8 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         // add beans when using JaxRS
         AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
         if (addJaxRsAnnotation != null){
-            classLevelExtensions.add(AddExtensionJaxRsLiteral.INSTANCE);
-            classLevelBeans.add(AddBeanJaxRsLiteral.INSTANCE);
+            classLevelExtensions.add(AddProcessAnnotatedTypesLiteral.INSTANCE);
+            classLevelBeans.add(AddWeldRequestScopeLiteral.INSTANCE);
         }
 
         configure(classLevelConfigMeta);
@@ -261,6 +264,22 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             if (testClass.getAnnotation(DisableDiscovery.class) == null){
                 throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
             }
+
+            List<? extends Class<?>> beans = classLevelBeans.stream().map(AddBean::value).toList();
+            if (beans.contains(org.glassfish.jersey.weld.se.WeldRequestScope.class)) {
+                throw new RuntimeException("@AddJaxRs annotation already includes `WeldRequestScope` bean");
+            }
+
+            List<? extends Class<?>> extensions = classLevelExtensions.stream().map(AddExtension::value).toList();
+            if (!extensions.isEmpty()) {
+                if (extensions.contains(org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class)) {
+                    throw new RuntimeException("@AddJaxRs annotation already includes `ProcessAllAnnotatedTypes` extension");
+                }
+                if (extensions.contains(CdiComponentProvider.class)) {
+                    throw new RuntimeException("@AddJaxRs annotation already includes `CdiComponentProvider` extension");
+                }
+            }
+
         }
     }
 
@@ -525,12 +544,13 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
 
     /**
-     * Add JaxRs Bean when {@code AddJaxRs} annotation is used.
+     * Add Weld Request Scope Literal when {@code AddJaxRs} annotation is used.
      */
-    private static final class AddBeanJaxRsLiteral extends AnnotationLiteral<AddBean> implements AddBean {
+    private static final class AddWeldRequestScopeLiteral extends AnnotationLiteral<AddBean> implements AddBean {
 
-        static final AddBeanJaxRsLiteral INSTANCE = new AddBeanJaxRsLiteral();
+        static final AddWeldRequestScopeLiteral INSTANCE = new AddWeldRequestScopeLiteral();
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -546,12 +566,13 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
 
     /**
-     * Add JaxRs Extension when {@code AddJaxRs} annotation is used.
+     * Add Process Annotated Types Literal when {@code AddJaxRs} annotation is used.
      */
-    private static final class AddExtensionJaxRsLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
+    private static final class AddProcessAnnotatedTypesLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
 
-        static final AddExtensionJaxRsLiteral INSTANCE = new AddExtensionJaxRsLiteral();
+        static final AddProcessAnnotatedTypesLiteral INSTANCE = new AddProcessAnnotatedTypesLiteral();
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override

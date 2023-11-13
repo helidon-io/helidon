@@ -23,7 +23,6 @@ module io.helidon.microprofile.testing.testng {
 
     requires io.helidon.config.mp;
     requires io.helidon.config.yaml.mp;
-    requires io.helidon.microprofile.cdi;
     requires jakarta.cdi;
     requires jakarta.inject;
     requires jakarta.ws.rs;
@@ -31,6 +30,7 @@ module io.helidon.microprofile.testing.testng {
     requires jersey.weld2.se;
     requires microprofile.config.api;
     requires org.testng;
+    requires io.helidon.microprofile.testing.jaxrs;
 
     exports io.helidon.microprofile.testing.testng;
 

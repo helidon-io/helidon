@@ -112,12 +112,18 @@ In addition to this simplification, the following annotations are supported:
 |Used to disable automated discovery of beans and extensions
 
 |Used `@io.helidon.microprofile.testing.junit5.AddJaxRs`
-|add JaxRs support to the test class. Useful for `@RequestScoped`  beans. Only used with `@DisableDiscovery` annotation, otherwise an exception will be thrown.
+a|add JaxRs support to the test class. Only used with `@DisableDiscovery` annotation, otherwise an exception will be thrown. Automatically adds the following Beans and Extensions to the test class:
+
+* `ServerCdiExtension`
+* `JaxRsCdiExtension`
+* `CdiComponentProvider`
+* `org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes`
+* `org.glassfish.jersey.weld.se.WeldRequestScope`
 |===
 
 == Examples
 
-In current example Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
+In the current example, Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
 
 [source,java]
 .Code sample
@@ -154,9 +160,6 @@ To test `@RequestScoped` bean with JaxRs support:
 
 @HelidonTest    <1>
 @DisableDiscovery <2>
-@AddExtension(ServerCdiExtension.class)
-@AddExtension(JaxRsCdiExtension.class)
-@AddExtension(CdiComponentProvider.class)
 
 @AddJaxRs <3>
 @AddBean(TestReqScopeDisabledDiscovery.MyController.class)
