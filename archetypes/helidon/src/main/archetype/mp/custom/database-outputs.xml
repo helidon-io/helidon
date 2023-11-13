@@ -306,8 +306,8 @@ docker run --rm --name mysql -p 3306:3306 \
                     </list>
                     <list key="dependencies">
                         <map>
-                            <value key="groupId">mysql</value>
-                            <value key="artifactId">mysql-connector-java</value>
+                            <value key="groupId">com.mysql</value>
+                            <value key="artifactId">mysql-connector-j</value>
                             <value key="scope">runtime</value>
                         </map>
                     </list>
