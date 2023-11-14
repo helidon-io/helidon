@@ -228,7 +228,10 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                     addServerClasspath(classPath, classesDir, libDir, rootDir);
                     if (containerConfig.isInWebContainer()) {
                         if (containerConfig.isIncludeWarContextPath()) {
-                            context.rootContext = archive.getName().split("\\.")[0];
+                            String rootContext = archive.getName().split("\\.")[0];
+                            if (!containerConfig.getSkipContextPaths().contains(rootContext)) {
+                                context.rootContext = rootContext;
+                            }
                         }
                         if (!loadApplicationFromWebXml(context, webInfDir)) {
                             // Search Application in classes
@@ -420,7 +423,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                     String key = app.getName() + ".routing-path.path";
                     ApplicationPath path = app.getDeclaredAnnotation(ApplicationPath.class);
                     String value = "/" + context.rootContext;
-                    if (path != null && !"/".equals(path.value())) {
+                    if (path != null && !"/".equals(path.value()) && !"".equals(path.value())) {
                         value = value + "/" + path.value();
                     }
                     properties.put(key, value);

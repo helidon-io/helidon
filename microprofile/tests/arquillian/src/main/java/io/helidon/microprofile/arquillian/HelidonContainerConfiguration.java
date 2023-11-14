@@ -17,7 +17,10 @@
 package io.helidon.microprofile.arquillian;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
@@ -41,6 +44,7 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  * <li>useBeanXmlTemplate: (Optional) defaults to true: will create the default templates/beans.xml when beans.xml is missing</li>
  * <li>includeWarContextPath: (Optional) defaults to false: will include the war name as a root context.
  * For example, if a example.war is deployed, the root context is going to be /example.</li>
+ * <li>skipContextPaths: (Optional) defaults to empty: define the context paths to be excluded.</li>
  * <li>multipleDeployments: (Optional) defaults to true: workaround for tests that unintentionally
  * executes 1+ times @org.jboss.arquillian.container.test.api.Deployment</li>
  * </ul>
@@ -61,6 +65,7 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
      */
     private boolean includeWarContextPath = false;
     private final List<Consumer<ConfigBuilder>> builderConsumers = new ArrayList<>();
+    private final Set<String> skipContextPaths = new HashSet<>();
 
     /**
      * Access container's config builder.
@@ -165,5 +170,13 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     ConfigBuilder useBuilder(ConfigBuilder configBuilder) {
         this.builderConsumers.forEach(builderConsumer -> builderConsumer.accept(configBuilder));
         return configBuilder;
+    }
+
+    public Set<String> getSkipContextPaths() {
+        return skipContextPaths;
+    }
+
+    public void setSkipContextPaths(String skipContextPaths) {
+        this.skipContextPaths.addAll(Arrays.asList(skipContextPaths.trim().split(",")));
     }
 }
