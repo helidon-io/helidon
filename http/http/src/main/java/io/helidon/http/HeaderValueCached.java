@@ -55,11 +55,6 @@ class HeaderValueCached extends HeaderValueBase {
     }
 
     @Override
-    public HeaderWriteable addValue(String value) {
-        throw new UnsupportedOperationException("Cannot change values of a cached header " + name());
-    }
-
-    @Override
     public List<String> allValues() {
         return List.of(value);
     }

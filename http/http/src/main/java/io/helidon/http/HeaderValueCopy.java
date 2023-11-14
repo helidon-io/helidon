@@ -19,7 +19,7 @@ package io.helidon.http;
 import java.util.ArrayList;
 import java.util.List;
 
-class HeaderValueCopy extends HeaderValueBase {
+class HeaderValueCopy extends HeaderWritableValueBase {
     private final Header original;
     private List<String> values;
 

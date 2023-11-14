@@ -21,7 +21,7 @@ import java.util.List;
 
 import io.helidon.common.buffers.LazyString;
 
-class HeaderValueLazy extends HeaderValueBase {
+class HeaderValueLazy extends HeaderWritableValueBase {
     private final LazyString value;
     private List<String> values;
 
