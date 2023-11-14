@@ -30,14 +30,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
-import io.helidon.microprofile.testing.common.CommonAddBean;
-import io.helidon.microprofile.testing.common.CommonAddBeans;
-import io.helidon.microprofile.testing.common.CommonCdiExtension;
-import io.helidon.microprofile.testing.common.CommonCdiExtensions;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -74,6 +69,9 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
+import static io.helidon.microprofile.testing.common.CommonTestUtil.getFeatureBeans;
+import static io.helidon.microprofile.testing.common.CommonTestUtil.getFeatureExtensions;
+
 
 /**
  * Junit5 extension to support Helidon CDI container in tests.
@@ -109,7 +107,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private SeContainer container;
 
 
-    @SuppressWarnings("unchecked")
     @Override
     public void beforeAll(ExtensionContext context) {
         testClass = context.getRequiredTestClass();
@@ -150,36 +147,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
             // can work
             startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Class<? extends Extension>> getFeatureExtensions(Class<?> testClass) {
-        return Arrays.stream(testClass.getDeclaredAnnotations())
-                .flatMap(a -> Arrays.stream(a.annotationType().getDeclaredAnnotations()))
-                .filter(a -> a instanceof CommonCdiExtensions)
-                .map(CommonCdiExtensions.class::cast)
-                .flatMap(e -> Arrays.stream(e.value()))
-                .map(CommonCdiExtension::value)
-                .collect(Collectors.toList());
-    }
-
-    private List<Class<?>> getFeatureBeans(Class<?> testClass) {
-
-        ArrayList<Class<?>> result = new ArrayList<>(Arrays.stream(testClass.getDeclaredAnnotations())
-                .flatMap(a -> Arrays.stream(a.annotationType().getDeclaredAnnotations()))
-                .filter(a -> a instanceof CommonAddBean)
-                .map(CommonAddBean.class::cast)
-                .map(CommonAddBean::value)
-                .collect(Collectors.toList()));
-
-        result.addAll(Arrays.stream(testClass.getDeclaredAnnotations())
-                .flatMap(a -> Arrays.stream(a.annotationType().getDeclaredAnnotations()))
-                .filter(a -> a instanceof CommonAddBeans)
-                .map(CommonAddBeans.class::cast)
-                .flatMap(e -> Arrays.stream(e.value()))
-                .map(CommonAddBean::value)
-                .collect(Collectors.toList()));
-        return result;
     }
 
     private <T extends Annotation> T[] getAnnotations(Class<?> testClass, Class<T> annotClass) {
@@ -361,7 +328,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             initializer.disableDiscovery();
         }
 
-        initializer.addExtensions(new AddBeansExtension(testClass, beanAnnotations, getFeatureBeans(testClass)));
+        initializer.addExtensions(new AddBeansExtension(testClass, beanAnnotations));
 
         for (AddExtension addExtension : extensionAnnotations) {
             Class<? extends Extension> extensionClass = addExtension.value();
@@ -516,14 +483,12 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private static class AddBeansExtension implements Extension {
         private final Class<?> testClass;
         private final List<AddBean> addBeans;
-        private final List<Class<?>> featureBeans;
 
         private final HashMap<String, Annotation> socketAnnotations = new HashMap<>();
 
-        private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans, List<Class<?>> featureBeans) {
+        private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
             this.testClass = testClass;
             this.addBeans = addBeans;
-            this.featureBeans = featureBeans;
         }
 
 
@@ -599,7 +564,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 }
             }
 
-            featureBeans.forEach(e -> event.addAnnotatedType(e, e.getName()));
+            // Add all Common Feature beans
+            getFeatureBeans(testClass).forEach(e -> event.addAnnotatedType(e, e.getName()));
         }
 
         private boolean hasBda(Class<?> value) {

@@ -19,12 +19,12 @@
  */
 module io.helidon.microprofile.testing.junit5 {
 
-    requires io.helidon.microprofile.cdi;
     requires io.helidon.config.mp;
     requires io.helidon.config.yaml.mp;
-    requires org.junit.jupiter.api;
-    requires jakarta.inject;
+    requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.testing.common;
+    requires jakarta.inject;
+    requires org.junit.jupiter.api;
 
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;

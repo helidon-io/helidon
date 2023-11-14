@@ -22,8 +22,7 @@ import java.lang.annotation.Target;
 
 /**
  * A repeatable container for {@link CommonAddBean}.
- * No need to use this annotation, just repeat {@link CommonAddBean} annotation
- * on test class.
+ * No need to use this annotation, just repeat {@link CommonAddBean} annotation.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

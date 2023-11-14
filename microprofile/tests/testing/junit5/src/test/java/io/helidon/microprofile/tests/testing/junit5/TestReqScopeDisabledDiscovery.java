@@ -28,9 +28,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @HelidonTest
-@DisableDiscovery
+//@DisableDiscovery
 
-// JAX-RS Request scope
 @AddBean(TestReqScopeDisabledDiscovery.MyController.class)
 @AddJaxRs
 class TestReqScopeDisabledDiscovery {

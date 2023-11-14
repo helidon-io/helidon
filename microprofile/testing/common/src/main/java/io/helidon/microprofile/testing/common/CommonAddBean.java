@@ -15,9 +15,6 @@
  */
 package io.helidon.microprofile.testing.common;
 
-import jakarta.enterprise.context.ApplicationScoped;
-
-import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -25,10 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Add a bean.
- * This is intended for test sources where we do not want to add {@code beans.xml} as this would add
- * all test classes as beans.
- * The bean will be added by default with {@link ApplicationScoped}.
+ * Add a bean to other annotations.
  * The class will be instantiated using CDI and will be available for injection into test classes and other beans.
  * This annotation can be repeated.
  */
@@ -36,18 +30,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(CommonAddBeans.class)
 public @interface CommonAddBean {
+
     /**
      * Class of the bean.
      * @return the class of a bean
      */
     Class<?> value();
-
-    /**
-     * Scope of the bean.
-     * Only {@link jakarta.inject.Singleton}, {@link ApplicationScoped}
-     *   and {@link jakarta.enterprise.context.RequestScoped} scopes are supported.
-     *
-     * @return scope of the bean
-     */
-    Class<? extends Annotation> scope() default ApplicationScoped.class;
 }

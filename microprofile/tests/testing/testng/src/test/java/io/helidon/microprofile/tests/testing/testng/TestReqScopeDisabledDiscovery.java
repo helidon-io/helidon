@@ -30,7 +30,6 @@ import static org.testng.AssertJUnit.assertEquals;
 @HelidonTest
 @DisableDiscovery
 
-// JAX-RS Request scope
 @AddJaxRs
 @AddBean(TestReqScopeDisabledDiscovery.MyController.class)
 class TestReqScopeDisabledDiscovery {
