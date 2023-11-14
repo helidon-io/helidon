@@ -227,6 +227,11 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     }
 
     private ServerConnection identifyConnection() {
+        // if just one candidate, take a chance with it
+        if (providerCandidates.size() == 1) {
+            return providerCandidates.getFirst().connection(this);
+        }
+
         try {
             reader.ensureAvailable();
         } catch (DataReader.InsufficientDataAvailableException e) {
