@@ -172,10 +172,18 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
         return configBuilder;
     }
 
+    /**
+     * Getter of skipContextPaths.
+     * @return the skipContextPaths
+     */
     public Set<String> getSkipContextPaths() {
         return skipContextPaths;
     }
 
+    /**
+     * List of comma separated context roots that should be excluded.
+     * @param skipContextPaths the context paths
+     */
     public void setSkipContextPaths(String skipContextPaths) {
         this.skipContextPaths.addAll(Arrays.asList(skipContextPaths.trim().split(",")));
     }

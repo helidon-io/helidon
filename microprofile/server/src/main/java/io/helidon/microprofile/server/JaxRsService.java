@@ -189,7 +189,7 @@ class JaxRsService implements HttpService {
         // call doHandle in active context
         Contexts.runInContext(context, () -> doHandle(context, req, res));
     }
-    
+
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
         BaseUriRequestUri uris = BaseUriRequestUri.resolve(req);
         ContainerRequest requestContext = new ContainerRequest(uris.baseUri,
