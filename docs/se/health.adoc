@@ -93,9 +93,9 @@ A health check is a Java functional interface that returns a
 [source,java]
 .Health check with a lambda expression:
 ----
-HealthCheck hc = () -> HealthCheckResponse
+Supplier<HealthCheckResponse> hcr = () -> HealthCheckResponse
                 .builder()
-                .detail("exampleCheck", "looking-good")
+                .detail("exampleValue", "looking-good")
                 .status(HealthCheckResponse.Status.UP) // always "up"
                 .build();
 ----
@@ -106,12 +106,12 @@ HealthCheck hc = () -> HealthCheckResponse
 static HealthCheckResponse exampleHealthCheck() {
         return HealthCheckResponse
                 .builder()
-                .detail("exampleHealthCheck", "looking-good")
+                .detail("exampleValue", "looking-good")
                 .status(HealthCheckResponse.Status.UP) // always "up"
                 .build();
     }
 
-HealthCheck hc = Main::exampleHealthCheck;
+Supplier<HealthCheckResponse> hcr = Main::exampleHealthCheck;
 ----
 A real health check would compute its status dynamically based on the conditions in the server rather than hard-coding a fixed value.
 
@@ -148,18 +148,24 @@ instance of `HealthObserver`:
 ----
 WebServer server = WebServer.builder()
         .config(config.get("server"))
-        .addFeature(ObserveFeature.create(HealthObserver.builder() // <1>
-                                                  .addCheck(hc)    // <2>
-                                                  .details(true)   // <3>
-                                                  .build()))       // <4>
+        .addFeature(ObserveFeature.create(HealthObserver.builder()                     // <1>
+                                                  .addCheck(hcr,                       // <2>
+                                                            HealthCheckType.READINESS, // <3>
+                                                            "exampleCheck")            // <4>
+                                                  .details(true)                       // <5>
+                                                  .build()))                           // <6>
         .routing(Main::routing)
         .build()
         .start();
 ----
 <1> Create a builder for the `HealthObserver`.
-<2> Add the custom health check to the `HealthObserver.Builder`. Invoke `addCheck` multiple times to add multiple custom health checks.
-<3> Set detailed HTTP response output to `true`.
-<4> Build the `HealthObserver` so it can be added to the observability feature that is registered with the webserver.
+<2> Create and add a custom health check to the builder, passing the supplier of the health check response (the `hcr` variable in this example).
+<3> Set the type of health check.
+<4> Set the name of the health check.
+<5> Set the health observer to include details in the output. (optional)
+<6> Build the `HealthObserver` so it can be added to the observability feature that is registered with the webserver.
+
+Invoke `addCheck` multiple times to add multiple custom health checks.
 
 Here is a sample response to the custom health check registered above:
 
@@ -169,11 +175,11 @@ Here is a sample response to the custom health check registered above:
 {
   "status": "UP",
   "checks": [
-    {
-      "name": "Main$$Lambda/0x00000001320ac800",
+        {
+      "name": "exampleCheck",
       "status": "UP",
       "data": {
-        "exampleHealthCheck": "looking-good"
+        "exampleValue": "looking-good"
       }
     },
 ...
