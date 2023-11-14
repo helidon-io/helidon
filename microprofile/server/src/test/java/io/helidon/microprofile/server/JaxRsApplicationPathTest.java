@@ -100,12 +100,11 @@ class JaxRsApplicationPathTest {
     }
 
     @Test
-    @Disabled("Enable to investigate TCK issue")
     void encodedEntityTest() {
         String getResponse = client.target("http://localhost:" + port)
                 .path("/ApplicationPath!/Resource/ParamEntityWithFromString/test%21/test!/test!/test%21")
                 .request().get(String.class);
-        assertThat(getResponse, is("test%21test!test%21test!"));
+        assertThat(getResponse, is("test%21test!test!test!"));
     }
 
     @ApplicationPath("/ApplicationPath%21")

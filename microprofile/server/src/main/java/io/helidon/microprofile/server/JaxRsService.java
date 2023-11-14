@@ -121,7 +121,7 @@ class JaxRsService implements HttpService {
         return new JaxRsService(resourceConfig, appHandler, container);
     }
 
-    static String basePath(UriPath path) {
+    private static String basePath(UriPath path) {
         String reqPath = path.path();
         String absPath = path.absolute().path();
         String basePath = absPath.substring(0, absPath.length() - reqPath.length() + 1);
@@ -179,14 +179,6 @@ class JaxRsService implements HttpService {
         return application;
     }
 
-    private static URI baseUri(ServerRequest req) {
-        String uri = (req.isSecure() ? "https" : "http")
-                + "://" + req.authority()
-                + basePath(req.path());
-
-        return URI.create(uri);
-    }
-
     private void handle(ServerRequest req, ServerResponse res) {
         Context context = req.context();
 
@@ -197,28 +189,11 @@ class JaxRsService implements HttpService {
         // call doHandle in active context
         Contexts.runInContext(context, () -> doHandle(context, req, res));
     }
-
+    
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
-        URI baseUri = baseUri(req);
-        URI requestUri;
-
-        String rawPath = req.path().rawPath();
-        rawPath = rawPath.startsWith("/") ? rawPath.substring(1) : rawPath;
-        /*
-         * rawPath could be a decoded path here because of UriPathNoParam(41).
-         * Paths generated from decoded URIs could contain whitespace,
-         * and URIs cannot be created with whitespace (it throws one IllegalException).
-         * I didn't find a better solution than the next.
-         */
-        rawPath = rawPath.replaceAll(" ", "%20");
-        if (req.query().isEmpty()) {
-            requestUri = baseUri.resolve(rawPath);
-        } else {
-            requestUri = baseUri.resolve(rawPath + "?" + req.query().rawValue());
-        }
-
-        ContainerRequest requestContext = new ContainerRequest(baseUri,
-                                                               requestUri,
+        BaseUriRequestUri uris = BaseUriRequestUri.resolve(req);
+        ContainerRequest requestContext = new ContainerRequest(uris.baseUri,
+                                                               uris.requestUri,
                                                                req.prologue().method().text(),
                                                                new HelidonMpSecurityContext(), new MapPropertiesDelegate(),
                                                                resourceConfig);
@@ -450,6 +425,28 @@ class JaxRsService implements HttpService {
         @Override
         public void write(int b) throws IOException {
             delegate.write(b);
+        }
+    }
+
+    private static class BaseUriRequestUri {
+        private final URI baseUri;
+        private final URI requestUri;
+
+        private BaseUriRequestUri(URI baseUri, URI requestUri) {
+            this.baseUri = baseUri;
+            this.requestUri = requestUri;
+        }
+
+        private static BaseUriRequestUri resolve(ServerRequest req) {
+            String processedBasePath = basePath(req.path());
+            String rawPath = req.path().absolute().rawPath();
+            String prefix = (req.isSecure() ? "https" : "http") + "://" + req.authority();
+            String serverBasePath = prefix + processedBasePath;
+            String requestPath = prefix + rawPath;
+            if (!req.query().isEmpty()) {
+                requestPath = requestPath + "?" + req.query().rawValue();
+            }
+            return new BaseUriRequestUri(URI.create(serverBasePath), URI.create(requestPath));
         }
     }
 }
