@@ -1,0 +1,62 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.integrations.neo4j.Neo4j
+:keywords: helidon, config, io.helidon.integrations.neo4j.Neo4j
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.integrations.neo4j.Neo4j
+include::{rootdir}/includes/attributes.adoc[]
+
+= Neo4j (integrations.neo4j) Configuration
+
+// tag::config[]
+
+
+Type: link:{javadoc-base-url}/io.helidon.integrations.neo4j/io/helidon/integrations/neo4j/Neo4j.html[io.helidon.integrations.neo4j.Neo4j]
+
+
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`authentication-enabled` |boolean |`true` |Enable authentication.
+|`certificate` |Path |{nbsp} |Set certificate path.
+|`connection-acquisition-timeout` |Duration |`PT1MS` |Set connection acquisition timeout.
+|`encrypted` |boolean |{nbsp} |Enable encrypted field.
+|`hostname-verification-enabled` |boolean |{nbsp} |Enable hostname verification.
+|`idle-time-before-connection-test` |Duration |`PT-1MS` |Set idle time.
+|`log-leaked-sessions` |boolean |{nbsp} |Enable log leaked sessions.
+|`max-connection-lifetime` |Duration |`PT5H` |Set max life time.
+|`max-connection-pool-size` |int |`100` |Set pool size.
+|`metrics-enabled` |boolean |{nbsp} |Enable metrics.
+|`password` |string |{nbsp} |Create password.
+|`trust-strategy` |TrustStrategy (TRUST_ALL_CERTIFICATES, TRUST_CUSTOM_CA_SIGNED_CERTIFICATES, TRUST_SYSTEM_CA_SIGNED_CERTIFICATES) |{nbsp} |Set trust strategy.
+|`uri` |string |{nbsp} |Create uri.
+|`username` |string |{nbsp} |Create username.
+
+|===
+
+// end::config[]
