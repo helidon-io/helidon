@@ -36,11 +36,11 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
-Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
+Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
-which helps you identify performance and operational issues.  Helidon SE includes support for distributed tracing
-through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer
-and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
+which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either
+through the https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API], or by
+https://opentracing.io[OpenTracing API].
 
 === Tracing Concepts
 
@@ -52,15 +52,14 @@ A span is associated to a single service, but its descendants can belong to diff
 A _trace_ contains a collection of spans from one or more services, running on one or more hosts. For example,
 if you trace a service endpoint that calls another service, then the trace would contain spans from both services.
 Within a trace, spans are organized as a directed acyclic graph (DAG) and
-can belong to multiple services, running on multiple hosts.  The _OpenTracing Data Model_ describes the details
-at https://opentracing.io/specification[The OpenTracing Semantic Specification].
+can belong to multiple services, running on multiple hosts.
 Spans are automatically created by Helidon as needed during execution of the REST request.
 
 == Getting Started with Tracing
 
 The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace
 across multiple services, and how to integrate with tracing with Kubernetes. All examples use Jaeger and traces
-will be viewed using both the Jaeger UI.
+will be viewed using the Jaeger UI.
 
 === Create a Sample Helidon SE Project
 
@@ -115,67 +114,86 @@ section (*not* `<dependencyManagement>`). This will enable Helidon to use Jaeger
 default host and port, `localhost:14250`.
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
-</dependency>
+ <dependency>
+     <groupId>io.helidon.tracing</groupId>
+     <artifactId>helidon-tracing</artifactId>   <1>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.webserver.observe</groupId>
+     <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.tracing.providers</groupId>
+     <artifactId>helidon-tracing-providers-jaeger</artifactId>  <3>
+ </dependency>
 ----
+<1> Helidon Tracing dependencies.
+<2> Observability features for tracing.
+<3> Jaeger tracing provider.
 
 All spans sent by Helidon to Jaeger need to be associated with a service.  Specify the service name below.
 
 [source,bash]
-.Add the following line to `resources/application.yaml`:
+.Add the following lines to `resources/application.yaml`:
 ----
 tracing:
   service: helidon-se-1
+  protocol: http
+  port: 14250
+  path: /api/traces
+  tags:
+    env: development
+  enabled: true
+  sampler-type: "const"
+  sampler-param: 1
+  log-spans: true
+  propagation: b3
 ----
 
 [source,java]
-.Update the `Main` class; Add Tracer to the WebServer builder
+.Update the `Main` class. Add Tracer to the WebServer builder
 ----
-import io.helidon.tracing.TracerBuilder; // <1>
+import io.helidon.tracing.TracerBuilder;
 ...
+
+Tracer tracer = TracerBuilder.create("helidon") <1>
+                .build();
+
 WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build()) // <2>
+                .addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 ----
-<1> Add a new import statement.
-<2> Build and register a `Tracer` object using the tracing configuration.
+<1> Create the `Tracer` object.
+<2> Add an observability feature using the created `Tracer`.
 
 [source,java]
-.Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class: replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span; // <1>
-...
-    private void getDefaultMessageHandler(ServerRequest request,
-                                   ServerResponse response) {
+private void getDefaultMessageHandler(ServerRequest request,
+                                      ServerResponse response) {
+    var spanBuilder = Tracer.global().spanBuilder("mychildSpan"); <1>
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder)); <2>
+    var span = spanBuilder.start(); <3>
 
-        var spanBuilder = request.tracer()  // <2>
-                .buildSpan("getDefaultMessageHandler");  // <3>
-        request.spanContext().ifPresent(spanBuilder::asChildOf);  // <4>
-        Span span = spanBuilder.start();  // <5>
-
-        try {
-            sendResponse(response, "World");
-        } finally {
-            span.finish();  // <6>
-        }
+    try {
+        sendResponse(response, "World");
+        span.end(); <4>
+    } catch (Throwable t) {
+        span.end(t);    <5>
     }
+}
 ----
-<1> Add new import statement.
-<2> Get the `Tracer` object from the request.
-<3> Build a new span named `getDefaultMessageHandler`.
-<4> Make the new span a child of the current span.
-<5> Start the span.  The current timestamp is used as the starting time for the span.
-<6> Finish the span.  The current timestamp is used as the ending time for the span.
+<1> Create a new `Span` using the global tracer.
+<2> Set the parent of the new span to the span from the `Request` if available.
+<3> Start the span.
+<4> End the span normally after the response is sent.
+<5> End the span with an exception if one was thrown.
 
 
 [source,bash]
@@ -198,7 +216,7 @@ curl http://localhost:8080/greet
 
 === Viewing Tracing Using Jaeger UI
 
-The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents
+The tracing output data is verbose and can be challenging to interpret using the REST API, especially since it represents
 a structure of spans. Jaeger provides a web-based UI at http://localhost:16686/search, where you can see a visual
 representation of the same data and the relationship between spans within a trace.
 
@@ -214,13 +232,13 @@ longer duration since there is one-time initialization that occurs.
 .Tracing list view
 image::guides/12_tracing_se_top.png[Traces]
 
-Click on a trace and you will see the trace detail page where the spans are listed.  You can clearly
+Click on a trace, and you will see the trace detail page where the spans are listed. You can clearly
 see the root span and the relationship among all the spans in the trace, along with timing information.
 
 .Trace detail page
 image::guides/12_tracing_se_detail.png[Trace Detail]
 
-NOTE: A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see
+NOTE: For OpenTracing, a parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see
 https://github.com/opentracing/specification/blob/master/specification.md[Open Tracing Semantic Spec].
 
 You can examine span details by clicking on the span row.  Refer to the image below, which shows the span details, including timing information.
@@ -232,12 +250,12 @@ image::guides/12_tracing_span_detail.png[Span Details]
 
 === Tracing Across Services
 
-Helidon automatically traces across services, providing that the services use the same tracer, for example, the same instance of Jaeger.
-This means a single trace can include spans from multiple services and hosts.  OpenTracing uses a `SpanContext` to
+Helidon automatically traces across services if the services use the same tracer, for example, the same instance of Jaeger.
+This means a single trace can include spans from multiple services and hosts.  Helidon uses a `SpanContext` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
+internally call OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
 
-To demonstrate distributed tracing, you will need to create a second project, where the server listens on port 8081.
+To demonstrate distributed tracing, you will need to create a second project, where the server listens to on port 8081.
 Create a new root directory to hold this new project, then do the following steps, similar to
 what you did at the start of this guide:
 
@@ -262,17 +280,24 @@ cd helidon-quickstart-se-2
 ----
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
-</dependency>
+ <dependency>
+     <groupId>io.helidon.tracing</groupId>
+     <artifactId>helidon-tracing</artifactId>   <1>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.webserver.observe</groupId>
+     <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.tracing.providers</groupId>
+     <artifactId>helidon-tracing-providers-jaeger</artifactId>  <3>
+ </dependency>
 ----
+<1> Helidon Tracing API.
+<2> Observability features for tracing.
+<3> Jaeger tracing provider.
 
 [source,bash]
 .Replace `resources/application.yaml` with the following:
@@ -281,44 +306,59 @@ app:
   greeting: "Hello From SE-2"
 
 tracing:
-  service: "helidon-se-2"
+  service: helidon-se-2
+  protocol: http
+  port: 14250
+  path: /api/traces
+  tags:
+    env: development
+  enabled: true
+  sampler-type: "const"
+  sampler-param: 1
+  log-spans: true
+  propagation: b3
 
 server:
   port: 8081
   host: 0.0.0.0
 ----
 
+NOTE: The settings above are for development and experimental purposes only. For production environment, please see the link:../tracing.adoc[Tracing documentation].
+
 [source,java]
 .Update the `Main` class; Add Tracer to the WebServer builder
 ----
-import io.helidon.tracing.TracerBuilder;
-...
+Tracer tracer = TracerBuilder.create("helidon") <1>
+                .build();
+
 WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build())
+                .addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 ----
+<1> Create the `Tracer` object.
+<2> Add an observability feature using the created `Tracer`.
 
 [source,java]
-.Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class. Replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span;
-//...
-    private void getDefaultMessageHandler(ServerRequest request,
-                                   ServerResponse response) {
+private void getDefaultMessageHandler(ServerRequest request,
+                               ServerResponse response) {
 
-        var spanBuilder = request.tracer()
-                .buildSpan("getDefaultMessageHandler");
-        request.spanContext().ifPresent(spanBuilder::asChildOf);
-        Span span = spanBuilder.start();
+    var spanBuilder = request.tracer()
+            .buildSpan("getDefaultMessageHandler");
+    request.spanContext().ifPresent(spanBuilder::asChildOf);
+    Span span = spanBuilder.start();
 
-        try {
-            sendResponse(response, "World");
-        } finally {
-            span.finish();
-        }
+    try {
+        sendResponse(response, "World");
+    } catch (Throwable t) {
+        span.end(t);
     }
+}
 ----
 
 [source,bash]
@@ -368,26 +408,6 @@ call it.
 [source,java]
 .Replace the `GreetService` class with the following code:
 ----
-package io.helidon.examples.quickstart.se;
-
-import io.helidon.http.Http;
-import io.helidon.config.Config;
-import io.helidon.tracing.jersey.client.ClientTracingFilter;
-import io.helidon.webserver.HttpRules;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.opentracing.Span;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.WebTarget;
-
 public class GreetService implements HttpService {
 
   private final AtomicReference<String> greeting = new AtomicReference<>();
@@ -411,16 +431,15 @@ public class GreetService implements HttpService {
   }
 
   private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-
-    var spanBuilder = request.tracer()
-                .buildSpan("getDefaultMessageHandler");
-    request.spanContext().ifPresent(spanBuilder::asChildOf);
-    Span span = spanBuilder.start();
+    var spanBuilder = Tracer.global().spanBuilder("getDefaultMessageHandler");
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder));
+    var span = spanBuilder.start();
 
     try {
-      sendResponse(response, "World");
-    } finally {
-      span.finish();
+        sendResponse(response, "World");
+        span.end();
+    } catch (Throwable t) {
+        span.end(t);
     }
   }
 
@@ -447,21 +466,20 @@ public class GreetService implements HttpService {
   private void outboundMessageHandler(ServerRequest request, ServerResponse response) {
     Invocation.Builder requestBuilder = webTarget.request();
 
-    // <2>
-    var spanBuilder = request.tracer()
-                .buildSpan("outboundMessageHandler");
-    request.spanContext().ifPresent(spanBuilder::asChildOf);
-    Span span = spanBuilder.start();
+    var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder));
+    var span = spanBuilder.start();     // <2>
 
     try {
       requestBuilder.property(
-          ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext());  // <3>
+          ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, span.context());  // <3>
 
       String result = requestBuilder   // <4>
           .get(String.class);
       response.send(result);
-    } finally {
-      span.finish();   // <5>
+      span.end();
+    } catch (Throwable t) {
+      span.end(t);   // <5>
     }
   }
 
@@ -494,7 +512,7 @@ In the image above, you can see that the trace includes spans from two services.
 which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
 see that the delay no longer exists.
 
-You can now stop your second service, it is not longer used in this guide.
+You can now stop your second service, it is no longer used in this guide.
 
 == Integration with Kubernetes
 
@@ -644,7 +662,7 @@ Access the Jaeger UI at http://localhost:9412/jaeger and click on the refresh ic
 
 === Cleanup
 
-You can now delete the Kubernetes resources that were just created during this example.
+You can now delete the Kubernetes resources just created during this example.
 
 [source,bash]
 .Delete the Kubernetes resources:
@@ -670,5 +688,6 @@ Refer to the following references for additional information:
 
 - link:{microprofile-tracing-spec-url}[MicroProfile OpenTracing specification]
 - link:{microprofile-tracing-javadoc-url}[MicroProfile OpenTracing Javadoc]
+* link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
 - link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
 
