@@ -477,8 +477,8 @@ public class GreetService implements HttpService {
       String result = requestBuilder   // <4>
           .get(String.class);
       response.send(result);
-      spa.end();
-    } catch (Throwandle t) {
+      span.end();
+    } catch (Throwable t) {
       span.end(t);   // <5>
     }
   }
