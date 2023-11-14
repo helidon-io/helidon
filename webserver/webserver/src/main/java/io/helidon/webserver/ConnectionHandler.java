@@ -81,8 +81,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       Socket socket,
                       String serverChannelId,
                       Router router,
-                      Tls tls,
-                      ListenerConfig listenerConfig) {
+                      Tls tls) {
         this.listenerContext = listenerContext;
         this.connectionSemaphore = connectionSemaphore;
         this.requestSemaphore = requestSemaphore;
@@ -93,7 +92,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         this.serverChannelId = serverChannelId;
         this.router = router;
         this.tls = tls;
-        this.listenerConfig = listenerConfig;
+        this.listenerConfig = listenerContext.config();
     }
 
     @Override

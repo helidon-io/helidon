@@ -15,6 +15,8 @@
  */
 package io.helidon.webserver.tests;
 
+import java.util.HexFormat;
+
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
@@ -30,13 +32,14 @@ import org.junit.jupiter.api.Test;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static io.helidon.common.testing.junit5.HexStringDecoder.decodeHexString;
 
 @ServerTest
 class ProxyProtocolTest {
 
-    static final String V2_PREFIX = "\0x0D\0x0A\0x0D\0x0A\0x00\0x0D\0x0A\0x51\0x55\0x49\0x54\0x0A";
+    static final String V2_PREFIX = "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A";
 
+    private final static HexFormat hexFormat = HexFormat.of().withUpperCase().withDelimiter(":");
+    
     private final SocketHttpClient socketHttpClient;
 
     ProxyProtocolTest(SocketHttpClient socketHttpClient) {
@@ -84,12 +87,12 @@ class ProxyProtocolTest {
     @Test
     void testProxyProtocolV2IPv4() {
         String header = V2_PREFIX
-                + "\0x20\0x11\0x00\0x0C"    // version, family/protocol, length
-                + "\0xC0\0xA8\0x00\0x01"    // 192.168.0.1
-                + "\0xC0\0xA8\0x00\0x0B"    // 192.168.0.11
-                + "\0xDC\0x04"              // 56324
-                + "\0x01\0xBB";             // 443
-        socketHttpClient.writeProxyHeader(decodeHexString(header));
+                + ":20:11:00:0C"    // version, family/protocol, length
+                + ":C0:A8:00:01"    // 192.168.0.1
+                + ":C0:A8:00:0B"    // 192.168.0.11
+                + ":DC:04"          // 56324
+                + ":01:BB";         // 443
+        socketHttpClient.writeProxyHeader(hexFormat.parseHex(header));
         String s = socketHttpClient.sendAndReceive(Method.GET, "");
         assertThat(s, startsWith("HTTP/1.1 200 OK"));
     }

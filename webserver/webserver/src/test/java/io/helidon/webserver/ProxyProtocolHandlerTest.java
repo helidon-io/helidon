@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PushbackInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 
 import io.helidon.http.RequestException;
 import org.junit.jupiter.api.Test;
@@ -26,11 +27,12 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static io.helidon.common.testing.junit5.HexStringDecoder.decodeHexString;
 
 class ProxyProtocolHandlerTest {
 
-    static final String V2_PREFIX_2 = "\0x0D\0x0A\0x51\0x55\0x49\0x54\0x0A";
+    static final String V2_PREFIX_2 = "0D:0A:51:55:49:54:0A:";
+
+    private static final HexFormat hexFormat = HexFormat.of().withUpperCase().withDelimiter(":");
 
     @Test
     void basicV1Test() throws IOException {
@@ -81,13 +83,13 @@ class ProxyProtocolHandlerTest {
     @Test
     void basicV2TestIPv4() throws IOException {
         String header = V2_PREFIX_2
-                + "\0x20\0x11\0x00\0x0C"    // version, family/protocol, length
-                + "\0xC0\0xA8\0x00\0x01"    // 192.168.0.1
-                + "\0xC0\0xA8\0x00\0x0B"    // 192.168.0.11
-                + "\0xDC\0x04"              // 56324
-                + "\0x01\0xBB";             // 443
+                + "20:11:00:0C:"    // version, family/protocol, length
+                + "C0:A8:00:01:"    // 192.168.0.1
+                + "C0:A8:00:0B:"    // 192.168.0.11
+                + "DC:04:"              // 56324
+                + "01:BB";             // 443
         ProxyProtocolData data = ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
-                new ByteArrayInputStream(decodeHexString(header))));
+                new ByteArrayInputStream(hexFormat.parseHex(header))));
         assertThat(data.family(), is(ProxyProtocolData.Family.IPv4));
         assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
         assertThat(data.sourceAddress(), is("192.168.0.1"));
@@ -99,15 +101,15 @@ class ProxyProtocolHandlerTest {
     @Test
     void basicV2TestIPv6() throws IOException {
         String header = V2_PREFIX_2
-                + "\0x20\0x21\0x00\0x0C"    // version, family/protocol, length
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"    // source
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"    // dest
-                + "\0xDC\0x04"              // 56324
-                + "\0x01\0xBB";             // 443
+                + "20:21:00:0C:"                // version, family/protocol, length
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"    // source
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"    // dest
+                + "DC:04:"                      // 56324
+                + "01:BB";                      // 443
         ProxyProtocolData data = ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
-                new ByteArrayInputStream(decodeHexString(header))));
+                new ByteArrayInputStream(hexFormat.parseHex(header))));
         assertThat(data.family(), is(ProxyProtocolData.Family.IPv6));
         assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
         assertThat(data.sourceAddress(), is("aaaa:bbbb:cccc:dddd:aaaa:bbbb:cccc:dddd"));
@@ -119,17 +121,17 @@ class ProxyProtocolHandlerTest {
     @Test
     void unknownV2Test() throws IOException {
         String header = V2_PREFIX_2
-                + "\0x20\0x00\0x00\0x40"    // version, family/protocol, length=64
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD";
+                + "20:00:00:40:"    // version, family/protocol, length=64
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD";
         ProxyProtocolData data = ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
-                new ByteArrayInputStream(decodeHexString(header))));
+                new ByteArrayInputStream(hexFormat.parseHex(header))));
         assertThat(data.family(), is(ProxyProtocolData.Family.UNKNOWN));
         assertThat(data.protocol(), is(ProxyProtocolData.Protocol.UNKNOWN));
         assertThat(data.sourceAddress(), is(""));
@@ -141,38 +143,38 @@ class ProxyProtocolHandlerTest {
     @Test
     void badV2Test() {
         String header1 = V2_PREFIX_2
-                + "\0x20\0x21\0x00\0x0C"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB"    // bad source
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xDC\0x04"
-                + "\0x01\0xBB";
+                + "20:21:00:0C:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:"    // bad source
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "DC:04:"
+                + "01:BB";
         assertThrows(RequestException.class, () ->
                 ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
-                        new ByteArrayInputStream(decodeHexString(header1)))));
+                        new ByteArrayInputStream(hexFormat.parseHex(header1)))));
 
         String header2 = V2_PREFIX_2
-                + "\0x20\0x21\0x0F\0xFF"    // bad length, over our limit
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xDC\0x04"
-                + "\0x01\0xBB";
+                + "20:21:0F:FF:"    // bad length, over our limit
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "DC:04:"
+                + "01:BB";
         assertThrows(RequestException.class, () ->
                 ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
-                        new ByteArrayInputStream(decodeHexString(header2)))));
+                        new ByteArrayInputStream(hexFormat.parseHex(header2)))));
 
         String header3 = V2_PREFIX_2
-                + "\0x20\0x21\0x00\0x0C"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xAA\0xAA\0xBB\0xBB\0xCC\0xCC\0xDD\0xDD"
-                + "\0xDC\0x04";             // missing dest port
+                + "20:21:00:0C:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "AA:AA:BB:BB:CC:CC:DD:DD:"
+                + "DC:04";          // missing dest port
         assertThrows(RequestException.class, () ->
                 ProxyProtocolHandler.handleV2Protocol(new PushbackInputStream(
-                        new ByteArrayInputStream(decodeHexString(header3)))));
+                        new ByteArrayInputStream(hexFormat.parseHex(header3)))));
     }
 }
