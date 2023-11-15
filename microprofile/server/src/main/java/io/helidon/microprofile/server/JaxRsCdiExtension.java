@@ -283,13 +283,15 @@ public class JaxRsCdiExtension implements Extension {
                                    injectionManager);
     }
 
+    // @Priority does not have any effect. This should map to Exception,
+    // but it is invoked before user ExceptionMapper. This probably requires an issue.
     @Provider
-    private static class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
+    private static class CatchAllExceptionMapper implements ExceptionMapper<Throwable> {
         @Context
         private ServerRequest serverRequest;
 
         @Override
-        public Response toResponse(Exception exception) {
+        public Response toResponse(Throwable exception) {
             serverRequest.context().register("unmappedException", exception);
             if (exception instanceof WebApplicationException wae) {
                 return wae.getResponse();
