@@ -404,20 +404,11 @@ curl -X GET http://localhost:8080/observe/health/ready
                           optional="true">
                         <option value="jaeger"
                                 name="Jaeger"
-                                description="Send traces to a Jaeger backend" >
+                                description="Send traces to a Jaeger backend">
                             <output>
                                 <model>
-                                    <list key="dependencies">
-                                        <map order="800">
-                                            <value key="groupId">io.helidon.tracing.providers</value>
-                                            <value key="artifactId">helidon-tracing-providers-jaeger</value>
-                                        </map>
-                                    </list>
                                     <list key="readme-sections">
                                         <value file="/common/files/README.jaeger.md"/>
-                                    </list>
-                                    <list key="config-properties">
-                                        <value>tracing.global=false</value>
                                     </list>
                                 </model>
                             </output>
@@ -427,12 +418,6 @@ curl -X GET http://localhost:8080/observe/health/ready
                                 description="Send traces to a Zipkin backend">
                             <output>
                                 <model>
-                                    <list key="dependencies">
-                                        <map order="800">
-                                            <value key="groupId">io.helidon.tracing.providers</value>
-                                            <value key="artifactId">helidon-tracing-providers-zipkin</value>
-                                        </map>
-                                    </list>
                                     <list key="readme-sections">
                                         <value file="/common/files/README.zipkin.md"/>
                                     </list>
