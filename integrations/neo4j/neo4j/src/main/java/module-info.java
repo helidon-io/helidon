@@ -31,10 +31,10 @@ import io.helidon.common.features.api.Preview;
 module io.helidon.integrations.neo4j {
 
     requires io.helidon.common;
-    requires io.helidon.config.metadata;
     requires java.logging;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.config;
     requires transitive org.neo4j.driver;
