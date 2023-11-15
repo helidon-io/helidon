@@ -122,7 +122,8 @@ class MetricsFactoryManager {
      */
     static MetricsFactory getMetricsFactory() {
         return access(() -> {
-            metricsConfigNode = Objects.requireNonNullElseGet(metricsConfigNode, GlobalConfig::config);
+            metricsConfigNode = Objects.requireNonNullElseGet(metricsConfigNode,
+                                                              MetricsFactoryManager::externalMetricsConfig);
             metricsFactory = Objects.requireNonNullElseGet(metricsFactory,
                                                            () -> getMetricsFactory(metricsConfigNode));
             return metricsFactory;
@@ -147,6 +148,14 @@ class MetricsFactoryManager {
     static void closeAll() {
         METRICS_FACTORY_PROVIDER.get().close();
         metricsFactory = null;
+    }
+
+    private static Config externalMetricsConfig() {
+        Config serverFeaturesMetricsConfig = GlobalConfig.config().get("server.features.observe.observers.metrics");
+        if (!serverFeaturesMetricsConfig.exists()) {
+            serverFeaturesMetricsConfig = GlobalConfig.config().get("metrics");
+        }
+        return serverFeaturesMetricsConfig;
     }
 
     private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config metricsConfigNode) {
