@@ -255,6 +255,16 @@ public abstract class HelidonRestCdiExtension implements Extension {
     }
 
     /**
+     * Returns the config key for settings for the specified suffix nested within the server config tree.
+     *
+     * @param suffix the config key suffix (typically the name of the component: e.g., health)
+     * @return full nested config key for the specified suffix
+     */
+    protected static String nestedConfigKey(String suffix) {
+        return "server.features.observe.observers." + suffix;
+    }
+
+    /**
      * Configure with runtime config.
      *
      * @param config config to use
