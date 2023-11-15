@@ -26,11 +26,11 @@ module io.helidon.microprofile.testing.jaxrs {
     requires io.helidon.microprofile.testing.common;
     requires jakarta.inject;
     requires jersey.cdi1x;
+    requires jersey.weld2.se;
     requires org.junit.jupiter.api;
 
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;
-    requires jersey.weld2.se;
 
     exports io.helidon.microprofile.testing.jaxrs;
 

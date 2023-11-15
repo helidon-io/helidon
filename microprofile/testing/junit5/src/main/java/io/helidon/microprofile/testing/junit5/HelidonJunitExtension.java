@@ -33,6 +33,7 @@ import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
+import io.helidon.microprofile.testing.common.JaxRsValidator;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -134,10 +135,11 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
         if (resetPerTest) {
             validatePerTest();
-
             return;
         }
         validatePerClass();
+
+        JaxRsValidator.validate(testClass);
 
         configure(classLevelConfigMeta);
 
