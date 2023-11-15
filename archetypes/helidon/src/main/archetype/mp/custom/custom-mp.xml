@@ -33,6 +33,7 @@
     <exec src="/common/packaging.xml"/>
     <source src="observability.xml"/>
     <exec src="database-outputs.xml" if="${db}"/>
+    <source src="security-outputs.xml" if="${security}"/>
     <output>
         <templates engine="mustache" transformations="mustache" if="${application-yaml}">
             <directory>files</directory>

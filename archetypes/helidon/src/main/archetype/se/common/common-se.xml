@@ -125,7 +125,14 @@
                 .build()
                 .start();
 
+        {{#Main-after-server}}
+        {{.}}
+        {{/Main-after-server}}
+
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
+        {{#Main-logging}}
+        {{.}}
+        {{/Main-logging}}
 ]]></value>
             </list>
             <list key="main-class-content">
