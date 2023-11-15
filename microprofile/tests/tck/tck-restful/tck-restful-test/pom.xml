@@ -82,6 +82,20 @@
                 </configuration>
             </plugin>
             <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -97,6 +111,8 @@
                     <systemPropertyVariables>
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>
+                        <jimage.dir>${project.build.directory}/jdk11-bundle</jimage.dir>
+                        <signature.sigTestClasspath>${project.build.directory}/lib/jakarta.xml.bind-api-${version.lib.jakarta.xml.bind-api}.jar:${project.build.directory}/lib/jakarta.ws.rs-api-${version.lib.jakarta.jaxrs-api}.jar:${project.build.directory}/jdk11-bundle/java.base:${project.build.directory}/jdk11-bundle/java.rmi:${project.build.directory}/jdk11-bundle/java.sql:${project.build.directory}/jdk11-bundle/java.naming</signature.sigTestClasspath>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
