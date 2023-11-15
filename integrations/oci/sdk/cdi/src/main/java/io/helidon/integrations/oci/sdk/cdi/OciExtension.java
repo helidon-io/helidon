@@ -59,6 +59,7 @@ import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.util.TypeLiteral;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -631,37 +632,16 @@ public final class OciExtension implements Extension {
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
         InjectionPoint ip = event.getInjectionPoint();
-        Type baseType = ip.getAnnotated().getBaseType();
-        if (!(baseType instanceof Class)) {
-            // Optimization: all OCI constructs we're interested in
-            // are non-generic classes (and not therefore
-            // ParameterizedTypes or GenericArrayTypes).
-            return;
-        }
-        Class<?> baseClass = (Class<?>) baseType;
-        String baseClassName = baseClass.getName();
-        if (!baseClassName.startsWith(OCI_PACKAGE_PREFIX)) {
-            // Optimization: the set of classes we're interested in is
-            // a subset of general OCI-related classes.
-            return;
-        }
-        Set<Annotation> qualifiers = ip.getQualifiers();
-        if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
-            || ADP_BUILDER_CLASSES.contains(baseClass)) {
-            // Use an "empty" ServiceTaqs as an indicator of demand
-            // for some kind of AbstractAuthenticationDetailsProvider
-            // (or a relevant builder).
-            this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
-            return;
-        }
-        Matcher m = SERVICE_CLIENT_CLASS_NAME_SUBSTRING_PATTERN.matcher(baseClassName.substring(OCI_PACKAGE_PREFIX.length()));
-        if (!m.matches() || this.isVetoed(baseClass)) {
-            return;
-        }
-        this.processServiceClientInjectionPoint(event::addDefinitionError,
-                                                baseClass,
-                                                qualifiers,
-                                                OCI_PACKAGE_PREFIX + m.group(1));
+        processInjectionPoint(ip.getAnnotated().getBaseType(),
+                              ip.getQualifiers(),
+                              event::addDefinitionError);
+    }
+
+    private void processProviderInjectionPoint(@Observes ProcessInjectionPoint<?, ? extends Provider<?>> event) {
+        InjectionPoint ip = event.getInjectionPoint();
+        processInjectionPoint(((ParameterizedType) ip.getAnnotated().getBaseType()).getActualTypeArguments()[0],
+                              ip.getQualifiers(),
+                              event::addDefinitionError);
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
@@ -735,8 +715,38 @@ public final class OciExtension implements Extension {
         return false;
     }
 
+    private void processInjectionPoint(Type type,
+                                       Set<Annotation> qualifiers,
+                                       Consumer<? super ClassNotFoundException> errorHandler) {
+        if (!(type instanceof Class)) {
+            // Optimization: all OCI constructs we're interested in are non-generic classes (and not therefore
+            // ParameterizedTypes or GenericArrayTypes).
+            return;
+        }
+        Class<?> c = (Class<?>) type;
+        String className = c.getName();
+        if (!className.startsWith(OCI_PACKAGE_PREFIX)) {
+            // Optimization: the set of classes we're interested in is a subset of general OCI-related classes.
+            return;
+        }
+        if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(c) || ADP_BUILDER_CLASSES.contains(c)) {
+            // Register an "empty" ServiceTaqs as an indicator of demand for some kind of
+            // AbstractAuthenticationDetailsProvider (or a relevant builder).
+            this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
+            return;
+        }
+        Matcher m = SERVICE_CLIENT_CLASS_NAME_SUBSTRING_PATTERN.matcher(className.substring(OCI_PACKAGE_PREFIX.length()));
+        if (!m.matches() || this.isVetoed(c)) {
+            return;
+        }
+        this.processServiceClientInjectionPoint(errorHandler,
+                                                c,
+                                                qualifiers,
+                                                OCI_PACKAGE_PREFIX + m.group(1));
+    }
+
     private void processServiceClientInjectionPoint(Consumer<? super ClassNotFoundException> errorHandler,
-                                                    Class<?> baseClass,
+                                                    Class<?> c,
                                                     Set<Annotation> qualifiers,
                                                     String serviceInterfaceName) {
         Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
@@ -746,12 +756,12 @@ public final class OciExtension implements Extension {
         //   ....example.Example
         //   ....example.ExampleClient
         //   ....example.ExampleClient$Builder
-        Class<?> serviceInterfaceClass = toClassUnresolved(errorHandler, baseClass, serviceInterfaceName, lenient);
+        Class<?> serviceInterfaceClass = toClassUnresolved(errorHandler, c, serviceInterfaceName, lenient);
         if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
             String serviceClient = serviceInterfaceName + "Client";
-            Class<?> serviceClientClass = toClassUnresolved(errorHandler, baseClass, serviceClient, lenient);
+            Class<?> serviceClientClass = toClassUnresolved(errorHandler, c, serviceClient, lenient);
             if (serviceClientClass != null && serviceInterfaceClass.isAssignableFrom(serviceClientClass)) {
-                Class<?> serviceClientBuilderClass = toClassUnresolved(errorHandler, baseClass, serviceClient + "$Builder", true);
+                Class<?> serviceClientBuilderClass = toClassUnresolved(errorHandler, c, serviceClient + "$Builder", true);
                 if (serviceClientBuilderClass == null) {
                     serviceClientBuilderClass = toClassUnresolved(errorHandler, serviceClient + "Builder", lenient);
                 }
@@ -775,14 +785,14 @@ public final class OciExtension implements Extension {
         //   ....example.ExampleAsyncClient
         //   ....example.ExampleAsyncClient$Builder
         String serviceAsyncInterface = serviceInterfaceName + "Async";
-        Class<?> serviceAsyncInterfaceClass = toClassUnresolved(errorHandler, baseClass, serviceAsyncInterface, lenient);
+        Class<?> serviceAsyncInterfaceClass = toClassUnresolved(errorHandler, c, serviceAsyncInterface, lenient);
         if (serviceAsyncInterfaceClass != null && serviceAsyncInterfaceClass.isInterface()) {
             String serviceAsyncClient = serviceAsyncInterface + "Client";
-            Class<?> serviceAsyncClientClass = toClassUnresolved(errorHandler, baseClass, serviceAsyncClient, lenient);
+            Class<?> serviceAsyncClientClass = toClassUnresolved(errorHandler, c, serviceAsyncClient, lenient);
             if (serviceAsyncClientClass != null
                 && serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass)) {
                 Class<?> serviceAsyncClientBuilderClass =
-                    toClassUnresolved(errorHandler, baseClass, serviceAsyncClient + "$Builder", true);
+                    toClassUnresolved(errorHandler, c, serviceAsyncClient + "$Builder", true);
                 if (serviceAsyncClientBuilderClass == null) {
                     serviceAsyncClientBuilderClass = toClassUnresolved(errorHandler, serviceAsyncClient + "Builder", lenient);
                 }
