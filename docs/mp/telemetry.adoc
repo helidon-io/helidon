@@ -397,6 +397,8 @@ Launch the Jaeger UI at link:http://localhost:16686/[] to see the expected outpu
 
 image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call]
 
+This example is available at the link:https://github.com/helidon-io/helidon/tree/main/examples/microprofile/telemetry[Helidon official GitHub repository].
+
 == Reference
 
 * link:https://download.eclipse.org/microprofile/microprofile-telemetry-1.0/tracing/microprofile-telemetry-tracing-spec-1.0.pdf[MicroProfile Telemetry Specification]
