@@ -51,6 +51,9 @@ class OpenTelemetryProducer {
     private static final String OTEL_METRICS_EXPORTER = "otel.metrics.exporter";
     private static final String OTEL_LOGS_EXPORTER = "otel.logs.exporter";
     private static final String SERVICE_NAME_PROPERTY = "otel.service.name";
+    private static final String EXPORTER_NAME_PROPERTY = "otel.exporter.name";
+    private String exporterName = HELIDON_SERVICE_NAME; // Default if not set
+
     private LazyValue<OpenTelemetry> openTelemetry;
     private Map<String, String> telemetryProperties;
 
@@ -68,6 +71,8 @@ class OpenTelemetryProducer {
     private void init() {
 
         telemetryProperties  = Collections.unmodifiableMap(getTelemetryProperties());
+
+        mpConfig.getOptionalValue(EXPORTER_NAME_PROPERTY, String.class).ifPresent(e -> exporterName = e);
 
         //Initialize OpenTelemetry in a lazy way.
         if (!isTelemetryDisabled()) {
@@ -128,7 +133,7 @@ class OpenTelemetryProducer {
      */
     @Produces
     Tracer tracer(OpenTelemetry openTelemetry) {
-        return openTelemetry.getTracer(HELIDON_SERVICE_NAME);
+        return openTelemetry.getTracer(exporterName);
     }
 
     /**
