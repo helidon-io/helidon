@@ -51,7 +51,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 link:https://opentelemetry.io/[OpenTelemetry] comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
 
-MicroProfile Telemetry 1.0 allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using variety of exporter.
+MicroProfile Telemetry 1.0 allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using a variety of exporters.
 
 In a distributed tracing system, *traces* are used to capture a series of requests and are composed of multiple *spans* that represent individual operations within those requests. Each *span* includes a name, timestamps, and metadata that provide insights into the corresponding operation.
 
@@ -92,8 +92,8 @@ class HelidonBean {
         // do something here
     }
 
-    @WithSpan("name", kind = SpanKind.SERVER, @SpanAttribute(value = "arg") String arg) <2>
-    void complexSpan() {
+    @WithSpan("name") <2>
+    void complexSpan(@SpanAttribute(value = "arg") String arg) {
         // do something here
     }
 }
@@ -214,7 +214,7 @@ This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon a
 
 === Set Up Jaeger
 
-For the examples Jaeger will be used for gathering of the tracing information.
+For example, Jaeger will be used for gathering of the tracing information.
 
 .Run Jaeger in a docker container.
 [source, bash]
@@ -232,7 +232,7 @@ docker run -d --name jaeger \
   -p 14268:14268 \
   -p 14269:14269 \
   -p 9411:9411 \
-  jaegertracing/all-in-one:1.41
+  jaegertracing/all-in-one:1.50
 ----
 
 All the tracing information gathered from the examples runs is accessible from the browser in the Jaeger UI under link:http://localhost:16686/[]
