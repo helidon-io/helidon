@@ -76,8 +76,9 @@ class RegistryFactory {
     }
 
     static RegistryFactory getInstance(MeterRegistry meterRegistry) {
-        REGISTRY_FACTORY.set(create(meterRegistry));
-        return REGISTRY_FACTORY.get();
+        return REGISTRY_FACTORY.updateAndGet(rf -> rf != null && rf.meterRegistry == meterRegistry
+                ? rf
+                : create(meterRegistry));
     }
 
     /**

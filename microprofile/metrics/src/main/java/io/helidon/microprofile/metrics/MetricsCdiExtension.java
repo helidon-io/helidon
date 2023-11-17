@@ -551,14 +551,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
 
         Contexts.globalContext().register(metricsFactory);
-        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder()
-                .config(config);
-        MetricsConfig metricsConfig = metricsConfigBuilder.build();
+        MetricsConfig metricsConfig = metricsFactory.metricsConfig();
         MeterRegistry meterRegistry = metricsFactory.globalRegistry(metricsConfig);
-        RegistryFactory.getInstance(meterRegistry); // initialize before first use
-        return builder.metricsConfig(metricsConfigBuilder)
+        return builder.metricsConfig(metricsConfig)
                 .meterRegistry(meterRegistry)
-                .metricsConfig(MetricsConfig.builder(metricsConfig))
                 .build();
     }
 
