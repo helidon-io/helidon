@@ -88,7 +88,7 @@ class RequestRouting implements Routing {
             response.request(nextRequests);
             nextRequests.next();
         } catch (Error | RuntimeException e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error occurred during routing!", e);
+            LOGGER.log(Level.FINE, "Unexpected error occurred during routing!", e);
             throw e;
         }
     }
