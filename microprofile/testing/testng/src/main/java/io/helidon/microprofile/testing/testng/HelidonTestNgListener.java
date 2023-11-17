@@ -33,7 +33,6 @@ import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
-import io.helidon.microprofile.testing.common.JaxRsValidator;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -130,7 +129,8 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
         validatePerClass();
 
-        JaxRsValidator.validate(testClass);
+        TestNgJaxRsValidator testNgJaxRsValidator = new TestNgJaxRsValidator();
+        testNgJaxRsValidator.validate(testClass);
 
         configure(classLevelConfigMeta);
 

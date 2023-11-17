@@ -14,33 +14,26 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.testing.common;
+package io.helidon.microprofile.testing.validator;
+
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 /**
  * Validator for JAX-RS annotation usage.
  */
-public class JaxRsValidator {
+public abstract class JaxRsValidator implements TestValidator {
 
-    private JaxRsValidator() {
-    }
-
-    /**
-     * Perform validation. Runtime exception is thrown if something is wrong.
-     * @param testClass the annotated test class
-     */
-    public static void validate(Class<?> testClass){
+    protected boolean checkAddJaxRs(Class<?> testClass){
         Set<String> testClassAnnotations = Arrays.stream(testClass.getDeclaredAnnotations())
                 .map(Annotation::annotationType)
                 .map(Class::getName)
                 .collect(Collectors.toSet());
-        if (testClassAnnotations.stream().anyMatch(i -> i.contains("AddJaxRs"))
-                && testClassAnnotations.stream().noneMatch(i -> i.contains("DisableDiscovery"))){
-                throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
-        }
+        //FIXME:THIS IS VERY BAD!
+        return testClassAnnotations.stream().anyMatch(i -> i.contains("AddJaxRs"));
     }
 }

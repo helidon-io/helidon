@@ -25,6 +25,7 @@ module io.helidon.microprofile.testing.testng {
     requires io.helidon.config.yaml.mp;
     requires io.helidon.microprofile.testing.common;
     requires io.helidon.microprofile.testing.jaxrs;
+    requires io.helidon.microprofile.testing.validator;
     requires jakarta.cdi;
     requires jakarta.inject;
     requires jakarta.ws.rs;
