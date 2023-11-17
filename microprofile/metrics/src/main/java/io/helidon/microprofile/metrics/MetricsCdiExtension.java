@@ -175,7 +175,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      * Creates a new extension instance.
      */
     public MetricsCdiExtension() {
-        super(LOGGER, "observe.providers.metrics", "metrics");
+        super(LOGGER, nestedConfigKey("metrics"), "metrics");
     }
 
     /**
