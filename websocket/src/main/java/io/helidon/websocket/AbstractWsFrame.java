@@ -109,7 +109,7 @@ abstract sealed class AbstractWsFrame implements WsFrame permits ServerWsFrame, 
             throw new WsCloseException("Payload too large", WsCloseCodes.TOO_BIG);
         }
 
-        return new FrameHeader(opCode, fin, masked, length);
+        return new FrameHeader(opCode, fin, masked, (int) frameLength);
     }
 
     protected static BufferData readPayload(DataReader reader, FrameHeader header) {
