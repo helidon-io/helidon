@@ -69,9 +69,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
-import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
-import static org.glassfish.jersey.server.ServerProperties.WADL_FEATURE_DISABLE;
-
 class JaxRsService implements HttpService {
     /**
      * If set to {@code "true"}, Jersey will ignore responses in exceptions.
@@ -98,8 +95,6 @@ class JaxRsService implements HttpService {
     }
 
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
-        resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
-        resourceConfig.property(WADL_FEATURE_DISABLE, "true");
 
         InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
