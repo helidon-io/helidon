@@ -22,6 +22,7 @@ import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 
@@ -64,11 +65,13 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final String serverChannelId;
     private final Router router;
     private final Tls tls;
+    private final ListenerConfig listenerConfig;
 
     private ServerConnection connection;
     private HelidonSocket helidonSocket;
     private DataReader reader;
     private SocketWriter writer;
+    private ProxyProtocolData proxyProtocolData;
 
     ConnectionHandler(ListenerContext listenerContext,
                       Semaphore connectionSemaphore,
@@ -89,6 +92,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         this.serverChannelId = serverChannelId;
         this.router = router;
         this.tls = tls;
+        this.listenerConfig = listenerContext.config();
     }
 
     @Override
@@ -99,6 +103,12 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public final void run() {
         String channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
+
+        // proxy protocol before SSL handshake
+        if (listenerConfig.enableProxyProtocol()) {
+            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
+            proxyProtocolData = handler.get();
+        }
 
         // handle SSL and init helidonSocket, reader and writer
         try {
@@ -224,6 +234,11 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public Router router() {
         return router;
+    }
+
+    @Override
+    public Optional<ProxyProtocolData> proxyProtocolData() {
+        return Optional.ofNullable(proxyProtocolData);
     }
 
     private ServerConnection identifyConnection() {

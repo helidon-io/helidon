@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
@@ -36,6 +37,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.RoutingRequest;
 
@@ -205,6 +207,11 @@ abstract class Http1ServerRequest implements RoutingRequest {
     @Override
     public UriInfo requestedUri() {
         return uriInfo.get();
+    }
+
+    @Override
+    public Optional<ProxyProtocolData> proxyProtocolData() {
+        return ctx.proxyProtocolData();
     }
 
     private UriInfo createUriInfo() {

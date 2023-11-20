@@ -18,6 +18,7 @@ package io.helidon.webserver.http2;
 
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -38,6 +39,7 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.RoutingRequest;
 
@@ -218,6 +220,11 @@ class Http2ServerRequest implements RoutingRequest {
         Objects.requireNonNull(filterFunction);
         UnaryOperator<InputStream> current = this.streamFilter;
         this.streamFilter = it -> filterFunction.apply(current.apply(it));
+    }
+
+    @Override
+    public Optional<ProxyProtocolData> proxyProtocolData() {
+        return ctx.proxyProtocolData();
     }
 
     private UriInfo createUriInfo() {
