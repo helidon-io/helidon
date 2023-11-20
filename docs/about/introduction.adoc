@@ -41,6 +41,8 @@ Helidon is cloud-native ready. It provides fast start-up time and has low memory
 
 Helidon fully supports GraalVM native image allowing you to build a native executable from your Java application.
 
+Helidon applications are stand-alone Java applications running in their own JVM and powered by the Helidon WebServer.
+
 == Helidon Flavors
 
 Helidon comes in two flavors: *Helidon SE* and *Helidon MP*. Think about these flavors as frameworks providing similar functionality but offering different developer experiences.
@@ -89,6 +91,10 @@ public class HelloWorld {
     }
 }
 ----
+
+Even though Helidon MP supports Jakarta EE APIs it does not require
+an application server. Helidon MP applications are stand-alone Java applications running
+in their own JVM powered by Helidon WebServer.
 
 === What flavor shall I use?
 

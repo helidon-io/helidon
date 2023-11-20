@@ -90,7 +90,8 @@ Use these hands-on development tutorials to learn how to generate a small "Hello
 
 xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon MP Tutorial]
 
-xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon SE Tutorial]
+// We do not have an SE application tutorial. So for now point at quickstart.
+xref:{rootdir}/se/guides/quickstart.adoc[Helidon SE Quickstart]
 
 --
 
