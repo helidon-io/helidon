@@ -1077,6 +1077,16 @@
                 <artifactId>helidon-microprofile-tests-junit5</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.tests</groupId>
+                <artifactId>helidon-microprofile-tests-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.tests</groupId>
+                <artifactId>helidon-microprofile-tests-jaxrs</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Logging -->
             <dependency>
                 <groupId>io.helidon.logging</groupId>

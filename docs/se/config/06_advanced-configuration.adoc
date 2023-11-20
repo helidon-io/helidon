@@ -668,7 +668,7 @@ A token reference is a key token starting with `$`, optionally enclosed between
 As an example use case, you can use token references to declare the default values (see
 `resolving-tokens.yaml` below), while the references may be resolved in another
 config source, which identifies a current environment (see `env.yaml` examples
-below). You can then use the same overrides for different environments, say `test` and `prod`.
+below). You can then use the same overrides for different environments, say `tests` and `prod`.
 The configuration in each environment is then overridden with a different values
 using wildcards (see `overrides.properties` below).
 

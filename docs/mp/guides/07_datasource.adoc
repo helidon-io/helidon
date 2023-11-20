@@ -115,7 +115,7 @@ javax:
 
 <1> This `javax:`/`sql:`/`DataSource:` preamble is required.
 
-<2> `test` is the name of the `DataSource` being configured here.
+<2> `tests` is the name of the `DataSource` being configured here.
 
 <3> `dataSourceClassName` is an
 https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#configuration-knobs-baby[essential
@@ -177,7 +177,7 @@ annotated field automatically.
 <2> The
 http://javax-inject.github.io/javax-inject/api/javax/inject/Named.html[`@Named`
 annotation] is used to select which data source should be injected.
-Here, the `test` data source is requested.
+Here, the `tests` data source is requested.
 
 === Use The Injected DataSource
 
