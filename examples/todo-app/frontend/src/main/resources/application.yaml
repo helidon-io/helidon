@@ -18,6 +18,8 @@ env: docker
 server:
   port: 8080
   features:
+    access-log:
+      enabled: true
     security:
       paths:
         - path: "/api/{+}"

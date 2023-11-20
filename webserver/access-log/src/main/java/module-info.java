@@ -38,4 +38,7 @@ module io.helidon.webserver.accesslog {
 
     exports io.helidon.webserver.accesslog;
 
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+            with io.helidon.webserver.accesslog.AccessLogFeatureProvider;
+
 }

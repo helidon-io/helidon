@@ -21,7 +21,7 @@ import io.helidon.common.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for context feature for {@link io.helidon.webserver.WebServer}.
+ * {@link java.util.ServiceLoader} provider implementation for access log feature for {@link io.helidon.webserver.WebServer}.
  */
 @Weight(AccessLogFeature.WEIGHT)
 public class AccessLogFeatureProvider implements ServerFeatureProvider<AccessLogFeature> {
@@ -36,7 +36,7 @@ public class AccessLogFeatureProvider implements ServerFeatureProvider<AccessLog
 
     @Override
     public String configKey() {
-        return "context";
+        return "access-log";
     }
 
     @Override
