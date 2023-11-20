@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.enterprise.inject.spi.Extension;
 
 /**
  * Common Utility class for tests.
@@ -37,9 +36,9 @@ public class CommonTestUtil {
      * @param testClass Class
      * @return List with Extension classes
      */
-    public static List<Class<? extends Extension>> getFeatureExtensions(Class<?> testClass) {
+    public static List<Class<?>> getFeatureExtensions(Class<?> testClass) {
 
-        List<Class<? extends Extension>> result = Arrays.stream(testClass.getDeclaredAnnotations())
+        List<Class<?>> result = Arrays.stream(testClass.getDeclaredAnnotations())
                 .flatMap(a -> Arrays.stream(a.annotationType().getDeclaredAnnotations()))
                 .filter(a -> a instanceof CommonCdiExtension)
                 .map(CommonCdiExtension.class::cast)

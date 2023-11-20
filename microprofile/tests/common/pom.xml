@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,29 +27,14 @@
     </parent>
 
     <artifactId>helidon-microprofile-tests-common</artifactId>
-    <name>Helidon Microprofile Testing JUnit5</name>
+    <name>Helidon Microprofile Testing Common support</name>
 
     <description>
-        Integration with Junit5 to support tests with CDI injection
+        Helidon Microprofile Testing Common support
     </description>
 
     <dependencies>
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
-            <version>2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-            <scope>compile</scope>
-        </dependency>
+
     </dependencies>
 
 </project>

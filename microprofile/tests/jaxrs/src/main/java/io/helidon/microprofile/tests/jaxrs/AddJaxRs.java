@@ -33,7 +33,7 @@ import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
  * JAX_RS Testing annotation.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE})
 @Inherited
 @CommonCdiExtension(ServerCdiExtension.class)
 @CommonCdiExtension(JaxRsCdiExtension.class)

@@ -15,8 +15,7 @@
  */
 
 /**
- * JUnit5 extension module to run CDI tests.
- */
+ * Helidon Testing JAX-RS Support
 module io.helidon.microprofile.tests.jaxrs {
 
     requires io.helidon.config.mp;
@@ -24,7 +23,6 @@ module io.helidon.microprofile.tests.jaxrs {
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.tests.common;
-    requires javax.inject;
     requires jersey.cdi1x;
     requires jersey.weld2.se;
     requires org.junit.jupiter.api;

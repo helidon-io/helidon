@@ -22,8 +22,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.inject.spi.Extension;
-
 
 /**
  * Common CDI Extension.
@@ -39,5 +37,5 @@ public @interface CommonCdiExtension {
      *
      * @return The CDI Extension Class.
      */
-    Class<? extends Extension> value();
+    Class<?> value();
 }
