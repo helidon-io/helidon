@@ -21,6 +21,7 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -50,6 +51,8 @@ class WebSocketTest {
     private final int port;
     private final HttpClient client;
 
+    private volatile boolean isNormalClose = true;
+
     WebSocketTest(WebServer server) {
         port = server.port();
         client = HttpClient.newBuilder()
@@ -69,11 +72,13 @@ class WebSocketTest {
     }
 
     @AfterEach
-    void checkClosed() {
-        EchoService.CloseInfo closeInfo = service.closeInfo();
-        assertThat(closeInfo, notNullValue());
-        assertThat(closeInfo.status(), is(WsCloseCodes.NORMAL_CLOSE));
-        assertThat(closeInfo.reason(), is("normal"));
+    void checkNormalClose() {
+        if (isNormalClose) {
+            EchoService.CloseInfo closeInfo = service.closeInfo();
+            assertThat(closeInfo, notNullValue());
+            assertThat(closeInfo.status(), is(WsCloseCodes.NORMAL_CLOSE));
+            assertThat(closeInfo.reason(), is("normal"));
+        }
     }
 
     @Test
@@ -91,7 +96,7 @@ class WebSocketTest {
         ws.sendText("Hello", true).get(5, TimeUnit.SECONDS);
         ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
 
-        List<String> results = listener.getResults();
+        List<String> results = listener.results().received;
         assertThat(results, contains("Hello"));
     }
 
@@ -107,7 +112,7 @@ class WebSocketTest {
         ws.sendText("First", true).get(5, TimeUnit.SECONDS);
         ws.sendText("Second", true).get(5, TimeUnit.SECONDS);
         ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
-        assertThat(listener.getResults(), contains("First", "Second"));
+        assertThat(listener.results().received, contains("First", "Second"));
     }
 
     @Test
@@ -124,13 +129,63 @@ class WebSocketTest {
         ws.sendText("Third", true).get(5, TimeUnit.SECONDS);
         ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
 
-        assertThat(listener.getResults(), contains("FirstSecond", "Third"));
+        assertThat(listener.results().received, contains("FirstSecond", "Third"));
+    }
+
+    /**
+     * Tests sending long text messages. Note that any message longer than 16K
+     * will be chunked into 16K pieces by the JDK client.
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    void testLongTextMessages() throws Exception {
+        TestListener listener = new TestListener();
+
+        java.net.http.WebSocket ws = client.newWebSocketBuilder()
+                .buildAsync(URI.create("ws://localhost:" + port + "/echo"), listener)
+                .get(5, TimeUnit.SECONDS);
+        ws.request(10);
+
+        String s100 = randomString(100);            // less than one byte
+        ws.sendText(s100, true).get(5, TimeUnit.SECONDS);
+        String s10000 = randomString(10000);        // less than two bytes
+        ws.sendText(s10000, true).get(5, TimeUnit.SECONDS);
+        ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
+
+        assertThat(listener.results().received, contains(s100, s10000));
+    }
+
+    /**
+     * Test sending a single text message that will fit into a single JDK client frame
+     * of 16K but exceeds max-frame-length set in application.yaml for the server.
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    void testTooLongTextMessage() throws Exception {
+        TestListener listener = new TestListener();
+
+        java.net.http.WebSocket ws = client.newWebSocketBuilder()
+                .buildAsync(URI.create("ws://localhost:" + port + "/echo"), listener)
+                .get(5, TimeUnit.SECONDS);
+        ws.request(10);
+
+        String s10001 = randomString(10001);      // over the limit of 10000
+        ws.sendText(s10001, true).get(5, TimeUnit.SECONDS);
+        assertThat(listener.results().statusCode, is(1009));
+        assertThat(listener.results().reason, is("Payload too large"));
+        isNormalClose = false;
     }
 
     private static class TestListener implements java.net.http.WebSocket.Listener {
+
+        record Results(int statusCode, String reason, List<String> received) {
+        }
+
         final List<String> received = new LinkedList<>();
         final List<String> buffered = new LinkedList<>();
-        private final CompletableFuture<List<String>> response = new CompletableFuture<>();
+        private final CompletableFuture<Results> response = new CompletableFuture<>();
 
         @Override
         public void onOpen(java.net.http.WebSocket webSocket) {
@@ -151,12 +206,21 @@ class WebSocketTest {
 
         @Override
         public CompletionStage<?> onClose(java.net.http.WebSocket webSocket, int statusCode, String reason) {
-            response.complete(received);
+            response.complete(new Results(statusCode, reason, received));
             return null;
         }
 
-        List<String> getResults() throws ExecutionException, InterruptedException, TimeoutException {
+        Results results() throws ExecutionException, InterruptedException, TimeoutException {
             return response.get(10, TimeUnit.SECONDS);
         }
+    }
+
+    private static String randomString(int length) {
+        int leftLimit = 97; // letter 'a'
+        int rightLimit = 122; // letter 'z'
+        return new Random().ints(leftLimit, rightLimit + 1)
+                .limit(length)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
     }
 }
