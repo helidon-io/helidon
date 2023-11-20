@@ -51,7 +51,7 @@ class WithSpanInterceptor {
      *
      * @param context Invocation Context
      * @return Invocation proceed.
-     * @throws Exception
+     * @throws Exception when something is wrong
      */
     @AroundInvoke
     public Object interceptSpan(InvocationContext context) throws Exception {
