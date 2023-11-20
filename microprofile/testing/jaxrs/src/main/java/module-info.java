@@ -15,7 +15,7 @@
  */
 
 /**
- * JUnit5 extension module to run CDI tests.
+ * Helidon Testing JAX-RS support.
  */
 module io.helidon.microprofile.testing.jaxrs {
 
