@@ -84,7 +84,7 @@ public class WsConnection implements ServerConnection, WsSession {
                                       .stream()
                                       .filter(p -> p instanceof WsConfig)
                                       .findFirst()
-                                      .orElse(null);
+                                      .orElseThrow(() -> new InternalError("Unable to find WebSocket config"));
     }
 
     /**
@@ -253,9 +253,7 @@ public class WsConnection implements ServerConnection, WsSession {
 
     private ClientWsFrame readFrame() {
         try {
-            int maxFrameLength = wsConfig != null ? wsConfig.maxFrameLength()
-                                                  : Integer.parseInt(MAX_FRAME_LENGTH);
-            return ClientWsFrame.read(ctx, dataReader, maxFrameLength);
+            return ClientWsFrame.read(ctx, dataReader, wsConfig.maxFrameLength());
         } catch (DataReader.InsufficientDataAvailableException e) {
             throw new CloseConnectionException("Socket closed by the other side", e);
         } catch (WsCloseException e) {
