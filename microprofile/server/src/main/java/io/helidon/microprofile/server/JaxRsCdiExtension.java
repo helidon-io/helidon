@@ -283,8 +283,8 @@ public class JaxRsCdiExtension implements Extension {
                                    injectionManager);
     }
 
-    // @Priority does not have any effect. This should map to Exception,
-    // but it is invoked before user ExceptionMapper. This probably requires an issue.
+    // Throwable as temporal fix to pass TCKs meanwhile
+    // https://github.com/eclipse-ee4j/jersey/pull/5469 is not released
     @Provider
     private static class CatchAllExceptionMapper implements ExceptionMapper<Throwable> {
         @Context
