@@ -65,10 +65,6 @@
             <groupId>io.helidon.microprofile.testing</groupId>
             <artifactId>helidon-microprofile-testing-common</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-validator</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

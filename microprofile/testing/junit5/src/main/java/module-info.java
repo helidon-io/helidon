@@ -23,7 +23,6 @@ module io.helidon.microprofile.testing.junit5 {
     requires io.helidon.config.yaml.mp;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.testing.common;
-    requires io.helidon.microprofile.testing.validator;
     requires jakarta.inject;
     requires org.junit.jupiter.api;
 

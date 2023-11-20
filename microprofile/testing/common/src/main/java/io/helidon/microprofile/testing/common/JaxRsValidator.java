@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.testing.validator;
+package io.helidon.microprofile.testing.common;
 
 
 import java.lang.annotation.Annotation;
@@ -33,7 +33,6 @@ public abstract class JaxRsValidator implements TestValidator {
                 .map(Annotation::annotationType)
                 .map(Class::getName)
                 .collect(Collectors.toSet());
-        //FIXME:THIS IS VERY BAD!
         return testClassAnnotations.stream().anyMatch(i -> i.contains("AddJaxRs"));
     }
 }

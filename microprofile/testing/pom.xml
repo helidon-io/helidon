@@ -37,6 +37,5 @@
         <module>junit5</module>
         <module>testng</module>
         <module>jaxrs</module>
-        <module>validator</module>
     </modules>
 </project>

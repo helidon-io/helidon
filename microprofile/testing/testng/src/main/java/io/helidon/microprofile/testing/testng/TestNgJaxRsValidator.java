@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.testing.testng;
 
-import io.helidon.microprofile.testing.validator.JaxRsValidator;
+import io.helidon.microprofile.testing.common.JaxRsValidator;
 
 /**
  * An implementation for JaxRs Validator for Junit.
