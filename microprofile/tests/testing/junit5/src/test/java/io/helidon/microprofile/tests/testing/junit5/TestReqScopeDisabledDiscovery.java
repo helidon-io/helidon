@@ -16,7 +16,6 @@
 package io.helidon.microprofile.tests.testing.junit5;
 
 import io.helidon.microprofile.testing.jaxrs.AddJaxRs;
-import io.helidon.microprofile.testing.junit5.*;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;

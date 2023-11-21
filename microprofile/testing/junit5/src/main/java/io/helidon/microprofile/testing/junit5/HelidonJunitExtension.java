@@ -629,44 +629,5 @@ class HelidonJunitExtension implements BeforeAllCallback,
             return methodMeta;
         }
     }
-//
-//
-//    /**
-//     * Add Weld Request Scope Bean Literal when {@code AddJaxRs} annotation is used.
-//     */
-//    private static final class AddWeldRequestScopeLiteral extends AnnotationLiteral<AddBean> implements AddBean {
-//
-//        static final AddWeldRequestScopeLiteral INSTANCE = new AddWeldRequestScopeLiteral();
-//
-//        @Serial
-//        private static final long serialVersionUID = 1L;
-//
-//        @Override
-//        public Class<?> value() {
-//            return org.glassfish.jersey.weld.se.WeldRequestScope.class;
-//        }
-//
-//        @Override
-//        public Class<? extends Annotation> scope() {
-//            return RequestScoped.class;
-//        }
-//    }
-//
-//
-//    /**
-//     * Add Process Annotated Types Literal when {@code AddJaxRs} annotation is used.
-//     */
-//    private static final class AddProcessAnnotatedTypesLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
-//
-//        static final AddProcessAnnotatedTypesLiteral INSTANCE = new AddProcessAnnotatedTypesLiteral();
-//
-//        @Serial
-//        private static final long serialVersionUID = 1L;
-//
-//        @Override
-//        public Class<? extends Extension> value() {
-//            return org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class;
-//        }
-//    }
 
 }
