@@ -203,8 +203,8 @@ class Http2ClientConnection {
     }
 
     void close() {
+        this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
         if (state.getAndSet(State.CLOSED) != State.CLOSED) {
-            this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
             try {
                 handleTask.cancel(true);
                 ctx.log(LOGGER, TRACE, "Closing connection");

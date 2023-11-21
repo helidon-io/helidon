@@ -46,7 +46,7 @@ final class Http2ConnectionCache extends ClientConnectionCache {
 
     @Override
     public void closeResource() {
-        if (closed.getAndSet(true)) {
+        if (!closed.getAndSet(true)) {
             List.copyOf(cache.keySet())
                     .forEach(this::closeAndRemove);
         }
