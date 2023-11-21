@@ -15,7 +15,8 @@
  */
 
 /**
- * Helidon Testing JAX-RS Support
+ * Helidon Testing JAX-RS Support.
+ */
 module io.helidon.microprofile.tests.jaxrs {
 
     requires io.helidon.config.mp;

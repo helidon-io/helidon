@@ -70,6 +70,9 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
+import static io.helidon.microprofile.tests.common.CommonTestUtil.getFeatureBeans;
+import static io.helidon.microprofile.tests.common.CommonTestUtil.getFeatureExtensions;
+
 /**
  * Junit5 extension to support Helidon CDI container in tests.
  */
@@ -135,6 +138,9 @@ class HelidonJunitExtension implements BeforeAllCallback,
             return;
         }
         validatePerClass();
+
+        JunitJaxRsValidator junitJaxRsValidator = new JunitJaxRsValidator();
+        junitJaxRsValidator.validate(testClass);
 
         configure(classLevelConfigMeta);
 
@@ -338,6 +344,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
             }
         }
 
+        getFeatureExtensions(testClass).forEach(initializer::addExtensions);
+
         container = initializer.initialize();
     }
 
@@ -527,6 +535,9 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 if (!hasBda(addBean.value())) {
                     configurator.add(scope);
                 }
+
+                getFeatureBeans(testClass).forEach(e -> event.addAnnotatedType(e, e.getName()));
+
             }
         }
 

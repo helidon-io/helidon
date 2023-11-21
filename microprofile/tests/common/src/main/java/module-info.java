@@ -19,6 +19,8 @@
  */
 module io.helidon.microprofile.tests.common {
 
+    requires transitive jakarta.enterprise.cdi.api;
+
     exports io.helidon.microprofile.tests.common;
 
 }
