@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,44 +20,40 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile.tests</groupId>
-        <artifactId>tests-project</artifactId>
+        <groupId>io.helidon.microprofile</groupId>
+        <artifactId>helidon-microprofile-project</artifactId>
         <version>3.2.4-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>helidon-microprofile-tests-junit5-tests</artifactId>
-    <name>Helidon Microprofile Tests Junit5 unit tests</name>
+    <groupId>io.helidon.microprofile.tests</groupId>
+    <artifactId>helidon-microprofile-tests-jaxrs</artifactId>
+    <name>Helidon Microprofile Testing JAX-RS support</name>
 
     <description>
-        Test for JUnit5 integration to prevent cyclic dependendcies,
-        so the module can be used in MP config implementation
+        Helidon Microprofile Testing JAX-RS support
     </description>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile.server</groupId>
-            <artifactId>helidon-microprofile-server</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.tests</groupId>
-            <artifactId>helidon-microprofile-tests-junit5</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
-            <scope>test</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
-            <artifactId>helidon-microprofile-tests-jaxrs</artifactId>
-            <scope>test</scope>
+            <artifactId>helidon-microprofile-tests-common</artifactId>
         </dependency>
     </dependencies>
+
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,9 @@ import org.testng.ITestListener;
 import org.testng.ITestResult;
 import org.testng.annotations.Test;
 
+import static io.helidon.microprofile.tests.common.CommonTestUtil.getFeatureBeans;
+import static io.helidon.microprofile.tests.common.CommonTestUtil.getFeatureExtensions;
+
 /**
  * TestNG extension to support Helidon CDI container in tests.
  */
@@ -124,6 +127,9 @@ public class HelidonTestNGListener implements IClassListener, ITestListener {
             return;
         }
         validatePerClass();
+
+        TestNgJaxRsValidator testNgJaxRsValidator = new TestNgJaxRsValidator();
+        testNgJaxRsValidator.validate(testClass);
 
         configure(classLevelConfigMeta);
 
@@ -358,6 +364,8 @@ public class HelidonTestNGListener implements IClassListener, ITestListener {
             }
         }
 
+        getFeatureExtensions(testClass).forEach(initializer::addExtensions);
+
         container = initializer.initialize();
     }
 
@@ -447,6 +455,9 @@ public class HelidonTestNGListener implements IClassListener, ITestListener {
                     configurator.add(scope);
                 }
             }
+
+            getFeatureBeans(testClass).forEach(e -> event.addAnnotatedType(e, e.getName()));
+
         }
 
         private boolean hasBda(Class<?> value) {

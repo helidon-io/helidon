@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.microprofile.tests.common;
 
 /**
- * JUnit5 extension module to run CDI tests.
+ * Validator for test class.
  */
-module io.helidon.microprofile.tests.junit5 {
+public interface TestValidator {
 
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml.mp;
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.microprofile.tests.common;
-    requires jakarta.inject;
-    requires org.junit.jupiter.api;
-
-    requires transitive jakarta.cdi;
-    requires transitive jakarta.ws.rs;
-
-    exports io.helidon.microprofile.tests.junit5;
+    /**
+     * Perform Validation.
+     * @param testClass for verification.
+     */
+    void validate(Class<?> testClass) throws RuntimeException;
 }

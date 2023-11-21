@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
+package io.helidon.microprofile.tests.common;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+
 /**
- * JUnit5 extension module to run CDI tests.
+ * Common CDI Extensions for testing.
  */
-module io.helidon.microprofile.tests.junit5 {
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+@Inherited
+public @interface CommonCdiExtensions {
 
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml.mp;
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.microprofile.tests.common;
-    requires jakarta.inject;
-    requires org.junit.jupiter.api;
-
-    requires transitive jakarta.cdi;
-    requires transitive jakarta.ws.rs;
-
-    exports io.helidon.microprofile.tests.junit5;
+    /**
+     * Return CDI Extension.
+     *
+     * @return CDIExtension[]
+     */
+    CommonCdiExtension[] value();
 }

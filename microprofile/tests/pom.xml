@@ -46,6 +46,8 @@
         <module>junit5-tests</module>
         <module>testng</module>
         <module>testng-tests</module>
+        <module>common</module>
+        <module>jaxrs</module>
     </modules>
 
     <profiles>
