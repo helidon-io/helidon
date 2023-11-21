@@ -132,9 +132,6 @@
                         <context.root/> <!-- Suppress the TCK's default of /optionalTCK -->
                         <metrics.rest-request.enabled>true</metrics.rest-request.enabled> <!-- off by default -->
                     </systemPropertyVariables>
-                    <!-- TODO temporary exclusion until MP metrics tck is updated
-                     https://github.com/eclipse/microprofile-metrics/pull/788 -->
-                    <excludesFile>excludeTests.txt</excludesFile>
                 </configuration>
             </plugin>
         </plugins>
