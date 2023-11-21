@@ -1,0 +1,103 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/../..]
+:description: Helidon Security Java Serialization (JEP-290)
+:keywords: helidon, security, serialization, java, JEP-290
+:metainf: META-INF/helidon/serial-config.properties
+
+= JEP-290
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Deserialization setup, Deserialization setup>>
+- <<System property configuration, System property configuration>>
+- <<Programmatic configuration, Programmatic configuration>>
+
+== Overview
+
+link:https://openjdk.org/jeps/290[JEP-290] brought support for deserialization filters to Java programming language.
+Such filtering allows us to control which classes may be deserialized using Java serialization.
+
+== Deserialization setup
+
+Helidon default settings forbids any deserialization except for patterns defined in a `pattern`
+property of any `{metainf}` on classpath. The patterns are semicolon delimited strings, such as `io.myapp.&#42;&#42;;java.util.HashMap` (any subpackage of `io.myapp` and class `java.util.HashMap`).
+Helidon will *always* add a deny-all filter pattern to the end of the pattern string (to make sure we exclude any unspecified class - we only operate on whitelists)
+
+These defaults can be modified either through system properties, or programmatically.
+
+== System property configuration
+The following system properties can be used to control deserialization in Helidon:
+
+.System properties
+[cols="3,3,5a"]
+
+|===
+|property |default value |description
+
+|`helidon.serialFilter.pattern` |`!&#42;` |Filter pattern to use, deny all is always added
+|`helidon.serialFilter.ignoreFiles` |`false` |Whether to ignore files `{metainf}` in libraries on the classpath
+|`helidon.serialFilter.failure.action` |`FAIL` |Action to do when the configuration of global filter exists and is not consistent with our security expectations (e.g. contains a pattern to include all).
+
+Options:
+
+- `FAIL` - throw an exception to terminate startup
+- `WARN` - log a warning
+- `IGNORE` - ignore this and silently continue
+
+|`helidon.serialFilter.missing.action` |`CONFIGURE` |Action to do when there is no global configuration.
+
+Options:
+
+- `CONFIGURE` - configure Helidon defaults
+- `FAIL` - throw an exception to terminate startup
+- `WARN` - log a warning
+- `IGNORE` - ignore this and silently continue
+
+|`helidon.serialFilter.trace` |`NONE` |Tracing configuration for deserialization. Controls what information (if any) will be logged to a logger `io.helidon.common.SerializationConfig.TracingObjectInputFilter` in `INFO` log level.
+
+Options:
+
+- `NONE` - do not trace
+- `BASIC` - trace only classes, and only once per class
+- `FULL` - trace all deserialization filter requests
+
+|===
+
+== Programmatic configuration
+
+Custom `SerializationConfig` may be registered, but it *must* be done before Helidon server is started.
+
+[source,java]
+.Configure custom Helidon serialization config
+----
+SerializationConfig.builder()
+  .traceSerialization(SerializationConfig.TraceOption.BASIC) <1>
+  .filterPattern(MyType.class.getName())                     <2>
+  .ignoreFiles(true)                                         <3>
+  .onWrongConfig(SerializationConfig.Action.IGNORE)          <4>
+  .build()
+  .configure();                                              <5>
+----
+<1> Trace first instance of each class that is deserialized
+<2> Configure a single class filter pattern (only allows deserialization of class `MyType`
+<3> Ignore files defined in {metainf}
+<4> In case there is an existing global serialization configuration on JDK, ignore it and continue (global filter cannot be reconfigured)
+<5> Configure this serialization config as the default for this JVM

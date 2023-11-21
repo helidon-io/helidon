@@ -1,0 +1,88 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/../../..]
+
+=== Header Authentication Provider
+:description: Helidon Security Header Provider
+:keywords: helidon, security, header
+:feature-name: Header Authentication Security Provider
+
+Asserts user or service identity based on a value of a header.
+
+==== Setup
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-header</artifactId>
+</dependency>
+----
+
+==== Overview
+
+include::{rootdir}/config/io_helidon_security_providers_header_HeaderAtnProvider.adoc[leveloffset=+2,tag=config]
+
+==== Example code
+
+[source,yaml]
+.Configuration example
+----
+security:
+  providers:
+    header-atn:
+      atn-token:
+        header: "X-AUTH-USER"
+      outbound:
+        - name: "internal-services"
+          hosts: ["*.example.org"]
+          # propagates the current user or service id using the same header as authentication
+        - name: "partner-service"
+          hosts: ["*.partner.org"]
+          # propagates an explicit username in a custom header
+          username: "service-27"
+          outbound-token:
+            header: "X-Service-Auth"
+----
+
+==== How does it work?
+This provider inspects a specified request header and extracts the username/service name from it and
+asserts it as current subject's principal.
+
+This can be used when we use perimeter authentication (e.g. there is a gateway that takes
+care of authentication and propagates the user in a header).
+
+*Identity propagation*
+
+Identity is propagated only if an outbound target matches the target service.
+
+The following options exist when propagating identity:
+1. We propagate the current username using the configured header
+2. We use username associated with an outbound target (see example configuration above)
+
+
+*Caution*
+
+When using this provider, you must be sure the header cannot be explicitly configured by a user or another service.
+All requests should go through a gateway that removes this header from inbound traffic, and only configures it for
+authenticated users/services.
+Another option is to use this with fully trusted parties (such as services within a single company, on a single
+protected network not accessible to any users), and of course for testing and demo purposes.
+

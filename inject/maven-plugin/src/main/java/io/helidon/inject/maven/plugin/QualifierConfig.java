@@ -64,7 +64,7 @@ public class QualifierConfig implements Qualifier {
     }
 
     @Override
-    public Optional<String> getValue(String name) {
+    public Optional<String> getValue(String property) {
         throw new UnsupportedOperationException();
     }
 

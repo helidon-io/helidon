@@ -70,7 +70,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Docs
-        run: etc/scripts/site.sh
+        run: etc/scripts/docs.sh
   build:
     timeout-minutes: 60
     strategy:

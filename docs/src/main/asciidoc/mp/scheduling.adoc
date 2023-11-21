@@ -1,0 +1,176 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Scheduling
+:description: Scheduling in Helidon MP
+:keywords: helidon, mp, scheduling
+:feature-name: Scheduling
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Reference, Reference>>
+
+== Overview
+
+Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality
+based on https://github.com/jmrozanec/cron-utils[Cron-utils].
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.scheduling</groupId>
+    <artifactId>helidon-microprofile-scheduling</artifactId>
+</dependency>
+----
+
+== Usage
+
+For scheduling tasks in Helidon you can choose from `@Scheduled` or `@FixedRate` annotations by required complexity
+of invocation interval. All you need is define method with one of the annotations in application scoped bean.
+
+=== Fixed rate
+
+For simple fixed rate invocation interval is `@FixedRate` the easiest way for scheduling task invocation.
+
+[source,java]
+----
+@FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
+----
+
+All values defined with the annotation can be overridden from the config.
+
+[source,yaml]
+.Overriding annotated values from config
+----
+fully.qualified.ClassName.methodName:
+  schedule:
+    initial-delay: 5
+    delay: 15
+    time-unit: HOURS
+----
+
+Metadata like human-readable interval description or configured values are available through
+_FixedRateInvocation_ injected as method parameter.
+
+[source,java]
+----
+@FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
+----
+
+=== Cron expression
+
+For more complicated interval definition, cron expression can be leveraged with `@Schedule` annotation.
+
+[source,java]
+----
+@Scheduled("0 15 8 ? * *", concurrentExecution = false)
+public void methodName() { ... }
+----
+
+include::{rootdir}/includes/cron.adoc[lines=19..]
+
+Metadata like human-readable interval description or configured values are available through _CronInvocation_ injected
+ as method parameter.
+
+[source,java]
+----
+@Scheduled("0 15 8 ? * *")
+public void methodName(CronInvocation inv) { ... }
+----
+
+== Configuration
+
+`Scheduled` annotation properties can be overridden using `application.yaml` properties
+
+[source,yaml]
+.Overriding annotated values from config
+----
+fully.qualified.ClassName.methodName:
+  schedule:
+    cron: "* * * * * ?"
+    concurrent: false
+----
+
+.Configuration properties
+[width="90%",cols="3,10",frame="topbot",options="header"]
+|====
+| Property              | Description
+| cron                  | String containing cron setup
+| concurrent            | Boolean, equivalent `concurrentExecution` property of `@Scheduled`. Default `true`.
+|====
+
+== Examples
+
+=== Fixed rate
+
+[source,java]
+.Example of scheduling with fixed rate
+----
+@FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
+public void methodName() {
+    System.out.println("Every 10 minutes, first invocation 5 minutes after start");
+}
+----
+
+=== FixedRate Metadata Injection
+
+[source,java]
+.Example with invocation metadata
+----
+@FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
+public void methodName(FixedRateInvocation inv) {
+    System.out.println("Method invoked " + inv.description());
+}
+----
+
+=== Cron expression
+
+[source,java]
+.Example of scheduling with cron expression
+----
+@Scheduled("0 15 8 ? * *", concurrentExecution = false)
+public void methodName() {
+    System.out.println("Executer every day at 8:15");
+}
+----
+
+=== Scheduled Metadata Injection.
+
+[source,java]
+.Example with invocation metadata
+----
+@Scheduled("0 15 8 ? * *")
+public void methodName(CronInvocation inv) {
+    System.out.println("Method invoked " + inv.description());
+}
+----
+
+== Reference
+
+* https://github.com/jmrozanec/cron-utils[Cron-utils GitHub page]
+* link:{scheduling-javadoc-base-url}/io/helidon/microprofile/scheduling/package-summary.html[Helidon Scheduling JavaDoc]
