@@ -154,9 +154,7 @@ class LoomClient implements WebClient {
     @Override
     public void closeResource() {
         for (ProtocolSpi o : List.copyOf(clientSpiByProtocol.values())) {
-            if (o.spi() instanceof ReleasableResource cl) {
-                cl.releaseResource();
-            }
+            o.spi().releaseResource();
         }
     }
 

@@ -19,11 +19,12 @@ package io.helidon.webclient.spi;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.ReleasableResource;
 
 /**
  * Integration for HTTP versions to provide a single API.
  */
-public interface HttpClientSpi {
+public interface HttpClientSpi extends ReleasableResource {
     /**
      * Return whether this HTTP version can handle the provided request.
      * <p>
