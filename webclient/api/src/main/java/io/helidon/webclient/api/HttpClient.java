@@ -35,7 +35,9 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     /**
      * Gracefully close all opened client specific connections.
      */
-    void closeResource();
+    default void closeResource() {
+        // Do nothing by default
+    }
 
     /**
      * Shortcut for get method with a path.
