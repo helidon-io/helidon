@@ -285,7 +285,7 @@ _nexting_. There are two options:
 .any("/hello", (req, res) -> { // <1>
     // filtering logic (e.g., validating parameters) // <2>
     if (userParametersOk()) {
-        req.next(); // <3>
+        res.next(); // <3>
     } else {
         throw new IllegalArgumentException("Invalid parameters."); // <4>
     }
