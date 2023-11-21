@@ -240,7 +240,7 @@ public class SystemMetersProvider implements MetersProvider {
                           GarbageCollectorMXBean::getCollectionCount,
                           Tag.create("name", poolName));
             // Express the GC time in seconds.
-            registerFunctionalCounter(result,
+            registerGauge(result,
                           GC_TIME,
                           gcBean,
                           bean -> (long) (bean.getCollectionTime() / 1000.0D),
