@@ -16,6 +16,7 @@
 
 package io.helidon.examples.microprofile.telemetry;
 
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
@@ -48,13 +49,17 @@ public class GreetResource {
 
     private Tracer tracer;
 
+    private io.helidon.tracing.Tracer helidonTracerInjected;
+
+
     @Uri("http://localhost:8081/secondary")
     private WebTarget target;
 
     @Inject
-    GreetResource(Span span, Tracer tracer) {
+    GreetResource(Span span, Tracer tracer, io.helidon.tracing.Tracer helidonTracerInjected) {
         this.span = span;
         this.tracer = tracer;
+        this.helidonTracerInjected = helidonTracerInjected;
     }
 
     /**
@@ -85,6 +90,45 @@ public class GreetResource {
 
         return new GreetingMessage("Custom Span" + span);
     }
+
+    /**
+     *  Create a helidon mixed span and return its description.
+     * @return {@link GreetingMessage}
+     */
+    @GET
+    @Path("mixed")
+    @Produces(MediaType.APPLICATION_JSON)
+    @WithSpan("mixed_parent")
+    public GreetingMessage mixedSpan() {
+
+        io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();
+        io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed")
+                .kind(io.helidon.tracing.Span.Kind.SERVER)
+                .tag("attribute", "value")
+                .start();
+        mixedSpan.end();
+
+        return new GreetingMessage("Mixed Span" + span);
+    }
+
+    /**
+     *  Create a helidon mixed span and return its description.
+     * @return {@link GreetingMessage}
+     */
+    @GET
+    @Path("mixed_injected")
+    @Produces(MediaType.APPLICATION_JSON)
+    @WithSpan("mixed_parent_injected")
+    public GreetingMessage mixedSpanInjected() {
+        io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected")
+                .kind(io.helidon.tracing.Span.Kind.SERVER)
+                .tag("attribute", "value")
+                .start();
+        mixedSpan.end();
+
+        return new GreetingMessage("Mixed Span Injected" + span);
+    }
+
     /**
      * Get Span info.
      *

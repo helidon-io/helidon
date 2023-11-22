@@ -23,6 +23,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
+import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
@@ -58,6 +59,10 @@ class OpenTelemetryProducer {
     private Map<String, String> telemetryProperties;
 
     private final Config config;
+
+    private volatile Tracer tracer;
+
+    private volatile io.helidon.tracing.Tracer helidonTracer;
 
     private final org.eclipse.microprofile.config.Config mpConfig;
 
@@ -105,6 +110,9 @@ class OpenTelemetryProducer {
             }
             openTelemetry = LazyValue.create(OpenTelemetry::noop);
         }
+        tracer = openTelemetry.get().getTracer(exporterName);
+        helidonTracer = HelidonOpenTelemetry.create(openTelemetry.get(), tracer, Map.of());
+        OpenTelemetryTracerProvider.globalTracer(helidonTracer);
     }
 
     /**
@@ -128,12 +136,16 @@ class OpenTelemetryProducer {
     /**
      * Provides an instance of the current OpenTelemetry Tracer.
      *
-     * @param openTelemetry instance of OpenTelemetry.
      * @return Tracer.
      */
     @Produces
-    Tracer tracer(OpenTelemetry openTelemetry) {
-        return openTelemetry.getTracer(exporterName);
+    Tracer tracer() {
+        return tracer;
+    }
+
+    @Produces
+    io.helidon.tracing.Tracer helidonTracer() {
+        return helidonTracer;
     }
 
     /**
