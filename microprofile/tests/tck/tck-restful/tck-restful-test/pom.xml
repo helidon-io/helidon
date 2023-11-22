@@ -121,6 +121,15 @@
                     <includes>
                         <include>*IT.java</include>
                     </includes>
+                    <excludes>
+                        <!--
+                            Next 3 tests are related to CatchAllExceptionMapper
+                            Requires https://github.com/eclipse-ee4j/jersey/pull/5469
+                        -->
+                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/ext/paramconverter/JAXRSClientIT.java</exclude>
+                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/ext/providers/JAXRSProvidersClientIT.java</exclude>
+                        <exclude>ee/jakarta/tck/ws/rs/spec/provider/exceptionmapper/JAXRSClientIT.java</exclude>
+                    </excludes>
                     <systemPropertyVariables>
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>

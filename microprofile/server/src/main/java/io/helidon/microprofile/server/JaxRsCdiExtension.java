@@ -283,15 +283,16 @@ public class JaxRsCdiExtension implements Extension {
                                    injectionManager);
     }
 
-    // Throwable as temporal fix to pass TCKs meanwhile
+    // @Priority does not have any effect till this is merged
     // https://github.com/eclipse-ee4j/jersey/pull/5469 is not released
     @Provider
-    private static class CatchAllExceptionMapper implements ExceptionMapper<Throwable> {
+    @Priority(5000)
+    private static class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
         @Context
         private ServerRequest serverRequest;
 
         @Override
-        public Response toResponse(Throwable exception) {
+        public Response toResponse(Exception exception) {
             serverRequest.context().register("unmappedException", exception);
             if (exception instanceof WebApplicationException wae) {
                 return wae.getResponse();
