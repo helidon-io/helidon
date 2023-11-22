@@ -83,6 +83,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
         cache.values().stream()
                 .flatMap(Collection::stream)
                 .forEach(TcpClientConnection::closeResource);
+        this.removeReleaseShutdownHook();
     }
 
     private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {

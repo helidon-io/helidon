@@ -16,13 +16,56 @@
 
 package io.helidon.webclient.spi;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
+import io.helidon.common.LazyValue;
 import io.helidon.webclient.api.ReleasableResource;
+
+import static java.lang.System.Logger.Level;
 
 /**
  * Client connection cache with release shutdown hook to provide graceful shutdown.
  */
 public abstract class ClientConnectionCache implements ReleasableResource {
+
+    private static final System.Logger LOGGER = System.getLogger(ClientConnectionCache.class.getName());
+    private static final ReentrantLock UNRELEASED_CACHES_LOCK = new ReentrantLock();
+    private static final LazyValue<List<ClientConnectionCache>> UNRELEASED_CACHES = LazyValue.create(() -> {
+        Runtime.getRuntime().addShutdownHook(new Thread(ClientConnectionCache::onShutdown));
+        return new ArrayList<>();
+    });
+
     protected ClientConnectionCache() {
-        Runtime.getRuntime().addShutdownHook(new Thread(this::releaseResource));
+        UNRELEASED_CACHES_LOCK.lock();
+        try {
+            UNRELEASED_CACHES.get().add(this);
+        } finally {
+            UNRELEASED_CACHES_LOCK.unlock();
+        }
+    }
+
+    protected void removeReleaseShutdownHook() {
+        UNRELEASED_CACHES_LOCK.lock();
+        try {
+            UNRELEASED_CACHES.get().remove(this);
+        } finally {
+            UNRELEASED_CACHES_LOCK.unlock();
+        }
+    }
+
+    private static void onShutdown() {
+        UNRELEASED_CACHES_LOCK.lock();
+        try {
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Gracefully closing connections in "
+                        + UNRELEASED_CACHES.get().size()
+                        + " client connection caches.");
+            }
+            List.copyOf(UNRELEASED_CACHES.get()).forEach(ReleasableResource::releaseResource);
+        } finally {
+            UNRELEASED_CACHES_LOCK.unlock();
+        }
     }
 }

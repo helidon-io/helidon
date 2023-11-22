@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 
@@ -50,7 +51,7 @@ class ShutDownTest {
 
     @BeforeAll
     static void beforeAll() throws InterruptedException {
-
+        LogConfig.configureRuntime();
         mockHttp2Server = MockHttp2Server.builder()
                 .onGoAway((ctx, streamId, headers, payload, encoder) -> {
                     int remotePort = ((InetSocketAddress) ctx.channel().remoteAddress()).getPort();

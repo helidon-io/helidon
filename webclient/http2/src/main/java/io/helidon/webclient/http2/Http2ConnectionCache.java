@@ -49,6 +49,7 @@ final class Http2ConnectionCache extends ClientConnectionCache {
         if (!closed.getAndSet(true)) {
             List.copyOf(cache.keySet())
                     .forEach(this::closeAndRemove);
+            this.removeReleaseShutdownHook();
         }
     }
 
