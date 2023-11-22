@@ -16,8 +16,10 @@
 
 package io.helidon.webclient.http2;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import io.helidon.common.configurable.LruCache;
@@ -25,21 +27,34 @@ import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webclient.spi.ClientConnectionCache;
 
-final class Http2ConnectionCache {
-    //todo Gracefully close connections in channel cache
-    private static final Http2ConnectionCache SHARED = create();
+final class Http2ConnectionCache extends ClientConnectionCache {
+    private static final Http2ConnectionCache SHARED = new Http2ConnectionCache(true);
     private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.<ConnectionKey, Boolean>builder()
             .capacity(1000)
             .build();
     private final Map<ConnectionKey, Http2ClientConnectionHandler> cache = new ConcurrentHashMap<>();
+    private final AtomicBoolean closed = new AtomicBoolean();
+
+    private Http2ConnectionCache(boolean shared) {
+        super(shared);
+    }
 
     static Http2ConnectionCache shared() {
         return SHARED;
     }
 
     static Http2ConnectionCache create() {
-        return new Http2ConnectionCache();
+        return new Http2ConnectionCache(false);
+    }
+
+    @Override
+    public void closeResource() {
+        if (!closed.getAndSet(true)) {
+            List.copyOf(cache.keySet())
+                    .forEach(this::closeAndRemove);
+        }
     }
 
     boolean supports(ConnectionKey ck) {
@@ -47,11 +62,9 @@ final class Http2ConnectionCache {
     }
 
     void remove(ConnectionKey connectionKey) {
-        Http2ClientConnectionHandler handler = cache.remove(connectionKey);
-        if (handler != null) {
-            handler.close();
+        if (!closed.get()) {
+            closeAndRemove(connectionKey);
         }
-        http2Supported.remove(connectionKey);
     }
 
     Http2ConnectionAttemptResult newStream(Http2ClientImpl http2Client,
@@ -59,6 +72,10 @@ final class Http2ConnectionCache {
                                            Http2ClientRequestImpl request,
                                            ClientUri initialUri,
                                            Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+
+        if (closed.get()) {
+            throw new IllegalStateException("Connection cache is closed");
+        }
 
         // this statement locks all threads - must not do anything complicated (just create a new instance)
         Http2ConnectionAttemptResult result =
@@ -72,5 +89,13 @@ final class Http2ConnectionCache {
             http2Supported.put(connectionKey, true);
         }
         return result;
+    }
+
+    private void closeAndRemove(ConnectionKey connectionKey){
+        Http2ClientConnectionHandler handler = cache.remove(connectionKey);
+        if (handler != null) {
+            handler.close();
+        }
+        http2Supported.remove(connectionKey);
     }
 }
