@@ -46,18 +46,22 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private static final System.Logger LOGGER = System.getLogger(Http1ConnectionCache.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final String HTTPS = "https";
-    private static final Http1ConnectionCache SHARED = create();
+    private static final Http1ConnectionCache SHARED = new Http1ConnectionCache(true);
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
     private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
+
+    protected Http1ConnectionCache(boolean shared) {
+        super(shared);
+    }
 
     static Http1ConnectionCache shared() {
         return SHARED;
     }
 
     static Http1ConnectionCache create() {
-        return new Http1ConnectionCache();
+        return new Http1ConnectionCache(false);
     }
 
     ClientConnection connection(Http1ClientImpl http1Client,
@@ -83,7 +87,6 @@ class Http1ConnectionCache extends ClientConnectionCache {
         cache.values().stream()
                 .flatMap(Collection::stream)
                 .forEach(TcpClientConnection::closeResource);
-        this.removeReleaseShutdownHook();
     }
 
     private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {

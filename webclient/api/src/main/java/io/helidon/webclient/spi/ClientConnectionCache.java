@@ -16,11 +16,6 @@
 
 package io.helidon.webclient.spi;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
-
-import io.helidon.common.LazyValue;
 import io.helidon.webclient.api.ReleasableResource;
 
 import static java.lang.System.Logger.Level;
@@ -31,41 +26,17 @@ import static java.lang.System.Logger.Level;
 public abstract class ClientConnectionCache implements ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(ClientConnectionCache.class.getName());
-    private static final ReentrantLock UNRELEASED_CACHES_LOCK = new ReentrantLock();
-    private static final LazyValue<List<ClientConnectionCache>> UNRELEASED_CACHES = LazyValue.create(() -> {
-        Runtime.getRuntime().addShutdownHook(new Thread(ClientConnectionCache::onShutdown));
-        return new ArrayList<>();
-    });
 
-    protected ClientConnectionCache() {
-        UNRELEASED_CACHES_LOCK.lock();
-        try {
-            UNRELEASED_CACHES.get().add(this);
-        } finally {
-            UNRELEASED_CACHES_LOCK.unlock();
+    protected ClientConnectionCache(boolean shared) {
+        if (shared) {
+            Runtime.getRuntime().addShutdownHook(new Thread(this::onShutdown));
         }
     }
 
-    protected void removeReleaseShutdownHook() {
-        UNRELEASED_CACHES_LOCK.lock();
-        try {
-            UNRELEASED_CACHES.get().remove(this);
-        } finally {
-            UNRELEASED_CACHES_LOCK.unlock();
+    private void onShutdown() {
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG, "Gracefully closing connections in client connection cache.");
         }
-    }
-
-    private static void onShutdown() {
-        UNRELEASED_CACHES_LOCK.lock();
-        try {
-            if (LOGGER.isLoggable(Level.DEBUG)) {
-                LOGGER.log(Level.DEBUG, "Gracefully closing connections in "
-                        + UNRELEASED_CACHES.get().size()
-                        + " client connection caches.");
-            }
-            List.copyOf(UNRELEASED_CACHES.get()).forEach(ReleasableResource::releaseResource);
-        } finally {
-            UNRELEASED_CACHES_LOCK.unlock();
-        }
+        this.releaseResource();
     }
 }

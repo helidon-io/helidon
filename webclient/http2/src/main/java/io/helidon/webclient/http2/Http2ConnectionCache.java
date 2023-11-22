@@ -30,18 +30,23 @@ import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.spi.ClientConnectionCache;
 
 final class Http2ConnectionCache extends ClientConnectionCache {
-    private static final Http2ConnectionCache SHARED = create();
+    private static final Http2ConnectionCache SHARED = new Http2ConnectionCache(true);
     private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.<ConnectionKey, Boolean>builder()
             .capacity(1000)
             .build();
     private final Map<ConnectionKey, Http2ClientConnectionHandler> cache = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
+
+    private Http2ConnectionCache(boolean shared) {
+        super(shared);
+    }
+
     static Http2ConnectionCache shared() {
         return SHARED;
     }
 
     static Http2ConnectionCache create() {
-        return new Http2ConnectionCache();
+        return new Http2ConnectionCache(false);
     }
 
     @Override
@@ -49,7 +54,6 @@ final class Http2ConnectionCache extends ClientConnectionCache {
         if (!closed.getAndSet(true)) {
             List.copyOf(cache.keySet())
                     .forEach(this::closeAndRemove);
-            this.removeReleaseShutdownHook();
         }
     }
 
