@@ -15,7 +15,7 @@
  */
 
 /**
- * Java for cloud security module providers.
+ * Helidon security module providers.
  */
 module io.helidon.security.providers.common {
 
