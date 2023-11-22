@@ -215,7 +215,7 @@ public class SystemMetersProvider implements MetersProvider {
                       typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getMax));
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        registerGauge(result, JVM_UPTIME, runtimeBean, RuntimeMXBean::getUptime);
+        registerGauge(result, JVM_UPTIME, runtimeBean, rtBean -> rtBean.getUptime() / 1000.0D);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         registerGauge(result, THREAD_COUNT, threadBean, ThreadMXBean::getThreadCount);
