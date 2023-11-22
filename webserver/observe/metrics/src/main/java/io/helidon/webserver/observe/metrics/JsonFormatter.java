@@ -209,6 +209,7 @@ class JsonFormatter implements MeterRegistryFormatter {
 
                 JsonObjectBuilder builderForThisName = metadataOutputBuilderWithinParent
                         .computeIfAbsent(name, k -> JSON.createObjectBuilder());
+                addNonEmpty(builderForThisName, "type", meter.type().typeName());
                 meter.baseUnit().ifPresent(u -> addNonEmpty(builderForThisName, "unit", u));
                 meter.description().ifPresent(d -> addNonEmpty(builderForThisName, "description", d));
                 isAnyOutput.set(true);
