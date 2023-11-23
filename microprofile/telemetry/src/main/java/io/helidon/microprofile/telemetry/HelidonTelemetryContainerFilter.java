@@ -51,6 +51,10 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private static final String SPAN_SCOPE = "otel.span.server.scope";
     private static final String HTTP_TARGET = "http.target";
 
+    private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
+
+    private static boolean spanNameFullUrl = false;
+
     // Extract OpenTelemetry Parent Context from Request headers.
     private static final TextMapGetter<ContainerRequestContext> CONTEXT_HEADER_INJECTOR;
 
@@ -78,9 +82,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private ResourceInfo resourceInfo;
 
     @Inject
-    HelidonTelemetryContainerFilter(Tracer tracer, OpenTelemetry openTelemetry) {
+    HelidonTelemetryContainerFilter(Tracer tracer, OpenTelemetry openTelemetry, org.eclipse.microprofile.config.Config mpConfig) {
         this.tracer = tracer;
         this.openTelemetry = openTelemetry;
+
+        mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
     }
 
     @Override
@@ -100,10 +106,15 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             parentContext = extractedContext;
         }
 
-        String annotatedPath = requestContext.getUriInfo().getPath();
-        Path pathAnnotation = resourceInfo.getResourceMethod().getAnnotation(Path.class);
-        if (pathAnnotation != null) {
-            annotatedPath = pathAnnotation.value();
+        String annotatedPath;
+        if (spanNameFullUrl) {
+            annotatedPath = requestContext.getUriInfo().getAbsolutePath().toString();
+        } else {
+            annotatedPath = requestContext.getUriInfo().getPath();
+            Path pathAnnotation = resourceInfo.getResourceMethod().getAnnotation(Path.class);
+            if (pathAnnotation != null) {
+                annotatedPath = pathAnnotation.value();
+            }
         }
 
         //Start new span for container request.

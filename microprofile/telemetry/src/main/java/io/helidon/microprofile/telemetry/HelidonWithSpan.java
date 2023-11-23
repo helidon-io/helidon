@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.io.Serial;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -37,6 +38,8 @@ import jakarta.interceptor.InterceptorBinding;
     // Literal to create HelidonWithSpan annotation.
     class Literal extends AnnotationLiteral<HelidonWithSpan> implements HelidonWithSpan {
         static final Literal INSTANCE = new Literal();
+        @Serial
+        private static final long serialVersionUID = 5910339603347723544L;
 
         private Literal() {
         }
