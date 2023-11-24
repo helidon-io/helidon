@@ -134,8 +134,6 @@
                         <exclude>ee/jakarta/tck/ws/rs/spec/provider/sort/JAXRSClientIT.java</exclude>
                         <!-- https://github.com/helidon-io/helidon/issues/8061 -->
                         <exclude>ee/jakarta/tck/ws/rs/spec/resourceconstructor/JAXRSClientIT.java</exclude>
-                        <!-- https://github.com/helidon-io/helidon/issues/8062 -->
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/container/responsecontext/JAXRSClientIT.java</exclude>
                         <!-- https://github.com/helidon-io/helidon/issues/8063 -->
                         <exclude>ee/jakarta/tck/ws/rs/jaxrs21/ee/sse/sseeventsource/JAXRSClientIT.java</exclude>
                     </excludes>
