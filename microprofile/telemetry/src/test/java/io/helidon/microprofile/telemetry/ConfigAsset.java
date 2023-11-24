@@ -35,8 +35,7 @@ public class ConfigAsset implements Asset {
             properties.store(os, null);
             return new ByteArrayInputStream(os.toByteArray());
         } catch (IOException e) {
-            // Shouldn't happen since we're only using in memory streams
-            throw new RuntimeException("Unexpected error saving properties", e);
+            throw new RuntimeException("Exception with saving properties", e);
         }
     }
 

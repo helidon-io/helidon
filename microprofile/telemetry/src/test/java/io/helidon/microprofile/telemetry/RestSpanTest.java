@@ -24,7 +24,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.opentelemetry.sdk.trace.data.SpanData;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit5.ArquillianExtension;
@@ -45,6 +52,10 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static io.opentelemetry.api.trace.SpanKind.SERVER;
+import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Test Rest with Tracer Mock
@@ -89,9 +100,21 @@ public class RestSpanTest {
     }
 
     @Test
-    void span() throws URISyntaxException, IOException {
-        assertThat(basicClient.get("/span"), Matchers.is(HTTP_OK));
+    void spanHierarchy() {
 
+        assertThat(basicClient.get("mixed"), is(HTTP_OK));
+
+        List<SpanData> spanItems = spanExporter.getFinishedSpanItems(3);
+        assertThat(spanItems.size(), is(3));
+        assertThat(spanItems.get(0).getKind(), is(SERVER));
+        assertThat(spanItems.get(0).getName(), is("mixed_inner"));
+        assertThat(spanItems.get(0).getAttributes().get(AttributeKey.stringKey("attribute")), is("value"));
+
+        assertThat(spanItems.get(1).getKind(), is(INTERNAL));
+        assertThat(spanItems.get(1).getName(), is("mixed_parent"));
+
+        assertThat(spanItems.get(2).getKind(), is(SERVER));
+        assertThat(spanItems.get(2).getName(), is("mixed"));
     }
 
 
@@ -104,8 +127,17 @@ public class RestSpanTest {
         }
 
         @GET
-        @Path("/span/{name}")
-        public Response spanName(@PathParam(value = "name") String name) {
+        @Path("mixed")
+        @WithSpan("mixed_parent")
+        public Response mixedSpan() {
+
+            io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();
+            io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed_inner")
+                    .kind(io.helidon.tracing.Span.Kind.SERVER)
+                    .tag("attribute", "value")
+                    .start();
+            mixedSpan.end();
+
             return Response.ok().build();
         }
     }
