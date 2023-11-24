@@ -16,7 +16,6 @@
 
 package io.helidon.examples.microprofile.telemetry;
 
-import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
@@ -28,7 +27,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.Uri;
-
 
 /**
  * A simple JAX-RS resource to greet you. Examples:
@@ -50,7 +48,6 @@ public class GreetResource {
     private Tracer tracer;
 
     private io.helidon.tracing.Tracer helidonTracerInjected;
-
 
     @Uri("http://localhost:8081/secondary")
     private WebTarget target;
