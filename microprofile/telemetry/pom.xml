@@ -103,6 +103,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
@@ -111,6 +116,7 @@
             <groupId>org.jboss.arquillian.junit5</groupId>
             <artifactId>arquillian-junit5-container</artifactId>
             <version>1.7.0.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>

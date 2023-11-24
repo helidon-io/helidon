@@ -39,10 +39,7 @@ public class InMemorySpanExporter implements SpanExporter {
     private final List<SpanData> finishedSpanItems = new CopyOnWriteArrayList<>();
 
     /**
-     * Careful when retrieving the list of finished spans. There is a chance when the response is already sent to the
-     * client and the server still writing the end of the spans. This means that a response is available to assert from
-     * the test side but not all spans may be available yet. For this reason, this method requires the number of
-     * expected spans.
+     * In-memory span exporter inspired by TCKs.
      */
     public List<SpanData> getFinishedSpanItems(int spanCount) {
         assertSpanCount(spanCount);

@@ -18,38 +18,33 @@
 package io.helidon.microprofile.telemetry;
 
 import static io.opentelemetry.semconv.resource.attributes.ResourceAttributes.SERVICE_VERSION;
-import static java.net.HttpURLConnection.HTTP_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
+
+import io.helidon.http.Status;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.http1.Http1Client;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.opentelemetry.sdk.trace.data.SpanData;
-import jakarta.ws.rs.HttpMethod;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
-import org.junit.jupiter.api.BeforeAll;
 
 import io.opentelemetry.sdk.autoconfigure.spi.traces.ConfigurableSpanExporterProvider;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -58,25 +53,23 @@ import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
 import static org.hamcrest.Matchers.*;
 
 /**
- * Test Rest with Tracer Mock
+ * Test Span Hierarchy with Tracer Mock
  */
 @ExtendWith(ArquillianExtension.class)
-public class RestSpanTest {
+public class RestSpanHierarchyTest {
 
-    private static final String TEST_SERVICE_NAME = "helidon/mp/telemetry";
-    private static final String TEST_SERVICE_VERSION = "0.1.0-TEST";
+    private Http1Client client;
 
     @Deployment
     public static WebArchive createDeployment() {
 
         ConfigAsset config = new ConfigAsset()
-                .add("otel.service.name", TEST_SERVICE_NAME)
-                .add("otel.resource.attributes", SERVICE_VERSION.getKey() + "=" + TEST_SERVICE_VERSION)
+                .add("otel.service.name", "helidon-mp-telemetry")
                 .add("otel.sdk.disabled", "false")
                 .add("otel.traces.exporter", "in-memory");
 
         return ShrinkWrap.create(WebArchive.class)
-                .addClasses(InMemorySpanExporter.class, InMemorySpanExporterProvider.class, BasicHttpClient.class)
+                .addClasses(InMemorySpanExporter.class, InMemorySpanExporterProvider.class)
                 .addAsLibrary(TestLibraries.AWAITILITY_LIB)
                 .addAsServiceProvider(ConfigurableSpanExporterProvider.class, InMemorySpanExporterProvider.class)
                 .addAsResource(config, "META-INF/microprofile-config.properties");
@@ -88,21 +81,24 @@ public class RestSpanTest {
     @Inject
     InMemorySpanExporter spanExporter;
 
-    private BasicHttpClient basicClient;
-
     @Before
-    void setUp() {
-        // Only want to run on server
+    void setup() {
         if (spanExporter != null) {
             spanExporter.reset();
-            basicClient = new BasicHttpClient(url);
+        }
+
+        if (client == null){
+            client = Http1Client
+                    .builder()
+                    .baseUri(URI.create(url.toString()))
+                    .build();
         }
     }
 
     @Test
     void spanHierarchy() {
 
-        assertThat(basicClient.get("mixed"), is(HTTP_OK));
+        assertThat(client.get("mixed").request().status(), is(Status.OK_200));
 
         List<SpanData> spanItems = spanExporter.getFinishedSpanItems(3);
         assertThat(spanItems.size(), is(3));
