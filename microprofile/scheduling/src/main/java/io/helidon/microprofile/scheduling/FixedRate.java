@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.scheduling.FixedRate.DelayType;
+
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Scheduled to be invoked periodically at fixed rate.
+ * Scheduled to be invoked periodically at fixed rate. Fixed rate tasks are never invoked concurrently.
  * Value is interpreted as seconds by default, can be overridden by {@link #timeUnit()}.
  */
 @Retention(RUNTIME)
@@ -51,4 +53,11 @@ public @interface FixedRate {
      * @return time unit for evaluating supplied values
      */
     TimeUnit timeUnit() default TimeUnit.SECONDS;
+
+    /**
+     * Whether the delay should be calculated from the start or end of the previous task.
+     *
+     * @return delay type
+     */
+    DelayType delayType() default DelayType.SINCE_PREVIOUS_START;
 }

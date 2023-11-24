@@ -32,6 +32,8 @@ include::{rootdir}/includes/se.adoc[]
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
+- <<Cron, Cron>>
+- <<Fixed rate, Fixed Rate>>
 - <<Examples, Examples>>
 - <<Reference, Reference>>
 
@@ -56,9 +58,9 @@ For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron e
 === Fixed rate
 
 [source,java]
-.Scheduling with fixed rate use `Scheduling.fixedRateBuilder()` builder.
+.Scheduling with fixed rate use `Scheduling.fixedRate()` builder.
 ----
-Scheduling.fixedRateBuilder()
+Scheduling.fixedRate()
         .delay(10)
         .initialDelay(5)
         .timeUnit(TimeUnit.MINUTES)
@@ -72,39 +74,31 @@ FixedRateInvocation provided as task parameter.
 [source,java]
 .Invocation metadata
 ----
-Scheduling.fixedRateBuilder()
+Scheduling.fixedRate()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))
         .build();
 ----
 
-=== Cron expression
+include::{rootdir}/config/io_helidon_scheduling_FixedRate.adoc[tag=config,leveloffset=+2]
+
+=== Cron
 
 For more complicated interval definition, Cron expression can be leveraged with
-`Scheduling.cronBuilder()` builder.
+`Scheduling.cron()` builder.
 
 [source,java]
 .Scheduling with Cron expression
 ----
-Scheduling.cronBuilder()
+Scheduling.cron()
     .expression("0 15 8 ? * *")
     .task(inv -> System.out.println("Executer every day at 8:15"))
     .build();
 ----
 
-== Configuration
+include::{rootdir}/config/io_helidon_scheduling_Cron.adoc[tag=config,leveloffset=+2]
 
-Configuration properties are added to `application.yaml` file:
-
-.Configuration properties
-[width="90%",cols="3,10",frame="topbot",options="header"]
-|====
-| Property              | Description
-| cron                  | String containing Cron setup
-| concurrent            | Boolean, equivalent `concurrentExecution` property of `@Scheduled`. Default `true`.
-|====
-
-=== Cron expression
+=== Cron expression syntax
 
 Cron expressions should be configured as follows.
 
@@ -113,15 +107,34 @@ include::{rootdir}/includes/cron.adoc[lines=19..]
 Metadata like human-readable interval description or configured values are available through
 CronInvocation provided as task parameter.
 
+== Configuration
+Scheduling is configurable with xref:../se/config/introduction.adoc[Helidon Config].
+
+[source,java]
+.Example of configuring
+----
+Scheduling.fixedRate()
+    .config(Config.create(() -> ConfigSources.create(
+    """
+    delay: 4
+    delay-type: SINCE_PREVIOUS_END
+    initial-delay: 1
+    time-unit: SECONDS
+    """, MediaTypes.APPLICATION_X_YAML)))
+    .task(inv -> System.out.println("Every 4 minutes, first invocation 1 minutes after start"))
+    .build();
+----
+
+
 == Examples
 
 === Fixed rate
 For simple fixed rate invocation use .
 
 [source,java]
-.Example of scheduling with fixed rate use `Scheduling.fixedRateBuilder()` builder.
+.Example of scheduling with fixed rate use `Scheduling.fixedRate()` builder.
 ----
-Scheduling.fixedRateBuilder()
+Scheduling.fixedRate()
         .delay(10)
         .initialDelay(5)
         .timeUnit(TimeUnit.MINUTES)
@@ -136,7 +149,7 @@ Metadata like human-readable interval description or configured values are avail
 [source,java]
 .Example with invocation metadata
 ----
-Scheduling.fixedRateBuilder()
+Scheduling.fixedRate()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))
         .build();
