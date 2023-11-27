@@ -448,7 +448,6 @@ public final class TypeInfoFactory {
     }
 
     private static List<Annotation> createAnnotations(Element element, Elements elements) {
-        ElementKind elementKind = kind(element.getKind());
         return element.getAnnotationMirrors()
                 .stream()
                 .map(it -> AnnotationFactory.createAnnotation(it, elements))

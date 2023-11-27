@@ -587,7 +587,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @param modifier element modifiers
          * @return updated builder instance
-         * @deprecated use {@link #typeModifiers()} instead
+         * @deprecated use {@link #elementModifiers()} instead
          * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
          * @see #modifiers()
          */
