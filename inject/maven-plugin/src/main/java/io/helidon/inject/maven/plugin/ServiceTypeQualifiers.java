@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package io.helidon.inject.maven.plugin;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
-import io.helidon.inject.api.Qualifier;
+import io.helidon.common.types.TypeName;
+import io.helidon.inject.service.Qualifier;
 
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -33,10 +33,10 @@ public class ServiceTypeQualifiers {
     /**
      * The service type name these qualifiers apply to.
      */
-    @Parameter(name = "serviceTypeName")
+    @Parameter(name = "serviceTypeName", required = true)
     private String serviceTypeName;
 
-    @Parameter(name = "qualifiers")
+    @Parameter(name = "qualifiers", required = true)
     private List<QualifierConfig> qualifiers;
 
     /**
@@ -48,8 +48,8 @@ public class ServiceTypeQualifiers {
     /**
      * @return the map representation for this instance
      */
-    Map<String, Set<Qualifier>> toMap() {
-        return Map.of(Objects.requireNonNull(serviceTypeName), new LinkedHashSet<>(Objects.requireNonNull(qualifiers)));
+    Map<TypeName, Set<Qualifier>> toMap() {
+        return Map.of(TypeName.create(serviceTypeName), new LinkedHashSet<>(qualifiers));
     }
 
 }

@@ -127,11 +127,6 @@
                                 <!-- See https://github.com/helidon-io/helidon/issues/8163 -->
                                 <include>helidon.*</include>
                             </moduleIncludes>
-                            <moduleExcludes>
-                                <!-- Unsupported modules -->
-                                <exclude>io.helidon.inject*</exclude>
-                                <exclude>*.processor*</exclude>
-                            </moduleExcludes>
                             <packageIncludes>
                                 <include>io.helidon*</include>
                             </packageIncludes>

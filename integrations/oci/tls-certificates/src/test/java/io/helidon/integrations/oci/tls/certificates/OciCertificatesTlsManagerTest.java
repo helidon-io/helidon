@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterEach;
@@ -48,8 +48,8 @@ class OciCertificatesTlsManagerTest {
 
     @Test
     void serverRuntime() throws Exception {
-        Services services = InjectionServices.realizedServices();
-        LifecycleHook lifecycleHook = services.lookupFirst(LifecycleHook.class).get();
+        Services services = InjectionServices.create().services();
+        LifecycleHook lifecycleHook = services.get(LifecycleHook.class);
         CountDownLatch startup = new CountDownLatch(1);
 
         lifecycleHook.registerStartupConsumer(c -> startup.countDown());

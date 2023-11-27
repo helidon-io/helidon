@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@ package io.helidon.microprofile.openapi;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * {@link MpOpenApiManager} prototype.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface MpOpenApiManagerConfigBlueprint {
 
     /**
@@ -34,7 +33,7 @@ interface MpOpenApiManagerConfigBlueprint {
      *
      * @return {@code true} if enabled, {@code false} otherwise
      */
-    @ConfiguredOption(key = MpOpenApiManager.USE_JAXRS_SEMANTICS_KEY)
+    @Option.Configured(MpOpenApiManager.USE_JAXRS_SEMANTICS_KEY)
     boolean useJaxRsSemantics();
 
     /**
@@ -42,6 +41,6 @@ interface MpOpenApiManagerConfigBlueprint {
      *
      * @return list of Jandex index path
      */
-    @ConfiguredOption(configured = false, value = "META-INF/jandex.idx")
+    @Option.Default("META-INF/jandex.idx")
     List<String> indexPaths();
 }

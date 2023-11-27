@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -37,13 +38,10 @@ import io.helidon.common.tls.ConfiguredTlsManager;
 import io.helidon.common.tls.TlsConfig;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.Async;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
-
-import jakarta.inject.Provider;
 
 /**
  * The default implementation (service loader and provider-driven) implementation of {@link OciCertificatesTlsManager}.
@@ -58,8 +56,8 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     private final AtomicReference<String> lastVersionDownloaded = new AtomicReference<>("");
 
     // these will only be non-null when enabled
-    private Provider<OciPrivateKeyDownloader> pkDownloader;
-    private Provider<OciCertificatesDownloader> certDownloader;
+    private Supplier<OciPrivateKeyDownloader> pkDownloader;
+    private Supplier<OciCertificatesDownloader> certDownloader;
     private ScheduledExecutorService asyncExecutor;
     private Async async;
     private TlsConfig tlsConfig;
@@ -83,9 +81,9 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     @Override // TlsManager
     public void init(TlsConfig tls) {
         this.tlsConfig = tls;
-        Services services = InjectionServices.realizedServices();
-        this.pkDownloader = services.lookupFirst(OciPrivateKeyDownloader.class);
-        this.certDownloader = services.lookupFirst(OciCertificatesDownloader.class);
+        Services services = InjectionServices.create().services();
+        this.pkDownloader = services.supply(OciPrivateKeyDownloader.class);
+        this.certDownloader = services.supply(OciCertificatesDownloader.class);
         this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();
         this.async = Async.builder().executor(asyncExecutor).build();
 
@@ -93,12 +91,13 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
         loadContext(true);
 
         // register for any available graceful shutdown events
-        Optional<ServiceProvider<LifecycleHook>> shutdownHook = services.lookupFirst(LifecycleHook.class, false);
-        shutdownHook.ifPresent(sp -> sp.get().registerShutdownConsumer(this::shutdown));
+        Optional<LifecycleHook> shutdownHook = services.supplyFirst(LifecycleHook.class)
+                .get();
+        shutdownHook.ifPresent(hook -> hook.registerShutdownConsumer(this::shutdown));
 
         // now schedule for reload checking
         String taskIntervalDescription =
-                io.helidon.scheduling.Scheduling.cronBuilder()
+                io.helidon.scheduling.Scheduling.cron()
                         .executor(asyncExecutor)
                         .expression(cfg.schedule())
                         .task(inv -> maybeReload())

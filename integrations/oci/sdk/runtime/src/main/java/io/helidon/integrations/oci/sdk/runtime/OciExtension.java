@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,11 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
@@ -52,7 +51,7 @@ import static java.util.function.Predicate.not;
  * terminology and general approach before continuing further.
  * <p>
  * This module enables the
- * {@linkplain jakarta.inject.Inject injection} of any <em>service
+ * {@linkplain io.helidon.inject.service.Injection.Inject injection} of any <em>service
  * interface</em>, <em>service client</em>, <em>service client
  * builder</em>, <em>asynchronous service interface</em>,
  * <em>asynchronous service client</em>, or <em>asynchronous service
@@ -60,7 +59,7 @@ import static java.util.function.Predicate.not;
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>.
  * <p>
- * Additionally, this module enables the {@linkplain jakarta.inject.Inject injection}
+ * Additionally, this module enables the {@linkplain io.helidon.inject.service.Injection.Inject injection}
  * of the {@link com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider},
  * which allows the corresponding service client to authenticate with the service.
  * <p>In all cases, user-supplied configuration will be preferred over any
@@ -70,7 +69,7 @@ import static java.util.function.Predicate.not;
  *
  * To use this extension, make sure it is on your project's runtime
  * classpath. Also be sure the <em>helidon-integrations-oci-processor</em> is
- * on your APT/compile-time classpath. To {@linkplain jakarta.inject.Inject inject} a service
+ * on your APT/compile-time classpath. To {@linkplain io.helidon.inject.service.Injection.Inject inject} a service
  * interface named
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.CloudExample</code>
  * (or an analogous asynchronous service interface), you will also
@@ -83,7 +82,7 @@ import static java.util.function.Predicate.not;
  *
  * <h2>Advanced Usage</h2>
  *
- * <p>In the course of providing {@linkplain jakarta.inject.Inject
+ * <p>In the course of providing {@linkplain io.helidon.inject.service.Injection.Inject
  * injection support} for a service interface or an asynchronous
  * service interface, this {@linkplain java.security.cert.Extension extension} will
  * create service client builder and asynchronous service client
@@ -116,8 +115,8 @@ import static java.util.function.Predicate.not;
  * for details.
  *
  * @see <a
- * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
- * target="_top">Oracle Cloud Infrastructure Java SDK</a>
+ *         href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
+ *         target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension {
     /**
@@ -131,6 +130,9 @@ public final class OciExtension {
                                     .map(AuthStrategy::id)
                                     .toList())
             .build());
+
+    // the field is not final (and volatile) so tests can replace the injection services used by this instance
+    private static volatile LazyValue<InjectionServices> injectionServices = LazyValue.create(InjectionServices::create);
     private static String overrideOciConfigFile;
     private static volatile Supplier<io.helidon.common.config.Config> ociConfigSupplier;
     private static volatile Supplier<io.helidon.common.config.Config> fallbackConfigSupplier;
@@ -160,7 +162,7 @@ public final class OciExtension {
      * oci-specific bootstrap {@link io.helidon.config.spi.ConfigSource}.
      * <p>
      * If the implementation is unable to find this file, then a fallback mechanism will be used to find it in the configuration
-     * found in the {@link InjectionServices#globalBootstrap()}, using a top-level attribute key named
+     * based on {@link io.helidon.common.config.GlobalConfig}, using a top-level attribute key named
      * {@value OciConfigBlueprint#CONFIG_KEY}.
      * <p>
      * The final fallback mechanism will use an {@code auto} authentication strategy - see {@link OciConfigBlueprint} for details.
@@ -177,10 +179,7 @@ public final class OciExtension {
         }
 
         // fallback
-        config = InjectionServices.globalBootstrap()
-                .flatMap(Bootstrap::config)
-                .map(it -> it.get(OciConfig.CONFIG_KEY))
-                .orElse(null);
+        config = GlobalConfig.config().get("oci");
         if (isSufficientlyConfigured(config)) {
             return OciConfig.create(config);
         }
@@ -197,10 +196,10 @@ public final class OciExtension {
      */
     public static Supplier<? extends AbstractAuthenticationDetailsProvider> ociAuthenticationProvider() {
         return () -> {
-            Services services = InjectionServices.realizedServices();
-            ServiceProvider<AbstractAuthenticationDetailsProvider> authProvider =
-                    services.lookupFirst(AbstractAuthenticationDetailsProvider.class);
-            return Objects.requireNonNull(authProvider.get());
+            Services services = injectionServices.get().services();
+            Supplier<AbstractAuthenticationDetailsProvider> authProvider =
+                    services.supply(AbstractAuthenticationDetailsProvider.class);
+            return authProvider.get();
         };
     }
 
@@ -268,9 +267,11 @@ public final class OciExtension {
      * @return true if the given config can be used to identify an OCI authentication strategy
      */
     public static boolean isSufficientlyConfigured(io.helidon.common.config.Config config) {
-        return (config != null
-                        && (config.get(KEY_AUTH_STRATEGY).exists()
-                                    || config.get(KEY_AUTH_STRATEGIES).exists()));
+        return (
+                config != null
+                        && (
+                        config.get(KEY_AUTH_STRATEGY).exists()
+                                || config.get(KEY_AUTH_STRATEGIES).exists()));
     }
 
     // in support for testing a variant of oci.yaml
@@ -285,4 +286,7 @@ public final class OciExtension {
         return (overrideOciConfigFile == null) ? DEFAULT_OCI_GLOBAL_CONFIG_FILE : overrideOciConfigFile;
     }
 
+    static void injectionServices(InjectionServices services) {
+        OciExtension.injectionServices = LazyValue.create(services);
+    }
 }

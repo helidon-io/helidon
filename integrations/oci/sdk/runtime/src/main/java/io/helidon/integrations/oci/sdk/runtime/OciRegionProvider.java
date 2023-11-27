@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,44 +19,36 @@ package io.helidon.integrations.oci.sdk.runtime;
 import java.util.Optional;
 
 import io.helidon.common.Weight;
-import io.helidon.inject.api.ContextualServiceQuery;
-import io.helidon.inject.api.InjectionPointInfo;
-import io.helidon.inject.api.InjectionPointProvider;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ServiceInfoBasics;
+import io.helidon.inject.Services;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
+import io.helidon.inject.service.Qualifier;
 
 import com.oracle.bmc.Region;
-import jakarta.inject.Singleton;
-
-import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.toNamedProfile;
 
 /**
- * Can optionally be used to return a {@link Region} appropriate for the {@link InjectionPointInfo} context.
+ * Can optionally be used to return a {@link Region} appropriate for the {@link io.helidon.inject.service.Ip} context.
  */
-@Singleton
-@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
+@Injection.Singleton
+@Weight(Services.INJECT_WEIGHT)
 class OciRegionProvider implements InjectionPointProvider<Region> {
 
     OciRegionProvider() {
     }
 
     @Override
-    public Region get() {
-        return first(ContextualServiceQuery.builder()
-                             .serviceInfoCriteria(InjectionServices.EMPTY_CRITERIA)
-                             .expected(false)
-                             .build())
-                .orElseThrow();
-    }
-
-    @Override
-    public Optional<Region> first(ContextualServiceQuery query) {
-        String requestedNamedProfile = toNamedProfile(query.injectionPointInfo().orElse(null));
+    public Optional<QualifiedInstance<Region>> first(Lookup query) {
+        String requestedNamedProfile = query.injectionPoint()
+                .map(OciAuthenticationDetailsProvider::toNamedProfile)
+                .orElse(null);
         Region region = toRegionFromNamedProfile(requestedNamedProfile);
         if (region == null) {
             region = Region.getRegionFromImds();
         }
-        return Optional.ofNullable(region);
+        return Optional.ofNullable(region)
+                .map(it -> QualifiedInstance.create(it, Qualifier.createNamed(it.getRegionId())));
     }
 
     static Region toRegionFromNamedProfile(String requestedNamedProfile) {

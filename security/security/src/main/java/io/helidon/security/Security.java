@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.inject.service.Injection;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
@@ -68,6 +69,7 @@ import io.helidon.tracing.Tracer;
  * @see #builder()
  * @see #create(Config)
  */
+@Injection.Contract
 public interface Security {
     /**
      * Integration should add a special header to each request. The value will contain the original

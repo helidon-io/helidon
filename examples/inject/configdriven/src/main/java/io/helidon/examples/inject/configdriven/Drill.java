@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,25 @@ package io.helidon.examples.inject.configdriven;
 import java.util.Objects;
 
 import io.helidon.examples.inject.basics.Tool;
-import io.helidon.inject.configdriven.api.ConfigDriven;
+import io.helidon.inject.service.Injection;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
 
-@ConfigDriven(DrillConfigBlueprint.class)
+@Injection.DrivenBy(DrillConfigBlueprint.class)
 class Drill implements Tool {
 
     private final DrillConfig cfg;
 
-    @Inject
+    @Injection.Inject
     Drill(DrillConfig cfg) {
         this.cfg = Objects.requireNonNull(cfg);
     }
 
     @Override
     public String name() {
-        return cfg.name();
+        return cfg.name() + " Drill";
     }
 
-    @PostConstruct
-    @SuppressWarnings("unused")
+    @Injection.PostConstruct
     void init() {
         System.out.println(name() + "; initialized");
     }

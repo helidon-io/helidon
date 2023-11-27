@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,31 +18,30 @@ package io.helidon.inject.tests.inject.provider;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.inject.api.ContextualServiceQuery;
-import io.helidon.inject.api.InjectionPointProvider;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
 
 public class MyServices {
 
-    @Singleton
-    public static class MyConcreteClassContractPerRequestProvider implements Provider<MyConcreteClassContract> {
-        private volatile int counter;
+    @Injection.Service
+    public static class MyConcreteClassContractPerRequestProvider implements Supplier<MyConcreteClassContract> {
+        public static volatile AtomicInteger COUNTER = new AtomicInteger();
 
         @Override
         public MyConcreteClassContract get() {
-            int num = counter++;
+            int num = COUNTER.getAndIncrement();
             return new MyConcreteClassContract(getClass().getSimpleName() + ":instance_" + num);
         }
     }
 
-    @Singleton
+    @Injection.Singleton
     @Weight(Weighted.DEFAULT_WEIGHT + 1)
     public static class MyConcreteClassContractPerRequestIPProvider implements InjectionPointProvider<MyConcreteClassContract> {
         private volatile int counter;
@@ -50,22 +49,22 @@ public class MyServices {
         private boolean postConstructed;
         private MyConcreteClassContract injected;
 
-        @PostConstruct
+        @Injection.PostConstruct
         public void postConstruct() {
             assert (injected != null);
             postConstructed = true;
         }
 
         @Override
-        public Optional<MyConcreteClassContract> first(ContextualServiceQuery query) {
+        public Optional<QualifiedInstance<MyConcreteClassContract>> first(Lookup query) {
             assert (injected != null);
             assert (postConstructed);
             int num = counter++;
             String id = getClass().getSimpleName() + ":instance_" + num + ", " + injected;
-            return Optional.of(new MyConcreteClassContract(id));
+            return Optional.of(QualifiedInstance.create(new MyConcreteClassContract(id)));
         }
 
-        @Inject
+        @Injection.Inject
         void setMyConcreteClassContract(MyConcreteClassContract injected) {
             assert (this.injected == null);
             this.injected = Objects.requireNonNull(injected);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,126 +19,77 @@ package io.helidon.inject.testing;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-import io.helidon.common.LazyValue;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.InjectionServicesConfig;
-import io.helidon.inject.api.InjectionServicesHolder;
-import io.helidon.inject.api.ServiceBinder;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.runtime.ServiceBinderDefault;
+import io.helidon.common.types.TypeName;
+import io.helidon.inject.ActivationResult;
+import io.helidon.inject.InjectionException;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.service.ServiceInfo;
 
 /**
- * Supporting helper utilities unit-testing Injection Services.
+ * Services with support for testing.
  */
 public class InjectionTestingSupport {
-    private static LazyValue<InjectionServices> instance = lazyCreate(basicTestableConfig());
-
     private InjectionTestingSupport() {
     }
 
     /**
-     * Resets all internal configuration instances, JVM global singletons, service registries, etc.
+     * Creates a list of service types simple type names of the service descriptors in the collection.
+     * If the class is an inner class, the returned collection contains the outer class name as well, separated by a dot.
+     *
+     * @param coll service descriptor collection to go through
+     * @return a list where each entry matches the simple class name of the entry in the provided collection
      */
-    public static void resetAll() {
-        Internal.reset();
+    public static List<String> toSimpleTypes(List<ServiceInfo> coll) {
+        return coll.stream()
+                .map(ServiceInfo::serviceType)
+                .map(TypeName::classNameWithEnclosingNames)
+                .toList();
     }
 
     /**
-     * Provides a means to bind a service provider into the {@link Services} registry.
+     * Creates a list of service types simple type names of the service descriptors in the collection.
+     * If the class is an inner class, the returned collection contains the outer class name as well, separated by a dot.
      *
-     * @param injectionServices the services instance to bind into
-     * @param serviceProvider   the service provider to bind
-     * @see ServiceBinder
+     * @param coll service descriptor collection to go through
+     * @return a list where each entry matches the simple class name of the entry in the provided collection
      */
-    public static void bind(InjectionServices injectionServices,
-                            ServiceProvider<?> serviceProvider) {
-        ServiceBinderDefault binder = ServiceBinderDefault.create(injectionServices, InjectionTestingSupport.class.getSimpleName(), true);
-        binder.bind(serviceProvider);
+    public static List<String> toTypes(List<ServiceInfo> coll) {
+        return coll.stream()
+                .map(ServiceInfo::serviceType)
+                .map(TypeName::fqName)
+                .toList();
     }
 
     /**
-     * Creates a {@link InjectionServices} interface more conducive to unit and integration testing.
+     * Creates a list of simple type names of the elements in the collection.
      *
-     * @return testable services instance
+     * @param coll collection to go through
+     * @return a list where each entry matches the simple class name of the entry in the provided collection
      */
-    public static InjectionServices testableServices() {
-        return instance.get();
+    public static List<String> toSimpleTypes(Collection<?> coll) {
+        return coll.stream()
+                .map(Object::getClass)
+                .map(Class::getSimpleName)
+                .toList();
     }
 
     /**
-     * Creates a {@link InjectionServices} interface more conducive to unit and integration testing.
+     * A shutdown method that fails on deactivation errors.
      *
-     * @param config the config to use
-     * @return testable services instance
-     * @see InjectionServicesConfig
+     * @param injectionServices services to shut down, this may be {@code null} to prevent unexpected errors when registry
+     *                          fails to initialize in a test and is null at time of shutdown
      */
-    public static InjectionServices testableServices(Config config) {
-        return lazyCreate(config).get();
-    }
-
-    /**
-     * Basic testable configuration.
-     *
-     * @return testable config
-     */
-    public static Config basicTestableConfig() {
-        return Config.builder(
-                        ConfigSources.create(
-                                Map.of("inject.permits-dynamic", "true",
-                                        "inject.service-lookup-caching", "true"),
-                                "config-1"))
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .build();
-    }
-
-    /**
-     * Describe the provided instance or provider.
-     *
-     * @param providerOrInstance the instance to provider
-     * @return the description of the instance
-     */
-    public static String toDescription(Object providerOrInstance) {
-        if (providerOrInstance instanceof Optional) {
-            providerOrInstance = ((Optional<?>) providerOrInstance).orElse(null);
+    public static void shutdown(InjectionServices injectionServices) {
+        if (injectionServices == null) {
+            return;
         }
-
-        if (providerOrInstance instanceof ServiceProvider) {
-            return ((ServiceProvider<?>) providerOrInstance).description();
-        }
-        return String.valueOf(providerOrInstance);
+        Map<TypeName, ActivationResult> shutdown = injectionServices.shutdown();
+        shutdown.values()
+                .forEach(it -> {
+                    if (it.failure()) {
+                        throw new InjectionException("Failed to shutdown injection services: " + it, it.error().orElse(null));
+                    }
+                });
     }
-
-    /**
-     * Describe the provided instance or provider collection.
-     *
-     * @param coll the instance to provider collection
-     * @return the description of the instance
-     */
-    public static List<String> toDescriptions(Collection<?> coll) {
-        return coll.stream().map(InjectionTestingSupport::toDescription).collect(Collectors.toList());
-    }
-
-    private static LazyValue<InjectionServices> lazyCreate(Config config) {
-        return LazyValue.create(() -> {
-            InjectionServices.globalBootstrap(Bootstrap.builder().config(config).build());
-            return InjectionServices.injectionServices().orElseThrow();
-        });
-    }
-
-    @SuppressWarnings("deprecation")
-    private static class Internal extends InjectionServicesHolder {
-        public static void reset() {
-            InjectionServicesHolder.reset();
-            instance = lazyCreate(basicTestableConfig());
-        }
-    }
-
 }

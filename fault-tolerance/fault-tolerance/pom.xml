@@ -44,18 +44,17 @@
         <dependency>
             <!--
             must be in compile & runtime dependencies
-            as we provide services that are in API
+            as we provide service from this module
             -->
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-api</artifactId>
+            <artifactId>helidon-inject-service</artifactId>
         </dependency>
         <dependency>
             <!--
-            must be in compile dependencies, as it is used by generated classes
-            optional for runtime - if injection is used, it will be loaded
+            we only use inject API when injecting, so it would be on the module path anyway
             -->
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
+            <artifactId>helidon-inject</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -71,31 +70,6 @@
             -->
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
-            Used to define configured options to generate JSON using annotation processor
-            -->
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
-            Marks singletons driven by configuration
-            -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
-            must be in compile dependencies, as it is used by generated classes
-            optional for runtime - if injection is used, it will be loaded
-            -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -138,36 +112,36 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-processor</artifactId>
+                            <groupId>io.helidon.inject</groupId>
+                            <artifactId>helidon-inject-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
+                            <artifactId>helidon-builder-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.common.processor</groupId>
-                            <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
                         <groupId>io.helidon.config</groupId>
                         <artifactId>helidon-config-metadata-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-processor</artifactId>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
@@ -176,8 +150,18 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.common.processor</groupId>
-                        <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

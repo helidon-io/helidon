@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,20 @@
 
 package io.helidon.examples.inject.interceptors;
 
-import io.helidon.inject.api.ClassNamed;
-import io.helidon.inject.api.Interceptor;
-import io.helidon.inject.api.InvocationContext;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Interception;
+import io.helidon.inject.service.InvocationContext;
 
-import jakarta.inject.Singleton;
-
-@ClassNamed(Turn.class)
-@Singleton
+@Injection.ClassNamed(Turn.class)
+@Injection.Singleton
 @SuppressWarnings("unused")
-class TurnInterceptor implements Interceptor {
+class TurnInterceptor implements Interception.Interceptor {
 
     @Override
     @SuppressWarnings("unchecked")
     public <V> V proceed(InvocationContext ctx,
                          Chain<V> chain,
-                         Object... args) {
+                         Object... args) throws Exception {
         // in "real life" you'd use the ctx to determine the best decision - this is just for simple demonstration only!
         if (args.length == 1) {
             // this is the call to turn()

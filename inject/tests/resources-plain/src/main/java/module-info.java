@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@
  * Plain Test Resources.
  */
 module io.helidon.inject.tests.plain {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
-
+    requires io.helidon.inject.service;
     requires io.helidon.common.types;
     requires io.helidon.common;
-    requires io.helidon.inject.api;
 
     exports io.helidon.inject.tests.plain.hello;
     exports io.helidon.inject.tests.plain.interceptor;

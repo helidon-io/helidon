@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,26 +18,21 @@ package io.helidon.inject.tests.inject.tbox.impl;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
-import io.helidon.inject.api.ContextualServiceQuery;
-import io.helidon.inject.api.InjectionPointInfo;
-import io.helidon.inject.api.InjectionPointProvider;
-import io.helidon.inject.api.ServiceInfoCriteria;
-import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.tests.inject.Verification;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
 import io.helidon.inject.tests.inject.tbox.AbstractSaw;
 import io.helidon.inject.tests.inject.tbox.Lubricant;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
-
 /**
  * Kept intentionally in a different package from {@link AbstractSaw} for testing.
  */
-@Singleton
+@Injection.Singleton
 @SuppressWarnings("unused")
 public class HandSaw extends AbstractSaw {
 
@@ -46,11 +41,11 @@ public class HandSaw extends AbstractSaw {
 
     private int setterInjectedLubricantInSubClassInjectedCount;
 
-    @Inject @Named(FineBlade.NAME) Provider<AbstractBlade> fineBladeFieldInjectedPkgPrivateProviderInSubClass;
-    @Inject @Named(FineBlade.NAME) Optional<AbstractBlade> fineBladeFieldInjectedPkgPrivateOptionalInSubClass;
-    @Inject @Named(FineBlade.NAME) List<AbstractBlade> fineBladeFieldInjectedPkgPrivateListInSubClass;
+    @Injection.Inject @Injection.Named(FineBlade.NAME) Supplier<AbstractBlade> fineBladeFieldInjectedPkgPrivateProviderInSubClass;
+    @Injection.Inject @Injection.Named(FineBlade.NAME) Optional<AbstractBlade> fineBladeFieldInjectedPkgPrivateOptionalInSubClass;
+    @Injection.Inject @Injection.Named(FineBlade.NAME) List<AbstractBlade> fineBladeFieldInjectedPkgPrivateListInSubClass;
 
-    Provider<AbstractBlade> setterInjectedPkgPrivateProviderInSubClass;
+    Supplier<AbstractBlade> setterInjectedPkgPrivateProviderInSubClass;
     Optional<AbstractBlade> setterInjectedPkgPrivateOptionalInSubClass;
     List<AbstractBlade> setterInjectedPkgPrivateListInSubClass;
     List<InjectionPointProvider<AbstractBlade>> setterInjectedAllProviderListInSubClass;
@@ -63,75 +58,78 @@ public class HandSaw extends AbstractSaw {
     HandSaw() {
     }
 
-    @Inject
+    @Injection.Inject
     public HandSaw(Optional<Lubricant> lubricant) {
         ctorInjectedLubricantInSubClass = lubricant;
     }
 
     @Override
-    public Optional<String> named() {
-        return Optional.of(getClass().getSimpleName());
+    public String name() {
+        return getClass().getSimpleName();
     }
 
-    @Inject
+    @Injection.Inject
     protected void injectLubricant(Optional<Lubricant> lubricant) {
         setterInjectedLubricantInSubClass = lubricant;
         setterInjectedLubricantInSubClassInjectedCount++;
     }
 
-    @Inject
-    void setBladeProvider(Provider<AbstractBlade> blade) {
+    @Injection.Inject
+    void setBladeProvider(Supplier<AbstractBlade> blade) {
         setterInjectedPkgPrivateProviderInSubClass = blade;
         setterInjectedPkgPrivateProviderInSubClassInjectedCount++;
     }
 
-    @Inject
+    @Injection.Inject
     void setBladeOptional(Optional<AbstractBlade> blade) {
         setterInjectedPkgPrivateOptionalInSubClass = blade;
         setterInjectedPkgPrivateOptionalInSubClassInjectedCount++;
     }
 
-    @Inject
+    @Injection.Inject
     void setBladeList(List<AbstractBlade> blades) {
         setterInjectedPkgPrivateListInSubClass = blades;
         setterInjectedPkgPrivateListInSubClassInjectedCount++;
     }
 
-    @Inject
-    @SuppressWarnings("unchecked")
-    void setAllBlades(@Named("*") List<Provider<AbstractBlade>> blades) {
-        setterInjectedAllProviderListInSubClass = (List) blades;
+    @Injection.Inject
+    void setAllBlades(@Injection.Named("*") List<InjectionPointProvider<AbstractBlade>> blades) {
+        setterInjectedAllProviderListInSubClass = blades;
         setterInjectedAllProviderListInSubClassInjectedCount++;
     }
 
     @Override
     public void verifyState() {
         Verification.verifyInjected(ctorInjectedLubricantInSubClass, getClass()
-                + "." + InjectionPointInfo.CONSTRUCTOR, null, false, null);
+                + ".<init>", null, false, null);
         Verification.verifyInjected(setterInjectedLubricantInSubClass, getClass()
                 + ".injectLubricant(Optional<Lubricant> lubricant)", setterInjectedLubricantInSubClassInjectedCount, false, null);
 
+        // we use cardinality of the InjectionPointProvider
         Verification.verifyInjected(fineBladeFieldInjectedPkgPrivateProviderInSubClass, getClass()
-                + ".fineBladeFieldInjectedPkgPrivateProviderInSubClass", null, true, FineBlade.class);
+                + ".fineBladeFieldInjectedPkgPrivateProviderInSubClass", null, false, FineBlade.class);
         Verification.verifyInjected(fineBladeFieldInjectedPkgPrivateOptionalInSubClass, getClass() +
                 ".fineBladeFieldInjectedPkgPrivateOptionalInSubClass", null, true, FineBlade.class);
         Verification.verifyInjected(fineBladeFieldInjectedPkgPrivateListInSubClass, getClass() +
                 ".fineBladeFieldInjectedPkgPrivateListInSubClass", null, 1, FineBlade.class);
 
+        // we use cardinality of the InjectionPointProvider
         Verification.verifyInjected(setterInjectedPkgPrivateProviderInSubClass, getClass() +
-                ".setBladeProvider(Provider<AbstractBlade> blade)", setterInjectedPkgPrivateProviderInSubClassInjectedCount, true, DullBlade.class);
+                ".setBladeProvider(Provider<AbstractBlade> blade)", setterInjectedPkgPrivateProviderInSubClassInjectedCount, false, DullBlade.class);
         Verification.verifyInjected(setterInjectedPkgPrivateOptionalInSubClass, getClass() +
                 ".setBladeOptional(Optional<AbstractBlade> blade)", setterInjectedPkgPrivateOptionalInSubClassInjectedCount, true, DullBlade.class);
         Verification.verifyInjected(setterInjectedPkgPrivateListInSubClass, getClass() +
                 ".setBladeList(List<AbstractBlade> blades)", setterInjectedPkgPrivateListInSubClassInjectedCount, 1, AbstractBlade.class);
         Verification.verifyInjected(setterInjectedAllProviderListInSubClass, getClass() +
-                 ".setAllBlades(List<AbstractBlade> blades)", setterInjectedAllProviderListInSubClassInjectedCount, 1, ServiceProvider.class);
-        List<AbstractBlade> blades = setterInjectedAllProviderListInSubClass.get(0)
-                .list(ContextualServiceQuery.builder()
-                              .serviceInfoCriteria(ServiceInfoCriteria.builder()
-                                                           .addContractImplemented(AbstractBlade.class)
-                                                           .build())
-                              .build());
+                 ".setAllBlades(List<AbstractBlade> blades)", setterInjectedAllProviderListInSubClassInjectedCount, 1, InjectionPointProvider.class);
+        List<AbstractBlade> blades = setterInjectedAllProviderListInSubClass.getFirst()
+                .list(Lookup.builder()
+                              .addContract(AbstractBlade.class)
+                              .addQualifier(Qualifier.WILDCARD_NAMED)
+                              .build())
+                .stream()
+                .map(Supplier::get)
+                .toList();
         Verification.verifyInjected(blades, getClass() +
                 "<all blades>", null, 3, AbstractBlade.class);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,8 @@ public final class FaultTolerance {
 
     static {
         EXECUTOR.set(LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                          .name("helidon-ft-", 0)
-                                                          .factory())));
+                                                                                       .name("helidon-ft-", 0)
+                                                                                       .factory())));
     }
 
     private FaultTolerance() {
@@ -104,7 +104,7 @@ public final class FaultTolerance {
      * executing. Simulates a scheduled executor when using VTs.
      *
      * @param runnable the runnable
-     * @param millis the time to sleep
+     * @param millis   the time to sleep
      * @return the new runnable
      */
     public static Runnable toDelayedRunnable(Runnable runnable, long millis) {
@@ -124,9 +124,9 @@ public final class FaultTolerance {
      * executing. Simulates a scheduled executor when using VTs.
      *
      * @param callable the callable
-     * @param millis the time to sleep
+     * @param millis   the time to sleep
+     * @param <T>      type of value returned
      * @return the new callable
-     * @param <T> type of value returned
      */
     public static <T> Callable<T> toDelayedCallable(Callable<T> callable, long millis) {
         return () -> {

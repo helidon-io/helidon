@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,71 +18,63 @@ package io.helidon.inject.tests.inject.tbox.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.ContextualServiceQuery;
-import io.helidon.inject.api.InjectionPointProvider;
-import io.helidon.inject.api.Qualifier;
-import io.helidon.inject.api.ServiceInfoCriteria;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
+import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
-
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
 
 /**
  * Provides contextual injection for blades.
  */
-@Singleton
-@Named("*")
+@Injection.Singleton
+@Injection.Named("*")
 public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
 
-    static final Qualifier all = Qualifier.createNamed("*");
-    static final Qualifier coarse = Qualifier.createNamed("coarse");
-    static final Qualifier fine = Qualifier.createNamed("fine");
+    static final Qualifier QUALIFIER_ALL = Qualifier.WILDCARD_NAMED;
+    static final Qualifier QUALIFIER_COARSE = Qualifier.createNamed("coarse");
+    static final Qualifier QUALIFIER_FINE = Qualifier.createNamed("fine");
+    static final Qualifier QUALIFIER_DULL = Qualifier.createNamed("dull");
 
     @Override
-    public Optional<AbstractBlade> first(ContextualServiceQuery query) {
-        Objects.requireNonNull(query);
-        ServiceInfoCriteria criteria = query.serviceInfoCriteria();
-        assert (criteria.contractsImplemented().size() == 1) : criteria;
-        assert (criteria.contractsImplemented().contains(TypeName.create(AbstractBlade.class))) : criteria;
+    public Optional<QualifiedInstance<AbstractBlade>> first(Lookup query) {
+        assert (query.contracts().size() == 1) : query;
+        assert (query.contracts().contains(TypeName.create(AbstractBlade.class))) : query;
 
         AbstractBlade blade;
-        if (criteria.qualifiers().contains(all) || criteria.qualifiers().contains(coarse)) {
+        Qualifier qualifier;
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_COARSE)) {
+            qualifier = QUALIFIER_COARSE;
             blade = new CoarseBlade();
-        } else if (criteria.qualifiers().contains(fine)) {
+        } else if (query.qualifiers().contains(QUALIFIER_FINE)) {
+            qualifier = QUALIFIER_FINE;
             blade = new FineBlade();
         } else {
-            assert (criteria.qualifiers().isEmpty());
+            assert (query.qualifiers().isEmpty());
+            qualifier = QUALIFIER_DULL;
             blade = new DullBlade();
         }
 
-        return Optional.of(blade);
+        return Optional.of(QualifiedInstance.create(blade, qualifier));
     }
 
     @Override
-    public List<AbstractBlade> list(ContextualServiceQuery query) {
-        Objects.requireNonNull(query);
-        assert (query.injectionPointInfo().orElseThrow().listWrapped()) : query;
-        ServiceInfoCriteria criteria = query.serviceInfoCriteria();
-
-        List<AbstractBlade> result = new ArrayList<>();
-        if (criteria.qualifiers().contains(all) || criteria.qualifiers().contains(coarse)) {
-            result.add(new CoarseBlade());
+    public List<QualifiedInstance<AbstractBlade>> list(Lookup query) {
+        List<QualifiedInstance<AbstractBlade>> result = new ArrayList<>();
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_COARSE)) {
+            result.add(QualifiedInstance.create(new CoarseBlade(), QUALIFIER_COARSE));
         }
 
-        if (criteria.qualifiers().contains(all) || criteria.qualifiers().contains(fine)) {
-            result.add(new FineBlade());
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_FINE)) {
+            result.add(QualifiedInstance.create(new FineBlade(), QUALIFIER_FINE));
         }
 
-        if (criteria.qualifiers().contains(all) || criteria.qualifiers().isEmpty()) {
-            result.add(new DullBlade());
-        }
-
-        if (query.expected() && result.isEmpty()) {
-            throw new AssertionError("expected to match: " + criteria);
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().isEmpty()) {
+            result.add(QualifiedInstance.create(new DullBlade(), QUALIFIER_DULL));
         }
 
         return result;

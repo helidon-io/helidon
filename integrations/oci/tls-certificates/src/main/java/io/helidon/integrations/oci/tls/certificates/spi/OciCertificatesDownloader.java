@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package io.helidon.integrations.oci.tls.certificates.spi;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
  * The contract used for downloading certificates from OCI.
  */
-@Contract
+@Injection.Contract
 public interface OciCertificatesDownloader {
 
     /**

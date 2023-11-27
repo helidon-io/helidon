@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 package io.helidon.inject.tests.inject.tbox;
 
 import java.util.List;
+import java.util.function.Supplier;
 
-import io.helidon.inject.api.Contract;
-
-import jakarta.inject.Provider;
+import io.helidon.inject.service.Injection;
 
 /**
  * Testing.
  */
-@Contract
+@Injection.Contract
 public interface ToolBox {
 
     /**
@@ -33,13 +32,13 @@ public interface ToolBox {
      *
      * @return for testing
      */
-    List<Provider<Tool>> toolsInBox();
+    List<Supplier<Tool>> toolsInBox();
 
     /**
      * Testing.
      *
      * @return for testing
      */
-    Provider<Hammer> preferredHammer();
+    Supplier<Hammer> preferredHammer();
 
 }

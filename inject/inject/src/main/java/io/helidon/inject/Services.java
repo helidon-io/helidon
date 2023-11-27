@@ -1,0 +1,1077 @@
+/*
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.inject;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import io.helidon.common.LazyValue;
+import io.helidon.common.Weighted;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Interception.Interceptor;
+import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.ModuleComponent;
+import io.helidon.inject.service.QualifiedProvider;
+import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.ServiceBinder;
+import io.helidon.inject.service.ServiceDescriptor;
+import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.service.ServiceInstance;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.Metrics;
+
+/**
+ * The service registry. The service registry generally has knowledge about all the services that are available within your
+ * application, along with the contracts (i.e., interfaces) they advertise, the qualifiers that optionally describe them, and oll
+ * of each services' dependencies on other service contracts, etc.
+ * <p>
+ * Collectively these service instances are considered "the managed service instances" under Injection.
+ * <p>
+ * Services are described through a (code generated) {@link io.helidon.inject.service.ServiceDescriptor}, and this registry
+ * will manage their lifecycle as required by their annotations (such as {@link io.helidon.inject.service.Injection.Singleton}).
+ * <p>
+ * This Services interface exposes a read-only set of methods providing access to these "managed service" instances,
+ * suppliers, or service descriptors.
+ * Once you resolve the service its provider is activated by
+ * calling one of its get() methods. This is equivalent to the declarative form just using
+ * {@link io.helidon.inject.service.Injection.Inject} instead.
+ * Note that activation of a service might result in activation chaining. For example, service A injects service B, etc. When
+ * service A is activated then service A's dependencies (i.e., injection points) need to be activated as well. To avoid long
+ * activation chaining, it is recommended to that users strive to use {@link java.util.function.Supplier} injection whenever
+ * possible.
+ * Supplier injection (a) breaks long activation chains from occurring by deferring activation until when those services are
+ * really needed, and (b) breaks circular references that lead to {@link io.helidon.inject.InjectionException} during activation
+ * (i.e., service A injects B, and service B injects A).
+ * <p>
+ * The services are ranked according to the provider's comparator. The Injection framework will rank according to a strategy that
+ * first looks for
+ * {@link io.helidon.common.Weighted}, and finally by the alphabetic ordering according
+ * to the type name (package and class canonical name).
+ */
+public final class Services {
+    /**
+     * public weight used by Helidon Injection components.
+     * It is lower than the default, so it is easy to override service with custom providers.
+     */
+    public static final double INJECT_WEIGHT = Weighted.DEFAULT_WEIGHT - 1;
+    static final TypeName TYPE_NAME = TypeName.create(Services.class);
+    private static final System.Logger LOGGER = System.getLogger(Services.class.getName());
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+    private static final Comparator<ServiceInfo> SERVICE_INFO_COMPARATOR = Comparator
+            .comparingDouble(ServiceInfo::weight)
+            .reversed()
+            .thenComparing((f, s) -> {
+                if (f.qualifiers().isEmpty() && s.qualifiers().isEmpty()) {
+                    return 0;
+                }
+                if (f.qualifiers().isEmpty()) {
+                    return -1;
+                }
+                if (s.qualifiers().isEmpty()) {
+                    return 1;
+                }
+                return 0;
+            })
+            .thenComparing(ServiceInfo::serviceType);
+
+    private final String id = String.valueOf(COUNTER.incrementAndGet());
+    private final InjectionServicesImpl injectionServices;
+    private final Counter lookupCounter;
+    private final Counter lookupScanCounter;
+    private final Counter cacheLookupCounter;
+    private final Counter cacheHitCounter;
+    private final boolean cacheEnabled;
+    private final State state;
+
+    /*
+    The following section may be modified at runtime
+     */
+    private final ReadWriteLock stateLock = new ReentrantReadWriteLock();
+    private final Lock stateReadLock = stateLock.readLock();
+    private final Lock stateWriteLock = stateLock.writeLock();
+
+    // service descriptor to its manager
+    private final Map<ServiceInfo, ServiceManager<?>> servicesByDescriptor = new IdentityHashMap<>();
+    // implementation type to its manager
+    private final Map<TypeName, ServiceInfo> servicesByType = new HashMap<>();
+    // implemented contracts to their manager(s)
+    private final Map<TypeName, Set<ServiceInfo>> servicesByContract = new HashMap<>();
+    // map of qualifier type to a service info that can provide instances for it
+    private final Map<TypeName, Set<ServiceInfo>> qualifiedProvidersByQualifier = new HashMap<>();
+    // map of a qualifier type and contract to a service info
+    private final Map<TypedQualifiedProviderKey, Set<ServiceInfo>> typedQualifiedProviders = new HashMap<>();
+    // service managers of discovered scope handlers
+    private final List<ServiceManager<?>> scopeHandlerManagers = new ArrayList<>();
+    // scope handle can give us a scope instance
+    private final Map<TypeName, ScopeHandler> scopeHandlers = new HashMap<>();
+    // scope to ScopeServices factory - to bind services that are valid in that scope
+    private final Map<TypeName, ScopeServicesFactory> scopeServicesFactories = new HashMap<>();
+    private final Map<Lookup, List<ServiceInfo>> cache = new HashMap<>();
+    private final SingletonScopeHandler singletonScopeHandler;
+    private final ServiceScopeHandler serviceScopeHandler;
+    private final boolean interceptionDisabled;
+
+    private Map<ServiceInfo, ServiceManager<Interceptor>> interceptors;
+
+    Services(InjectionServicesImpl injectionServices, State state) {
+        this.injectionServices = injectionServices;
+        this.state = state;
+        InjectionConfig cfg = injectionServices.config();
+
+        this.lookupCounter = Metrics.globalRegistry()
+                .getOrCreate(Counter.builder("io.helidon.inject.lookups")
+                                     .description("Number of lookups in the service registry")
+                                     .scope(Meter.Scope.VENDOR));
+        this.lookupScanCounter = Metrics.globalRegistry()
+                .getOrCreate(Counter.builder("io.helidon.inject.scanLookups")
+                                     .description("Number of lookups that require registry scan")
+                                     .scope(Meter.Scope.VENDOR));
+
+        this.cacheEnabled = cfg.serviceLookupCaching();
+        this.cacheLookupCounter = Metrics.globalRegistry()
+                .getOrCreate(Counter.builder("io.helidon.inject.cacheLookups")
+                                     .description("Number of lookups in cache in the service registry")
+                                     .scope(Meter.Scope.VENDOR));
+        this.cacheHitCounter = Metrics.globalRegistry()
+                .getOrCreate(Counter.builder("io.helidon.inject.cacheHits")
+                                     .description("Number of cache hits in the service registry")
+                                     .scope(Meter.Scope.VENDOR));
+
+        this.singletonScopeHandler = new SingletonScopeHandler(this);
+        this.serviceScopeHandler = new ServiceScopeHandler(this);
+        this.scopeHandlers.put(Injection.Singleton.TYPE_NAME, singletonScopeHandler);
+        this.scopeHandlers.put(Injection.Service.TYPE_NAME, serviceScopeHandler);
+        this.interceptionDisabled = !injectionServices.config().interceptionEnabled();
+    }
+
+    /**
+     * Get the first service instance matching the lookup with the expectation that there is a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown provider type
+     * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup, or the resolution to
+     *                                              instance failed
+     */
+    public <T> T get(Lookup lookup) {
+        return this.<T>supply(lookup).get();
+    }
+
+    /**
+     * Get the first service instance matching the contract with the expectation that there is a match available.
+     *
+     * @param type contract to look-up
+     * @param <T>  type of the contract
+     * @return the best service instance matching the contract
+     * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup, or the resolution to
+     *                                              instance failed
+     */
+    public <T> T get(Class<T> type) {
+        return this.get(Lookup.create(type));
+    }
+
+    /**
+     * Get the first service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown provider type
+     */
+    public <T> Optional<T> first(Lookup lookup) {
+        return this.<T>supplyFirst(lookup).get();
+    }
+
+    /**
+     * Get the first service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param type contract to look-up
+     * @param <T>  type of the contract
+     * @return the best service instance matching the contract, or an empty {@link java.util.Optional} if none match
+     */
+    public <T> Optional<T> first(Class<T> type) {
+        return this.first(Lookup.create(type));
+    }
+
+    /**
+     * Get all service instances matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return list of services matching the criteria, may be empty if none matched, or no instances were provided
+     */
+    public <T> List<T> all(Lookup lookup) {
+        return this.<T>supplyAll(lookup).get();
+    }
+
+    /**
+     * Get all service instances matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param type contract to look-up
+     * @param <T>  type of the contract
+     * @return list of services matching the criteria, may be empty if none matched, or no instances were provided
+     */
+    public <T> List<T> all(Class<T> type) {
+        return this.all(Lookup.create(type));
+    }
+
+    /**
+     * Get the first service supplier matching the lookup with the expectation that there is a match available.
+     * The provided {@link java.util.function.Supplier#get()} may throw an
+     * {@link io.helidon.inject.InjectionException} in case the matching service cannot provide a value (either because
+     * of scope mismatch, or because there is no available instance, and we use a runtime resolution through
+     * {@link io.helidon.inject.service.ServicesProvider}, {@link io.helidon.inject.service.InjectionPointProvider}, or similar).
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service supplier matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown provider type
+     * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup
+     */
+    public <T> Supplier<T> supply(Lookup lookup) {
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        if (managers.isEmpty()) {
+            throw new InjectionException("No services match: " + lookup);
+        }
+        return new ServiceSupply<>(lookup, managers);
+    }
+
+    /**
+     * Get the first service supplier matching the lookup with the expectation that there is a match available.
+     * The provided {@link java.util.function.Supplier#get()} may throw an
+     * {@link io.helidon.inject.InjectionException} in case the matching service cannot provide a value (either because
+     * of scope mismatch, or because there is no available instance, and we use a runtime resolution through
+     * {@link io.helidon.inject.service.ServicesProvider}, {@link io.helidon.inject.service.InjectionPointProvider}, or similar).
+     *
+     * @param type contract to find
+     * @param <T>  type of the contract
+     * @return the best service supplier matching the lookup
+     * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup
+     */
+    public <T> Supplier<T> supply(Class<T> type) {
+        return this.supply(Lookup.create(type));
+    }
+
+    /**
+     * Find the first service provider matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown provider type
+     */
+    public <T> Supplier<Optional<T>> supplyFirst(Lookup lookup) {
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        if (managers.isEmpty()) {
+            return Optional::empty;
+        }
+        return new ServiceSupplyOptional<>(lookup, managers);
+    }
+
+    /**
+     * Lookup a supplier of an optional service instance.
+     *
+     * @param type contract we look for
+     * @param <T>  type of the contract
+     * @return supplier of an optional instance
+     */
+    public <T> Supplier<Optional<T>> supplyFirst(Class<T> type) {
+        return this.supplyFirst(Lookup.create(type));
+    }
+
+    /**
+     * Lookup a supplier of all services matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return supplier of list of services ordered, may be empty if there is no match
+     */
+    public <T> Supplier<List<T>> supplyAll(Lookup lookup) {
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        if (managers.isEmpty()) {
+            return List::of;
+        }
+        return new ServiceSupplyList<>(lookup, managers);
+    }
+
+    /**
+     * Lookup a supplier of a list of instances of the requested type.
+     * This is the preferred way of looking up instances, as the list may be computed at runtime, and may
+     * differ in time (as some services may be {@link io.helidon.inject.service.ServicesProvider}).
+     *
+     * @param type contract we look for
+     * @param <T>  type of the contract
+     * @return a supplier of list of contracts
+     */
+    public <T> Supplier<List<T>> supplyAll(Class<T> type) {
+        return this.supplyAll(Lookup.create(type));
+    }
+
+    /**
+     * Configuration this service registry was created with.
+     *
+     * @return service registry configuration
+     */
+    public InjectionConfig config() {
+        return injectionServices.config();
+    }
+
+    /**
+     * A lookup method that returns target instances with metadata.
+     * As this method resolves actual instances, scopes of all discovered services must be active
+     * (this would be always true if you only use singleton and "service" scopes).
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return list of registry instances (with metadata)
+     */
+    public <T> List<ServiceInstance<T>> lookupInstances(Lookup lookup) {
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        return managers.stream()
+                .flatMap(it -> managerInstances(lookup, it).stream())
+                .toList();
+
+    }
+
+    /**
+     * Get a supplier for the provided service info. The service info must already be known by this registry,
+     * either through a code generated module, or registered through
+     * {@link io.helidon.inject.InjectionConfig.Builder#addServiceDescriptor(io.helidon.inject.service.ServiceDescriptor)}.
+     * This method bypasses lookup.
+     *
+     * @param descriptor service descriptor to get a supplier for, please use the singleton instance (usually code generated
+     *                   into a public {@code __ServiceDescriptor} class), we use instance equality to discover services
+     * @param <T>        type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *                   you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return supplier of an instance for the descriptor provided
+     */
+    public <T> Supplier<T> supply(ServiceInfo descriptor) {
+        return new ServiceSupply<>(Lookup.builder()
+                                           .serviceType(descriptor.serviceType())
+                                           .build(),
+                                   List.of(serviceManager(descriptor)));
+    }
+
+    /**
+     * A lookup method operating on the service descriptors, rather than service instances.
+     * This is a useful tool for tools that need to analyze the structure of the registry,
+     * for testing etc.
+     * The returned instances are always the same instances registered with this registry, and these
+     * are expected to be the singleton instances from code generated {@link io.helidon.inject.service.ServiceDescriptor}.
+     * <p>
+     * The registry is optimized for look-ups based on service type and service contracts, all other
+     * lookups trigger a full registry scan.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @return a list of service descriptors that match the lookup criteria
+     */
+    public List<ServiceInfo> lookupServices(Lookup lookup) {
+        // a very special lookup
+        if (lookup.qualifiers().contains(Qualifier.DRIVEN_BY_NAME)) {
+            if (lookup.qualifiers().size() != 1) {
+                throw new InjectionException("Invalid injection lookup. @DrivenByName must be the only qualifier used.");
+            }
+            if (!lookup.contracts().contains(TypeNames.STRING)) {
+                throw new InjectionException("Invalid injection lookup. @DrivenByName must use String contract.");
+            }
+            if (lookup.contracts().size() != 1) {
+                throw new InjectionException("Invalid injection lookup. @DrivenByName must use String as the only contract.");
+            }
+            return List.of(DrivenByName__ServiceDescriptor.INSTANCE);
+        }
+
+        Lock currentLock = stateReadLock;
+        try {
+            // most of our operations are within a read lock
+            currentLock.lock();
+
+            lookupCounter.increment();
+
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE, "Lookup: " + lookup);
+            }
+
+            List<ServiceInfo> result = new ArrayList<>();
+
+            if (lookup.serviceType().isPresent()) {
+                // when a specific service type is requested, we go for it
+                ServiceInfo exact = servicesByType.get(lookup.serviceType().get());
+                if (exact != null) {
+                    result.add(exact);
+                    return result;
+                }
+            }
+
+            if (1 == lookup.contracts().size()) {
+                // a single contract is requested, we are ready for this ("indexed by contract")
+                TypeName theOnlyContractRequested = lookup.contracts().iterator().next();
+                Set<ServiceInfo> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
+                if (subsetOfMatches != null) {
+                    // the subset is ordered, cannot use parallel, also no need to re-order
+                    subsetOfMatches.stream()
+                            .filter(lookup::matches)
+                            .forEach(result::add);
+                    if (!result.isEmpty()) {
+                        return result;
+                    }
+                }
+            }
+
+            if (cacheEnabled) {
+                List<ServiceInfo> cacheResult = cache.get(lookup);
+                cacheLookupCounter.increment();
+                if (cacheResult != null) {
+                    cacheHitCounter.increment();
+                    return cacheResult;
+                }
+            }
+
+            // table scan :-(
+            lookupScanCounter.increment();
+            servicesByType.values()
+                    .stream()
+                    .filter(lookup::matches)
+                    .sorted(SERVICE_INFO_COMPARATOR)
+                    .forEach(result::add);
+
+            if (result.isEmpty() && !lookup.qualifiers().isEmpty()) {
+                // check qualified providers
+                if (lookup.contracts().size() == 1) {
+                    TypeName contract = lookup.contracts().iterator().next();
+                    for (Qualifier qualifier : lookup.qualifiers()) {
+                        TypeName qualifierType = qualifier.typeName();
+                        Set<ServiceInfo> found = typedQualifiedProviders.get(new TypedQualifiedProviderKey(qualifierType,
+                                                                                                           contract));
+                        if (found != null) {
+                            result.addAll(found);
+                        }
+                        found = qualifiedProvidersByQualifier.get(qualifierType);
+                        if (found != null) {
+                            result.addAll(found);
+                        }
+                    }
+                }
+            }
+
+            if (cacheEnabled) {
+                // upgrade to write lock
+                currentLock.unlock();
+                currentLock = stateWriteLock;
+                currentLock.lock();
+                cache.put(lookup, result);
+            }
+
+            return result;
+        } finally {
+            currentLock.unlock();
+        }
+    }
+
+    /**
+     * Get all service suppliers matching the lookup with the expectation that there may not be a match available.
+     * <p>
+     * This method is limited to services that are directly accessible in the registry, and may not provide all instances
+     * from {@link io.helidon.inject.service.ServicesProvider} (and possible other types that can produce an unknown number
+     * of instances).
+     * <p>
+     * Use {@link #supplyAll(io.helidon.inject.service.Lookup)} instead.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return list of service suppliers matching the criteria, may be empty if none matched, or no instances were provided
+     */
+    <T> List<Supplier<T>> allSuppliers(Lookup lookup) {
+        /*
+         this method is not public, as it is not capable of fulfilling the contracts of some of our extensions,
+         such as ServicesProvider and InjectionPointProvider - as these may produce zero or more instances when
+         initialized, the list would need to change its size (which is just not possible)
+         we need to support this for injection (the old "List<Provider>" as JSR-330 sees it)
+
+         we have the following options:
+         - current option (this method is not public, users must use `supplyAll` instead
+         - make the methods public, with the limited features (you may not get all instances)
+         - return something else than a Supplier, that can provide a list (still would not work nicely with JSR-330)
+         - resolve `ServicesProvider` or `InjectionPointProvider` before this method returns
+                (this would break the promise we make on lazy initialization)
+         */
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        return managers.stream()
+                .map(it -> (Supplier<T>) new ServiceSupply<>(lookup, List.of(it)))
+                .toList();
+    }
+
+    <T> List<ServiceInstance<T>> managerInstances(Lookup lookup, ServiceManager<T> manager) {
+        return manager.managedServiceInScope()
+                .instances(lookup)
+                .stream()
+                .flatMap(List::stream)
+                .map(qi -> manager.registryInstance(lookup, qi))
+                .toList();
+    }
+
+    List<ServiceInfo> servicesByContract(TypeName drivenBy) {
+        Set<ServiceInfo> serviceInfos = servicesByContract.get(drivenBy);
+        if (serviceInfos == null) {
+            return List.of();
+        }
+        return List.copyOf(serviceInfos);
+    }
+
+    void postBindAllModules() {
+        singletonScopeHandler.activate();
+    }
+
+    ScopeServices createForScope(TypeName scope, String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
+        try {
+            stateReadLock.lock();
+            ScopeServicesFactory factory = scopeServicesFactories.get(scope);
+            if (factory != null) {
+                return factory.createForScope(id, initialBindings);
+            }
+        } finally {
+            stateReadLock.unlock();
+        }
+
+        // upgrade to write lock
+        try {
+            stateWriteLock.lock();
+            ScopeServicesFactory factory = scopeServicesFactories.computeIfAbsent(scope,
+                                                                                  it -> new ScopeServicesFactory(this, it));
+            return factory.createForScope(id, initialBindings);
+
+        } finally {
+            stateWriteLock.unlock();
+        }
+    }
+
+    Map<TypeName, ActivationResult> close() {
+        return singletonScopeHandler.currentScope()
+                .map(Scope::services)
+                .map(ScopeServices::close)
+                .orElseGet(Map::of);
+    }
+
+    void interceptors(ServiceInfo... serviceInfos) {
+        if (interceptionDisabled) {
+            return;
+        }
+        try {
+            stateWriteLock.lock();
+            if (this.interceptors == null) {
+                this.interceptors = new IdentityHashMap<>();
+            }
+            // there may be more than one application, we need to add to existing
+            for (ServiceInfo serviceInfo : serviceInfos) {
+                this.interceptors.computeIfAbsent(serviceInfo,
+                                                  this::serviceManager);
+            }
+        } finally {
+            stateWriteLock.unlock();
+        }
+    }
+
+    List<ServiceManager<Interceptor>> interceptors() {
+        if (interceptionDisabled) {
+            return List.of();
+        }
+        try {
+            stateReadLock.lock();
+            if (interceptors != null) {
+                return List.copyOf(interceptors.values());
+            }
+        } finally {
+            stateReadLock.unlock();
+        }
+        try {
+            stateWriteLock.lock();
+            if (interceptors == null) {
+                // we must preserve the order of services, as they are weight ordered!
+                this.interceptors = new LinkedHashMap<>();
+                List<ServiceManager<Interceptor>> serviceManagers = lookupManagers(Lookup.builder()
+                                                                                      .addContract(Interceptor.class)
+                                                                                      .addQualifier(Qualifier.WILDCARD_NAMED)
+                                                                                      .build());
+                for (ServiceManager<Interceptor> serviceManager : serviceManagers) {
+                    this.interceptors.put(serviceManager.descriptor(), serviceManager);
+                }
+            }
+            return List.copyOf(interceptors.values());
+        } finally {
+            stateWriteLock.unlock();
+        }
+    }
+
+    void bind(ModuleComponent module) {
+        String moduleName = module.name();
+
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Starting module binding: " + moduleName);
+        }
+
+        ServiceBinder moduleBinder = new ServiceBinderImpl(moduleName);
+        module.configure(moduleBinder);
+
+        ServiceDescriptor<ModuleComponent> descriptor = ModuleServiceDescriptor.create(module, moduleName);
+        bindInstance(descriptor, module);
+
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Finished module binding: " + moduleName);
+        }
+    }
+
+    void bind(Application application) {
+        String appName = application.name();
+
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Starting application binding: " + appName);
+        }
+
+        ServiceInjectionPlanBinder appBinder = new AppBinderImpl(appName);
+        application.configure(appBinder);
+
+        ServiceDescriptor<Application> descriptor = ApplicationServiceDescriptor.create(application, appName);
+        bindInstance(descriptor, application);
+
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Finished application binding: " + appName);
+
+        }
+    }
+
+    ScopeHandler scopeHandler(TypeName scope) {
+        return scopeHandlers.computeIfAbsent(scope, it -> {
+            for (ServiceManager<?> scopeHandlerManager : scopeHandlerManagers) {
+                ScopeHandler scopeHandler = (ScopeHandler) scopeHandlerManager.managedServiceInScope()
+                        .instances(Lookup.EMPTY) // lookup instances
+                        .orElseThrow(() -> new InjectionException("There is not scope handler service for scope "
+                                                                          + scope.fqName()))
+                        .getFirst() // List.getFirst() - Qualified instance
+                        .get();
+                if (scopeHandler.supportedScope().equals(scope)) {
+                    return scopeHandler;
+                }
+            }
+            throw new InjectionException("A request for service in scope " + scope.fqName()
+                                                 + " has been received, yet there is no ScopeHandler available for this scope "
+                                                 + "in this registry");
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> ServiceManager<T> serviceManager(ServiceInfo descriptor) {
+        ServiceManager<?> serviceManager = servicesByDescriptor.get(descriptor);
+        if (serviceManager == null) {
+            throw new InjectionException("A service descriptor was used that is not bound to this service registry: "
+                                                 + descriptor.serviceType());
+        }
+        return (ServiceManager<T>) serviceManager;
+    }
+
+    <T> List<ServiceManager<T>> lookupManagers(Lookup lookup) {
+        return lookupServices(lookup)
+                .stream()
+                .map(this::<T>serviceManager)
+                .toList();
+    }
+
+    <T> void bindInstance(ServiceDescriptor<T> descriptor, T instance) {
+        ServiceProvider<T> provider = new ServiceProvider<>(this, descriptor);
+        Activator<T> managedService = Activator.create(provider, instance);
+
+        bind(new ServiceManager<>(scopeSupplier(descriptor), provider, () -> managedService));
+    }
+
+    void bind(ServiceManager<?> provider) {
+        try {
+            stateWriteLock.lock();
+            if (state.currentPhase().ordinal() > Phase.GATHERING_DEPENDENCIES.ordinal()) {
+                throw new IllegalStateException(
+                        "Attempting to bind to Services in the wrong lifecycle state: " + state.currentPhase());
+            }
+
+            ServiceDescriptor<?> descriptor = provider.descriptor();
+            servicesByDescriptor.put(descriptor, provider);
+
+            if (descriptor.contracts().contains(ScopeHandler.TYPE_NAME)) {
+                scopeHandlerManagers.add(provider);
+            }
+
+            TypeName serviceType = descriptor.serviceType();
+
+            // only put if absent, as this may be a lower weight provider for the same type
+            ServiceInfo previousValue = servicesByType.putIfAbsent(serviceType, descriptor);
+            if (previousValue != null) {
+                // a value was already registered for this service type, ignore this registration
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    LOGGER.log(System.Logger.Level.TRACE,
+                               "Attempt to register another service provider for the same service type."
+                                       + " Service type: " + serviceType.fqName()
+                                       + ", existing provider: " + previousValue
+                                       + ", new provider: " + provider);
+                }
+                return;
+            }
+
+            servicesByContract.computeIfAbsent(serviceType, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
+                    .add(descriptor);
+
+            for (TypeName contract : descriptor.contracts()) {
+                servicesByContract.computeIfAbsent(contract, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
+                        .add(descriptor);
+            }
+
+            scopeServicesFactories.computeIfAbsent(descriptor.scope(), it -> new ScopeServicesFactory(this, it))
+                    .bindService(provider);
+        } finally {
+            stateWriteLock.unlock();
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void bind(ServiceDescriptor<?> serviceDescriptor) {
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Binding service descriptor: " + serviceDescriptor.infoType().fqName());
+        }
+
+        ServiceProvider provider = new ServiceProvider<>(this,
+                                                         serviceDescriptor);
+        Supplier managedService = () -> Activator.create(this, provider);
+        ServiceManager<?> manager = new ServiceManager<>(scopeSupplier(serviceDescriptor), provider, managedService);
+
+        // scope handlers have a very specific meaning
+        if (serviceDescriptor.contracts().contains(ScopeHandler.TYPE_NAME)) {
+            if (!Injection.Singleton.TYPE_NAME.equals(serviceDescriptor.scope())) {
+                throw new InjectionException("Services that provide ScopeHandler contract MUST be in Singleton scope, but "
+                                                     + serviceDescriptor.serviceType().fqName() + " is in "
+                                                     + serviceDescriptor.scope().fqName() + " scope.");
+            }
+        }
+
+        bind(manager);
+
+        if (serviceDescriptor.contracts().contains(QualifiedProvider.TYPE_NAME)) {
+            // a special kind of service that matches ANY qualifier instance of a specific type, and also may match
+            // ANY contract
+            bindQualifiedProvider(serviceDescriptor);
+        }
+    }
+
+    private void bindQualifiedProvider(ServiceDescriptor<?> descriptor) {
+        if (descriptor.qualifierType().isEmpty()) {
+            throw new InjectionException("Cannot bind qualified provider " + descriptor.serviceType().fqName() + ", as it "
+                                                 + "does not have a qualifier type defined in its descriptor");
+        }
+        TypeName qualifierType = descriptor.qualifierType().get();
+        Set<TypeName> contracts = descriptor.contracts();
+        if (contracts.contains(TypeNames.OBJECT)) {
+            // can match any contract
+            qualifiedProvidersByQualifier.computeIfAbsent(qualifierType, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
+                    .add(descriptor);
+        } else {
+            // contract specific
+            Set<TypeName> realContracts = contracts.stream()
+                    .filter(Predicate.not(QualifiedProvider.TYPE_NAME::equals))
+                    .collect(Collectors.toSet());
+            for (TypeName realContract : realContracts) {
+                TypedQualifiedProviderKey key = new TypedQualifiedProviderKey(qualifierType, realContract);
+                typedQualifiedProviders.computeIfAbsent(key, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
+                        .add(descriptor);
+            }
+        }
+    }
+
+    private static <T> List<ServiceInstance<T>> explodeFilterAndSort(Lookup lookup,
+                                                                     List<ServiceManager<T>> serviceManagers) {
+        // this method is called when we resolve instances, so we can safely assume any scope is active
+
+        List<ServiceInstance<T>> result = new ArrayList<>();
+
+        for (ServiceManager<T> serviceManager : serviceManagers) {
+            serviceManager.managedServiceInScope()
+                    .instances(lookup)
+                    .stream()
+                    .flatMap(List::stream)
+                    .map(it -> serviceManager.registryInstance(lookup, it))
+                    .forEach(result::add);
+        }
+
+        result.sort(RegistryInstanceComparator.instance());
+
+        return List.copyOf(result);
+    }
+
+    private <T> Supplier<Scope> scopeSupplier(ServiceDescriptor<T> descriptor) {
+        TypeName scope = descriptor.scope();
+        if (Injection.Singleton.TYPE_NAME.equals(scope)) {
+            return () -> singletonScopeHandler.scope;
+        } else if (Injection.Service.TYPE_NAME.equals(scope)) {
+            return () -> serviceScopeHandler.scope;
+        } else {
+            // must be a lazy value, as the scope handler may not be available at the time this method is called
+            LazyValue<ScopeHandler> scopeHandler = LazyValue.create(() -> scopeHandler(scope));
+            return () -> scopeHandler.get()
+                    .currentScope() // must be called each time, as we must use the currently active scope, not a cached one
+                    .orElseThrow(() -> new ScopeNotActiveException("Scope not active fore service: "
+                                                                           + descriptor.serviceType().fqName(),
+                                                                   scope));
+        }
+    }
+
+    private static class ServiceSupplyBase<T> {
+        private final Lookup lookup;
+        private final List<ServiceManager<T>> managers;
+
+        private ServiceSupplyBase(Lookup lookup, List<ServiceManager<T>> managers) {
+            this.managers = managers;
+            this.lookup = lookup;
+        }
+
+        @Override
+        public String toString() {
+            return managers.stream()
+                    .map(ServiceManager::descriptor)
+                    .map(ServiceDescriptor::serviceType)
+                    .map(TypeName::fqName)
+                    .collect(Collectors.joining(", "));
+        }
+    }
+
+    static class ServiceSupply<T> extends ServiceSupplyBase<T> implements Supplier<T> {
+        private final Supplier<T> value;
+
+        // supply a single instance at runtime based on the manager
+        ServiceSupply(Lookup lookup, List<ServiceManager<T>> managers) {
+            super(lookup, managers);
+
+            Supplier<T> supplier;
+
+            supplier = () -> explodeFilterAndSort(lookup, managers)
+                    .stream()
+                    .findFirst()
+                    .map(ServiceInstance::get)
+                    .orElseThrow(() -> new InjectionServiceProviderException(
+                            "Neither of matching services could provide a value. Descriptors: " + managers + ", "
+                                    + "lookup: " + super.lookup));
+
+            this.value = supplier;
+        }
+
+        @Override
+        public T get() {
+            return value.get();
+        }
+
+        private boolean singletonOnly(List<ServiceManager<T>> managers) {
+            return managers.stream()
+                    .map(ServiceManager::descriptor)
+                    .map(ServiceInfo::scope)
+                    .allMatch(Injection.Singleton.TYPE_NAME::equals);
+        }
+    }
+
+    static class ServiceSupplyOptional<T> extends ServiceSupplyBase<T> implements Supplier<Optional<T>> {
+        // supply a single instance at runtime based on the manager
+        ServiceSupplyOptional(Lookup lookup, List<ServiceManager<T>> managers) {
+            super(lookup, managers);
+        }
+
+        @Override
+        public Optional<T> get() {
+            Optional<ServiceInstance<T>> first = explodeFilterAndSort(super.lookup, super.managers)
+                    .stream()
+                    .findFirst();
+            return first.map(Supplier::get);
+        }
+    }
+
+    static class ServiceSupplyList<T> extends ServiceSupplyBase<T> implements Supplier<List<T>> {
+        // supply a single instance at runtime based on the manager
+        ServiceSupplyList(Lookup lookup, List<ServiceManager<T>> managers) {
+            super(lookup, managers);
+        }
+
+        @Override
+        public List<T> get() {
+            Stream<ServiceInstance<T>> stream = explodeFilterAndSort(super.lookup, super.managers)
+                    .stream();
+
+            return stream.map(Supplier::get)
+                    .toList();
+        }
+    }
+
+    private static class ServiceScopeHandler implements ScopeHandler {
+        private final Scope scope;
+
+        ServiceScopeHandler(Services serviceRegistry) {
+            this.scope = new ServiceScope(serviceRegistry);
+        }
+
+        @Override
+        public TypeName supportedScope() {
+            return Injection.Service.TYPE_NAME;
+        }
+
+        @Override
+        public Optional<Scope> currentScope() {
+            return Optional.of(scope);
+        }
+    }
+
+    private static class SingletonScopeHandler implements ScopeHandler {
+        private final Scope scope;
+
+        SingletonScopeHandler(Services serviceRegistry) {
+            this.scope = new SingletonScope(serviceRegistry);
+        }
+
+        @Override
+        public TypeName supportedScope() {
+            return Injection.Singleton.TYPE_NAME;
+        }
+
+        @Override
+        public Optional<Scope> currentScope() {
+            return Optional.of(scope);
+        }
+
+        void activate() {
+            scope.services().activate();
+        }
+    }
+
+    private static class SingletonScope implements Scope {
+        private final LazyValue<ScopeServices> services;
+
+        SingletonScope(Services serviceRegistry) {
+            this.services = LazyValue.create(() -> serviceRegistry.createForScope(Injection.Singleton.TYPE_NAME,
+                                                                                  serviceRegistry.id,
+                                                                                  Map.of()));
+        }
+
+        @Override
+        public void close() {
+            // no-op, singleton service registry is closed from InjectionServices
+        }
+
+        @Override
+        public ScopeServices services() {
+            return services.get();
+        }
+    }
+
+    private static class ServiceScope implements Scope {
+        private final ScopeServices services;
+
+        ServiceScope(Services serviceRegistry) {
+            this.services = new ServiceScopeServices(serviceRegistry, serviceRegistry.id);
+        }
+
+        @Override
+        public void close() {
+            // no-op
+        }
+
+        @Override
+        public ScopeServices services() {
+            return services;
+        }
+    }
+
+    private class ServiceBinderImpl implements ServiceBinder {
+        private final String moduleName;
+
+        ServiceBinderImpl(String moduleName) {
+            this.moduleName = moduleName;
+        }
+
+        @Override
+        public void bind(ServiceDescriptor<?> serviceDescriptor) {
+            Services.this.bind(serviceDescriptor);
+        }
+
+        @Override
+        public String toString() {
+            return "Service binder for module: " + moduleName;
+        }
+    }
+
+    private class AppBinderImpl implements ServiceInjectionPlanBinder {
+        private final String appName;
+
+        AppBinderImpl(String appName) {
+            this.appName = appName;
+        }
+
+        @Override
+        public Binder bindTo(ServiceInfo serviceInfo) {
+            ServiceManager<?> serviceManager = Services.this.serviceManager(serviceInfo);
+
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG, "binding injection plan to " + serviceManager);
+            }
+
+            return serviceManager.servicePlanBinder();
+        }
+
+        @Override
+        public void interceptors(ServiceInfo... descriptors) {
+            Services.this.interceptors(descriptors);
+        }
+
+        @Override
+        public String toString() {
+            return "Service binder for application: " + appName;
+        }
+    }
+
+    private record TypedQualifiedProviderKey(TypeName qualifier, TypeName contract) {
+    }
+}

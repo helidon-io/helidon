@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ module helidon.tests.nimage.mp {
     requires io.helidon.health.checks;
 
     // needed to compile injection generated classes
-    requires static io.helidon.inject.runtime;
+    requires io.helidon.inject.service;
 
     exports io.helidon.tests.integration.nativeimage.mp1;
     exports io.helidon.tests.integration.nativeimage.mp1.other;

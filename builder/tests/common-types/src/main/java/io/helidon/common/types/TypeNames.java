@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,10 @@ public final class TypeNames {
      * Type name for {@link java.util.Collection}.
      */
     public static final TypeName COLLECTION = TypeName.create(Collection.class);
+    /**
+     * Type name for {@link java.time.Duration}.
+     */
+    public static final TypeName DURATION = TypeName.create(Duration.class);
     /*
     Primitive types and their boxed counterparts
      */

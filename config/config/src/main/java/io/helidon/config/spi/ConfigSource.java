@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
  * {@link Source} of configuration.
@@ -63,7 +63,7 @@ import io.helidon.inject.api.Contract;
  * @see io.helidon.config.AbstractConfigSource
  * @see ConfigSources ConfigSources - access built-in implementations.
  */
-@Contract
+@Injection.Contract
 public interface ConfigSource extends Supplier<ConfigSource>, Source {
     @Override
     default ConfigSource get() {

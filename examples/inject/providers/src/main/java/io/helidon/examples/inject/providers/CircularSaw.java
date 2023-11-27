@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,16 @@ package io.helidon.examples.inject.providers;
 
 import java.util.Optional;
 
-import io.helidon.inject.api.RunLevel;
+import io.helidon.inject.service.Injection;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 
-@Singleton
-@RunLevel(RunLevel.STARTUP)
+@Injection.Singleton
+@Injection.RunLevel(Injection.RunLevel.STARTUP)
 class CircularSaw implements Saw {
 
     private final Blade blade;
 
-    @Inject
+    @Injection.Inject
     CircularSaw(Optional<Blade> blade) {
         this.blade = blade.orElse(null);
     }
@@ -40,8 +37,7 @@ class CircularSaw implements Saw {
         return "Circular Saw: (blade=" + blade + ")";
     }
 
-    @PostConstruct
-    @SuppressWarnings("unused")
+    @Injection.PostConstruct
     void init() {
         System.out.println(name() + "; initialized");
     }

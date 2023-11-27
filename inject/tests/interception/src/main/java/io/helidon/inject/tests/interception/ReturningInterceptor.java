@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.inject.api.Interceptor;
-import io.helidon.inject.api.InvocationContext;
+import io.helidon.inject.service.Interception;
+import io.helidon.inject.service.InvocationContext;
 
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -30,7 +30,7 @@ import jakarta.inject.Singleton;
 @Named("io.helidon.inject.tests.interception.Return")
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
-class ReturningInterceptor implements Interceptor {
+class ReturningInterceptor implements Interception.Interceptor {
     private static final AtomicReference<Invocation> LAST_CALL = new AtomicReference<>();
 
     static Invocation lastCall() {
@@ -39,7 +39,7 @@ class ReturningInterceptor implements Interceptor {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) {
+    public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) throws Exception {
         LAST_CALL.set(new Invocation(ctx.elementInfo().elementName(), Arrays.copyOf(args, args.length)));
         if (args.length < 4) {
             // safeguard

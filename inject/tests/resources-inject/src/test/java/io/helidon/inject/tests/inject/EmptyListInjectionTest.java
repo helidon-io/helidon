@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,38 @@
 
 package io.helidon.inject.tests.inject;
 
-import io.helidon.config.Config;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import java.util.function.Supplier;
+
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.basicTestableConfig;
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class EmptyListInjectionTest {
-    private static final Config CONFIG = basicTestableConfig();
-
+    private InjectionServices injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        this.services = testableServices(CONFIG).services();
+        this.injectionServices = InjectionServices.create();
+        this.services = injectionServices.services();
     }
 
     @AfterEach
     void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
     void acceptEmptyListInjectables() {
-        ServiceProvider<AServiceUsingAContractWithNoServiceImplementations> sp =
-                services.lookupFirst(AServiceUsingAContractWithNoServiceImplementations.class);
+        Supplier<AServiceUsingAContractWithNoServiceImplementations> sp =
+                services.supply(AServiceUsingAContractWithNoServiceImplementations.class);
         assertThat(sp.get(), notNullValue());
     }
 

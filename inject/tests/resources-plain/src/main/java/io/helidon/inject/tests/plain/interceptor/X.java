@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
+import io.helidon.inject.service.Injection;
 
-@Singleton
-@Named("ClassX")
+@Injection.Singleton
+@Injection.Named("ClassX")
 public class X implements IA, IB, Closeable {
-
-    X() {
-        // this is the one that will be used by interception
-    }
-
-    @Inject
+    @Injection.Inject
     public X(Optional<IA> optionalIA) {
         assert (optionalIA.isEmpty());
     }
@@ -46,17 +39,17 @@ public class X implements IA, IB, Closeable {
     public void methodIA2() {
     }
 
-    @Named("methodIB2")
+    @Injection.Named("methodIB2")
     @InterceptorBasedAnno("IBSubAnno")
     @Override
-    public String methodIB2(@Named("arg1") String val) {
+    public String methodIB2(@Injection.Named("arg1") String val) {
         return val;
     }
 
-    @Named("methodIB")
+    @Injection.Named("methodIB")
     @InterceptorBasedAnno("IBSubAnno")
     @Override
-    public void methodIB(@Named("arg1") String val) {
+    public void methodIB(@Injection.Named("arg1") String val) {
     }
 
     @InterceptorBasedAnno

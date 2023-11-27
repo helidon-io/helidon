@@ -38,6 +38,7 @@
 
     <modules>
         <module>api</module>
+        <module>codegen</module>
         <module>processor</module>
         <module>tests</module>
     </modules>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,14 @@ module io.helidon.integrations.oci.sdk.runtime {
     requires io.helidon.builder.api;
     requires oci.java.sdk.common;
 
-    requires static io.helidon.config.metadata;
-    requires static jakarta.annotation;
-    requires static jakarta.inject;
-
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
-    requires transitive io.helidon.inject.runtime;
+    requires transitive io.helidon.inject;
 
     exports io.helidon.integrations.oci.sdk.runtime;
 
-    uses io.helidon.inject.api.ModuleComponent;
+    uses io.helidon.inject.service.ModuleComponent;
 
-    provides io.helidon.inject.api.ModuleComponent with
-            io.helidon.integrations.oci.sdk.runtime.Injection$$Module;
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.integrations.oci.sdk.runtime.Injection__Module;
 }

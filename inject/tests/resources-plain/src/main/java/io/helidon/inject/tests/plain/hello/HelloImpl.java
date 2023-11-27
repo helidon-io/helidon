@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,50 +18,43 @@ package io.helidon.inject.tests.plain.hello;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.inject.service.Injection;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
-
-@Singleton
+@Injection.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class HelloImpl implements Hello {
 
-    @Inject
+    @Injection.Inject
     World world;
 
-    @Inject
-    Provider<World> worldRef;
+    @Injection.Inject
+    Supplier<World> worldRef;
 
-    @Inject
-    List<Provider<World>> listOfWorldRefs;
+    @Injection.Inject
+    List<Supplier<World>> listOfWorldRefs;
 
-    @Inject
+    @Injection.Inject
     List<World> listOfWorlds;
 
-    @Inject @Named("red")
+    @Injection.Inject
+    @Injection.Named("red")
     Optional<World> redWorld;
-
-    @Inject
+    int postConstructCallCount;
+    int preDestroyCallCount;
+    @Injection.Inject
     private Optional<World> privateWorld;
-
     private World setWorld;
     private Optional<World> setRedWorld;
     private World ctorWorld;
 
-    int postConstructCallCount;
-    int preDestroyCallCount;
-
     HelloImpl() {
     }
 
-    @Inject
+    @Injection.Inject
     public HelloImpl(World ctorWorld) {
         this();
         this.ctorWorld = ctorWorld;
@@ -77,23 +70,23 @@ public class HelloImpl implements Hello {
         assert (ctorWorld == world) : "world != ctorWorld";
     }
 
-    @Inject
+    @Injection.Inject
     public void world(World world) {
         this.setWorld = world;
         assert (world == ctorWorld);
     }
 
-    @Inject
-    public void setRedWorld(@Named("red") Optional<World> redWorld) {
+    @Injection.Inject
+    public void setRedWorld(@Injection.Named("red") Optional<World> redWorld) {
         this.setRedWorld = redWorld;
     }
 
-    @PostConstruct
+    @Injection.PostConstruct
     public void postConstruct() {
         postConstructCallCount++;
     }
 
-    @PreDestroy
+    @Injection.PreDestroy
     public void preDestroy() {
         preDestroyCallCount++;
     }

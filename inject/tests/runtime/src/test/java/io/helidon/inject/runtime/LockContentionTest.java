@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,15 @@ package io.helidon.inject.runtime;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.ActivationResult;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.ActivationResult;
+import io.helidon.inject.InjectionServices;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -43,38 +36,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 class LockContentionTest {
     final int COUNT = 100;
 
-    final ExecutorService es = Executors.newFixedThreadPool(16);
-    final Config config = Config.builder(
-                    ConfigSources.create(
-                            Map.of("inject.permits-dynamic", "true"), "config-1"))
-            .disableEnvironmentVariablesSource()
-            .disableSystemPropertiesSource()
-            .build();
-
-    @BeforeEach
-    void init() {
-        InjectionServices.globalBootstrap(Bootstrap.builder().config(config).build());
-    }
-
-    @AfterEach
-    void tearDown() {
-        SimpleInjectionTestingSupport.resetAll();
-    }
+    private final ExecutorService es = Executors.newFixedThreadPool(16);
 
     @Test
-    // we cannot interlace shutdown with startups here - so instead we are checking to ensure N threads can call startup
-    // and then N threads can call shutdown in parallel, but in phases
     void lockContention() {
+        // each instance is independent, let's just make sure we can shutdown in parallel
         Map<String, Future<?>> result = new ConcurrentHashMap<>();
-        for (int i = 1; i <= COUNT; i++) {
-            result.put("start run:" + i, es.submit(this::start));
-        }
 
-        verify(result);
-        result.clear();
-
+        InjectionServices is = InjectionServices.create();
         for (int i = 1; i <= COUNT; i++) {
-            result.put("shutdown run:" + i, es.submit(this::shutdown));
+            result.put("shutdown run:" + i, es.submit(() -> this.shutdown(is)));
         }
 
         verify(result);
@@ -90,16 +61,11 @@ class LockContentionTest {
         });
     }
 
-    Services start() {
-        return Objects.requireNonNull(InjectionServices.realizedServices());
-    }
-
-    Map<TypeName, ActivationResult> shutdown() {
-        InjectionServices injectionServices = InjectionServices.injectionServices().orElseThrow();
+    Map<TypeName, ActivationResult> shutdown(InjectionServices injectionServices) {
         Map<TypeName, ActivationResult> result = new LinkedHashMap<>();
         Map<TypeName, ActivationResult> round;
         do {
-            round = injectionServices.shutdown().orElseThrow();
+            round = injectionServices.shutdown();
             result.putAll(round);
         } while (!round.isEmpty());
         return result;

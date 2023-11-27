@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,9 @@ package io.helidon.inject.tests.inject.interceptor;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import io.helidon.inject.api.InterceptedTrigger;
-
 /**
- * Used as an {@link InterceptedTrigger} from the maven-plugin call (see pom.xml).
+ * Used as an {@link io.helidon.inject.service.Interception.Trigger} from the maven-plugin call (see pom.xml).
  */
-//@InterceptedTrigger - intentional decision not to add this in order to avoid standard annotation processing.
-//  it will instead be handled by the maven-plugin
 @Retention(RetentionPolicy.CLASS)
 public @interface TestNamed {
 

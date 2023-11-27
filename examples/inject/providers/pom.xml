@@ -45,11 +45,6 @@
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
@@ -67,20 +62,24 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <compilerArgs>
-                        <arg>-Ainject.autoAddNonContractInterfaces=true</arg> <!-- this setting can be used to avoid the need for @Contract -->
-                        <arg>-Ainject.debug=false</arg>
-                        <arg>-Ainject.acceptPreview=true</arg>
+                        <arg>-Ahelidon.inject.autoAddNonContractInterfaces=true</arg> <!-- this setting can be used to avoid the need for @Contract -->
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-processor</artifactId>
+                            <groupId>io.helidon.bundles</groupId>
+                            <artifactId>helidon-bundles-apt</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.bundles</groupId>
+                        <artifactId>helidon-bundles-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

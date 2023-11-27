@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,87 +16,80 @@
 
 package io.helidon.inject.maven.plugin;
 
-import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.CodegenLogger;
+import io.helidon.codegen.CodegenOptions;
+import io.helidon.codegen.CodegenScope;
+import io.helidon.codegen.ModuleInfo;
+import io.helidon.codegen.ModuleInfoSourceParser;
+import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.Application;
-import io.helidon.inject.api.CallingContext;
-import io.helidon.inject.api.CallingContextFactory;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ModuleComponent;
-import io.helidon.inject.api.ServiceInfoCriteria;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.ServiceProviderProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.runtime.ServiceBinderDefault;
-import io.helidon.inject.tools.AbstractFilerMessager;
-import io.helidon.inject.tools.ActivatorCreatorCodeGen;
-import io.helidon.inject.tools.ApplicationCreatorCodeGen;
-import io.helidon.inject.tools.ApplicationCreatorConfigOptions;
-import io.helidon.inject.tools.ApplicationCreatorRequest;
-import io.helidon.inject.tools.ApplicationCreatorResponse;
-import io.helidon.inject.tools.CodeGenFiler;
-import io.helidon.inject.tools.CodeGenPaths;
-import io.helidon.inject.tools.CompilerOptions;
-import io.helidon.inject.tools.ModuleInfoDescriptor;
-import io.helidon.inject.tools.PermittedProviderType;
-import io.helidon.inject.tools.ToolsException;
-import io.helidon.inject.tools.spi.ApplicationCreator;
+import io.helidon.inject.codegen.InjectionCodegenContext;
+import io.helidon.inject.service.ServiceInfo;
 
-import org.apache.maven.model.Build;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.inject.api.CallingContextFactory.globalCallingContext;
-import static io.helidon.inject.runtime.InjectionExceptions.toErrorMessage;
-import static io.helidon.inject.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
-import static io.helidon.inject.tools.ModuleUtils.isUnnamedModuleName;
-import static io.helidon.inject.tools.ModuleUtils.toBasePath;
-import static io.helidon.inject.tools.ModuleUtils.toSuggestedModuleName;
-import static java.util.Optional.ofNullable;
-
 /**
- * Abstract base for the Injection {@code maven-plugin} responsible for creating {@code Application} and Test {@code Application}'s.
- *
- * @see Application
- * @see ApplicationCreatorConfigOptions
+ * Abstract base for the Injection {@code maven-plugin} responsible for creating {@code Application} and Test
+ * {@code Application}'s.
  */
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
-
+abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
+    private static final String MODULE_COMPONENT_CLASS_FILE_NAME = InjectionCodegenContext.MODULE_NAME + ".class";
     /**
      * The approach for handling providers.
      * See {@code ApplicationCreatorConfigOptions#permittedProviderTypes()}.
      */
-    @Parameter(property = "inject.permitted.provider.types", readonly = true)
-    private String permittedProviderTypes;
+    @Parameter(property = "helidon.inject.permitted.provider.types", defaultValue = "ALL")
     private PermittedProviderType permittedProviderType;
+
+    /**
+     * The -source argument for the Java compiler.
+     * Note: using the same as maven-compiler for convenience and least astonishment.
+     */
+    @Parameter(property = "maven.compiler.source", defaultValue = "21")
+    private String source;
+
+    /**
+     * The -target argument for the Java compiler.
+     * Note: using the same as maven-compiler for convenience and least astonishment.
+     */
+    @Parameter(property = "maven.compiler.target", defaultValue = "21")
+    private String target;
 
     /**
      * Sets the named types permitted for providers, assuming use of
      * {@link PermittedProviderType#NAMED}.
      */
-    @Parameter(property = "inject.permitted.provider.type.names", readonly = true)
+    @Parameter(property = "helidon.inject.permitted.provider.type.names")
     private List<String> permittedProviderTypeNames;
 
     /**
      * Sets the named qualifier types permitted for providers, assuming use of
      * {@link PermittedProviderType#NAMED}.
      */
-    @Parameter(property = "inject.permitted.provider.qualifier.type.names", readonly = true)
+    @Parameter(property = "helidon.inject.permitted.provider.qualifier.type.names", readonly = true)
     private List<String> permittedProviderQualifierTypeNames;
 
     /**
@@ -105,56 +98,152 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     protected AbstractApplicationCreatorMojo() {
     }
 
-    static ToolsException noModuleFoundError() {
-        return new ToolsException("Unable to determine the name of the current module - "
-                                          + "was APT run and do you have a module-info?");
-    }
+    @Override
+    protected void innerExecute() {
 
-    static ToolsException noModuleFoundError(String moduleName) {
-        return new ToolsException("No Injection module named '" + moduleName
-                                          + "' was found in the current module - was APT run?");
-    }
+        MavenLogger mavenLogger = MavenLogger.create(getLog(), failOnWarning());
 
-    String getThisModuleName() {
-        Build build = getProject().getBuild();
-        Path basePath = toBasePath(build.getSourceDirectory());
-        String moduleName = toSuggestedModuleName(basePath, Path.of(build.getSourceDirectory()), true).orElseThrow();
-        if (isUnnamedModuleName(moduleName)) {
-            // try to recover it from a previous tooling step
-            String appPackageName = loadAppPackageName().orElse(null);
-            if (appPackageName == null) {
-                getLog().info(noModuleFoundError().getMessage());
-            } else {
-                moduleName = appPackageName;
+        // we MUST get the exclusion list prior to building the next loader, since it will reset the service registry
+        Set<TypeName> serviceNamesForExclusion = serviceTypeNamesForExclusion(mavenLogger);
+        getLog().debug("Type names for exclusion: " + serviceNamesForExclusion);
+
+        boolean hasModuleInfo = hasModuleInfo();
+        Set<Path> modulepath = hasModuleInfo ? getModulepathElements() : Set.of();
+        Set<Path> classpath = getClasspathElements();
+        ClassLoader prev = Thread.currentThread().getContextClassLoader();
+        URLClassLoader loader = createClassLoader(classpath, prev);
+
+        Optional<ModuleInfo> nonTestModuleInfo = findModuleInfo(nonTestSourceRootPaths())
+                .map(ModuleInfoSourceParser::parse);
+
+        /*
+        We may have module info both in sources and in tests
+         */
+        Optional<ModuleInfo> myModuleInfo = findModuleInfo(sourceRootPaths())
+                .map(ModuleInfoSourceParser::parse);
+        CodegenOptions codegenOptions = MavenOptions.create(toOptions());
+        CodegenScope scope = scope();
+        codegenOptions.validate(Set.of(ApplicationOptions.PERMITTED_PROVIDER_TYPE,
+                                       ApplicationOptions.PERMITTED_PROVIDER_TYPES,
+                                       ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPES));
+
+        // package name to use (should be the same as ModuleComponent package)
+        String packageName = packageName(codegenOptions, myModuleInfo, nonTestModuleInfo);
+        // module name to use to define application name (should be the same as ModuleComponent uses for this module)
+        String moduleName = moduleName(loader, codegenOptions, myModuleInfo, packageName, scope);
+
+        MavenCodegenContext scanContext = MavenCodegenContext.create(codegenOptions,
+                                                                     scope,
+                                                                     generatedSourceDirectory(),
+                                                                     outputDirectory(),
+                                                                     mavenLogger,
+                                                                     myModuleInfo.orElse(null));
+
+        try {
+            Thread.currentThread().setContextClassLoader(loader);
+
+            try (WrappedServices services = WrappedServices.create(loader, mavenLogger, false)) {
+                CompilerOptions compilerOptions = CompilerOptions.builder()
+                        .classpath(List.copyOf(classpath))
+                        .modulepath(List.copyOf(modulepath))
+                        .sourcepath(sourceRootPaths())
+                        .source(getSource())
+                        .target(getTarget())
+                        .commandLineArguments(getCompilerArgs())
+                        .outputDirectory(outputDirectory())
+                        .build();
+
+                createApplication(scanContext,
+                                  services,
+                                  compilerOptions,
+                                  serviceNamesForExclusion,
+                                  moduleName,
+                                  packageName);
+            } catch (CodegenException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new CodegenException("An error occurred creating the Application in " + getClass().getName(), e);
             }
+        } finally {
+            Thread.currentThread().setContextClassLoader(prev);
         }
-        return moduleName;
     }
 
-    Optional<ServiceProvider<ModuleComponent>> lookupThisModule(String name,
-                                                                Services services,
-                                                                boolean expected) {
-        Optional<ServiceProvider<ModuleComponent>> result = services.lookupFirst(ModuleComponent.class, name, false);
-        if (result.isEmpty() && expected) {
-            throw noModuleFoundError(name);
+    protected void createApplication(MavenCodegenContext scanContext,
+                                     WrappedServices services,
+                                     CompilerOptions compilerOptions,
+                                     Set<TypeName> serviceNamesForExclusion,
+                                     String moduleName,
+                                     String packageName) {
+
+        // retrieves all the services in the registry
+        Set<TypeName> allServices = services.all()
+                .stream()
+                .map(ServiceInfo::serviceType)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        if (allServices.isEmpty()) {
+            warn("Application creator found no services to process");
+            return;
+        } else {
+            getLog().debug("All services to be processed (no exclusions applied): " + allServices);
         }
-        return result;
+
+        allServices.removeAll(serviceNamesForExclusion);
+
+        getLog().debug("All services to be processed (exclusions applied): " + allServices);
+
+        String className = getGeneratedClassName();
+
+        // get the application creator only after services are initialized (we need to ignore any existing apps)
+        ApplicationCreator creator = new ApplicationCreator(scanContext, failOnError());
+
+        creator.createApplication(services,
+                                  allServices,
+                                  TypeName.create(packageName + "." + className),
+                                  moduleName,
+                                  compilerOptions);
     }
 
-    String getClassPrefixName() {
-        return ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME;
+    /**
+     * Where to generate sources. As this directory differs between production code and test code, it must be provided
+     * by a subclass.
+     *
+     * @return where to generate sources
+     */
+    protected abstract Path generatedSourceDirectory();
+
+    /**
+     * Class name to be generated.
+     *
+     * @return application class name
+     */
+
+    protected abstract String getGeneratedClassName();
+
+    /**
+     * Output directory for this {@link #scope()}.
+     *
+     * @return output directory
+     */
+    protected abstract Path outputDirectory();
+
+    /**
+     * Source roots for this {@link #scope()}.
+     *
+     * @return source roots
+     */
+    protected List<Path> sourceRootPaths() {
+        return nonTestSourceRootPaths();
     }
 
-    abstract String getGeneratedClassName();
-
-    abstract File getOutputDirectory();
-
-    List<Path> getSourceRootPaths() {
-        return getNonTestSourceRootPaths();
-    }
-
-    List<Path> getNonTestSourceRootPaths() {
-        MavenProject project = getProject();
+    /**
+     * Production source roots for this project.
+     *
+     * @return source roots for production code
+     */
+    protected List<Path> nonTestSourceRootPaths() {
+        MavenProject project = mavenProject();
         List<Path> result = new ArrayList<>(project.getCompileSourceRoots().size());
         for (Object a : project.getCompileSourceRoots()) {
             result.add(Path.of(a.toString()));
@@ -162,8 +251,13 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         return result;
     }
 
-    List<Path> getTestSourceRootPaths() {
-        MavenProject project = getProject();
+    /**
+     * Test source roots for this project.
+     *
+     * @return source roots for test code
+     */
+    protected List<Path> testSourceRootPaths() {
+        MavenProject project = mavenProject();
         List<Path> result = new ArrayList<>(project.getTestCompileSourceRoots().size());
         for (Object a : project.getTestCompileSourceRoots()) {
             result.add(Path.of(a.toString()));
@@ -176,226 +270,221 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     boolean hasModuleInfo() {
-        return getSourceRootPaths().stream()
-                .anyMatch(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME).exists());
+        return sourceRootPaths()
+                .stream()
+                .anyMatch(p -> Files.exists(p.resolve(ModuleInfo.FILE_NAME)));
     }
 
-    /**
-     * Favors the 'test' module-info if available, and falls back to 'main' module-info.
-     *
-     * @param location the location for the located module-info
-     * @return the module-info descriptor to return or null if none is available
-     */
-    ModuleInfoDescriptor getAnyModuleInfo(AtomicReference<File> location) {
-        File file = getNonTestSourceRootPaths().stream()
-                .map(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME))
-                .filter(File::exists)
-                .findFirst()
-                .orElse(null);
-
-        if (file == null) {
-            file = getTestSourceRootPaths().stream()
-                    .map(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME))
-                    .filter(File::exists)
-                    .findFirst()
-                    .orElse(null);
-        }
-
-        if (file != null && location != null) {
-            location.set(file);
-            return ModuleInfoDescriptor.create(file.toPath());
-        }
-
-        return null;
+    protected Optional<Path> findModuleInfo(List<Path> sourcePaths) {
+        return sourcePaths.stream()
+                .map(it -> it.resolve(ModuleInfo.FILE_NAME))
+                .filter(Files::exists)
+                .findFirst();
     }
 
     /**
      * @return This represents the set of services that we already code-gen'ed
      */
-    Set<TypeName> getServiceTypeNamesForExclusion() {
-        getLog().info("excluding service type names: []");
+    protected Set<TypeName> serviceTypeNamesForExclusion(CodegenLogger logger) {
         return Set.of();
     }
 
-    @Override
-    protected void innerExecute() {
-        this.permittedProviderType =
-                (permittedProviderTypes == null || permittedProviderTypes.isBlank())
-                        ? ApplicationCreatorConfigOptions.DEFAULT_PERMITTED_PROVIDER_TYPE
-                        : PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
-
-        CallingContext callCtx = null;
-        Optional<CallingContext.Builder> callingContextBuilder =
-                CallingContextFactory.createBuilder(false);
-        if (callingContextBuilder.isPresent()) {
-            callingContextBuilder.get()
-                    .update(it -> Optional.ofNullable(getThisModuleName()).ifPresent(it::moduleName));
-            callCtx = callingContextBuilder.get().build();
-            globalCallingContext(callCtx, true);
-        }
-
-        // we MUST get the exclusion list prior to building the next loader, since it will reset the service registry
-        Set<TypeName> serviceNamesForExclusion = getServiceTypeNamesForExclusion();
-        boolean hasModuleInfo = hasModuleInfo();
-        Set<Path> modulepath = (hasModuleInfo) ? getModulepathElements() : Collections.emptySet();
-        Set<Path> classpath = getClasspathElements();
-        ClassLoader prev = Thread.currentThread().getContextClassLoader();
-        URLClassLoader loader = ExecutableClassLoader.create(classpath, prev);
-
-        try {
-            Thread.currentThread().setContextClassLoader(loader);
-
-            InjectionServices injectionServices = MavenPluginUtils.injectionServices(false);
-            if (injectionServices.config().usesCompileTimeApplications()) {
-                String desc = "Should not be using 'application' bindings";
-                String msg = (callCtx == null) ? toErrorMessage(desc) : toErrorMessage(callCtx, desc);
-                throw new IllegalStateException(msg);
-            }
-            Services services = injectionServices.services();
-
-            // get the application creator only after services are initialized (we need to ignore any existing apps)
-            ApplicationCreator creator = MavenPluginUtils.applicationCreator();
-
-            List<ServiceProvider<?>> allModules = services
-                    .lookupAll(ServiceInfoCriteria.builder()
-                                       .addContractImplemented(ModuleComponent.class)
-                                       .build());
-            if (InjectionServices.isDebugEnabled()) {
-                getLog().info("processing modules: " + MavenPluginUtils.toDescriptions(allModules));
-            } else {
-                getLog().debug("processing modules: " + MavenPluginUtils.toDescriptions(allModules));
-            }
-            if (allModules.isEmpty()) {
-                warn("No modules to process");
-            }
-
-            // retrieves all the services in the registry
-            List<ServiceProvider<?>> allServices = services
-                    .lookupAll(ServiceInfoCriteria.builder()
-                                       .includeIntercepted(true)
-                                       .build(), false);
-            if (allServices.isEmpty()) {
-                warn("no services to process");
-                return;
-            }
-
-            Set<TypeName> serviceTypeNames = toNames(allServices);
-            serviceTypeNames.removeAll(serviceNamesForExclusion);
-
-            String classPrefixName = getClassPrefixName();
-            AtomicReference<File> moduleInfoPathRef = new AtomicReference<>();
-            ModuleInfoDescriptor descriptor = getAnyModuleInfo(moduleInfoPathRef);
-            String moduleInfoPath = (moduleInfoPathRef.get() != null)
-                    ? moduleInfoPathRef.get().getPath()
-                    : null;
-            String moduleInfoModuleName = getThisModuleName();
-            Optional<ServiceProvider<ModuleComponent>> moduleSp = lookupThisModule(moduleInfoModuleName, services, false);
-            String packageName = determinePackageName(moduleSp, serviceTypeNames, descriptor, true);
-
-            CodeGenPaths codeGenPaths = CodeGenPaths.builder()
-                    .generatedSourcesPath(getGeneratedSourceDirectory().getPath())
-                    .outputPath(getOutputDirectory().getPath())
-                    .update(it -> ofNullable(moduleInfoPath).ifPresent(it::moduleInfoPath))
-                    .build();
-            ApplicationCreatorCodeGen applicationCodeGen = ApplicationCreatorCodeGen.builder()
-                    .packageName(packageName)
-                    .className(getGeneratedClassName())
-                    .classPrefixName(classPrefixName)
-                    .build();
-            List<String> compilerArgs = getCompilerArgs();
-            CompilerOptions compilerOptions = CompilerOptions.builder()
-                    .classpath(List.copyOf(classpath))
-                    .modulepath(List.copyOf(modulepath))
-                    .sourcepath(getSourceRootPaths())
-                    .source(getSource())
-                    .target(getTarget())
-                    .commandLineArguments((compilerArgs != null) ? compilerArgs : List.of())
-                    .build();
-            ApplicationCreatorConfigOptions configOptions = ApplicationCreatorConfigOptions.builder()
-                    .permittedProviderTypes(permittedProviderType)
-                    .permittedProviderNames(Set.copyOf(permittedProviderTypeNames))
-                    .permittedProviderQualifierTypeNames(Set.copyOf(toTypeNames(permittedProviderQualifierTypeNames)))
-                    .build();
-            String moduleName = getModuleName();
-            AbstractFilerMessager directFiler = AbstractFilerMessager.createDirectFiler(codeGenPaths, getLogger());
-            CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
-            ApplicationCreatorRequest.Builder reqBuilder = ApplicationCreatorRequest.builder()
-                    .codeGen(applicationCodeGen)
-                    .messager(new Messager2LogAdapter())
-                    .filer(codeGenFiler)
-                    .configOptions(configOptions)
-                    .serviceTypeNames(List.copyOf(serviceTypeNames))
-                    .generatedServiceTypeNames(List.copyOf(serviceTypeNames))
-                    .codeGenPaths(codeGenPaths)
-                    .compilerOptions(compilerOptions)
-                    .throwIfError(isFailOnError())
-                    .generator(getClass().getName())
-                    .templateName(getTemplateName());
-            if (MavenPluginUtils.hasValue(moduleName)) {
-                reqBuilder.moduleName(moduleName);
-            } else if (!isUnnamedModuleName(moduleInfoModuleName)) {
-                reqBuilder.moduleName(moduleInfoModuleName);
-            }
-            ApplicationCreatorRequest req = reqBuilder.build();
-            ApplicationCreatorResponse res = creator.createApplication(req);
-            if (res.success()) {
-                getLog().debug("processed service type names: " + res.serviceTypeNames());
-                if (getLog().isDebugEnabled()) {
-                    getLog().debug("response: " + res);
-                }
-            } else {
-                getLog().error("failed to process", res.error().orElse(null));
-            }
-        } catch (Exception e) {
-            throw new ToolsException("An error occurred creating the Application in " + getClass().getName(), e);
-        } finally {
-            Thread.currentThread().setContextClassLoader(prev);
-        }
-    }
-
-    List<TypeName> toTypeNames(List<String> permittedProviderQualifierTypeNames) {
-        if (permittedProviderQualifierTypeNames == null || permittedProviderQualifierTypeNames.isEmpty()) {
-            return List.of();
-        }
-
-        return permittedProviderQualifierTypeNames.stream()
-                .map(TypeName::create)
-                .collect(Collectors.toList());
-    }
-
-    Set<TypeName> toNames(List<ServiceProvider<?>> services) {
-        Map<TypeName, ServiceProvider<?>> result = new LinkedHashMap<>();
-        services.forEach(sp -> {
-            sp = ServiceBinderDefault.toRootProvider(sp);
-            TypeName serviceType = sp.serviceInfo().serviceTypeName();
-            ServiceProvider<?> prev = result.put(serviceType, sp);
-            if (prev != null) {
-                if (!(prev instanceof ServiceProviderProvider)) {
-                    throw new ToolsException("There are two registrations for the same service type: " + prev + " and " + sp);
-                }
-                getLog().debug("There are two registrations for the same service type: " + prev + " and " + sp);
-            }
-        });
-        return new TreeSet<>(result.keySet());
-    }
-
     void warn(String msg) {
-        Optional<CallingContext.Builder> optBuilder = CallingContextFactory.createBuilder(false);
-        CallingContext callCtx = optBuilder.map(builder -> builder
-                .update(it -> Optional.ofNullable(getThisModuleName()).ifPresent(it::moduleName)))
-                .map(CallingContext.Builder::build)
-                .orElse(null);
-        String desc = "no modules to process";
-        String ctxMsg = (callCtx == null) ? toErrorMessage(desc) : toErrorMessage(callCtx, desc);
-        ToolsException e = new ToolsException(ctxMsg);
-        if (InjectionServices.isDebugEnabled()) {
-            getLog().warn(e.getMessage(), e);
-        } else {
-            getLog().warn(e.getMessage());
-        }
-        if (isFailOnWarning()) {
-            throw e;
+        getLog().warn(msg);
+
+        if (failOnWarning()) {
+            throw new CodegenException(msg);
         }
     }
 
+    protected abstract CodegenScope scope();
+
+    /**
+     * Creates a new classloader.
+     *
+     * @param classPath the classpath to use
+     * @param parent    the parent loader
+     * @return the loader
+     */
+    protected URLClassLoader createClassLoader(Collection<Path> classPath,
+                                               ClassLoader parent) {
+        List<URL> urls = new ArrayList<>(classPath.size());
+        for (Path dependency : classPath) {
+            try {
+                urls.add(dependency.toUri().toURL());
+            } catch (MalformedURLException e) {
+                throw new CodegenException("Unable to build the classpath. Dependency cannot be converted to URL: "
+                                                   + dependency,
+                                           e);
+            }
+        }
+
+        if (parent == null) {
+            parent = Thread.currentThread().getContextClassLoader();
+        }
+        return new URLClassLoader(urls.toArray(new URL[0]), parent);
+    }
+
+    protected String getSource() {
+        return source;
+    }
+
+    protected String getTarget() {
+        return target;
+    }
+
+    protected LinkedHashSet<Path> getSourceClasspathElements() {
+        MavenProject project = mavenProject();
+        LinkedHashSet<Path> result = new LinkedHashSet<>(project.getCompileArtifacts().size());
+        result.add(Paths.get(project.getBuild().getOutputDirectory()));
+        for (Object a : project.getCompileArtifacts()) {
+            result.add(((Artifact) a).getFile().toPath());
+        }
+        return result;
+    }
+
+    /**
+     * Provides a convenient way to handle test scope. Returns the classpath for source files (or test sources) only.
+     */
+    protected LinkedHashSet<Path> getClasspathElements() {
+        return getSourceClasspathElements();
+    }
+
+    // to dot separated path
+    private static String toDotSeparated(Path relativePath) {
+        return StreamSupport.stream(relativePath.spliterator(), false)
+                .map(Path::toString)
+                .collect(Collectors.joining("."));
+    }
+
+    private String packageName(CodegenOptions codegenOptions,
+                               Optional<ModuleInfo> myModuleInfo,
+                               Optional<ModuleInfo> srcModuleInfo) {
+        return CodegenOptions.CODEGEN_PACKAGE
+                .findValue(codegenOptions)
+                .or(this::packageFromModuleComponent)
+                .or(() -> myModuleInfo.flatMap(this::exportedPackage))
+                .or(() -> srcModuleInfo.flatMap(this::exportedPackage))
+                .or(this::firstUsedPackage)
+                .orElseThrow(() -> new CodegenException("Unable to determine package for application class."));
+    }
+
+    private Optional<String> firstUsedPackage() {
+        // we expect at least some source code. If none found, try test source, if none found, must be configured
+        return firstUsedPackage(nonTestSourceRootPaths())
+                .or(() -> firstUsedPackage(testSourceRootPaths()));
+    }
+
+    private Optional<String> firstUsedPackage(List<Path> sourceRoots) {
+        Set<String> found = new TreeSet<>(Comparator.comparing(String::length));
+
+        for (Path sourceRoot : sourceRoots) {
+            try {
+                try (Stream<Path> pathStream = Files.walk(sourceRoot)) {
+                    pathStream
+                            .filter(it -> it.getFileName().toString().endsWith(".java"))
+                            .map(it -> packageName(sourceRoot, it))
+                            .forEach(found::add);
+                }
+            } catch (IOException e) {
+                getLog().debug("Failed to walk path tree for source root: " + sourceRoot.toAbsolutePath(),
+                               e);
+            }
+        }
+        return found.stream()
+                .findFirst();
+    }
+
+    private Optional<String> exportedPackage(ModuleInfo moduleInfo) {
+        Set<String> unqualifiedExports = new TreeSet<>(Comparator.comparing(String::length));
+        moduleInfo.exports()
+                .forEach((export, to) -> {
+                    if (to.isEmpty()) {
+                        unqualifiedExports.add(export);
+                    }
+                });
+        return unqualifiedExports.stream().findFirst();
+    }
+
+    private String moduleName(ClassLoader loader,
+                              CodegenOptions codegenOptions,
+                              Optional<ModuleInfo> myModuleInfo,
+                              String packageName,
+                              CodegenScope scope) {
+        return CodegenOptions.CODEGEN_MODULE
+                .findValue(codegenOptions)
+                .or(() -> myModuleInfo.map(ModuleInfo::name))
+                .or(() -> this.moduleFromModuleComponent(loader))
+                .orElseGet(() -> "unnamed/"
+                        + packageName
+                        + (scope.isProduction() ? "" : "/" + scope.name()));
+    }
+
+    private Optional<String> packageFromModuleComponent() {
+        try (Stream<Path> stream = Files.walk(outputDirectory())) {
+            return stream
+                    .filter(it -> it.endsWith(MODULE_COMPONENT_CLASS_FILE_NAME))
+                    .map(it -> packageName(outputDirectory(), it))
+                    .findFirst();
+        } catch (IOException e) {
+            // ignored, as we do not want to fail just for this reason
+            getLog().debug("Failed to find module component in build directory", e);
+            return Optional.empty();
+        }
+    }
+
+    private String packageName(Path rootPath, Path filePath) {
+        Path parent = filePath.getParent();
+        if (parent == null) {
+            return "";
+        }
+        return toDotSeparated(rootPath.relativize(parent));
+    }
+
+    private Optional<String> moduleFromModuleComponent(ClassLoader loader) {
+        try (Stream<Path> stream = Files.walk(outputDirectory())) {
+            return stream
+                    .filter(it -> it.endsWith(InjectionCodegenContext.MODULE_NAME + ".class"))
+                    .map(it -> {
+                        // instantiate the class, call name() on it
+                        String fqn = toDotSeparated(outputDirectory().relativize(it));
+                        fqn = fqn.substring(0, fqn.length() - 6); // remove .class suffix
+                        try {
+                            Class<?> moduleComponentClass = loader.loadClass(fqn);
+                            Object moduleComponent = moduleComponentClass.getConstructor()
+                                    .newInstance();
+                            // there should be a method `String name()`
+                            return (String) moduleComponent.getClass().getMethod("name")
+                                    .invoke(moduleComponent);
+                        } catch (ReflectiveOperationException e) {
+                            throw new CodegenException("Failed to instantiate " + fqn + ", needed to get module name", e);
+                        }
+                    })
+                    .findFirst();
+        } catch (IOException e) {
+            // ignored, as we do not want to fail just for this reason
+            getLog().debug("Failed to find module component in build directory", e);
+            return Optional.empty();
+        }
+    }
+
+    private Set<String> toOptions() {
+
+        Set<String> options = new HashSet<>(getCompilerArgs());
+
+        moduleNameFromMavenConfig().ifPresent(it -> options.add("-A" + CodegenOptions.TAG_CODEGEN_MODULE + "=" + it));
+        packageNameFromMavenConfig().ifPresent(it -> options.add("-A" + CodegenOptions.TAG_CODEGEN_PACKAGE + "=" + it));
+
+        options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_TYPE.name() + "=" + permittedProviderType);
+        if (!permittedProviderTypeNames.isEmpty()) {
+            options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_TYPES.name()
+                                + "=" + String.join(",", permittedProviderTypeNames));
+        }
+        if (!permittedProviderQualifierTypeNames.isEmpty()) {
+            options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPES.name()
+                                + "=" + String.join(",", permittedProviderQualifierTypeNames));
+        }
+
+        return options;
+    }
 }

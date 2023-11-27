@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package io.helidon.examples.inject.basics;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.RunLevel;
-import io.helidon.inject.api.ServiceInfoCriteria;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Lookup;
 
 /**
  * Basics example.
@@ -35,27 +35,33 @@ public class Main {
      * @param args arguments
      */
     public static void main(String... args) {
-        Services services = InjectionServices.realizedServices();
+        // get the global service registry
+        Services services = InjectionServices.create().services();
 
         // 0. Demonstrates programmatic lookup from the Services registry.
-        // 1. when a service is being managed by a DI provider (like Helidon Injection) it should be "looked up" or injected instead of new'ed
-        // 2. Notice we get a ServiceProvider - service providers allow for lazy initialization
-        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
-                .runLevel(RunLevel.STARTUP)
+        // 1. when a service is being managed by a DI provider (like Helidon Injection) it should be "looked up" or injected
+        // instead of new'ed
+        Lookup lookup = Lookup.builder()
+                .runLevel(Injection.RunLevel.STARTUP)
                 .build();
 
-        List<ServiceProvider<?>> startupServiceProviders = services.lookupAll(criteria);
-        System.out.println("Startup service providers (ranked according to weight, pre-activated): " + startupServiceProviders);
+        System.out.println("--------------------------------");
+        System.out.println("- Initialize services          -");
+        System.out.println("--------------------------------");
+        // direct lookup (not using Supplier) will immediately initialize all services
+        List<Object> startupServices = services.all(lookup);
 
-        ServiceProvider<?> highestWeightedServiceProvider = services.lookupFirst(criteria);
+        System.out.println("--------------------------------");
+        System.out.println("- Programmatic lookup          -");
+        System.out.println("--------------------------------");
+        System.out.println("All services in RunLevel.STARTUP (ranked according to weight): ");
+        System.out.println(startupServices.stream()
+                                   .map(Object::getClass)
+                                   .map(Class::getName)
+                                   .collect(Collectors.joining("\n  ", "  ", "")));
+
+        Object highestWeightedServiceProvider = services.get(lookup);
         System.out.println("Highest weighted service provider: " + highestWeightedServiceProvider);
-
-        // trigger lazy activations for the highest weighted service provider
-        System.out.println("Highest weighted service provider (after activation): " + highestWeightedServiceProvider.get());
-
-        // trigger all activations for the (remaining unactivated) startup service providers
-        startupServiceProviders.forEach(ServiceProvider::get);
-        System.out.println("All service providers (after all activations): " + startupServiceProviders);
     }
 
 }

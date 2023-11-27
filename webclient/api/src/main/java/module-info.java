@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
-
 /**
  * Helidon WebClient API.
  */
@@ -32,9 +31,8 @@ module io.helidon.webclient.api {
 
     requires static io.helidon.common.features.api; // @Feature
     requires static io.helidon.config.metadata; // @ConfiguredOption etc
-    requires static io.helidon.inject.configdriven.api;
-    requires static io.helidon.inject.configdriven.runtime;
-    requires static jakarta.inject; // Injection support
+
+    requires io.helidon.inject.service; // we provide a service from this module
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.configurable;
@@ -55,5 +53,7 @@ module io.helidon.webclient.api {
     uses io.helidon.webclient.spi.WebClientServiceProvider;
     uses io.helidon.webclient.spi.ProtocolConfigProvider;
     uses io.helidon.webclient.spi.HttpClientSpiProvider;
-	
+
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.webclient.api.Injection__Module;
 }

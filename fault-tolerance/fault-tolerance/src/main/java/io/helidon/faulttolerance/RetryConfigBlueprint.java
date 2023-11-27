@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,16 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.inject.service.ConfigDriven;
 
 /**
  * {@link Retry} configuration bean.
  */
-// @ConfigBean(value = "fault-tolerance.retries", repeatable = true, wantDefaultConfigBean = true)
+@ConfigDriven.ConfigBean
+@ConfigDriven.Repeatable
+@ConfigDriven.WantDefault
 @Prototype.Blueprint(decorator = RetryConfigBlueprint.BuilderDecorator.class)
-@Configured(root = true, prefix = "fault-tolerance.retries")
+@Prototype.Configured("fault-tolerance.retries")
 interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     /**
      * Default calls to make.
@@ -60,7 +61,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return number of desired calls, must be 1 (means no retries) or higher.
      */
-    @ConfiguredOption("3")
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_CALLS)
     int calls();
 
     /**
@@ -69,7 +71,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return delay between retries (combines with retry policy)
      */
-    @ConfiguredOption("PT0.2S")
+    @Option.Configured
+    @Option.Default("PT0.2S")
     Duration delay();
 
     /**
@@ -80,7 +83,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return delay factor for delaying retry policy
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultDouble(-1L)
     double delayFactor();
 
     /**
@@ -90,7 +94,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return jitter
      */
-    @ConfiguredOption("PT-1S")
+    @Option.Configured
+    @Option.Default("PT-1S")
     Duration jitter();
 
     /**
@@ -98,7 +103,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return overall timeout
      */
-    @ConfiguredOption("PT1S")
+    @Option.Configured
+    @Option.Default("PT1S")
     Duration overallTimeout();
 
     /**

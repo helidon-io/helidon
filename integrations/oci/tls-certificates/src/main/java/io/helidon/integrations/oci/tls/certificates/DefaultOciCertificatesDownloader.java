@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.pki.PemReader;
+import io.helidon.inject.service.Injection;
 import io.helidon.integrations.oci.sdk.runtime.OciExtension;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 
@@ -35,14 +36,13 @@ import com.oracle.bmc.certificates.requests.GetCertificateAuthorityBundleRequest
 import com.oracle.bmc.certificates.requests.GetCertificateBundleRequest;
 import com.oracle.bmc.certificates.responses.GetCertificateAuthorityBundleResponse;
 import com.oracle.bmc.certificates.responses.GetCertificateBundleResponse;
-import jakarta.inject.Singleton;
 
 import static io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader.create;
 
 /**
  * Implementation of the {@link OciCertificatesDownloader} that will use OCI's Certificates Service to download certs.
  */
-@Singleton
+@Injection.Singleton
 class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
 
     @Override

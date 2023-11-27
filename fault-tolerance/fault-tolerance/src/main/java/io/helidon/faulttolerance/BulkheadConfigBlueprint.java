@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,14 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.configdriven.api.ConfigBean;
+import io.helidon.inject.service.ConfigDriven;
 
 /**
  * {@link Bulkhead} configuration bean.
  */
-@ConfigBean(repeatable = true)
-@Configured(root = true, prefix = "fault-tolerance.bulkheads")
+@ConfigDriven.ConfigBean
+@ConfigDriven.Repeatable
+@Prototype.Configured("fault-tolerance.bulkheads")
 @Prototype.Blueprint(decorator = BulkheadConfigBlueprint.BuilderDecorator.class)
 interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
     /**
@@ -41,6 +40,7 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
 
     /**
      * Default queue lengths.
+     *
      * @see #queueLength()
      */
     int DEFAULT_QUEUE_LENGTH = 10;
@@ -51,7 +51,8 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      *
      * @return maximal number of parallel calls, defaults is {@value DEFAULT_LIMIT}
      */
-    @ConfiguredOption("10")
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_LIMIT)
     int limit();
 
     /**
@@ -61,7 +62,8 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      *
      * @return length of the queue
      */
-    @ConfiguredOption("10")
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_QUEUE_LENGTH)
     int queueLength();
 
     /**

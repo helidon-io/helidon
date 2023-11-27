@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,10 @@
 
 package io.helidon.inject.tests.inject;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-import io.helidon.inject.tools.ToolsException;
+import io.helidon.inject.InjectionException;
 
 /**
  * Testing utilities.
@@ -42,29 +39,15 @@ public final class TestUtils {
     public static String loadStringFromResource(String resourceNamePath) {
         try {
             try (InputStream in = TestUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
+                if (in == null) {
+                    throw new InjectionException("Could not find resource: " + resourceNamePath);
+                }
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
             }
+        } catch (InjectionException e) {
+            throw e;
         } catch (Exception e) {
-            throw new ToolsException("Failed to load: " + resourceNamePath, e);
+            throw new InjectionException("Failed to load: " + resourceNamePath, e);
         }
     }
-
-    /**
-     * Loads a String from a file, wrapping any exception encountered to a {@link ToolsException}.
-     *
-     * @param fileName the file name to load
-     * @return the contents of the file
-     * @throws ToolsException if there were any exceptions encountered
-     */
-     // same as from CommonUtils.
-     public static String loadStringFromFile(String fileName) {
-        try {
-            Path filePath = Path.of(fileName);
-            String content = Files.readString(filePath);
-            return content.trim();
-        } catch (IOException e) {
-            throw new ToolsException("Unable to load from file: " + fileName, e);
-        }
-    }
-
 }

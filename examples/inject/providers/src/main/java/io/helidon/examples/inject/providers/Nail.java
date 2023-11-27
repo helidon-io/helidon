@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,10 @@
 
 package io.helidon.examples.inject.providers;
 
-import io.helidon.inject.api.Contract;
-import io.helidon.inject.api.Services;
-
 /**
- * Normally, one would need to place {@link Contract} on interfaces. Here, however, we used
- * {@code -Ainject.autoAddNonContractInterfaces=true} in the {@code pom.xml} thereby making all interfaces into contracts that
- * can be found via {@link Services#lookup}.
+ * Normally, one would need to place {@link io.helidon.inject.service.Injection.Contract} on interfaces. Here, however, we used
+ * {@code -Ahelidon.inject.autoAddNonContractInterfaces=true} in the {@code pom.xml} thereby making all interfaces into contracts that
+ * can be found via {@link io.helidon.inject.Services#first}.
  */
 //@Contract
 public interface Nail {

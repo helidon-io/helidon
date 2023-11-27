@@ -44,12 +44,25 @@
     </properties>
 
     <modules>
+        <module>service-lifecycle</module>
+        <module>stacking</module>
+        <module>helidon-inject</module>
+        <module>jakarta-inject</module>
+        <module>javax-inject</module>
         <module>resources-plain</module>
         <module>resources-inject</module>
         <module>tck-jsr330</module>
         <module>interception</module>
         <module>api</module>
         <module>runtime</module>
+        <module>codegen</module>
+        <module>scopes</module>
+        <module>lookup</module>
+        <module>qualified-providers</module>
+        <!-- and config bean tests -->
+        <module>config-beans</module>
+        <module>config-beans-driven</module>
+        <module>config-beans-driven-application</module>
     </modules>
 
 </project>

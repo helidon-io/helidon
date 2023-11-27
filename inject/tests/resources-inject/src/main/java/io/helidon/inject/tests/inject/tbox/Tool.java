@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,18 @@
 
 package io.helidon.inject.tests.inject.tbox;
 
-import io.helidon.inject.api.Contract;
-import io.helidon.inject.api.OptionallyNamed;
+import io.helidon.inject.service.Injection;
 
 /**
  * Testing.
  */
-@Contract
-public interface Tool extends OptionallyNamed {
+@Injection.Contract
+public interface Tool {
 
     /**
      * Testing.
      *
      * @return for testing
      */
-    default String name() {
-        return named().orElseThrow();
-    }
-
+    String name();
 }

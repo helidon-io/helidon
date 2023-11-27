@@ -32,7 +32,6 @@
     <packaging>maven-plugin</packaging>
 
     <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
         <version.plexus.classworlds>2.7.0</version.plexus.classworlds>
         <version.plexus.utils>3.3.0</version.plexus.utils>
         <version.plugin.api>3.9.3</version.plugin.api>
@@ -81,33 +80,28 @@
         <!-- normal dependencies -->
         <dependency>
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-tools</artifactId>
-        </dependency>
-        <!-- for ConfigBeanRegistry (reset) -->
-        <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
+            <artifactId>helidon-inject-codegen</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-api</artifactId>
+            <!--
+            we cannot use helidon-inject as the SPI is required on classpath of application,
+            and this introduces conflicts; helidon-inject-service is small and does not introduce SPI
+            that is used from within it, so we can share it
+            -->
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject-service</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>compile</scope> <!-- for Provider -->
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-scan</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.jknack</groupId>
-            <artifactId>handlebars</artifactId>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-compiler</artifactId>
         </dependency>
         <dependency>
             <groupId>io.github.classgraph</groupId>

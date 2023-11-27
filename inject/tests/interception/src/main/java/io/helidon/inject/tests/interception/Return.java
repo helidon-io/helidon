@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,21 @@ package io.helidon.inject.tests.interception;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.helidon.inject.api.InterceptedTrigger;
+import io.helidon.inject.service.Interception;
 
 /**
  * Return an explicit value (do not call target).
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@InterceptedTrigger
+@Interception.Trigger
 @Target(ElementType.METHOD)
+@Inherited
 @interface Return {
 
 }

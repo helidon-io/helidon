@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,13 @@
 
 package io.helidon.inject.tests.inject.tbox.impl;
 
-import java.util.Optional;
-
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
 
 /**
  * When a particular blade name is not "asked for" explicitly then we give out a dull blade.
  */
+@Injection.Named("dull blade")
 public class DullBlade extends AbstractBlade {
-
-    @Override
-    public Optional<String> named() {
-        return Optional.of("dull blade");
-    }
 
 }

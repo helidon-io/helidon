@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,17 @@
 
 package io.helidon.inject.tests.inject.tbox.impl;
 
-import java.util.Optional;
-
-import io.helidon.inject.api.OptionallyNamed;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.tbox.Awl;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-
-@Singleton
-public class AwlImpl implements Awl, OptionallyNamed {
-
-    @Inject
+@Injection.Singleton
+public class AwlImpl implements Awl {
+    @Injection.Inject
     AwlImpl() {
     }
 
     @Override
-    public Optional<String> named() {
-        return Optional.of("awl");
+    public String name() {
+        return "awl";
     }
-
 }

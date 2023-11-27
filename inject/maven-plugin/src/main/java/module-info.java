@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +21,19 @@ module io.helidon.inject.maven.plugin {
 
     requires io.helidon.builder.api;
     requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.inject.configdriven.runtime;
+    requires io.helidon.common.config;
+    requires io.helidon.codegen;
+    requires io.helidon.codegen.scan;
+    requires io.helidon.codegen.compiler;
+    requires io.helidon.inject.codegen;
+    requires io.helidon.inject.service;
+
     requires maven.artifact;
     requires maven.model;
     requires maven.plugin.annotations;
     requires maven.plugin.api;
     requires maven.project;
-
-    requires transitive io.helidon.inject.tools;
+    requires io.github.classgraph;
 
     exports io.helidon.inject.maven.plugin;
-
-    uses io.helidon.inject.tools.spi.ActivatorCreator;
-    uses io.helidon.inject.tools.spi.ApplicationCreator;
-    uses io.helidon.inject.tools.spi.ExternalModuleCreator;
-
 }

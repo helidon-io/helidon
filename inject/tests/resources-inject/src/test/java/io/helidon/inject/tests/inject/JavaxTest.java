@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,57 +16,62 @@
 
 package io.helidon.inject.tests.inject;
 
-import io.helidon.config.Config;
-import io.helidon.inject.api.Qualifier;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.tools.Options;
-import io.helidon.inject.tools.TypeNames;
+import java.util.List;
+
+import io.helidon.common.types.TypeName;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import jakarta.enterprise.inject.Default;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.basicTestableConfig;
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 /**
  * Javax to Jakarta related tests.
  */
 class JavaxTest {
-    private static final Config CONFIG = basicTestableConfig();
-
+    private InjectionServices injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        this.services = testableServices(CONFIG).services();
+        this.injectionServices = InjectionServices.create();
+        this.services = injectionServices.services();
     }
 
     @AfterEach
     void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     /**
-     * Uses {@link Options#TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE}.
+     * Uses {@code inject.mapApplicationToSingletonScope}.
      * This also verifies that the qualifiers were mapped over properly from javax as well.
      */
     @Test
     void applicationScopeToSingletonScopeTranslation() {
-        ServiceProvider<AnApplicationScopedService> sp = services.lookupFirst(AnApplicationScopedService.class);
-        assertThat(sp.toString(),
-                   equalTo("AnApplicationScopedService:INIT"));
-        assertThat(sp.serviceInfo().qualifiers(),
+        List<ServiceInfo> apScopedList = services.lookupServices(Lookup.create(AnApplicationScopedService.class));
+
+        assertThat(apScopedList, hasSize(1));
+
+        ServiceInfo apScoped = apScopedList.getFirst();
+        assertThat(apScoped.serviceType(),
+                   equalTo(TypeName.create(AnApplicationScopedService.class)));
+        assertThat(apScoped.qualifiers(),
                    contains(Qualifier.create(Default.class)));
-        assertThat(sp.serviceInfo().scopeTypeNames(),
-                   containsInAnyOrder(TypeNames.JAKARTA_SINGLETON_TYPE, TypeNames.JAKARTA_APPLICATION_SCOPED_TYPE));
+        assertThat(apScoped.scope(), is(Injection.Singleton.TYPE_NAME));
     }
 
 }

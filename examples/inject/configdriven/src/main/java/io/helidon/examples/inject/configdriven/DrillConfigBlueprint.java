@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package io.helidon.examples.inject.configdriven;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.configdriven.api.ConfigBean;
+import io.helidon.inject.service.ConfigDriven;
 
-@ConfigBean(repeatable = true)
+@ConfigDriven.ConfigBean
+@ConfigDriven.Repeatable
 @Prototype.Blueprint
-@Configured(root = true, prefix = "drill")
+@Prototype.Configured("drill")
 interface DrillConfigBlueprint {
-    @ConfiguredOption
+    @Option.Configured
     String name();
 
 }

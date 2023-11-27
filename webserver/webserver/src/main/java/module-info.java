@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ module io.helidon.webserver {
     requires java.logging; // only used to keep logging active until shutdown hook finishes
     requires java.management;
 
-    requires static io.helidon.config.metadata;
-
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.security;
@@ -45,6 +43,8 @@ module io.helidon.webserver {
     requires transitive io.helidon.config;
     requires transitive io.helidon.http.encoding;
     requires transitive io.helidon.http.media;
+
+    requires io.helidon.inject.service;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use
@@ -67,5 +67,8 @@ module io.helidon.webserver {
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http1.Http1ProtocolConfigProvider;
     provides io.helidon.webserver.spi.ServerConnectionSelectorProvider with io.helidon.webserver.http1.Http1ConnectionProvider;
+
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.webserver.Injection__Module;
 
 }

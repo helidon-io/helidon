@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,47 +16,41 @@
 
 package io.helidon.inject.tests.inject.provider;
 
-import io.helidon.config.Config;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import java.util.function.Supplier;
+
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 class PerRequestProviderTest {
 
-    Config config = InjectionTestingSupport.basicTestableConfig();
-    InjectionServices injectionServices;
-    Services services;
+    private InjectionServices injectionServices;
+    private Services services;
 
     @BeforeEach
     void setUp() {
-        setUp(config);
-    }
-
-    void setUp(Config config) {
-        this.injectionServices = testableServices(config);
+        this.injectionServices = InjectionServices.create();
         this.services = injectionServices.services();
     }
 
     @AfterEach
     void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
-    void myConcreteClassContractTest() {
-        ServiceProvider<MyConcreteClassContract> sp = services.lookupFirst(MyConcreteClassContract.class);
-        assertThat(sp.description(),
-                   equalTo("MyServices$MyConcreteClassContractPerRequestIPProvider:INIT"));
+    void myConcreteClassContractWithIpProviderTest() {
+        MyServices.MyConcreteClassContractPerRequestProvider.COUNTER.set(0);
+        // we cannot get an injection point provider here, as we use regular lookup
+        Supplier<MyConcreteClassContract> sp = services.supply(MyConcreteClassContract.class);
+
         MyConcreteClassContract instance0 = sp.get();
         assertThat(instance0.toString(),
                    equalTo("MyConcreteClassContractPerRequestIPProvider:instance_0, "

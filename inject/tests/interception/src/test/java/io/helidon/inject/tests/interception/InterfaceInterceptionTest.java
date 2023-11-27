@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.inject.tests.interception;
 
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.InvocationException;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.InvocationException;
+import io.helidon.inject.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,9 +46,9 @@ class InterfaceInterceptionTest {
 
     @BeforeAll
     static void init() {
-        injectionServices = InjectionServices.injectionServices().orElseThrow();
+        injectionServices = InjectionServices.create();
         services = injectionServices.services();
-        service = services.lookup(OtherContract.class).get();
+        service = services.get(OtherContract.class);
 
         assertAll(
                 () -> assertThat("Interceptors should not be called for constructor - returning",
