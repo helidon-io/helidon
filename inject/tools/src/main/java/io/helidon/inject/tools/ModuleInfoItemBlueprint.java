@@ -24,7 +24,6 @@ import java.util.TreeSet;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * These are the individual items that compose the {@link ModuleInfoDescriptor} builder.
@@ -55,7 +54,7 @@ interface ModuleInfoItemBlueprint {
      *
      * @return true if this item is using requires
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean requires();
 
     /**
@@ -63,7 +62,7 @@ interface ModuleInfoItemBlueprint {
      *
      * @return true if this item is using requires
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean uses();
 
     /**
@@ -71,7 +70,7 @@ interface ModuleInfoItemBlueprint {
      *
      * @return true if this item is using transitive
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean isTransitiveUsed();
 
     /**
@@ -80,7 +79,7 @@ interface ModuleInfoItemBlueprint {
      * @return true if this item is using static
      */
     // see https://github.com/helidon-io/helidon/issues/5440
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean isStaticUsed();
 
     /**
@@ -88,7 +87,7 @@ interface ModuleInfoItemBlueprint {
      *
      * @return true if this item is using exports
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean exports();
 
     /**
@@ -96,7 +95,7 @@ interface ModuleInfoItemBlueprint {
      *
      * @return true if this item is using opens
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean opens();
 
     /**
@@ -104,7 +103,7 @@ interface ModuleInfoItemBlueprint {
      *
      * @return true if this item is using provides
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean provides();
 
     /**

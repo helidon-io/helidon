@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.Qualifier;
 
@@ -187,7 +187,7 @@ interface ActivatorCreatorCodeGenBlueprint {
      *
      * @return production or test scope
      */
-    @ConfiguredOption(DEFAULT_CLASS_PREFIX_NAME)
+    @Option.Default(DEFAULT_CLASS_PREFIX_NAME)
     String classPrefixName();
 
     /**

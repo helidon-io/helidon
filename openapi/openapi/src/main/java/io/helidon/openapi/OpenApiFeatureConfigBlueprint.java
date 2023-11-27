@@ -22,8 +22,6 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.openapi.spi.OpenApiManagerProvider;
 import io.helidon.openapi.spi.OpenApiServiceProvider;
@@ -33,7 +31,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * {@link OpenApiFeature} prototype.
  */
 @Prototype.Blueprint
-@Configured(root = true, prefix = "openapi")
+@Prototype.Configured("openapi")
 @Prototype.Provides(ServerFeatureProvider.class)
 interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature> {
     /**
@@ -51,7 +49,8 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      *
      * @return {@code true} if enabled, {@code false} otherwise
      */
-    @ConfiguredOption(key = "enabled", value = "true")
+    @Option.Configured("enabled")
+    @Option.DefaultBoolean(true)
     boolean isEnabled();
 
     /**
@@ -59,7 +58,8 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      *
      * @return webContext to use
      */
-    @ConfiguredOption("/openapi")
+    @Option.Configured
+    @Option.Default("/openapi")
     String webContext();
 
     /**
@@ -67,7 +67,7 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      *
      * @return location of the static OpenAPI document file
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> staticFile();
 
     /**
@@ -75,7 +75,7 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      *
      * @return CORS config
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<CrossOriginConfig> cors();
 
     /**
@@ -83,7 +83,8 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      *
      * @return the OpenAPI services
      */
-    @ConfiguredOption(provider = true, providerType = OpenApiServiceProvider.class)
+    @Option.Configured
+    @Option.Provider(OpenApiServiceProvider.class)
     @Option.Singular
     List<OpenApiService> services();
 
@@ -92,7 +93,8 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      *
      * @return the OpenAPI manager
      */
-    @ConfiguredOption(provider = true, providerType = OpenApiManagerProvider.class, providerDiscoverServices = false)
+    @Option.Configured
+    @Option.Provider(value = OpenApiManagerProvider.class, discoverServices = false)
     Optional<OpenApiManager<?>> manager();
 
     /**
@@ -101,7 +103,7 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      * @return whether to permit access to metrics endpoint to anybody, defaults to {@code true}
      * @see #roles()
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.DefaultBoolean(true)
     boolean permitAll();
 
@@ -110,7 +112,7 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      *
      * @return list of hints
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Default("openapi")
     List<String> roles();
 

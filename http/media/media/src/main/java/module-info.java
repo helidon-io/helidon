@@ -31,9 +31,8 @@ module io.helidon.http.media {
     requires io.helidon.common.buffers;
     requires io.helidon.common.uri;
 
-    requires static io.helidon.builder.api;
+    requires io.helidon.builder.api;
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.media.type;
     requires transitive io.helidon.common;

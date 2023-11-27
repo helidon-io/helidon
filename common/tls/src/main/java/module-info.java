@@ -18,7 +18,6 @@
  * TLS configuration for client and server.
  */
 module io.helidon.common.tls {
-    requires static io.helidon.config.metadata;
     requires static io.helidon.inject.api;
 
     requires io.helidon.builder.api;

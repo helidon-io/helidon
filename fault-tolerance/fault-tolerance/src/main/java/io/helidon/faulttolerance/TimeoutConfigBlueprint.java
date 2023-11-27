@@ -20,15 +20,14 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * {@link Timeout} configuration bean.
  */
 @Prototype.Blueprint(decorator = TimeoutConfigBlueprint.BuilderDecorator.class)
-@Configured(root = true, prefix = "fault-tolerance.timeouts")
+@Prototype.Configured("fault-tolerance.timeouts")
 interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
     /**
      * Name for debugging, error reporting, monitoring.
@@ -43,7 +42,8 @@ interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
      *
      * @return timeout
      */
-    @ConfiguredOption("PT10S")
+    @Option.Configured
+    @Option.Default("PT10S")
     Duration timeout();
 
     /**
@@ -52,7 +52,8 @@ interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
      *
      * @return  whether to execute on current thread ({@code true}), or in an executor service ({@code false}})
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean currentThread();
 
     /**

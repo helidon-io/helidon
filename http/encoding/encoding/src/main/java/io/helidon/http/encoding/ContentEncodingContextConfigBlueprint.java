@@ -20,12 +20,10 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.encoding.spi.ContentEncodingProvider;
 
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface ContentEncodingContextConfigBlueprint extends Prototype.Factory<ContentEncodingContext> {
     /**
      * List of content encodings that should be used.
@@ -34,7 +32,7 @@ interface ContentEncodingContextConfigBlueprint extends Prototype.Factory<Conten
      * @return list of content encodings to be used (such as {@code gzip,deflate})
      */
     @Option.Singular
-    @ConfiguredOption(provider = true,
-                      providerType = ContentEncodingProvider.class)
+    @Option.Configured
+    @Option.Provider(ContentEncodingProvider.class)
     List<ContentEncoding> contentEncodings();
 }

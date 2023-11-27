@@ -287,6 +287,7 @@ public interface MapperManager {
         /**
          * Whether to use built-in mappers.
          *
+         * @param useBuiltIn whether to use built in mappers (such as String to Integer)
          * @return updated builder
          */
         public Builder useBuiltIn(boolean useBuiltIn) {

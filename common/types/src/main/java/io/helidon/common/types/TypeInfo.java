@@ -76,6 +76,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         private AccessModifier accessModifier;
         private ElementKind kind;
         private Object originatingElement;
+        private String description;
         private String module;
         private String typeKind;
         private TypeInfo superTypeInfo;
@@ -95,6 +96,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER from(TypeInfo prototype) {
             typeName(prototype.typeName());
+            description(prototype.description());
             typeKind(prototype.typeKind());
             kind(prototype.kind());
             addElementInfo(prototype.elementInfo());
@@ -120,6 +122,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER from(TypeInfo.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
+            builder.description().ifPresent(this::description);
             builder.typeKind().ifPresent(this::typeKind);
             builder.kind().ifPresent(this::kind);
             addElementInfo(builder.elementInfo());
@@ -177,6 +180,30 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER typeName(Supplier<? extends TypeName> supplier) {
             Objects.requireNonNull(supplier);
             this.typeName(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear existing value of this property.
+         *
+         * @return updated builder instance
+         * @see #description()
+         */
+        public BUILDER clearDescription() {
+            this.description = null;
+            return self();
+        }
+
+        /**
+         * Description, such as javadoc, if available.
+         *
+         * @param description description of this element
+         * @return updated builder instance
+         * @see #description()
+         */
+        public BUILDER description(String description) {
+            Objects.requireNonNull(description);
+            this.description = description;
             return self();
         }
 
@@ -772,6 +799,15 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Description, such as javadoc, if available.
+         *
+         * @return the description
+         */
+        public Optional<String> description() {
+            return Optional.ofNullable(description);
+        }
+
+        /**
          * The type element kind.
          * <p>
          * Such as
@@ -970,6 +1006,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Description, such as javadoc, if available.
+         *
+         * @param description description of this element
+         * @return updated builder instance
+         * @see #description()
+         */
+        BUILDER description(Optional<String> description) {
+            Objects.requireNonNull(description);
+            this.description = description.map(java.lang.String.class::cast).orElse(this.description);
+            return self();
+        }
+
+        /**
          * The parent/super class for this type info.
          *
          * @param superTypeInfo the super type
@@ -1025,6 +1074,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             private final Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations;
             private final Optional<TypeInfo> superTypeInfo;
             private final Optional<Object> originatingElement;
+            private final Optional<String> description;
             private final Optional<String> module;
             private final Set<Modifier> elementModifiers;
             private final Set<String> modifiers;
@@ -1038,6 +1088,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
              */
             protected TypeInfoImpl(TypeInfo.BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
+                this.description = builder.description();
                 this.typeKind = builder.typeKind().get();
                 this.kind = builder.kind().get();
                 this.elementInfo = List.copyOf(builder.elementInfo());
@@ -1058,6 +1109,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             @Override
             public TypeName typeName() {
                 return typeName;
+            }
+
+            @Override
+            public Optional<String> description() {
+                return description;
             }
 
             @Override

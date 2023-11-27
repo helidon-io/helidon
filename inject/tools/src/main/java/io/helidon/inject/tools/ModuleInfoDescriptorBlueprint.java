@@ -29,7 +29,6 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Provides the basic formation for {@code module-info.java} creation and manipulation.
@@ -60,7 +59,7 @@ interface ModuleInfoDescriptorBlueprint {
      *
      * @return the module name
      */
-    @ConfiguredOption(DEFAULT_MODULE_NAME)
+    @Option.Default(DEFAULT_MODULE_NAME)
     String name();
 
     /**
@@ -68,7 +67,7 @@ interface ModuleInfoDescriptorBlueprint {
      *
      * @return the template name
      */
-    @ConfiguredOption(TemplateHelper.DEFAULT_TEMPLATE_NAME)
+    @Option.Default(TemplateHelper.DEFAULT_TEMPLATE_NAME)
     String templateName();
 
     /**
@@ -90,7 +89,7 @@ interface ModuleInfoDescriptorBlueprint {
      *
      * @return the ordering
      */
-    @ConfiguredOption("NATURAL")
+    @Option.Default("NATURAL")
     ModuleInfoOrdering ordering();
 
     /**

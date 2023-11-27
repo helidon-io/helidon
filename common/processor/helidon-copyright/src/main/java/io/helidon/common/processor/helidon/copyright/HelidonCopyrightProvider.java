@@ -24,7 +24,10 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Java {@link java.util.ServiceLoader} provider implementation that generates copyright as used by the Helidon project.
+ *
+ * @deprecated use {@code helidon-codegen-helidon-copyright} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 @Weight(100)
 public class HelidonCopyrightProvider implements CopyrightProvider {
     private static final String COPYRIGHT_TEMPLATE = """

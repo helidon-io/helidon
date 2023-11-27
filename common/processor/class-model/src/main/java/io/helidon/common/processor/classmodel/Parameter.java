@@ -25,7 +25,10 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Method parameter model.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class Parameter extends AnnotatedComponent {
 
     private final boolean optional;

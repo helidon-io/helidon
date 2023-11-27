@@ -17,13 +17,12 @@
 package io.helidon.inject.configdriven.interceptor.test;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 
 /**
  * Drives {@link ZImpl} activation.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface ZImplConfigBlueprint {
 
     /**

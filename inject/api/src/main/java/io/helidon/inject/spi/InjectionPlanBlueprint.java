@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.api.ServiceProvider;
 
 /**
@@ -57,7 +56,7 @@ interface InjectionPlanBlueprint {
      *
      * @return true if resolution occurred
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean wasResolved();
 
     /**

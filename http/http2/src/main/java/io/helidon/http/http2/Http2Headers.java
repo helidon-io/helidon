@@ -1277,10 +1277,10 @@ public class Http2Headers {
         }
     }
 
-    private static record DynamicHeader(HeaderName headerName, String value, int size) implements HeaderRecord {
+    private record DynamicHeader(HeaderName headerName, String value, int size) implements HeaderRecord {
     }
 
-    private static record IndexedHeader(HeaderRecord delegate, int index) implements IndexedHeaderRecord {
+    private record IndexedHeader(HeaderRecord delegate, int index) implements IndexedHeaderRecord {
         @Override
         public HeaderName headerName() {
             return delegate().headerName();

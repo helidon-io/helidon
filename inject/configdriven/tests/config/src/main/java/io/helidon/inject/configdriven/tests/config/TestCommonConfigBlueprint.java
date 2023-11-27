@@ -18,14 +18,13 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * For testing purpose.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 interface TestCommonConfigBlueprint {
 
@@ -34,7 +33,7 @@ interface TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption
+    @Option.Configured
     String name();
 
     /**
@@ -42,7 +41,8 @@ interface TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption(required = true)
+    @Option.Configured
+    @Option.Required
     int port();
 
     /**
@@ -50,7 +50,7 @@ interface TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption
+    @Option.Configured
     List<String> cipherSuites();
 
     /**
@@ -58,7 +58,8 @@ interface TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption("")
+    @Option.Configured
+    @Option.Default("")
     char[] pswd();
 
 }

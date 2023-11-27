@@ -16,8 +16,8 @@
 
 package io.helidon.inject.api;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Provides optional, contextual tunings to the {@link Injector}.
@@ -31,7 +31,7 @@ interface InjectorOptionsBlueprint {
      *
      * @return the injector strategy to use
      */
-    @ConfiguredOption("ANY")
+    @Option.Default("ANY")
     Injector.Strategy strategy();
 
     /**

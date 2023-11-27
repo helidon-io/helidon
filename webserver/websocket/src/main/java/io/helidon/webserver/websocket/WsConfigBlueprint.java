@@ -20,22 +20,21 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webserver.spi.ProtocolConfig;
 
 /**
  * WebSocket protocol configuration.
  */
 @Prototype.Blueprint
-@Configured(provides = ProtocolConfig.class)
+@Prototype.Configured
+@Prototype.Provides(ProtocolConfig.class)
 interface WsConfigBlueprint extends ProtocolConfig {
     /**
      * WebSocket origins.
      *
      * @return origins
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular
     Set<String> origins();
 
@@ -53,7 +52,8 @@ interface WsConfigBlueprint extends ProtocolConfig {
      *
      * @return configuration name
      */
-    @ConfiguredOption(WsUpgradeProvider.CONFIG_NAME)
+    @Option.Configured
+    @Option.Default(WsUpgradeProvider.CONFIG_NAME)
     @Override
     String name();
 
@@ -63,6 +63,7 @@ interface WsConfigBlueprint extends ProtocolConfig {
      *
      * @return max frame size to read
      */
-    @ConfiguredOption(WsConnection.MAX_FRAME_LENGTH)
+    @Option.Configured
+    @Option.DefaultInt(WsConnection.MAX_FRAME_LENGTH)
     int maxFrameLength();
 }

@@ -16,8 +16,8 @@
 
 package io.helidon.inject.api;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Request to deactivate a {@link ServiceProvider}.
@@ -29,6 +29,6 @@ interface DeActivationRequestBlueprint {
      *
      * @return throw on failure
      */
-    @ConfiguredOption("true")
+    @Option.DefaultBoolean(true)
     boolean throwIfError();
 }

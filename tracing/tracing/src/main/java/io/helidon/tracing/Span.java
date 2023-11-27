@@ -218,6 +218,7 @@ public interface Span {
         /**
          * Parent span of the new span.
          *
+         * @param spanContext span context to be the parent of this span
          * @return updated builder instance
          */
         B parent(SpanContext spanContext);

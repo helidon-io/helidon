@@ -33,7 +33,6 @@ module io.helidon.webserver.websocket {
     requires io.helidon.http;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.webserver;
     requires transitive io.helidon.websocket;

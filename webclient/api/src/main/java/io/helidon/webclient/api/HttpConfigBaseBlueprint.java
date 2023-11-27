@@ -23,13 +23,11 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.tls.Tls;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Common configuration for HTTP protocols.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint(builderPublic = false)
 interface HttpConfigBaseBlueprint {
     /**
@@ -37,7 +35,8 @@ interface HttpConfigBaseBlueprint {
      *
      * @return whether to follow redirects
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean followRedirects();
 
     /**
@@ -46,7 +45,8 @@ interface HttpConfigBaseBlueprint {
      *
      * @return max number of followed redirects
      */
-    @ConfiguredOption("10")
+    @Option.Configured
+    @Option.DefaultInt(10)
     int maxRedirects();
 
     /**
@@ -56,7 +56,7 @@ interface HttpConfigBaseBlueprint {
      *
      * @return TLS configuration to use
      */
-    @ConfiguredOption
+    @Option.Configured
     Tls tls();
 
 
@@ -66,7 +66,7 @@ interface HttpConfigBaseBlueprint {
      * @return read timeout
      * @see io.helidon.common.socket.SocketOptions#readTimeout()
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Duration> readTimeout();
 
     /**
@@ -75,7 +75,7 @@ interface HttpConfigBaseBlueprint {
      * @return connect timeout
      * @see io.helidon.common.socket.SocketOptions#connectTimeout()
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Duration> connectTimeout();
 
     /**
@@ -85,7 +85,8 @@ interface HttpConfigBaseBlueprint {
      * @return keep alive for this connection
      * @see io.helidon.common.socket.SocketOptions#socketKeepAlive()
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean keepAlive();
 
     /**
@@ -93,7 +94,7 @@ interface HttpConfigBaseBlueprint {
      *
      * @return proxy to use, defaults to {@link Proxy#noProxy()}
      */
-    @ConfiguredOption
+    @Option.Configured
     Proxy proxy();
 
     /**
@@ -102,7 +103,7 @@ interface HttpConfigBaseBlueprint {
      *
      * @return map of client properties
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular("property")
     Map<String, String> properties();
 }

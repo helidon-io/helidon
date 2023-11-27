@@ -27,6 +27,7 @@ record ConfigBean(TypeName typeName,
                   String configPrefix,
                   ConfigBeanAnnotation annotation) {
     private static final TypeName CONFIGURED = TypeName.create("io.helidon.config.metadata.Configured");
+    private static final TypeName PROTOTYPE_CONFIGURED = TypeName.create("io.helidon.builder.api.Prototype.Configured");
     private static final TypeName CONFIG = TypeName.create("io.helidon.common.config.Config");
 
     public static ConfigBean create(TypeInfo configBeanTypeInfo) {
@@ -62,15 +63,26 @@ record ConfigBean(TypeName typeName,
             }
         }
 
-        // the type must be annotation with @Configured(root = true, prefix = "something")
+        // the type must be annotation with @Prototype.Configured(root = true, prefix = "something")
+        // or @Prototype.Configured
+        Optional<Annotation> prototypeConfigured = configBeanTypeInfo.findAnnotation(PROTOTYPE_CONFIGURED);
         Optional<Annotation> maybeConfigured = configBeanTypeInfo.findAnnotation(CONFIGURED);
-        if (maybeConfigured.isEmpty()) {
-            throw new IllegalArgumentException("Blueprint must be annotated with @Configured(root = true)"
+
+        boolean isRoot;
+        String configPrefix;
+
+        if (prototypeConfigured.isPresent()) {
+            Annotation configured = prototypeConfigured.get();
+            isRoot = configured.booleanValue("root").orElse(true);
+            configPrefix = configured.value().orElse("");
+        } else if (maybeConfigured.isPresent()) {
+            Annotation configured = maybeConfigured.get();
+            isRoot = configured.booleanValue().orElse(false);
+            configPrefix = configured.getValue("prefix").orElse("");
+        } else {
+            throw new IllegalArgumentException("Blueprint must be annotated with @Prototype.Configured(\"someprefix\")"
                                                        + " to be eligible to be a ConfigBean: " + configBeanTypeInfo.typeName());
         }
-        Annotation configured = maybeConfigured.get();
-        boolean isRoot = configured.getValue("root").map(Boolean::parseBoolean).orElse(false);
-        String configPrefix = configured.getValue("prefix").orElse("");
 
         if (!isRoot) {
             throw new IllegalArgumentException("Blueprint must be annotated with @Configured(root = true)"

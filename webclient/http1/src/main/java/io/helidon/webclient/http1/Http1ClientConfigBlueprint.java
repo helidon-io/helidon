@@ -16,8 +16,8 @@
 
 package io.helidon.webclient.http1;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webclient.api.HttpClientConfig;
 
 /**
@@ -30,6 +30,6 @@ interface Http1ClientConfigBlueprint extends HttpClientConfig, Prototype.Factory
      *
      * @return protocol specific configuration
      */
-    @ConfiguredOption("create()")
+    @Option.Default("create()")
     Http1ClientProtocolConfig protocolConfig();
 }

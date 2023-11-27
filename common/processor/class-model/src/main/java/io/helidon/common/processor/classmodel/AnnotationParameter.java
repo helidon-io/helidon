@@ -23,7 +23,10 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Annotation parameter model.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class AnnotationParameter extends CommonComponent {
 
     private final String value;

@@ -17,11 +17,11 @@
 package io.helidon.webserver.grpc;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 import io.helidon.webserver.spi.ProtocolConfig;
 
 @Prototype.Blueprint
-@Configured(provides = ProtocolConfig.class)
+@Prototype.Configured
+@Prototype.Provides(ProtocolConfig.class)
 interface GrpcConfigBlueprint extends ProtocolConfig {
     /**
      * Protocol configuration type.

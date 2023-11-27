@@ -16,5 +16,8 @@
 
 /**
  * Tools for annotation processing.
+ *
+ * @deprecated use {@code helidon-codegen} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 package io.helidon.common.processor;

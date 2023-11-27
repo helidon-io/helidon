@@ -117,11 +117,6 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
                             <groupId>io.helidon.inject</groupId>
                             <artifactId>helidon-inject-processor</artifactId>
                             <version>${helidon.version}</version>
@@ -141,15 +136,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <!-- this is required to add the processor to reactor at the right time -->
                         <groupId>io.helidon.inject</groupId>
                         <artifactId>helidon-inject-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <!-- this is required to add the processor to reactor at the right time -->
-                        <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

@@ -266,7 +266,7 @@ class ToolBoxTest {
         List<ServiceProvider<?>> allServices = services
                 .lookupAll(ServiceInfoCriteria.builder().build(), true);
         allServices.stream()
-                .filter(sp -> !(sp instanceof Provider))
+                .filter(sp -> !(sp.isProvider()))
                 .forEach(sp -> {
                     sp.get();
                     assertThat("activation should not have triggered any lookups (for singletons): "

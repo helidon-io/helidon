@@ -18,7 +18,10 @@ package io.helidon.common.processor;
 
 /**
  * Tools for generating code.
+ *
+ * @deprecated use {@code helidon-codegen} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class GeneratorTools {
     private GeneratorTools() {
 
