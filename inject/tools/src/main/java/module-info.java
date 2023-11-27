@@ -29,7 +29,6 @@ module io.helidon.inject.tools {
     requires io.helidon.common;
     requires jakarta.inject;
     requires java.compiler;
-    requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.inject.runtime;

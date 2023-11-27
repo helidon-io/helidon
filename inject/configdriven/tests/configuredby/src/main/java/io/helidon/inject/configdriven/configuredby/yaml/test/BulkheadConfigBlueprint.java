@@ -16,15 +16,15 @@
 
 package io.helidon.inject.configdriven.configuredby.yaml.test;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
-@Configured(root = true, prefix = "ft.bulkheads")
+@Prototype.Configured("ft.bulkheads")
 @Prototype.Blueprint
 interface BulkheadConfigBlueprint {
 
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int queue();
 
 }

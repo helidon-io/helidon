@@ -21,8 +21,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * aka SpanTracingConfig.
@@ -30,7 +28,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * Configuration of a single traced span.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface FakeSpanTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
 
     /**
@@ -38,10 +36,10 @@ interface FakeSpanTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
      *
      * @return new name for this span or empty when rename is not desired
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> newName();
 
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular("spanLog")
         // B addSpanLog(String, FakeSpanLogTracingConfigBean);
     Map<String, FakeSpanLogTracingConfig> spanLogMap();

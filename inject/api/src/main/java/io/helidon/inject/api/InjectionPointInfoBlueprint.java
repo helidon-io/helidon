@@ -16,9 +16,9 @@
 
 package io.helidon.inject.api;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Describes a receiver for injection - identifies who/what is requesting an injection that needs to be satisfied.
@@ -63,7 +63,7 @@ interface InjectionPointInfoBlueprint extends ElementInfo, ElementInfoBlueprint 
      *
      * @return true if list based receiver
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean listWrapped();
 
     /**
@@ -71,7 +71,7 @@ interface InjectionPointInfoBlueprint extends ElementInfo, ElementInfoBlueprint 
      *
      * @return true if optional based receiver
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean optionalWrapped();
 
     /**
@@ -79,7 +79,7 @@ interface InjectionPointInfoBlueprint extends ElementInfo, ElementInfoBlueprint 
      *
      * @return true if provider based receiver
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean providerWrapped();
 
     /**

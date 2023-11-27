@@ -27,8 +27,6 @@ import javax.net.ssl.SSLContext;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.LazyValue;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
@@ -38,7 +36,7 @@ import io.helidon.inject.configdriven.api.ConfigBean;
  * WebServer sockets.
  */
 @ConfigBean
-@Configured(root = true, prefix = "tls")
+@Prototype.Configured("tls")
 @Prototype.Blueprint
 interface FakeWebServerTlsConfigBlueprint {
     String PROTOCOL = "TLS";
@@ -51,15 +49,14 @@ interface FakeWebServerTlsConfigBlueprint {
      */
     String CLIENT_X509_CERTIFICATE = FakeWebServerTlsConfigBlueprint.class.getName() + ".client-x509-certificate";
 
-    @ConfiguredOption
+    @Option.Configured
     Set<String> enabledTlsProtocols();
 
     // TODO: had to make this Optional - we might need something like 'ExternalConfigBean' for this case ?
     Optional<SSLContext> sslContext();
 
     @Option.Singular("cipher")
-    @ConfiguredOption(key = "cipher")
-        //    Set<String> cipherSuite();
+    @Option.Configured("cipher")
     List<String> cipherSuite();
 
     /**
@@ -68,7 +65,8 @@ interface FakeWebServerTlsConfigBlueprint {
      *
      * @return {@code true} if this configuration represents a TLS configuration, {@code false} for plain configuration
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean enabled();
 
 }

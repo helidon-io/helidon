@@ -23,10 +23,9 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface EnumRelatedConfigBlueprint {
 
     FakeClientAuth clientAuth();

@@ -19,8 +19,8 @@ package io.helidon.inject.api;
 import java.time.Instant;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Log entry for lifecycle related events (i.e., activation startup and deactivation shutdown).
@@ -86,7 +86,7 @@ interface ActivationLogEntryBlueprint {
      *
      * @return the thread id
      */
-    @ConfiguredOption("0")
+    @Option.DefaultLong(0)
     long threadId();
 
     /**

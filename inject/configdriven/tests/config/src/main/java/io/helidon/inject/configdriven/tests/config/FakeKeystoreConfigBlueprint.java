@@ -20,40 +20,40 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * aka KeyConfig.Keystore.Builder
  *
  * This is a ConfigBean since it marries up to the backing config.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 interface FakeKeystoreConfigBlueprint {
 
     String DEFAULT_KEYSTORE_TYPE = "PKCS12";
 
-    @ConfiguredOption(key = "trust-store")
+    @Option.Configured
     boolean trustStore();
 
-    @ConfiguredOption(key = "type", value = DEFAULT_KEYSTORE_TYPE)
+    @Option.Configured("type")
+    @Option.Default(DEFAULT_KEYSTORE_TYPE)
     String keystoreType();
 
-    @ConfiguredOption(key = "passphrase")
+    @Option.Configured("passphrase")
     char[] keystorePassphrase();
 
-    @ConfiguredOption(key = "key.alias", value = "1")
+    @Option.Configured("key.alias")
+    @Option.Default("1")
     String keyAlias();
 
-    @ConfiguredOption(key = "key.passphrase")
+    @Option.Configured("key.passphrase")
     char[] keyPassphrase();
 
-    @ConfiguredOption(key = "cert.alias")
+    @Option.Configured("cert.alias")
     @Option.Singular("certAlias")
     List<String> certAliases();
 
-    @ConfiguredOption(key = "cert-chain.alias")
+    @Option.Configured("cert-chain.alias")
     String certChainAlias();
 
 }

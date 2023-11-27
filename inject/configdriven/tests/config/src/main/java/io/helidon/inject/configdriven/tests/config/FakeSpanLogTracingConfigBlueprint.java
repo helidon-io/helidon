@@ -17,14 +17,13 @@
 package io.helidon.inject.configdriven.tests.config;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 
 /**
  * aka SpanLogTracingConfig.
  * Configuration of a single log event in a traced span.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface FakeSpanLogTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
 
 }

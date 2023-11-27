@@ -25,7 +25,6 @@ module io.helidon.builder.config.tests.test.config {
     requires io.helidon.inject.api;
     requires io.helidon.inject.configdriven.api;
 
-    requires static io.helidon.config.metadata;
     requires static io.helidon.inject.configdriven.runtime;
     requires static io.helidon.inject.runtime;
     requires static jakarta.annotation;

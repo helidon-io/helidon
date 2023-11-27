@@ -25,7 +25,6 @@ module io.helidon.inject.api {
     requires io.helidon.logging.common;
     requires jakarta.inject;
 
-    requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
 
     requires transitive io.helidon.builder.api;

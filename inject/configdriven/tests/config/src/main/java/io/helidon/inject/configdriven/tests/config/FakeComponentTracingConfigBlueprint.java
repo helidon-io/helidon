@@ -20,7 +20,6 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 
 /**
  * aka ComponentTracing.
@@ -35,7 +34,7 @@ import io.helidon.config.metadata.Configured;
  * </ul>
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface FakeComponentTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
 
     // Builder::addSpan(String span, FakeSpanLogTracingConfigBean val), Impl::getSpan(String span), etc.

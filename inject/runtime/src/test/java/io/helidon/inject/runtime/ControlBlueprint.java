@@ -18,16 +18,16 @@ package io.helidon.inject.runtime;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint
 interface ControlBlueprint {
     Optional<RuntimeException> exceptionBeforeProceed();
     Optional<RuntimeException> exceptionAfterProceed();
     Optional<Object> shortCircuitValue();
-    @ConfiguredOption("0")
+    @Option.DefaultInt(0)
     int timesToCatchException();
-    @ConfiguredOption("1")
+    @Option.DefaultInt(1)
     int timesToCallProceed();
 }

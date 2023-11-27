@@ -16,13 +16,13 @@
 
 package io.helidon.inject.configdriven.configuredby.test;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
-@Configured(root = true)
+@Prototype.Configured
 @Prototype.Blueprint
 interface SomeServiceConfigBlueprint {
-    @ConfiguredOption("")
+    @Option.Configured
+    @Option.Default("")
     String name();
 }

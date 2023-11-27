@@ -18,8 +18,8 @@ package io.helidon.inject.tools;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Applies only to the output paths that various {@code creators} will use (e.g.,
@@ -39,7 +39,7 @@ interface CodeGenPathsBlueprint {
      *
      * @return where should meta-inf services be written
      */
-    @ConfiguredOption(DEFAULT_META_INF_SERVICES_PATH)
+    @Option.Default(DEFAULT_META_INF_SERVICES_PATH)
     Optional<String> metaInfServicesPath();
 
     /**

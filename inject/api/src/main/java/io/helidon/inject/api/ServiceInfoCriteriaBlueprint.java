@@ -23,7 +23,6 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Criteria to discover services.
@@ -114,7 +113,7 @@ interface ServiceInfoCriteriaBlueprint {
      *
      * @return true if the non-proxied type intercepted services should be eligible
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean includeIntercepted();
 
     /**

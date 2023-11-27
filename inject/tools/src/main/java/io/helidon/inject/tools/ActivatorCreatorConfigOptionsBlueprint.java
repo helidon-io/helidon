@@ -16,8 +16,8 @@
 
 package io.helidon.inject.tools;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * These options are expected to have an affinity match to "permit" properties found within
@@ -38,7 +38,7 @@ interface ActivatorCreatorConfigOptionsBlueprint {
      *
      * @return true if strict mode is in effect
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean supportsJsr330InStrictMode();
 
     /**
@@ -46,7 +46,7 @@ interface ActivatorCreatorConfigOptionsBlueprint {
      *
      * @return true if the module should be created
      */
-    @ConfiguredOption("true")
+    @Option.DefaultBoolean(true)
     boolean moduleCreated();
 
     /**
@@ -56,7 +56,7 @@ interface ActivatorCreatorConfigOptionsBlueprint {
      *
      * @return true if the application should be created
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean applicationPreCreated();
 
 }

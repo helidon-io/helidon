@@ -18,9 +18,8 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
@@ -28,7 +27,7 @@ import io.helidon.inject.configdriven.api.ConfigBean;
  */
 @ConfigBean(atLeastOne = true)
 @Prototype.Blueprint
-@Configured(root = true)
+@Prototype.Configured
 interface TestServerConfigBlueprint extends TestCommonConfigBlueprint {
 
     /**
@@ -36,7 +35,8 @@ interface TestServerConfigBlueprint extends TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption("default")
+    @Option.Configured
+    @Option.Default("default")
     @Override
     String name();
 
@@ -45,7 +45,7 @@ interface TestServerConfigBlueprint extends TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> description();
 
 }

@@ -21,7 +21,6 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration directives and options optionally provided to the {@link io.helidon.inject.tools.spi.ApplicationCreator}.
@@ -38,7 +37,7 @@ interface ApplicationCreatorConfigOptionsBlueprint {
      *
      * @return provider generation permission type
      */
-    @ConfiguredOption("ALL")
+    @Option.Default("ALL")
     PermittedProviderType permittedProviderTypes();
 
     /**

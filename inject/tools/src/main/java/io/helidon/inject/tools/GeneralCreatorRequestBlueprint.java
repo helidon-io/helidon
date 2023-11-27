@@ -19,9 +19,9 @@ package io.helidon.inject.tools;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Base interface codegen-related requests.
@@ -34,7 +34,7 @@ interface GeneralCreatorRequestBlueprint extends GeneralCodeGenNamesBlueprint {
      *
      * @return if set to true then no codegen will occur on disk
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean analysisOnly();
 
     /**
@@ -77,7 +77,7 @@ interface GeneralCreatorRequestBlueprint extends GeneralCodeGenNamesBlueprint {
      *
      * @return true if the creator should fail, otherwise the response will show the error
      */
-    @ConfiguredOption("true")
+    @Option.DefaultBoolean(true)
     boolean throwIfError();
 
     /**

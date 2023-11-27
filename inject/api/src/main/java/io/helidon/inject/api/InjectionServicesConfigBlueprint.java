@@ -19,9 +19,8 @@ package io.helidon.inject.api;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * This is the configuration that the Injection service provider uses internally.
@@ -32,14 +31,14 @@ import io.helidon.config.metadata.ConfiguredOption;
  * element.
  */
 @Prototype.Blueprint
-@Configured(root = true, prefix = "inject")
+@Prototype.Configured("inject")
 interface InjectionServicesConfigBlueprint {
     /**
      * The provider implementation name.
      *
      * @return the provider implementation name
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> providerName();
 
     /**
@@ -47,7 +46,7 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the provider implementation version
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> providerVersion();
 
     /**
@@ -55,7 +54,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the deadlock detection timeout
      */
-    @ConfiguredOption("PT10S")
+    @Option.Configured
+    @Option.Default("PT10S")
     Duration activationDeadlockDetectionTimeout();
 
     /**
@@ -63,7 +63,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return shutdown timeout
      */
-    @ConfiguredOption("PT10S")
+    @Option.Configured
+    @Option.Default("PT10S")
     Duration shutdownTimeout();
 
     /**
@@ -71,7 +72,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether activation logs are captured and retained
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean activationLogs();
 
     /**
@@ -79,7 +81,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether service lookups are cached
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean serviceLookupCaching();
 
     /**
@@ -88,7 +91,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether the services registry supports dynamic updates of the service registry
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean permitsDynamic();
 
     /**
@@ -99,7 +103,8 @@ interface InjectionServicesConfigBlueprint {
      * @return the flag indicating whether the services registry supports dynamic updates of the service registry post
      * startup
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean supportsDynamic();
 
     /**
@@ -108,7 +113,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether the provider is permitted to use reflection for normal runtime usage
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean permitsReflection();
 
     /**
@@ -118,7 +124,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether reflection is supported during runtime operations
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean supportsReflection();
 
     /**
@@ -131,7 +138,8 @@ interface InjectionServicesConfigBlueprint {
      * @see Application
      * @see Activator
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean usesCompileTimeApplications();
 
     /**
@@ -143,7 +151,8 @@ interface InjectionServicesConfigBlueprint {
      * @see ModuleComponent
      * @see Activator
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean usesCompileTimeModules();
 
     /**
@@ -152,7 +161,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether the provider supports compile-time code generation of DI artifacts
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean supportsCompileTime();
 
     /**
@@ -160,7 +170,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether strict jsr330 specification will be enforced
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean usesJsr330();
 
     /**
@@ -168,7 +179,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether the provider supports the jsr330 specification
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean supportsJsr330();
 
     /**
@@ -176,7 +188,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether the provider supports the jsr330 specification for the use of static injection points
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean supportsJsr330Statics();
 
     /**
@@ -184,7 +197,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether the provider supports the jsr330 specification for the use of private injection points
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean supportsJsr330Privates();
 
     /**
@@ -192,7 +206,8 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return the flag indicating whether the provider supports contextual lookup
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean supportsContextualLookup();
 
     /**
@@ -201,7 +216,7 @@ interface InjectionServicesConfigBlueprint {
      *
      * @return if debug should be enabled
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Boolean> debug();
 
     /**

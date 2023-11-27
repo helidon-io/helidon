@@ -16,16 +16,15 @@
 
 package io.helidon.examples.inject.configdriven;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 @ConfigBean(repeatable = true)
 @Prototype.Blueprint
-@Configured(root = true, prefix = "drill")
+@Prototype.Configured("drill")
 interface DrillConfigBlueprint {
-    @ConfiguredOption
+    @Option.Configured
     String name();
 
 }

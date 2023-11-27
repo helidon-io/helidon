@@ -23,7 +23,6 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * General base interface for any codegen-related create activity.
@@ -36,7 +35,7 @@ interface GeneralCreatorResponseBlueprint extends GeneralCodeGenNamesBlueprint {
      *
      * @return success flag
      */
-    @ConfiguredOption("true")
+    @Option.DefaultBoolean(true)
     boolean success();
 
     /**
