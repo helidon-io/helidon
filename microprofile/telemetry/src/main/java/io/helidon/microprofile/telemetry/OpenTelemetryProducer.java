@@ -85,12 +85,11 @@ class OpenTelemetryProducer {
         // If there is an OTEL Agent – delegate everything to it.
         if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)) {
             openTelemetry =  GlobalOpenTelemetry.get();
-            return;
-        }
+        } else {
 
-        //Initialize OpenTelemetry
-        if (!isTelemetryDisabled()) {
-            openTelemetry = AutoConfiguredOpenTelemetrySdk.builder()
+            //Initialize OpenTelemetry
+            if (!isTelemetryDisabled()) {
+                openTelemetry = AutoConfiguredOpenTelemetrySdk.builder()
                         .addPropertiesCustomizer(x -> telemetryProperties)
                         .addResourceCustomizer(this::customizeResource)
                         .setServiceClassLoader(Thread.currentThread().getContextClassLoader())
@@ -109,11 +108,12 @@ class OpenTelemetryProducer {
                     }
                     openTelemetry = OpenTelemetry.noop();
                 }
-        } else {
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.TRACE, "Telemetry Disabled by configuration");
+            } else {
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    LOGGER.log(System.Logger.Level.TRACE, "Telemetry Disabled by configuration");
+                }
+                openTelemetry = OpenTelemetry.noop();
             }
-            openTelemetry = OpenTelemetry.noop();
         }
 
         tracer = openTelemetry.getTracer(exporterName);
