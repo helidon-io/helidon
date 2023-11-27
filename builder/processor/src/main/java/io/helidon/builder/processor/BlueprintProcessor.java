@@ -468,11 +468,14 @@ public class BlueprintProcessor extends AbstractProcessor {
         }
     }
 
-    private String createTypeArgumentString(List<TypeName> typeArguments) {
+    static String createTypeArgumentString(List<TypeName> typeArguments) {
         if (!typeArguments.isEmpty()) {
             String arguments = typeArguments.stream()
                     .map(TypeName::className)
                     .collect(Collectors.joining(", "));
+            if ("?".equals(arguments)) {
+                return "";
+            }
             return "<" + arguments + ">";
         }
         return "";

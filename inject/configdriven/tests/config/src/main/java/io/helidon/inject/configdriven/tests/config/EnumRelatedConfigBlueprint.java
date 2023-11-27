@@ -27,7 +27,7 @@ import io.helidon.config.metadata.Configured;
 
 @Prototype.Blueprint
 @Configured
-public interface EnumRelatedConfigBlueprint {
+interface EnumRelatedConfigBlueprint {
 
     FakeClientAuth clientAuth();
 

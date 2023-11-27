@@ -23,6 +23,16 @@ import java.util.Optional;
  * Annotation utilities.
  */
 public final class Annotations {
+    /**
+     * Override annotation.
+     */
+    public static final Annotation OVERRIDE = Annotation.create(Override.class);
+
+    /**
+     * Deprecated annotation.
+     */
+    public static final Annotation DEPRECATED = Annotation.create(Deprecated.class);
+
     private Annotations() {
     }
 

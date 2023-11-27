@@ -33,9 +33,9 @@ import io.helidon.common.Severity;
 import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeValues;
 
 import static io.helidon.builder.processor.Types.BLUEPRINT_TYPE;
 import static io.helidon.builder.processor.Types.BUILDER_DECORATOR;
@@ -331,7 +331,7 @@ record TypeContext(
                                   .filter(Predicate.not(ElementInfoPredicates::isStatic))
                                   .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                                   .filter(it -> {
-                                      if (it.modifiers().contains(TypeValues.MODIFIER_DEFAULT)) {
+                                      if (it.elementModifiers().contains(Modifier.DEFAULT)) {
                                           ignoredMethods.add(MethodSignature.create(it));
                                           return false;
                                       }

@@ -31,7 +31,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  */
 @Prototype.Blueprint
 @Configured
-public interface FakeSpanTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
+interface FakeSpanTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
 
     /**
      * When rename is desired, returns the new name.

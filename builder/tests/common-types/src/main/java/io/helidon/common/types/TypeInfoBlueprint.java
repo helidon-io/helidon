@@ -178,7 +178,7 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return element modifiers
      * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-     * @deprecated use {@link #elementMOdifiers()} instead
+     * @deprecated use {@link #elementModifiers()} instead
      */
     @Option.Singular
     @Option.Redundant

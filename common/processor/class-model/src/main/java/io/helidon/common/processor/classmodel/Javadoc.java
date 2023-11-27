@@ -535,6 +535,7 @@ public final class Javadoc extends ModelComponent {
             for (String paramName : methodBuilder.parameters().keySet()) {
                 //generate only really present parameters
                 if (parameters.containsKey(paramName)) {
+                    List<String> strings = parameters.get(paramName);
                     this.filteredParameters.put(paramName, parameters.get(paramName));
                 }
             }

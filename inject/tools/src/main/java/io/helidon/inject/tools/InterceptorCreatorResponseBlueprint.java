@@ -27,7 +27,7 @@ import io.helidon.common.types.TypeName;
  * Response from interception creation.
  */
 @Prototype.Blueprint
-public interface InterceptorCreatorResponseBlueprint {
+interface InterceptorCreatorResponseBlueprint {
 
     /**
      * The generated files.

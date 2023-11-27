@@ -19,6 +19,6 @@ package io.helidon.builder.test.testsubjects.tostring;
 import io.helidon.builder.api.Prototype;
 
 @Prototype.Blueprint
-public interface ParentBlueprint {
+interface ParentBlueprint {
     String name();
 }

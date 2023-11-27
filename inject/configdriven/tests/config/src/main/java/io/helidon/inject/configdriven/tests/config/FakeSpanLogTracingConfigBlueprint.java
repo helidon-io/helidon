@@ -25,6 +25,6 @@ import io.helidon.config.metadata.Configured;
  */
 @Prototype.Blueprint
 @Configured
-public interface FakeSpanLogTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
+interface FakeSpanLogTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
 
 }

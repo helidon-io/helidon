@@ -180,15 +180,17 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                     .addTypeArgument(builderType)
                     .build();
 
+            Javadoc javadoc = setterJavadoc(blueprintJavadoc)
+                            .addParameter(argumentName, blueprintJavadoc.returnDescription())
+                            .build();
+
             classBuilder.addMethod(builder -> builder.name(setterName())
                     .accessModifier(setterAccessModifier(configured))
-                    .description(blueprintJavadoc.content())
-                    .returnType(returnType, "updated builder instance")
+                    .returnType(returnType)
                     .addParameter(param -> param.name(argumentName)
-                            .type(argumentType)
-                            .description(blueprintJavadoc.returnDescription()))
-                    .addJavadocTag("see", "#" + getterName() + "()")
+                            .type(argumentType))
                     .typeName(Objects.class)
+                    .javadoc(javadoc)
                     .addLine(".requireNonNull(" + argumentName + ");")
                     .add("var builder = ")
                     .typeName(fm.typeWithFactoryMethod().genericTypeName())

@@ -73,7 +73,8 @@ record PrototypeProperty(MethodSignature signature,
             name = "the" + capitalize(name);
         }
 
-        TypeName returnType = element.typeName(); // real return type (String, Optional<String>, List<String>, Map<String, Type>
+        // real return type (String, Optional<String>, List<String>, Map<String, Type>)
+        TypeName returnType = propertyTypeName(element);
 
         boolean sameGeneric = element.hasAnnotation(OPTION_SAME_GENERIC_TYPE);
         // to help with defaults, setters, config mapping etc.
@@ -104,6 +105,13 @@ record PrototypeProperty(MethodSignature signature,
                 toStringValue,
                 confidential
         );
+    }
+
+    private static TypeName propertyTypeName(TypedElementInfo element) {
+        return element.findAnnotation(Types.OPTION_TYPE)
+                .flatMap(Annotation::value)
+                .map(TypeName::create)
+                .orElseGet(element::typeName);
     }
 
     Field.Builder fieldDeclaration(boolean isBuilder) {

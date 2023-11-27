@@ -100,6 +100,7 @@ final class Types {
     static final TypeName OPTION_DEFAULT_LONG_TYPE = TypeName.create(OPTION_DEFAULT_LONG);
     static final TypeName OPTION_DEFAULT_METHOD_TYPE = TypeName.create(OPTION_DEFAULT_METHOD);
     static final TypeName OPTION_DEFAULT_CODE_TYPE = TypeName.create(OPTION_DEFAULT_CODE);
+    static final TypeName OPTION_TYPE = TypeName.create("io.helidon.builder.api.Option.Type");
 
     static final TypeName VOID_TYPE = TypeName.create(void.class);
     static final TypeName STRING_TYPE = TypeName.create(String.class);

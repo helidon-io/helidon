@@ -342,6 +342,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param typeArgument the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
+         * @see #typeParameters()
          * @see #typeArguments()
          */
         public BUILDER addTypeArgument(TypeName typeArgument) {
@@ -355,6 +356,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param consumer the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
+         * @see #typeParameters()
          * @see #typeArguments()
          */
         public BUILDER addTypeArgument(Consumer<TypeName.Builder> consumer) {
@@ -480,6 +482,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
          * @return the type arguments
+         * @see #typeParameters()
+         * @see #typeArguments()
          */
         public List<TypeName> typeArguments() {
             return typeArguments;

@@ -19,9 +19,11 @@ package io.helidon.common.processor;
 import java.util.List;
 import java.util.function.Predicate;
 
+import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
@@ -38,7 +40,7 @@ public final class ElementInfoPredicates {
      * @return whether the element represents a method
      */
     public static boolean isMethod(TypedElementInfo element) {
-        return TypeValues.KIND_METHOD.equals(element.elementTypeKind());
+        return ElementKind.METHOD == element.kind();
     }
 
     /**
@@ -48,7 +50,7 @@ public final class ElementInfoPredicates {
      * @return whether the element has static modifier
      */
     public static boolean isStatic(TypedElementInfo element) {
-        return element.modifiers().contains(TypeValues.MODIFIER_STATIC);
+        return element.elementModifiers().contains(Modifier.STATIC);
     }
 
     /**
@@ -58,7 +60,7 @@ public final class ElementInfoPredicates {
      * @return whether the element has private modifier
      */
     public static boolean isPrivate(TypedElementInfo element) {
-        return element.modifiers().contains(TypeValues.MODIFIER_PRIVATE);
+        return AccessModifier.PRIVATE == element.accessModifier();
     }
 
     /**
@@ -68,7 +70,7 @@ public final class ElementInfoPredicates {
      * @return whether the element has public modifier
      */
     public static boolean isPublic(TypedElementInfo element) {
-        return element.modifiers().contains(TypeValues.MODIFIER_PUBLIC);
+        return AccessModifier.PUBLIC == element.accessModifier();
     }
 
 
@@ -79,7 +81,7 @@ public final class ElementInfoPredicates {
      * @return whether the element has default modifier
      */
     public static boolean isDefault(TypedElementInfo element) {
-        return element.modifiers().contains(TypeValues.MODIFIER_DEFAULT);
+        return element.elementModifiers().contains(Modifier.DEFAULT);
     }
 
     /**

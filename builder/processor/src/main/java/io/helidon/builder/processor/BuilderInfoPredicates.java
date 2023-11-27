@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import io.helidon.common.processor.ElementInfoPredicates;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -58,15 +59,15 @@ final class BuilderInfoPredicates {
      * @return found method, ord empty if method does not exist, if more than one exist, the first one is returned
      */
     static Optional<TypedElementInfo> findMethod(MethodSignature signatureFilter,
-                                                 Set<String> expectedModifiers,
+                                                 Set<Modifier> expectedModifiers,
                                                  TypeInfo typeInfo) {
         return typeInfo.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(it -> {
-                    Set<String> modifiers = it.modifiers();
+                    Set<Modifier> modifiers = it.elementModifiers();
                     if (expectedModifiers != null) {
-                        for (String expectedModifier : expectedModifiers) {
+                        for (Modifier expectedModifier : expectedModifiers) {
                             if (!modifiers.contains(expectedModifier)) {
                                 return false;
                             }

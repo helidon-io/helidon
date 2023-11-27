@@ -408,4 +408,22 @@ public final class Option {
          */
         String value();
     }
+
+
+    /**
+     * Explicitly define a type (may include generics) in case the type is located
+     * in the same module, and cannot be inferred correctly by the annotation processor.
+     * This is always needed for types with generics in the same module.
+     */
+    @Target(ElementType.METHOD)
+    // note: class retention needed for cases when derived builders are inherited across modules
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Type {
+        /**
+         * Type declaration including generic types (must match the declared generic type on the blueprint).
+         *
+         * @return type name with generic declaration
+         */
+        String value();
+    }
 }
