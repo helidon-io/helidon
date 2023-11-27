@@ -34,7 +34,7 @@ public final class Constructor extends Executable {
      *
      * @return new builder instance
      */
-    static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 

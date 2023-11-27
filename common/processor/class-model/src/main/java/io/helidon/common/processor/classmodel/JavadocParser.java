@@ -119,7 +119,11 @@ class JavadocParser {
         } else if (state == ParserState.GENERIC_PARAM) {
             javadocBuilder.addGenericArgument(currentTagName, currentTag);
         } else if (state == ParserState.TAG) {
-            javadocBuilder.addTag(currentTagName, currentTag);
+            if ("deprecated".equals(currentTagName)) {
+                javadocBuilder.deprecation(currentTag);
+            } else {
+                javadocBuilder.addTag(currentTagName, currentTag);
+            }
         } else if (state == ParserState.RETURNS) {
             javadocBuilder.returnDescription(currentTag);
         } else if (state == ParserState.THROWS) {

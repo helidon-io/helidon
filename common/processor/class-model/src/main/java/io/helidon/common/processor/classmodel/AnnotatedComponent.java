@@ -63,6 +63,20 @@ abstract class AnnotatedComponent extends CommonComponent {
         /**
          * Add new annotation to the component.
          *
+         * @param annotation annotation instance
+         * @return updated builder instance
+         */
+        public B addAnnotation(io.helidon.common.types.Annotation annotation) {
+            return addAnnotation(newAnnot -> {
+                newAnnot.type(annotation.typeName());
+                annotation.values()
+                        .forEach(newAnnot::addParameter);
+            });
+        }
+
+        /**
+         * Add new annotation to the component.
+         *
          * @param consumer annotation builder consumer
          * @return updated builder instance
          */

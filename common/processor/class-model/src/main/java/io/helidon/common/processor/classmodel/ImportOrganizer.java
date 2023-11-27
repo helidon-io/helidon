@@ -156,7 +156,7 @@ class ImportOrganizer {
         }
 
         Builder addImport(TypeName type) {
-            return addImport(Type.fromTypeName(type));
+            return addImport(Type.fromTypeName(type.genericTypeName()));
         }
 
         Builder addImport(Type type) {
@@ -252,7 +252,7 @@ class ImportOrganizer {
             if (this.typeName.equals(simpleName)) {
                 simpleName = type.simpleTypeName();
                 if (noImports.containsKey(simpleName)
-                        && noImports.get(simpleName).fqTypeName().equals(type.fqTypeName())) {
+                        && !noImports.get(simpleName).fqTypeName().equals(type.fqTypeName())) {
                     forcedFullImports.add(noImports.remove(simpleName).fqTypeName());
                 }
             }

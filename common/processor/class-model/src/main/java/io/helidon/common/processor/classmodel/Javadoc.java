@@ -34,7 +34,7 @@ import java.util.Set;
  *     <li>generic arguments</li>
  *     <li>return</li>
  *     <li>throws</li>
- *     <li>deprecation</li>
+ *     <li>deprecated</li>
  *     <li>everything else</li>
  * </ul>
  */
@@ -90,6 +90,18 @@ public final class Javadoc extends ModelComponent {
         return new Builder();
     }
 
+
+    /**
+     * Create new {@link Builder} instance.
+     *
+     * @param javadoc existing javadoc to copy
+     * @return new builder instance
+     */
+    public static Builder builder(Javadoc javadoc) {
+        return new Builder()
+                .from(javadoc);
+    }
+
     private static Map<String, List<List<String>>> createCopyOfTagMap(Map<String, List<List<String>>> otherTags) {
         Map<String, List<List<String>>> newTags = new HashMap<>();
         for (Map.Entry<String, List<List<String>>> entry : otherTags.entrySet()) {
@@ -131,7 +143,7 @@ public final class Javadoc extends ModelComponent {
             writeTagInformation(writer, "throws", entry.getKey(), entry.getValue());
         }
         if (!deprecation.isEmpty()) {
-            writeTagInformation(writer, "deprecation", null, deprecation);
+            writeTagInformation(writer, "deprecated", null, deprecation);
         }
         for (Map.Entry<String, List<List<String>>> entry : otherTags.entrySet()) {
             for (List<String> description : entry.getValue()) {
@@ -446,6 +458,18 @@ public final class Javadoc extends ModelComponent {
         public Builder deprecation(String deprecation) {
             this.deprecation.clear();
             this.deprecation.add(deprecation);
+            return this;
+        }
+
+        /**
+         * Deprecation description, multiple lines.
+         *
+         * @param deprecation deprecation description
+         * @return updated builder instance
+         */
+        public Builder deprecation(List<String> deprecation) {
+            this.deprecation.clear();
+            this.deprecation.addAll(deprecation);
             return this;
         }
 

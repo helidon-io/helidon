@@ -164,8 +164,13 @@ public final class Annotation extends CommonComponent {
          */
         public Builder addParameter(String name, Object value) {
             Objects.requireNonNull(value);
+
+            Class<?> paramType = value instanceof TypeName
+                    ? Class.class
+                    : value.getClass();
+
             return addParameter(builder -> builder.name(name)
-                    .type(value.getClass())
+                    .type(paramType)
                     .value(value));
         }
 
