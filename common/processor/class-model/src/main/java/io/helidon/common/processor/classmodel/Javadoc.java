@@ -37,7 +37,10 @@ import java.util.Set;
  *     <li>deprecated</li>
  *     <li>everything else</li>
  * </ul>
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class Javadoc extends ModelComponent {
 
     private final List<String> content;

@@ -25,7 +25,10 @@ import io.helidon.common.types.TypeName;
 /**
  * Entry point to create class model.
  * This model contain all needed information for each generated type and handles resulting generation.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class ClassModel extends ClassBase {
 
     /**

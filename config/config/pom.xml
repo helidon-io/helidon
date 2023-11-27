@@ -121,11 +121,11 @@
                             <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
-                        <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
+<!--                        <path>-->
+<!--                            <groupId>io.helidon.inject</groupId>-->
+<!--                            <artifactId>helidon-inject-processor</artifactId>-->
+<!--                            <version>${helidon.version}</version>-->
+<!--                        </path>-->
                         <path>
                             <groupId>io.helidon.common.processor</groupId>
                             <artifactId>helidon-common-processor-helidon-copyright</artifactId>
@@ -140,12 +140,12 @@
                         <artifactId>helidon-common-features-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
-                    <dependency>
-                        <!-- this is required to add the processor to reactor at the right time -->
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
+<!--                    <dependency>-->
+<!--                        &lt;!&ndash; this is required to add the processor to reactor at the right time &ndash;&gt;-->
+<!--                        <groupId>io.helidon.inject</groupId>-->
+<!--                        <artifactId>helidon-inject-processor</artifactId>-->
+<!--                        <version>${helidon.version}</version>-->
+<!--                    </dependency>-->
                     <dependency>
                         <!-- this is required to add the processor to reactor at the right time -->
                         <groupId>io.helidon.builder</groupId>

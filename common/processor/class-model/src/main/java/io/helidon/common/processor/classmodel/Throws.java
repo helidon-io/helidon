@@ -23,7 +23,10 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Objects which describes exception throws configuration.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public class Throws extends DescribableComponent {
 
     private Throws(Builder builder) {

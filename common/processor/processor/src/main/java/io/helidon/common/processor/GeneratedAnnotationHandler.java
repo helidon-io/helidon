@@ -27,7 +27,10 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Support for generated annotation.
+ *
+ * @deprecated use {@code helidon-codegen} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class GeneratedAnnotationHandler {
     private static final GeneratedAnnotationProvider PROVIDER = HelidonServiceLoader.builder(ServiceLoader.load(
                     GeneratedAnnotationProvider.class))

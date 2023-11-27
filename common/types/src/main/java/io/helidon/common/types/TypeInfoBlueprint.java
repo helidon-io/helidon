@@ -39,6 +39,14 @@ interface TypeInfoBlueprint extends Annotated {
     TypeName typeName();
 
     /**
+     * Description, such as javadoc, if available.
+     *
+     * @return description of this element
+     */
+    @Option.Redundant
+    Optional<String> description();
+
+    /**
      * The type element kind.
      * <p>
      * Such as

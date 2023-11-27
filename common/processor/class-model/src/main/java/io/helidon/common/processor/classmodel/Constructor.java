@@ -22,7 +22,10 @@ import io.helidon.common.types.AccessModifier;
 
 /**
  * Constructor model.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class Constructor extends Executable {
 
     private Constructor(Builder builder) {

@@ -16,7 +16,10 @@
 
 /**
  * Helidon copyright implementation.
+ *
+ * @deprecated use {@code helidon-codegen-helidon-copyright} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 module io.helidon.common.processor.helidon.copyright {
 
     requires io.helidon.common.processor;

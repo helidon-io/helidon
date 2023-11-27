@@ -31,7 +31,10 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Model of the method which should be created in the specific type.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class Method extends Executable {
 
     private final Map<String, TypeArgument> declaredTokens;

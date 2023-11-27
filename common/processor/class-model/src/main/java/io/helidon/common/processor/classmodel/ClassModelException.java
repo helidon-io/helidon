@@ -17,7 +17,10 @@ package io.helidon.common.processor.classmodel;
 
 /**
  * Exception message which corresponds to the error in class model creation.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public class ClassModelException extends RuntimeException {
 
     ClassModelException(String message) {

@@ -17,7 +17,10 @@ package io.helidon.common.processor.classmodel;
 
 /**
  * Inner class model.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class InnerClass extends ClassBase {
 
     //Collected directly specified imports when building this class

@@ -16,5 +16,8 @@
 
 /**
  * Class model generator for annotation processors.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 package io.helidon.common.processor.classmodel;
