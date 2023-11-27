@@ -17,59 +17,24 @@
 package io.helidon.common.types;
 
 import java.util.Locale;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import io.helidon.builder.api.Prototype;
 
-final class TypedElementInfoSupport {
-    private TypedElementInfoSupport() {
+final class TypeInfoSupport {
+    private TypeInfoSupport() {
     }
 
-    @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override")
-    static String toString(TypedElementInfo me) {
-        StringBuilder builder = new StringBuilder();
-        if (ElementKind.PARAMETER != me.kind()) {
-            me.enclosingType()
-                    .ifPresent(enclosingTypeName -> builder.append(enclosingTypeName).append("::"));
-        }
-        builder.append(me.toDeclaration());
-        return builder.toString();
-    }
-
-    /**
-     * Provides a description for this instance.
-     *
-     * @return provides the {typeName}{space}{elementName}
-     */
-    @Prototype.PrototypeMethod
-    static String toDeclaration(TypedElementInfo me) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(me.typeName()).append(" ").append(me.elementName());
-        String params = me.parameterArguments().stream()
-                .map(it -> it.typeName() + " " + it.elementName())
-                .collect(Collectors.joining(", "));
-        if (!params.isBlank()) {
-            builder.append("(").append(params).append(")");
-        }
-        return builder.toString();
-    }
-
-    static class BuilderDecorator implements Prototype.BuilderDecorator<TypedElementInfo.BuilderBase<?, ?>> {
-        BuilderDecorator() {
-        }
-
-        @SuppressWarnings("removal")
+    static final class TypeInfoDecorator implements Prototype.BuilderDecorator<TypeInfo.BuilderBase<?, ?>> {
+        @SuppressWarnings("removal") // this method makes sure we are backward compatible
         @Override
-        public void decorate(TypedElementInfo.BuilderBase<?, ?> target) {
-/*
+        public void decorate(TypeInfo.BuilderBase<?, ?> target) {
+            /*
             Backward compatibility for deprecated methods.
              */
-            if (target.kind().isEmpty() && target.elementTypeKind().isPresent()) {
-                target.kind(ElementKind.valueOf(target.elementTypeKind().get().toUpperCase(Locale.ROOT)));
+            if (target.kind().isEmpty() && target.typeKind().isPresent()) {
+                target.kind(ElementKind.valueOf(target.typeKind().get().toUpperCase(Locale.ROOT)));
             }
-            target.elementTypeKind(target.kind().get().toString());
+            target.typeKind(target.kind().get().toString());
 
             if (target.accessModifier().isEmpty()) {
                 AccessModifier accessModifier = null;
@@ -103,14 +68,6 @@ final class TypedElementInfoSupport {
                 target.addModifier(typeModifier.modifierName());
             }
             target.addModifier(target.accessModifier().get().modifierName());
-
-
-            Optional<ElementKind> elementKind = target.kind();
-            if (elementKind.isPresent()) {
-                if (elementKind.get() == ElementKind.CONSTRUCTOR) {
-                    target.elementName("<init>");
-                }
-            }
         }
     }
 }

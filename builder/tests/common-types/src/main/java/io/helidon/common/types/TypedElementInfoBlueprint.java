@@ -26,7 +26,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * An annotation with defined values.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = TypedElementInfoSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(TypedElementInfoSupport.class)
 interface TypedElementInfoBlueprint extends Annotated {
     /**
@@ -59,9 +59,21 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the element kind
      * @see io.helidon.common.types.TypeInfo
+     * @deprecated use {@link #kind()} instead
      */
     @Option.Required
+    @Option.Deprecated("kind")
+    @Option.Redundant
+    @Deprecated(forRemoval = true, since = "4.1.0")
     String elementTypeKind();
+
+    /**
+     * The kind of element (e.g., method, field, etc).
+     *
+     * @return the element kind
+     * @see io.helidon.common.types.ElementKind
+     */
+    ElementKind kind();
 
     /**
      * The default value assigned to the element, represented as a string.
@@ -92,28 +104,67 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return element modifiers
      * @see io.helidon.common.types.TypeInfo
+     * @deprecated use {@link #elementModifiers()} instead
      */
-    @Option.Redundant
     @Option.Singular
+    @Option.Redundant
+    @Option.Deprecated("elementModifiers")
+    @Deprecated(forRemoval = true, since = "4.1.0")
     Set<String> modifiers();
 
     /**
+     * Element modifiers.
+     *
+     * @return element modifiers
+     * @see io.helidon.common.types.Modifier
+     * @see #accessModifier()
+     */
+    @Option.Redundant
+    @Option.Singular
+    Set<Modifier> elementModifiers();
+
+    /**
+     * Access modifier of the element.
+     *
+     * @return access modifier
+     */
+    @Option.Redundant
+    AccessModifier accessModifier();
+
+    /**
      * The enclosing type name for this typed element. Applicable when this instance represents a
-     * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
-     * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
-     * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
+     * {@link io.helidon.common.types.ElementKind#FIELD}, or
+     * {@link io.helidon.common.types.ElementKind#METHOD}, or
+     * {@link io.helidon.common.types.ElementKind#PARAMETER}
      *
      * @return the enclosing type element
      */
     Optional<TypeName> enclosingType();
 
     /**
-     * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
+     * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.ElementKind#METHOD}.
      * Each instance of this list
-     * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
+     * will be the individual {@link io.helidon.common.types.ElementKind#PARAMETER}'s for the method.
      *
      * @return the list of parameters belonging to this method if applicable
      */
     @Option.Singular
     List<TypedElementInfo> parameterArguments();
+
+    /**
+     * List of all thrown types that are checked ({@link java.lang.Exception} and {@link java.lang.Error}).
+     *
+     * @return set of thrown checked types
+     */
+    Set<TypeName> throwsChecked();
+
+    /**
+     * The element used to create this instance.
+     * The type of the object depends on the environment we are in - it may be an {@code Element} in annotation processing,
+     * or a {@code MethodInfo} (and such) when using classpath scanning.
+     *
+     * @return originating element
+     */
+    @Option.Redundant
+    Optional<Object> originatingElement();
 }

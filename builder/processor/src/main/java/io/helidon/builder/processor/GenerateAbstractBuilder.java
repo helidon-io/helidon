@@ -255,9 +255,17 @@ final class GenerateAbstractBuilder {
                     .name(getterName)
                     .returnType(child.builderGetterType())
                     .addLine("return " + child.builderGetter() + ";");
-            if (child.configuredOption().javadoc() != null) {
-                method.description(child.configuredOption().javadoc().content())
-                        .returnType(child.builderGetterType(), "the " + toHumanReadable(child.name()));
+
+            for (io.helidon.common.types.Annotation annotation : child.configuredOption().annotations()) {
+                method.addAnnotation(annotation);
+            }
+
+            Javadoc javadoc = child.configuredOption().javadoc();
+
+            if (javadoc != null) {
+                method.javadoc(Javadoc.builder(javadoc)
+                                       .returnDescription("the " + toHumanReadable(child.name()))
+                                       .build());
             }
             classBuilder.addMethod(method);
         }
@@ -501,7 +509,7 @@ final class GenerateAbstractBuilder {
                                     .add("\", serviceLoader, ")
                                     .typeName(providerType)
                                     .add(".class, ")
-                                    .typeName(property.typeHandler().actualType())
+                                    .typeName(property.typeHandler().actualType().genericTypeName())
                                     .add(".class, ")
                                     .add(property.name())
                                     .add("DiscoverServices, @java.util.Optional@.ofNullable(")

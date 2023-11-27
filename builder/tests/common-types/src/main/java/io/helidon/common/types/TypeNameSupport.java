@@ -217,6 +217,9 @@ final class TypeNameSupport {
         List<String> packageElements = new ArrayList<>();
 
         while (true) {
+            if (className.isEmpty()) {
+                throw new IllegalArgumentException("Invalid type name: \"" + typeName + "\", got empty string section");
+            }
             if (Character.isUpperCase(className.charAt(0))) {
                 break;
             }
