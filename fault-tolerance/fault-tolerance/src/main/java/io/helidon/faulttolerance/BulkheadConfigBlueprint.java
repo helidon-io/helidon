@@ -21,15 +21,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
  * {@link Bulkhead} configuration bean.
  */
 @ConfigBean(repeatable = true)
-@Configured(root = true, prefix = "fault-tolerance.bulkheads")
+@Prototype.Configured("fault-tolerance.bulkheads")
 @Prototype.Blueprint(decorator = BulkheadConfigBlueprint.BuilderDecorator.class)
 interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
     /**
@@ -51,7 +49,8 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      *
      * @return maximal number of parallel calls, defaults is {@value DEFAULT_LIMIT}
      */
-    @ConfiguredOption("10")
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_LIMIT)
     int limit();
 
     /**
@@ -61,7 +60,8 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      *
      * @return length of the queue
      */
-    @ConfiguredOption("10")
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_QUEUE_LENGTH)
     int queueLength();
 
     /**

@@ -19,13 +19,12 @@ package io.helidon.inject.configdriven.tests.config;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 
 /**
  * aka Traceable.
  * Tracing configuration that can be enabled or disabled.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 interface FakeTraceableConfigBlueprint {
     /**

@@ -16,16 +16,15 @@
 
 package io.helidon.inject.configdriven.configuredby.yaml.test;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 @ConfigBean(repeatable = true)
-@Configured(root = true, prefix = "ft.asyncs")
+@Prototype.Configured("ft.asyncs")
 @Prototype.Blueprint
 interface AsyncConfigBlueprint {
-    @ConfiguredOption
+    @Option.Configured
     String executor();
 
 }

@@ -117,7 +117,8 @@ class HelidonConnector implements Connector {
 
         // default headers
         if (properties.containsKey(DEFAULT_HEADERS)) {
-            builder.defaultHeadersMap(getValue(properties, DEFAULT_HEADERS, EMPTY_MAP_LIST));
+            Map<String, String> headers = getValue(properties, DEFAULT_HEADERS, EMPTY_MAP_LIST);
+            headers.forEach(builder::addHeader);
         }
 
         // connection sharing defaults to false in this connector

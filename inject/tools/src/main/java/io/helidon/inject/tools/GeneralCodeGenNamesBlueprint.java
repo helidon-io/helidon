@@ -18,8 +18,8 @@ package io.helidon.inject.tools;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * General code gen information.
@@ -32,7 +32,7 @@ interface GeneralCodeGenNamesBlueprint {
      *
      * @return the template name that should be used
      */
-    @ConfiguredOption("default")
+    @Option.Default("default")
     String templateName();
 
     /**

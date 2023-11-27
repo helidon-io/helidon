@@ -39,6 +39,14 @@ interface TypeInfoBlueprint extends Annotated {
     TypeName typeName();
 
     /**
+     * Description, such as javadoc, if available.
+     *
+     * @return description of this element
+     */
+    @Option.Redundant
+    Optional<String> description();
+
+    /**
      * The type element kind.
      * <p>
      * Such as
@@ -182,7 +190,7 @@ interface TypeInfoBlueprint extends Annotated {
      */
     @Option.Singular
     @Option.Redundant
-    @Option.Deprecated("typeModifiers")
+    @Option.Deprecated("elementModifiers")
     @Deprecated(forRemoval = true, since = "4.1.0")
     Set<String> modifiers();
 

@@ -18,8 +18,8 @@ package io.helidon.inject.api;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Request to activate a service.
@@ -46,7 +46,7 @@ interface ActivationRequestBlueprint {
      *
      * @return phase to target
      */
-    @ConfiguredOption("ACTIVE")
+    @Option.Default("ACTIVE")
     Phase targetPhase();
 
     /**
@@ -54,6 +54,6 @@ interface ActivationRequestBlueprint {
      *
      * @return whether to throw on failure
      */
-    @ConfiguredOption("true")
+    @Option.DefaultBoolean(true)
     boolean throwIfError();
 }

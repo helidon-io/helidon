@@ -19,22 +19,21 @@ package io.helidon.integrations.openapi.ui;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * {@link OpenApiUi} prototype.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface OpenApiUiConfigBlueprint extends Prototype.Factory<OpenApiUi> {
     /**
      * Merges implementation-specific UI options.
      *
      * @return options for the UI to merge
      */
-    @ConfiguredOption(kind = ConfiguredOption.Kind.MAP)
+    @Option.Configured
     Map<String, String> options();
 
     /**
@@ -42,7 +41,8 @@ interface OpenApiUiConfigBlueprint extends Prototype.Factory<OpenApiUi> {
      *
      * @return {@code true} if enabled, {@code false} otherwise
      */
-    @ConfiguredOption(key = "enabled", value = "true")
+    @Option.Configured("enabled")
+    @Option.DefaultBoolean(true)
     boolean isEnabled();
 
     /**
@@ -50,6 +50,6 @@ interface OpenApiUiConfigBlueprint extends Prototype.Factory<OpenApiUi> {
      *
      * @return full web context path
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> webContext();
 }

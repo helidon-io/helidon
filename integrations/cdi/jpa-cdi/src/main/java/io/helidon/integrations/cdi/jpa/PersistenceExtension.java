@@ -1752,7 +1752,7 @@ public final class PersistenceExtension implements Extension {
 
         }
 
-        private static final record ProductionId(Set<Type> types, Set<Annotation> qualifiers) {}
+        private record ProductionId(Set<Type> types, Set<Annotation> qualifiers) {}
 
     }
 

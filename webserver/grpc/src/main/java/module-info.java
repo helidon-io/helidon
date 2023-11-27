@@ -37,7 +37,6 @@ module io.helidon.webserver.grpc {
     requires java.logging;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config.metadata;
 
     requires transitive com.google.protobuf;
     requires transitive io.grpc;

@@ -30,6 +30,8 @@
 
     <artifactId>helidon-builder-processor</artifactId>
     <name>Helidon Builder Annotation Processor</name>
+    <description>This module is deprecated and will be removed, please use helidon-builder-codegen in
+    combination with helidon-codegen-apt</description>
 
     <dependencies>
         <dependency>

@@ -20,7 +20,6 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 
 /**
  * aka TracingConfig.
@@ -28,7 +27,7 @@ import io.helidon.config.metadata.Configured;
  * Tracing configuration that contains traced components (such as WebServer, Security) and their traced spans and span logs.
  * Spans can be renamed through configuration, components, spans and span logs may be disabled through this configuration.
  */
-@Configured(prefix = "tracing", root = true)
+@Prototype.Configured("tracing")
 @Prototype.Blueprint
 interface FakeTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
 

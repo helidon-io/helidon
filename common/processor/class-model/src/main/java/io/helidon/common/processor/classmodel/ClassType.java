@@ -17,7 +17,10 @@ package io.helidon.common.processor.classmodel;
 
 /**
  * Class type.
+ *
+ * @deprecated use {@code helidon-codegen-class-model} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public enum ClassType {
 
     /**

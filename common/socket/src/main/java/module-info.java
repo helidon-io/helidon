@@ -24,8 +24,6 @@ module io.helidon.common.socket {
     // as unless your module uses config, the API is not useful
     requires io.helidon.common.config;
 
-    requires static io.helidon.config.metadata;
-
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.builder.api;
 

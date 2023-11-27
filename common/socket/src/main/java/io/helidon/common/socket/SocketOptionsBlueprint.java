@@ -27,13 +27,11 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Socket options.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint(decorator = SocketOptionsBlueprint.BuilderDecorator.class)
 interface SocketOptionsBlueprint {
     /**
@@ -51,7 +49,8 @@ interface SocketOptionsBlueprint {
      *
      * @return connect timeout duration
      */
-    @ConfiguredOption("PT10S")
+    @Option.Configured
+    @Option.Default("PT10S")
     Duration connectTimeout();
 
     /**
@@ -59,7 +58,8 @@ interface SocketOptionsBlueprint {
      *
      * @return read timeout duration
      */
-    @ConfiguredOption("PT30S")
+    @Option.Configured
+    @Option.Default("PT30S")
     Duration readTimeout();
 
     /**
@@ -68,7 +68,7 @@ interface SocketOptionsBlueprint {
      * @return buffer size, in bytes
      * @see java.net.StandardSocketOptions#SO_RCVBUF
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Integer> socketReceiveBufferSize();
 
     /**
@@ -77,7 +77,7 @@ interface SocketOptionsBlueprint {
      * @return buffer size, in bytes
      * @see java.net.StandardSocketOptions#SO_SNDBUF
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Integer> socketSendBufferSize();
 
     /**
@@ -87,7 +87,8 @@ interface SocketOptionsBlueprint {
      * @return whether to reuse address
      * @see java.net.StandardSocketOptions#SO_REUSEADDR
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean socketReuseAddress();
 
     /**
@@ -97,7 +98,8 @@ interface SocketOptionsBlueprint {
      * @return keep alive
      * @see java.net.StandardSocketOptions#SO_KEEPALIVE
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean socketKeepAlive();
 
     /**
@@ -107,7 +109,8 @@ interface SocketOptionsBlueprint {
      * @return whether to use TCP_NODELAY, defaults to {@code false}
      * @see java.net.StandardSocketOptions#TCP_NODELAY
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean tcpNoDelay();
 
     /**

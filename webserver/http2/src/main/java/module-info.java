@@ -30,7 +30,6 @@ module io.helidon.webserver.http2 {
     requires io.helidon.builder.api;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.common.task;

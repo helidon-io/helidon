@@ -21,8 +21,6 @@ module io.helidon.common.pki {
 
     requires io.helidon.builder.api;
 
-    requires static io.helidon.config.metadata;
-
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common;

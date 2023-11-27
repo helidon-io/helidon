@@ -19,8 +19,8 @@ package io.helidon.common.uri;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Information about URI, that can be used to invoke a specific request over the network.
@@ -34,7 +34,7 @@ interface UriInfoBlueprint {
      *
      * @return the scheme, defaults to {@code http}
      */
-    @ConfiguredOption("http")
+    @Option.Default("http")
     String scheme();
 
     /**
@@ -42,7 +42,7 @@ interface UriInfoBlueprint {
      *
      * @return host, defaults to {@code localhost}
      */
-    @ConfiguredOption("localhost")
+    @Option.Default("localhost")
     String host();
 
     /**
@@ -70,7 +70,7 @@ interface UriInfoBlueprint {
      *
      * @return path
      */
-    @ConfiguredOption("root()")
+    @Option.Default("root()")
     UriPath path();
 
     /**
@@ -78,7 +78,7 @@ interface UriInfoBlueprint {
      *
      * @return query, may be {@link io.helidon.common.uri.UriQuery#isEmpty() empty}
      */
-    @ConfiguredOption("empty()")
+    @Option.Default("empty()")
     UriQuery query();
 
     /**
@@ -86,7 +86,7 @@ interface UriInfoBlueprint {
      *
      * @return fragment, may be {@link io.helidon.common.uri.UriFragment#empty() empty}
      */
-    @ConfiguredOption("empty()")
+    @Option.Default("empty()")
     UriFragment fragment();
 
     /**

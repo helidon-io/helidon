@@ -19,5 +19,7 @@
  *
  * @see io.helidon.common.processor.spi.CopyrightProvider
  * @see io.helidon.common.processor.spi.GeneratedAnnotationProvider
+ * @deprecated use {@code helidon-codegen} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 package io.helidon.common.processor.spi;

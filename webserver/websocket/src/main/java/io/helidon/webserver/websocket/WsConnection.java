@@ -45,7 +45,7 @@ import io.helidon.websocket.WsSession;
 public class WsConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(WsConnection.class.getName());
 
-    static final String MAX_FRAME_LENGTH = "1048576";
+    static final int MAX_FRAME_LENGTH = 1048576;
 
     private final ConnectionContext ctx;
     private final HttpPrologue prologue;

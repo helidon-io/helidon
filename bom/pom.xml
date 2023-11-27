@@ -507,6 +507,36 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-apt</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-scan</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-compiler</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-class-model</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor</artifactId>
                 <version>${helidon.version}</version>
@@ -1294,6 +1324,11 @@
             <dependency>
                 <groupId>io.helidon.builder</groupId>
                 <artifactId>helidon-builder-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

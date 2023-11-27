@@ -24,7 +24,6 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Abstractly describes method or field elements of a managed service type (i.e., fields, constructors, injectable methods, etc.).
@@ -84,7 +83,7 @@ interface ElementInfoBlueprint {
      *
      * @return true if static receiver
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean staticDeclaration();
 
     /**

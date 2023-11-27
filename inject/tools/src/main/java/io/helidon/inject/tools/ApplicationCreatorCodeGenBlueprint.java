@@ -18,8 +18,8 @@ package io.helidon.inject.tools;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Codegen request options applicable for {@link io.helidon.inject.tools.spi.ApplicationCreator}.
@@ -48,7 +48,7 @@ interface ApplicationCreatorCodeGenBlueprint {
      *
      * @return production or test scope
      */
-    @ConfiguredOption("")
+    @Option.Default("")
     String classPrefixName();
 
 }

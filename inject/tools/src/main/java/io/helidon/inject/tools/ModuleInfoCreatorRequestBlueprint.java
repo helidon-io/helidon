@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Used to represent the parameters that feed into the code generation of a module-info file specifically for Injection in that
@@ -59,7 +59,7 @@ interface ModuleInfoCreatorRequestBlueprint {
      *
      * @return true if the Module should be created
      */
-    @ConfiguredOption("true")
+    @Option.DefaultBoolean(true)
     boolean moduleCreated();
 
     /**

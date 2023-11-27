@@ -18,15 +18,14 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * aka ServerConfiguration.
  * The SocketConfiguration configures a port to listen on and its associated server socket parameters.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 interface FakeSocketConfigBlueprint {
 
@@ -43,7 +42,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return name of this socket
      */
-    @ConfiguredOption("@default")
+    @Option.Configured
+    @Option.Default("@default")
     String name();
 
     /**
@@ -52,10 +52,11 @@ interface FakeSocketConfigBlueprint {
      *
      * @return the server port of the server socket
      */
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int port();
 
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> bindAddress();
 
     /**
@@ -66,7 +67,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return a maximum length of the queue of incoming connections
      */
-    @ConfiguredOption("1024")
+    @Option.Configured
+    @Option.DefaultInt(1024)
     int backlog();
 
     /**
@@ -74,7 +76,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return a server socket timeout in milliseconds or {@code 0}
      */
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int timeoutMillis();
 
     /**
@@ -85,7 +88,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return a buffer size in bytes of the server socket or {@code 0}
      */
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int receiveBufferSize();
 
     /**
@@ -95,7 +99,7 @@ interface FakeSocketConfigBlueprint {
      *
      * @return web server tls configuration
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<FakeWebServerTlsConfig> tls();
 
     /**
@@ -104,7 +108,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return {@code true} for enabled socket, {@code false} for socket that should not be opened
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean enabled();
 
     /**
@@ -112,7 +117,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return size in bytes
      */
-    @ConfiguredOption("8192")
+    @Option.Configured
+    @Option.DefaultInt(8192)
     int maxHeaderSize();
 
     /**
@@ -120,7 +126,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return length
      */
-    @ConfiguredOption("4096")
+    @Option.Configured
+    @Option.DefaultInt(4096)
     int maxInitialLineLength();
 
     /**
@@ -129,7 +136,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return maximum payload size
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultLong(-1)
     long maxPayloadSize();
 
     /**
@@ -137,7 +145,8 @@ interface FakeSocketConfigBlueprint {
      *
      * @return maximum length of the content of an upgrade request
      */
-    @ConfiguredOption("65536")
+    @Option.Configured
+    @Option.DefaultInt(65536)
     int maxUpgradeContentLength();
 
 }
