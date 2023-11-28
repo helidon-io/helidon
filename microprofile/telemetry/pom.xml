@@ -32,6 +32,11 @@
         Support for MicroProfile Telemetry
     </description>
 
+    <properties>
+        <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
+    </properties>
+
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
@@ -115,7 +120,7 @@
         <dependency>
             <groupId>org.jboss.arquillian.junit5</groupId>
             <artifactId>arquillian-junit5-container</artifactId>
-            <version>1.7.0.Final</version>
+            <version>${version.lib.arquillian}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
