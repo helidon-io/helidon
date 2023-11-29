@@ -69,7 +69,8 @@ record AnnotationDataOption(Javadoc javadoc,
                             boolean confidential,
                             List<AllowedValue> allowedValues,
                             String defaultValue,
-                            DeprecationData deprecationData, List<Annotation> annotations) {
+                            DeprecationData deprecationData,
+                            List<Annotation> annotations) {
     private static final String UNCONFIGURED = "io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED";
 
     // this is temporary, when we stop supporting config metadata, we can refactor this method
