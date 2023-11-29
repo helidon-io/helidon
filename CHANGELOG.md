@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.14]
+
+This is a bug fix release of Helidon 1 that contains dependency upgrades.
+
+### Fixes
+
+- Upgrade netty to 4.1.100.Final [7862](https://github.com/helidon-io/helidon/pull/7862)
+- Upgrade jgit to 6.7.0 [7594](https://github.com/helidon-io/helidon/pull/7594)
+- Upgrade grpc-java to 1.57.1. Remove grpc repackaging. Use grpc bom [7306](https://github.com/helidon-io/helidon/pull/7306)
+- Upgrade grpc, jackson, okio, netty and add a couple suppressions [7267](https://github.com/helidon-io/helidon/pull/7267)
+- Upgrade guava to 32.0.0 [6989](https://github.com/helidon-io/helidon/pull/6989)
+- Build: Add release workflow [7940](https://github.com/helidon-io/helidon/pull/7940)
+- Build: remove Jenkinsfile [7841](https://github.com/helidon-io/helidon/pull/7841)
+
 ## [1.4.13]
 
 This is a bug fix release of Helidon 1 that contains dependency upgrades.
@@ -801,6 +815,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.14]: https://github.com/oracle/helidon/compare/1.4.13..1.4.14
 [1.4.13]: https://github.com/oracle/helidon/compare/1.4.12..1.4.13
 [1.4.12]: https://github.com/oracle/helidon/compare/1.4.11..1.4.12
 [1.4.11]: https://github.com/oracle/helidon/compare/1.4.10..1.4.11
