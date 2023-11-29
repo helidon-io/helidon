@@ -34,7 +34,7 @@ import static org.testng.AssertJUnit.assertEquals;
 
 @AddJaxRs
 @AddBean(TestReqScopeDisabledDiscovery.MyController.class)
-class TestReqScopeDisabledDiscovery {
+public class TestReqScopeDisabledDiscovery {
 
     @Inject
     private WebTarget target;
