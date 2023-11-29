@@ -99,7 +99,7 @@ public class GreetResource {
     public GreetingMessage mixedSpan() {
 
         io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();
-        io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed")
+        io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed_inner")
                 .kind(io.helidon.tracing.Span.Kind.SERVER)
                 .tag("attribute", "value")
                 .start();
@@ -117,7 +117,7 @@ public class GreetResource {
     @Produces(MediaType.APPLICATION_JSON)
     @WithSpan("mixed_parent_injected")
     public GreetingMessage mixedSpanInjected() {
-        io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected")
+        io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected_inner")
                 .kind(io.helidon.tracing.Span.Kind.SERVER)
                 .tag("attribute", "value")
                 .start();
