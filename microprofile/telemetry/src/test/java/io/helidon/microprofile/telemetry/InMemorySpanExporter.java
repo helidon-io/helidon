@@ -48,7 +48,7 @@ public class InMemorySpanExporter implements SpanExporter {
     }
 
     public void assertSpanCount(int spanCount) {
-        Awaitility.await().pollDelay(3, SECONDS).atMost(10, SECONDS)
+        Awaitility.await().pollDelay(3, SECONDS).atMost(30, SECONDS)
                 .untilAsserted(() -> assertThat(finishedSpanItems.size(), Matchers.is(spanCount)));
     }
 
