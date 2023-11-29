@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.testing.testng;
 
-import java.io.Serial;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
