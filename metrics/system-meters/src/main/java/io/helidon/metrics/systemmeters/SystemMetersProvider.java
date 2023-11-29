@@ -78,7 +78,7 @@ public class SystemMetersProvider implements MetersProvider {
             .withName("jvm.uptime")
             .withDescription(
                     "Displays the start time of the Java virtual machine in "
-                            + "milliseconds. This "
+                            + "seconds. This "
                             + "attribute displays the approximate time when the Java "
                             + "virtual machine "
                             + "started.")
@@ -146,7 +146,7 @@ public class SystemMetersProvider implements MetersProvider {
     private static final Metadata GC_TIME = Metadata.builder()
             .withName("gc.time")
             .withDescription(
-                    "Displays the approximate accumulated collection elapsed time in milliseconds. "
+                    "Displays the approximate accumulated collection elapsed time in seconds. "
                             + "This attribute displays -1 if the collection elapsed time is undefined for this "
                             + "collector. The Java virtual machine implementation may use a high resolution "
                             + "timer to measure the elapsed time. This attribute may display the same value "
@@ -215,7 +215,7 @@ public class SystemMetersProvider implements MetersProvider {
                       typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getMax));
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        registerGauge(result, JVM_UPTIME, runtimeBean, RuntimeMXBean::getUptime);
+        registerGauge(result, JVM_UPTIME, runtimeBean, rtBean -> rtBean.getUptime() / 1000.0D);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         registerGauge(result, THREAD_COUNT, threadBean, ThreadMXBean::getThreadCount);

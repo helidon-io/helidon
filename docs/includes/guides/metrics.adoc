@@ -130,7 +130,7 @@ curl -H "Accept: application/json"  http://localhost:8080{metrics-endpoint}
     "classloader.loadedClasses.count": 3582,
     "thread.count": 18,
     "classloader.unloadedClasses.total": 0,
-    "jvm.uptime": 369478,
+    "jvm.uptime": 36.9478,
     "gc.time;name=G1 Young Generation": 0,
     "memory.committedHeap": 541065216,
     "thread.max.count": 19,
