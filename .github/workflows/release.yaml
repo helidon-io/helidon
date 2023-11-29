@@ -61,6 +61,6 @@ jobs:
       - name: Upload Staged Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: io-helidon-staged-artifacts
+          name: io-helidon-artifacts-${{ github.ref_name }}
           path: parent/target/nexus-staging/
           retention-days: 90
