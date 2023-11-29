@@ -39,6 +39,8 @@ import org.glassfish.jersey.server.Uri;
  *
  *  Call secondary service:
  *  curl -X GET http://localhost:8080/greet/outbound
+ *
+ *  Explore traces in Jaeger UI.
  */
 @Path("/greet")
 public class GreetResource {
@@ -47,16 +49,13 @@ public class GreetResource {
 
     private Tracer tracer;
 
-    private io.helidon.tracing.Tracer helidonTracerInjected;
-
     @Uri("http://localhost:8081/secondary")
     private WebTarget target;
 
     @Inject
-    GreetResource(Span span, Tracer tracer, io.helidon.tracing.Tracer helidonTracerInjected) {
+    GreetResource(Span span, Tracer tracer) {
         this.span = span;
         this.tracer = tracer;
-        this.helidonTracerInjected = helidonTracerInjected;
     }
 
     /**
@@ -86,44 +85,6 @@ public class GreetResource {
         span.end();
 
         return new GreetingMessage("Custom Span" + span);
-    }
-
-    /**
-     *  Create a helidon mixed span and return its description.
-     * @return {@link GreetingMessage}
-     */
-    @GET
-    @Path("mixed")
-    @Produces(MediaType.APPLICATION_JSON)
-    @WithSpan("mixed_parent")
-    public GreetingMessage mixedSpan() {
-
-        io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();
-        io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed_inner")
-                .kind(io.helidon.tracing.Span.Kind.SERVER)
-                .tag("attribute", "value")
-                .start();
-        mixedSpan.end();
-
-        return new GreetingMessage("Mixed Span" + span);
-    }
-
-    /**
-     *  Create a helidon mixed span and return its description.
-     * @return {@link GreetingMessage}
-     */
-    @GET
-    @Path("mixed_injected")
-    @Produces(MediaType.APPLICATION_JSON)
-    @WithSpan("mixed_parent_injected")
-    public GreetingMessage mixedSpanInjected() {
-        io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected_inner")
-                .kind(io.helidon.tracing.Span.Kind.SERVER)
-                .tag("attribute", "value")
-                .start();
-        mixedSpan.end();
-
-        return new GreetingMessage("Mixed Span Injected" + span);
     }
 
     /**

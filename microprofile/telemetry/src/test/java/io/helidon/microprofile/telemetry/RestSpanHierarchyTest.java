@@ -17,7 +17,6 @@
 
 package io.helidon.microprofile.telemetry;
 
-import static io.opentelemetry.semconv.resource.attributes.ResourceAttributes.SERVICE_VERSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.net.URI;
@@ -25,7 +24,6 @@ import java.net.URL;
 import java.util.List;
 
 import io.helidon.http.Status;
-import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 
 import io.opentelemetry.api.common.AttributeKey;
@@ -45,6 +43,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -66,6 +65,7 @@ public class RestSpanHierarchyTest {
         ConfigAsset config = new ConfigAsset()
                 .add("otel.service.name", "helidon-mp-telemetry")
                 .add("otel.sdk.disabled", "false")
+                .add("telemetry.span.full.url", "false")
                 .add("otel.traces.exporter", "in-memory");
 
         return ShrinkWrap.create(WebArchive.class)
@@ -95,6 +95,11 @@ public class RestSpanHierarchyTest {
         }
     }
 
+    @AfterEach
+    void reset(){
+        spanExporter.reset();
+    }
+
     @Test
     void spanHierarchy() {
 
@@ -105,22 +110,47 @@ public class RestSpanHierarchyTest {
         assertThat(spanItems.get(0).getKind(), is(SERVER));
         assertThat(spanItems.get(0).getName(), is("mixed_inner"));
         assertThat(spanItems.get(0).getAttributes().get(AttributeKey.stringKey("attribute")), is("value"));
+        assertThat(spanItems.get(0).getParentSpanId(), is(spanItems.get(1).getSpanId()));
+
 
         assertThat(spanItems.get(1).getKind(), is(INTERNAL));
         assertThat(spanItems.get(1).getName(), is("mixed_parent"));
+        assertThat(spanItems.get(1).getParentSpanId(), is(spanItems.get(2).getSpanId()));
+
 
         assertThat(spanItems.get(2).getKind(), is(SERVER));
         assertThat(spanItems.get(2).getName(), is("mixed"));
     }
 
+    @Test
+    void spanHierarchyInjected() {
+
+        assertThat(client.get("mixed_injected").request().status(), is(Status.OK_200));
+
+        List<SpanData> spanItems = spanExporter.getFinishedSpanItems(3);
+        assertThat(spanItems.size(), is(3));
+        assertThat(spanItems.get(0).getKind(), is(SERVER));
+        assertThat(spanItems.get(0).getName(), is("mixed_inner_injected"));
+        assertThat(spanItems.get(0).getAttributes().get(AttributeKey.stringKey("attribute")), is("value"));
+        assertThat(spanItems.get(0).getParentSpanId(), is(spanItems.get(1).getSpanId()));
+
+
+        assertThat(spanItems.get(1).getKind(), is(INTERNAL));
+        assertThat(spanItems.get(1).getName(), is("mixed_parent_injected"));
+        assertThat(spanItems.get(1).getParentSpanId(), is(spanItems.get(2).getSpanId()));
+
+
+        assertThat(spanItems.get(2).getKind(), is(SERVER));
+        assertThat(spanItems.get(2).getName(), is("mixed_injected"));
+    }
+
 
     @Path("/")
     public static class SpanResource {
-        @GET
-        @Path("/span")
-        public Response span() {
-            return Response.ok().build();
-        }
+
+        @Inject
+        private io.helidon.tracing.Tracer helidonTracerInjected;
+
 
         @GET
         @Path("mixed")
@@ -129,6 +159,20 @@ public class RestSpanHierarchyTest {
 
             io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();
             io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed_inner")
+                    .kind(io.helidon.tracing.Span.Kind.SERVER)
+                    .tag("attribute", "value")
+                    .start();
+            mixedSpan.end();
+
+            return Response.ok().build();
+        }
+
+        @GET
+        @Path("mixed_injected")
+        @WithSpan("mixed_parent_injected")
+        public Response mixedSpanInjected() {
+
+            io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_inner_injected")
                     .kind(io.helidon.tracing.Span.Kind.SERVER)
                     .tag("attribute", "value")
                     .start();
