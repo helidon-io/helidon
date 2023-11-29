@@ -15,16 +15,18 @@
  */
 package io.helidon.microprofile.testing.testng;
 
-import io.helidon.microprofile.testing.common.JaxRsValidator;
+import io.helidon.microprofile.testing.common.TestValidator;
+import io.helidon.microprofile.testing.jaxrs.AddJaxRs;
 
 /**
  * An implementation for JaxRs Validator for Junit.
  */
-public class TestNgJaxRsValidator extends JaxRsValidator {
+public class TestNgJaxRsValidator implements TestValidator {
 
     @Override
     public void validate(Class<?> testClass) throws RuntimeException {
-        if (checkAddJaxRs(testClass)){
+        AddJaxRs jaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+        if (jaxRsAnnotation != null){
             DisableDiscovery disableDiscovery = testClass.getAnnotation(DisableDiscovery.class);
             if (disableDiscovery == null) {
                 throw new RuntimeException("@AddJaxRs annotation may only be used with @DisableDiscovery annotation");

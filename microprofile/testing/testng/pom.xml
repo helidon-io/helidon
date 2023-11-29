@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-common</artifactId>
+            <artifactId>helidon-microprofile-testing-jaxrs</artifactId>
         </dependency>
     </dependencies>
 
