@@ -24,5 +24,5 @@ public interface TestValidator {
      * Perform Validation.
      * @param testClass for verification.
      */
-    void validate(Class<?> testClass) throws RuntimeException;
+    void validate(Class<?> testClass);
 }
