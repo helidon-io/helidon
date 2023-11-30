@@ -74,7 +74,7 @@ import org.testng.annotations.Test;
 public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
-            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class);
+            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
 
     private static final List<String> YAML_SUFFIXES = List.of(".yml", ".yaml");

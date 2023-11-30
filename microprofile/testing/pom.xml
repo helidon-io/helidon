@@ -33,9 +33,7 @@
     <name>Helidon Microprofile Testing Project</name>
 
     <modules>
-        <module>common</module>
         <module>junit5</module>
         <module>testng</module>
-        <module>jaxrs</module>
     </modules>
 </project>

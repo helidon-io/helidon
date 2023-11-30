@@ -13,27 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.microprofile.testing.testng;
 
-package io.helidon.microprofile.testing.common;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
 /**
- * Common CDI Extensions for testing.
+ * Add JaxRS support for Request-scoped beans.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-@Inherited
-public @interface CommonCdiExtensions {
-
-    /**
-     * Return CDI Extension.
-     *
-     * @return CDIExtension[]
-     */
-    CommonCdiExtension[] value();
+public @interface AddJaxRs {
 }
