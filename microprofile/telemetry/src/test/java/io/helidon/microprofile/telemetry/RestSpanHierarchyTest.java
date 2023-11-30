@@ -17,81 +17,54 @@
 
 package io.helidon.microprofile.telemetry;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.net.URI;
-import java.net.URL;
 import java.util.List;
 
 import io.helidon.http.Status;
-import io.helidon.webclient.http1.Http1Client;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.opentelemetry.sdk.trace.data.SpanData;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit5.ArquillianExtension;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Before;
-
-import io.opentelemetry.sdk.autoconfigure.spi.traces.ConfigurableSpanExporterProvider;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.opentelemetry.api.trace.SpanKind.SERVER;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
-import static org.hamcrest.Matchers.*;
+import static io.opentelemetry.api.trace.SpanKind.SERVER;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Test Span Hierarchy with Tracer Mock
  */
-@ExtendWith(ArquillianExtension.class)
+@HelidonTest
+@AddBean(InMemorySpanExporter.class)
+@AddBean(InMemorySpanExporterProvider.class)
+@AddConfig(key = "otel.service.name", value = "helidon-mp-telemetry")
+@AddConfig(key = "otel.sdk.disabled", value = "false")
+@AddConfig(key = "telemetry.span.full.url", value = "false")
+@AddConfig(key = "otel.traces.exporter", value = "in-memory")
 public class RestSpanHierarchyTest {
 
-    private Http1Client client;
-
-    @Deployment
-    public static WebArchive createDeployment() {
-
-        ConfigAsset config = new ConfigAsset()
-                .add("otel.service.name", "helidon-mp-telemetry")
-                .add("otel.sdk.disabled", "false")
-                .add("telemetry.span.full.url", "false")
-                .add("otel.traces.exporter", "in-memory");
-
-        return ShrinkWrap.create(WebArchive.class)
-                .addClasses(InMemorySpanExporter.class, InMemorySpanExporterProvider.class)
-                .addAsLibrary(TestLibraries.AWAITILITY_LIB)
-                .addAsServiceProvider(ConfigurableSpanExporterProvider.class, InMemorySpanExporterProvider.class)
-                .addAsResource(config, "META-INF/microprofile-config.properties");
-    }
-
-    @ArquillianResource
-    URL url;
+    @Inject
+    WebTarget webTarget;
 
     @Inject
     InMemorySpanExporter spanExporter;
 
-    @Before
+    @BeforeEach
     void setup() {
         if (spanExporter != null) {
             spanExporter.reset();
-        }
-
-        if (client == null){
-            client = Http1Client
-                    .builder()
-                    .baseUri(URI.create(url.toString()))
-                    .build();
         }
     }
 
@@ -103,7 +76,7 @@ public class RestSpanHierarchyTest {
     @Test
     void spanHierarchy() {
 
-        assertThat(client.get("mixed").request().status(), is(Status.OK_200));
+        assertThat(webTarget.request("mixed").get(), is(Status.OK_200));
 
         List<SpanData> spanItems = spanExporter.getFinishedSpanItems(3);
         assertThat(spanItems.size(), is(3));
@@ -125,7 +98,7 @@ public class RestSpanHierarchyTest {
     @Test
     void spanHierarchyInjected() {
 
-        assertThat(client.get("mixed_injected").request().status(), is(Status.OK_200));
+        assertThat(webTarget.request("mixed_injected").get(), is(Status.OK_200));
 
         List<SpanData> spanItems = spanExporter.getFinishedSpanItems(3);
         assertThat(spanItems.size(), is(3));
