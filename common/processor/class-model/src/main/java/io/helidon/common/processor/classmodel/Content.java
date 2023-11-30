@@ -186,8 +186,6 @@ class Content {
             String processedFqName = TYPE_IDENTIFICATION_PATTERN.matcher(fqClassName)
                     .replaceAll(className -> ClassModel.TYPE_TOKEN_PATTERN.replace("name", className.group()));
             return add(processedFqName);
-
-            //return add(ClassModel.TYPE_TOKEN_PATTERN.replace("name", fqClassName));
         }
 
         /**
