@@ -21,9 +21,11 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.processor.ElementInfoPredicates;
+import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
@@ -38,45 +40,46 @@ import static org.hamcrest.Matchers.not;
 class TypeInfoPredicatesTest {
     private static final TypeInfo TEST_SUBJECT = TypeInfo.builder()
             .typeName(TypeName.create("io.helidon.builder.processor.test.TestSubject"))
-            .typeKind(TypeValues.KIND_INTERFACE)
-            .addElementInfo(it -> it.elementTypeKind(TypeValues.KIND_FIELD)
+            .kind(ElementKind.INTERFACE)
+            .accessModifier(AccessModifier.PUBLIC)
+            .addElementInfo(it -> it.kind(ElementKind.FIELD)
                     .elementName("privateField")
-                    .addModifier(TypeValues.MODIFIER_FINAL)
-                    .addModifier(TypeValues.MODIFIER_PRIVATE)
+                    .addElementModifier(Modifier.FINAL)
+                    .accessModifier(AccessModifier.PRIVATE)
                     .typeName(Types.STRING_TYPE))
-            .addElementInfo(it -> it.elementTypeKind(TypeValues.KIND_FIELD)
+            .addElementInfo(it -> it.kind(ElementKind.FIELD)
                     .elementName("publicField")
-                    .addModifier(TypeValues.MODIFIER_FINAL)
-                    .addModifier(TypeValues.MODIFIER_PUBLIC)
+                    .addElementModifier(Modifier.FINAL)
+                    .accessModifier(AccessModifier.PUBLIC)
                     .typeName(Types.STRING_TYPE))
-            .addElementInfo(it -> it.elementTypeKind(TypeValues.KIND_FIELD)
+            .addElementInfo(it -> it.kind(ElementKind.FIELD)
                     .elementName("CONSTANT")
-                    .addModifier(TypeValues.MODIFIER_FINAL)
-                    .addModifier(TypeValues.MODIFIER_STATIC)
-                    .addModifier(TypeValues.MODIFIER_PRIVATE)
+                    .addElementModifier(Modifier.FINAL)
+                    .addElementModifier(Modifier.STATIC)
+                    .accessModifier(AccessModifier.PRIVATE)
                     .typeName(Types.STRING_TYPE))
-            .addElementInfo(it -> it.elementTypeKind(TypeValues.KIND_METHOD)
+            .addElementInfo(it -> it.kind(ElementKind.METHOD)
                     .elementName("defaultMethod")
-                    .addModifier(TypeValues.MODIFIER_DEFAULT)
+                    .addElementModifier(Modifier.DEFAULT)
                     .typeName(Types.STRING_TYPE))
-            .addElementInfo(it -> it.elementTypeKind(TypeValues.KIND_METHOD)
+            .addElementInfo(it -> it.kind(ElementKind.METHOD)
                     .elementName("staticMethodWithParams")
-                    .addModifier(TypeValues.MODIFIER_STATIC)
+                    .addElementModifier(Modifier.STATIC)
                     .typeName(Types.STRING_TYPE)
                     .addParameterArgument(arg -> arg.typeName(Types.CONFIG_TYPE)
                             .elementName("config")
-                            .elementTypeKind(TypeValues.KIND_PARAMETER)))
-            .addElementInfo(it -> it.elementTypeKind(TypeValues.KIND_METHOD)
+                            .kind(ElementKind.PARAMETER)))
+            .addElementInfo(it -> it.kind(ElementKind.METHOD)
                     .elementName("staticMethodWithParams")
-                    .addModifier(TypeValues.MODIFIER_STATIC)
+                    .addElementModifier(Modifier.STATIC)
                     .typeName(Types.STRING_TYPE)
                     .addAnnotation(annot -> annot.typeName(Types.PROTOTYPE_ANNOTATED_TYPE))
                     .addParameterArgument(arg -> arg.typeName(Types.CONFIG_TYPE)
                             .elementName("config")
-                            .elementTypeKind(TypeValues.KIND_PARAMETER))
+                            .kind(ElementKind.PARAMETER))
                     .addParameterArgument(arg -> arg.typeName(Types.CONFIG_TYPE)
                             .elementName("config2")
-                            .elementTypeKind(TypeValues.KIND_PARAMETER)))
+                            .kind(ElementKind.PARAMETER)))
             .build();
 
     @Test
@@ -88,8 +91,8 @@ class TypeInfoPredicatesTest {
                 .toList();
 
         assertThat(methods, containsInAnyOrder("defaultMethod",
-                "staticMethodWithParams",
-                "staticMethodWithParams"));
+                                               "staticMethodWithParams",
+                                               "staticMethodWithParams"));
     }
 
     @Test
@@ -101,8 +104,8 @@ class TypeInfoPredicatesTest {
                 .toList();
 
         assertThat(methods, containsInAnyOrder("CONSTANT",
-                "staticMethodWithParams",
-                "staticMethodWithParams"));
+                                               "staticMethodWithParams",
+                                               "staticMethodWithParams"));
     }
 
     @Test
@@ -114,7 +117,7 @@ class TypeInfoPredicatesTest {
                 .toList();
 
         assertThat(methods, containsInAnyOrder("privateField",
-                "CONSTANT"));
+                                               "CONSTANT"));
     }
 
     @Test
@@ -160,7 +163,7 @@ class TypeInfoPredicatesTest {
                 .toList();
 
         assertThat(methods, containsInAnyOrder("staticMethodWithParams",
-                "staticMethodWithParams"));
+                                               "staticMethodWithParams"));
     }
 
     @Test
@@ -196,7 +199,8 @@ class TypeInfoPredicatesTest {
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(BuilderInfoPredicates.ignoredMethod(Set.of(new MethodSignature(Types.STRING_TYPE,
                                                                                        "staticMethodWithParams",
-                                                                                       List.of(Types.CONFIG_TYPE, Types.CONFIG_TYPE)
+                                                                                       List.of(Types.CONFIG_TYPE,
+                                                                                               Types.CONFIG_TYPE)
                 )), Set.of()))
                 .toList();
 
@@ -210,7 +214,8 @@ class TypeInfoPredicatesTest {
     void findMethodTest() {
         Optional<TypedElementInfo> found = BuilderInfoPredicates.findMethod(new MethodSignature(Types.STRING_TYPE,
                                                                                                 "staticMethodWithParams",
-                                                                                                List.of(Types.CONFIG_TYPE, Types.CONFIG_TYPE)),
+                                                                                                List.of(Types.CONFIG_TYPE,
+                                                                                                        Types.CONFIG_TYPE)),
                                                                             null,
                                                                             TEST_SUBJECT);
 

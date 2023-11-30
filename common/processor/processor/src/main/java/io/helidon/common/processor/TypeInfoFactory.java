@@ -17,17 +17,20 @@
 package io.helidon.common.processor;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationValue;
@@ -41,9 +44,12 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
 
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -60,6 +66,12 @@ import static java.util.function.Predicate.not;
  */
 public final class TypeInfoFactory {
     private static final AllPredicate ALL_PREDICATE = new AllPredicate();
+
+    private static final Set<TypeName> IGNORED_ANNOTATIONS = Set.of(TypeName.create(SuppressWarnings.class),
+                                                                    TypeName.create(Override.class));
+
+    // we expect that annotations themselves are not code generated, and can be cached
+    private static final Map<TypeName, List<Annotation>> META_ANNOTATION_CACHE = new ConcurrentHashMap<>();
 
     private TypeInfoFactory() {
     }
@@ -98,7 +110,6 @@ public final class TypeInfoFactory {
                 .flatMap(it -> create(processingEnv, typeElement, elementPredicate, it));
     }
 
-
     /**
      * Create type information from a type element, reading all child elements.
      *
@@ -131,9 +142,9 @@ public final class TypeInfoFactory {
 
     /**
      * Creates an instance of a {@link io.helidon.common.types.TypedElementInfo} given its type and variable element from
-     * annotation processing. If the passed in element is not a {@link io.helidon.common.types.TypeValues#KIND_FIELD},
-     * {@link io.helidon.common.types.TypeValues#KIND_METHOD},
-     * {@link io.helidon.common.types.TypeValues#KIND_CONSTRUCTOR}, or {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
+     * annotation processing. If the passed in element is not a {@link io.helidon.common.types.ElementKind#FIELD},
+     * {@link io.helidon.common.types.ElementKind#METHOD},
+     * {@link io.helidon.common.types.ElementKind#CONSTRUCTOR}, or {@link io.helidon.common.types.ElementKind#FIELD}
      * then this method may return empty.
      *
      * @param env      annotation processing environment
@@ -154,23 +165,36 @@ public final class TypeInfoFactory {
                 .stream()
                 .map(Modifier::toString)
                 .collect(Collectors.toSet());
+        Set<TypeName> thrownChecked = Set.of();
 
-        if (v instanceof ExecutableElement) {
-            ExecutableElement ee = (ExecutableElement) v;
+        if (v instanceof ExecutableElement ee) {
             typeMirror = Objects.requireNonNull(ee.getReturnType());
             params = ee.getParameters().stream()
                     .map(it -> createTypedElementInfoFromElement(env, it, elements).orElseThrow())
-                    .collect(Collectors.toList());
+                    .toList();
             AnnotationValue annotationValue = ee.getDefaultValue();
             defaultValue = (annotationValue == null) ? null
                     : String.valueOf(annotationValue.accept(new ToAnnotationValueVisitor(elements)
-                                                     .mapBooleanToNull(true)
-                                                     .mapVoidToNull(true)
-                                                     .mapBlankArrayToNull(true)
-                                                     .mapEmptyStringToNull(true)
-                                                     .mapToSourceDeclaration(true), null));
-        } else if (v instanceof VariableElement) {
-            VariableElement ve = (VariableElement) v;
+                                                                    .mapBooleanToNull(true)
+                                                                    .mapVoidToNull(true)
+                                                                    .mapBlankArrayToNull(true)
+                                                                    .mapEmptyStringToNull(true)
+                                                                    .mapToSourceDeclaration(true), null));
+
+            thrownChecked = ee.getThrownTypes()
+                    .stream()
+                    .flatMap(it -> {
+                        if (isCheckedException(env, it)) {
+                            TypeName typeName = TypeFactory.createTypeName(it).orElse(null);
+                            if (typeName == null) {
+                                return Stream.of();
+                            }
+                            return Stream.of(typeName);
+                        }
+                        return Stream.of();
+                    })
+                    .collect(Collectors.toSet());
+        } else if (v instanceof VariableElement ve) {
             typeMirror = Objects.requireNonNull(ve.asType());
         }
 
@@ -204,15 +228,26 @@ public final class TypeInfoFactory {
                 .typeName(type)
                 .componentTypes(componentTypeNames)
                 .elementName(v.getSimpleName().toString())
-                .elementTypeKind(v.getKind().name())
+                .kind(kind(v.getKind()))
                 .annotations(createAnnotations(v, elements))
                 .elementTypeAnnotations(elementTypeAnnotations)
-                .modifiers(modifierNames)
+                .elementModifiers(modifiers(modifierNames))
+                .accessModifier(accessModifier(modifierNames))
+                .throwsChecked(thrownChecked)
                 .parameterArguments(params);
         TypeFactory.createTypeName(v.getEnclosingElement()).ifPresent(builder::enclosingType);
         Optional.ofNullable(defaultValue).ifPresent(builder::defaultValue);
 
         return Optional.of(builder.build());
+    }
+
+    private static boolean isCheckedException(ProcessingEnvironment env, TypeMirror it) {
+        Elements elements = env.getElementUtils();
+        Types types = env.getTypeUtils();
+        TypeMirror exception = elements.getTypeElement(Exception.class.getName()).asType();
+        TypeMirror runtimeException = elements.getTypeElement(RuntimeException.class.getName()).asType();
+
+        return types.isAssignable(it, exception) && !types.isAssignable(it, runtimeException);
     }
 
     /**
@@ -223,6 +258,15 @@ public final class TypeInfoFactory {
      */
     public static boolean isBuiltInJavaType(TypeName type) {
         return type.primitive() || type.packageName().startsWith("java.");
+    }
+
+    static ElementKind kind(javax.lang.model.element.ElementKind kind) {
+        try {
+            return ElementKind.valueOf(String.valueOf(kind).toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            // not supported, consider other type
+            return ElementKind.OTHER;
+        }
     }
 
     private static Optional<TypeInfo> create(ProcessingEnvironment processingEnv,
@@ -251,9 +295,13 @@ public final class TypeInfoFactory {
         Elements elementUtils = processingEnv.getElementUtils();
         try {
             List<Annotation> annotations =
-                    List.copyOf(createAnnotations(elementUtils.getTypeElement(genericTypeName.resolvedName()), elementUtils));
-            Map<TypeName, List<Annotation>> referencedAnnotations =
-                    new LinkedHashMap<>(toMetaAnnotations(annotations, processingEnv));
+                    List.copyOf(createAnnotations(elementUtils.getTypeElement(genericTypeName.resolvedName()),
+                                                  elementUtils));
+            Set<TypeName> annotationsOnTypeOrElements = new HashSet<>();
+            annotations.stream()
+                    .map(Annotation::typeName)
+                    .forEach(annotationsOnTypeOrElements::add);
+
             List<TypedElementInfo> elementsWeCareAbout = new ArrayList<>();
             List<TypedElementInfo> otherElements = new ArrayList<>();
             typeElement.getEnclosedElements()
@@ -267,16 +315,24 @@ public final class TypeInfoFactory {
                         } else {
                             otherElements.add(it);
                         }
-                        merge(referencedAnnotations, toMetaAnnotations(it.annotations(), processingEnv));
-                        it.parameterArguments().forEach(arg -> merge(referencedAnnotations,
-                                                                     toMetaAnnotations(arg.annotations(), processingEnv)));
+                        annotationsOnTypeOrElements.addAll(it.annotations()
+                                                                   .stream()
+                                                                   .map(Annotation::typeName)
+                                                                   .collect(Collectors.toSet()));
+                        it.parameterArguments()
+                                .forEach(arg -> annotationsOnTypeOrElements.addAll(arg.annotations()
+                                                                                           .stream()
+                                                                                           .map(Annotation::typeName)
+                                                                                           .collect(Collectors.toSet())));
                     });
+
+            Set<String> modifiers = toModifierNames(typeElement.getModifiers());
             TypeInfo.Builder builder = TypeInfo.builder()
                     .typeName(typeName)
-                    .typeKind(String.valueOf(typeElement.getKind()))
+                    .kind(kind(typeElement.getKind()))
                     .annotations(annotations)
-                    .referencedTypeNamesToAnnotations(referencedAnnotations)
-                    .modifiers(toModifierNames(typeElement.getModifiers()))
+                    .elementModifiers(modifiers(modifiers))
+                    .accessModifier(accessModifier(modifiers))
                     .elementInfo(elementsWeCareAbout)
                     .otherElementInfo(otherElements);
 
@@ -285,14 +341,6 @@ public final class TypeInfoFactory {
                 if (!isBuiltInJavaType(it.typeName()) && !it.typeName().generic()) {
                     allInterestingTypeNames.add(it.typeName().genericTypeName());
                 }
-                List<Annotation> annos = it.annotations();
-                Map<TypeName, List<Annotation>> resolved = toMetaAnnotations(annos, processingEnv);
-                resolved.forEach(builder::putReferencedTypeNamesToAnnotation);
-                resolved.keySet().stream()
-                        .map(TypeName::genericTypeName)
-                        .filter(t -> !isBuiltInJavaType(t))
-                        .filter(t -> !t.generic())
-                        .forEach(allInterestingTypeNames::add);
                 it.parameterArguments().stream()
                         .map(TypedElementInfo::typeName)
                         .map(TypeName::genericTypeName)
@@ -361,10 +409,37 @@ public final class TypeInfoFactory {
                 builder.module(module.toString());
             }
 
+            builder.referencedTypeNamesToAnnotations(toMetaAnnotations(processingEnv, annotationsOnTypeOrElements));
+
             return Optional.of(builder.build());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + typeElement, e);
         }
+    }
+
+    private static Set<io.helidon.common.types.Modifier> modifiers(Set<String> stringModifiers) {
+        Set<io.helidon.common.types.Modifier> result = new HashSet<>();
+
+        for (String stringModifier : stringModifiers) {
+            try {
+                result.add(io.helidon.common.types.Modifier.valueOf(stringModifier.toUpperCase(Locale.ROOT)));
+            } catch (Exception ignored) {
+                // we do not care about modifiers we do not understand - either access modifier, or something new
+            }
+        }
+
+        return result;
+    }
+
+    private static AccessModifier accessModifier(Set<String> stringModifiers) {
+        for (String stringModifier : stringModifiers) {
+            try {
+                return AccessModifier.valueOf(stringModifier.toUpperCase(Locale.ROOT));
+            } catch (Exception ignored) {
+                // we do not care about modifiers we do not understand - either non-access modifier, or something new
+            }
+        }
+        return AccessModifier.PACKAGE_PRIVATE;
     }
 
     private static void merge(Map<TypeName, List<Annotation>> result,
@@ -376,7 +451,12 @@ public final class TypeInfoFactory {
         return element.getAnnotationMirrors()
                 .stream()
                 .map(it -> AnnotationFactory.createAnnotation(it, elements))
-                .collect(Collectors.toList());
+                .filter(TypeInfoFactory::filterAnnotations)
+                .toList();
+    }
+
+    private static boolean filterAnnotations(Annotation annotation) {
+        return !IGNORED_ANNOTATIONS.contains(annotation.typeName());
     }
 
     /**
@@ -437,23 +517,59 @@ public final class TypeInfoFactory {
      * @param annotations the annotations
      * @return the meta annotations for the provided set of annotations
      */
-    private static Map<TypeName, List<Annotation>> toMetaAnnotations(Collection<Annotation> annotations,
-                                                                     ProcessingEnvironment processingEnv) {
+    private static Map<TypeName, List<Annotation>> toMetaAnnotations(ProcessingEnvironment env,
+                                                                     Set<TypeName> annotations) {
         if (annotations.isEmpty()) {
             return Map.of();
         }
 
-        Elements elements = processingEnv.getElementUtils();
-        Map<TypeName, List<Annotation>> result = new LinkedHashMap<>();
-        annotations.stream()
-                .filter(it -> !result.containsKey(it.typeName()))
+        Map<TypeName, List<Annotation>> result = new HashMap<>();
+
+        gatherMetaAnnotations(env, annotations, result);
+
+        return result;
+    }
+
+    // gather a single level map of types to their meta annotation
+    private static void gatherMetaAnnotations(ProcessingEnvironment env,
+                                              Set<TypeName> annotationTypes,
+                                              Map<TypeName, List<Annotation>> result) {
+        if (annotationTypes.isEmpty()) {
+            return;
+        }
+
+        Elements elements = env.getElementUtils();
+
+        annotationTypes.stream()
+                .filter(not(result::containsKey)) // already in the result, no need to add it
                 .forEach(it -> {
-                    TypeElement typeElement = elements.getTypeElement(it.typeName().name());
-                    if (typeElement != null) {
-                        result.put(it.typeName(), new ArrayList<>(createAnnotations(typeElement, elements)));
+                    List<Annotation> meta = META_ANNOTATION_CACHE.get(it);
+                    boolean fromCache = true;
+                    if (meta == null) {
+                        fromCache = false;
+                        TypeElement typeElement = elements.getTypeElement(it.name());
+                        if (typeElement != null) {
+                            List<Annotation> metaAnnotations = createAnnotations(typeElement, elements);
+                            result.put(it, new ArrayList<>(metaAnnotations));
+                            // now rinse and repeat for the referenced annotations
+                            gatherMetaAnnotations(env,
+                                                  metaAnnotations.stream()
+                                                          .map(Annotation::typeName)
+                                                          .collect(Collectors.toSet()),
+                                                  result);
+                            meta = metaAnnotations;
+                        } else {
+                            meta = List.of();
+                        }
+                    }
+                    if (!fromCache) {
+                        // we cannot use computeIfAbsent, as that would do a recursive update if nested more than once
+                        META_ANNOTATION_CACHE.putIfAbsent(it, meta);
+                    }
+                    if (!meta.isEmpty()) {
+                        result.put(it, meta);
                     }
                 });
-        return result;
     }
 
     /**

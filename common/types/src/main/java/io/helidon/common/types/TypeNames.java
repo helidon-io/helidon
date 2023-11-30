@@ -135,6 +135,17 @@ public final class TypeNames {
      * Boxed void type.
      */
     public static final TypeName BOXED_VOID = TypeName.create(Void.class);
+    /*
+    Our own types
+     */
+    /**
+     * Type name of the type name.
+     */
+    public static final TypeName TYPE_NAME = TypeName.create(TypeName.class);
+    /**
+     * Type name of typed element info.
+     */
+    public static final TypeName TYPED_ELEMENT_INFO = TypeName.create(TypedElementInfo.class);
 
     static final Map<String, TypeName> PRIMITIVES = Map.of(
             "boolean", PRIMITIVE_BOOLEAN,

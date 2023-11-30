@@ -296,16 +296,18 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 .build();
         String argumentName = "consumer";
 
+        Javadoc javadoc = setterJavadoc(blueprintJavadoc)
+                .addParameter(argumentName, blueprintJavadoc.returnDescription())
+                .build();
+
         Method.Builder builder = Method.builder()
                 .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType)
                 .addParameter(param -> param.name(argumentName)
-                        .type(argumentType)
-                        .description(blueprintJavadoc.returnDescription()))
+                        .type(argumentType))
                 .accessModifier(setterAccessModifier(configured))
                 .typeName(Objects.class)
+                .javadoc(javadoc)
                 .addLine(".requireNonNull(" + argumentName + ");")
                 .add("var builder = ")
                 .typeName(factoryMethod.typeWithFactoryMethod().genericTypeName())
@@ -337,12 +339,13 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
 
         Method.Builder builder = Method.builder()
                 .name(methodName)
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .javadoc(setterJavadoc(blueprintJavadoc)
+                                 .addParameter(singularName, blueprintJavadoc.returnDescription())
+                                 .build())
+                .returnType(returnType)
+                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .addParameter(param -> param.name(singularName)
-                        .type(actualType())
-                        .description(blueprintJavadoc.returnDescription()))
+                        .type(actualType()))
                 .accessModifier(setterAccessModifier(configured))
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(" + singularName + ");")

@@ -19,10 +19,10 @@ package io.helidon.builder.processor;
 import java.util.List;
 
 import io.helidon.common.Builder;
-import io.helidon.common.processor.classmodel.Annotation;
 import io.helidon.common.processor.classmodel.ClassModel;
 import io.helidon.common.processor.classmodel.TypeArgument;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -73,11 +73,11 @@ final class GenerateBuilder {
                     .addMethod(method -> {
                         method.name("buildPrototype")
                                 .returnType(prototype)
-                                .addAnnotation(Annotation.create(Override.class))
+                                .addAnnotation(Annotations.OVERRIDE)
                                 .addLine("preBuildPrototype();")
                                 .addLine("validatePrototype();")
                                 .add("return new ")
-                                .typeName(prototype)
+                                .typeName(prototype.genericTypeName())
                                 .add("Impl");
                         if (!typeArguments.isEmpty()) {
                             method.add("<>");
@@ -89,7 +89,7 @@ final class GenerateBuilder {
             } else {
                 // build method returns the same as buildPrototype method
                 builder.addMethod(method -> method.name("build")
-                        .addAnnotation(Annotation.create(Override.class))
+                        .addAnnotation(Annotations.OVERRIDE)
                         .returnType(runtimeType)
                         .addLine("return buildPrototype();"));
             }

@@ -22,9 +22,9 @@ import java.util.function.Consumer;
 
 import io.helidon.common.Errors;
 import io.helidon.common.processor.ElementInfoPredicates;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.RUNTIME_OBJECT_TYPE;
@@ -164,7 +164,7 @@ abstract class ValidationTask {
         @Override
         public void validate(Errors.Collector errors) {
             // must be package local
-            if (blueprint.modifiers().contains(TypeValues.MODIFIER_PUBLIC)) {
+            if (blueprint.accessModifier() == AccessModifier.PUBLIC) {
                 errors.fatal(blueprint.typeName().fqName() + " is defined as public, it must be package local");
             }
         }
