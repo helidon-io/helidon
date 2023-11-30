@@ -979,16 +979,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.testing</groupId>
-                <artifactId>helidon-microprofile-testing-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.testing</groupId>
-                <artifactId>helidon-microprofile-testing-jaxrs</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.messaging.mock</groupId>
                 <artifactId>helidon-messaging-mock</artifactId>
                 <version>${helidon.version}</version>
