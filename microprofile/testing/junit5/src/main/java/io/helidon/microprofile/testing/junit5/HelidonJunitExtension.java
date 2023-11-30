@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.testing.junit5;
 
+import java.io.Serial;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -33,6 +34,8 @@ import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -47,6 +50,7 @@ import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
+import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.client.Client;
@@ -56,6 +60,7 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -69,9 +74,6 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
-import static io.helidon.microprofile.testing.common.CommonTestUtil.getFeatureBeans;
-import static io.helidon.microprofile.testing.common.CommonTestUtil.getFeatureExtensions;
-
 
 /**
  * Junit5 extension to support Helidon CDI container in tests.
@@ -83,7 +85,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                        InvocationInterceptor,
                                        ParameterResolver {
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
-            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class);
+            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
 
     private static final List<String> YAML_SUFFIXES = List.of(".yml", ".yaml");
@@ -107,6 +109,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private SeContainer container;
 
 
+    @SuppressWarnings("unchecked")
     @Override
     public void beforeAll(ExtensionContext context) {
         testClass = context.getRequiredTestClass();
@@ -134,12 +137,20 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
         if (resetPerTest) {
             validatePerTest();
+
             return;
         }
         validatePerClass();
 
-        JunitJaxRsValidator junitJaxRsValidator = new JunitJaxRsValidator();
-        junitJaxRsValidator.validate(testClass);
+        // add beans when using JaxRS
+        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+        if (addJaxRsAnnotation != null){
+            classLevelExtensions.add(ProcessAllAnnotatedTypesLiteral.INSTANCE);
+            classLevelExtensions.add(ServerCdiExtensionLiteral.INSTANCE);
+            classLevelExtensions.add(JaxRsCdiExtensionLiteral.INSTANCE);
+            classLevelExtensions.add(CdiComponentProviderLiteral.INSTANCE);
+            classLevelBeans.add(WeldRequestScopeLiteral.INSTANCE);
+        }
 
         configure(classLevelConfigMeta);
 
@@ -151,6 +162,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
     }
 
+    @SuppressWarnings("unchecked")
     private <T extends Annotation> T[] getAnnotations(Class<?> testClass, Class<T> annotClass) {
         // inherited does not help, as it only returns annot from superclass if
         // child has none
@@ -235,6 +247,13 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                                        + "test methods on the class. Method " + method
                                                        + " has an annotation that modifies container behavior.");
                 }
+            }
+        }
+
+        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+        if (addJaxRsAnnotation != null){
+            if (testClass.getAnnotation(DisableDiscovery.class) == null){
+                throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
             }
         }
     }
@@ -341,8 +360,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                         .getName() + " is not");
             }
         }
-
-        getFeatureExtensions(testClass).forEach(initializer::addExtensions);
 
         container = initializer.initialize();
     }
@@ -565,9 +582,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     configurator.add(scope);
                 }
             }
-
-            // Add all Common Feature beans
-            getFeatureBeans(testClass).forEach(e -> event.addAnnotatedType(e, e.getName()));
         }
 
         private boolean hasBda(Class<?> value) {
@@ -627,6 +641,93 @@ class HelidonJunitExtension implements BeforeAllCallback,
             methodMeta.profile = this.profile;
 
             return methodMeta;
+        }
+    }
+
+
+    /**
+     * Add WeldRequestScope. Used with {@code AddJaxRs}.
+     */
+    private static final class WeldRequestScopeLiteral extends AnnotationLiteral<AddBean> implements AddBean {
+
+        static final WeldRequestScopeLiteral INSTANCE = new WeldRequestScopeLiteral();
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<?> value() {
+            return org.glassfish.jersey.weld.se.WeldRequestScope.class;
+        }
+
+        @Override
+        public Class<? extends Annotation> scope() {
+            return RequestScoped.class;
+        }
+    }
+
+
+    /**
+     * Add ProcessAllAnnotatedTypes. Used with {@code AddJaxRs}.
+     */
+    private static final class ProcessAllAnnotatedTypesLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
+
+        static final ProcessAllAnnotatedTypesLiteral INSTANCE = new ProcessAllAnnotatedTypesLiteral();
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<? extends Extension> value() {
+            return org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes.class;
+        }
+    }
+
+    /**
+     * Add ServerCdiExtension. Used with {@code AddJaxRs}.
+     */
+    private static final class ServerCdiExtensionLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
+
+        static final ServerCdiExtensionLiteral INSTANCE = new ServerCdiExtensionLiteral();
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<? extends Extension> value() {
+            return ServerCdiExtension.class;
+        }
+    }
+
+    /**
+     * Add WeldRequestScope. Used with {@code AddJaxRs}.
+     */
+    private static final class JaxRsCdiExtensionLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
+
+        static final JaxRsCdiExtensionLiteral INSTANCE = new JaxRsCdiExtensionLiteral();
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<? extends Extension> value() {
+            return JaxRsCdiExtension.class;
+        }
+    }
+
+    /**
+     * Add CdiComponentProvider. Used with {@code AddJaxRs}.
+     */
+    private static final class CdiComponentProviderLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
+
+        static final CdiComponentProviderLiteral INSTANCE = new CdiComponentProviderLiteral();
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<? extends Extension> value() {
+            return CdiComponentProvider.class;
         }
     }
 

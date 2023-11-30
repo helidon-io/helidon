@@ -15,10 +15,7 @@
  */
 package io.helidon.microprofile.tests.testing.junit5;
 
-import io.helidon.microprofile.testing.jaxrs.AddJaxRs;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.DisableDiscovery;
-import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.*;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -32,8 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @HelidonTest
 @DisableDiscovery
 
-@AddBean(TestReqScopeDisabledDiscovery.MyController.class)
+// JAX-RS Request scope
 @AddJaxRs
+@AddBean(TestReqScopeDisabledDiscovery.MyController.class)
 class TestReqScopeDisabledDiscovery {
     @Inject
     private WebTarget target;
