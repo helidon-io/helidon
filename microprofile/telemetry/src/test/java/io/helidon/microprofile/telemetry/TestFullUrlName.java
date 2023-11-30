@@ -106,7 +106,7 @@ public class TestFullUrlName {
 
         List<SpanData> spanItems = spanExporter.getFinishedSpanItems(1);
         assertThat(spanItems.size(), is(1));
-        assertThat(spanItems.get(0).getName(), is("http://localhost:8080/named"));
+        assertThat(spanItems.get(0).getName(), is("http://localhost:" + url.getPort() + "/named"));
     }
 
 
