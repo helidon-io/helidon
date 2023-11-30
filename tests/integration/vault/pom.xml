@@ -21,7 +21,7 @@
     <parent>
         <artifactId>helidon-tests-integration</artifactId>
         <groupId>io.helidon.tests.integration</groupId>
-        <version>3.2.4-SNAPSHOT</version>
+        <version>3.2.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>

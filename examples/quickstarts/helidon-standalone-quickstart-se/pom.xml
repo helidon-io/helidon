@@ -22,11 +22,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.examples.quickstarts</groupId>
     <artifactId>helidon-standalone-quickstart-se</artifactId>
-    <version>3.2.4-SNAPSHOT</version>
+    <version>3.2.4</version>
     <name>Helidon Standalone Quickstart SE Example</name>
 
     <properties>
-        <helidon.version>3.2.4-SNAPSHOT</helidon.version>
+        <helidon.version>3.2.4</helidon.version>
         <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
 
         <maven.compiler.source>17</maven.compiler.source>
