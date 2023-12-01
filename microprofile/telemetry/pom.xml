@@ -32,7 +32,6 @@
         Support for MicroProfile Telemetry
     </description>
 
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
