@@ -69,7 +69,7 @@ For Automatic Instrumentation, OpenTelemetry provides a JavaAgent. The Tracing A
 
 For Manual Instrumentation, there is a set of annotations and access to OpenTelemetry API.
 
-`@WithSpan` - By adding this annotation to a method in any Jakarta CDI aware bean, a new Span will be created and any necessary connections to the current Trace context will be established. Additionally, the `SpanAttribute` annotation can be used to mark method parameters that should be included in the Trace.
+`@WithSpan` - By adding this annotation to a method in any Jakarta CDI aware bean, a new span will be created and any necessary connections to the current Trace context will be established. Additionally, the `SpanAttribute` annotation can be used to mark method parameters that should be included in the Trace.
 
 Helidon provides full access to OpenTelemetry Tracing API:
 
@@ -100,7 +100,10 @@ class HelidonBean {
 <1> Simple `@WithSpan` annotation usage.
 <2> Additional attributes can be set on a method.
 
-You can also inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star, and stop Spans.
+
+=== Working With Tracers
+
+You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star and stop spans.
 
 .SpanBuilder usage
 [source, java]
@@ -127,6 +130,66 @@ public class HelidonEndpoint {
 ----
 <1> Inject `Tracer`.
 <2> Use `Tracer.spanBuilder` to create and start new `Span`.
+
+Helidon Microprofile Telemetry is integrated with xref:tracing.adoc[Helidon Tracing API]. This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
+
+.Inject Helidon Tracer
+[source, java]
+----
+private io.helidon.tracing.Tracer helidonTracerInjected;
+
+@Inject
+GreetResource(io.helidon.tracing.Tracer helidonTracerInjected) {
+    this.helidonTracerInjected = helidonTracerInjected; <1>
+}
+
+@GET
+@Path("mixed_injected")
+@Produces(MediaType.APPLICATION_JSON)
+@WithSpan("mixed_parent_injected")
+public GreetingMessage mixedSpanInjected() {
+    io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected") <2>
+            .kind(io.helidon.tracing.Span.Kind.SERVER)
+            .tag("attribute", "value")
+            .start();
+    mixedSpan.end();
+
+    return new GreetingMessage("Mixed Span Injected" + span);
+}
+----
+<1> Inject `io.helidon.tracing.Tracer`.
+<2> Use the injected tracer to create  `io.helidon.tracing.Span` using the `spanBuilder()` method.
+
+The span is then started and ended manually. Span parent relations will be preserved. This means that span named "mixed_injected" with have parent span named "mixed_parent_injected", which will have parent span named "mixed_injected".
+
+Another option is to use the Global Tracer:
+
+.Obtain the Global tracer
+[source, java]
+----
+@GET
+@Path("mixed")
+@Produces(MediaType.APPLICATION_JSON)
+@WithSpan("mixed_parent")
+public GreetingMessage mixedSpan() {
+
+    io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();   <1>
+    io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed")  <2>
+            .kind(io.helidon.tracing.Span.Kind.SERVER)
+            .tag("attribute", "value")
+            .start();
+    mixedSpan.end();
+
+    return new GreetingMessage("Mixed Span" + span);
+}
+----
+<1> Obtain tracer using the `io.helidon.tracing.Tracer.global()` method;
+<2> Use the created tracer to create a span.
+
+The span is then started and ended manually. Span parent relations will be preserved.
+
+
+=== Working With Spans
 
 To obtain the current span, it can be injected by CDI. The current span can also be obtained using the static method `Span.current()`.
 
@@ -155,6 +218,8 @@ public class HelidonEndpoint {
 <1> Inject the current span.
 <2> Use the injected span.
 <3> Use `Span.current()` to access the current span.
+
+=== Working With Baggage
 
 The same functionality is available for the `Baggage` API:
 
@@ -205,7 +270,7 @@ The OpenTelemetry Java Agent may influence the work of MicroProfile Telemetry, o
 
 `otel.agent.present=true`
 
-This way, Helidon will explicitly get all the configuration and objects from the Agent, thus allowing correct Span hierarchy settings.
+This way, Helidon will explicitly get all the configuration and objects from the Agent, thus allowing correct span hierarchy settings.
 
 == Examples
 
@@ -335,7 +400,7 @@ public JsonObject useCustomSpan(){
 }
 ----
 <1> Inject Opentelemetry `Tracer`.
-<2> Create Span around the method `useCustomSpan()`.
+<2> Create a span around the method `useCustomSpan()`.
 <3> Create a custom `INTERNAL` span and start it.
 <4> End the custom span.
 
@@ -391,7 +456,7 @@ curl localhost:8080/greet/outbound
 Secondary
 ----
 
-The `greeting-service` call `secondary-service`. Each service will create Spans with corresponding names, and a service class hierarchy will be created.
+The `greeting-service` call `secondary-service`. Each service will create spans with corresponding names, and a service class hierarchy will be created.
 
 Launch the Jaeger UI at link:http://localhost:16686/[] to see the expected output (shown below).
 
