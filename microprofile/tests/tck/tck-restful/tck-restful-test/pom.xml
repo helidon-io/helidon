@@ -134,12 +134,12 @@
                         <exclude>ee/jakarta/tck/ws/rs/spec/provider/sort/JAXRSClientIT.java</exclude>
                         <!-- https://github.com/helidon-io/helidon/issues/8061 -->
                         <exclude>ee/jakarta/tck/ws/rs/spec/resourceconstructor/JAXRSClientIT.java</exclude>
-                        <!-- https://github.com/helidon-io/helidon/issues/8063 -->
-                        <exclude>ee/jakarta/tck/ws/rs/jaxrs21/ee/sse/sseeventsource/JAXRSClientIT.java</exclude>
                     </excludes>
                     <systemPropertyVariables>
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>
+                        <jersey.config.client.ignoreExceptionResponse>false</jersey.config.client.ignoreExceptionResponse>
+                        <jersey.config.allowSystemPropertiesProvider>true</jersey.config.allowSystemPropertiesProvider>
                         <org.jboss.weld.bootstrap.concurrentDeployment>false</org.jboss.weld.bootstrap.concurrentDeployment>
                         <org.jboss.weld.construction.relaxed>false</org.jboss.weld.construction.relaxed>
                         <org.jboss.weld.executor.threadPoolType>SINGLE_THREAD</org.jboss.weld.executor.threadPoolType>
