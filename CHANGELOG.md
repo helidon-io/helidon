@@ -9,6 +9,23 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.4]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- JPA: Adds a DialectFactory implementation to permit Hibernate to introspect database metadata properly when supporting container-mode JPA [7934](https://github.com/helidon-io/helidon/pull/7934)
+- OCI: Adds support for Provider-specializing injection points in OciExtension [8027](https://github.com/helidon-io/helidon/pull/8027)
+- OpenAPI: Correct errors in how OpenAPI generator config settings are set [7969](https://github.com/helidon-io/helidon/pull/7969)
+- WebClient: Properly removes a channel from the cache [7952](https://github.com/helidon-io/helidon/pull/7952)
+- Dependencies: Upgrade OCI SDK to 3.29.0 [8086](https://github.com/helidon-io/helidon/pull/8086)
+- Dependencies: Upgrade parsson to 1.0.5 [7960](https://github.com/helidon-io/helidon/pull/7960)
+- Dependencies: Upgrade to mysql-connector-j 8.2.0 [8016](https://github.com/helidon-io/helidon/pull/8016)
+- Dependencies: Upgrade to Tyrus 2.1.4 [7944](https://github.com/helidon-io/helidon/pull/7944)
+- Examples: Backports database-related information present on 4.x to 3.x archetypes [7936](https://github.com/helidon-io/helidon/pull/7936)
+- Examples: Corrects a case typo in the custom MP archetype that results in an invalid property being installed on UCP [7933](https://github.com/helidon-io/helidon/pull/7933)
+
 ## [3.2.3]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -815,6 +832,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.4]: https://github.com/helidon-io/helidon/compare/3.2.3...3.2.4
 [3.2.3]: https://github.com/helidon-io/helidon/compare/3.2.2...3.2.3
 [3.2.2]: https://github.com/helidon-io/helidon/compare/3.2.1...3.2.2
 [3.2.1]: https://github.com/helidon-io/helidon/compare/3.2.0...3.2.1
