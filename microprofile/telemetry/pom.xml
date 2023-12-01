@@ -32,10 +32,6 @@
         Support for MicroProfile Telemetry
     </description>
 
-    <properties>
-        <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
-    </properties>
-
 
     <dependencies>
         <dependency>
