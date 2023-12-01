@@ -45,6 +45,7 @@
         <module>arquillian</module>
         <module>server</module>
         <module>testing</module>
+        <module>telemetry</module>
     </modules>
 
     <profiles>

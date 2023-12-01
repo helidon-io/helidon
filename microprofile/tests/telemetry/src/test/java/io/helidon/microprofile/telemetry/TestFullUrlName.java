@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-
 package io.helidon.microprofile.telemetry;
 
 import java.util.List;
 
 import io.helidon.http.Status;
+import io.helidon.microprofile.telemetry.InMemorySpanExporter;
+import io.helidon.microprofile.telemetry.InMemorySpanExporterProvider;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
