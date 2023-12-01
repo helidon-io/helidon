@@ -24,12 +24,12 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
-        <version>1.4.14-SNAPSHOT</version>
+        <version>1.4.15-SNAPSHOT</version>
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-yaml-parsing</artifactId>
-    <version>1.4.14-SNAPSHOT</version>
+    <version>1.4.15-SNAPSHOT</version>
     <name>${project.artifactId}</name>
 
     <properties>

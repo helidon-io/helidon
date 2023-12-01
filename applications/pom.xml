@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>1.4.14-SNAPSHOT</version>
+        <version>1.4.15-SNAPSHOT</version>
         <relativePath>../dependencies/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.applications</groupId>
