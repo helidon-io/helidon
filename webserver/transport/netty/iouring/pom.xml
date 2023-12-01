@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver.transport.netty</groupId>
         <artifactId>helidon-webserver-transport-netty-project</artifactId>
-        <version>3.2.4-SNAPSHOT</version>
+        <version>3.2.5-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-webserver-transport-netty-iouring</artifactId>
     <name>Helidon WebServer Transport Netty io_uring</name>
