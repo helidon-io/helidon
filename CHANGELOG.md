@@ -11,6 +11,72 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.1]
+
+This release contains bugfixes and ehancements and is recommended for all users of Helidon 4.
+
+Java 21 is required to use Helidon 4.0.1.
+
+### Notable Changes
+
+- Added PROXY protocol support to Helidon WebServer
+- WebServer performance improvements
+- `CorsConfig.Builder.enabled()` now returns an `Optional<Boolean>` instead of `boolean`. This change was required to fix a CORS issue and we expect the user impact of this change to be minimal.
+
+### CHANGES
+
+- CORS: Change CorsConfig.enabled to optional and add logic to infer it [8038](https://github.com/helidon-io/helidon/pull/8038)
+- Health: Add a new `addCheck` variant allowing the caller to set the health check name; add tests; revise doc [7994](https://github.com/helidon-io/helidon/pull/7994)
+- Health: Fix nested config prefix for observer settings [8010](https://github.com/helidon-io/helidon/pull/8010)
+- Http2: Graceful client connection close [8051](https://github.com/helidon-io/helidon/pull/8051)
+- JPA: Adds a DialectFactory implementation to permit Hibernate to introspect database metadata properly when supporting container-mode JPA [7927](https://github.com/helidon-io/helidon/pull/7927)
+- Metrics: Add meter type to JSON metrics metadata output [8057](https://github.com/helidon-io/helidon/pull/8057)
+- Metrics: EOF at end of OpenMetrics output [7982](https://github.com/helidon-io/helidon/pull/7982)
+- Metrics: Use correct config nodes for metrics settings; when using global meter registry set metrics config correctly [8008](https://github.com/helidon-io/helidon/pull/8008)
+- MicroProfile: Update JaxRsService to reset status to 200 when nexting. [8056](https://github.com/helidon-io/helidon/pull/8056)
+- OCI: Adds support for Provider-specializing injection points in OciExtension [8006](https://github.com/helidon-io/helidon/pull/8006)
+- OpenAPI: Correct errors in how OpenAPI generator config settings are set [7970](https://github.com/helidon-io/helidon/pull/7970)
+- WebServer: Fix for access-log feature. [8041](https://github.com/helidon-io/helidon/pull/8041)
+- WebServer: GZIP encoder - properly trigger chunked enc [7977](https://github.com/helidon-io/helidon/pull/7977)
+- WebServer: Headers on server cannot be set after entity was sent [8042](https://github.com/helidon-io/helidon/pull/8042)
+- WebServer: Initial support for proxy protocol V1 and V2 [7829](https://github.com/helidon-io/helidon/pull/7829)
+- WebServer: Optimize single provider case [8002](https://github.com/helidon-io/helidon/pull/8002)
+- WebServer: Re-enable TCP auto-tuning [7989](https://github.com/helidon-io/helidon/pull/7989)
+- WebServer: Updates header type hierarchy to make HeaderValueCached not writeable [8000](https://github.com/helidon-io/helidon/pull/8000)
+- WebServer: WS disconnect [7890](https://github.com/helidon-io/helidon/pull/7890)
+- WebSocket: Support for longer WebSocket frames [8025](https://github.com/helidon-io/helidon/pull/8025)
+- gRPC: Fix repeated pseudo-header field `:status` [7995](https://github.com/helidon-io/helidon/pull/7995)
+- native-image: JSON-P native image [8044](https://github.com/helidon-io/helidon/pull/8044)
+- Dependencies: Align Websocket API versions with 3.x [7950](https://github.com/helidon-io/helidon/pull/7950)
+- Dependencies: Upgrade log4j to 2.21.1 . Use log4j-bom [7900](https://github.com/helidon-io/helidon/pull/7900)
+- Dependencies: Upgrade parsson to 1.1.5 [7958](https://github.com/helidon-io/helidon/pull/7958)
+- Dependencies: Upgrade to mysql-connector-j 8.2.0 [7988](https://github.com/helidon-io/helidon/pull/7988)
+- Dependencies: Upgrades to Tyrus 2.1.4. [7929](https://github.com/helidon-io/helidon/pull/7929)
+- Docs: Adds Testing section back to the menu and fix maven coordinates [7992](https://github.com/helidon-io/helidon/pull/7992)
+- Docs: Change "Java for cloud" to "Helidon" [8046](https://github.com/helidon-io/helidon/pull/8046)
+- Docs: Fix broken link and explicitly state MP uses Helidon WebServer [8043](https://github.com/helidon-io/helidon/pull/8043)
+- Docs: Fix telemetry docs [8014](https://github.com/helidon-io/helidon/pull/8014)
+- Docs: Fix tracing documentation [7962](https://github.com/helidon-io/helidon/pull/7962)
+- Docs: Minor fixes in SE Tracing documentation [7887](https://github.com/helidon-io/helidon/pull/7887)
+- Docs: New section describing support for the Proxy Protocol [8007](https://github.com/helidon-io/helidon/pull/8007)
+- Docs: SSE doc maven coordinates [7891](https://github.com/helidon-io/helidon/pull/7891)
+- Docs: Update Neo4j module to generated config [7997](https://github.com/helidon-io/helidon/pull/7997)
+- Docs: Upgrade gradle guide and examples [7910](https://github.com/helidon-io/helidon/pull/7910)
+- Docs: WebServer fix req.next typo [8053](https://github.com/helidon-io/helidon/pull/8053)
+- Docs: fix Security http basic authentication property [7987](https://github.com/helidon-io/helidon/pull/7987)
+- Examples: Archetype - Fix the wrong metrics endpoint for Helidon SE [8020](https://github.com/helidon-io/helidon/pull/8020)
+- Examples: Archetype - Generated projects does not contains empty application.yaml [7942](https://github.com/helidon-io/helidon/pull/7942)
+- Examples: Corrects a case typo in the custom MP archetype that results in an invalid property being installed on UCP [7924](https://github.com/helidon-io/helidon/pull/7924)
+- Examples: Use H2 in-memory in SE archetype [7877](https://github.com/helidon-io/helidon/pull/7877)
+- Examples: Use MP OpenTelemetry instead of OpenTracing in archetypes [7993](https://github.com/helidon-io/helidon/pull/7993)
+- Examples: archetype fix MP security  [7947](https://github.com/helidon-io/helidon/pull/7947)
+- Examples: backport native-image fixes + support -Dnative.image.skip and -Dnative.image.buildStatic [7972](https://github.com/helidon-io/helidon/pull/7972)
+- Examples: dockerFiles in examples [7909](https://github.com/helidon-io/helidon/pull/7909)
+- Tests: Enable tests that were disabled during renaming to `jakarta` packages work [7949](https://github.com/helidon-io/helidon/pull/7949)
+
+Thanks to @lilac for their contributions.
+
+
 ## [4.0.0]
 
 We are pleased to announce the release of Helidon 4.0.0. The big news in Helidon 4.0.0 is the introduction of Helidon Níma -- a ground up webserver implementation based on JDK Project Loom virtual threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
@@ -845,7 +911,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
-[4.0.0-RC2]: https://github.com/oracle/helidon/compare/4.0.0-RC2...4.0.0
+[4.0.1]: https://github.com/oracle/helidon/compare/4.0.0...4.0.1
+[4.0.0]: https://github.com/oracle/helidon/compare/4.0.0-RC2...4.0.0
 [4.0.0-RC2]: https://github.com/oracle/helidon/compare/4.0.0-RC1...4.0.0-RC2
 [4.0.0-RC1]: https://github.com/oracle/helidon/compare/4.0.0-M2...4.0.0-RC1
 [4.0.0-M2]: https://github.com/oracle/helidon/compare/4.0.0-M1...4.0.0-M2
