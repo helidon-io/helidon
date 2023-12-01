@@ -72,7 +72,7 @@ import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
 import static org.glassfish.jersey.server.ServerProperties.WADL_FEATURE_DISABLE;
 
-class JaxRsService implements HttpService {
+public class JaxRsService implements HttpService {
     /**
      * If set to {@code "true"}, Jersey will ignore responses in exceptions.
      */
@@ -97,7 +97,8 @@ class JaxRsService implements HttpService {
         this.application = getApplication(resourceConfig);
     }
 
-    static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    public static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
         resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
         resourceConfig.property(WADL_FEATURE_DISABLE, "true");
 

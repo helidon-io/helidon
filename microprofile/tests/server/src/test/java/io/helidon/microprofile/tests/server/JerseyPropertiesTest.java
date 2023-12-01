@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.server;
+package io.helidon.microprofile.tests.server;
 
 import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.JaxRsService;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
@@ -32,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test that it is possible to override {@code IGNORE_EXCEPTION_RESPONSE} in
- * Jersey using config. See {@link JaxRsService}
+ * Jersey using config. See {@link io.helidon.microprofile.server.JaxRsService}
  * for more information.
  */
 @HelidonTest

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.server;
+package io.helidon.microprofile.tests.server;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +22,10 @@ import java.util.concurrent.TimeoutException;
 
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.RoutingName;
+import io.helidon.microprofile.server.RoutingPath;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
@@ -61,7 +65,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
         value = RoutingName.DEFAULT_NAME)
 public class ProducedRouteTest {
 
-    static final String TEST_BEAN_FQDN = "io.helidon.microprofile.server.ProducedRouteTest$TestBean";
+    static final String TEST_BEAN_FQDN = "io.helidon.microprofile.tests.server.ProducedRouteTest$TestBean";
     static final String FILTERED_PATH = "/filtered";
     static final String UNFILTERED_PATH = "/unfiltered";
 

@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.server;
+package io.helidon.microprofile.tests.server;
 
 import java.net.URI;
 
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;

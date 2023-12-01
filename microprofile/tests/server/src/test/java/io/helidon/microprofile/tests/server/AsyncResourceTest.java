@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.server;
+package io.helidon.microprofile.tests.server;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
