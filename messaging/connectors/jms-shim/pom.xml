@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.messaging</groupId>
         <artifactId>helidon-messaging-connectors-project</artifactId>
-        <version>3.2.4-SNAPSHOT</version>
+        <version>3.2.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-messaging-jms-shim</artifactId>

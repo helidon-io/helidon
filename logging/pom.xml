@@ -21,7 +21,7 @@
     <parent>
         <artifactId>helidon-project</artifactId>
         <groupId>io.helidon</groupId>
-        <version>3.2.4-SNAPSHOT</version>
+        <version>3.2.5-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.logging</groupId>
