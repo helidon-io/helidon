@@ -1325,6 +1325,11 @@
                 <artifactId>helidon-builder-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Injection Core -->
             <dependency>

@@ -72,31 +72,43 @@
                 <configuration>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
+                        <!-- Helidon annotation processor -->
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                         <!-- this is now using the configdriven processor instead -->
                         <path>
                             <groupId>io.helidon.inject.configdriven</groupId>
                             <artifactId>helidon-inject-configdriven-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
-                        <!-- this is also using the ConfigBean builder processor -->
+                        <!-- Helidon annotation processor to code generate types for @Blueprint -->
                         <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
+                            <artifactId>helidon-builder-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
                         <groupId>io.helidon.inject.configdriven</groupId>
                         <artifactId>helidon-inject-configdriven-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+
                 </dependencies>
             </plugin>
             <plugin>
