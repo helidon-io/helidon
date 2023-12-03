@@ -537,7 +537,7 @@ public final class SecretBundleNodeConfigSource
      * @param earliestExpiration an {@link Instant} identifying the earliest expiration of a Secret indirectly
      * identified by one of the supplied tags
      */
-    public static record Stamp(Set<?> eTags, Instant earliestExpiration) {
+    public record Stamp(Set<?> eTags, Instant earliestExpiration) {
 
         /**
          * Creates a new {@link Stamp}.

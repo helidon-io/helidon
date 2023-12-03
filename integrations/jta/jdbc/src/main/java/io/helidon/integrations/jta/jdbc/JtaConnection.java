@@ -1233,7 +1233,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     }
 
-    private static final record Enlistment(long threadId, Transaction transaction, XAResource xaResource) {
+    private record Enlistment(long threadId, Transaction transaction, XAResource xaResource) {
 
         private Enlistment {
             Objects.requireNonNull(transaction, "transaction");
