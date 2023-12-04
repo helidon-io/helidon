@@ -25,7 +25,6 @@ module io.helidon.inject.runtime {
     requires io.helidon.common;
     requires io.helidon;
 
-    requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
     requires static jakarta.inject;
 

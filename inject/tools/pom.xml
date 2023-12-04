@@ -53,11 +53,6 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-config</artifactId>
         </dependency>

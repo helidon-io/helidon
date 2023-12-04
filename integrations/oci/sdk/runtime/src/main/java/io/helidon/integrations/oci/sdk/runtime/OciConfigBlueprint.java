@@ -25,9 +25,6 @@ import java.util.function.Predicate;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.config.metadata.ConfiguredValue;
 
 import com.oracle.bmc.ConfigFileReader;
 
@@ -86,7 +83,7 @@ import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsPr
  */
 // note: this is intended to be a replica to the properties carried from the cdi integrations previously done for MP
 @Prototype.Blueprint
-@Configured(root = true, prefix = OciConfigBlueprint.CONFIG_KEY)
+@Prototype.Configured(OciConfigBlueprint.CONFIG_KEY)
 interface OciConfigBlueprint {
     /**
      * Config key of this config.
@@ -107,12 +104,13 @@ interface OciConfigBlueprint {
      *
      * @return the singular authentication strategy to be applied
      */
-    @ConfiguredOption(allowedValues = {
-            @ConfiguredValue(value = VAL_AUTO, description = "auto select first applicable"),
-            @ConfiguredValue(value = VAL_CONFIG, description = "simple authentication provider"),
-            @ConfiguredValue(value = VAL_CONFIG_FILE, description = "config file authentication provider"),
-            @ConfiguredValue(value = VAL_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
-            @ConfiguredValue(value = VAL_RESOURCE_PRINCIPAL, description = "resource principals authentication provider"),
+    @Option.Configured
+    @Option.AllowedValues({
+            @Option.AllowedValue(value = VAL_AUTO, description = "auto select first applicable"),
+            @Option.AllowedValue(value = VAL_CONFIG, description = "simple authentication provider"),
+            @Option.AllowedValue(value = VAL_CONFIG_FILE, description = "config file authentication provider"),
+            @Option.AllowedValue(value = VAL_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
+            @Option.AllowedValue(value = VAL_RESOURCE_PRINCIPAL, description = "resource principals authentication provider")
     })
     Optional<String> authStrategy();
 
@@ -146,12 +144,13 @@ interface OciConfigBlueprint {
      * @return the list of authentication strategies that will be applied, defaulting to {@code auto}
      * @see io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy
      */
-    @ConfiguredOption(allowedValues = {
-            @ConfiguredValue(value = VAL_AUTO, description = "auto select first applicable"),
-            @ConfiguredValue(value = VAL_CONFIG, description = "simple authentication provider"),
-            @ConfiguredValue(value = VAL_CONFIG_FILE, description = "config file authentication provider"),
-            @ConfiguredValue(value = VAL_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
-            @ConfiguredValue(value = VAL_RESOURCE_PRINCIPAL, description = "resource principal authentication provider"),
+    @Option.Configured
+    @Option.AllowedValues({
+            @Option.AllowedValue(value = VAL_AUTO, description = "auto select first applicable"),
+            @Option.AllowedValue(value = VAL_CONFIG, description = "simple authentication provider"),
+            @Option.AllowedValue(value = VAL_CONFIG_FILE, description = "config file authentication provider"),
+            @Option.AllowedValue(value = VAL_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
+            @Option.AllowedValue(value = VAL_RESOURCE_PRINCIPAL, description = "resource principal authentication provider"),
     })
     List<String> authStrategies();
 
@@ -167,7 +166,7 @@ interface OciConfigBlueprint {
      *
      * @return the OCI configuration profile path
      */
-    @ConfiguredOption(key = "config.path")
+    @Option.Configured("config.path")
     Optional<String> configPath();
 
     /**
@@ -180,7 +179,8 @@ interface OciConfigBlueprint {
      *
      * @return the optional OCI configuration/auth profile name
      */
-    @ConfiguredOption(value = DEFAULT_PROFILE_NAME, key = "config.profile")
+    @Option.Configured("config.profile")
+    @Option.Default(DEFAULT_PROFILE_NAME)
     Optional<String> configProfile();
 
     /**
@@ -194,7 +194,7 @@ interface OciConfigBlueprint {
      *
      * @return the OCI authentication fingerprint
      */
-    @ConfiguredOption(key = "auth.fingerprint")
+    @Option.Configured("auth.fingerprint")
     Optional<String> authFingerprint();
 
     /**
@@ -209,7 +209,8 @@ interface OciConfigBlueprint {
      *
      * @return the OCI authentication key file
      */
-    @ConfiguredOption(value = "oci_api_key.pem", key = "auth.keyFile")
+    @Option.Configured("auth.keyFile")
+    @Option.Default("oci_api_key.pem")
     String authKeyFile();
 
     /**
@@ -224,7 +225,7 @@ interface OciConfigBlueprint {
      *
      * @return the OCI authentication key file path
      */
-    @ConfiguredOption(key = "auth.private-key-path")
+    @Option.Configured("auth.private-key-path")
     Optional<String> authPrivateKeyPath();
 
     /**
@@ -240,7 +241,7 @@ interface OciConfigBlueprint {
      * @return the OCI authentication private key
      */
     // See https://github.com/helidon-io/helidon/issues/6908
-    @ConfiguredOption(key = "auth.private-key")
+    @Option.Configured("auth.private-key")
     @Option.Confidential
     Optional<char[]> authPrivateKey();
 
@@ -255,7 +256,7 @@ interface OciConfigBlueprint {
      * @return the OCI authentication passphrase
      */
     // See https://github.com/helidon-io/helidon/issues/6908
-    @ConfiguredOption(key = "auth.passphrase")
+    @Option.Configured("auth.passphrase")
     @Option.Confidential
     Optional<char[]> authPassphrase();
 
@@ -269,7 +270,7 @@ interface OciConfigBlueprint {
      *
      * @return the OCI region
      */
-    @ConfiguredOption(key = "auth.region")
+    @Option.Configured("auth.region")
     Optional<String> authRegion();
 
     /**
@@ -282,7 +283,7 @@ interface OciConfigBlueprint {
      *
      * @return the OCI tenant id
      */
-    @ConfiguredOption(key = "auth.tenant-id")
+    @Option.Configured("auth.tenant-id")
     Optional<String> authTenantId();
 
     /**
@@ -295,7 +296,7 @@ interface OciConfigBlueprint {
      *
      * @return the OCI user id
      */
-    @ConfiguredOption(key = "auth.user-id")
+    @Option.Configured("auth.user-id")
     Optional<String> authUserId();
 
     /**
@@ -305,7 +306,8 @@ interface OciConfigBlueprint {
      *
      * @return the OCI IMDS hostname
      */
-    @ConfiguredOption(value = IMDS_HOSTNAME, key = "imds.hostname")
+    @Option.Configured("imds.hostname")
+    @Option.Default(IMDS_HOSTNAME)
     String imdsHostName();
 
     /**
@@ -316,7 +318,8 @@ interface OciConfigBlueprint {
      * @return the OCI IMDS connection timeout
      * @see OciAvailability
      */
-    @ConfiguredOption(value = "PT0.1S", key = "imds.timeout.milliseconds")
+    @Option.Configured("imds.timeout.milliseconds")
+    @Option.Default("PT0.1S")
     Duration imdsTimeout();
 
     /**

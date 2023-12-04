@@ -17,11 +17,10 @@
 package io.helidon.inject.configdriven.configuredby.test;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 @ConfigBean(wantDefault = true, atLeastOne = true)
-@Configured(root = true)
+@Prototype.Configured
 @Prototype.Blueprint
 interface ASingletonConfigBeanBlueprint {
 

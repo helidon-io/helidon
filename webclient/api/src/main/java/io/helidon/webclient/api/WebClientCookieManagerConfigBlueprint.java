@@ -23,18 +23,17 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface WebClientCookieManagerConfigBlueprint extends Prototype.Factory<WebClientCookieManager> {
     /**
      * Whether automatic cookie store is enabled or not.
      *
      * @return status of cookie store
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean automaticStoreEnabled();
 
     /**
@@ -42,7 +41,8 @@ interface WebClientCookieManagerConfigBlueprint extends Prototype.Factory<WebCli
      *
      * @return the cookie policy
      */
-    @ConfiguredOption("java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER")
+    @Option.Configured
+    @Option.Default("java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER")
     CookiePolicy cookiePolicy();
 
     /**
@@ -50,7 +50,7 @@ interface WebClientCookieManagerConfigBlueprint extends Prototype.Factory<WebCli
      *
      * @return map of default cookies
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular
     Map<String, String> defaultCookies();
 

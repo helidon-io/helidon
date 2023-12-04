@@ -30,11 +30,9 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.spi.TlsManagerProvider;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint(decorator = TlsConfigDecorator.class)
-@Configured
+@Prototype.Configured
 interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     /**
      * The default protocol is set to {@value}.
@@ -70,7 +68,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return private key to use
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<PrivateKey> privateKey();
 
     /**
@@ -79,7 +77,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      * @return private key certificate chain, only used when private key is configured
      */
     @Option.Singular
-    @ConfiguredOption(key = "private-key")
+    @Option.Configured("private-key")
     // same config node as privateKey
     List<X509Certificate> privateKeyCertChain();
 
@@ -89,7 +87,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      * @return certificates to be trusted
      */
     @Option.Singular
-    @ConfiguredOption
+    @Option.Configured
     List<X509Certificate> trust();
 
     /**
@@ -98,7 +96,8 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      * @return the tls manager of the tls instance
      * @see ConfiguredTlsManager
      */
-    @ConfiguredOption(provider = true, providerType = TlsManagerProvider.class, providerDiscoverServices = false)
+    @Option.Configured
+    @Option.Provider(value = TlsManagerProvider.class, discoverServices = false)
     TlsManager manager();
 
     /**
@@ -122,7 +121,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return provider to use, by default no provider is specified
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> secureRandomProvider();
 
     /**
@@ -130,7 +129,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return algorithm to use, by default uses {@link java.security.SecureRandom} constructor
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> secureRandomAlgorithm();
 
     /**
@@ -139,7 +138,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return algorithm to use
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> keyManagerFactoryAlgorithm();
 
     /**
@@ -154,7 +153,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return algorithm to use
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> trustManagerFactoryAlgorithm();
 
     /**
@@ -179,7 +178,8 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *         to disable endpoint identification (equivalent to hostname verification).
      *         Defaults to {@value Tls#ENDPOINT_IDENTIFICATION_HTTPS}
      */
-    @ConfiguredOption(Tls.ENDPOINT_IDENTIFICATION_HTTPS)
+    @Option.Configured
+    @Option.Default(Tls.ENDPOINT_IDENTIFICATION_HTTPS)
     String endpointIdentificationAlgorithm();
 
     /**
@@ -187,7 +187,8 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return enabled flag
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean enabled();
 
     /**
@@ -198,7 +199,8 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return whether to trust all certificates, do not use in production
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean trustAll();
 
     /**
@@ -206,7 +208,8 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return what type of mutual TLS to use, defaults to {@link TlsClientAuth#NONE}
      */
-    @ConfiguredOption(value = "NONE")
+    @Option.Configured
+    @Option.Default("NONE")
     TlsClientAuth clientAuth();
 
     /**
@@ -214,7 +217,8 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return protocol to use, defaults to {@value DEFAULT_PROTOCOL}
      */
-    @ConfiguredOption(DEFAULT_PROTOCOL)
+    @Option.Configured
+    @Option.Default(DEFAULT_PROTOCOL)
     String protocol();
 
     /**
@@ -222,7 +226,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return provider to use, defaults to none (only {@link #protocol()} is used by default)
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> provider();
 
     /**
@@ -231,7 +235,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      * @return cipher suits to enable, by default (or if list is empty), all available cipher suites
      *         are enabled
      */
-    @ConfiguredOption(key = "cipher-suite")
+    @Option.Configured("cipher-suite")
     @Option.Singular("enabledCipherSuite")
     List<String> enabledCipherSuites();
 
@@ -241,7 +245,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return protocols to enable, by default (or if list is empty), all available protocols are enabled
      */
-    @ConfiguredOption(key = "protocols")
+    @Option.Configured("protocols")
     @Option.Singular
     List<String> enabledProtocols();
 
@@ -250,7 +254,8 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return session cache size, defaults to 1024
      */
-    @ConfiguredOption("1024")
+    @Option.Configured
+    @Option.DefaultInt(1024)
     int sessionCacheSize();
 
     /**
@@ -258,7 +263,8 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return session timeout, defaults to 30 minutes
      */
-    @ConfiguredOption("PT30M")
+    @Option.Configured
+    @Option.Default("PT30M")
     Duration sessionTimeout();
 
     /**
@@ -266,7 +272,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return keystore type, defaults to {@link java.security.KeyStore#getDefaultType()}
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> internalKeystoreType();
 
     /**
@@ -274,7 +280,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return keystore provider, if not defined, provider is not specified
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> internalKeystoreProvider();
 
 }

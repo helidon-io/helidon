@@ -18,12 +18,16 @@ package io.helidon.builder.codegen;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.codegen.ValidationTask.ValidateConfiguredType;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenEvent;
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -44,9 +48,9 @@ class BuilderCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(BuilderCodegen.class);
 
     // all types annotated with prototyped by (for validation)
-    private final List<TypeInfo> runtimeTypes = new ArrayList<>();
+    private final Set<TypeName> runtimeTypes = new HashSet<>();
     // all blueprint types (for validation)
-    private final List<TypeInfo> blueprintTypes = new ArrayList<>();
+    private final Set<TypeName> blueprintTypes = new HashSet<>();
 
     private final CodegenContext ctx;
 
@@ -56,8 +60,15 @@ class BuilderCodegen implements CodegenExtension {
 
     @Override
     public void process(RoundContext roundContext) {
-        runtimeTypes.addAll(roundContext.annotatedTypes(Types.RUNTIME_PROTOTYPED_BY));
+        // see need to keep the type names, as some types may not be available, as we are generating them
+        runtimeTypes.addAll(roundContext.annotatedTypes(Types.RUNTIME_PROTOTYPED_BY)
+                                    .stream()
+                                    .map(TypeInfo::typeName)
+                                    .toList());
         Collection<TypeInfo> blueprints = roundContext.annotatedTypes(Types.PROTOTYPE_BLUEPRINT);
+        blueprintTypes.addAll(blueprints.stream()
+                                      .map(TypeInfo::typeName)
+                                      .toList());
 
         List<TypeInfo> blueprintInterfaces = blueprints.stream()
                 .filter(it -> it.kind() == ElementKind.INTERFACE)
@@ -355,10 +366,12 @@ class BuilderCodegen implements CodegenExtension {
         }
     }
 
-    private Collection<? extends ValidationTask> addBlueprintsForValidation(List<TypeInfo> blueprints) {
+    private Collection<? extends ValidationTask> addBlueprintsForValidation(Set<TypeName> blueprints) {
         List<ValidationTask> result = new ArrayList<>();
 
-        for (TypeInfo blueprint : blueprints) {
+        for (TypeName blueprintType : blueprints) {
+            TypeInfo blueprint = ctx.typeInfo(blueprintType)
+                    .orElseThrow(() -> new CodegenException("Could not get TypeInfo for " + blueprintType.fqName()));
             result.add(new ValidationTask.ValidateBlueprint(blueprint));
             TypeContext typeContext = TypeContext.create(ctx, blueprint);
 
@@ -382,8 +395,10 @@ class BuilderCodegen implements CodegenExtension {
                         .fqName()));
     }
 
-    private List<? extends ValidationTask> addRuntimeTypesForValidation(List<TypeInfo> runtimeTypes) {
+    private List<? extends ValidationTask> addRuntimeTypesForValidation(Set<TypeName> runtimeTypes) {
         return runtimeTypes.stream()
+                .map(ctx::typeInfo)
+                .flatMap(Optional::stream)
                 .map(it -> new ValidateConfiguredType(it,
                                                       annotationTypeValue(it, RUNTIME_PROTOTYPE)))
                 .toList();

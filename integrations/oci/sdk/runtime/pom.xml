@@ -60,11 +60,6 @@
             <artifactId>helidon-inject-configdriven-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-runtime</artifactId>
         </dependency>

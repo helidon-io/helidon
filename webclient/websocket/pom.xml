@@ -45,11 +45,6 @@
             <artifactId>helidon-websocket</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

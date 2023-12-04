@@ -16,9 +16,8 @@
 
 package io.helidon.webclient.websocket;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webclient.api.HttpClientConfig;
 
 /**
@@ -29,13 +28,14 @@ import io.helidon.webclient.api.HttpClientConfig;
  *         io.helidon.webclient.spi.ProtocolConfig)
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface WsClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<WsClient> {
     /**
      * WebSocket specific configuration.
      *
      * @return protocol specific configuration
      */
-    @ConfiguredOption("create()")
+    @Option.Configured
+    @Option.Default("create()")
     WsClientProtocolConfig protocolConfig();
 }

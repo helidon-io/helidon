@@ -102,11 +102,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata-processor</artifactId>
             <optional>true</optional>
         </dependency>

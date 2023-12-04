@@ -62,11 +62,6 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>

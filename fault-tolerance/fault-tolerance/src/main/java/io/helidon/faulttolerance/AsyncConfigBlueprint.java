@@ -20,15 +20,14 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * {@link Async} configuration bean.
  */
 @Prototype.Blueprint(decorator = AsyncConfigBlueprint.BuilderDecorator.class)
-@Configured
+@Prototype.Configured
 interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
     /**
      * Name for debugging, error reporting, monitoring.
@@ -43,7 +42,7 @@ interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
      * @return name fo the {@link java.util.concurrent.ExecutorService} to lookup
      * @see #executor()
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> executorName();
 
     /**

@@ -22,7 +22,6 @@ module io.helidon.integrations.oci.sdk.runtime {
     requires io.helidon.builder.api;
     requires oci.java.sdk.common;
 
-    requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
     requires static jakarta.inject;
 

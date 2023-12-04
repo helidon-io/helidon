@@ -28,7 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.config {
 
-//    requires static io.helidon.inject.api;
+    requires io.helidon.inject.api;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.inject.runtime;

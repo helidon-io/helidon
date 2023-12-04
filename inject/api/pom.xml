@@ -49,12 +49,6 @@
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
@@ -63,7 +57,7 @@
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>

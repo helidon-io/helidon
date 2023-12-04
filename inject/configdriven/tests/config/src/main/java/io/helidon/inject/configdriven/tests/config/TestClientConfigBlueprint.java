@@ -18,16 +18,15 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.Map;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
  * For testing purpose.
  */
 @ConfigBean(repeatable = true)
-@Configured(root = true)
+@Prototype.Configured
 @Prototype.Blueprint
 interface TestClientConfigBlueprint extends TestCommonConfigBlueprint {
 
@@ -36,7 +35,8 @@ interface TestClientConfigBlueprint extends TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption("default")
+    @Option.Configured
+    @Option.Default("default")
     @Override
     String name();
 
@@ -45,7 +45,8 @@ interface TestClientConfigBlueprint extends TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int serverPort();
 
     /**
@@ -53,7 +54,7 @@ interface TestClientConfigBlueprint extends TestCommonConfigBlueprint {
      *
      * @return for testing purposes
      */
-    @ConfiguredOption
+    @Option.Configured
     Map<String, String> headers();
 
 }

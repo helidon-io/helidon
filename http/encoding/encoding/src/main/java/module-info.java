@@ -32,7 +32,6 @@ module io.helidon.http.encoding {
     requires io.helidon.common;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
 
     requires transitive io.helidon.common.config;

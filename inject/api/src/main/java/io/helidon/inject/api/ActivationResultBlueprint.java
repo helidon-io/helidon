@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Represents the result of a service activation or deactivation.
@@ -52,7 +52,7 @@ interface ActivationResultBlueprint {
      *
      * @return the starting phase
      */
-    @ConfiguredOption("INIT")
+    @Option.Default("INIT")
     Phase startingActivationPhase();
 
     /**
@@ -60,7 +60,7 @@ interface ActivationResultBlueprint {
      *
      * @return the target, desired, ultimate phase requested
      */
-    @ConfiguredOption("INIT")
+    @Option.Default("INIT")
     Phase targetActivationPhase();
 
     /**
@@ -98,7 +98,7 @@ interface ActivationResultBlueprint {
      *
      * @return true if was resolved
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean wasResolved();
 
     /**

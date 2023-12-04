@@ -31,7 +31,6 @@ module io.helidon.webclient.websocket {
     requires io.helidon.websocket;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config.metadata;
 
     exports io.helidon.webclient.websocket;
 

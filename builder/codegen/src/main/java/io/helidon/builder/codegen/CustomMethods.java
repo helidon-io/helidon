@@ -162,7 +162,7 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                     .addContent(customMethod.name())
                     .addContent("(")
                     .addContent(String.join(", ", argumentNames))
-                    .addContentLine(")")
+                    .addContentLine(");")
                     .addContent("return self();");
         };
 

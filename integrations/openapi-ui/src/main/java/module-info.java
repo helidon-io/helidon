@@ -27,7 +27,6 @@ module io.helidon.integrations.openapi.ui {
     requires io.helidon.openapi;
     requires io.helidon.webserver;
     requires io.helidon.webserver.staticcontent;
-    requires io.helidon.config.metadata;
 
     requires smallrye.open.api.ui;
 

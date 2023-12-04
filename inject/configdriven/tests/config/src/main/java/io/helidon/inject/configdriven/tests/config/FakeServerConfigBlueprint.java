@@ -22,14 +22,12 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * aka ServerConfiguration.
  */
 @Prototype.Blueprint
-@Configured(root = true, prefix = "server")
+@Prototype.Configured("server")
 interface FakeServerConfigBlueprint extends FakeSocketConfigBlueprint {
 
     /**
@@ -66,7 +64,7 @@ interface FakeServerConfigBlueprint extends FakeSocketConfigBlueprint {
      * @return a map of all the configured server sockets, never null
      */
     @Option.Singular("socket") // note that singular names cannot clash
-    @ConfiguredOption(key = "sockets")
+    @Option.Configured
     Map<String, FakeSocketConfig> sockets();
 
     /**
@@ -79,7 +77,7 @@ interface FakeServerConfigBlueprint extends FakeSocketConfigBlueprint {
      *
      * @return the {@link java.time.Duration} to use
      */
-    @ConfiguredOption(key = "whatever")
+    @Option.Configured("whatever")
     default Duration maxShutdownTimeout() {
         return Duration.ofSeconds(10L);
     }
@@ -106,7 +104,8 @@ interface FakeServerConfigBlueprint extends FakeSocketConfigBlueprint {
      *
      * @return whether to print details
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean printFeatureDetails();
 
 }

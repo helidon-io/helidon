@@ -75,14 +75,6 @@
         </dependency>
         <dependency>
             <!--
-            Used to define configured options to generate JSON using annotation processor
-            -->
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
             Marks singletons driven by configuration
             -->
             <groupId>io.helidon.inject.configdriven</groupId>

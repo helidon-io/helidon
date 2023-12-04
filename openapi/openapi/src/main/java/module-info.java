@@ -31,7 +31,6 @@ module io.helidon.openapi {
     requires io.helidon.common.config;
     requires io.helidon.common.media.type;
     requires io.helidon.servicecommon;
-    requires static io.helidon.config.metadata;
 
     requires org.yaml.snakeyaml;
     requires io.helidon.inject.api;

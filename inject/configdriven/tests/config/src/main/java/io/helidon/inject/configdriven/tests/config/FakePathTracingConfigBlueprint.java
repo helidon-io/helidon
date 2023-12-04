@@ -20,15 +20,13 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * aka PathTracing.
  *
  * Traced system configuration for web server for a specific path.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 interface FakePathTracingConfigBlueprint {
 
@@ -49,7 +47,8 @@ interface FakePathTracingConfigBlueprint {
     // Builder::addMethod(String method);
     List<String> methods();
 
-    @ConfiguredOption(required = true)
+    @Option.Configured
+    @Option.Required
     FakeTracingConfig tracedConfig();
 
 }
