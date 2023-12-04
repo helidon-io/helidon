@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.List;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
@@ -67,11 +68,13 @@ class MaxTcpConnectionsTest {
         // the socket is just never accepted
         assertThrows(UncheckedIOException.class,
                      () -> webClient.get("/greet")
+                             .header(HeaderValues.CONNECTION_CLOSE)
                              .readTimeout(Duration.ofMillis(200))
                              .request(String.class));
         client.close();
         Thread.sleep(100); // give it some time for server to release the semaphore
         ClientResponseTyped<String> typedResponse = webClient.get("/greet")
+                .header(HeaderValues.CONNECTION_CLOSE)
                 .readTimeout(Duration.ofMillis(200))
                 .request(String.class);
         assertThat(typedResponse.status().text(), typedResponse.entity(), is("hello"));

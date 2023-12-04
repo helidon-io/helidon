@@ -65,6 +65,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     ClientConnection connection(Http1ClientImpl http1Client,
+                                Duration requestReadTimeout,
                                 Tls tls,
                                 Proxy proxy,
                                 ClientUri uri,
@@ -73,7 +74,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
         if (keepAlive) {
-            return keepAliveConnection(http1Client, effectiveTls, uri, proxy);
+            return keepAliveConnection(http1Client, requestReadTimeout, effectiveTls, uri, proxy);
         } else {
             return oneOffConnection(http1Client, effectiveTls, uri, proxy);
         }
@@ -105,6 +106,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     private ClientConnection keepAliveConnection(Http1ClientImpl http1Client,
+                                                 Duration requestReadTimeout,
                                                  Tls tls,
                                                  ClientUri uri,
                                                  Proxy proxy) {
@@ -118,6 +120,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
         ConnectionKey connectionKey = new ConnectionKey(uri.scheme(),
                                                         uri.host(),
                                                         uri.port(),
+                                                        clientConfig.readTimeout().orElse(requestReadTimeout),
                                                         tls,
                                                         clientConfig.dnsResolver(),
                                                         clientConfig.dnsAddressLookup(),
@@ -161,6 +164,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
                                           new ConnectionKey(uri.scheme(),
                                                             uri.host(),
                                                             uri.port(),
+                                                            clientConfig.readTimeout().orElse(Duration.ZERO),
                                                             tls,
                                                             clientConfig.dnsResolver(),
                                                             clientConfig.dnsAddressLookup(),

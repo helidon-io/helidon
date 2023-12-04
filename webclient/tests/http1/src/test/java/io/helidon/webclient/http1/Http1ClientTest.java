@@ -238,6 +238,7 @@ class Http1ClientTest {
             connectionNow = http1Client
                     .connectionCache()
                     .connection(http1Client,
+                                Duration.ZERO,
                                 injectedHttp1client.prototype().tls(),
                                 Proxy.noProxy(),
                                 request.resolvedUri(),
@@ -271,6 +272,7 @@ class Http1ClientTest {
             connectionList.add(http1Client
                                        .connectionCache()
                                        .connection(http1Client,
+                                                   Duration.ZERO,
                                                    clientConfig.tls(),
                                                    Proxy.noProxy(),
                                                    request.resolvedUri(),
@@ -298,6 +300,7 @@ class Http1ClientTest {
             connection = http1Client
                     .connectionCache()
                     .connection(http1Client,
+                                Duration.ZERO,
                                 clientConfig.tls(),
                                 Proxy.noProxy(),
                                 request.resolvedUri(),
@@ -326,6 +329,7 @@ class Http1ClientTest {
         ClientConnection connectionNow = http1Client
                 .connectionCache()
                 .connection(http1Client,
+                            Duration.ZERO,
                             clientConfig.tls(),
                             Proxy.noProxy(),
                             request.resolvedUri(),

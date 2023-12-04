@@ -16,6 +16,8 @@
 
 package io.helidon.webclient.http2;
 
+import java.time.Duration;
+
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequest;
@@ -67,6 +69,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
         ConnectionKey ck = new ConnectionKey(clientUri.scheme(),
                                              clientUri.host(),
                                              clientUri.port(),
+                                             clientConfig.readTimeout().orElse(Duration.ZERO),
                                              clientRequest.tls(),
                                              clientConfig.dnsResolver(),
                                              clientConfig.dnsAddressLookup(),
