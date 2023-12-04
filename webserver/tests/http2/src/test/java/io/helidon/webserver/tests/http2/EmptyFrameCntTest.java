@@ -92,6 +92,7 @@ class EmptyFrameCntTest {
         ConnectionKey connectionKey = new ConnectionKey(clientUri.scheme(),
                                                         clientUri.host(),
                                                         clientUri.port(),
+                                                        Duration.ZERO,
                                                         Tls.builder().enabled(false).build(),
                                                         DefaultDnsResolver.create(),
                                                         null,

@@ -113,7 +113,7 @@ public final class Http1HeadersParser {
         if (col == maxLength) {
             throw new IllegalStateException("Header size exceeded");
         } else if (col < 0) {
-            throw new IllegalArgumentException("Invalid header, missing colon: " + reader.debugDataHex());
+            throw new IllegalArgumentException("Invalid header, missing colon:\n" + reader.debugDataHex());
         }
 
         String headerName = reader.readAsciiString(col);

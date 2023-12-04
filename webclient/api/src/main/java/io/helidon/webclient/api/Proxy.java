@@ -25,6 +25,7 @@ import java.net.ProxySelector;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
@@ -457,6 +458,8 @@ public class Proxy {
                                                                     new ConnectionKey("http",
                                                                                       proxyAddress.getHostName(),
                                                                                       proxyAddress.getPort(),
+                                                                                      clientConfig.readTimeout()
+                                                                                              .orElse(Duration.ZERO),
                                                                                       NO_TLS,
                                                                                       clientConfig.dnsResolver(),
                                                                                       clientConfig.dnsAddressLookup(),

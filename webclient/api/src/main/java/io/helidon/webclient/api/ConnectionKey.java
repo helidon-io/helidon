@@ -16,6 +16,8 @@
 
 package io.helidon.webclient.api;
 
+import java.time.Duration;
+
 import io.helidon.common.tls.Tls;
 import io.helidon.webclient.spi.DnsResolver;
 
@@ -25,6 +27,7 @@ import io.helidon.webclient.spi.DnsResolver;
  * @param scheme           uri address scheme
  * @param host             uri address host
  * @param port             uri address port
+ * @param readTimeout      SO read timeout
  * @param tls              TLS to be used in connection
  * @param dnsResolver      DNS resolver to be used
  * @param dnsAddressLookup DNS address lookup strategy
@@ -33,6 +36,7 @@ import io.helidon.webclient.spi.DnsResolver;
 public record ConnectionKey(String scheme,
                             String host,
                             int port,
+                            Duration readTimeout,
                             Tls tls,
                             DnsResolver dnsResolver,
                             DnsAddressLookup dnsAddressLookup,

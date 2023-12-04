@@ -18,6 +18,7 @@ package io.helidon.webclient.http2;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -266,6 +267,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return new ConnectionKey(uri.scheme(),
                                  uri.host(),
                                  uri.port(),
+                                 clientConfig.readTimeout().orElse(Duration.ZERO),
                                  "https".equals(uri.scheme()) ? clientRequest.tls() : NO_TLS,
                                  clientConfig.dnsResolver(),
                                  clientConfig.dnsAddressLookup(),
