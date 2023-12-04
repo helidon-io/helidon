@@ -30,11 +30,12 @@ interface CodegenEventBlueprint {
      * <p>
      * Mapping table:
      * <table>
-     *     <th>
-     *         <td>Level</td>
-     *         <td>Maven log level</td>
-     *         <td>APT Diagnostic.Kind</td>
-     *     </th>
+     *     <caption>Level mappings</caption>
+     *     <tr>
+     *         <th>Level</th>
+     *         <th>Maven log level</th>
+     *         <th>APT Diagnostic.Kind</th>
+     *     </tr>
      *     <tr>
      *         <td>ERROR</td>
      *         <td>error</td>
