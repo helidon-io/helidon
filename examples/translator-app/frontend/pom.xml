@@ -29,7 +29,6 @@
     </parent>
     <groupId>io.helidon.examples.translator</groupId>
     <artifactId>helidon-examples-translator-frontend</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
     <name>Helidon Examples Translator Frontend</name>
 
     <description>

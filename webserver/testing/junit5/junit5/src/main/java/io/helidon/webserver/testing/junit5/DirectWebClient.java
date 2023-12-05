@@ -99,6 +99,11 @@ public class DirectWebClient implements WebClient {
     }
 
     @Override
+    public void closeResource() {
+        // Nothing to close in connection-less client
+    }
+
+    @Override
     public WebClientConfig prototype() {
         return webClient.prototype();
     }

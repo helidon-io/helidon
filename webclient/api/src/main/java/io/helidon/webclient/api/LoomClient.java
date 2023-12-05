@@ -152,6 +152,13 @@ class LoomClient implements WebClient {
     }
 
     @Override
+    public void closeResource() {
+        for (ProtocolSpi o : List.copyOf(clientSpiByProtocol.values())) {
+            o.spi().releaseResource();
+        }
+    }
+
+    @Override
     public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol, C protocolConfig) {
         return protocol.provider().protocol(this, protocolConfig);
     }

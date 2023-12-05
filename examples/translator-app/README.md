@@ -28,7 +28,7 @@ kubectl apply \
 With Docker:
 ```bash
 docker build -t helidon-examples-translator-backend backend/
-docker build -t helidon-examples--translator-frontend frontend/
+docker build -t helidon-examples-translator-frontend frontend/
 docker run --rm -d -p 9080:9080 \
     --link zipkin \
     --name helidon-examples-translator-backend \

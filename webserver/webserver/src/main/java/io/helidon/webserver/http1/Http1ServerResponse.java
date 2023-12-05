@@ -53,6 +53,7 @@ import io.helidon.webserver.http.spi.SinkProvider;
  * An HTTP/1 server response.
  */
 class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
+    private static final System.Logger LOGGER = System.getLogger(Http1ServerResponse.class.getName());
     private static final byte[] HTTP_BYTES = "HTTP/1.1 ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
@@ -140,6 +141,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     @Override
     public Http1ServerResponse header(Header header) {
+        if (streamingEntity) {
+            throw new IllegalStateException("Cannot set response header after requesting output stream.");
+        }
+        if (isSent()) {
+            throw new IllegalStateException("Cannot set response header after response was already sent.");
+        }
         this.headers.set(header);
         return this;
     }
@@ -197,10 +204,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
+
+        OutputStream encodedOutputStream = contentEncode(outputStream);
+        // Headers can be augmented by encoders
+        bos.checkResponseHeaders();
         if (outputStreamFilter == null) {
-            return contentEncode(outputStream);
+            return encodedOutputStream;
         } else {
-            return outputStreamFilter.apply(contentEncode(outputStream));
+            return outputStreamFilter.apply(encodedOutputStream);
         }
     }
 
@@ -383,7 +394,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private final Http1ServerRequest request;
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
-        private final boolean forcedChunked;
+        private boolean forcedChunked;
 
         private BufferData firstBuffer;
         private boolean closed;
@@ -414,13 +425,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.responseCloseRunnable = responseCloseRunnable;
             this.ctx = ctx;
             this.sendListener = sendListener;
-            this.isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
             this.contentLength = headers.contentLength().orElse(-1);
             this.request = request;
             this.keepAlive = keepAlive;
+            this.validateHeaders = validateHeaders;
+        }
+
+        void checkResponseHeaders(){
+            this.isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
             this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)
                     || headers.contains(HeaderNames.TRAILER);
-            this.validateHeaders = validateHeaders;
         }
 
         @Override
@@ -580,6 +594,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
                     // proper stream with multiple buffers, write status amd headers
                     headers.add(STREAM_TRAILERS);
+                }
+                // this is chunked encoding, if anybody managed to set content length, it would break everything
+                if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
+                    LOGGER.log(System.Logger.Level.WARNING, "Content length was set after stream was requested, "
+                            + "the response is already chunked, cannot use content-length");
+                    headers.remove(HeaderNames.CONTENT_LENGTH);
                 }
                 sendHeadersAndPrepare();
                 firstByte = false;

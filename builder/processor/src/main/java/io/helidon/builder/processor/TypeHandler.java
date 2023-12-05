@@ -341,18 +341,21 @@ class TypeHandler {
         paramLines.add("consumer of builder for");
         paramLines.addAll(blueprintJavadoc.returnDescription());
 
+        Javadoc javadoc = setterJavadoc(blueprintJavadoc)
+                .addParameter(argumentName, paramLines)
+                .build();
+
         TypeName argumentType = TypeName.builder()
                 .type(Consumer.class)
                 .addTypeArgument(actualType())
                 .build();
         Method.Builder builder = Method.builder()
                 .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType)
+                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .addParameter(param -> param.name(argumentName)
-                        .type(argumentType)
-                        .description(paramLines))
+                        .type(argumentType))
+                .javadoc(javadoc)
                 .accessModifier(setterAccessModifier(configured))
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(" + argumentName + ");")
@@ -374,18 +377,27 @@ class TypeHandler {
         classBuilder.addMethod(builder);
     }
 
+    protected Javadoc.Builder setterJavadoc(Javadoc blueprintJavadoc) {
+        return Javadoc.builder(blueprintJavadoc)
+                .addTag("see", "#" + getterName() + "()")
+                .returnDescription("updated builder instance");
+    }
+
     protected void charArraySetter(InnerClass.Builder classBuilder,
                                    AnnotationDataOption configured,
                                    TypeName returnType,
                                    Javadoc blueprintJavadoc) {
+
         classBuilder.addMethod(builder -> builder.name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType)
+                .javadoc(setterJavadoc(blueprintJavadoc)
+                                 .addParameter(name(), blueprintJavadoc.returnDescription())
+                                 .build())
+                .returnType(returnType)
                 .addParameter(param -> param.name(name())
-                        .type(STRING_TYPE)
-                        .description(blueprintJavadoc.returnDescription()))
+                        .type(STRING_TYPE))
                 .accessModifier(setterAccessModifier(configured))
+                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .typeName(Objects.class).addLine(".requireNonNull(" + name() + ");")
                 .addLine("this." + name() + " = " + name() + ".toCharArray();")
                 .addLine("return self();"));
@@ -415,15 +427,19 @@ class TypeHandler {
                                   AnnotationDataOption configured,
                                   TypeName returnType,
                                   Javadoc blueprintJavadoc) {
+
         Method.Builder builder = Method.builder()
                 .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType)
+                .javadoc(setterJavadoc(blueprintJavadoc)
+                                 .addParameter(name(), blueprintJavadoc.returnDescription())
+                                 .build())
+                .returnType(returnType)
+                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .addParameter(param -> param.name(name())
-                        .type(argumentTypeName())
-                        .description(blueprintJavadoc.returnDescription()))
+                        .type(argumentTypeName()))
                 .accessModifier(setterAccessModifier(configured));
+
         if (!declaredType.primitive()) {
             builder.typeName(Objects.class).addLine(".requireNonNull(" + name() + ");");
         }
@@ -463,19 +479,22 @@ class TypeHandler {
         paramLines.add("consumer of builder for");
         paramLines.addAll(blueprintJavadoc.returnDescription());
 
+        Javadoc javadoc = setterJavadoc(blueprintJavadoc)
+                .addParameter(argumentName, paramLines)
+                .build();
+
         TypeName argumentType = TypeName.builder()
                 .type(Consumer.class)
                 .addTypeArgument(builderType)
                 .build();
         Method.Builder builder = Method.builder()
                 .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType)
+                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .addParameter(param -> param.name(argumentName)
-                        .type(argumentType)
-                        .description(paramLines))
+                        .type(argumentType))
                 .accessModifier(setterAccessModifier(configured))
+                .javadoc(javadoc)
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(" + argumentName + ");")
                 .add("var builder = ")
@@ -507,16 +526,19 @@ class TypeHandler {
         paramLines.add("supplier of");
         paramLines.addAll(blueprintJavadoc.returnDescription());
 
+        Javadoc javadoc = setterJavadoc(blueprintJavadoc)
+                .addParameter(argumentName, paramLines)
+                .build();
+
         TypeName argumentType = supplierType;
         Method.Builder builder = Method.builder()
                 .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType)
+                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .addParameter(param -> param.name(argumentName)
-                        .type(argumentType)
-                        .description(paramLines))
+                        .type(argumentType))
                 .accessModifier(setterAccessModifier(configured))
+                .javadoc(javadoc)
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(" + argumentName + ");")
                 .addLine("this." + name() + "(" + argumentName + ".get());")
@@ -532,12 +554,13 @@ class TypeHandler {
         String argumentName = name() + "Config";
         Method.Builder builder = Method.builder()
                 .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType)
+                .javadoc(setterJavadoc(blueprintJavadoc)
+                                 .addParameter(argumentName, blueprintJavadoc.returnDescription())
+                                 .build())
+                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .addParameter(param -> param.name(argumentName)
-                        .type(factoryMethod.argumentType())
-                        .description(blueprintJavadoc.returnDescription()))
+                        .type(factoryMethod.argumentType()))
                 .accessModifier(setterAccessModifier(configured))
                 .typeName(Objects.class).addLine(".requireNonNull(" + argumentName + ");")
                 .add("this." + name() + " = ")

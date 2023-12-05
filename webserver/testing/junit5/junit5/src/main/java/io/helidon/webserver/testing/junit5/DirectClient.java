@@ -100,6 +100,11 @@ public class DirectClient implements Http1Client {
                 .connection(new DirectClientConnection(socket, router));
     }
 
+    @Override
+    public void closeResource() {
+        // Nothing to close in connection-less client
+    }
+
     /**
      * Whether to use tls (mark this connection as secure).
      *

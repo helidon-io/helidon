@@ -29,11 +29,20 @@
     <artifactId>helidon-integrations-cdi-hibernate</artifactId>
     <name>Helidon CDI Integrations Hibernate</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+    
     <dependencies>
         <!-- Test-scoped dependencies. -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

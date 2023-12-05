@@ -62,11 +62,11 @@
                     </includes>
                 </templates>
                 <model>
-                    <list key="poms">
-                        <value>pom.xml</value>
+                    <list key="poms" if="!${multi-module}">
+                        <value>ADD pom.xml .</value>
                     </list>
                     <list key="src-dirs" if="!${multi-module}">
-                        <value>src</value>
+                        <value>ADD src src</value>
                     </list>
                     <list key="native-sections" if="${docker.native-image}">
                         <value file="files/README.native.md"/>

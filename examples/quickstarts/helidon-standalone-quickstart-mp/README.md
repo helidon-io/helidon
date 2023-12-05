@@ -106,13 +106,13 @@ Start the application:
 Build the "native" Docker Image
 
 ```
-docker build -t helidon-quickstart-mp-native -f Dockerfile.native .
+docker build -t helidon-standalone-quickstart-mp-native -f Dockerfile.native .
 ```
 
 Start the application:
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-mp-native:latest
+docker run --rm -p 8080:8080 helidon-standalone-quickstart-mp-native:latest
 ```
   
 ## Build a Java Runtime Image using jlink
@@ -141,7 +141,7 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 Start the application:
 
 ```
-./target/helidon-quickstart-se-jri/bin/start
+./target/helidon-standalone-quickstart-mp-jri/bin/start
 ```
 
 ### Multi-stage Docker build
@@ -149,17 +149,17 @@ Start the application:
 Build the JRI as a Docker Image
 
 ```
-docker build -t helidon-quickstart-mp-jri -f Dockerfile.jlink .
+docker build -t helidon-standalone-quickstart-mp-jri -f Dockerfile.jlink .
 ```
 
 Start the application:
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-mp-jri:latest
+docker run --rm -p 8080:8080 helidon-standalone-quickstart-mp-jri:latest
 ```
 
 See the start script help:
 
 ```
-docker run --rm helidon-quickstart-mp-jri:latest --help
+docker run --rm helidon-standalone-quickstart-mp-jri:latest --help
 ```

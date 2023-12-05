@@ -122,7 +122,7 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
 
     @Override
     public String type() {
-        return "log";
+        return "metrics";
     }
 
     @Override

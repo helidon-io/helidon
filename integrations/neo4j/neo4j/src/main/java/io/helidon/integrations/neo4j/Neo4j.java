@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.logging.Level;
 
 import io.helidon.common.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
@@ -75,6 +77,7 @@ public final class Neo4j {
     /**
      * Fluent API builder for Neo4j.
      */
+    @Configured
     public static final class Builder implements io.helidon.common.Builder<Builder, Neo4j> {
         private boolean encrypted;
         private boolean authenticationEnabled = true;
@@ -148,6 +151,7 @@ public final class Neo4j {
          * @param username parameter
          * @return Builder
          */
+        @ConfiguredOption
         public Builder username(String username) {
             Objects.requireNonNull(username);
             this.username = username;
@@ -162,6 +166,7 @@ public final class Neo4j {
          * @param password parameter
          * @return Builder
          */
+        @ConfiguredOption
         public Builder password(String password) {
             Objects.requireNonNull(password);
             this.password = password;
@@ -174,6 +179,7 @@ public final class Neo4j {
          * @param uri parameter
          * @return Builder
          */
+        @ConfiguredOption
         public Builder uri(String uri) {
             Objects.requireNonNull(uri);
             this.uri = uri;
@@ -181,11 +187,12 @@ public final class Neo4j {
         }
 
         /**
-         * Enable ecrypted field.
+         * Enable encrypted field.
          *
          * @param encrypted parameter
          * @return Builder
          */
+        @ConfiguredOption
         public Builder encrypted(boolean encrypted) {
             this.encrypted = encrypted;
             return this;
@@ -197,28 +204,32 @@ public final class Neo4j {
          * @param authenticationEnabled parameter
          * @return Builder
          */
+        @ConfiguredOption("true")
         public Builder authenticationEnabled(boolean authenticationEnabled) {
             this.authenticationEnabled = authenticationEnabled;
             return this;
         }
 
         /**
-         * Enagle metrics.
+         * Enable metrics.
          *
          * @param metricsEnabled parameter
          * @return Builder
          */
+        @ConfiguredOption
+
         public Builder metricsEnabled(boolean metricsEnabled) {
             this.metricsEnabled = metricsEnabled;
             return this;
         }
 
         /**
-         * Eable log leaked sessions.
+         * Enable log leaked sessions.
          *
          * @param logLeakedSessions parameter
          * @return Builder
          */
+        @ConfiguredOption
         public Builder logLeakedSessions(boolean logLeakedSessions) {
             this.logLeakedSessions = logLeakedSessions;
             return this;
@@ -230,6 +241,7 @@ public final class Neo4j {
          * @param maxConnectionPoolSize parameter
          * @return Builder
          */
+        @ConfiguredOption("100")
         public Builder maxConnectionPoolSize(int maxConnectionPoolSize) {
             this.maxConnectionPoolSize = maxConnectionPoolSize;
             return this;
@@ -241,6 +253,7 @@ public final class Neo4j {
          * @param idleTimeBeforeConnectionTest parameter
          * @return Builder
          */
+        @ConfiguredOption("PT1MS")
         public Builder idleTimeBeforeConnectionTest(Duration idleTimeBeforeConnectionTest) {
             Objects.requireNonNull(idleTimeBeforeConnectionTest);
             this.idleTimeBeforeConnectionTest = idleTimeBeforeConnectionTest;
@@ -253,6 +266,7 @@ public final class Neo4j {
          * @param maxConnectionLifetime parameter
          * @return Builder
          */
+        @ConfiguredOption("PT5H")
         public Builder maxConnectionLifetime(Duration maxConnectionLifetime) {
             Objects.requireNonNull(maxConnectionLifetime);
             this.maxConnectionLifetime = maxConnectionLifetime;
@@ -265,6 +279,7 @@ public final class Neo4j {
          * @param connectionAcquisitionTimeout parameter
          * @return Builder
          */
+        @ConfiguredOption("PT1M")
         public Builder connectionAcquisitionTimeout(Duration connectionAcquisitionTimeout) {
             Objects.requireNonNull(connectionAcquisitionTimeout);
             this.connectionAcquisitionTimeout = connectionAcquisitionTimeout;
@@ -277,6 +292,7 @@ public final class Neo4j {
          * @param strategy parameter
          * @return Builder
          */
+        @ConfiguredOption(type = TrustStrategy.class)
         public Builder trustStrategy(TrustStrategy strategy) {
             this.trustStrategy = strategy;
             return this;
@@ -288,6 +304,7 @@ public final class Neo4j {
          * @param certFile parameter
          * @return Builder
          */
+        @ConfiguredOption
         public Builder certificate(Path certFile) {
             this.certFile = certFile;
             return this;
@@ -299,6 +316,7 @@ public final class Neo4j {
          * @param hostnameVerificationEnabled parameter
          * @return Builder
          */
+        @ConfiguredOption
         public Builder hostnameVerificationEnabled(boolean hostnameVerificationEnabled) {
             this.hostnameVerificationEnabled = hostnameVerificationEnabled;
             return this;

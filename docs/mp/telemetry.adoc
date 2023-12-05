@@ -32,7 +32,6 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
-- <<Additional Information, Additional Information>>
 - <<Reference, Reference>>
 
 == Overview
@@ -51,7 +50,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 link:https://opentelemetry.io/[OpenTelemetry] comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
 
-MicroProfile Telemetry 1.0 allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using variety of exporter.
+MicroProfile Telemetry 1.0 allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using a variety of exporters.
 
 In a distributed tracing system, *traces* are used to capture a series of requests and are composed of multiple *spans* that represent individual operations within those requests. Each *span* includes a name, timestamps, and metadata that provide insights into the corresponding operation.
 
@@ -68,9 +67,9 @@ There are two ways to work with Telemetry, using:
 
 For Automatic Instrumentation, OpenTelemetry provides a JavaAgent. The Tracing API allows for the automatic participation in distributed tracing of Jakarta RESTful Web Services (both server and client) as well as MicroProfile REST Clients, without requiring any modifications to the code. This is achieved through automatic instrumentation.
 
-For Manual Instrumentation there is a set of annotations and access to OpenTelemetry API.
+For Manual Instrumentation, there is a set of annotations and access to OpenTelemetry API.
 
-`@WithSpan` - By adding this annotation to a method in any Jakarta CDI aware bean, a new Span will be created and any necessary connections to the current Trace context will be established. Additionally, the `SpanAttribute` annotation can be used to mark method parameters that should be included in the Trace.
+`@WithSpan` - By adding this annotation to a method in any Jakarta CDI aware bean, a new span will be created and any necessary connections to the current Trace context will be established. Additionally, the `SpanAttribute` annotation can be used to mark method parameters that should be included in the Trace.
 
 Helidon provides full access to OpenTelemetry Tracing API:
 
@@ -92,16 +91,19 @@ class HelidonBean {
         // do something here
     }
 
-    @WithSpan("name", kind = SpanKind.SERVER, @SpanAttribute(value = "arg") String arg) <2>
-    void complexSpan() {
+    @WithSpan("name") <2>
+    void complexSpan(@SpanAttribute(value = "arg") String arg) {
         // do something here
     }
 }
 ----
 <1> Simple `@WithSpan` annotation usage.
-<2> Additional attributes can be set to the annotation.
+<2> Additional attributes can be set on a method.
 
-You can also inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star, and stop Spans.
+
+=== Working With Tracers
+
+You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star and stop spans.
 
 .SpanBuilder usage
 [source, java]
@@ -128,6 +130,66 @@ public class HelidonEndpoint {
 ----
 <1> Inject `Tracer`.
 <2> Use `Tracer.spanBuilder` to create and start new `Span`.
+
+Helidon Microprofile Telemetry is integrated with xref:tracing.adoc[Helidon Tracing API]. This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
+
+.Inject Helidon Tracer
+[source, java]
+----
+private io.helidon.tracing.Tracer helidonTracerInjected;
+
+@Inject
+GreetResource(io.helidon.tracing.Tracer helidonTracerInjected) {
+    this.helidonTracerInjected = helidonTracerInjected; <1>
+}
+
+@GET
+@Path("mixed_injected")
+@Produces(MediaType.APPLICATION_JSON)
+@WithSpan("mixed_parent_injected")
+public GreetingMessage mixedSpanInjected() {
+    io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected") <2>
+            .kind(io.helidon.tracing.Span.Kind.SERVER)
+            .tag("attribute", "value")
+            .start();
+    mixedSpan.end();
+
+    return new GreetingMessage("Mixed Span Injected" + span);
+}
+----
+<1> Inject `io.helidon.tracing.Tracer`.
+<2> Use the injected tracer to create  `io.helidon.tracing.Span` using the `spanBuilder()` method.
+
+The span is then started and ended manually. Span parent relations will be preserved. This means that span named "mixed_injected" with have parent span named "mixed_parent_injected", which will have parent span named "mixed_injected".
+
+Another option is to use the Global Tracer:
+
+.Obtain the Global tracer
+[source, java]
+----
+@GET
+@Path("mixed")
+@Produces(MediaType.APPLICATION_JSON)
+@WithSpan("mixed_parent")
+public GreetingMessage mixedSpan() {
+
+    io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();   <1>
+    io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed")  <2>
+            .kind(io.helidon.tracing.Span.Kind.SERVER)
+            .tag("attribute", "value")
+            .start();
+    mixedSpan.end();
+
+    return new GreetingMessage("Mixed Span" + span);
+}
+----
+<1> Obtain tracer using the `io.helidon.tracing.Tracer.global()` method;
+<2> Use the created tracer to create a span.
+
+The span is then started and ended manually. Span parent relations will be preserved.
+
+
+=== Working With Spans
 
 To obtain the current span, it can be injected by CDI. The current span can also be obtained using the static method `Span.current()`.
 
@@ -156,6 +218,8 @@ public class HelidonEndpoint {
 <1> Inject the current span.
 <2> Use the injected span.
 <3> Use `Span.current()` to access the current span.
+
+=== Working With Baggage
 
 The same functionality is available for the `Baggage` API:
 
@@ -195,18 +259,18 @@ To configure OpenTelemetry, MicroProfile Config must be used, and the configurat
 - link:https://github.com/open-telemetry/opentelemetry-java/tree/v1.19.0/sdk-extensions/autoconfigure[OpenTelemetry SDK Autoconfigure] (excluding properties related to Metrics and Logging)
 - link:https://opentelemetry.io/docs/instrumentation/java/manual/[Manual Instrumentation]
 
-Please consult with the links above for all configurations properties usage.
+Please consult with the links above for all configurations' properties usage.
 
-The property should be declared in `microprofile-config.properties` file in order to be processed correctly.
+The property should be declared in `microprofile-config.properties` file to be processed correctly.
 
 
 === OpenTelemetry Java Agent
 
-The OpenTelemetry Java Agent may influence the work of MicroProfile Telemetry, on how the objects are created and configured. Helidon will do "best effort" detect the use of the agent. But, if there is a decision to run the Helidon app with the agent, a configuration property should be set:
+The OpenTelemetry Java Agent may influence the work of MicroProfile Telemetry, on how the objects are created and configured. Helidon will do "best effort" to detect the use of the agent. But if there is a decision to run the Helidon app with the agent, a configuration property should be set:
 
 `otel.agent.present=true`
 
-This way, Helidon will explicitly get all the configuration and objects from the Agent, thus allowing correct Span hierarchy settings.
+This way, Helidon will explicitly get all the configuration and objects from the Agent, thus allowing correct span hierarchy settings.
 
 == Examples
 
@@ -214,7 +278,7 @@ This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon a
 
 === Set Up Jaeger
 
-For the examples Jaeger will be used for gathering of the tracing information.
+For example, Jaeger will be used for gathering of the tracing information.
 
 .Run Jaeger in a docker container.
 [source, bash]
@@ -232,7 +296,7 @@ docker run -d --name jaeger \
   -p 14268:14268 \
   -p 14269:14269 \
   -p 9411:9411 \
-  jaegertracing/all-in-one:1.41
+  jaegertracing/all-in-one:1.50
 ----
 
 All the tracing information gathered from the examples runs is accessible from the browser in the Jaeger UI under link:http://localhost:16686/[]
@@ -273,7 +337,7 @@ Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name, w
 [NOTE]
 ====
 
-For this example, you will use Jaeger to manage data tracing. If you prefer to use Zipkin, please set `otel.traces.exporter` property to "zipkin". For more information using about Zipkin, see link:https://zipkin.io/[]. Also a corresponding Maven dependency for the exporter should be added:
+For this example, you will use Jaeger to manage data tracing. If you prefer to use Zipkin, please set `otel.traces.exporter` property to "zipkin". For more information using about Zipkin, see link:https://zipkin.io/[]. Also, a corresponding Maven dependency for the exporter should be added:
 ----
 <dependency>
     <groupId>io.opentelemetry</groupId>
@@ -336,7 +400,7 @@ public JsonObject useCustomSpan(){
 }
 ----
 <1> Inject Opentelemetry `Tracer`.
-<2> Create Span around the method `useCustomSpan()`.
+<2> Create a span around the method `useCustomSpan()`.
 <3> Create a custom `INTERNAL` span and start it.
 <4> End the custom span.
 
@@ -370,7 +434,7 @@ public String outbound() {
 <2> Wrap method using `WithSpan`.
 <3> Call the secondary service.
 
-The secondary service is very simple, it has only one method, which is also annotated with `@WithSpan`.
+The secondary service is basic; it has only one method, which is also annotated with `@WithSpan`.
 
 .Secondary service
 [source, java]
@@ -392,15 +456,13 @@ curl localhost:8080/greet/outbound
 Secondary
 ----
 
-The `greeting-service` call `secondary-service`. Each service will create Spans with corresponding names, and a service class hierarchy will be created.
+The `greeting-service` call `secondary-service`. Each service will create spans with corresponding names, and a service class hierarchy will be created.
 
 Launch the Jaeger UI at link:http://localhost:16686/[] to see the expected output (shown below).
 
 image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call]
 
-
-== Additional Information
-
+This example is available at the link:https://github.com/helidon-io/helidon/tree/main/examples/microprofile/telemetry[Helidon official GitHub repository].
 
 == Reference
 

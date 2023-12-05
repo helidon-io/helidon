@@ -277,18 +277,18 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <value if="${flavor} == 'se'">io.helidon.webserver.observe.metrics</value>
                                     <value if="${flavor} == 'se'">io.helidon.metrics.api</value>
                                 </list>
-                                <list key="readme-sections">
+                                <list key="readme-sections" if="${flavor} == 'se'">
                                     <value><![CDATA[
 ## Try metrics
 
 ```
 # Prometheus Format
-curl -s -X GET http://localhost:8080/metrics
+curl -s -X GET http://localhost:8080/observe/metrics
 # TYPE base:gc_g1_young_generation_count gauge
 . . .
 
 # JSON Format
-curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 {"base":...
 . . .
 ```
@@ -404,20 +404,11 @@ curl -X GET http://localhost:8080/observe/health/ready
                           optional="true">
                         <option value="jaeger"
                                 name="Jaeger"
-                                description="Send traces to a Jaeger backend" >
+                                description="Send traces to a Jaeger backend">
                             <output>
                                 <model>
-                                    <list key="dependencies">
-                                        <map order="800">
-                                            <value key="groupId">io.helidon.tracing.providers</value>
-                                            <value key="artifactId">helidon-tracing-providers-jaeger</value>
-                                        </map>
-                                    </list>
                                     <list key="readme-sections">
                                         <value file="/common/files/README.jaeger.md"/>
-                                    </list>
-                                    <list key="config-properties">
-                                        <value>tracing.global=false</value>
                                     </list>
                                 </model>
                             </output>
@@ -427,12 +418,6 @@ curl -X GET http://localhost:8080/observe/health/ready
                                 description="Send traces to a Zipkin backend">
                             <output>
                                 <model>
-                                    <list key="dependencies">
-                                        <map order="800">
-                                            <value key="groupId">io.helidon.tracing.providers</value>
-                                            <value key="artifactId">helidon-tracing-providers-zipkin</value>
-                                        </map>
-                                    </list>
                                     <list key="readme-sections">
                                         <value file="/common/files/README.zipkin.md"/>
                                     </list>

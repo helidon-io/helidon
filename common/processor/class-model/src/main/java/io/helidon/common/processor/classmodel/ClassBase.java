@@ -57,8 +57,16 @@ public abstract class ClassBase extends AnnotatedComponent {
         this.isFinal = builder.isFinal;
         this.isAbstract = builder.isAbstract;
         this.isStatic = builder.isStatic;
-        this.fields = builder.fields.values().stream().sorted(ClassBase::fieldComparator).toList();
-        this.staticFields = builder.staticFields.values().stream().sorted(ClassBase::fieldComparator).toList();
+        if (builder.sortFields) {
+            this.fields = builder.fields.values().stream().sorted(ClassBase::fieldComparator).toList();
+        } else {
+            this.fields = List.copyOf(builder.fields.values());
+        }
+        if (builder.sortStaticFields) {
+            this.staticFields = builder.staticFields.values().stream().sorted(ClassBase::fieldComparator).toList();
+        } else {
+            this.staticFields = List.copyOf(builder.staticFields.values());
+        }
         this.methods = builder.methods.stream().sorted(ClassBase::methodCompare).toList();
         this.staticMethods = builder.staticMethods.stream().sorted(ClassBase::methodCompare).toList();
         this.constructors = List.copyOf(builder.constructors);
@@ -298,6 +306,8 @@ public abstract class ClassBase extends AnnotatedComponent {
         private boolean isFinal;
         private boolean isAbstract;
         private boolean isStatic;
+        private boolean sortFields = true;
+        private boolean sortStaticFields = true;
 
         Builder() {
         }
@@ -521,6 +531,17 @@ public abstract class ClassBase extends AnnotatedComponent {
         /**
          * Add new constructor to this class.
          *
+         * @param constructor constructor builder
+         * @return updated builder instance
+         */
+        public B addConstructor(Constructor.Builder constructor) {
+            constructors.add(constructor.type(name()).build());
+            return identity();
+        }
+
+        /**
+         * Add new constructor to this class.
+         *
          * @param consumer constructor builder consumer
          * @return updated builder instance
          */
@@ -608,6 +629,30 @@ public abstract class ClassBase extends AnnotatedComponent {
          */
         public B classType(ClassType classType) {
             this.classType = classType;
+            return identity();
+        }
+
+        /**
+         * Whether to sort non-static fields by type and name (defaults to {@code true}).
+         * If set to {@code false}, fields are ordered by insertion sequence.
+         *
+         * @param sort whether to sort fields
+         * @return updated builder instance
+         */
+        public B sortFields(boolean sort) {
+            this.sortFields = sort;
+            return identity();
+        }
+
+        /**
+         * Whether to sort static fields by type and name (defaults to {@code true}).
+         * If set to {@code false}, fields are ordered by insertion sequence.
+         *
+         * @param sort whether to sort fields
+         * @return updated builder instance
+         */
+        public B sortStaticFields(boolean sort) {
+            this.sortStaticFields = sort;
             return identity();
         }
 

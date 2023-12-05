@@ -179,6 +179,7 @@ public final class Option {
     public @interface AllowedValue {
         /**
          * Value of the option.
+         *
          * @return value
          */
         String value();
@@ -387,5 +388,42 @@ public final class Option {
     // note: class retention needed for cases when derived builders are inherited across modules
     @Retention(RetentionPolicy.CLASS)
     public @interface Confidential {
+    }
+
+    /**
+     * Mark an option as deprecated.
+     * This will introduce {@link java.lang.Deprecated} annotation on all related methods.
+     * Since and if for removal will be taken from the {@link java.lang.Deprecated} annotation on this method.
+     * This annotation is an extension to the Java annotation. If not defined, description from javadoc tag {@code deprecated}
+     * will be used for all setters and getters instead.
+     */
+    @Target(ElementType.METHOD)
+    // note: class retention needed for cases when derived builders are inherited across modules
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Deprecated {
+        /**
+         * Alternative option that replaces this option.
+         *
+         * @return name of the method that should be used instead
+         */
+        String value();
+    }
+
+
+    /**
+     * Explicitly define a type (may include generics) in case the type is located
+     * in the same module, and cannot be inferred correctly by the annotation processor.
+     * This is always needed for types with generics in the same module.
+     */
+    @Target(ElementType.METHOD)
+    // note: class retention needed for cases when derived builders are inherited across modules
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Type {
+        /**
+         * Type declaration including generic types (must match the declared generic type on the blueprint).
+         *
+         * @return type name with generic declaration
+         */
+        String value();
     }
 }

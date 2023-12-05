@@ -90,9 +90,12 @@ public interface ServerResponse {
 
     /**
      * Set header with a value.
+     * Headers cannot be set after {@link #outputStream()} method is called, or after the response was sent.
      *
      * @param header header value
      * @return this instance
+     * @throws java.lang.IllegalStateException in case a header is set after output stream was requested,
+     *              or the response was sent
      * @see HeaderName
      */
     ServerResponse header(Header header);

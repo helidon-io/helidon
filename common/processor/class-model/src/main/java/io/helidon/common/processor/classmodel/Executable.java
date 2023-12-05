@@ -28,7 +28,10 @@ import java.util.function.Supplier;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 
-abstract class Executable extends AnnotatedComponent {
+/**
+ * Executable base, used by method and constructor.
+ */
+public abstract class Executable extends AnnotatedComponent {
 
     private final Content content;
     private final List<Parameter> parameters;
@@ -85,7 +88,13 @@ abstract class Executable extends AnnotatedComponent {
         return content.hasBody();
     }
 
-    abstract static class Builder<B extends Builder<B, T>, T extends Executable>
+    /**
+     * Base builder from executable components (method an constructor).
+     *
+     * @param <B> type of the builder
+     * @param <T> type of the built instance
+     */
+    public abstract static class Builder<B extends Builder<B, T>, T extends Executable>
             extends AnnotatedComponent.Builder<B, T> {
 
         private final Map<String, Parameter> parameters = new LinkedHashMap<>();
@@ -281,6 +290,13 @@ abstract class Executable extends AnnotatedComponent {
             return this.addJavadocParameter(parameter.name(), parameter.description());
         }
 
+        /**
+         * Add a declared throws definition.
+         *
+         * @param exception exception declaration
+         * @param description description to add to javadoc
+         * @return updated builder instance
+         */
         public B addThrows(TypeName exception, String description) {
             Objects.requireNonNull(exception);
             Objects.requireNonNull(description);
@@ -288,6 +304,12 @@ abstract class Executable extends AnnotatedComponent {
                     .description(description));
         }
 
+        /**
+         * Add a declared throws definition.
+         *
+         * @param consumer exception declaration builder consumer
+         * @return updated builder instance
+         */
         public B addThrows(Consumer<Throws.Builder> consumer) {
             Objects.requireNonNull(consumer);
             Throws.Builder builder = Throws.builder();
@@ -295,11 +317,23 @@ abstract class Executable extends AnnotatedComponent {
             return addThrows(builder);
         }
 
+        /**
+         * Add a declared throws definition.
+         *
+         * @param supplier exception declaration supplier
+         * @return updated builder instance
+         */
         public B addThrows(Supplier<Throws> supplier) {
             Objects.requireNonNull(supplier);
             return addThrows(supplier.get());
         }
 
+        /**
+         * Add a declared throws definition.
+         *
+         * @param exception exception declaration
+         * @return updated builder instance
+         */
         public B addThrows(Throws exception) {
             Objects.requireNonNull(exception);
             this.exceptions.add(exception.type());

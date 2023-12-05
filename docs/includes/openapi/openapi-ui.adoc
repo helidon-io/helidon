@@ -26,6 +26,8 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 :feature-name: Helidon OpenAPI UI support
 :screen-capture-start: openapi-ui-screen-capture-greeting-{flavor-lc}-start.png
 :screen-capture-expanded: openapi-ui-screen-capture-greeting-{flavor-lc}-expanded.png
+ifdef::mp-flavor[:ui-config-prefix: mp.openapi.services.ui]
+ifdef::se-flavor[:ui-config-prefix: openapi.services.ui]
 // end::preamble[]
 
 // tag::intro[]
@@ -134,9 +136,9 @@ image::{screen-capture-expanded}[align="center",title="Example OpenAPI UI Screen
 
 // tag::config-intro[]
 == Configuration
-To use configuration to control how the Helidon OpenAPI UI service behaves, add an `openapi.ui` section to
-ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
-ifdef::se-flavor[your configuration file, such as `application.yaml`.]
+To use configuration to control how the Helidon OpenAPI UI service behaves, add
+ifdef::mp-flavor[`{ui-config-prefix}` settings to your `META-INF/microprofile-config.properties` file.]
+ifdef::se-flavor[an `{ui-config-prefix}` section to your configuration file, such as `application.yaml`.]
 
 include::{rootdir}/config/io_helidon_integrations_openapi_ui_OpenApiUi.adoc[tag=config,leveloffset=+1]
 The default UI `web-context` value is the web context for your `OpenApiFeature` service with the added suffix `/ui`. If you use the default web context for both `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
@@ -162,7 +164,7 @@ endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,properties]
 ----
-openapi.web-context=/my-openapi
+mp.openapi.web-context=/my-openapi
 ----
 endif::mp-flavor[]
 +
@@ -176,25 +178,27 @@ ifdef::se-flavor[]
 [source,yaml]
 ----
 openapi:
-  ui:
-    web-context: /my-ui
+  services:
+    ui:
+      web-context: /my-ui
 ----
 endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,properties]
 ----
-openapi.ui.web-context=/my-ui
+mp.openapi.services.ui.web-context=/my-ui
 ----
 endif::mp-flavor[]
 +
 [NOTE]
 ====
-The `openapi.ui.web-context` setting assigns the _entire_ web-context for the UI, not the suffix appended to the `OpenApiFeature` endpoint.
+The `{ui-config-prefix}.web-context` setting assigns the _entire_ web-context for the UI, not the suffix appended to the `OpenApiFeature` endpoint.
 ====
 With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
 
 The SmallRye OpenAPI UI component accepts several options, but they are of minimal use to application developers and they must be passed to the SmallRye UI code programmatically.
-Helidon allows you to specify these values using configuration in the `openapi.ui.options` section. Helidon then passes the corresponding options to SmallRye for you.
+Helidon allows you to specify these values using configuration in the `{ui-config-prefix}.options`
+section. Helidon then passes the corresponding options to SmallRye for you.
 To configure any of these settings, use the enum values--they are all lower case--declared in  the SmallRye link:{smallrye-openapi-ui-base-url}/src/main/java/io/smallrye/openapi/ui/Option.java[`Option.java`] class as the keys in your Helidon configuration.
 
 [NOTE]

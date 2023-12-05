@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
                             https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
     <Match>
         <Class name="io.helidon.integrations.oci.sdk.cdi.OciExtension" />
-        <Bug pattern="DMI_BLOCKING_METHODS_ON_URL, REDOS" />
+        <Bug pattern="DMI_BLOCKING_METHODS_ON_URL, REDOS, UPM_UNCALLED_PRIVATE_METHOD" />
     </Match>
     <Match>
         <Class name="io.helidon.integrations.oci.sdk.cdi.OciExtension$EndpointAdjuster" />

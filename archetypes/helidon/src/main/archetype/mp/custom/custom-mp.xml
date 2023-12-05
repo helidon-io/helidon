@@ -20,7 +20,9 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-
+    <variables>
+        <boolean path="application-yaml">false</boolean>
+    </variables>
     <exec src="/mp/common/common-mp.xml"/>
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
@@ -31,7 +33,14 @@
     <exec src="/common/packaging.xml"/>
     <source src="observability.xml"/>
     <exec src="database-outputs.xml" if="${db}"/>
+    <source src="security-outputs.xml" if="${security}"/>
     <output>
+        <templates engine="mustache" transformations="mustache" if="${application-yaml}">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/application.yaml.mustache</include>
+            </includes>
+        </templates>
         <model>
             <value key="helidon-test">true</value>
             <value key="mainClass" if="${jpms}">${package}.Main</value>

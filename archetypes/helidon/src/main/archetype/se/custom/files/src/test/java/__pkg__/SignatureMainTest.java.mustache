@@ -13,8 +13,8 @@ import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD;
-import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_SECRET;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.is;
@@ -50,8 +50,8 @@ public abstract class SignatureMainTest {
 
     private void test(String uri, Set<String> expectedRoles, Set<String> invalidRoles, String service) {
         try (Http1ClientResponse response = client.get(uri)
-                .property(EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(PROPERTY_OUTBOUND_ID, "jack")
+                .property(PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
             assertThat(response.status().code(), is(200));

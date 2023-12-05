@@ -328,6 +328,19 @@ interface ListenerConfigBlueprint {
     Optional<Context> listenerContext();
 
     /**
+     * Enable proxy protocol support for this socket. This protocol is supported by
+     * some load balancers/reverse proxies as a means to convey client information that
+     * would otherwise be lost. If enabled, the proxy protocol header must be present
+     * on every new connection established with your server. For more information,
+     * see <a href="https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt">
+     * the specification</a>. Default is {@code false}.
+     *
+     * @return proxy support status
+     */
+    @Option.Default("false")
+    boolean enableProxyProtocol();
+
+    /**
      * Requested URI discovery context.
      *
      * @return discovery context

@@ -64,6 +64,8 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
 
+import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
+import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static io.helidon.http.http2.Http2Util.PREFACE_LENGTH;
 import static java.lang.System.Logger.Level.DEBUG;
@@ -100,9 +102,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final WritableHeaders<?> connectionHeaders;
     private final long rapidResetCheckPeriod;
     private final int maxRapidResets;
+    private final int maxEmptyFrames;
     private final long maxClientConcurrentStreams;
     private int rapidResetCnt = 0;
     private long rapidResetPeriodStart = 0;
+    private int emptyFrames = 0;
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
             .build();
@@ -125,6 +129,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.http2Config = http2Config;
         this.rapidResetCheckPeriod = http2Config.rapidResetCheckPeriod().toNanos();
         this.maxRapidResets = http2Config.maxRapidResets();
+        this.maxEmptyFrames = http2Config.maxEmptyFrames();
         this.serverSettings = Http2Settings.builder()
                 .update(builder -> settingsUpdate(http2Config, builder))
                 .add(Http2Setting.ENABLE_PUSH, false)
@@ -548,15 +553,22 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         StreamContext stream = stream(streamId);
         stream.stream().checkDataReceivable();
 
+        boolean endOfStream = frameHeader.flags(Http2FrameTypes.DATA).endOfStream();
+
         // Flow-control: reading frameHeader.length() bytes from HTTP2 socket for known stream ID.
         int length = frameHeader.length();
         if (length > 0) {
+            emptyFrames = 0;
             if (streamId > 0 && frameHeader.type() != Http2FrameType.HEADERS) {
                 // Stream ID > 0: update connection and stream
                 stream.stream()
                         .flowControl()
                         .inbound()
                         .decrementWindowSize(length);
+            }
+        } else {
+            if (emptyFrames++ > maxEmptyFrames && !endOfStream) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Too much subsequent empty frames received.");
             }
         }
 
@@ -576,8 +588,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         } else {
             buffer = inProgressFrame();
         }
-
-        boolean endOfStream = frameHeader.flags(Http2FrameTypes.DATA).endOfStream();
 
         // TODO buffer now contains the actual data bytes
         stream.stream().data(frameHeader, buffer, endOfStream);
@@ -614,6 +624,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             ctx.remotePeer().tlsCertificates()
                     .flatMap(TlsUtils::parseCn)
                     .ifPresent(cn -> connectionHeaders.add(X_HELIDON_CN, cn));
+
+            // proxy protocol related headers X-Forwarded-For and X-Forwarded-Port
+            ctx.proxyProtocolData().ifPresent(proxyProtocolData -> {
+                String sourceAddress = proxyProtocolData.sourceAddress();
+                if (!sourceAddress.isEmpty()) {
+                    connectionHeaders.add(X_FORWARDED_FOR, sourceAddress);
+                }
+                int sourcePort = proxyProtocolData.sourcePort();
+                if (sourcePort != -1) {
+                    connectionHeaders.set(X_FORWARDED_PORT, sourcePort);
+                }
+            });
+
             initConnectionHeaders = false;
         }
 
@@ -743,7 +766,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     rapidResetCnt = 1;
                     rapidResetPeriodStart = currentTime;
                 } else if (maxRapidResets < rapidResetCnt) {
-                    throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Rapid reset attack detected!");
+                    throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Rapid reset attack detected!");
                 } else {
                     rapidResetCnt++;
                 }

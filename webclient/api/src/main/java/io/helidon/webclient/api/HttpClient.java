@@ -23,7 +23,7 @@ import io.helidon.http.Method;
  *
  * @param <REQ> type of the client request
  */
-public interface HttpClient<REQ extends ClientRequest<REQ>> {
+public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableResource {
     /**
      * Create a request for a method.
      *
@@ -31,6 +31,13 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     REQ method(Method method);
+
+    /**
+     * Gracefully close all opened client specific connections.
+     */
+    default void closeResource() {
+        // Do nothing by default
+    }
 
     /**
      * Shortcut for get method with a path.

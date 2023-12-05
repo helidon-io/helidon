@@ -201,15 +201,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 // todo ignoring trailers
                 WritableHeaders<?> writable = WritableHeaders.create();
 
-                // write the expected gRPC headers for content type and status
-                writable.set(GRPC_CONTENT_TYPE);
                 writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, status.getCode().value()));
                 String description = status.getDescription();
                 if (description != null) {
                     writable.set(HeaderValues.create(GrpcStatus.MESSAGE_NAME, description));
                 }
 
-                Http2Headers http2Headers = Http2Headers.create(writable).status(io.helidon.http.Status.OK_200);
+                Http2Headers http2Headers = Http2Headers.create(writable);
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),

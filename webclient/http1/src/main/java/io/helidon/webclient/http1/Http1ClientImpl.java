@@ -28,6 +28,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     private final Http1ClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
     private final Http1ConnectionCache connectionCache;
+    private final Http1ConnectionCache clientCache;
 
     Http1ClientImpl(WebClient webClient, Http1ClientConfig clientConfig) {
         this.webClient = webClient;
@@ -35,8 +36,10 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         this.protocolConfig = clientConfig.protocolConfig();
         if (clientConfig.shareConnectionCache()) {
             this.connectionCache = Http1ConnectionCache.shared();
+            this.clientCache = null;
         } else {
             this.connectionCache = Http1ConnectionCache.create();
+            this.clientCache = connectionCache;
         }
     }
 
@@ -84,6 +87,13 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
                 .tls(clientRequest.tls())
                 .headers(clientRequest.headers())
                 .fragment(clientUri.fragment());
+    }
+
+    @Override
+    public void closeResource() {
+        if (clientCache != null) {
+            this.clientCache.closeResource();
+        }
     }
 
     WebClient webClient() {

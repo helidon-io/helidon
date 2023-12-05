@@ -28,7 +28,6 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.Uri;
 
-
 /**
  * A simple JAX-RS resource to greet you. Examples:
  *
@@ -40,6 +39,8 @@ import org.glassfish.jersey.server.Uri;
  *
  *  Call secondary service:
  *  curl -X GET http://localhost:8080/greet/outbound
+ *
+ *  Explore traces in Jaeger UI.
  */
 @Path("/greet")
 public class GreetResource {
@@ -85,6 +86,7 @@ public class GreetResource {
 
         return new GreetingMessage("Custom Span" + span);
     }
+
     /**
      * Get Span info.
      *

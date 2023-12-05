@@ -125,7 +125,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>8.3.1</version.plugin.dependency-check>
+        <version.plugin.dependency-check>8.4.3</version.plugin.dependency-check>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -162,6 +162,7 @@
         <javadoc.link.weld>https://javadoc.io/doc/org.jboss.weld/weld-spi/${version.lib.weld-api}</javadoc.link.weld>
         <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
+        <javadoc.link.hibernate>https://docs.jboss.org/hibernate/orm/${version.lib.hibernate.family}/javadocs/</javadoc.link.hibernate>
 
         <javadoc.jackson.version>2.14</javadoc.jackson.version>
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
@@ -390,6 +391,10 @@
                             <offlineLink>
                                 <url>${javadoc.link.eclipselink}</url>
                                 <location>${javadoc.packagelist.dir}/eclipselink</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.hibernate}</url>
+                                <location>${javadoc.packagelist.dir}/hibernate</location>
                             </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">

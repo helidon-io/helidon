@@ -34,7 +34,7 @@
                     </list>
                     <value key="db-health-check-stmt" if="${health}">SELECT 0</value>
                     <list key="db-connection">
-                        <value><![CDATA[    url: "jdbc:h2:tcp://localhost:9092/~test"
+                        <value><![CDATA[    url: "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE"
     username: sa
     password:]]></value>
                     </list>
@@ -61,8 +61,8 @@ For details, see https://www.h2database.com/html/cheatSheet.html
                             <value key="artifactId">helidon-integrations-db-mysql</value>
                         </map>
                         <map>
-                            <value key="groupId">mysql</value>
-                            <value key="artifactId">mysql-connector-java</value>
+                            <value key="groupId">com.mysql</value>
+                            <value key="artifactId">mysql-connector-j</value>
                         </map>
                     </list>
                     <value key="db-health-check-stmt" if="${health}">SELECT 0</value>

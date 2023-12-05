@@ -78,7 +78,7 @@ The driver can be used according to the link:https://neo4j.com/developer/java/[N
 
 == Configuration
 
-include::{rootdir}/config/io_helidon_integrations_neo4j.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_integrations_neo4j_Neo4j.adoc[leveloffset=+1,tag=config]
 
 == Examples
 

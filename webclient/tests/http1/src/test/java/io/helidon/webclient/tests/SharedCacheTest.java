@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.http.Method.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SharedCacheTest {
     @Test
@@ -99,6 +100,9 @@ class SharedCacheTest {
                 assertThat(res.status(), is(Status.OK_200));
             }
 
+            // with global connection cache is noop
+            webClient.closeResource();
+
             Integer secondReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
@@ -108,6 +112,98 @@ class SharedCacheTest {
             assertThat("In case of cached connection client port must be the same.",
                        secondReqClientPort,
                        is(firstReqClientPort));
+        } finally {
+            if (webServer != null) {
+                webServer.stop();
+            }
+        }
+    }
+
+    @Test
+    void clientCache() {
+        HeaderName clientPortHeader = HeaderNames.create("client-port");
+        WebServer webServer = null;
+        try {
+            var routing = HttpRouting.builder()
+                    .route(Http1Route.route(POST, "/", (req, res) -> {
+                        res.header(clientPortHeader, String.valueOf(req.remotePeer().port()));
+                        res.send();
+                    }));
+
+            webServer = WebServer.builder()
+                    .routing(routing)
+                    .build()
+                    .start();
+
+            int port = webServer.port();
+
+            WebClient webClient = WebClient.builder()
+                    .shareConnectionCache(false)
+                    .keepAlive(true)
+                    .baseUri("http://localhost:" + port)
+                    .build();
+
+            Integer firstReqClientPort;
+            try (var res = webClient.post().submit("WHATEVER")) {
+                firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
+                assertThat(res.status(), is(Status.OK_200));
+            }
+
+            Integer secondReqClientPort;
+            try (var res = webClient.post().submit("WHATEVER")) {
+                secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
+                assertThat(res.status(), is(Status.OK_200));
+            }
+
+            assertThat("In case of cached connection client port must be the same.",
+                       secondReqClientPort,
+                       is(firstReqClientPort));
+        } finally {
+            if (webServer != null) {
+                webServer.stop();
+            }
+        }
+    }
+
+    @Test
+    void clientCacheClosed() {
+        HeaderName clientPortHeader = HeaderNames.create("client-port");
+        WebServer webServer = null;
+        try {
+            var routing = HttpRouting.builder()
+                    .route(Http1Route.route(POST, "/", (req, res) -> {
+                        res.header(clientPortHeader, String.valueOf(req.remotePeer().port()));
+                        res.send();
+                    }));
+
+            webServer = WebServer.builder()
+                    .routing(routing)
+                    .build()
+                    .start();
+
+            int port = webServer.port();
+
+            WebClient webClient = WebClient.builder()
+                    .shareConnectionCache(false)
+                    .keepAlive(true)
+                    .baseUri("http://localhost:" + port)
+                    .build();
+
+            try (var res = webClient.post().submit("WHATEVER")) {
+                res.headers().get(clientPortHeader).get(Integer.TYPE);
+                assertThat(res.status(), is(Status.OK_200));
+            }
+
+            webClient.closeResource();
+
+            IllegalStateException e = assertThrows(IllegalStateException.class,
+                                                   () -> {
+                                                       try (var res = webClient.post().submit("WHATEVER")) {
+                                                           res.headers().get(clientPortHeader).get(Integer.TYPE);
+                                                       }
+                                                   });
+            assertThat(e.getMessage(), is("Connection cache is closed"));
+
         } finally {
             if (webServer != null) {
                 webServer.stop();

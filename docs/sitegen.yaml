@@ -452,6 +452,12 @@ backend:
                   type: "icon"
                   value: "outbox"
               - type: "PAGE"
+                title: "Testing"
+                source: "testing.adoc"
+                glyph:
+                  type: "icon"
+                  value: "thumbs_up_down"
+              - type: "PAGE"
                 title: "Tracing"
                 source: "tracing.adoc"
                 glyph:

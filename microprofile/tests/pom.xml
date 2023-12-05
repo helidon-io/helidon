@@ -46,6 +46,7 @@
         <module>server</module>
         <module>testing</module>
         <module>config</module>
+        <module>telemetry</module>
     </modules>
 
     <profiles>

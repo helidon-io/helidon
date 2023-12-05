@@ -29,7 +29,7 @@ import io.helidon.builder.api.Prototype;
  *
  */
 @Prototype.Blueprint
-public interface FakeKeyConfigBlueprint {
+interface FakeKeyConfigBlueprint {
 
     /**
      * The public key of this config if configured.

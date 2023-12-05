@@ -61,7 +61,8 @@
         <version.lib.h2>2.2.220</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.handlebars>4.3.1</version.lib.handlebars>
-        <version.lib.hibernate>6.3.1.Final</version.lib.hibernate>
+        <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
+        <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
@@ -79,7 +80,7 @@
         <version.lib.jakarta.persistence-api>3.1.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
-        <version.lib.jakarta.websockets-api>2.1.0</version.lib.jakarta.websockets-api>
+        <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.0</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.1.2</version.lib.jandex>
@@ -120,7 +121,7 @@
         <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
-        <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
+        <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
         <version.lib.netty>4.1.100.Final</version.lib.netty>
@@ -138,7 +139,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.perfmark-api>0.25.0</version.lib.perfmark-api>
-        <version.lib.parsson>1.1.3</version.lib.parsson>
+        <version.lib.parsson>1.1.5</version.lib.parsson>
         <version.lib.postgresql>42.4.3</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
@@ -146,7 +147,7 @@
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
-        <version.lib.tyrus>2.0.4</version.lib.tyrus>
+        <version.lib.tyrus>2.1.4</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
         <version.lib.weld>5.1.1.SP2</version.lib.weld>
         <version.lib.yasson>2.0.4</version.lib.yasson>
@@ -809,9 +810,9 @@
                 <version>${version.lib.h2}</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${version.lib.mysql-connector-java}</version>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${version.lib.mysql-connector-j}</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>

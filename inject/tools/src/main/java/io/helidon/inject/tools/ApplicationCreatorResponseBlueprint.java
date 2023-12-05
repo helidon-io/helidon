@@ -24,7 +24,7 @@ import io.helidon.builder.api.Prototype;
  * @see io.helidon.inject.tools.spi.ApplicationCreator
  */
 @Prototype.Blueprint
-public interface ApplicationCreatorResponseBlueprint extends GeneralCreatorResponseBlueprint {
+interface ApplicationCreatorResponseBlueprint extends GeneralCreatorResponseBlueprint {
 
     /**
      * The basic description for the {@link io.helidon.inject.api.Application} generated.

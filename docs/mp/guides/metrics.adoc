@@ -44,9 +44,9 @@ classloader_loadedClasses_total{mp_scope="base",} 8146.0
 # HELP requests_count_total Each request (regardless of HTTP method) will increase this counter
 # TYPE requests_count_total counter
 requests_count_total{mp_scope="vendor",} 1.0
-# HELP jvm_uptime_seconds Displays the start time of the Java virtual machine in milliseconds. This attribute displays the approximate time when the Java virtual machine started.
+# HELP jvm_uptime_seconds Displays the start time of the Java virtual machine in seconds. This attribute displays the approximate time when the Java virtual machine started.
 # TYPE jvm_uptime_seconds gauge
-jvm_uptime_seconds{mp_scope="base",} 7377.0
+jvm_uptime_seconds{mp_scope="base",} 7.3770
 ----
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=curl-metrics-json]
@@ -73,7 +73,7 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=curl-metrics-json]
     "classloader.loadedClasses.count": 8224,
     "thread.count": 19,
     "classloader.unloadedClasses.total": 0,
-    "jvm.uptime": 368224
+    "jvm.uptime": 36.8224
   }
 }
 ----

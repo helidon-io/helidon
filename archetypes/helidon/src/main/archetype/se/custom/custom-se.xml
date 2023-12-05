@@ -25,11 +25,12 @@
     <exec src="/common/security.xml"/>
     <source src="database-inputs.xml"/>
     <source src="/common/extra.xml"/>
-    <source src="/se/custom/extra.xml"/>
+    <source src="extra.xml"/>
     <source src="/common/observability.xml"/>
     <source src="observability.xml"/>
     <exec src="/common/packaging.xml"/>
     <exec src="database-output.xml" if="${db}"/>
+    <source src="security-outputs.xml" if="${security}"/>
 
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>

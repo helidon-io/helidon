@@ -16,10 +16,11 @@
 
 package io.helidon.examples.integrations.micronaut.data;
 
+import javax.validation.constraints.Pattern;
+
 import io.helidon.examples.integrations.micronaut.data.model.Pet;
 
 import jakarta.inject.Inject;
-import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;

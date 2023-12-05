@@ -41,6 +41,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Static Content Support, Static Content Support>>
 ** <<Media types support, Media Types Support>>
 ** <<HTTP Content Encoding, HTTP Content Encoding>>
+** <<Proxy Protocol Support, Proxy Protocol Support>>
 - <<Reference, Reference>>
 - <<Additional Information, Additional Information>>
 
@@ -284,7 +285,7 @@ _nexting_. There are two options:
 .any("/hello", (req, res) -> { // <1>
     // filtering logic (e.g., validating parameters) // <2>
     if (userParametersOk()) {
-        req.next(); // <3>
+        res.next(); // <3>
     } else {
         throw new IllegalArgumentException("Invalid parameters."); // <4>
     }
@@ -939,6 +940,74 @@ For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP 
 has been enabled as shown above, the response shall include the header `Content-Encoding: gzip`
 and a compressed payload.
 
+== Proxy Protocol Support
+
+The link:https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[Proxy Protocol]
+provides a way to convey client information across reverse
+proxies or load balancers which would otherwise be lost given that new connections
+are established for each network hop. Often times, this information
+can be carried in HTTP headers, but not all proxies support this feature.
+Helidon is capable of
+parsing a proxy protocol header (i.e., a network preamble) that is based on
+either V1 or V2 of the protocol, thus making client information available to
+service developers.
+
+Proxy Protocol support is enabled via configuration, and
+can be done either declaratively or programmatically. Once enabled, every new
+connection on the corresponding port **MUST** be preambled by a proxy header
+for the connection not to be rejected as invalid --that is, proxy headers are
+never optional.
+
+Programmatically, support for the Proxy Protocol is enabled as follows:
+[source,java]
+----
+WebServer server = WebServer.builder()
+    .enableProxyProtocol(true)
+    .routing(...)
+    .build()
+    .start();
+----
+
+Declaratively, support for the Proxy Protocol is enabled as follows:
+[source,yaml]
+----
+server:
+  port: 8080
+  host: 0.0.0.0
+  enable-proxy-protocol: true
+----
+
+=== Accessing Proxy Protocol Data
+
+There are two ways in which the header data can be accessed in your application.
+One way is by obtaining the protocol data directly from a request as shown
+next:
+
+[source,java]
+----
+routing.get("/", (req, res) -> {
+    ProxyProtocolData data = req.proxyProtocolData().orElse(null);
+    if (data != null
+            && data.family() == ProxyProtocolData.Family.IPv4
+            && data.protocol() == ProxyProtocolData.Protocol.TCP
+            && data.sourceAddress().equals("192.168.0.1")
+            && data.destAddress().equals("192.168.0.11")
+            && data.sourcePort() == 56324
+            && data.destPort() == 443) {
+        // ...
+    }
+});
+----
+
+NOTE: Every request associated with a certain connection shall have
+access to the Proxy Protocol data received when the connection was opened.
+
+Alternatively, the WebServer also makes the original client source
+address and source port available in the HTTP headers `X-Forwarded-For`
+and `X-Forwarded-Port`, respectively. In some cases, it is just simpler
+to inspect these headers instead of getting the complete `ProxyProtocolData`
+instance as shown above.
+
 == Additional Information
 
 Here is the code for a minimalist web application that runs on a random free port:
@@ -967,3 +1036,4 @@ public static void main(String[] args) {
 * link:{media-jsonp-javadoc-base-url}/module-summary.html[Helidon JSON-B Support JavaDoc]
 * link:{media-jsonb-javadoc-base-url}/module-summary.html[Helidon JSON-P Support JavaDoc]
 * link:{media-jackson-javadoc-base-url}/module-summary.html[Helidon Jackson Support JavaDoc]
+* link:https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[Proxy Protocol Specification]

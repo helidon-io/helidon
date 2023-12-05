@@ -30,6 +30,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final Http2ClientConfig clientConfig;
     private final Http2ClientProtocolConfig protocolConfig;
     private final Http2ConnectionCache connectionCache;
+    private final Http2ConnectionCache clientCache;
 
     Http2ClientImpl(WebClient webClient, Http2ClientConfig clientConfig) {
         this.webClient = webClient;
@@ -37,8 +38,10 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
         this.protocolConfig = clientConfig.protocolConfig();
         if (clientConfig.shareConnectionCache()) {
             this.connectionCache = Http2ConnectionCache.shared();
+            this.clientCache = null;
         } else {
             this.connectionCache = Http2ConnectionCache.create();
+            this.clientCache = connectionCache;
         }
     }
 
@@ -92,6 +95,13 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
                 .tls(clientRequest.tls())
                 .headers(clientRequest.headers())
                 .fragment(clientUri.fragment());
+    }
+
+    @Override
+    public void closeResource() {
+        if (clientCache != null) {
+            this.clientCache.closeResource();
+        }
     }
 
     WebClient webClient() {

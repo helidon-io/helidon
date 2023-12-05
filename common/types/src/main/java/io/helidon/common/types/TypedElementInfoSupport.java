@@ -16,6 +16,8 @@
 
 package io.helidon.common.types;
 
+import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.api.Prototype;
@@ -28,7 +30,7 @@ final class TypedElementInfoSupport {
     @Prototype.Annotated("java.lang.Override")
     static String toString(TypedElementInfo me) {
         StringBuilder builder = new StringBuilder();
-        if (!TypeValues.KIND_PARAMETER.equals(me.elementTypeKind())) {
+        if (ElementKind.PARAMETER != me.kind()) {
             me.enclosingType()
                     .ifPresent(enclosingTypeName -> builder.append(enclosingTypeName).append("::"));
         }
@@ -54,4 +56,61 @@ final class TypedElementInfoSupport {
         return builder.toString();
     }
 
+    static class BuilderDecorator implements Prototype.BuilderDecorator<TypedElementInfo.BuilderBase<?, ?>> {
+        BuilderDecorator() {
+        }
+
+        @SuppressWarnings("removal")
+        @Override
+        public void decorate(TypedElementInfo.BuilderBase<?, ?> target) {
+/*
+            Backward compatibility for deprecated methods.
+             */
+            if (target.kind().isEmpty() && target.elementTypeKind().isPresent()) {
+                target.kind(ElementKind.valueOf(target.elementTypeKind().get().toUpperCase(Locale.ROOT)));
+            }
+            target.elementTypeKind(target.kind().get().toString());
+
+            if (target.accessModifier().isEmpty()) {
+                AccessModifier accessModifier = null;
+                for (String modifier : target.modifiers()) {
+                    if (TypeValues.MODIFIER_PUBLIC.equals(modifier)) {
+                        accessModifier = AccessModifier.PUBLIC;
+                        break;
+                    }
+                    if (TypeValues.MODIFIER_PROTECTED.equals(modifier)) {
+                        accessModifier = AccessModifier.PROTECTED;
+                        break;
+                    }
+                    if (TypeValues.MODIFIER_PRIVATE.equals(modifier)) {
+                        accessModifier = AccessModifier.PRIVATE;
+                        break;
+                    }
+                }
+                if (accessModifier == null) {
+                    accessModifier = AccessModifier.PACKAGE_PRIVATE;
+                }
+                target.accessModifier(accessModifier);
+            }
+            for (String modifier : target.modifiers()) {
+                try {
+                    target.addElementModifier(Modifier.valueOf(modifier.toUpperCase(Locale.ROOT)));
+                } catch (IllegalArgumentException ignored) {
+                    // best effort - we need to skip access modifiers and unknown modifiers
+                }
+            }
+            for (Modifier typeModifier : target.elementModifiers()) {
+                target.addModifier(typeModifier.modifierName());
+            }
+            target.addModifier(target.accessModifier().get().modifierName());
+
+
+            Optional<ElementKind> elementKind = target.kind();
+            if (elementKind.isPresent()) {
+                if (elementKind.get() == ElementKind.CONSTRUCTOR) {
+                    target.elementName("<init>");
+                }
+            }
+        }
+    }
 }

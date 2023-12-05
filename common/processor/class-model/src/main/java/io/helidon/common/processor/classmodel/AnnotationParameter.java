@@ -57,6 +57,8 @@ public final class AnnotationParameter extends CommonComponent {
             if (!stringValue.startsWith("\"") && !stringValue.endsWith("\"")) {
                 return "\"" + stringValue + "\"";
             }
+        } else if (value instanceof TypeName typeName) {
+            return typeName.fqName() + ".class";
         }
         return value.toString();
     }

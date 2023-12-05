@@ -130,7 +130,7 @@ curl -H "Accept: application/json"  http://localhost:8080{metrics-endpoint}
     "classloader.loadedClasses.count": 3582,
     "thread.count": 18,
     "classloader.unloadedClasses.total": 0,
-    "jvm.uptime": 369478,
+    "jvm.uptime": 36.9478,
     "gc.time;name=G1 Young Generation": 0,
     "memory.committedHeap": 541065216,
     "thread.max.count": 19,
@@ -392,23 +392,20 @@ You can get the metadata for any scope, such as `{metrics-endpoint}?scope=base`,
 .JSON response (truncated):
 ----
 {
-  "classloader.currentLoadedClass.count": {
-    "unit": "none",
-    "type": "counter",
-    "description": "Displays the number of classes that are currently loaded in the Java virtual machine."
-  },
-  "jvm.uptime": {
-    "unit": "milliseconds",
-    "type": "gauge",
-    "description": "Displays the start time of the Java virtual machine in milliseconds. This attribute displays the approximate time when the Java virtual machine started.",
-    "displayName": "JVM Uptime"
-  },
-  "memory.usedHeap": {
-    "unit": "bytes",
-    "type": "gauge",
-    "description": "Displays the amount of used heap memory in bytes.",
-    "displayName": "Used Heap Memory"
-  }
+   "classloader.loadedClasses.count": {
+      "type": "gauge",
+      "description": "Displays the number of classes that are currently loaded in the Java virtual machine."
+    },
+   "jvm.uptime": {
+      "type": "gauge",
+      "unit": "seconds",
+      "description": "Displays the start time of the Java virtual machine in milliseconds. This attribute displays the approximate time when the Java virtual machine started."
+    },
+   "memory.usedHeap": {
+      "type": "gauge",
+      "unit": "bytes",
+      "description": "Displays the amount of used heap memory in bytes."
+    }
 }
 ----
 

@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -85,8 +86,7 @@ class Http2ClientConnection {
     private Http2Settings serverSettings = Http2Settings.builder()
             .build();
     private Future<?> handleTask;
-
-    private volatile boolean closed = false;
+    private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
 
     Http2ClientConnection(Http2ClientImpl http2Client, ClientConnection connection) {
         this.protocolConfig = http2Client.protocolConfig();
@@ -177,7 +177,7 @@ class Http2ClientConnection {
     }
 
     boolean closed() {
-        return closed || (protocolConfig.ping() && !ping());
+        return state.get().closed() || (protocolConfig.ping() && !ping());
     }
 
     boolean ping() {
@@ -203,13 +203,15 @@ class Http2ClientConnection {
     }
 
     void close() {
-        closed = true;
-        try {
-            handleTask.cancel(true);
-            ctx.log(LOGGER, TRACE, "Closing connection");
-            connection.closeResource();
-        } catch (Throwable e) {
-            ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
+        this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
+        if (state.getAndSet(State.CLOSED) != State.CLOSED) {
+            try {
+                handleTask.cancel(true);
+                ctx.log(LOGGER, TRACE, "Closing connection");
+                connection.closeResource();
+            } catch (Throwable e) {
+                ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
+            }
         }
     }
 
@@ -268,14 +270,14 @@ class Http2ClientConnection {
             try {
                 while (!Thread.interrupted()) {
                     if (!handle()) {
-                        closed = true;
+                        this.close();
                         ctx.log(LOGGER, TRACE, "Connection closed");
                         return;
                     }
                 }
                 ctx.log(LOGGER, TRACE, "Client listener interrupted");
             } catch (Throwable t) {
-                closed = true;
+                this.close();
                 ctx.log(LOGGER, DEBUG, "Failed to handle HTTP/2 client connection", t);
             }
         });
@@ -457,8 +459,26 @@ class Http2ClientConnection {
     }
 
     private void goAway(int streamId, Http2ErrorCode errorCode, String msg) {
-        Http2Settings http2Settings = Http2Settings.create();
-        Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
-        writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
+        if (State.OPEN == state.getAndSet(State.GO_AWAY)) {
+            Http2Settings http2Settings = Http2Settings.create();
+            Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
+            writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
+        }
+    }
+
+    private enum State {
+        CLOSED(true),
+        GO_AWAY(true),
+        OPEN(false);
+
+        private final boolean closed;
+
+        State(boolean closed){
+            this.closed = closed;
+        }
+
+        boolean closed() {
+            return closed;
+        }
     }
 }

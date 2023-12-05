@@ -24,7 +24,7 @@ import io.helidon.config.metadata.Configured;
  */
 @Prototype.Blueprint
 @Configured
-public interface ZImplConfigBlueprint {
+interface ZImplConfigBlueprint {
 
     /**
      * For testing purposes.

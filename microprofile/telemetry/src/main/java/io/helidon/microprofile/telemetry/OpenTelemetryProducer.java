@@ -19,9 +19,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
+import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -51,10 +51,17 @@ class OpenTelemetryProducer {
     private static final String OTEL_METRICS_EXPORTER = "otel.metrics.exporter";
     private static final String OTEL_LOGS_EXPORTER = "otel.logs.exporter";
     private static final String SERVICE_NAME_PROPERTY = "otel.service.name";
-    private LazyValue<OpenTelemetry> openTelemetry;
+    private static final String EXPORTER_NAME_PROPERTY = "otel.exporter.name";
+    private String exporterName = HELIDON_SERVICE_NAME; // Default if not set
+
+    private OpenTelemetry openTelemetry;
     private Map<String, String> telemetryProperties;
 
     private final Config config;
+
+    private volatile Tracer tracer;
+
+    private volatile io.helidon.tracing.Tracer helidonTracer;
 
     private final org.eclipse.microprofile.config.Config mpConfig;
 
@@ -64,16 +71,25 @@ class OpenTelemetryProducer {
         this.mpConfig = mpConfig;
     }
 
+    /**
+     * Construct OpenTelemetry. If the OTEL Agent is present, everything is configured and prepared.
+     * We just reuse objects from the Agent.
+     */
     @PostConstruct
     private void init() {
 
         telemetryProperties  = Collections.unmodifiableMap(getTelemetryProperties());
 
-        //Initialize OpenTelemetry in a lazy way.
-        if (!isTelemetryDisabled()) {
-            openTelemetry = LazyValue.create(() -> {
+        mpConfig.getOptionalValue(EXPORTER_NAME_PROPERTY, String.class).ifPresent(e -> exporterName = e);
 
-                OpenTelemetry openTelemetry = AutoConfiguredOpenTelemetrySdk.builder()
+        // If there is an OTEL Agent – delegate everything to it.
+        if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)) {
+            openTelemetry =  GlobalOpenTelemetry.get();
+        } else {
+
+            //Initialize OpenTelemetry
+            if (!isTelemetryDisabled()) {
+                openTelemetry = AutoConfiguredOpenTelemetrySdk.builder()
                         .addPropertiesCustomizer(x -> telemetryProperties)
                         .addResourceCustomizer(this::customizeResource)
                         .setServiceClassLoader(Thread.currentThread().getContextClassLoader())
@@ -92,43 +108,48 @@ class OpenTelemetryProducer {
                     }
                     openTelemetry = OpenTelemetry.noop();
                 }
-                return openTelemetry;
-            });
-        } else {
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.TRACE, "Telemetry Disabled by configuration");
+            } else {
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    LOGGER.log(System.Logger.Level.TRACE, "Telemetry Disabled by configuration");
+                }
+                openTelemetry = OpenTelemetry.noop();
             }
-            openTelemetry = LazyValue.create(OpenTelemetry::noop);
         }
+
+        tracer = openTelemetry.getTracer(exporterName);
+        helidonTracer = HelidonOpenTelemetry.create(openTelemetry, tracer, Map.of());
+        OpenTelemetryTracerProvider.globalTracer(helidonTracer);
     }
 
     /**
-     * Get OpenTelemetry. If the OTEL Agent is present, everything is configured and prepared.
-     * We just reuse objects from the Agent.
+     * Get OpenTelemetry.
      *
      * @return OpenTelemetry
      */
     @ApplicationScoped
     @Produces
     OpenTelemetry openTelemetry() {
-
-        if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)) {
-            return GlobalOpenTelemetry.get();
-        }
-
-        return openTelemetry.get();
+        return openTelemetry;
     }
-
 
     /**
      * Provides an instance of the current OpenTelemetry Tracer.
      *
-     * @param openTelemetry instance of OpenTelemetry.
      * @return Tracer.
      */
     @Produces
-    Tracer tracer(OpenTelemetry openTelemetry) {
-        return openTelemetry.getTracer(HELIDON_SERVICE_NAME);
+    Tracer tracer() {
+        return tracer;
+    }
+
+    /**
+     * Provides an instance of the current Helidon API Tracer.
+     *
+     * @return Tracer.
+     */
+    @Produces
+    io.helidon.tracing.Tracer helidonTracer() {
+        return helidonTracer;
     }
 
     /**

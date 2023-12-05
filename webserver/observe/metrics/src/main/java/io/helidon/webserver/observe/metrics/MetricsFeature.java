@@ -64,8 +64,8 @@ class MetricsFeature {
     private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     MetricsFeature(MetricsObserverConfig config) {
-        this.meterRegistry = config.meterRegistry().orElseGet(MetricsFactory.getInstance()::globalRegistry);
         this.metricsConfig = config.metricsConfig();
+        this.meterRegistry = config.meterRegistry().orElseGet(() -> MetricsFactory.getInstance().globalRegistry(metricsConfig));
     }
 
     /**
