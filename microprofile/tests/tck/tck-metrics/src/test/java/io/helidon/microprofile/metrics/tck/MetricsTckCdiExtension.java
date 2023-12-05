@@ -23,5 +23,6 @@ public class MetricsTckCdiExtension implements Extension {
 
     void before(@Observes BeforeBeanDiscovery discovery) {
         discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
+        discovery.addAnnotatedType(CatchAllExceptionMapper.class, CatchAllExceptionMapper.class.getSimpleName());
     }
 }
