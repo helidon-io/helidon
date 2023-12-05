@@ -41,6 +41,7 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
@@ -173,6 +174,7 @@ class HelloWorldTest {
     }
 
     @Test
+    @Disabled("CatchAllExceptionMapper was removed")
     void testUnmappedException() throws Exception {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "triggerUnmappedException")};

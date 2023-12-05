@@ -26,8 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.webserver.http.ServerRequest;
-
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
@@ -35,11 +33,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Application;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -277,30 +271,9 @@ public class JaxRsCdiExtension implements Extension {
                                  InjectionManager injectionManager) {
 
         ResourceConfig resourceConfig = jaxRsApplication.resourceConfig();
-        resourceConfig.register(new CatchAllExceptionMapper());
 
         return JaxRsService.create(resourceConfig,
                                    injectionManager);
-    }
-
-    // @Priority does not have any effect till this is merged
-    // https://github.com/eclipse-ee4j/jersey/pull/5469 is not released
-    @Provider
-    @Priority(5000)
-    private static class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
-        @Context
-        private ServerRequest serverRequest;
-
-        @Override
-        public Response toResponse(Exception exception) {
-            serverRequest.context().register("unmappedException", exception);
-            if (exception instanceof WebApplicationException wae) {
-                return wae.getResponse();
-            } else {
-                LOGGER.log(Level.WARNING, () -> "Internal server error", exception);
-                return Response.serverError().build();
-            }
-        }
     }
 
     Optional<String> findContextRoot(io.helidon.config.Config config, JaxRsApplication jaxRsApplication) {

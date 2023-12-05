@@ -121,20 +121,6 @@
                     <includes>
                         <include>*IT.java</include>
                     </includes>
-                    <excludes>
-                        <!--
-                            Next 4 tests are related to CatchAllExceptionMapper
-                            Requires https://github.com/eclipse-ee4j/jersey/pull/5469
-                        -->
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/ext/paramconverter/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/ext/providers/JAXRSProvidersClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/provider/exceptionmapper/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/core/configurable/JAXRSClientIT.java</exclude>
-                        <!-- https://github.com/helidon-io/helidon/issues/8060 -->
-                        <exclude>ee/jakarta/tck/ws/rs/spec/provider/sort/JAXRSClientIT.java</exclude>
-                        <!-- https://github.com/helidon-io/helidon/issues/8061 -->
-                        <exclude>ee/jakarta/tck/ws/rs/spec/resourceconstructor/JAXRSClientIT.java</exclude>
-                    </excludes>
                     <systemPropertyVariables>
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>

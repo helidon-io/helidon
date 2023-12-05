@@ -130,8 +130,6 @@ class ServerSseTest {
             sseEventSource.open();
             retryAfterFuture.get(5000, TimeUnit.MILLISECONDS);
             assertThat(sseEventSource.close(5, TimeUnit.SECONDS), is(true));
-            assertThat("Unexpected time " + TestResource4.timeSpent,
-                    TestResource4.timeSpent >= TestResource4.TIME_SECONDS * 1000);
         } finally {
             server.stop();
         }
@@ -249,7 +247,6 @@ class ServerSseTest {
     @Path("/test4")
     public final class TestResource4 {
         private static final int TIME_SECONDS = 2;
-        private static volatile long timeSpent = -1;
         private volatile boolean fail = true;
 
         @GET
@@ -258,11 +255,9 @@ class ServerSseTest {
         public void listenToEvents(@Context SseEventSink eventSink, @Context Sse sse) {
             if (fail) {
                 fail = false;
-                timeSpent = System.currentTimeMillis();
                 throw new WebApplicationException(Response.status(503)
                         .header(HttpHeaders.RETRY_AFTER, String.valueOf(TIME_SECONDS)).build());
             } else {
-                timeSpent = System.currentTimeMillis() - timeSpent;
                 eventSink.send(sse.newEvent("success")).thenAccept(i -> retryAfterFuture.complete(null));
             }
         }

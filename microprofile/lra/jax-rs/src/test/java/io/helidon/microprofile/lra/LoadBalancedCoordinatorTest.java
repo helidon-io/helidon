@@ -33,6 +33,7 @@ import io.helidon.config.Config;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.lra.resources.CatchAllExceptionMapper;
 import io.helidon.microprofile.lra.resources.CdiNestedCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CommonAfter;
 import io.helidon.microprofile.lra.resources.DontEnd;
@@ -95,6 +96,7 @@ import static org.hamcrest.Matchers.not;
 // LRA client
 @AddExtension(LraCdiExtension.class)
 // Test resources
+@AddBean(CatchAllExceptionMapper.class)
 @AddBean(JaxRsCompleteOrCompensate.class)
 @AddBean(NonJaxRsCompleteOrCompensate.class)
 @AddBean(NonJaxRsCompleteOrCompensateCS.class)
