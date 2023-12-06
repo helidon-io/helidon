@@ -62,6 +62,7 @@
         <version.lib.commons-io>2.11.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.microprofile-core-profile>10.0.2</version.lib.microprofile-core-profile>
+        <version.lib.sigtest>1.4</version.lib.sigtest>
         <version.lib.microprofile-cdi-tck>4.0.12</version.lib.microprofile-cdi-tck>
         <version.lib.microprofile-restful-tck>3.1.4</version.lib.microprofile-restful-tck>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
@@ -957,6 +958,11 @@
                 <groupId>jakarta.ee.tck.coreprofile</groupId>
                 <artifactId>core-profile-tck-impl</artifactId>
                 <version>${version.lib.microprofile-core-profile}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.netbeans.tools</groupId>
+                <artifactId>sigtest-maven-plugin</artifactId>
+                <version>${version.lib.sigtest}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.enterprise</groupId>
