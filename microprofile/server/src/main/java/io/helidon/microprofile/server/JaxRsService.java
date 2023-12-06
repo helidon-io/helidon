@@ -333,7 +333,7 @@ class JaxRsService implements HttpService {
             if (contentLength > 0) {
                 res.header(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
-            this.outputStream = new NoFlushOutputStream(res.outputStream());
+            this.outputStream = res.outputStream();
             return outputStream;
         }
 
@@ -387,39 +387,6 @@ class JaxRsService implements HttpService {
             } catch (InterruptedException e) {
                 throw new RuntimeException("Failed to wait for Jersey to write response");
             }
-        }
-    }
-
-    private static class NoFlushOutputStream extends OutputStream {
-        private final OutputStream delegate;
-
-        private NoFlushOutputStream(OutputStream delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void write(byte[] b) throws IOException {
-            delegate.write(b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            delegate.write(b, off, len);
-        }
-
-        @Override
-        public void flush() {
-            // intentional no-op, flush did not work nicely with Jersey
-        }
-
-        @Override
-        public void close() throws IOException {
-            delegate.close();
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            delegate.write(b);
         }
     }
 

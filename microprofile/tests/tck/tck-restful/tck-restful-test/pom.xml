@@ -127,10 +127,6 @@
                     <includes>
                         <include>*IT.java</include>
                     </includes>
-                    <excludes>
-                        <!-- https://github.com/jakartaee/rest/issues/1196 -->
-                        <exclude>ee/jakarta/tck/ws/rs/jaxrs21/ee/sse/sseeventsource/JAXRSClientIT.java</exclude>
-                    </excludes>
                     <systemPropertyVariables>
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>
