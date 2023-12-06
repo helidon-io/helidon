@@ -21,14 +21,14 @@ module io.helidon.microprofile.testing.junit5 {
 
     requires io.helidon.config.mp;
     requires io.helidon.config.yaml.mp;
-    requires io.helidon.microprofile.server;
+    requires io.helidon.microprofile.cdi;
     requires jakarta.inject;
     requires org.junit.jupiter.api;
 
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;
 
-
+    requires static io.helidon.microprofile.server;
     requires static jersey.cdi1x;
     requires static jersey.weld2.se;
 
