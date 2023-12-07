@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.config.testsubjects;
+package io.helidon.microprofile.testing.junit5;
 
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.eclipse.microprofile.config.inject.ConfigProperties;
-
-@ConfigProperties
-public class TestConfiguredBean {
-    public List<String> strList;
-    public List<Integer> intList;
-
-    @ConfigProperties
-    public static class Unsupported {
-        public List<?> untypedList;
-    }
+/**
+ * Add JaxRS support for Request-scoped beans.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+public @interface AddJaxRs {
 }

@@ -30,6 +30,10 @@ module io.helidon.microprofile.testing.testng {
     requires microprofile.config.api;
     requires org.testng;
 
+    requires static io.helidon.microprofile.server;
+    requires static jersey.cdi1x;
+    requires static jersey.weld2.se;
+
     exports io.helidon.microprofile.testing.testng;
 
     provides org.testng.ITestNGListener with HelidonTestNgListener;
