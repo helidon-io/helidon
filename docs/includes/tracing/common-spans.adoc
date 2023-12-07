@@ -42,7 +42,7 @@ is used.
 
 Some of these spans `log` to the span. These log events can be (in most cases) configured:
 
-[cols="2,2,2,4", role="flex, sm10"]
+[cols="2,2,1,1,8", role="flex, sm10"]
 |===
 |span name          |log name               |configurable   |enabled by default |description
 
