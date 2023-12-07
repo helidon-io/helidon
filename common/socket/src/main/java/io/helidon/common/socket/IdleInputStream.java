@@ -96,7 +96,7 @@ class IdleInputStream extends InputStream {
      */
     void idle() {
         if (idlingThread != null) {
-            throw new IllegalStateException("Already in idle mode!");
+            return;
         }
         idlingThread = executor.get().submit(this::handle);
     }

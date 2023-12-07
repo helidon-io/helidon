@@ -102,6 +102,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
+        reader = cos.reader;
+        connection = cos.connection;
+
         Status responseStatus;
         try {
             responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
