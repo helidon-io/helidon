@@ -272,6 +272,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
+        // Why is NOT_MODIFIED_304 not added here too?
         if (responseStatus == Status.NO_CONTENT_204) {
             return false;
         }
