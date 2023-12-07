@@ -210,6 +210,7 @@ class LoomServer implements WebServer {
             if (startFutures != null) {
                 startFutures.forEach(future -> future.future().cancel(true));
             }
+            running.set(false);
             return;
         }
         if (registerShutdownHook) {
