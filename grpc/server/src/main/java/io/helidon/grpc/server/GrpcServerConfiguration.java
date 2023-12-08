@@ -108,6 +108,18 @@ public interface GrpcServerConfiguration {
     GrpcTlsDescriptor tlsConfig();
 
     /**
+     * Returns the limit for the rate of incoming RST_STREAM frames per connection to maxRstStream per second.
+     * When exceeded on a connection, the connection is closed. This can reduce the impact of
+     * an attacker continually resetting RPCs before they complete.
+     * <p>
+     * Clients send RST_STREAM when they cancel RPCs, so some RST_STREAMs are normal and
+     * setting this too low can cause errors for legitimate clients.
+     *
+     * @return the limit for the rate of incoming RST_STREAM frames per connection to maxRstStream per second
+     */
+    int maxRstFramesPerSecond();
+
+    /**
      * Creates new instance with default values for all configuration properties.
      *
      * @return a new instance
@@ -168,6 +180,8 @@ public interface GrpcServerConfiguration {
 
         private Context context;
 
+        private int maxRstFramesPerSecond;
+
         private Builder() {
         }
 
@@ -188,6 +202,7 @@ public interface GrpcServerConfiguration {
 
             name = config.get("name").asString().orElse(DEFAULT_NAME);
             port = config.get("port").asInt().orElse(DEFAULT_PORT);
+            maxRstFramesPerSecond = config.get("maxRstFramesPerSecond").asInt().orElse(Integer.MAX_VALUE);
             useNativeTransport = config.get("native").asBoolean().orElse(false);
             config.get("workers").asInt().ifPresent(this::workersCount);
 
@@ -220,6 +235,27 @@ public interface GrpcServerConfiguration {
         @ConfiguredOption(value = "" + DEFAULT_PORT)
         public Builder port(int port) {
             this.port = port < 0 ? 0 : port;
+            return this;
+        }
+
+        /**
+         * Limits the rate of incoming RST_STREAM frames per connection to maxRstStream per second.
+         * When exceeded on a connection, the connection is closed. This can reduce the impact of
+         * an attacker continually resetting RPCs before they complete.
+         * <p>
+         * Clients send RST_STREAM when they cancel RPCs, so some RST_STREAMs are normal and
+         * setting this too low can cause errors for legitimate clients.
+         * <p>
+         * By default, there is no limit. If the {@code maxRstStream} parameter is set to less than
+         * or equal to zero then there will be no limit.
+         *
+         * @param maxRstStream the positive limit of RST_STREAM frames per connection per period, or
+         *                     {@code Integer.MAX_VALUE} for unlimited
+         * @return an updated builder
+         */
+        @ConfiguredOption(value = "" + Integer.MAX_VALUE)
+        public Builder maxRstFramesPerSecond(int maxRstStream) {
+            this.maxRstFramesPerSecond = maxRstStream;
             return this;
         }
 
@@ -332,6 +368,10 @@ public interface GrpcServerConfiguration {
             return workers;
         }
 
+        int maxRstFramesPerSecond() {
+            return maxRstFramesPerSecond;
+        }
+
         @Override
         public GrpcServerConfiguration build() {
             if (name == null || name.isEmpty()) {
@@ -362,6 +402,10 @@ public interface GrpcServerConfiguration {
 
             if (workers <= 0) {
                 workers = DEFAULT_WORKER_COUNT;
+            }
+
+            if (maxRstFramesPerSecond <= 0) {
+                maxRstFramesPerSecond = Integer.MAX_VALUE;
             }
 
             return GrpcServerBasicConfig.create(this);

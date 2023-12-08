@@ -57,8 +57,12 @@
         </dependency>
         <!-- etcd v3 -->
         <dependency>
-            <groupId>io.helidon.grpc</groupId>
-            <artifactId>io.grpc</artifactId>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>

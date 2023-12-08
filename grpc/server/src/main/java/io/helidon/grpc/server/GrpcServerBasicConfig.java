@@ -42,6 +42,7 @@ public class GrpcServerBasicConfig
 
     private final Context context;
 
+    private final int maxRstFramesPerSecond;
     /**
      * Construct {@link GrpcServerBasicConfig} instance.
      *
@@ -57,6 +58,7 @@ public class GrpcServerBasicConfig
         this.tracingConfig = builder.tracingConfig();
         this.workers = builder.workers();
         this.tlsConfig = builder.tlsConfig();
+        this.maxRstFramesPerSecond = builder.maxRstFramesPerSecond();
     }
 
     /**
@@ -131,5 +133,10 @@ public class GrpcServerBasicConfig
     @Override
     public GrpcTlsDescriptor tlsConfig() {
         return tlsConfig;
+    }
+
+    @Override
+    public int maxRstFramesPerSecond() {
+        return maxRstFramesPerSecond;
     }
 }

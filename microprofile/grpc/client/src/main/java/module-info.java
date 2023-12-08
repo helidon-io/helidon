@@ -23,7 +23,8 @@ module io.helidon.microprofile.grpc.client {
     requires jakarta.cdi;
     requires jakarta.inject;
 
-    requires transitive grpc.core;
+    requires transitive io.grpc.inprocess;
+    requires transitive io.grpc.internal;
     requires transitive io.helidon.microprofile.grpc.core;
 
     exports io.helidon.microprofile.grpc.client;

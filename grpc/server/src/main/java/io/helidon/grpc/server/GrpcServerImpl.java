@@ -178,11 +178,17 @@ public class GrpcServerImpl implements GrpcServer {
 
             HandlerRegistry handlerRegistry = this.handlerRegistry;
 
+            int maxRstFramesPerSecond = config.maxRstFramesPerSecond();
+            if (maxRstFramesPerSecond <= 0) {
+                maxRstFramesPerSecond = Integer.MAX_VALUE;
+            }
+
             server = configureNetty(builder)
                     .directExecutor()
                     .addService(healthService)
                     .addService(ProtoReflectionService.newInstance())
                     .fallbackHandlerRegistry(handlerRegistry)
+                    .maxRstFramesPerWindow(maxRstFramesPerSecond, 1)
                     .build()
                     .start();
 

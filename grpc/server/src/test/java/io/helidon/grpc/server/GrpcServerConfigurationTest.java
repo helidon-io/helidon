@@ -220,4 +220,39 @@ public class GrpcServerConfigurationTest {
         assertThat(serverConfig.useNativeTransport(), is(true));
         assertThat(serverConfig.workers(), is(51));
     }
+
+    @Test
+    public void shouldHaveDefaultMaxRstFrames() {
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .build();
+
+        assertThat(configuration.maxRstFramesPerSecond(), is(Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void shouldSetMaxRstFrames() {
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .maxRstFramesPerSecond(19)
+                .build();
+
+        assertThat(configuration.maxRstFramesPerSecond(), is(19));
+    }
+
+    @Test
+    public void shouldSetMaxRstFramesToZero() {
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .maxRstFramesPerSecond(0)
+                .build();
+
+        assertThat(configuration.maxRstFramesPerSecond(), is(Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void shouldSetMaxRstFramesToLessThanZero() {
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .maxRstFramesPerSecond(-19)
+                .build();
+
+        assertThat(configuration.maxRstFramesPerSecond(), is(Integer.MAX_VALUE));
+    }
 }

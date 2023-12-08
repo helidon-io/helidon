@@ -28,8 +28,15 @@ module io.helidon.grpc.server {
     requires transitive io.helidon.health;
     requires io.helidon.tracing;
 
-    requires transitive grpc.services;
-    requires transitive grpc.core;
+    requires transitive io.grpc;
+    requires transitive io.grpc.inprocess;
+    requires transitive io.grpc.internal;
+    requires transitive io.grpc.services;
+    requires io.grpc.netty;
+    requires io.grpc.util;
+    requires io.netty.transport;
+    requires io.netty.handler;
+    requires io.netty.common;
     requires transitive microprofile.health.api;
 
     requires jakarta.annotation;
