@@ -89,10 +89,12 @@ class RegistryFactory {
     static RegistryFactory getInstance() {
         RegistryFactory result = REGISTRY_FACTORY.get();
         if (result == null) {
-            LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
-                    + " before it has been initialized; using default Helidon meter registry and continuing");
-            result = new RegistryFactory(Metrics.globalRegistry());
-            REGISTRY_FACTORY.set(result);
+            throw new IllegalStateException("Attempt to retrieve current " + RegistryFactory.class.getName()
+                                                    + " before it has been initialized");
+//            LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
+//                    + " before it has been initialized; using default Helidon meter registry and continuing");
+//            result = new RegistryFactory(Metrics.globalRegistry());
+//            REGISTRY_FACTORY.set(result);
         }
         return result;
     }
