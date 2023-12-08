@@ -39,6 +39,7 @@ import jakarta.transaction.TransactionManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -154,6 +155,7 @@ class TestAnnotationRewriting {
     }
 
     @Test
+    @Disabled // TODO See https://github.com/helidon-io/helidon/issues/8122
     void testNonTransactionalEntityManager() {
         this.cdiContainer.getBeanManager()
             .getEvent()
