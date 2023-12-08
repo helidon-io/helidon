@@ -29,7 +29,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;

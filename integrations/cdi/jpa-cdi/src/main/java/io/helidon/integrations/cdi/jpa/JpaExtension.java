@@ -804,7 +804,7 @@ public class JpaExtension implements Extension {
      * @exception IOException if an input or output error occurs, typically because a {@code META-INF/persistence.xml}
      * resource was found but could not be loaded for some reason
      *
-     * @exception JAXBException if there was a problem {@linkplain Unmarshaller#unmarshal(Reader) unmarshalling} a
+     * @exception JAXBException if there was a problem {@linkplain Unmarshaller#unmarshal(java.io.Reader) unmarshalling} a
      * {@code META-INF/persistence.xml} resource
      *
      * @exception NullPointerException if either {@code event} or {@code beanManager} is {@code null}
@@ -2045,7 +2045,7 @@ public class JpaExtension implements Extension {
 
     private void onStartup(@Observes
                            @Initialized(ApplicationScoped.class)
-                           @Priority(LIBRARY_BEFORE)
+                           @Priority(LIBRARY_BEFORE + 20)
                            Object event,
                            @ContainerManaged
                            Instance<EntityManagerFactory> emfs) {
