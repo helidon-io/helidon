@@ -95,7 +95,7 @@
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>3.6.0</version.lib.kafka>
         <version.lib.log4j>2.21.1</version.lib.log4j>
-        <version.lib.logback>1.2.10</version.lib.logback>
+        <version.lib.logback>1.4.14</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.6.6</version.lib.micrometer>
@@ -139,7 +139,7 @@
         <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
         <version.lib.postgresql>42.4.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
-        <version.lib.slf4j>1.7.32</version.lib.slf4j>
+        <version.lib.slf4j>2.0.9</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.0.26</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.transaction-api>1.3.3</version.lib.transaction-api>
