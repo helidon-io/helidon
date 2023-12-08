@@ -25,9 +25,11 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-In this guide you fill find basic advice for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
-You should also consider configuring/tuning Java heap size as per any Java application.
+== Introduction
 
+In this guide you fill find basic advice for performance tuning of your Helidon application.
+Most of this concerns tuning Helidon WebServer, but you should also consider configuring/tuning
+Java heap size as per any Java application.
 
 == Use `io.helidon.microprofile.bundles:helidon-microprofile-core`
 
@@ -49,41 +51,5 @@ Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` d
 </dependency>
 ----
 
+include::{rootdir}/includes/guides/performance-tuning.adoc[]
 
-== Configure Netty worker thread pool size
-
-The Netty worker thread-pool is what handles your incoming requests. It defaults to 2*NCPU. To set it to something else you can set this property in `microprofile-config.properties`:
-
-[source,properties]
-----
-server.worker-count=4
-----
-
-
-=== Configure Helidon server pool size
-
-The Helidon server thread-pool takes requests from Netty and invokes your JAX-RS endpoints.  You can control lts configuration in `microprofile-config.properties`. This is Helidon MP specific only.
-
-[source,properties]
-----
-server.executor-service.core-pool-size: 2
-server.executor-service.max-pool-size: 4
-----
-
-To verify settings increase the log level for Helidon's executor service by adding this to your `logging.properties`:
-
-[source,properties]
-----
-io.helidon.common.configurable.ThreadPool.level=FINE
-----
-
-
-=== Configure Netty's maxOrder (Helidon 2.4.1 or earlier)
-
-In some situations Netty can aggressively allocate memory per request. This has been addressed in recent versions of Helidon and Netty, but if you are running an earlier version set this system property when you start your Helidon application:
-
-```
--Dio.netty.allocator.maxOrder=6
-```
-
-You can try smaller numbers.
