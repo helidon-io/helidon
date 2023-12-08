@@ -70,12 +70,12 @@ public class WsConnection implements ServerConnection, WsSession {
                          HttpPrologue prologue,
                          Headers upgradeHeaders,
                          String wsKey,
-                         WsRoute wsRoute) {
+                         WsListener wsListener) {
         this.ctx = ctx;
         this.prologue = prologue;
         this.upgradeHeaders = upgradeHeaders;
         this.wsKey = wsKey;
-        this.listener = wsRoute.listener();
+        this.listener = wsListener;
         this.dataReader = ctx.dataReader();
         this.lastRequestTimestamp = DateTime.timestamp();
         this.wsConfig = (WsConfig) ctx.listenerContext()
@@ -88,7 +88,25 @@ public class WsConnection implements ServerConnection, WsSession {
     }
 
     /**
-     * Create a new connection.
+     * Create a new connection using a listener.
+     *
+     * @param ctx            server connection context
+     * @param prologue       prologue of this request
+     * @param upgradeHeaders headers for
+     * @param wsKey          ws key
+     * @param wsListener     a ws listener
+     * @return a new connection
+     */
+    public static WsConnection create(ConnectionContext ctx,
+                                      HttpPrologue prologue,
+                                      Headers upgradeHeaders,
+                                      String wsKey,
+                                      WsListener wsListener) {
+        return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsListener);
+    }
+
+    /**
+     * Create a new connection using a route.
      *
      * @param ctx            server connection context
      * @param prologue       prologue of this request
@@ -102,7 +120,7 @@ public class WsConnection implements ServerConnection, WsSession {
                                       Headers upgradeHeaders,
                                       String wsKey,
                                       WsRoute wsRoute) {
-        return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsRoute);
+        return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsRoute.listener());
     }
 
     @Override
