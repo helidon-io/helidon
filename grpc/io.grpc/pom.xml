@@ -32,6 +32,10 @@
     <name>Helidon grpc-java Bundle</name>
     <description>Bundle of grpc dependencies provided for backwards compatibility</description>
 
+    <properties>
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.grpc</groupId>

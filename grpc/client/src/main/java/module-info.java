@@ -20,6 +20,9 @@
 module io.helidon.grpc.client {
     exports io.helidon.grpc.client;
 
+    requires io.grpc.netty;
+    requires io.netty.handler;
+
     requires transitive io.helidon.grpc.core;
 
     requires io.helidon.tracing;
