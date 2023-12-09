@@ -2045,8 +2045,8 @@ public class JpaExtension implements Extension {
 
     private void onStartup(@Observes
                            @Initialized(ApplicationScoped.class)
-//                           @Priority(LIBRARY_BEFORE + 20)
-                           @Priority(LIBRARY_BEFORE)
+                           @Priority(LIBRARY_BEFORE + 20)
+//                           @Priority(LIBRARY_BEFORE)
                            Object event,
                            @ContainerManaged
                            Instance<EntityManagerFactory> emfs) {
