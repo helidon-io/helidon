@@ -73,6 +73,8 @@ public final class CodegenUtil {
                 }
             } else if (Character.isLowerCase(aChar)) {
                 result.append(aChar);
+            } else if (Character.isDigit(aChar)) {
+                result.append(aChar);
             } else {
                 // not a character, replace with underscore
                 result.append('_');

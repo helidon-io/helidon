@@ -38,6 +38,7 @@ class CodegenUtilTest {
             myMethod MY_METHOD
             MY_METHOD MY_METHOD
             some-value SOME_VALUE
+            methodIA2 METHOD_IA2
             """, delimiter = ' ')
     void testConstantName(String source, String expected) {
         String actual = CodegenUtil.toConstantName(source);

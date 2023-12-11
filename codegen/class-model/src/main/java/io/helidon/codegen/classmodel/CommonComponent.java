@@ -84,6 +84,7 @@ abstract class CommonComponent extends DescribableComponent {
          * @return updated builder instance
          */
         B javadoc(Javadoc javadoc) {
+            this.javadocBuilder.clear();
             this.javadocBuilder.from(javadoc);
             return identity();
         }

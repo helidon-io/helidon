@@ -408,6 +408,15 @@ public final class Prototype {
     }
 
     /**
+     * Annotated constant of a custom methods type to be added to prototype interface.
+     * The constant will be generated as a reference to the annotated constant (so it must be package local).
+     */
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Constant {
+    }
+
+    /**
      * Add additional interfaces to implement by the prototype. Provide correct types (fully qualified) for generics.
      */
     public @interface Implement {
@@ -418,6 +427,5 @@ public final class Prototype {
          */
         String[] value();
     }
-
 }
 

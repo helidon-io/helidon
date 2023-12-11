@@ -179,6 +179,8 @@ class BuilderCodegen implements CodegenExtension {
         blueprintDef.extendsList()
                 .forEach(classModel::addInterface);
 
+        generateCustomConstants(customMethods, classModel);
+
         TypeName builderTypeName = TypeName.builder()
                 .from(TypeName.create(prototype.fqName() + ".Builder"))
                 .typeArguments(prototype.typeArguments())
@@ -315,6 +317,18 @@ class BuilderCodegen implements CodegenExtension {
                 builder.addContentLine("return new " + ifaceName + ".Builder<>();");
             }
         });
+    }
+
+    private static void generateCustomConstants(CustomMethods customMethods, ClassModel.Builder classModel) {
+        for (CustomConstant customConstant : customMethods.customConstants()) {
+            classModel.addField(constant -> constant
+                    .type(customConstant.fieldType())
+                    .name(customConstant.name())
+                    .javadoc(customConstant.javadoc())
+                    .addContent(customConstant.declaringType())
+                    .addContent(".")
+                    .addContent(customConstant.name()));
+        }
     }
 
     private static void generateCustomMethods(CustomMethods customMethods, ClassModel.Builder classModel) {

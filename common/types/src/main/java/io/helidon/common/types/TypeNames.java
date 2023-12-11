@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.lang.annotation.Retention;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -64,6 +65,11 @@ public final class TypeNames {
      * Type name for {@link java.time.Duration}.
      */
     public static final TypeName DURATION = TypeName.create(Duration.class);
+    /**
+     * Type name for {@link java.lang.annotation.Retention}.
+     */
+    public static final TypeName RETENTION = TypeName.create(Retention.class);
+
     /*
     Primitive types and their boxed counterparts
      */
@@ -151,36 +157,19 @@ public final class TypeNames {
      * Type name of typed element info.
      */
     public static final TypeName TYPED_ELEMENT_INFO = TypeName.create(TypedElementInfo.class);
-
-    static final Map<String, TypeName> PRIMITIVES = Map.of(
-            "boolean", PRIMITIVE_BOOLEAN,
-            "byte", PRIMITIVE_BYTE,
-            "short", PRIMITIVE_SHORT,
-            "int", PRIMITIVE_INT,
-            "long", PRIMITIVE_LONG,
-            "char", PRIMITIVE_CHAR,
-            "float", PRIMITIVE_FLOAT,
-            "double", PRIMITIVE_DOUBLE,
-            "void", PRIMITIVE_VOID
-    );
-
-    private static final Map<TypeName, TypeName> BOXED_TYPES = Map.of(
-            PRIMITIVE_BOOLEAN, BOXED_BOOLEAN,
-            PRIMITIVE_BYTE, BOXED_BYTE,
-            PRIMITIVE_SHORT, BOXED_SHORT,
-            PRIMITIVE_INT, BOXED_INT,
-            PRIMITIVE_LONG, BOXED_LONG,
-            PRIMITIVE_CHAR, BOXED_CHAR,
-            PRIMITIVE_FLOAT, BOXED_FLOAT,
-            PRIMITIVE_DOUBLE, BOXED_DOUBLE,
-            PRIMITIVE_VOID, BOXED_VOID
-    );
+    /**
+     * Helidon annotation type.
+     */
+    public static final TypeName ANNOTATION = TypeName.create(Annotation.class);
+    /**
+     * Helidon element kind (enum).
+     */
+    public static final TypeName ELEMENT_KIND = TypeName.create(ElementKind.class);
+    /**
+     * Helidon access modifier (enum).
+     */
+    public static final TypeName ACCESS_MODIFIER = TypeName.create(AccessModifier.class);
 
     private TypeNames() {
-    }
-
-    static TypeName boxed(TypeName original) {
-        return Optional.ofNullable(BOXED_TYPES.get(original))
-                .orElse(original);
     }
 }

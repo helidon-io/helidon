@@ -18,6 +18,8 @@ package io.helidon.codegen.apt;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -157,21 +159,11 @@ class ToAnnotationValueVisitor implements AnnotationValueVisitor<Object, Object>
         if (mapBlankArrayToNull && values.isEmpty()) {
             return null;
         } else if (mapToSourceDeclaration) {
-            StringBuilder resultBuilder = new StringBuilder("{");
-
-            for (AnnotationValue val : vals) {
-                Object stringVal = val.accept(this, null);
-                if (stringVal != null) {
-                    if (resultBuilder.length() > 1) {
-                        resultBuilder.append(", ");
-                    }
-                    resultBuilder.append(stringVal);
-                }
-            }
-
-            resultBuilder.append("}");
-
-            return resultBuilder.toString();
+            return vals.stream()
+                    .map(v -> v.accept(this, null))
+                    .filter(Objects::nonNull)
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(", ", "{", "}"));
         }
 
         return values;
