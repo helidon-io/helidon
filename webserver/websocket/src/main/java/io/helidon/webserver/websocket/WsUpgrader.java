@@ -38,6 +38,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
+import io.helidon.websocket.WsListener;
 import io.helidon.websocket.WsUpgradeException;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -167,8 +168,9 @@ public class WsUpgrader implements Http1Upgrader {
 
         // invoke user-provided HTTP upgrade handler
         Optional<Headers> upgradeHeaders;
+        WsListener wsListener = route.listener();
         try {
-            upgradeHeaders = route.listener().onHttpUpgrade(prologue, headers);
+            upgradeHeaders = wsListener.onHttpUpgrade(prologue, headers);
         } catch (WsUpgradeException e) {
             LOGGER.log(Level.TRACE, "Websocket upgrade rejected", e);
             return null;
@@ -191,7 +193,7 @@ public class WsUpgrader implements Http1Upgrader {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + version);
         }
 
-        return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), wsKey, route);
+        return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), wsKey, wsListener);
     }
 
     protected boolean anyOrigin() {
