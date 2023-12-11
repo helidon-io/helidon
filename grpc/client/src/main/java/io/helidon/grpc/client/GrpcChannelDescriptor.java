@@ -102,9 +102,14 @@ public class GrpcChannelDescriptor {
 
     /**
      * Get the {@link NameResolver.Factory} to use.
+     * <p/>
+     * This method is deprecated due to the deprecation of the
+     * {@link io.grpc.ManagedChannelBuilder#nameResolverFactory(io.grpc.NameResolver.Factory)}
+     * method in the gRPC Java API.
      *
      * @return the optional {@link NameResolver.Factory} to use
      */
+    @Deprecated
     public Optional<NameResolver.Factory> nameResolverFactory() {
         return Optional.ofNullable(nameResolver);
     }
@@ -223,11 +228,16 @@ public class GrpcChannelDescriptor {
         /**
          * Set the {@link io.grpc.NameResolver.Factory} to use.
          * @param factory the {@link io.grpc.NameResolver.Factory} to use
+         * <p/>
+         * This method is deprecated due to the deprecation of the
+         * {@link io.grpc.ManagedChannelBuilder#nameResolverFactory(io.grpc.NameResolver.Factory)}
+         * method in the gRPC Java API.
          *
          * @return this instance for fluent API
          *
          * @see io.grpc.ManagedChannelBuilder#nameResolverFactory(io.grpc.NameResolver.Factory)
          */
+        @Deprecated
         public Builder nameResolverFactory(NameResolver.Factory factory) {
             this.nameResolver = factory;
             return this;

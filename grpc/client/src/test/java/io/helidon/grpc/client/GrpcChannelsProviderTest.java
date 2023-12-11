@@ -36,6 +36,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("deprecation")
 public class GrpcChannelsProviderTest {
 
     private static final String CLIENT_CERT = "ssl/clientCert.pem";

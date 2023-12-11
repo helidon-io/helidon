@@ -155,6 +155,7 @@ public class GrpcChannelsProvider {
         return channelConfigs;
     }
 
+    @SuppressWarnings("deprecation")
     private ManagedChannel createChannel(GrpcChannelDescriptor descriptor) {
         ManagedChannelBuilder<?> builder = descriptor.tlsDescriptor()
                 .map(tlsDescriptor -> createNettyChannelBuilder(descriptor, tlsDescriptor))
