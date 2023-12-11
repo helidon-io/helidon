@@ -74,8 +74,7 @@ public final class Main {
         Config config = mongo ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
         Config.global(config);
 
-        WebServer server = setupServer(WebServer.builder())
-                .start();
+        WebServer server = setupServer(WebServer.builder());
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
     }
@@ -96,7 +95,8 @@ public final class Main {
         return builder.config(config.get("server"))
                 .addFeature(observe)
                 .routing(Main::routing)
-                .build();
+                .build()
+                .start();
     }
 
     /**

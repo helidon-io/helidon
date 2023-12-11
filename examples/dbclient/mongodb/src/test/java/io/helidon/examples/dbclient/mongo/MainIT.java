@@ -49,6 +49,7 @@ public class MainIT {
             .withExposedPorts(27017);
 
     private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
+    private static final String CONNECTION_URL_KEY = "db.connection.url";
 
     private static WebServer server;
     private static WebClient client;
@@ -56,7 +57,7 @@ public class MainIT {
     @BeforeAll
     static void beforeAll() {
         String url = String.format("mongodb://127.0.0.1:%s/pokemon", container.getMappedPort(27017));
-        System.setProperty("db.connection.url", url);
+        System.setProperty(CONNECTION_URL_KEY, url);
         server = MongoDbExampleMain.setupServer(WebServer.builder());
         client = WebClient.create(config -> config.baseUri("http://localhost:" + server.port())
                 .addMediaSupport(JsonbSupport.create(Config.create()))
@@ -68,6 +69,7 @@ public class MainIT {
         if (server != null && server.isRunning()) {
             server.stop();
         }
+        System.clearProperty(CONNECTION_URL_KEY);
     }
 
     @Test
@@ -106,7 +108,7 @@ public class MainIT {
         // Get the new pokemon added
         jsonResponse = client.get("/db/Raticate").request(JsonObject.class);
         assertThat(jsonResponse.status(), is(Status.OK_200));
-        assertThat(jsonResponse.entity().getString("name"), is("Raticate"));
+        assertThat(jsonResponse.entity().getString("_id"), is("Raticate"));
         assertThat(jsonResponse.entity().getString("type"), is("1"));
 
         // Update pokemon
@@ -116,7 +118,7 @@ public class MainIT {
         // Verify updated pokemon
         jsonResponse = client.get("/db/Raticate").request(JsonObject.class);
         assertThat(jsonResponse.status(), is(Status.OK_200));
-        assertThat(jsonResponse.entity().getString("name"), is("Raticate"));
+        assertThat(jsonResponse.entity().getString("_id"), is("Raticate"));
         assertThat(jsonResponse.entity().getString("type"), is("2"));
 
         // Delete Pokemon
@@ -131,6 +133,6 @@ public class MainIT {
     private List<String> listAllPokemons() {
         ClientResponseTyped<JsonArray> response = client.get("/db").request(JsonArray.class);
         assertThat(response.status(), is(Status.OK_200));
-        return response.entity().stream().map(e -> e.asJsonObject().getString("name")).toList();
+        return response.entity().stream().map(e -> e.asJsonObject().getString("_id")).toList();
     }
 }

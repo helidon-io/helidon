@@ -36,11 +36,11 @@ db:
             "query": { ping: 1 }
         }'
     # Insert operation contains collection name, operation type and data to be inserted.
-    # Name variable is stored as MongoDB primary key attribute name
+    # Name variable is stored as MongoDB primary key attribute _id
     insert2: '{
             "collection": "pokemons",
             "value": {
-                "name": $name,
+                "_id": $name,
                 "type": $type
             }
         }'
@@ -51,7 +51,7 @@ db:
     select-one: '{
             "collection": "pokemons",
             "query": {
-              "name": ?
+              "_id": ?
             }
         }'
     delete-all: '{
@@ -61,7 +61,7 @@ db:
     update: '{
             "collection": "pokemons",
             "query": {
-                "name": $name
+                "_id": $name
             },
             "value": {
                 $set: { "type": $type }
@@ -70,7 +70,7 @@ db:
     delete: '{
             "collection": "pokemons",
             "query": {
-                "name": ?
+                "_id": ?
             }
         }'
 
