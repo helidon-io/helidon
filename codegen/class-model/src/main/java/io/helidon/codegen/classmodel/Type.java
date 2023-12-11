@@ -60,11 +60,16 @@ abstract class Type extends ModelComponent {
 
     private static String extractBoundTypeName(TypeName instance) {
         String name = calcName(instance);
-        StringBuilder nameBuilder = new StringBuilder(name)
-                .append(instance.typeArguments()
-                .stream()
-                .map(TypeName::resolvedName)
-                .collect(Collectors.joining(", ", "<", ">")));
+        StringBuilder nameBuilder = new StringBuilder(name);
+
+        if (!instance.typeArguments().isEmpty()) {
+            nameBuilder.append('<')
+                    .append(instance.typeArguments()
+                                    .stream()
+                                    .map(TypeName::resolvedName)
+                                    .collect(Collectors.joining(", ")))
+                    .append('>');
+        }
 
         if (instance.array()) {
             nameBuilder.append("[]");
