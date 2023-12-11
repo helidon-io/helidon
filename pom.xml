@@ -975,6 +975,11 @@
                 <version>${version.lib.microprofile-cdi-tck}</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.enterprise</groupId>
+                <artifactId>cdi-tck-lang-model</artifactId>
+                <version>${version.lib.microprofile-cdi-tck}</version>
+            </dependency>
+            <dependency>
                 <groupId>jakarta.ws.rs</groupId>
                 <artifactId>jakarta-restful-ws-tck</artifactId>
                 <version>${version.lib.microprofile-restful-tck}</version>
@@ -1146,6 +1151,11 @@
             <dependency>
                 <groupId>org.jboss.arquillian.junit</groupId>
                 <artifactId>arquillian-junit-container</artifactId>
+                <version>${version.lib.arquillian}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.junit5</groupId>
+                <artifactId>arquillian-junit5-core</artifactId>
                 <version>${version.lib.arquillian}</version>
             </dependency>
             <dependency>

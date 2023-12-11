@@ -47,6 +47,7 @@
         <module>tck-telemetry</module>
         <module>tck-core-profile</module>
         <module>tck-cdi</module>
+        <module>tck-cdi-lang-model</module>
         <module>tck-restful</module>
         <module>tck-jsonb</module>
         <module>tck-jsonp</module>
