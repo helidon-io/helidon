@@ -242,17 +242,17 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                     if (!it.elementModifiers().contains(Modifier.STATIC)) {
                         errors.fatal(it,
                                      "A field annotated with @Prototype.Constant must be static, final, "
-                                             + "and at least package local. Not static.");
+                                             + "and at least package local. Field \"" + it.elementName() + "\" is not static.");
                     }
                     if (!it.elementModifiers().contains(Modifier.FINAL)) {
                         errors.fatal(it,
                                      "A field annotated with @Prototype.Constant must be static, final, "
-                                             + "and at least package local. Not final.");
+                                             + "and at least package local. Field \"" + it.elementName() + "\" is not final.");
                     }
                     if (it.accessModifier() == AccessModifier.PRIVATE) {
                         errors.fatal(it,
                                      "A field annotated with @Prototype.Constant must be static, final, "
-                                             + "and at least package local. Private.");
+                                             + "and at least package local. Field \"" + it.elementName() + "\" is private.");
                     }
                     TypeName fieldType = it.typeName();
                     String name = it.elementName();
