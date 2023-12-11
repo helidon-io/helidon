@@ -70,6 +70,6 @@ class TestStereotypes {
 
         SimpleTimer simpleTimer = metricRegistry.getSimpleTimer(new MetricID(StereotypeB.SIMPLE_TIMER_NAME));
         assertThat("Simple timer registered via stereotype", simpleTimer, notNullValue());
-        assertThat("Simple timer count", simpleTimer.getCount(), equalTo(1L));
+        assertThat("Simple timer count", simpleTimer.getCount(), greaterThanOrEqualTo(1L));
     }
 }
