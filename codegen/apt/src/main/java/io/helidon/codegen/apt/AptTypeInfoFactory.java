@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationValue;
@@ -194,16 +193,8 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
 
             thrownChecked = ee.getThrownTypes()
                     .stream()
-                    .flatMap(it -> {
-                        if (isCheckedException(ctx, it)) {
-                            TypeName typeName = AptTypeFactory.createTypeName(it).orElse(null);
-                            if (typeName == null) {
-                                return Stream.of();
-                            }
-                            return Stream.of(typeName);
-                        }
-                        return Stream.of();
-                    })
+                    .filter(it -> isCheckedException(ctx, it))
+                    .flatMap(it -> AptTypeFactory.createTypeName(it).stream())
                     .collect(Collectors.toSet());
         } else if (v instanceof VariableElement ve) {
             typeMirror = Objects.requireNonNull(ve.asType());
@@ -311,9 +302,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             List<TypedElementInfo> otherElements = new ArrayList<>();
             typeElement.getEnclosedElements()
                     .stream()
-                    .map(it -> createTypedElementInfoFromElement(ctx, it, elementUtils))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(it -> createTypedElementInfoFromElement(ctx, it, elementUtils).stream())
                     .forEach(it -> {
                         if (elementPredicate.test(it)) {
                             elementsWeCareAbout.add(it);
@@ -535,7 +524,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                     boolean fromCache = true;
                     if (meta == null) {
                         fromCache = false;
-                        TypeElement typeElement = elements.getTypeElement(it.name());
+                        TypeElement typeElement = elements.getTypeElement(it.fqName());
                         if (typeElement != null) {
                             List<Annotation> metaAnnotations = createAnnotations(ctx, typeElement, elements);
                             result.put(it, new ArrayList<>(metaAnnotations));

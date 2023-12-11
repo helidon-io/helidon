@@ -503,6 +503,23 @@ public final class Javadoc extends ModelComponent {
         }
 
         /**
+         * Remove everything from this builder.
+         *
+         * @return updated builder instance
+         */
+        public Builder clear() {
+            this.generate = false;
+            this.deprecation.clear();
+            this.returnDescription.clear();
+            this.contentBuilder.delete(0, contentBuilder.length());
+            this.parameters.clear();
+            this.genericArguments.clear();
+            this.throwsDesc.clear();
+            this.otherTags.clear();
+            return this;
+        }
+
+        /**
          * Populates this builder with the parsed javadoc data.
          *
          * @param fullJavadocString string format javadoc

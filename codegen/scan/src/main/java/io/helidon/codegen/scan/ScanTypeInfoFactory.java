@@ -557,7 +557,7 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                     boolean fromCache = true;
                     if (meta == null) {
                         fromCache = false;
-                        ClassInfo classInfo = ctx.scanResult().getClassInfo(it.fqName());
+                        ClassInfo classInfo = ctx.scanResult().getClassInfo(it.name());
                         if (classInfo != null) {
                             List<Annotation> metaAnnotations = createAnnotations(ctx,
                                                                                  classInfo.getAnnotationInfo(),
