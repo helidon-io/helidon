@@ -89,7 +89,7 @@
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
-        <version.lib.classgraph>4.8.154</version.lib.classgraph>
+        <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <!--
         !Version statement! - end
         -->
