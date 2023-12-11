@@ -2045,8 +2045,7 @@ public class JpaExtension implements Extension {
 
     private void onStartup(@Observes
                            @Initialized(ApplicationScoped.class)
-                           @Priority(LIBRARY_BEFORE + 20)
-//                           @Priority(LIBRARY_BEFORE)
+                           @Priority(LIBRARY_BEFORE + 20) // Must be later than metrics CDI extension priority
                            Object event,
                            @ContainerManaged
                            Instance<EntityManagerFactory> emfs) {

@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -88,12 +89,10 @@ class RegistryFactory {
     static RegistryFactory getInstance() {
         RegistryFactory result = REGISTRY_FACTORY.get();
         if (result == null) {
-            throw new IllegalStateException("Attempt to retrieve current " + RegistryFactory.class.getName()
-                                                    + " before it has been initialized");
-//            LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
-//                    + " before it has been initialized; using default Helidon meter registry and continuing");
-//            result = new RegistryFactory(Metrics.globalRegistry());
-//            REGISTRY_FACTORY.set(result);
+            LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
+                    + " before it has been initialized; using default Helidon meter registry and continuing");
+            result = new RegistryFactory(Metrics.globalRegistry());
+            REGISTRY_FACTORY.set(result);
         }
         return result;
     }
