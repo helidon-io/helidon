@@ -46,7 +46,8 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
                                                       Iterable<String> scopeSelection,
                                                       Iterable<String> nameSelection) {
         return matches(mediaType, MediaTypes.TEXT_PLAIN) || matches(mediaType, MediaTypes.APPLICATION_OPENMETRICS_TEXT)
-                ? Optional.of(create(metricsConfig,
+                ? Optional.of(create(mediaType,
+                                     metricsConfig,
                                      meterRegistry,
                                      scopeTagName,
                                      scopeSelection,
@@ -58,12 +59,14 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
         return a.type().equals(b.type()) && a.subtype().equals(b.subtype());
     }
 
-    private static MicrometerPrometheusFormatter create(MetricsConfig metricsConfig,
+    private static MicrometerPrometheusFormatter create(MediaType mediaType,
+                                                        MetricsConfig metricsConfig,
                                                         MeterRegistry meterRegistry,
                                                         Optional<String> scopeTagName,
                                                         Iterable<String> scopeSelection,
                                                         Iterable<String> nameSelection) {
         MicrometerPrometheusFormatter.Builder builder = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(mediaType)
                 .scopeSelection(scopeSelection)
                 .meterNameSelection(nameSelection);
         scopeTagName.ifPresent(builder::scopeTagName);

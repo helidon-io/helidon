@@ -48,4 +48,5 @@ module io.helidon.microprofile.cors {
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.cors.CorsCdiExtension;
 
+    opens io.helidon.microprofile.cors to weld.core.impl, org.glassfish.hk2.utilities;
 }

@@ -29,9 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
-import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -336,7 +335,10 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             if (null == outboundConfig) {
                 // the OutboundConfig.create() expects the provider configuration, not the outbound configuration
-                config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(config)));
+                Config outboundConfig = config.get("outbound");
+                if (outboundConfig.exists()) {
+                    outboundConfig(OutboundConfig.create(outboundConfig));
+                }
             }
             config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
             config.get("discover-tenant-config-providers").asBoolean().ifPresent(this::discoverTenantConfigProviders);
@@ -506,10 +508,9 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                 .flatMap(cfg -> cfg.get("propagate").asBoolean().asOptional())
                                 .orElse(true);
                         TokenHandler handler = outboundTarget.getConfig()
-                                .flatMap(cfg ->
-                                                 DeprecatedConfig.get(cfg, "outbound-token", "token")
-                                                         .as(TokenHandler::create)
-                                                         .asOptional())
+                                .flatMap(cfg -> cfg.get("outbound-token")
+                                        .map(TokenHandler::create)
+                                        .asOptional())
                                 .orElse(defaultTokenHandler);
                         return new OidcOutboundTarget(propagate, handler);
                     })).orElse(defaultTarget);

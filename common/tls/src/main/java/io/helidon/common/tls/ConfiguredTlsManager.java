@@ -124,6 +124,14 @@ public class ConfiguredTlsManager implements TlsManager {
         trustManager.ifPresent(reloadableTrustManager::reload);
     }
 
+    /**
+     * Initialize and set the {@link javax.net.ssl.SSLContext} on this manager instance.
+     *
+     * @param tlsConfig     the tls configuration
+     * @param secureRandom  the secure random
+     * @param keyManagers   the key managers
+     * @param trustManagers the trust managers
+     */
     protected void initSslContext(TlsConfig tlsConfig,
                                   SecureRandom secureRandom,
                                   KeyManager[] keyManagers,
@@ -197,6 +205,15 @@ public class ConfiguredTlsManager implements TlsManager {
         return RANDOM.get();
     }
 
+    /**
+     * Build the key manager factory.
+     *
+     * @param target        the tls configuration
+     * @param secureRandom  the secure random
+     * @param privateKey    the private key for the key store
+     * @param certificates the certificates for the keystore
+     * @return a key manager factory instance
+     */
     protected KeyManagerFactory buildKmf(TlsConfig target,
                                          SecureRandom secureRandom,
                                          PrivateKey privateKey,

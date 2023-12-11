@@ -31,6 +31,27 @@
     <name>Helidon SE applications parent pom</name>
     <description>Parent pom for Helidon SE applications</description>
 
+    <properties>
+        <helidon.test.config.profile>test</helidon.test.config.profile>
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${version.plugin.surefire}</version>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <helidon.config.profile>${helidon.test.config.profile}</helidon.config.profile>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
     <profiles>
         <profile>
             <id>native-image</id>
@@ -45,14 +66,12 @@
                                 <goals>
                                     <goal>generateResourceConfig</goal>
                                 </goals>
-                                <phase>package</phase>
                             </execution>
                             <execution>
                                 <id>build-native-image</id>
                                 <goals>
                                     <goal>compile</goal>
                                 </goals>
-                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>

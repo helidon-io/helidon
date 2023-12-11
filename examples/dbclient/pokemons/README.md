@@ -2,7 +2,7 @@
 
 This example shows how to run Helidon DB Client over JDBC.
 
-Application provides REST service endpoint with CRUD operations on Pokemnons
+Application provides REST service endpoint with CRUD operations on Pokemons
 database.
 
 ## Database
@@ -73,7 +73,7 @@ docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root \
 
 ## Run
 
-Then run the `io.helidon.examples.dbclient.pokemons.PokemonMain` class:
+Then run the `io.helidon.examples.dbclient.pokemons.Main` class:
 ```
 java -jar target/helidon-examples-dbclient-pokemons.jar
 ```
@@ -90,7 +90,7 @@ It's possible to run example with MongoDB database. Start it using docker:
 docker run --rm --name mongo -p 27017:27017 mongo
 ```
 
-Then run the `io.helidon.examples.dbclient.pokemons.PokemonMain` class with `mongo` argument:
+Then run the `io.helidon.examples.dbclient.pokemons.Main` class with `mongo` argument:
 ```
 java -jar target/helidon-examples-dbclient-pokemons.jar mongo
 ```
@@ -99,22 +99,35 @@ java -jar target/helidon-examples-dbclient-pokemons.jar mongo
 
 The application has the following endpoints:
 
-- http://localhost:8079/db - the main business endpoint (see `curl` commands below)
-- http://localhost:8079/metrics - the metrics endpoint (query adds application metrics)
-- http://localhost:8079/health - has a custom database health check
+- http://localhost:8080/db - the main business endpoint (see `curl` commands below)
+- http://localhost:8080/metrics - the metrics endpoint (query adds application metrics)
+- http://localhost:8080/health - has a custom database health check
 
 Application also connects to zipkin on default address.
 The query operation adds database trace.
 
-`curl` commands:
+```
+# List all Pokémon
+curl http://localhost:8080/db/pokemon
 
-- `curl http://localhost:8079/db/pokemon | json_pp` - list all pokemons in the database
-- `curl http://localhost:8079/db/type | json_pp` - list all pokemon types in the database
-- `curl http://localhost:8079/db/pokemon/2 | json_pp` - get a single pokemon by id
-- `curl http://localhost:8079/db/pokemon/name/Squirtle | json_pp` - get a single pokemon by name
-- `curl -i -X POST -d '{"id":7,"name":"Rattata","idType":1}' http://localhost:8079/db/pokemon` - add a new pokemon Rattata
-- `curl -i -X PUT -d '{"id":7,"name":"Raticate","idType":2}' http://localhost:8079/db/pokemon` - rename pokemon with id 7 to Raticate
-- `curl -i -X DELETE http://localhost:8079/db/pokemon/7` - delete pokemon with id 7
+# List all Pokémon types
+curl http://localhost:8080/db/type
+
+# Get a single Pokémon by id
+curl http://localhost:8080/db/pokemon/2
+
+# Get a single Pokémon by name
+curl http://localhost:8080/db/pokemon/name/Squirtle
+
+# Add a new Pokémon Rattata
+curl -i -X POST -d '{"id":7,"name":"Rattata","idType":1}' http://localhost:8080/db/pokemon
+
+# Rename Pokémon with id 7 to Raticate
+curl -i -X PUT -d '{"id":7,"name":"Raticate","idType":2}' http://localhost:8080/db/pokemon
+
+# Delete Pokémon with id 7
+curl -i -X DELETE http://localhost:8080/db/pokemon/7
+```
 
 ### Proxy
 

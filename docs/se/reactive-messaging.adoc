@@ -43,7 +43,8 @@ include::{rootdir}/includes/se.adoc[]
 == Overview
 
 Asynchronous messaging is a commonly used form of communication in the world of microservices.
-While it is possible to start building your reactive streams directly by combining operators and connecting them to reactive APIs, with Helidon SE Reactive Messaging, you can now use prepared
+While it is possible to start building your reactive streams directly by combining operators and
+connecting them to reactive APIs, with Helidon SE Reactive Messaging, you can now use prepared
 tools for repetitive use case scenarios .
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -59,22 +60,24 @@ include::{rootdir}/includes/dependencies.adoc[]
 == Usage
 
 Connecting your streams to external services usually requires a lot of boiler-plate
-code for configuration handling, backpressure propagation, acknowledgement and other tasks.
+code for configuration handling, backpressure propagation, acknowledgement and more.
 
 In Helidon there is a system of connectors, emitters and means to orchestrate these tasks
 called *Reactive Messaging*. It's basically an API for connecting and configuring
-Connectors and emitters with your reactive streams through <<Channel,channels>>.
+connectors and emitters with your reactive streams through <<Channel,Channels>>.
 
 Reactive Messaging relates to
-+xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging] as the making of connectors and configuring them can be a repetitive task that ultimately leads to
-+the same results. Helidon SE Reactive Messaging supports the very same configuration format for connectors as its MicroProfile counterpart does. Also, MP Connectors are reusable in
+xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging] as the making of connectors and configuring them can be a repetitive task that ultimately leads to
+the same results. Helidon SE Reactive Messaging supports the very same configuration format
+for connectors as its MicroProfile counterpart does. Also, MP Connectors are reusable in
 Helidon SE Messaging with some limitations such as there is no CDI in Helidon SE.
 All <<Messaging Connector,Messaging connectors>> in Helidon are made to be universally usable by Helidon MP and SE.
 
 === Channel
 
-A channel is a named pair consisting of a `Publisher` and `Subscriber`. Channels can be connected together by
-<<Processor,processors>>. Registering a `Publisher` or `Subscriber` for a channel can be done by Messaging API, or configured implicitly using registered <<Connectors,connectors>>
+A channel is a named pair of `Publisher` and `Subscriber`. Channels can be connected together by
+<<Processor,processors>>. Registering a `Publisher` or `Subscriber` for a channel can be done
+by Messaging API, or configured implicitly using registered <<Connectors,connectors>>
 to generate the `Publisher` or `Subscriber`.
 
 [source,java]
@@ -129,7 +132,7 @@ message wrapping as MicroProfile messaging.
 The only notable difference is that SE Messaging does almost no implicit or automatic
 acknowledgement due to _no magic_ philosophy of Helidon SE.
 
-The only exceptions to this are the variants of the methods `Messaging.Builder#listener` and
+The only exception to this are the variants of the methods `Messaging.Builder#listener` and
 `Messaging.Builder#processor` configured with consumer or function parameters which will  conveniently unwrap the payload
 for you. Once the payload is automatically unwrapped, it is not possible to do a manual acknowledgement, therefore
 an implicit acknowledgement is executed before the callback.

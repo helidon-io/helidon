@@ -31,7 +31,7 @@ public final class RequestLineLogEntry extends AbstractLogEntry {
      * Create a new request line entry.
      *
      * @return a new access log entry for request line
-     * @see AccessLogFeature.Builder#add(AccessLogEntry)
+     * @see AccessLogConfig.Builder#addEntry(AccessLogEntry)
      */
     public static RequestLineLogEntry create() {
         return builder().build();

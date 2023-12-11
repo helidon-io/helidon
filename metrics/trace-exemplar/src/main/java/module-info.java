@@ -23,9 +23,10 @@ module io.helidon.metrics.traceexemplar {
     requires io.helidon.common.context;
     requires io.helidon.tracing;
     requires io.helidon.metrics.api;
+    requires io.helidon.metrics.providers.micrometer;
 
-    requires transitive io.helidon.metrics;
+    requires simpleclient.tracer.common;
 
-    provides io.helidon.metrics.spi.ExemplarService
-            with io.helidon.metrics.exemplartrace.TraceExemplarService;
+    provides io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider
+            with io.helidon.metrics.exemplartrace.MicrometerSpanContextSupplierProvider;
 }

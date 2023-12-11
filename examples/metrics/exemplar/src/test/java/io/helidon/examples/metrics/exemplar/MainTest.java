@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
@@ -83,8 +84,8 @@ public class MainTest {
         }
     }
 
+    @Disabled // because of intermittent pipeline failures; the assertLinesMatch exhausts the available lines
     @Test
-    @Disabled
     public void testMetrics() {
         try (Http1ClientResponse response = client.get("/greet").request()) {
             assertThat(response.as(String.class), containsString("Hello World!"));
@@ -94,25 +95,30 @@ public class MainTest {
             assertThat(response.as(String.class), containsString("Hello Joe!"));
         }
 
-        try (Http1ClientResponse response = client.get("/observe/metrics/application").request()) {
+        try (Http1ClientResponse response = client.get("/observe/metrics/application")
+                .accept(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .request()) {
 
             String openMetricsOutput = response.as(String.class);
             LineNumberReader reader = new LineNumberReader(new StringReader(openMetricsOutput));
             List<String> returnedLines = reader.lines()
                                                .collect(Collectors.toList());
+            returnedLines.add("# extra line at end to make sure we do not deplete the actual lines");
 
             List<String> expected = List.of(">> skip to max >>",
-                    "# TYPE " + GreetService.TIMER_FOR_GETS + "_seconds_max gauge",
-                    valueMatcher("max"),
+                    "# TYPE " + GreetService.COUNTER_FOR_PERSONALIZED_GREETINGS + " counter",
+                    "# HELP " + GreetService.COUNTER_FOR_PERSONALIZED_GREETINGS + ".*",
+                    valueMatcher(GreetService.COUNTER_FOR_PERSONALIZED_GREETINGS,"", "total"),
                     ">> end of output >>");
-            assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_max_seconds TYPE and value");
+            assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_seconds_max TYPE and value");
         }
     }
 
-    private static String valueMatcher(String statName) {
-        // timerForGets_mean_seconds 0.010275403147594316 # {scope="application",trace_id="cfd13196e6a9fb0c"} 0.002189822 1617799841.963000
-        return GreetService.TIMER_FOR_GETS
-                + "_" + statName + "_seconds [\\d\\.]+ # \\{scope=\"application\",trace_id=\"[^\"]+\"\\} [\\d\\.]+ [\\d\\.]+";
+    private static String valueMatcher(String meterName, String unit, String statName) {
+        // counterForPersonalizedGreetings_total{scope="application"} 1.0 # {span_id="41d2a1755a2b8797",trace_id="41d2a1755a2b8797"} 1.0 1696888732.920
+        return meterName
+                + (unit == null || unit.isBlank() ? "" : "_" + unit)
+                + "_" + statName + ".*? # .*?trace_id=\"[^\"]+\"\\} [\\d\\.]+ [\\d\\.]+";
     }
 
 }

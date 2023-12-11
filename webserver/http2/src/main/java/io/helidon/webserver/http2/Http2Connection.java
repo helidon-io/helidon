@@ -64,6 +64,8 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
 
+import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
+import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static io.helidon.http.http2.Http2Util.PREFACE_LENGTH;
 import static java.lang.System.Logger.Level.DEBUG;
@@ -98,8 +100,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final boolean sendErrorDetails;
     private final ConnectionFlowControl flowControl;
     private final WritableHeaders<?> connectionHeaders;
-
+    private final long rapidResetCheckPeriod;
+    private final int maxRapidResets;
+    private final int maxEmptyFrames;
     private final long maxClientConcurrentStreams;
+    private int rapidResetCnt = 0;
+    private long rapidResetPeriodStart = 0;
+    private int emptyFrames = 0;
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
             .build();
@@ -120,6 +127,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.ctx = ctx;
         this.http2Config = http2Config;
+        this.rapidResetCheckPeriod = http2Config.rapidResetCheckPeriod().toNanos();
+        this.maxRapidResets = http2Config.maxRapidResets();
+        this.maxEmptyFrames = http2Config.maxEmptyFrames();
         this.serverSettings = Http2Settings.builder()
                 .update(builder -> settingsUpdate(http2Config, builder))
                 .add(Http2Setting.ENABLE_PUSH, false)
@@ -465,7 +475,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         state = State.READ_FRAME;
 
-        boolean overflow;
         int increment = windowUpdate.windowSizeIncrement();
 
 
@@ -475,9 +484,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
                 connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             }
-            overflow = flowControl.incrementOutboundConnectionWindowSize(increment) > WindowSize.MAX_WIN_SIZE;
-            if (overflow) {
-                Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+
+            long size = flowControl.incrementOutboundConnectionWindowSize(increment);
+            if (size > WindowSize.MAX_WIN_SIZE || size < 0) {
+                Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big.");
                 connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             }
         } else {
@@ -543,15 +553,22 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         StreamContext stream = stream(streamId);
         stream.stream().checkDataReceivable();
 
+        boolean endOfStream = frameHeader.flags(Http2FrameTypes.DATA).endOfStream();
+
         // Flow-control: reading frameHeader.length() bytes from HTTP2 socket for known stream ID.
         int length = frameHeader.length();
         if (length > 0) {
+            emptyFrames = 0;
             if (streamId > 0 && frameHeader.type() != Http2FrameType.HEADERS) {
                 // Stream ID > 0: update connection and stream
                 stream.stream()
                         .flowControl()
                         .inbound()
                         .decrementWindowSize(length);
+            }
+        } else {
+            if (emptyFrames++ > maxEmptyFrames && !endOfStream) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Too much subsequent empty frames received.");
             }
         }
 
@@ -571,8 +588,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         } else {
             buffer = inProgressFrame();
         }
-
-        boolean endOfStream = frameHeader.flags(Http2FrameTypes.DATA).endOfStream();
 
         // TODO buffer now contains the actual data bytes
         stream.stream().data(frameHeader, buffer, endOfStream);
@@ -609,6 +624,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             ctx.remotePeer().tlsCertificates()
                     .flatMap(TlsUtils::parseCn)
                     .ifPresent(cn -> connectionHeaders.add(X_HELIDON_CN, cn));
+
+            // proxy protocol related headers X-Forwarded-For and X-Forwarded-Port
+            ctx.proxyProtocolData().ifPresent(proxyProtocolData -> {
+                String sourceAddress = proxyProtocolData.sourceAddress();
+                if (!sourceAddress.isEmpty()) {
+                    connectionHeaders.add(X_FORWARDED_FOR, sourceAddress);
+                }
+                int sourcePort = proxyProtocolData.sourcePort();
+                if (sourcePort != -1) {
+                    connectionHeaders.set(X_FORWARDED_PORT, sourcePort);
+                }
+            });
+
             initConnectionHeaders = false;
         }
 
@@ -731,7 +759,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         try {
             StreamContext streamContext = stream(streamId);
-            streamContext.stream().rstStream(rstStream);
+            boolean rapidReset = streamContext.stream().rstStream(rstStream);
+            if (rapidReset && maxRapidResets != -1) {
+                long currentTime = System.nanoTime();
+                if (rapidResetCheckPeriod >= currentTime - rapidResetPeriodStart) {
+                    rapidResetCnt = 1;
+                    rapidResetPeriodStart = currentTime;
+                } else if (maxRapidResets < rapidResetCnt) {
+                    throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Rapid reset attack detected!");
+                } else {
+                    rapidResetCnt++;
+                }
+            }
 
             state = State.READ_FRAME;
         } catch (Http2Exception e) {
@@ -778,7 +817,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             }
 
             // 5.1.2 MAX_CONCURRENT_STREAMS limit check - stream error of type PROTOCOL_ERROR or REFUSED_STREAM
-            if (streams.size() > maxClientConcurrentStreams) {
+            if (streams.size() + 1 > maxClientConcurrentStreams) {
                 throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
                                          "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
             }

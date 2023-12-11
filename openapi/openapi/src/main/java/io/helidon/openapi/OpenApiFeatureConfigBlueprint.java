@@ -18,6 +18,7 @@ package io.helidon.openapi;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -26,13 +27,24 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.openapi.spi.OpenApiManagerProvider;
 import io.helidon.openapi.spi.OpenApiServiceProvider;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * {@link OpenApiFeature} prototype.
  */
 @Prototype.Blueprint
 @Configured(root = true, prefix = "openapi")
+@Prototype.Provides(ServerFeatureProvider.class)
 interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature> {
+    /**
+     * Weight of the OpenAPI feature. This is quite low, to be registered after routing.
+     * {@value io.helidon.openapi.OpenApiFeature#WEIGHT}.
+     *
+     * @return weight of the feature
+     */
+    @Option.DefaultDouble(OpenApiFeature.WEIGHT)
+    @Option.Configured
+    double weight();
 
     /**
      * Sets whether the feature should be enabled.
@@ -84,11 +96,13 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
     Optional<OpenApiManager<?>> manager();
 
     /**
-     * Whether endpoint should be authorized.
+     * Whether to allow anybody to access the endpoint.
      *
-     * @return if endpoint is configured to be authorized
+     * @return whether to permit access to metrics endpoint to anybody, defaults to {@code true}
+     * @see #roles()
      */
     @ConfiguredOption
+    @Option.DefaultBoolean(true)
     boolean permitAll();
 
     /**
@@ -97,5 +111,23 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      * @return list of hints
      */
     @ConfiguredOption
+    @Option.Default("openapi")
     List<String> roles();
+
+    /**
+     * Name of this instance.
+     *
+     * @return instance name, used when discovered from configuration
+     */
+    @Option.Default(OpenApiFeature.OPENAPI_ID)
+    String name();
+
+    /**
+     * List of sockets to register this feature on. If empty, it would get registered on all sockets.
+     *
+     * @return socket names to register on, defaults to empty (all available sockets)
+     */
+    @Option.Configured
+    @Option.Singular
+    Set<String> sockets();
 }

@@ -27,7 +27,7 @@ public final class StatusLogEntry extends AbstractLogEntry {
      * Create a new status log entry.
      *
      * @return a new access log entry for HTTP status
-     * @see AccessLogFeature.Builder#add(AccessLogEntry)
+     * @see AccessLogConfig.Builder#addEntry(AccessLogEntry)
      */
     public static StatusLogEntry create() {
         return builder().build();

@@ -67,8 +67,7 @@ public final class Main {
                                 .register("/rest/messages", sendingService))
                         // register WebSocket endpoint to push messages coming from Kafka to client
                         .addRouting(WsRouting.builder()
-                                .endpoint("/ws/messages", new WebSocketEndpoint())
-                                .build())
+                                .endpoint("/ws/messages", new WebSocketEndpoint()))
                         .config(config.get("server"))
                         .build()
                         .start();

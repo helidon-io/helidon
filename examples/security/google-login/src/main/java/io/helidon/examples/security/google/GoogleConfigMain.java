@@ -26,8 +26,6 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
-import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -58,14 +56,29 @@ public final class GoogleConfigMain {
         long time = System.nanoTime() - t;
 
         System.out.printf("""
-                        Server started in %d ms
-                        Started server on localhost: %2$d
-                        You can access this example at http://localhost:%2$d/index.html
+                                  Server started in %d ms
+                                  Started server on localhost: %2$d
+                                  You can access this example at http://localhost:%2$d/index.html
 
-                        Check application.yaml in case you are behind a proxy to configure it
-                        """,
-                TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS),
-                server.port());
+                                  Check application.yaml in case you are behind a proxy to configure it
+                                  """,
+                          TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS),
+                          server.port());
+    }
+
+    static void setup(WebServerConfig.Builder server) {
+        Config config = buildConfig();
+        server.config(config.get("server"))
+                .routing(routing -> routing
+                        .get("/rest/profile", (req, res) -> {
+                            Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                            res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
+                            res.send("Response from config based service, you are: \n" + securityContext
+                                    .flatMap(SecurityContext::user)
+                                    .map(Subject::toString)
+                                    .orElse("Security context is null"));
+                        })
+                        .register(StaticContentService.create("/WEB")));
     }
 
     private static Config buildConfig() {
@@ -76,21 +89,5 @@ public final class GoogleConfigMain {
                         // in jar file (see src/main/resources/application.yaml)
                         classpath("application.yaml"))
                 .build();
-    }
-
-    static void setup(WebServerConfig.Builder server) {
-        Config config = buildConfig();
-        server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(config.get("security")))
-                .get("/rest/profile", (req, res) -> {
-                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
-                    res.send("Response from config based service, you are: \n" + securityContext
-                            .flatMap(SecurityContext::user)
-                            .map(Subject::toString)
-                            .orElse("Security context is null"));
-                })
-                .register(StaticContentService.create("/WEB")));
     }
 }

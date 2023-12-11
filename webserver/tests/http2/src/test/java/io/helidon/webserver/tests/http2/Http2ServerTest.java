@@ -58,29 +58,32 @@ class Http2ServerTest {
     private final int plainPort;
     private final int tlsPort;
     private final Http1Client http1Client;
-    private final Tls insecureTls;
+    private final Tls clientTls;
 
     Http2ServerTest(WebServer server, Http1Client http1Client) {
         this.plainPort = server.port();
         this.tlsPort = server.port("https");
         this.http1Client = http1Client;
-        this.insecureTls = Tls.builder()
-                // insecure setup, as we have self-signed certificate
-                .trustAll(true)
+        this.clientTls = Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
                 .build();
     }
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
         Keys privateKeyConfig = Keys.builder()
-                .keystore(keystore -> keystore
-                        .keystore(Resource.create("certificate.p12"))
-                        .passphrase("helidon"))
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create("server.p12")))
                 .build();
 
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
                 .build();
 
         serverBuilder.putSocket("https",
@@ -89,6 +92,13 @@ class Http2ServerTest {
 
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
+        // explicitly on HTTP/2 only, to make sure we do upgrade
+        router.route(Http2Route.route(GET, "/", (req, res) -> res.header(TEST_HEADER).send(MESSAGE)))
+                .route(Http2Route.route(GET, "/query", Http2ServerTest::queryEndpoint));
+    }
+
+    @SetUpRoute("https")
+    static void routerHttps(HttpRouting.Builder router) {
         // explicitly on HTTP/2 only, to make sure we do upgrade
         router.route(Http2Route.route(GET, "/", (req, res) -> res.header(TEST_HEADER).send(MESSAGE)))
                 .route(Http2Route.route(GET, "/query", Http2ServerTest::queryEndpoint));
@@ -144,7 +154,7 @@ class Http2ServerTest {
         HttpResponse<String> response = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(Duration.ofSeconds(5))
-                .sslContext(insecureTls.sslContext())
+                .sslContext(clientTls.sslContext())
                 .build()
                 .send(HttpRequest.newBuilder()
                               .timeout(Duration.ofSeconds(5))
@@ -164,7 +174,7 @@ class Http2ServerTest {
         HttpResponse<String> response = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(Duration.ofSeconds(5))
-                .sslContext(insecureTls.sslContext())
+                .sslContext(clientTls.sslContext())
                 .build()
                 .send(HttpRequest.newBuilder()
                               .timeout(Duration.ofSeconds(5))

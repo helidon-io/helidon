@@ -56,4 +56,13 @@ interface WsConfigBlueprint extends ProtocolConfig {
     @ConfiguredOption(WsUpgradeProvider.CONFIG_NAME)
     @Override
     String name();
+
+    /**
+     * Max WebSocket frame size supported by the server on a read operation.
+     * Default is 1 MB.
+     *
+     * @return max frame size to read
+     */
+    @ConfiguredOption(WsConnection.MAX_FRAME_LENGTH)
+    int maxFrameLength();
 }

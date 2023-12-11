@@ -39,7 +39,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.server`) that encapsulates the Helidon WebServer.
+Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.server.Server`) that encapsulates the Helidon WebServer.
 
 == Maven-Coordinates
 
@@ -70,12 +70,14 @@ project's `pom.xml`:
 
 == Usage
 
-Helidon Microprofile Server is used to collect and deploy JAX-RS application. It is recommended to instantiate the server directly
-as is done in the xref:guides/quickstart.adoc[Helidon MP Quickstart example]. Note that the server lifecycle is bound to CDI.
+Helidon Microprofile Server is used to collect and deploy JAX-RS application(s).
+When starting Helidon MP, it is recommended to use the `io.helidon.Main` main class, which will take care of starting Helidon. CDI will then discover all extensions, including the Server extension and start it.
+
+See the xref:guides/quickstart.adoc[Helidon MP Quickstart example]. Note that the server lifecycle is bound to CDI.
+
+Usage of the `io.helidon.microprofile.server.Server` API is discouraged, as Helidon MP uses convention to discover and configure features, which makes the applications easier to understand and maintain.
 
 == API
-
-include::{rootdir}/config/io_helidon_microprofile_server_Server.adoc[leveloffset=+1,tag=config]
 
 The following table provides a brief description of routing annotations, including its parameters. More information
 in `Configuring a WebServer route` section.
@@ -108,6 +110,9 @@ By default, the server uses the MicroProfile Config, but you may also want to us
 
 In this example, the configuration is in a file, and it includes Helidon configuration options.
 
+
+Configuration reference:
+
 include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+1,tag=config]
 
 == Examples
@@ -136,12 +141,10 @@ Access log can be configured as follows:
 ----
 server.port=8080
 server.host=0.0.0.0
-server.access-log.format=helidon
+server.features.access-log.format=helidon
 ----
 
-All options shown above are also available programmatically when using builder.
-
-include::{rootdir}/includes/server/access-log-config-common.adoc[leveloffset=+1]
+include::{rootdir}/config/io_helidon_webserver_accesslog_AccessLogConfig.adoc[leveloffset=+1]
 
 === Configuring TLS
 
@@ -381,7 +384,7 @@ Helidon makes the requested URI information available as a property in the reque
 [source,java]
 .Retrieving Requested URI Information
 ----
-import io.helidon.http.UriInfo;
+import io.helidon.common.uri.UriInfo;
 
 public class MyFilter implements ContainerRequestFilter {
 
@@ -392,7 +395,7 @@ public class MyFilter implements ContainerRequestFilter {
     }
 }
 ----
-See the link:{http-javadoc-base-url}/io/helidon/common/http/UriInfo.html[`UriInfo`] JavaDoc for more information.
+See the link:{uri-javadoc-base-url}/io/helidon/common/uri/UriInfo.html[`UriInfo`] JavaDoc for more information.
 
 NOTE: The `requestContext.getUriInfo()` method returns the Jakarta RESTful web services `UriInfo` object, _not_ the Helidon-provided requested URI information `UriInfo` record.
 

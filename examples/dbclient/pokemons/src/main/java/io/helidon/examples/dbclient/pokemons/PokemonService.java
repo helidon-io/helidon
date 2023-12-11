@@ -16,12 +16,19 @@
 
 package io.helidon.examples.dbclient.pokemons;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.Map;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbExecute;
+import io.helidon.dbclient.DbTransaction;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.NotFoundException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -33,17 +40,106 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
 
 /**
- * Example service using a database.
+ * An {@link HttpService} that uses {@link DbClient}.
  */
 public class PokemonService implements HttpService {
 
+    private static final Logger LOGGER = System.getLogger(PokemonService.class.getName());
     private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
-    private final DbClient dbClient;
 
-    PokemonService(DbClient dbClient) {
-        this.dbClient = dbClient;
+    private final DbClient dbClient;
+    private final boolean initSchema;
+    private final boolean initData;
+
+    /**
+     * Create a new Pokémon service with a DB client.
+     */
+    PokemonService() {
+        Config config = Config.global().get("db");
+        this.dbClient = Contexts.globalContext()
+                .get(DbClient.class)
+                .orElseGet(() -> DbClient.create(config));
+
+        initSchema = config.get("init-schema").asBoolean().orElse(true);
+        initData = config.get("init-data").asBoolean().orElse(true);
+        init();
+    }
+
+    private void init() {
+        if (initSchema) {
+            initSchema();
+        }
+        if (initData) {
+            initData();
+        }
+    }
+
+    private void initSchema() {
+        DbExecute exec = dbClient.execute();
+        try {
+            exec.namedDml("create-types");
+            exec.namedDml("create-pokemons");
+        } catch (Exception ex1) {
+            LOGGER.log(Level.WARNING, "Could not create tables", ex1);
+            try {
+                deleteData();
+            } catch (Exception ex2) {
+                LOGGER.log(Level.WARNING, "Could not delete tables", ex2);
+            }
+        }
+    }
+
+    private void initData() {
+        DbTransaction tx = dbClient.transaction();
+        try {
+            initTypes(tx);
+            initPokemons(tx);
+            tx.commit();
+        } catch (Throwable t) {
+            tx.rollback();
+            throw t;
+        }
+    }
+
+    private static void initTypes(DbExecute exec) {
+        try (JsonReader reader = Json.createReader(PokemonService.class.getResourceAsStream("/pokemon-types.json"))) {
+            JsonArray types = reader.readArray();
+            for (JsonValue typeValue : types) {
+                JsonObject type = typeValue.asJsonObject();
+                exec.namedInsert("insert-type",
+                                 type.getInt("id"),
+                                 type.getString("name"));
+            }
+        }
+    }
+
+    private static void initPokemons(DbExecute exec) {
+        try (JsonReader reader = Json.createReader(PokemonService.class.getResourceAsStream("/pokemons.json"))) {
+            JsonArray pokemons = reader.readArray();
+            for (JsonValue pokemonValue : pokemons) {
+                JsonObject pokemon = pokemonValue.asJsonObject();
+                exec.namedInsert("insert-pokemon",
+                                 pokemon.getInt("id"),
+                                 pokemon.getString("name"),
+                                 pokemon.getInt("idType"));
+            }
+        }
+    }
+
+    private void deleteData() {
+        DbTransaction tx = dbClient.transaction();
+        try {
+            tx.namedDelete("delete-all-pokemons");
+            tx.namedDelete("delete-all-types");
+            tx.commit();
+        } catch (Throwable t) {
+            tx.rollback();
+            throw t;
+        }
     }
 
     @Override
@@ -74,17 +170,17 @@ public class PokemonService implements HttpService {
     private void index(ServerRequest request, ServerResponse response) {
         response.headers().contentType(MediaTypes.TEXT_PLAIN);
         response.send("""
-                Pokemon JDBC Example:
-                     GET /type                - List all pokemon types
-                     GET /pokemon             - List all pokemons
-                     GET /pokemon/{id}        - Get pokemon by id
-                     GET /pokemon/name/{name} - Get pokemon by name
-                     POST /pokemon            - Insert new pokemon:
-                                                {"id":<id>,"name":<name>,"type":<type>}
-                     PUT /pokemon             - Update pokemon
-                                                {"id":<id>,"name":<name>,"type":<type>}
-                     DELETE /pokemon/{id}     - Delete pokemon with specified id
-                """);
+                              Pokemon JDBC Example:
+                                   GET /type                - List all pokemon types
+                                   GET /pokemon             - List all pokemons
+                                   GET /pokemon/{id}        - Get pokemon by id
+                                   GET /pokemon/name/{name} - Get pokemon by name
+                                   POST /pokemon            - Insert new pokemon:
+                                                              {"id":<id>,"name":<name>,"type":<type>}
+                                   PUT /pokemon             - Update pokemon
+                                                              {"id":<id>,"name":<name>,"type":<type>}
+                                   DELETE /pokemon/{id}     - Delete pokemon with specified id
+                              """);
     }
 
     /**
@@ -128,14 +224,14 @@ public class PokemonService implements HttpService {
      */
     private void getPokemonById(ServerRequest request, ServerResponse response) {
         int pokemonId = Integer.parseInt(request.path()
-                .pathParameters()
-                .get("id"));
+                                                 .pathParameters()
+                                                 .get("id"));
 
         response.send(dbClient.execute().createNamedGet("select-pokemon-by-id")
-                .addParam("id", pokemonId)
-                .execute()
-                .orElseThrow(() -> new NotFoundException("Pokemon " + pokemonId + " not found"))
-                .as(JsonObject.class));
+                              .addParam("id", pokemonId)
+                              .execute()
+                              .orElseThrow(() -> new NotFoundException("Pokemon " + pokemonId + " not found"))
+                              .as(JsonObject.class));
     }
 
     /**
@@ -147,8 +243,8 @@ public class PokemonService implements HttpService {
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
         String pokemonName = request.path().pathParameters().get("name");
         response.send(dbClient.execute().namedGet("select-pokemon-by-name", pokemonName)
-                .orElseThrow(() -> new NotFoundException("Pokemon " + pokemonName + " not found"))
-                .as(JsonObject.class));
+                              .orElseThrow(() -> new NotFoundException("Pokemon " + pokemonName + " not found"))
+                              .as(JsonObject.class));
     }
 
     /**
@@ -161,7 +257,8 @@ public class PokemonService implements HttpService {
         long count = dbClient.execute().createNamedInsert("insert-pokemon")
                 .indexedParam(pokemon)
                 .execute();
-        response.send("Inserted: " + count + " values\n");
+        response.status(Status.CREATED_201)
+                .send("Inserted: " + count + " values\n");
     }
 
     /**
@@ -192,6 +289,7 @@ public class PokemonService implements HttpService {
         long count = dbClient.execute().createNamedDelete("delete-pokemon-by-id")
                 .addParam("id", id)
                 .execute();
-        response.send("Deleted: " + count + " values\n");
+        response.status(Status.NO_CONTENT_204)
+                .send("Deleted: " + count + " values\n");
     }
 }

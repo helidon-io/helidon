@@ -31,7 +31,7 @@ import io.helidon.common.features.api.Preview;
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.webserver.grpc {
 
-    requires grpc.protobuf.lite;
+    requires io.grpc.protobuf.lite;
     requires io.helidon.builder.api;
     requires io.helidon.webserver.http2;
     requires java.logging;
@@ -40,8 +40,8 @@ module io.helidon.webserver.grpc {
     requires static io.helidon.config.metadata;
 
     requires transitive com.google.protobuf;
-    requires transitive grpc.api;
-    requires transitive grpc.stub;
+    requires transitive io.grpc;
+    requires transitive io.grpc.stub;
     requires transitive io.helidon.common.config;
 
     exports io.helidon.webserver.grpc;

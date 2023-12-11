@@ -64,8 +64,8 @@ class MetricsFeature {
     private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     MetricsFeature(MetricsObserverConfig config) {
-        this.meterRegistry = config.meterRegistry().orElseGet(MetricsFactory.getInstance()::globalRegistry);
         this.metricsConfig = config.metricsConfig();
+        this.meterRegistry = config.meterRegistry().orElseGet(() -> MetricsFactory.getInstance().globalRegistry(metricsConfig));
     }
 
     /**
@@ -111,6 +111,20 @@ class MetricsFeature {
 
         return formatter.format();
     }
+
+    Optional<?> outputMetadata(MediaType mediaType,
+                       Iterable<String> scopeSelection,
+                       Iterable<String> nameSelection) {
+        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
+                                                           mediaType,
+                                                           SystemTagsManager.instance().scopeTagName(),
+                                                           scopeSelection,
+                                                           nameSelection);
+
+        return formatter.formatMetadata();
+    }
+
+
 
     private static MediaType bestAccepted(ServerRequest req) {
         return req.headers()
@@ -261,9 +275,9 @@ class MetricsFeature {
             res.send();
         }
 
-        getOrOptionsMatching(mediaType, res, () -> output(mediaType,
-                                                          scopeSelection,
-                                                          nameSelection));
+        getOrOptionsMatching(mediaType, res, () -> outputMetadata(mediaType,
+                                                                  scopeSelection,
+                                                                  nameSelection));
     }
 
     private void setUpDisabledEndpoints(HttpRules rules) {

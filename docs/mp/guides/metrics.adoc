@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,11 @@
 :intro-project-name: MicroProfile (MP)
 
 include::{rootdir}/includes/mp.adoc[]
+:metric: metric
+:metrics: metrics
+:metric_uc: Metric
+:metrics_uc: Metrics
+:metrics-endpoint: /metrics
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=intro]
 include::{rootdir}/includes/guides/metrics.adoc[tag=create-sample-project]
@@ -31,51 +36,45 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=build-and-run-intro]
 
 
 [source,text]
-.Text response:
+.Text response: (partial)
 ----
-# TYPE base_REST_request_total counter
-# HELP base_REST_request_total The number of invocations and total response time of this RESTful resource method since the start of the server. The metric will not record the elapsed time nor count of a REST request if it resulted in an unmapped exception. Also tracks the highest recorded time duration within the previous completed full minute and lowest recorded time duration within the previous completed full minute.
-base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
-# TYPE base_REST_request_elapsedTime_seconds gauge
-base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0.0
-# TYPE base_REST_request_maxTimeDuration_seconds gauge
-base_REST_request_maxTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} NaN
-# TYPE base_REST_request_minTimeDuration_seconds gauge
-base_REST_request_minTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} NaN
-base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
-base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0.0
-base_REST_request_maxTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} NaN
-base_REST_request_minTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} NaN
-
-# TYPE base_REST_request_unmappedException_total counter
-# HELP base_REST_request_unmappedException_total The total number of unmapped exceptions that occur from this RESTful resouce method since the start of the server.
-base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
-base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
-
-include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-prometheus-output]
+# HELP classloader_loadedClasses_total Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
+# TYPE classloader_loadedClasses_total counter
+classloader_loadedClasses_total{mp_scope="base",} 8146.0
+# HELP requests_count_total Each request (regardless of HTTP method) will increase this counter
+# TYPE requests_count_total counter
+requests_count_total{mp_scope="vendor",} 1.0
+# HELP jvm_uptime_seconds Displays the start time of the Java virtual machine in seconds. This attribute displays the approximate time when the Java virtual machine started.
+# TYPE jvm_uptime_seconds gauge
+jvm_uptime_seconds{mp_scope="base",} 7.3770
 ----
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=curl-metrics-json]
 
 [source,json]
-.JSON response:
+.JSON response (partial):
 ----
 {
-  "base": {
-    "REST.request":
-      {
-      "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": 0,
-      "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": 0,
-      "maxTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": null,
-      "minTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": null,
-      "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": 0,
-      "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": 0,
-      "maxTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
-      "minTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
-      },
-include::{rootdir}/includes/guides/metrics.adoc[tag=base-metrics-json-output]
+  "application": {
+    "personalizedGets": 0,
+    "allGets": {
+      "count": 0,
+      "elapsedTime": 0,
+      "max": 0,
+      "mean": 0
+    }
   },
-include::{rootdir}/includes/guides/metrics.adoc[tag=vendor-metrics-json-output]
+  "vendor": {
+    "requests.count": 2
+  },
+  "base": {
+    "gc.total;name=G1 Concurrent GC": 2,
+    "cpu.systemLoadAverage": 10.3388671875,
+    "classloader.loadedClasses.count": 8224,
+    "thread.count": 19,
+    "classloader.unloadedClasses.total": 0,
+    "jvm.uptime": 36.8224
+  }
 }
 ----
 include::{rootdir}/includes/guides/metrics.adoc[tag=get-single-metric]
@@ -93,9 +92,9 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=KPI]
 
 [[controlling-rest-request-metrics]]
 ==== Controlling `REST.request` Metrics
-Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
+Helidon MP implements the optional family of metrics, all with the name `REST.request`, as described in the
 link:{microprofile-metrics-spec-url}#_optional_rest[MicroProfile Metrics specification].
-Each instance is a `SimpleTimer` with tags `class` and `method` identifying exactly which REST endpoint Java
+Each instance is a `Timer` with tags `class` and `method` identifying exactly which REST endpoint Java
 method that instance measures.
 
 By default, Helidon MP does _not_ enable this feature.
@@ -104,8 +103,6 @@ Enable it by editing your application configuration to set `metrics.rest-request
 Note that the applications you generate using the full Helidon archetype _do_ enable this feature in the
 generated config file.
 You can see the results in the sample output shown in earlier example runs.
-
-include::{rootdir}/includes/guides/metrics.adoc[tags=controlling-by-component;controlling-by-registry]
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-metadata]
 
@@ -121,12 +118,10 @@ Each metric annotation has mandatory and optional fields. The name field, for ex
 
 ==== Method Level Metrics
 
-There are four metrics that you can use by annotating a method:
+There are two metrics that you can use by annotating a method:
 
 1. `@Counted` - Register a `Counter` metric
 2. `@Timed` - Register a `Timer` metric
-3. `@Metered` - Register a `Meter` metric
-4. `@SimplyTimed` - Register a `SimpleTimer` metric
 
 The following example will demonstrate how to use the `@Counted` annotation to track the number of times
 the `/cards` endpoint is called.
@@ -174,21 +169,16 @@ invocation.
 <3> The annotation `@Counted` will register a `Counter` metric for this method, creating it if needed.
 The counter is incremented each time the anyCards method is called.  The `name` attribute is optional.
 
-NOTE: For Metrics 1.1, you must set `monotonic` field to `true` to force the count to increment when entering the method.
-The default behavior is to decrement when exiting the method.  Here is an example:
-`@Counted(name = "any-card", monotonic = true)`.
-
-
-[source,bash]
+[source,bash,subs="attributes+"]
 .Build and run the application, then invoke the application endpoints below:
 ----
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
 [source,json]
-.JSON response:
+.JSON response (partial):
 ----
 {
   "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 // <1>
@@ -201,16 +191,14 @@ You must use  `absolute=false` for class-level annotations.
 
 ==== Additional Method Level Metrics
 
-The `@Timed`, `@Metered`, and `@SimplyTimed` annotations can also be used with a method.  For the following example.
-you can just annotate the same method with `@Metered` and `@Timed`. These metrics collect significant
+The `@Timed` annotation can also be used with a method.  For the following example.
+you can just annotate the same method with `@Timed`. These metrics collect significant
 information about the measured methods, but at a cost of some overhead and more complicated output.
-Use `@SimplyTimed` in cases where capturing the invocation count and the total elapsed time
-spent in a block of code is sufficient.
 
 Note that when using multiple annotations on a method, you *must* give the metrics different names as shown below.
 
 [source,java]
-.Update the `GreetingCards` class with the following code:
+.Replace the `GreetingCards` class with the following code:
 ----
 package io.helidon.examples.quickstart.mp;
 
@@ -225,7 +213,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 @Path("/cards")
@@ -237,8 +224,7 @@ public class GreetingCards {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Counted(name = "cardCount", absolute = true) //<1>
-  @Metered(name = "cardMeter", absolute = true, unit = MetricUnits.MILLISECONDS) //<2>
-  @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) //<3>
+  @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) //<2>
   public JsonObject anyCard() {
     return createResponse("Here are some random cards ...");
   }
@@ -250,53 +236,36 @@ public class GreetingCards {
 
 ----
 <1> Specify a custom name for the `Counter` metric and set `absolute=true` to remove the path prefix from the name.
-<2> Add the `@Metered` annotation to get a `Meter` metric.
-<3> Add the `@Timed` annotation to get a `Timer` metric.
+<2> Add the `@Timed` annotation to get a `Timer` metric.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 .Build and run the application, then invoke the application endpoints below:
 ----
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
 
 [source,json]
-.JSON response:
+.JSON response (partial):
 ----
 {
-  "cardCount": 2,
-  "cardMeter": { // <1>
+  "cardTimer": {
     "count": 2,
-    "meanRate": 0.15653506570241812,
-    "oneMinRate": 0,
-    "fiveMinRate": 0,
-    "fifteenMinRate": 0
-  },
-  "cardTimer": { // <2>
-    "count": 2,
-    "elapsedTime": 2,
-    "meanRate": 0.15651866263362785,
-    "oneMinRate": 0,
-    "fiveMinRate": 0,
-    "fifteenMinRate": 0,
-    "min": 0,
-    "max": 2,
-    "mean": 1.0506565,
-    "stddev": 1.0405735,
-    "p50": 2.09123,
-    "p75": 2.09123,
-    "p95": 2.09123,
-    "p98": 2.09123,
-    "p99": 2.09123,
-    "p999": 2.09123
+    "max": 0.002921992,
+    "mean": 0.0014682555,
+    "elapsedTime": 0.002936511,
+    "p0.5": 1.4336e-05,
+    "p0.75": 0.003014144,
+    "p0.95": 0.003014144,
+    "p0.98": 0.003014144,
+    "p0.99": 0.003014144,
+    "p0.999": 0.003014144
   }
+  "cardCount": 2
 }
 ----
-<1> The `Meter` metric includes the count field (it is a superset of `Counter`).
-<2> The `Timer` metric includes the `Meter` fields (it is a superset of `Meter`).
-
 
 ==== Reusing Metrics
 
@@ -304,7 +273,7 @@ You can share a metric across multiple endpoints simply by specifying the same m
 demonstrated below.
 
 [source,java]
-.Update the `GreetingCards` class with the following code:
+.Replace the `GreetingCards` class with the following code:
 ----
 package io.helidon.examples.quickstart.mp;
 
@@ -357,21 +326,21 @@ public class GreetingCards {
 <2>  The `/wedding` endpoint uses the same `Counter` metric, named `specialEventCard`.
 
 
-[source,bash]
+[source,bash,subs="attributes+"]
 .Build and run the application, then invoke the following endpoints:
 ----
 curl  http://localhost:8080/cards/wedding
 curl  http://localhost:8080/cards/birthday
 curl  http://localhost:8080/cards
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
 [source,json]
-.JSON response from `/metrics/application`:
+.JSON response (partial)`:
 ----
 {
-"anyCard": 1,
-"specialEventCard": 2  // <1>
+  "anyCard": 1,
+  "specialEventCard": 2  // <1>
 }
 ----
 <1> Notice that `specialEventCard` count is two, since you accessed `/cards/wedding` and `/cards/birthday`.
@@ -383,7 +352,7 @@ The following example introduces a metric to count all card queries.  In the fol
 needed to aggregate the counts, but they are left in the example to demonstrate the combined output of all three metrics.
 
 [source,java]
-.Update the `GreetingCards` class with the following code:
+.Replace the `GreetingCards` class with the following code:
 ----
 package io.helidon.examples.quickstart.mp;
 
@@ -429,16 +398,16 @@ public class GreetingCards {
 <2> Use `absolute=true` to remove path prefix for method-level annotations.
 <3> Add a method with a `Counter` metric to get birthday cards.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 .Build and run the application, then invoke the following endpoints:
 ----
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards/birthday
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
 [source,json]
-.JSON response from `/metrics/application`:
+.JSON response (partial):
 ----
 {
   "anyCard": 1,
@@ -453,12 +422,12 @@ fully qualified.
 ==== Field Level Metrics
 
 Field level metrics can be injected into managed objects, but they need to be updated by the application code.
-This annotation can be used on fields of type `Meter`, `Timer`, `Counter`, and `Histogram`.
+This annotation can be used on fields of type `Timer`, `Counter`, and `Histogram`.
 
 The following example shows how to use a field-level `Counter` metric to track cache hits.
 
 [source,java]
-.Update the `GreetingCards` class with the following code:
+.Replace the `GreetingCards` class with the following code:
 ----
 package io.helidon.examples.quickstart.mp;
 
@@ -521,7 +490,7 @@ public class GreetingCards {
 <3> Call `updateStats()` to update the cache hits.
 <4> Randomly increment the `cacheHits` counter.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 .Build and run the application, then invoke the following endpoints:
 ----
 curl http://localhost:8080/cards
@@ -529,11 +498,11 @@ curl http://localhost:8080/cards
 curl http://localhost:8080/cards/birthday
 curl http://localhost:8080/cards/birthday
 curl http://localhost:8080/cards/birthday
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
 [source,json]
-.JSON response from `/metrics/application`:
+.JSON response (partial):
 ----
 {
   "anyCard": 2,
@@ -546,13 +515,8 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 ==== Gauge Metric
 
-The metrics you have tested so far are updated in response to an application REST request, i.e GET `/cards`.  These
-metrics can be declared in a request scoped class and Helidon will store the metric in the `MetricRegistry`, so the value persists
-across requests. When GET `/metrics/application` is invoked, Helidon will return the current value of the metric stored in the `MetricRegistry`.
-The `Gauge` metric is different from all the other metrics. The application must provide a getter to return the gauge value in an
-application scoped class. When GET `/metrics/application` is invoked, Helidon will call the `Gauge` getter, store that value
-in the `MetricsRegistry`, and return it as part of the metrics response payload.  So, the `Gauge` metric value is updated real-time, in response to the
-get metrics request.
+The `Gauge` {metric} measures a value that is maintained by code outside the metrics subsystem. As with other {metrics}, the application explicitly registers a gauge. When the `{metrics-endpoint}` endpoint
+is invoked, Helidon retrieves the value of each registered `Gauge`.
 
 The following example demonstrates how to use a `Gauge` to track application up-time.
 

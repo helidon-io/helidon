@@ -94,6 +94,9 @@ public final class Prototype {
 
         /**
          * Discover services from configuration.
+         * If already configured instances already contain a service of the same type and name that would be added from
+         * configuration, the configuration would be ignored (e.g. the user must make a choice whether to configure, or
+         * set using an API).
          *
          * @param config               configuration located at the parent node of the service providers
          * @param configKey            configuration key of the provider list
@@ -103,6 +106,7 @@ public final class Prototype {
          * @param configType           type of the configured service
          * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
          *                             node
+         * @param existingInstances  already configured instances
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
          * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
@@ -113,17 +117,20 @@ public final class Prototype {
                          HelidonServiceLoader<T> serviceLoader,
                          Class<T> providerType,
                          Class<S> configType,
-                         boolean allFromServiceLoader) {
+                         boolean allFromServiceLoader,
+                         List<S> existingInstances) {
             return ProvidedUtil.discoverServices(config,
                                                  configKey,
                                                  serviceLoader,
                                                  providerType,
                                                  configType,
-                                                 allFromServiceLoader);
+                                                 allFromServiceLoader,
+                                                 existingInstances);
         }
 
         /**
-         * Discover service from configuration.
+         * Discover service from configuration. If an instance is already configured using a builder, it will not be
+         * discovered from configuration (e.g. the user must make a choice whether to configure, or set using API).
          *
          * @param config               configuration located at the parent node of the service providers
          * @param configKey            configuration key of the provider list
@@ -134,19 +141,28 @@ public final class Prototype {
          * @param configType           type of the configured service
          * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
          *                             node
+         * @param existingValue        value already configured, if the name is same as discovered from configuration
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
          * @return the first service (ordered by {@link io.helidon.common.Weight} that is discovered, or empty optional if none
          *         is found
          */
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         default <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
         discoverService(Config config,
                         String configKey,
                         HelidonServiceLoader<T> serviceLoader,
                         Class<T> providerType,
                         Class<S> configType,
-                        boolean allFromServiceLoader) {
-            return ProvidedUtil.discoverService(config, configKey, serviceLoader, providerType, configType, allFromServiceLoader);
+                        boolean allFromServiceLoader,
+                        Optional<S> existingValue) {
+            return ProvidedUtil.discoverService(config,
+                                                configKey,
+                                                serviceLoader,
+                                                providerType,
+                                                configType,
+                                                allFromServiceLoader,
+                                                existingValue);
         }
     }
 
@@ -250,12 +266,21 @@ public final class Prototype {
     @Retention(RetentionPolicy.CLASS)
     public @interface Configured {
         /**
-         * Root configuration this type is read from, if it is read from root.
-         * Do not fill this otherwise (e.g. when nested in another configuration type).
+         * Configuration node this type is read from.
+         * This implies a root configuration node by default, can be overridden using {@link #root()}.
          *
          * @return configuration key of this type, from the root of configuration
          */
         String value() default "";
+
+        /**
+         * If {@link #value()} is specified, it is considered to be a root configuration node.
+         * Set this property to {@code false} to explicitly mark this configuration as non-root.
+         * This is useful for services that provide an implementation of a provider.
+         *
+         * @return whether this is a root node, ignored if {@link #value()} is an empty string
+         */
+        boolean root() default true;
     }
 
     /**

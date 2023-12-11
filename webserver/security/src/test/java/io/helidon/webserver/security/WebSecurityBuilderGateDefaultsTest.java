@@ -22,6 +22,7 @@ import java.util.Set;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.Status;
@@ -51,7 +52,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link SecurityFeature}.
+ * Unit test for {@link SecurityHttpFeature}.
  */
 @ServerTest
 class WebSecurityBuilderGateDefaultsTest {
@@ -62,11 +63,13 @@ class WebSecurityBuilderGateDefaultsTest {
 
     WebSecurityBuilderGateDefaultsTest(WebServer server, Http1Client webClient) {
         this.myAuditProvider = server.context().get(UnitTestAuditProvider.class).orElseThrow();
+        // security for outbound in client
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();
         this.securityClient = WebClient.builder()
                 .baseUri("http://localhost:" + server.port())
+                .servicesDiscoverServices(false)
                 .addService(WebClientSecurity.create(security))
                 .build();
         this.webClient = webClient;
@@ -77,21 +80,24 @@ class WebSecurityBuilderGateDefaultsTest {
         WebSecurityTestUtil.auditLogFinest();
         UnitTestAuditProvider myAuditProvider = new UnitTestAuditProvider();
 
-        Config config = Config.create();
+        Config config = Config.just(ConfigSources.classpath("security-application.yaml"));
 
         Security security = Security.builder(config.get("security"))
-                .addAuditProvider(myAuditProvider).build();
-
-        SecurityFeature securityFeature = SecurityFeature.create(security)
-                .securityDefaults(SecurityFeature.rolesAllowed("admin").audit());
+                .addAuditProvider(myAuditProvider)
+                .build();
 
         Context context = Context.create();
         context.register(myAuditProvider);
 
-        serverBuilder.serverContext(context)
+        serverBuilder
+                .featuresDiscoverServices(false)
+                .addFeature(SecurityFeature.builder()
+                                    .security(security)
+                                    .defaults(SecurityFeature.rolesAllowed("admin"))
+                                    .build())
+                .addFeature(ContextFeature.create())
+                .serverContext(context)
                 .routing(builder -> builder
-                        .addFeature(ContextFeature.create())
-                        .addFeature(securityFeature)
                         // will only accept admin (due to gate defaults)
                         .get("/noRoles", SecurityFeature.authenticate())
                         .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
@@ -171,18 +177,18 @@ class WebSecurityBuilderGateDefaultsTest {
 
             if (response.status() != Status.UNAUTHORIZED_401) {
                 assertThat("Response received: " + response.entity().as(String.class),
-                        response.status(),
-                        is(Status.UNAUTHORIZED_401));
+                           response.status(),
+                           is(Status.UNAUTHORIZED_401));
             }
 
             assertThat(response.headers().first(HeaderNames.WWW_AUTHENTICATE),
-                    optionalValue(is("Basic realm=\"mic\"")));
+                       optionalValue(is("Basic realm=\"mic\"")));
         }
 
         try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
             assertThat(response.status(), is(Status.UNAUTHORIZED_401));
             assertThat(response.headers().first(HeaderNames.WWW_AUTHENTICATE),
-                    optionalValue(is("Basic realm=\"mic\"")));
+                       optionalValue(is("Basic realm=\"mic\"")));
         }
 
     }
@@ -190,8 +196,8 @@ class WebSecurityBuilderGateDefaultsTest {
     private void testForbidden(String uri, String username, String password) {
         try (HttpClientResponse response = callProtected(uri, username, password)) {
             assertThat(uri + " for user " + username + " should be forbidden",
-                    response.status(),
-                    is(Status.FORBIDDEN_403));
+                       response.status(),
+                       is(Status.FORBIDDEN_403));
         }
     }
 

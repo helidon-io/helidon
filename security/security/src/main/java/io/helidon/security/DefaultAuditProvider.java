@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
+import io.helidon.common.config.Config;
 import io.helidon.security.spi.AuditProvider;
 
 /**
@@ -40,9 +39,7 @@ final class DefaultAuditProvider implements AuditProvider {
 
     private DefaultAuditProvider(Config config) {
         // config node is already located on the security node
-        this.auditLogger = Logger.getLogger(DeprecatedConfig.get(config,
-                                                                 "audit.defaultProvider.logger",
-                                                                 "security.audit.defaultProvider.logger")
+        this.auditLogger = Logger.getLogger(config.get("audit.defaultProvider.logger")
                                                     .asString()
                                                     .orElse("AUDIT"));
 

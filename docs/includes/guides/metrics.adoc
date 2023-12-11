@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 // tag::intro[]
 
 This guide describes how to create a sample Helidon {intro-project-name} project
-that can be used to run some basic examples using both built-in and custom metrics with Helidon.
+that can be used to run some basic examples using both built-in and custom {metrics} with Helidon.
 
 == What You Need
 
@@ -51,25 +51,27 @@ mvn -U archetype:generate -DinteractiveMode=false \
 // end::create-sample-project[]
 
 // tag::using-built-in-metrics-intro[]
-=== Using the Built-In Metrics
+=== Using the Built-In {metrics_uc}
 
-Helidon provides three scopes of metrics: base, vendor, and application. Here are the metric endpoints:
+Helidon provides three built-in scopes of metrics: base, vendor, and application. Here are the metric endpoints:
 
-1. `/metrics/base` - Base metrics data as specified by the MicroProfile Metrics specification.
-2. `/metrics/vendor` - Helidon-specific metrics data.
-3. `/metrics/application` - Application-specific metrics data.
+1. `{metrics-endpoint}?scope=base` - Base {metrics}
+ifdef::mp-flavor[as specified by the MicroProfile Metrics specification]
+2. `{metrics-endpoint}?scope=vendor` - Helidon-specific {metrics}
+3. `{metrics-endpoint}?scope=application` - Application-specific metrics data.
 
-NOTE: The `/metrics` endpoint will return data for all scopes.
+Applications can add their own custom scopes as well simply by specifying a custom scope name when registering a {metric}.
 
-The built-in metrics fall into three categories:
+NOTE: The `{metrics-endpoint}` endpoint returns data for all scopes.
 
-. JVM behavior (in the base registry),
-. basic key performance indicators for request handling (in the vendor registry), and
-. thread pool utilization (also in the vendor registry).
+The built-in {metrics} fall into these categories:
 
-A later section describes the <<basic-and-extended-kpi,key performance indicator metrics>> in detail.
+. JVM behavior (in the base scope), and
+. basic key performance indicators for request handling (in the vendor scope).
 
-The following example demonstrates how to use the other built-in metrics.  All examples are executed
+A later section describes the <<basic-and-extended-kpi,key performance indicator {metrics}>> in detail.
+
+The following example demonstrates how to use the other built-in {metrics}.  All examples are executed
 from the root directory of your project (helidon-quickstart-{flavor-lc}).
 // end::using-built-in-metrics-intro[]
 
@@ -85,19 +87,19 @@ from the root directory of your project (helidon-quickstart-{flavor-lc}).
 // tag::build-and-run-intro[]
 
 [source,bash,subs="attributes+"]
-.Build the application, skipping unit tests, then run it:
+.Build the application and then run it:
 ----
-mvn package -DskipTests=true
+mvn package
 java -jar target/helidon-quickstart-{flavor-lc}.jar
 ----
 
-NOTE: Metrics can be returned in either text format (the default), or JSON.  The text format uses OpenMetrics (Prometheus) Text Format,
+NOTE: Metrics output can be returned in either text format (the default), or JSON.  The text format uses OpenMetrics (Prometheus) Text Format,
 see https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 .Verify the metrics endpoint in a new terminal window:
 ----
-curl http://localhost:8080/metrics
+curl http://localhost:8080{metrics-endpoint}
 ----
 // end::build-and-run-intro[]
 
@@ -115,91 +117,58 @@ base:classloader_total_loaded_class_count 7512
 // tag::curl-metrics-json[]
 You can get the same data in JSON format.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 .Verify the metrics endpoint with an HTTP accept header:
 ----
-curl -H "Accept: application/json"  http://localhost:8080/metrics
+curl -H "Accept: application/json"  http://localhost:8080{metrics-endpoint}
 ----
 // end::curl-metrics-json[]
 
 // tag::base-metrics-json-output[]
-    "classloader.currentLoadedClass.count": 7534,
-    "classloader.totalLoadedClass.count": 7538,
-    "classloader.totalUnloadedClass.count": 1,
-    "cpu.availableProcessors": 4,
-    "cpu.systemLoadAverage": 2.83349609375,
-    "gc.PS MarkSweep.count": 2,
-    "gc.PS MarkSweep.time": 77,
-    "gc.PS Scavenge.count": 5,
-    "gc.PS Scavenge.time": 37,
-    "jvm.uptime": 727588,
-    "memory.committedHeap": 284164096,
-    "memory.maxHeap": 3817865216,
-    "memory.usedHeap": 53283088,
-    "thread.count": 44,
-    "thread.daemon.count": 35,
-    "thread.max.count": 44
+    "gc.total;name=G1 Young Generation": 1,
+    "cpu.systemLoadAverage": 4.451171875,
+    "classloader.loadedClasses.count": 3582,
+    "thread.count": 18,
+    "classloader.unloadedClasses.total": 0,
+    "jvm.uptime": 36.9478,
+    "gc.time;name=G1 Young Generation": 0,
+    "memory.committedHeap": 541065216,
+    "thread.max.count": 19,
+    "cpu.availableProcessors": 8,
+    "classloader.loadedClasses.total": 3582,
+    "thread.daemon.count": 16,
+    "memory.maxHeap": 8589934592,
+    "memory.usedHeap": 20491248
 // end::base-metrics-json-output[]
 // tag::vendor-metrics-json-output[]
   "vendor": {
-    "executor-service.active-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
-    "executor-service.completed-task-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
-    "executor-service.largest-pool-size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 5,
-    "executor-service.pool-size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 5,
-    "executor-service.queue.remaining-capacity;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 10000,
-    "executor-service.queue.size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
-    "executor-service.task-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
-    "requests.count": 6,
-    "requests.meter": {
-      "count": 6,
-      "meanRate": 0.008275992296704147,
-      "oneMinRate": 0.01576418632772332,
-      "fiveMinRate": 0.006695060022357365,
-      "fifteenMinRate": 0.0036382699664488415
-    }
+    "requests.count": 3
   }
 // end::vendor-metrics-json-output[]
 
 // tag::get-single-metric[]
-You can get a single metric by specifying the name in the URL path.
+You can get a single metric by specifying the scope and name as query parameters in the URL.
 
-[source,bash]
-.Get the Helidon `requests.meter` metric:
+[source,bash,subs="attributes+"]
+.Get the Helidon `requests.count` {metric}:
 ----
-curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/requests.meter
+curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=vendor&name=requests.count'
 ----
 
 [source,json]
 .JSON response:
 ----
 {
-  "requests.meter": {
-    "count": 6,
-    "meanRate": 0.008275992296704147,
-    "oneMinRate": 0.01576418632772332,
-    "fiveMinRate": 0.006695060022357365,
-    "fifteenMinRate": 0.0036382699664488415
-  }
+  "requests.count": 6
 }
 ----
 
-NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/requests.meter.count.
 // end::get-single-metric[]
 
 // tag::built-in-metrics-discussion[]
-The `base` metrics illustrated above provide some insight into the behavior of the JVM in which the server runs.
+The `base` {metrics} illustrated above provide some insight into the behavior of the JVM in which the server runs.
 
-The `vendor` metrics shown above appear in two groups:
-
-- Helidon thread pools +
-+
-Helidon uses these thread pools for its own internal work, and your application can also use Helidon-managed thread pools if it needs to do work asynchronously. (See link:{helidon-github-tree-url}/examples/webserver/threadpool[this example].)
-The metrics in this group show information about the thread pools which can help you assess how efficiently they are utilized.
-Helidon uses tags to distinguish the metrics which describe different thread pools.
-In some cases the specific metrics exposed depend on the particular type of thread pool.
-- basic key performance indicators +
-+
-These metrics give an idea of the request traffic the server is handling. See the <<basic-and-extended-kpi,later section>> for more information on the basic and extended key performance indicator metrics.
+The `vendor` {metric} shown above gives an idea of the request traffic the server is handling. See the <<basic-and-extended-kpi,later section>> for more information on the basic and extended key performance indicator {metrics}.
 
 // end::built-in-metrics-discussion[]
 
@@ -212,10 +181,7 @@ By adding a `metrics` section to your application configuration you can control 
 *  <<disabling-entirely,Disable metrics subsystem entirely>>.
 // end::controlling-intro-part-1[]
 // tag::controlling-intro-part-2[]
-*  Identify groups of metrics to control:
-**  <<enabling-disabling-by-component,registered by a particular component>>, and
-**  <<enabling-disabling-by-registry,by metric registry>> (application, vendor, and base) and within a registry by metric names  which match patterns you provide.
-*  Select whether to collect <<basic-and-extended-kpi,extended key performance indicator metrics>>.
+*  Select whether to collect <<basic-and-extended-kpi,extended key performance indicator {metrics}>>.
 // end::controlling-intro-part-2[]
 // end::controlling-intro[]
 
@@ -223,17 +189,30 @@ By adding a `metrics` section to your application configuration you can control 
 // tag::disabling-whole-intro[]
 [[disabling-entirely]]
 ==== Disabling Metrics Subsystem Entirely
-By default, if your application depends on the `helidon-metrics` Maven module then full-featured metrics are enabled.
 You can disable the metrics subsystem entirely using configuration:
+ifdef::mp-flavor[]
 [source,properties]
 .Configuration properties file disabling metrics
 ----
 metrics.enabled=false
 ----
+endif::mp-flavor[]
+ifdef::se-flavor[]
+[source,yaml]
+.Configuration properties file disabling metrics
+----
+server:
+  features:
+    observe:
+      observers:
+        metrics:
+          enabled: false
+----
+endif::se-flavor[]
 // end::disabling-whole-intro[]
 
 // tag::disabling-whole-summary[]
-With metrics processing disabled, Helidon never updates any metrics and the `/metrics` endpoints respond with `404` plus a message that the metrics subsystem is disabled.
+With metrics processing disabled, Helidon never updates any {metrics} and the `{metrics-endpoint}` endpoints respond with `404`.
 // end::disabling-whole-summary[]
 // end::disabling-whole[]
 
@@ -259,7 +238,7 @@ Note that if you disable metrics processing entirely, no component updates its m
 
 // tag::controlling-by-registry[]
 // tag::controlling-by-registry-intro[]
-[[enabling-disabling-by-registry]]
+[[enabling-disabling-by-scope]]
 ==== Controlling Metrics By Registry Type and Metric Name
 You can control the collection and reporting of metrics by registry type and metric name within registry type.
 
@@ -357,67 +336,76 @@ metrics.registries.0.filter.exclude = myapp\..*/deletes
 [[basic-and-extended-kpi]]
 ==== Collecting Basic and Extended Key Performance Indicator (KPI) Metrics
 
-Any time you include the Helidon metrics module in your application, Helidon tracks two basic performance indicator metrics:
-
-* a `Counter` of all requests received (`requests.count`), and
-* a `Meter` of all requests received (`requests.meter`).
+Any time you include the Helidon metrics module in your application, Helidon tracks a basic performance indicator {metric}: a `Counter` of all requests received (`requests.count`).
 
 Helidon {h1-prefix} also includes additional, extended KPI metrics which are disabled by default:
 
-* current number of requests in-flight - a `ConcurrentGauge` (`requests.inFlight`) of requests currently being processed
-* long-running requests - a `Meter` (`requests.longRunning`) measuring the rate at which Helidon processes requests which take at least a given amount of time to complete; configurable, defaults to 10000 milliseconds (10 seconds)
-* load - a `Meter` (`requests.load`) measuring the rate at which requests are worked on (as opposed to received)
-* deferred - a `Meter` (`requests.deferred`) measuring the rate at which a request's processing is delayed after Helidon receives the request
+* current number of requests in-flight - a `Gauge` (`requests.inFlight`) of requests currently being processed
+* long-running requests - a `Counter` (`requests.longRunning`) measuring the total number of requests which take at least a given amount of time to complete; configurable, defaults to 10000 milliseconds (10 seconds)
+* load - a `Counter` (`requests.load`) measuring the number of requests worked on (as opposed to received)
+* deferred - a `Gauge` (`requests.deferred`) measuring delayed request processing (work on a request was delayed after Helidon received the request)
 
-You can enable and control these metrics using configuration:
+You can enable and control these {metrics} using configuration:
+ifdef::mp-flavor[]
 [source,properties]
-.Configuration properties file controlling extended KPI metrics
+.Configuration properties file controlling extended KPI {metrics}
 ----
 metrics.key-performance-indicators.extended = true
 metrics.key-performance-indicators.long-running.threshold-ms = 2000
 ----
+endif::mp-flavor[]
+ifdef::se-flavor[]
+[source,yaml]
+----
+server:
+  features:
+    observe:
+      observers:
+        metrics:
+          key-performance-indicators:
+            extended: true
+            long-running:
+              threshold-ms: 2000
+----
+endif::se-flavor[]
 // end::KPI[]
 // end::controlling[]
 
 // tag::metrics-metadata[]
 === Metrics Metadata
 
-Each metric has associated metadata that describes:
+Each {metric} has associated metadata that includes:
 
-1. name: The name of the metric.
-2. units: The unit of the metric such as time (seconds, millisecond), size (bytes, megabytes), etc.
-3. type: The type of metric: `Counter`, `Timer`, `Meter`, `Histogram`, `SimpleTimer`, or `Gauge`.
+1. name: The name of the {metric}.
+2. units: The unit of the {metric} such as time (seconds, milliseconds), size (bytes, megabytes), etc.
+3. a description of the {metric}.
 
-You can get the metadata for any scope, such as `/metrics/base`, as shown below:
+You can get the metadata for any scope, such as `{metrics-endpoint}?scope=base`, as shown below:
 
-[source,bash]
+[source,bash, subs="attributes+"]
 .Get the metrics metadata using HTTP OPTIONS method:
 ----
- curl -X OPTIONS -H "Accept: application/json"  http://localhost:8080/metrics/base
+ curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=base'
 ----
 
 [source,json]
 .JSON response (truncated):
 ----
 {
-  "classloader.currentLoadedClass.count": {
-    "unit": "none",
-    "type": "counter",
-    "description": "Displays the number of classes that are currently loaded in the Java virtual machine.",
-    "displayName": "Current Loaded Class Count"
-  },
-  "jvm.uptime": {
-    "unit": "milliseconds",
-    "type": "gauge",
-    "description": "Displays the start time of the Java virtual machine in milliseconds. This attribute displays the approximate time when the Java virtual machine started.",
-    "displayName": "JVM Uptime"
-  },
-  "memory.usedHeap": {
-    "unit": "bytes",
-    "type": "gauge",
-    "description": "Displays the amount of used heap memory in bytes.",
-    "displayName": "Used Heap Memory"
-  }
+   "classloader.loadedClasses.count": {
+      "type": "gauge",
+      "description": "Displays the number of classes that are currently loaded in the Java virtual machine."
+    },
+   "jvm.uptime": {
+      "type": "gauge",
+      "unit": "seconds",
+      "description": "Displays the start time of the Java virtual machine in milliseconds. This attribute displays the approximate time when the Java virtual machine started."
+    },
+   "memory.usedHeap": {
+      "type": "gauge",
+      "unit": "bytes",
+      "description": "Displays the amount of used heap memory in bytes."
+    }
 }
 ----
 

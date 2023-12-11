@@ -19,10 +19,12 @@ import io.helidon.http.Status;
 import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.DirectClient;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,10 +41,14 @@ class SnakeYAMLV1Test {
         this.client = client;
     }
 
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        server.addFeature(OpenApiFeature.builder()
+                                  .staticFile("target/test-classes/petstore.yaml")
+                                  .build());
+    }
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
-        routing.addFeature(OpenApiFeature.builder()
-                                   .staticFile("target/test-classes/petstore.yaml"));
     }
 
     @Test

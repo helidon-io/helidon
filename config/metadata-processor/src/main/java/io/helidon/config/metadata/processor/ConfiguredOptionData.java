@@ -64,6 +64,7 @@ final class ConfiguredOptionData {
     private boolean deprecated;
     private boolean merge;
     private String kind = "VALUE";
+    private TypeName providerType;
 
     // create from @ConfiguredOption in config-metadata
     static ConfiguredOptionData createMeta(ProcessingEnvironment aptEnv, Annotation option) {
@@ -112,7 +113,10 @@ final class ConfiguredOptionData {
 
         element.findAnnotation(DESCRIPTION).flatMap(Annotation::stringValue).ifPresent(result::description);
         element.findAnnotation(OPTION_REQUIRED).ifPresent(it -> result.required(true));
-        element.findAnnotation(OPTION_PROVIDER).ifPresent(it -> result.provider(true));
+        element.findAnnotation(OPTION_PROVIDER).ifPresent(it -> {
+            it.typeValue().ifPresent(result::providerType);
+            result.provider(true);
+        });
         element.findAnnotation(DEPRECATED).ifPresent(it -> result.deprecated(true));
         element.findAnnotation(OPTION_ALLOWED_VALUES)
                 .flatMap(Annotation::annotationValues)
@@ -184,6 +188,10 @@ final class ConfiguredOptionData {
         return provider;
     }
 
+    TypeName providerType() {
+        return providerType;
+    }
+
     boolean deprecated() {
         return deprecated;
     }
@@ -226,6 +234,10 @@ final class ConfiguredOptionData {
 
     void provider(boolean provider) {
         this.provider = provider;
+    }
+
+    void providerType(TypeName provider) {
+        this.providerType = provider;
     }
 
     void deprecated(boolean deprecated) {

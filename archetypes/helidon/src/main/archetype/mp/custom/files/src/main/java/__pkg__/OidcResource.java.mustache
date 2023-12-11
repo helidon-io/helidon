@@ -1,0 +1,27 @@
+package {{package}};
+
+import io.helidon.security.SecurityContext;
+import io.helidon.security.annotations.Authenticated;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Context;
+
+/**
+ * A simple JAX-RS resource with a single GET method.
+ */
+@Path("/test")
+public class OidcResource {
+
+    /**
+     * Hello world using security context.
+     * @param securityContext context as established during login
+     * @return a string with current username
+     */
+    @Authenticated
+    @GET
+    public String getIt(@Context SecurityContext securityContext) {
+        return "Hello " + securityContext.userName();
+    }
+
+}

@@ -6,26 +6,31 @@ db:
 {{/db-connection}}
     initializationFailTimeout: -1
     connectionTimeout: 2000
+{{#db-metrics}}
     helidon:
       pool-metrics:
         enabled: true
         # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
         name-prefix: "hikari."
+{{/db-metrics}}
+{{#db-health-check}}
   health-check:
     type: "query"
     statementName: "health-check"
+{{/db-health-check}}
   statements:
-    # Health check query statement for MySQL and H2 databases
-#    health-check: "SELECT 0"
-    # Health check query statement for Oracle database
-    health-check: "SELECT 1 FROM DUAL"
-    # Insert new pokemon
-    create-table: "CREATE TABLE pokemons (name VARCHAR(64) NOT NULL PRIMARY KEY, type VARCHAR(32))"
-    insert1: "INSERT INTO pokemons VALUES(?, ?)"
-    insert2: "INSERT INTO pokemons VALUES(:name, :type)"
-    select-by-type: "SELECT * FROM pokemons WHERE type = ?"
-    select-one: "SELECT * FROM pokemons WHERE name = ?"
-    select-all: "SELECT * FROM pokemons"
-    select-for-update: "SELECT * FROM pokemons WHERE name = :name for UPDATE"
-    update: "UPDATE pokemons SET type = :type WHERE name = :name"
-    delete: "DELETE FROM pokemons WHERE name = ?"
+{{#db-health-check-stmt}}
+    health-check: "{{.}}"
+{{/db-health-check-stmt}}
+    create-types: "CREATE TABLE PokeTypes (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
+    create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES PokeTypes(id))"
+    select-all-types: "SELECT id, name FROM PokeTypes"
+    select-all-pokemons: "SELECT id, name, id_type FROM Pokemons"
+    select-pokemon-by-id: "SELECT id, name, id_type FROM Pokemons WHERE id = :id"
+    select-pokemon-by-name: "SELECT id, name, id_type FROM Pokemons WHERE name = ?"
+    insert-type: "INSERT INTO PokeTypes(id, name) VALUES(?, ?)"
+    insert-pokemon: "INSERT INTO Pokemons(id, name, id_type) VALUES(?, ?, ?)"
+    update-pokemon-by-id: "UPDATE Pokemons SET name = :name, id_type = :idType WHERE id = :id"
+    delete-pokemon-by-id: "DELETE FROM Pokemons WHERE id = :id"
+    delete-all-types: "DELETE FROM PokeTypes"
+    delete-all-pokemons: "DELETE FROM Pokemons"

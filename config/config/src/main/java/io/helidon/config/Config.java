@@ -158,10 +158,10 @@ import io.helidon.config.spi.OverrideSource;
  * which return {@link ConfigValue} representing Java primitive data values ({@code boolean, double, int}, etc.)
  * <p>
  * The {@link ConfigValue} can be used to access the value or use optional style methods.
- *
+ * <p>
  * The config value provides access to the value in multiple ways.
  * See {@link ConfigValue} for reference.
- *
+ * <p>
  * Basic usages:
  * <pre>{@code
  * // throws a MissingValueException in case the config node does not exist
@@ -232,13 +232,13 @@ import io.helidon.config.spi.OverrideSource;
  * throws {@link ConfigMappingException}, unless you use the config beans support,
  * that can handle classes that fulfill some requirements (see documentation), such as a public constructor,
  * static "create(Config)" method etc.
- *
+ * <p>
  * <h3><a id="multipleSources">Handling Multiple Configuration
  * Sources</a></h3>
  * A {@code Config} instance, including the default {@code Config} returned by
  * {@link Config#create}, might be associated with multiple {@link ConfigSource}s. The
- * config system merges these together so that values from config sources with higher priority have
- * precedence over values from config sources with lower priority.
+ * config system merges these together so that values from config sources with higher {@link io.helidon.common.Weight weight}
+ * have priority over values from config sources with lower weight.
  */
 public interface Config extends io.helidon.common.config.Config {
     /**
@@ -534,6 +534,9 @@ public interface Config extends io.helidon.common.config.Config {
         return get(ConfigKeyImpl.of(key));
     }
 
+    @Override
+    Config root();
+
     /**
      * Returns the single sub-node for the specified sub-key.
      *
@@ -700,7 +703,7 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @param predicate predicate evaluated on each visited {@code Config} node
      *                  to continue or stop visiting the node
-     * @return stream of deepening depth-first subnodes
+     * @return stream of deepening depth-first sub nodes
      */
     Stream<Config> traverse(Predicate<Config> predicate);
 
@@ -855,11 +858,9 @@ public interface Config extends io.helidon.common.config.Config {
     }
 
     /**
-     * Returns existing current config node as a {@link Optional} instance
-     * or {@link Optional#empty()} in case of {@link Type#MISSING} node.
+     * Returns existing current config node as {@link io.helidon.config.ConfigValue}.
      *
-     * @return current config node as a {@link Optional} instance
-     *         or {@link Optional#empty()} in case of {@link Type#MISSING} node.
+     * @return current config node as {@link io.helidon.config.ConfigValue}
      */
     default ConfigValue<Config> asNode() {
         return ConfigValues.create(this,
@@ -912,7 +913,7 @@ public interface Config extends io.helidon.common.config.Config {
     /**
      * Register a {@link Consumer} that is invoked each time a change occurs on whole Config or on a particular Config node.
      * <p>
-     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
+     * A user can subscribe on root Config node and then will be notified on any change of Configuration.
      * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
      * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
      * with a node you are subscribed on.
@@ -1198,7 +1199,7 @@ public interface Config extends io.helidon.common.config.Config {
          * the value is found in a configuration source, the value immediately is returned without consulting any of the remaining
          * configuration sources in the prioritized collection.
          * <p>
-         * Target source is composed from following sources, in order:
+         * Target source is composed of following sources, in order:
          * <ol>
          * <li>{@link ConfigSources#environmentVariables() environment variables config source}<br>
          * Can disabled by {@link #disableEnvironmentVariablesSource()}</li>
@@ -1244,7 +1245,7 @@ public interface Config extends io.helidon.common.config.Config {
         /**
          * Sets a {@link ConfigSource} instance to be used as a source of configuration to be wrapped into {@link Config} API.
          * <p>
-         * Target source is composed from {@code configSource} and following sources (unless they are disabled) in order:
+         * Target source is composed of {@code configSource} and following sources (unless they are disabled) in order:
          * <ol>
          * <li>{@link ConfigSources#environmentVariables() environment variables config source}<br>
          * Can disabled by {@link #disableEnvironmentVariablesSource()}</li>
@@ -1269,7 +1270,7 @@ public interface Config extends io.helidon.common.config.Config {
          * Sets an ordered pair of {@link ConfigSource} instances to be used as single source of configuration
          * to be wrapped into {@link Config} API.
          * <p>
-         * Target source is composed from {@code configSource} and following sources (unless they are disabled) in order:
+         * Target source is of from {@code configSource} and following sources (unless they are disabled) in order:
          * <ol>
          * <li>{@link ConfigSources#environmentVariables() environment variables config source}<br>
          * Can disabled by {@link #disableEnvironmentVariablesSource()}</li>
@@ -1296,7 +1297,7 @@ public interface Config extends io.helidon.common.config.Config {
          * Sets an ordered trio of {@link ConfigSource} instances to be used as single source of configuration
          * to be wrapped into {@link Config} API.
          * <p>
-         * Target source is composed from config sources parameters and following sources (unless they are disabled) in order:
+         * Target source is composed of config sources parameters and following sources (unless they are disabled) in order:
          * <ol>
          * <li>{@link ConfigSources#environmentVariables() environment variables config source}<br>
          * Can disabled by {@link #disableEnvironmentVariablesSource()}</li>
@@ -1322,11 +1323,12 @@ public interface Config extends io.helidon.common.config.Config {
         }
 
         /**
-         * Sets source of a override source.
+         * Sets the source of an override source.
          * <p>
          * The feature allows user to override existing values with other ones, specified by wildcards. Default values might be
          * defined with key token references (i.e. {@code $env.$pod.logging.level: INFO}) that might be overridden by a config
-         * source with a higher priority to identify the current environment (i.e. {@code env: test} and {@code pod: qwerty}. The
+         * source with a higher {@link io.helidon.common.Weight weight} to identify the current environment
+         * (i.e. {@code env: test} and {@code pod: qwerty}). The
          * overrides are able to redefine values using wildcards (or without them). For example {@code test.*.logging.level =
          * FINE} overrides {@code logging.level} for all pods in test environment.
          * <p>
@@ -1338,7 +1340,7 @@ public interface Config extends io.helidon.common.config.Config {
         Builder overrides(Supplier<? extends OverrideSource> overridingSource);
 
         /**
-         * Disables an usage of resolving key tokens.
+         * Disables any usage of resolving key tokens.
          * <p>
          * A key can contain tokens starting with {@code $} (i.e. $host.$port), that are resolved by default and tokens are
          * replaced with a value of the key with the token as a key.
@@ -1358,12 +1360,12 @@ public interface Config extends io.helidon.common.config.Config {
         Builder failOnMissingKeyReference(boolean shouldFail);
 
         /**
-         * Disables an usage of resolving value tokens.
+         * Disables any usage of resolving value tokens.
          * <p>
          * A value can contain tokens enclosed in {@code ${}} (i.e. ${name}), that are resolved by default and tokens are replaced
          * with a value of the key with the token as a key.
          * <p>
-         * By default a value resolving filter is added to configuration. When this method is called, the filter will
+         * By default, a value resolving filter is added to configuration. When this method is called, the filter will
          *  not be added and value resolving will be disabled
          * @return an updated builder instance
          */
@@ -1417,7 +1419,7 @@ public interface Config extends io.helidon.common.config.Config {
 
         /**
          * Register a mapping function for specified {@link GenericType}.
-         * This is useful for mappers that support specificly typed generics, such as {@code Map<String, Integer>}
+         * This is useful for mappers that support specifically typed generics, such as {@code Map<String, Integer>}
          * or {@code Set<Foo<Bar>>}.
          * To support mappers that can map any type (e.g. all cases of {@code Map<String, V>}),
          * use {@link #addMapper(ConfigMapperProvider)} as it gives you full control over which types are supported, through
@@ -1473,7 +1475,7 @@ public interface Config extends io.helidon.common.config.Config {
          * loaded as a {@link java.util.ServiceLoader service}.
          * <p>
          * Order of configuration mapper providers loaded as a service
-         * is defined by {@link jakarta.annotation.Priority} annotation.
+         * is defined by {@link io.helidon.common.Weight} annotation.
          * <p>
          * Automatic registration of mappers as a service is enabled by default.
          *
@@ -1484,7 +1486,7 @@ public interface Config extends io.helidon.common.config.Config {
 
         /**
          * Registers a {@link ConfigParser} instance that can be used by config system to parse
-         * parse {@link io.helidon.config.spi.ConfigParser.Content} of {@link io.helidon.config.spi.ParsableSource}.
+         * {@link io.helidon.config.spi.ConfigParser.Content} of {@link io.helidon.config.spi.ParsableSource}.
          * Parsers {@link io.helidon.config.spi.ConfigParser#supportedMediaTypes()} is queried
          * in same order as was registered by this method.
          * Programmatically registered parsers have priority over other options.
@@ -1501,7 +1503,7 @@ public interface Config extends io.helidon.common.config.Config {
         /**
          * Disables automatic registration of parsers loaded as a {@link java.util.ServiceLoader service}.
          * <p>
-         * Order of configuration parsers loaded as a service is defined by {@link jakarta.annotation.Priority} annotation.
+         * Order of configuration parsers loaded as a service is defined by {@link io.helidon.common.Weight} annotation.
          * <p>
          * Automatic registration of parsers as a service is enabled by default.
          *
@@ -1514,7 +1516,7 @@ public interface Config extends io.helidon.common.config.Config {
          * Registers a {@link ConfigFilter} instance that will be used by {@link Config} to
          * filter elementary value before it is returned to a user.
          * <p>
-         * Filters are applied in same order as was registered by the this method, {@link
+         * Filters are applied in same order as was registered by this method, {@link
          * #addFilter(Function)} or {@link #addFilter(Supplier)} method.
          * <p>
          * {@link ConfigFilter} is actually a {@link java.util.function.BiFunction}&lt;{@link String},{@link String},{@link
@@ -1544,7 +1546,7 @@ public interface Config extends io.helidon.common.config.Config {
          * Filters are applied in same order as was registered by the {@link #addFilter(ConfigFilter)}, this method,
          * or {@link #addFilter(Supplier)} method.
          * <p>
-         * Registered provider's {@link Function#apply(Object)} method is called every time the new Config is created. Eg. when
+         * Registered provider's {@link Function#apply(Object)} method is called every time the new Config is created. E.g. when
          * this builder's {@link #build} method creates the {@link Config} or when the new
          * {@link Config#onChange(java.util.function.Consumer)} is fired with new Config instance with its own filter instance
          * is created.
@@ -1564,7 +1566,7 @@ public interface Config extends io.helidon.common.config.Config {
          * Filters are applied in same order as was registered by the {@link #addFilter(ConfigFilter)}, {@link
          * #addFilter(Function)}, or this method.
          * <p>
-         * Registered provider's {@link Function#apply(Object)} method is called every time the new Config is created. Eg. when
+         * Registered provider's {@link Function#apply(Object)} method is called every time the new Config is created. E.g. when
          * this builder's {@link #build} method creates the {@link Config} or when the new
          * {@link Config#onChange(java.util.function.Consumer)} change event
          * is fired with new Config instance with its own filter instance is created.
@@ -1580,7 +1582,7 @@ public interface Config extends io.helidon.common.config.Config {
         /**
          * Disables automatic registration of filters loaded as a {@link java.util.ServiceLoader service}.
          * <p>
-         * Order of configuration filters loaded as a service is defined by {@link jakarta.annotation.Priority} annotation.
+         * Order of configuration filters loaded as a service is defined by {@link io.helidon.common.Weight} annotation.
          * <p>
          * Automatic registration of filters as a service is enabled by default.
          *
@@ -1608,7 +1610,7 @@ public interface Config extends io.helidon.common.config.Config {
          * new Config instance.
          * Executor is also used to process reloading of config from appropriate {@link ConfigSource source}.
          * <p>
-         * By default dedicated thread pool that creates new threads as needed, but
+         * By default, dedicated thread pool that creates new threads as needed, but
          * will reuse previously constructed threads when they are available is used.
          *
          * @param changesExecutor the executor to use for async delivery of {@link Config#onChange(java.util.function.Consumer)}

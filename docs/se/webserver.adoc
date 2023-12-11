@@ -39,7 +39,9 @@ include::{rootdir}/includes/se.adoc[]
 - <<Supported Technologies, Supported Technologies>>
 ** <<HTTP/2 Support, HTTP/2 Support>>
 ** <<Static Content Support, Static Content Support>>
-** <<JSON Support, JSON Support>>
+** <<Media types support, Media Types Support>>
+** <<HTTP Content Encoding, HTTP Content Encoding>>
+** <<Proxy Protocol Support, Proxy Protocol Support>>
 - <<Reference, Reference>>
 - <<Additional Information, Additional Information>>
 
@@ -69,7 +71,7 @@ application code.
 [source,java]
 ----
 WebServer webServer = WebServer.builder()
-      .bindAddress(InetAddress.getLocalHost())
+      .address(InetAddress.getLocalHost())
       .port(8080)
       .build();
 ----
@@ -83,7 +85,7 @@ You can also define the configuration in a file.
 ----
 server:
   port: 8080
-  bind-address: "0.0.0.0"
+  host: "0.0.0.0"
 ----
 
 Then, in your application code, load the configuration from that file.
@@ -115,27 +117,26 @@ criteria.
 Routing also supports _Error Routing_ which binds Java `Throwable` to the
 handling logic.
 
-Configure HTTP request routing using `Routing.Builder`.
+Configure HTTP request routing using `HttpRouting.Builder`.
 
 [source,java]
-.Using Routing.Builder to specify how HTTP requests are handled
+.Using HttpRouting.Builder to specify how HTTP requests are handled
 ----
-Routing routing = Routing.builder()
-                         .get("/hello", (req, res) -> res.send("Hello World!")) // <1>
-                         .build();
 
-WebServer webServer = WebServer.create(routing); // <2>
+WebServer webServer = WebServer.builder()
+        .routing(routing -> routing.get("/hello", (req, res) -> res.send("Hello World!"))) // <1>
+        .build(); // <2>
 ----
 <1> Handle all GETs to `/hello` path. Send the `Hello World!` string.
-<2> Add the `routing` to the WebServer.
+<2> Create a server instance with the provided routing
 
 === HTTP Method Routing
 
-`Routing.Builder` lets you specify how to handle each HTTP method. For example:
+`HttpRouting.Builder` lets you specify how to handle each HTTP method. For example:
 
 [cols="1,5", role="flex, sm7"]
 |===
-|HTTP Method|Routing.Builder example
+|HTTP Method|HttpRouting.Builder example
 
 |*GET*|`+.get((req, res) -> { /* handler */ })+`
 |*PUT*| `+.put((req, res) -> { /* handler */ })+`
@@ -145,8 +146,10 @@ WebServer webServer = WebServer.create(routing); // <2>
 |*TRACE*| `+.trace((req, res) -> { /* handler */ })+`
 |*OPTIONS*| `+.options((req, res) -> { /* handler */ })+`
 |_any method_|`+.any((req, res) -> { /* handler */ })+`
-|_multiple methods_|`+.anyOf(List.of(Http.Method.GET, Http.Method.POST), (req, res) -> { /* handler */ })+`
-|_custom method_|`+.anyOf(Set.of(Http.RequestMethod.create("CUSTOM")), (req, res) -> { /* handler */ })+`
+|_multiple methods_|``+.route(Method.predicate(Method.GET, Method.POST),
+                        PathMatchers.any(),
+                        (req, res) -> { /* handler */ })`
+|_custom method_|`+.route(Method.create("CUSTOM"), (req, res) -> { /* handler */ })`
 |===
 
 === Path Matcher Routing
@@ -154,13 +157,14 @@ You can combine HTTP method routing with request path matching.
 
 [source,java]
 ----
-Routing.builder()
+HttpRouting.builder()
        .post("/some/path", (req, res) -> { /* handler */ })
 ----
 
 You can use *path pattern* instead of _path_ with the following syntax:
 
 * `/foo/bar/baz` - Exact path match against resolved path even with non-usual characters
+* `/foo/*` - convenience method to match `/foo` or any subpath (but not `/foobar`)
 * `/foo/{}/baz` - `{}` Unnamed regular expression segment `([^/]+)`
 * `/foo/{var}/baz` - Named regular expression segment `([^/]+)`
 * `/foo/{var:\d+}` - Named regular expression segment with a specified expression
@@ -175,35 +179,28 @@ IMPORTANT: Path (matcher) routing is *exact*. For example, a `/foo/bar` request 
 
 TIP: Always start _path_ and _path patterns_ with the `/` character.
 
-[[anchor-requestpredicate]]
-=== Request Predicate
+For more precise setup of path, you can use factory methods on `io.helidon.http.PathMatchers`
+and register using `HttpRouting.Builder.route(Predicate<Method>, PathMatcher, Handler)` method.
 
-Use the `RequestPredicate` utility class to identify more
-criteria. You can construct (build) a predicate based on typical request criteria such as
-content type, or the existence of a header
-or cookie. You can also construct a handler that only processes
-requests accepted by the predicate. All other requests are _nexted_, meaning that they are routed to the next valid handler.
+=== Using full `HttpRoute`
+
+To have more control over selecting which requests should be handled by a specific route,
+you can use the `io.helidon.webserver.http.HttpRoute` interface, and either setup a route using its `Builder`, or implement the interface directly.
+
+The `HttpRoute` is queried base on the request `io.helidon.http.HttpPrologue`.
 
 [source,java]
 ----
-.post("/foo",
-      RequestPredicate.create()
-                      .containsHeader("my-gr8-header")
-                      .accepts(MediaType.TEXT_PLAIN)
-                      .and(this::isUserAuthenticated)
-                      .thenApply((req, resp) -> {
-                           // Some logic
-                      })
-                      .otherwise((req, resp) -> { /* Otherwise logic */ }); // Optional. Default logic is req.next()
+.route(new MyCustomRoute());
 ----
 
 === Organizing Code into Services
 
-By implementing the `Service` interface you can organize your code into one
+By implementing the `io.helidon.webserver.http.HttpService` interface you can organize your code into one
 or more services, each with its own path prefix and set of handlers.
 
 [source,java]
-.Use `Routing.Builder.register` to register your service
+.Use `HttpRouting.Builder.register` to register your service
 ----
 .register("/hello", new HelloService())
 ----
@@ -231,10 +228,9 @@ Implement the logic to handle requests to WebServer in a `Handler`, which is a `
 Handlers:
 
 * Process the request and <<anchor-sending-response,send>> a response.
-* Act as a filter and forward requests to downstream handlers using the `request.next()`
+* Act as a filter and forward requests to downstream handlers using the `response.next()`
 method.
-* Throw an exception or call `request.next(exception)` to begin
-<<Error Handling,error handling>>.
+* Throw an exception to begin <<Error Handling,error handling>>.
 
 === Process Request and Produce Response
 Each `Handler` has two parameters. `ServerRequest` and `ServerResponse`.
@@ -244,24 +240,44 @@ headers and entity.
 * Response provides an ability to set response code, headers, and entity.
 
 [[anchor-filtering]]
-=== Handler as a Filter
+=== Filtering
+Filtering can be done either using a dedicated `Filter`, or through routes.
+
+==== Filter
+You can register a `io.helidon.webserver.http.Filter` with HTTP routing to handle
+filtering in interception style.
+
+A simple filter example:
+[source,java]
+----
+routing.addFilter((chain, req, res) -> {
+   try {
+       chain.proceed();
+   } finally {
+       // do something for any finished request
+   }
+})
+----
+
+==== Routes
+
 The handler forwards the request to the downstream handlers by
 _nexting_. There are two options:
 
-* call `req.next()`
+* call `res.next()`
 +
 [source,java]
 ----
 .any("/hello", (req, res) -> { // <1>
     // filtering logic  // <2>
-    req.next(); // <3>
+    res.next(); // <3>
 })
 ----
 <1> handler for any HTTP method using the `/hello` path
 <2> business logic implementation
 <3> forward the current request to the downstream handler
 
-* call `req.next(throwable)` to forward the handling to the
+* throw an exception to forward to error handling
 <<Error Handling,error handling>>
 +
 [source,java]
@@ -269,9 +285,9 @@ _nexting_. There are two options:
 .any("/hello", (req, res) -> { // <1>
     // filtering logic (e.g., validating parameters) // <2>
     if (userParametersOk()) {
-        req.next(); // <3>
+        res.next(); // <3>
     } else {
-        req.next(new IllegalArgumentException("Invalid parameters."); // <4>
+        throw new IllegalArgumentException("Invalid parameters."); // <4>
     }
 })
 ----
@@ -280,20 +296,18 @@ _nexting_. There are two options:
 <3> forward the current request to the downstream handler
 <4> forward the request to the error handler
 
-The handling logic can explicitly forward the execution to a different thread.
-This is the reason why returning from the handler can't automatically
-trigger calling the next handler.
-
 [[anchor-sending-response]]
 === Sending a Response
 To complete the request handling, you must send a response by calling the `res.send()` method.
+
+IMPORTANT: one of the variants of `send` method MUST be invoked in the same thread the request is started in; as we run in Virtual Threads, you can simply wait for any asynchronous tasks that must complete before sending a response
 
 [source,java]
 ----
 .get("/hello", (req, res) -> { // <1>
     // terminating logic
-    res.status(Http.Status.ACCEPTED_201);
-    res.send("Saved!"); // <2>
+    res.status(Status.ACCEPTED_202)
+       .send("Saved!"); // <2>
 })
 ----
 <1> handler that terminates the request handling for any HTTP method using the `/hello` path
@@ -307,11 +321,15 @@ on routing builder.
 .Routing based on HTTP version
 ----
 .routing(r -> r
-        .get("/any-version", (req, res) -> res.send("HTTP Version " + req.version()))
-        .route(Http1Route.route(GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route")))
-        .route(Http2Route.route(GET, "/version-specific", (req, res) -> res.send("HTTP/2 route")))
+        .get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion())) // <1>
+        .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route"))) // <2>
+        .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route"))) // <3>
 )
 ----
+
+<1> An HTTP route registered on `/any-version` path that prints the version of HTTP protocol
+<2> An HTTP/1.1 route registered on `/version-specific` path
+<3> An HTTP/2 route registered on `/version-specific` path
 
 While `Http1Route` for Http/1 is always available with Helidon webserver, other routes like `Http2Route` for <<HTTP/2 Support, HTTP/2>> needs to be added as additional dependency.
 
@@ -333,12 +351,11 @@ AllowList trustedProxies = AllowList.builder()
         .build(); // <1>
 
 WebServer.Builder builder = WebServer.builder()
-        .defaultSocket(s -> s
-                .host("localhost")
-                .port(0)
-                .requestedUriDiscoveryTypes(List.of(FORWARDED, X_FORWARDED)) // <2>
-                .trustedProxies(trustedProxies)) // <3>
-        .addRouting(yourRouting)
+        .host("localhost")
+        .requestedUriDiscoveryContext(it -> it.addDiscoveryType(FORWARDED) // <2>
+                        .addDiscoveryType(X_FORWARDED)
+                        .trustedProxies(trustedProxies)) // <3>
+        .routing(Main::routing)
         .config(serverConfig);
 ----
 <1> Create the `AllowList` describing the intermediate networks nodes to trust and not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`, and no other nodes are trusted.
@@ -372,7 +389,7 @@ Your code obtains the requested URI information from the Helidon server request 
 [source,java]
 .Retrieving Requested URI Information
 ----
-import io.helidon.http.UriInfo;
+import io.helidon.common.uri.UriInfo;
 
 public class MyHandler implements Handler {
 
@@ -383,22 +400,21 @@ public class MyHandler implements Handler {
     }
 }
 ----
-See the link:{http-javadoc-base-url}/io/helidon/common/http/UriInfo.html[`UriInfo`] JavaDoc for more information.
+See the link:{uri-javadoc-base-url}/io/helidon/common/uri/UriInfo.html[`UriInfo`] JavaDoc for more information.
 
 == Error Handling
 
 === Error Routing
 
-You may register an error handler for a specific `Throwable` in the
-`Routing.Builder` method.
+You may register an error handler for a specific `Throwable` in a
+`HttpRouting.Builder` method.
 [source,java]
 ----
-Routing routing = Routing.builder()
+HttpRouting.Builder routing = HttpRouting.builder()
                         .error(MyException.class, (req, res, ex) -> { // <1>
                             // handle the error, set the HTTP status code
                             res.send(errorDescriptionObject); // <2>
-                        })
-                        .build
+                        });
 ----
 <1> Registers an error handler that handles `MyException` that are thrown from the
 upstream handlers
@@ -407,7 +423,6 @@ upstream handlers
 Error handlers are called when
 
 * an exception is thrown from a handler
-* `req.next(ex)` is called, where `ex` is an instance of `Throwable`
 
 As with the standard handlers, the error handler must either
 
@@ -420,36 +435,21 @@ As with the standard handlers, the error handler must either
     res.send("Unable to parse request. Message: " + ex.getMessage());
 })
 ----
-* or, forward the error handling to the downstream error handlers
+* or throw an exception
 +
 [source,java]
 ----
 .error(Throwable.class, (req, res, ex) -> {
     // some logic
-    req.next(ex);
+    throw ex;
 })
 ----
 
-Error handling can't be forwarded to the standard
-handlers. In fact, invoking `req.next(ex)` or `req.next()` in an error handler
-are equivalent.
-
-[source,java]
-----
-.error(Throwable.class, (req, res, ex) -> {
-    if (condition) {
-        req.next(ex); // <1>
-    } else {
-        req.next(); // <2>
-    }
-})
-----
-<1> Call a downstream error handler with the `Throwable` instance.
-<2> Here, `req.next()` is the same as `req.next(ex)`. In both cases, the downstream error handler is called.
+Exceptions thrown from error handlers are not error handled, and will end up in an InternalServerError.
 
 === Default Error Handling
-If no user-defined error handler is matched, or if the last error handler of the
-exception called `req.next()`, then the exception is translated to an HTTP response as follows:
+If no user-defined error handler is matched, or if the error handler of the
+exception threw an exception, then the exception is translated to an HTTP response as follows:
 
 * Subtypes of `HttpException` are translated to their associated HTTP error codes.
 +
@@ -466,8 +466,7 @@ error code `500`.
 
 == HTTP/2 Support
 
-Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge
-and HTTP/2 with ALPN over TLS.
+Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge, HTTP/2 with prior knowledge, and HTTP/2 with ALPN over TLS.
 HTTP/2 support is enabled in WebServer by default when it's artifact is available on classpath.
 
 === Maven Coordinates
@@ -483,11 +482,11 @@ To enable HTTP/2 support add the following dependency to your project's `pom.xml
 
 == Static Content Support
 
-+Use the `io.helidon.webserver.staticcontent.StaticContentSupport` class to serve files and classpath resources.
-`StaticContentSupport` can be created for any readable directory or classpath
-context root and registered on a path in `Routing`.
++Use the `io.helidon.webserver.staticcontent.StaticContentService` class to serve files and classpath resources.
+`StaticContentService` can be created for any readable directory or classpath
+context root and registered on a path in `HttpRouting`.
 
-You can combine dynamic handlers with `StaticContentSupport` objects: if no file matches the request path, then the request is forwarded to
+You can combine dynamic handlers with `StaticContentService` objects: if no file matches the request path, then the request is forwarded to
 the next handler.
 
 === Maven Coordinates
@@ -508,28 +507,60 @@ To register static content based on a file system (`/pictures`), and classpath (
 
 [source,java]
 ----
-Routing.builder()
-       .register("/pictures", StaticContentSupport.create(Paths.get("/some/WEB/pics"))) // <1>
-       .register("/", StaticContentSupport.builder("/static-content") // <2>
+HttpRouting.builder()
+       .register("/pictures", StaticContentService.create(Paths.get("/some/WEB/pics"))) // <1>
+       .register("/", StaticContentService.builder("/static-content") // <2>
                                    .welcomeFileName("index.html") // <3>
                                    .build());
 ----
-<1> Create a new `StaticContentSupport` object to serve data from the file system,
+<1> Create a new `StaticContentService` object to serve data from the file system,
 and associate it with the `"/pictures"` context path.
-<2> Create a `StaticContentSupport` object to serve resources from the contextual
+<2> Create a `StaticContentService` object to serve resources from the contextual
 `ClassLoader`. The specific classloader can be also
 defined. A builder lets you provide more configuration values.
 <3> `index.html` is the file that is returned if a directory is requested.
 
-A `StaticContentSupport` object can be created using `create(...)` factory methods or a
+A `StaticContentService` object can be created using `create(...)` factory methods or a
 `builder`. The `builder` lets you provide more configuration values, including _welcome file-name_
 and mappings of filename extensions to media types.
 
-== JSON Support
+== Media types support
+WebServer and WebClient share the HTTP media support of Helidon, and any supported media type can be used in both.
+The media type support is automatically discovered from classpath.
+Programmatic support is of course enabled as well through `MediaContext`.
+
+Customized media support for WebServer
+[source,java]
+----
+WebServer server = WebServer.builder()
+                .routing(Main::routing)
+                .mediaContext(MediaContext.builder()
+                                      .mediaSupportsDiscoverServices(false)
+                                      .addMediaSupport(JsonpSupport.create())
+                                      .build())
+                .build();
+----
+
+Each registered (or discovered) media support adds support for writing and reading entities of a specific type.
+
+The following table lists JSON media supports:
+
+[cols="1,1,5,3", role="flex, sm7"]
+|===
+|Media type|TypeName|Maven groupId:artifactId|Supported Java type(s)
+
+|*JSON-P*|JsonpSupport|`io.helidon.http.media:helidon-http-media-jsonp`|`JsonObject, JsonArray`
+|*JSON-B*|JsonbSupport|`io.helidon.http.media:helidon-http-media-jsonb`|Any *
+|*Jackson*|JacksonSupport|`io.helidon.http.media:helidon-http-media-jackson`|Any *
+|===
+
+* JSON-B and Jackson have lower weight, so they are used only when no other media type matched the object being written or read
+
+=== JSON-P Support
 The WebServer supports JSON-P. When enabled, you can send and
 receive JSON-P objects transparently.
 
-=== Maven Coordinates
+==== Maven Coordinates
 
 To enable JSON Support add the following dependency to your project's `pom.xml`.
 
@@ -541,7 +572,7 @@ To enable JSON Support add the following dependency to your project's `pom.xml`.
 </dependency>
 ----
 
-=== Usage
+==== Usage
 
 [source,java]
 .Handler that receives and returns JSON objects
@@ -573,14 +604,14 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
 {"message":"Hello Joe"}
 ----
 
-== JSON-B Support
+=== JSON-B Support
 The WebServer supports the http://json-b.net/[JSON-B
 specification]. When this support is enabled, Java objects will be
 serialized to and deserialized from JSON automatically using
 https://github.com/eclipse-ee4j/yasson[Yasson], an implementation of
 the link:{jakarta-jsonb-spec-url}[JSON-B specification].
 
-=== Maven Coordinates
+==== Maven Coordinates
 
 To enable JSON-B Support add the following dependency to your project's `pom.xml`.
 
@@ -592,7 +623,7 @@ To enable JSON-B Support add the following dependency to your project's `pom.xml
 </dependency>
 ----
 
-=== Usage
+==== Usage
 
 Now that automatic JSON serialization and deserialization facilities
 have been set up, you can register a `Handler` that works with Java
@@ -617,7 +648,7 @@ public class Person {
         return this.name;
     }
 
-    public void setName(final String name) {
+    public void setName(String name) {
         this.name = name;
     }
 }
@@ -628,18 +659,10 @@ Then you can set up a `Handler` like this:
 [source,java]
 .A `Handler` that works with Java objects instead of raw JSON
 ----
-final Routing routing =
-    routingBuilder.post("/echo", // <1>
-                        Handler.create(Person.class, // <2>
-                                       (req, res, person) -> res.send(person)))) // <3>
-    .build();
+HttpRouting.Builder routing =
+    routingBuilder.post("/echo", (req, res) -> res.send(req.content().as(Person.class))); // <1>
 ----
-<1> link:{webserver-javadoc-base-url}/io/helidon/webserver/Routing.Builder.html#post-java.lang.String-io.helidon.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
-<2> link:{webserver-javadoc-base-url}/io/helidon/webserver/Handler.html#create-java.lang.Class-io.helidon.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
-to install a `Handler.EntityHandler` that works with `Person` instances.
-<3> This `Handler.EntityHandler` consumes a `Person` instance
-(`person`) and simply echoes it back.  Note that there is no working
-with raw JSON here.
+<1> This handler consumes a `Person` instance and simply echoes it back.  Note that there is no working with raw JSON here.
 
 [source,bash]
 .Example of posting JSON to the `/echo` endpoint
@@ -649,13 +672,13 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
 {"name":"Joe"}
 ----
 
-== Jackson Support
+=== Jackson Support
 The WebServer supports
 https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
 When this support is enabled, Java objects will be serialized to and
 deserialized from JSON automatically using Jackson.
 
-=== Maven Coordinates
+==== Maven Coordinates
 
 To enable Jackson Support add the following dependency to your project's `pom.xml`.
 
@@ -667,7 +690,7 @@ To enable Jackson Support add the following dependency to your project's `pom.xm
 </dependency>
 ----
 
-=== Usage
+==== Usage
 
 Now that automatic JSON serialization and deserialization facilities
 have been set up, you can register a `Handler` that works with Java
@@ -703,20 +726,10 @@ Then you can set up a `Handler` like this:
 [source,java]
 .A `Handler` that works with Java objects instead of raw JSON
 ----
-final Routing routing =
-    routingBuilder.post("/echo", // <1>
-                        Handler.create(Person.class, // <2>
-                                       (req, res, person) -> res.send(person)))) // <3>
-    .build();
+HttpRouting.Builder routing =
+routingBuilder.post("/echo", (req, res) -> res.send(req.content().as(Person.class))); // <1>
 ----
-<1> Set up a route for `POST` requests using the
-link:{webserver-javadoc-base-url}/io/helidon/webserver/Routing.Builder.html#post-java.lang.String-io.helidon.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
-<2> Use the
-link:{webserver-javadoc-base-url}/io/helidon/webserver/Handler.html#create-java.lang.Class-io.helidon.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
-to install a `Handler.EntityHandler` that works with `Person` instances.
-<3> This `Handler.EntityHandler` consumes a `Person` instance
-(`person`) and simply echoes it back.  Note that there is no working
-with raw JSON here.
+<1> This handler consumes a `Person` instance and simply echoes it back.  Note that there is no working with raw JSON here.
 
 [source,bash]
 .Example of posting JSON to the `/echo` endpoint
@@ -736,10 +749,9 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
 Access logging in Helidon is done by a dedicated module that can be
 added to WebServer and configured.
 
-Access logging is a Helidon WebServer `Service` and as such is executed
-in the order it is registered with WebServer routing.
-This implies that if you register it last and another `Service` or
-`Handler` finishes the request, the service will not be invoked.
+Access logging is a Helidon WebServer `ServerFeature`. Access Log feature has a
+very high weight, so it is registered before other features (such as security) that may
+terminate a request. This is to ensure the log contains all requests with appropriate status codes.
 
 To enable Access logging add the following dependency to project's `pom.xml`:
 
@@ -754,16 +766,16 @@ To enable Access logging add the following dependency to project's `pom.xml`:
 
 === Configuring Access Log in Your Code
 
-Access log is configured in your code by registering it as a service with `Routing`
+`AccessLogFeature` is discovered automatically by default, and configured through `server.features.access-log`.
+You can also configure this feature in code by registering it with WebServer (which will replace the discovered feature).
 
 [source,java]
 ----
-Routing.builder()
-    .register(AccessLogSupport.create(config.get("server.access-log")))
-    .get("/greet", myService)
+WebServer.builder()
+         .addFeature(AccessLogFeature.builder()
+             .commonLogFormat()
+             .build());
 ----
-
-The order of registration is significant - make sure `AccessLogSupport` is registered first (even before security, tracing etc.).
 
 === Configuring Access Log in a Configuration File
 
@@ -774,14 +786,14 @@ Access log can be configured as follows:
 ----
 server:
   port: 8080
-  access-log:
-    format: "%h %l %u %t %r %s %b %{Referer}i"
+  features:
+    access-log:
+      format: "%h %l %u %t %r %s %b %{Referer}i"
 ----
 
-All options shown above are also available programmatically when using builder.
+All options shown below are also available programmatically when using builder.
 
-
-include::{rootdir}/includes/server/access-log-config-common.adoc[leveloffset=+1]
+include::{rootdir}/config/io_helidon_webserver_accesslog_AccessLogConfig.adoc[leveloffset=+1]
 
 == TLS Configuration
 
@@ -793,20 +805,14 @@ To configure TLS in WebServer programmatically create your keystore configuratio
 
 [source,java]
 ----
-KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-                //Whether this keystore is also trust store
-                .trustStore()
-                //Keystore location/name
-                .keystore(Resource.create("keystore.p12"))
-                //Password to the keystore
-                .keystorePassphrase("password")
+Tls tls = Tls.builder()
+                .privateKey(pk -> pk.keystore(pkKeystore -> pkKeystore.keystore(Resource.create("private-key.p12"))
+                        .passphrase("password".toCharArray())))
+                .trust(trust -> trust.keystore(trustStore -> trustStore.keystore(Resource.create("trust.p12"))))
                 .build();
 
 WebServer.builder()
-         .tls(WebServerTls.builder()
-               .trust(keyConfig)
-               .privateKey(keyConfig)
-               .build())
+         .tls(tls)
          .build();
 ----
 
@@ -881,9 +887,9 @@ server:
 include::{rootdir}/config/io_helidon_common_tls_Tls.adoc[leveloffset=+2,tag=config]
 
 
-== HTTP Compression
+== HTTP Content Encoding
 
-HTTP compression can improve bandwidth utilization and transfer speeds in certain scenarios. It
+HTTP encoding can improve bandwidth utilization and transfer speeds in certain scenarios. It
 requires a few extra CPU cycles for compressing and uncompressing, but these can be offset
 if data is transferred over low-bandwidth network links.
 
@@ -893,36 +899,35 @@ effectively _negotiating_ the content encoding of the response. If none of the
 advertised encodings is supported by the WebServer, the response is returned
 uncompressed.
 
-=== Configuring HTTP Compression
+=== Configuring HTTP Encoding
 
-HTTP compression in the Helidon WebServer is _disabled_ by default. It can sometimes interfere
-with certain applications that use streaming, even if a compression encoding has not been
-negotiated with the client.
+HTTP encoding support is discovered automatically by WebServer from the classpath, or it can be customized programmatically.
 
-It can be enabled either programmatically or via configuration,
-and it can also be enabled on a per-socket basis. When configured at the server level, it
-applies only to the _default_ socket.
+Encoding can be configured per socket.
 
-Programmatically, simply use the `enableCompression` method during server creation:
-
+Disabling discovery and registering a Gzip encoding support:
 [source,java]
 ----
 WebServer.builder()
-         .port(8080)
-         .routing(...)
-         .enableCompression(true)        // compression enabled
-         .build()
+         .contentEncoding(ContentEncodingContextConfig.builder()
+            .contentEncodingsDiscoverServices(false)
+            .addContentEncoding(GzipEncoding.create())
+            .build());
 ----
 
-Or use a config file as follows and make sure the WebServer is created using it:
+Or use a config file using the following options:
 
-[source,yaml]
-.WebServer HTTP Compression configuration file `application.yaml`
-----
-server:
-  port: 8080
-  enable-compression: true
-----
+include::{rootdir}/config/io_helidon_http_encoding_ContentEncodingContext.adoc[leveloffset=+2,tag=config]
+
+The following providers are currently available (simply add the library on the classpath):
+
+[cols="1,2,5", role="flex, sm7"]
+|===
+|Encoding type|TypeName|Maven groupId:artifactId
+
+|*gzip*|GzipEncoding|`io.helidon.http.encoding:helidon-http-encoding-gzip`
+|*deflate*|DeflateSupport|`io.helidon.http.encoding:helidon-http-encoding-deflate`
+|===
 
 === HTTP Compression Negotiation
 
@@ -935,6 +940,74 @@ For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP 
 has been enabled as shown above, the response shall include the header `Content-Encoding: gzip`
 and a compressed payload.
 
+== Proxy Protocol Support
+
+The link:https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[Proxy Protocol]
+provides a way to convey client information across reverse
+proxies or load balancers which would otherwise be lost given that new connections
+are established for each network hop. Often times, this information
+can be carried in HTTP headers, but not all proxies support this feature.
+Helidon is capable of
+parsing a proxy protocol header (i.e., a network preamble) that is based on
+either V1 or V2 of the protocol, thus making client information available to
+service developers.
+
+Proxy Protocol support is enabled via configuration, and
+can be done either declaratively or programmatically. Once enabled, every new
+connection on the corresponding port **MUST** be preambled by a proxy header
+for the connection not to be rejected as invalid --that is, proxy headers are
+never optional.
+
+Programmatically, support for the Proxy Protocol is enabled as follows:
+[source,java]
+----
+WebServer server = WebServer.builder()
+    .enableProxyProtocol(true)
+    .routing(...)
+    .build()
+    .start();
+----
+
+Declaratively, support for the Proxy Protocol is enabled as follows:
+[source,yaml]
+----
+server:
+  port: 8080
+  host: 0.0.0.0
+  enable-proxy-protocol: true
+----
+
+=== Accessing Proxy Protocol Data
+
+There are two ways in which the header data can be accessed in your application.
+One way is by obtaining the protocol data directly from a request as shown
+next:
+
+[source,java]
+----
+routing.get("/", (req, res) -> {
+    ProxyProtocolData data = req.proxyProtocolData().orElse(null);
+    if (data != null
+            && data.family() == ProxyProtocolData.Family.IPv4
+            && data.protocol() == ProxyProtocolData.Protocol.TCP
+            && data.sourceAddress().equals("192.168.0.1")
+            && data.destAddress().equals("192.168.0.11")
+            && data.sourcePort() == 56324
+            && data.destPort() == 443) {
+        // ...
+    }
+});
+----
+
+NOTE: Every request associated with a certain connection shall have
+access to the Proxy Protocol data received when the connection was opened.
+
+Alternatively, the WebServer also makes the original client source
+address and source port available in the HTTP headers `X-Forwarded-For`
+and `X-Forwarded-Port`, respectively. In some cases, it is just simpler
+to inspect these headers instead of getting the complete `ProxyProtocolData`
+instance as shown above.
+
 == Additional Information
 
 Here is the code for a minimalist web application that runs on a random free port:
@@ -942,26 +1015,25 @@ Here is the code for a minimalist web application that runs on a random free por
 [source,java]
 ----
 public static void main(String[] args) {
-    WebServer webServer = WebServer
-            .create(Routing.builder()
-                            .any((req, res) -> res.send("It works!"))) // <1>
-            .start() // <2>
-            .await(10, TimeUnit.SECONDS); // <3>
+    WebServer webServer = WebServer.builder()
+                .routing(routing -> routing.any((req, res) -> res.send("It works!"))) // <1>
+                .build() // <2>
+                .start(); // <3>
 
     System.out.println("Server started at: http://localhost:" + webServer.port()); // <4>
 }
 ----
 
 <1> For any kind of request, at any path, respond with `It works!`.
-<2> Start the server.
-<3> Wait for the server to start while throwing possible errors as runtime exceptions.
+<2> Build the server with the provided configuraiton
+<3> Start the server (and wait for it to open the port).
 <4> The server is bound to a random free port.
 
 == Reference
 
 * link:{webserver-javadoc-base-url}/module-summary.html[Helidon WebServer JavaDoc]
 * link:{webserver-staticcontent-javadoc-base-url}/module-summary.html[Helidon WebServer Static Content JavaDoc]
-* link:{webserver-jersey-javadoc-base-url}/module-summary.html[Helidon WebServer Jersey JavaDoc]
 * link:{media-jsonp-javadoc-base-url}/module-summary.html[Helidon JSON-B Support JavaDoc]
 * link:{media-jsonb-javadoc-base-url}/module-summary.html[Helidon JSON-P Support JavaDoc]
 * link:{media-jackson-javadoc-base-url}/module-summary.html[Helidon Jackson Support JavaDoc]
+* link:https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[Proxy Protocol Specification]

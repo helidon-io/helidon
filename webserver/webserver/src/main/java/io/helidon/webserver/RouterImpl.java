@@ -26,7 +26,12 @@ class RouterImpl implements Router {
     private final Map<Class<?>, Routing> routings;
 
     private RouterImpl(Builder builder) {
-        this.routings = new IdentityHashMap<>(builder.routings);
+        routings = new IdentityHashMap<>();
+        builder.routings.values()
+                .forEach(it -> {
+                    Routing routing = it.build();
+                    routings.put(routing.getClass(), routing);
+                });
     }
 
     static Builder builder() {
@@ -65,7 +70,7 @@ class RouterImpl implements Router {
     static class Builder implements Router.Builder {
         private static final System.Logger LOGGER = System.getLogger(Builder.class.getName());
 
-        private final Map<Class<?>, Routing> routings = new IdentityHashMap<>();
+        private final Map<Class<?>, io.helidon.common.Builder<?, ? extends Routing>> routings = new IdentityHashMap<>();
 
         private Builder() {
         }
@@ -76,13 +81,19 @@ class RouterImpl implements Router {
         }
 
         @Override
-        public Builder addRouting(Routing routing) {
-            Routing previous = this.routings.put(routing.getClass(), routing);
+        public Router.Builder addRouting(io.helidon.common.Builder<?, ? extends Routing> routing) {
+            var previous = this.routings.put(routing.getClass(), routing);
             if (previous != null) {
+                Thread.dumpStack();
                 LOGGER.log(System.Logger.Level.WARNING, "Second routing of the same type is registered. "
                         + "The first instance will be ignored. Type: " + routing.getClass().getName());
             }
             return this;
+        }
+
+        @Override
+        public List<io.helidon.common.Builder<?, ? extends Routing>> routings() {
+            return List.copyOf(routings.values());
         }
     }
 }

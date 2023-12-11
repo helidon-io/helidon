@@ -25,7 +25,6 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * Simple Hello World rest application.
@@ -70,8 +69,7 @@ public final class Main {
     static void routing(HttpRouting.Builder routing) {
 
         // Note: Add the CORS routing *before* registering the GreetService routing.
-        routing.register("/greet", corsSupportForGreeting(), new GreetService())
-                .addFeature(ObserveFeature.create());
+        routing.register("/greet", corsSupportForGreeting(), new GreetService());
     }
 
     private static CorsSupport corsSupportForGreeting() {

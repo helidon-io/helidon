@@ -68,7 +68,19 @@ public final class Main {
         Config config = Config.create();
         Config.global(config);
 
-        server.routing(Main::routing)
+        /*
+         * For purposes of illustration, the key performance indicator settings for the
+         * MetricsSupport instance are set up according to a system property, so you can see,
+         * in one example, how to code each approach. Normally, you would choose one
+         * approach to use in an application.
+         */
+        MetricsObserver metricsObserver = USE_CONFIG
+                ? metricsSupportWithConfig(config.get("metrics"))
+                : metricsSupportWithoutConfig();
+
+
+        server.addFeature(ObserveFeature.just(metricsObserver))
+                .routing(Main::routing)
                 .config(config.get("server"));
 
     }
@@ -79,20 +91,8 @@ public final class Main {
      * @param routing routing builder
      */
     private static void routing(HttpRouting.Builder routing) {
-        Config config = Config.global();
 
-        /*
-         * For purposes of illustration, the key performance indicator settings for the
-         * MetricsSupport instance are set up according to a system property, so you can see,
-         * in one example, how to code each approach. Normally, you would choose one
-         * approach to use in an application.
-         */
-        MetricsObserver metricsSupport = USE_CONFIG
-                ? metricsSupportWithConfig(config.get("metrics"))
-                : metricsSupportWithoutConfig();
-
-        routing.addFeature(ObserveFeature.just(metricsSupport))
-                .register("/greet", new GreetService());
+        routing.register("/greet", new GreetService());
     }
 
     /**

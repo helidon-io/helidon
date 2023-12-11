@@ -29,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -81,7 +81,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
 
     /**
      * Get a builder instance to construct a new security provider.
-     * Alternative approach is {@link #create(Config)} (or {@link HttpBasicAuthProvider#create(Config)}).
+     * Alternative approach is {@link #create(io.helidon.common.config.Config)} (or {@link HttpBasicAuthProvider#create(Config)}).
      *
      * @return builder to fluently construct Basic security provider
      */
@@ -338,7 +338,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
 
                         @Override
                         public SecureUserStore create(Config config) {
-                            return usersConfig.as(ConfigUserStore::create)
+                            return usersConfig.map(ConfigUserStore::create)
                                     .orElseThrow(() -> new HttpAuthException(
                                             "No users configured! Key \"users\" must be in configuration"));
                         }
@@ -352,7 +352,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                         addUserStore(userStoreService.create(config.get(userStoreService.configKey())));
                     });
 
-            config.get("outbound").asList(OutboundTarget::create)
+            config.get("outbound").mapList(OutboundTarget::create)
                     .ifPresent(it -> it.forEach(outboundBuilder::addTarget));
 
             return this;

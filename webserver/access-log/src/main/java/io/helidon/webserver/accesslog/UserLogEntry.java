@@ -34,7 +34,9 @@ public final class UserLogEntry extends AbstractLogEntry {
      * Create a new user log entry.
      *
      * @return a new access log entry for username
-     * @see AccessLogFeature.Builder#add(AccessLogEntry)
+     *
+     * @see io.helidon.webserver.accesslog.AccessLogConfig.Builder#addEntry(AccessLogEntry)
+     * @see AccessLogConfig.Builder#addEntry(AccessLogEntry)
      */
     public static UserLogEntry create() {
         return builder().build();

@@ -95,12 +95,14 @@ class AccessLogFeatureTest {
         when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
         String expectedTimestamp = TimestampLogEntry.create().doApply(accessLogContext);
 
-        String logRecord = accessLog.createLogRecord(request,
-                                                     response,
-                                                     BEGIN_TIME,
-                                                     0L,
-                                                     END_TIME,
-                                                     TIME_TAKEN_MICROS * 1000);
+        AccessLogHttpFeature httpAccessLog = accessLog.httpFeature("@default");
+
+        String logRecord = httpAccessLog.createLogRecord(request,
+                                                         response,
+                                                         BEGIN_TIME,
+                                                         0L,
+                                                         END_TIME,
+                                                         TIME_TAKEN_MICROS * 1000);
 
         //192.168.0.104 - [18/Jun/2019:23:10:44 +0200] "GET /greet/test HTTP/1.1" 200 55 2248
 
@@ -145,12 +147,13 @@ class AccessLogFeatureTest {
         when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
         String expectedTimestamp = TimestampLogEntry.create().doApply(accessLogContext);
 
-        String logRecord = accessLog.createLogRecord(request,
-                                                     response,
-                                                     BEGIN_TIME,
-                                                     0L,
-                                                     END_TIME,
-                                                     TIME_TAKEN_MICROS * 1000);
+        String logRecord = accessLog.httpFeature("@default")
+                .createLogRecord(request,
+                                 response,
+                                 BEGIN_TIME,
+                                 0L,
+                                 END_TIME,
+                                 TIME_TAKEN_MICROS * 1000);
 
         //192.168.0.104 - [18/Jun/2019:23:10:44 +0200] "GET /greet/test HTTP/1.1" 200 55 2248
 
@@ -163,8 +166,8 @@ class AccessLogFeatureTest {
     @Test
     void testCustomFormat() {
         AccessLogFeature accessLog = AccessLogFeature.builder()
-                .add(TimestampLogEntry.builder().formatter(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).build())
-                .add(HeaderLogEntry.create("Referer"))
+                .addEntry(TimestampLogEntry.builder().formatter(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).build())
+                .addEntry(HeaderLogEntry.create("Referer"))
                 .build();
 
         RoutingRequest request = mock(RoutingRequest.class);
@@ -187,12 +190,13 @@ class AccessLogFeatureTest {
         RoutingResponse response = mock(RoutingResponse.class);
         when(response.status()).thenReturn(Status.I_AM_A_TEAPOT_418);
 
-        String logRecord = accessLog.createLogRecord(request,
-                                                     response,
-                                                     BEGIN_TIME,
-                                                     0L,
-                                                     END_TIME,
-                                                     TIME_TAKEN_MICROS * 1000);
+        String logRecord = accessLog.httpFeature("@default")
+                .createLogRecord(request,
+                                 response,
+                                 BEGIN_TIME,
+                                 0L,
+                                 END_TIME,
+                                 TIME_TAKEN_MICROS * 1000);
 
         String expected = "20071203101530 \"first,second\"";
 

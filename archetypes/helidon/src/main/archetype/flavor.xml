@@ -31,15 +31,15 @@
                   default="se"
                   global="true"
                   optional="true">
+                <option value="se"
+                        name="Helidon SE"
+                        description="Programmatic, lean &amp; fast">
+                    <exec src="se/se.xml"/>
+                </option>
                 <option value="mp"
                         name="Helidon MP"
                         description="Declarative, MicroProfile compliant">
                     <exec src="mp/mp.xml"/>
-                </option>
-                <option value="se"
-                        name="Helidon SE"
-                        description="WebSever based on Virtual Threads">
-                    <exec src="se/se.xml"/>
                 </option>
             </enum>
         </inputs>

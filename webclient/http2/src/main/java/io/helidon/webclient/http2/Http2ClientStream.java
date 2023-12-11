@@ -112,7 +112,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.hasEntity = !endOfStream;
     }
     @Override
-    public void rstStream(Http2RstStream rstStream) {
+    public boolean rstStream(Http2RstStream rstStream) {
         if (state == Http2StreamState.IDLE) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                      "Received RST_STREAM for stream "

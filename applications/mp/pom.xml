@@ -18,7 +18,7 @@
 -->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
@@ -32,10 +32,8 @@
     <description>Parent pom for Helidon MP applications</description>
 
     <properties>
-        <version.plugin.jandex>3.1.2</version.plugin.jandex>
-        <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
-        <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
-        <version.plugin.hibernate.enhance>6.1.7.Final</version.plugin.hibernate.enhance>
+        <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
+        <version.plugin.jandex>${version.lib.jandex}</version.plugin.jandex>
         <mainClass>io.helidon.Main</mainClass>
     </properties>
 
@@ -59,16 +57,7 @@
                 <plugin>
                     <groupId>org.hibernate.orm.tooling</groupId>
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
-                    <version>${version.plugin.hibernate.enhance}</version>
-                    <dependencies>
-                        <dependency>
-                            <!-- Force upgrade byte-buddy for Java 21.     -->
-                            <!-- Remove after upgrading to Hibernate 6.2.7 -->
-                            <groupId>net.bytebuddy</groupId>
-                            <artifactId>byte-buddy</artifactId>
-                            <version>${version.lib.byte-buddy}</version>
-                        </dependency>
-                    </dependencies>
+                    <version>${version.plugin.hibernate-enhance}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -88,14 +77,12 @@
                                 <goals>
                                     <goal>generateResourceConfig</goal>
                                 </goals>
-                                <phase>package</phase>
                             </execution>
                             <execution>
                                 <id>build-native-image</id>
                                 <goals>
                                     <goal>compile</goal>
                                 </goals>
-                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>

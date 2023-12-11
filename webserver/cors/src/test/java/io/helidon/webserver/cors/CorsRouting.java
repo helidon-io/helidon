@@ -26,6 +26,7 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_3;
 
 abstract class CorsRouting {
+
     @SetUpRoute
     static void routing(HttpRules routing) {
         CrossOriginConfig cors3COC = CrossOriginConfig.builder()

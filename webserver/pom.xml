@@ -44,7 +44,6 @@
         <module>sse</module>
         <module>static-content</module>
         <module>testing</module>
-        <module>tracing</module>
         <module>webserver</module>
         <module>websocket</module>
     </modules>

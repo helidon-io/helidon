@@ -23,12 +23,14 @@
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
     <exec src="/common/security.xml"/>
-    <source src="/se/custom/database.xml"/>
+    <source src="database-inputs.xml"/>
     <source src="/common/extra.xml"/>
-    <source src="/se/custom/extra.xml"/>
-    <exec src="/common/packaging.xml"/>
+    <source src="extra.xml"/>
     <source src="/common/observability.xml"/>
-    <source src="/se/custom/observability.xml"/>
+    <source src="observability.xml"/>
+    <exec src="/common/packaging.xml"/>
+    <exec src="database-output.xml" if="${db}"/>
+    <source src="security-outputs.xml" if="${security}"/>
 
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
@@ -45,31 +47,30 @@
                 <value><![CDATA[
     @Test
     void testSimpleGreet() {
-        try (Http1ClientResponse response = client.get("/simple-greet").request()) {
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is("Hello World!"));
-        }
+        ClientResponseTyped<String> response = client.get("/simple-greet").request(String.class);
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Hello World!"));
     }
 ]]></value>
             </list>
-            <list key="readme-exercise-the-application" if="${media} contains 'json'">
-                <value if="${media.json-lib} == 'jsonp'"><![CDATA[
+            <list key="readme-exercise-the-application">
+                <value order="999"><![CDATA[
+Basic:
 ```
 curl -X GET http://localhost:8080/simple-greet
 Hello World!
-
-```
-]]></value>
-                <value if="${media.json-lib} == 'jsonb'"><![CDATA[
-```
-curl -X GET http://localhost:8080/simple-greet
-{"message":"Hello World!"}
-
 ```
 ]]></value>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.logging.common</value>
+            </list>
+            <list key="dependencies">
+                <map order="50" if="!(${extra} contains 'webclient') || ${security}">
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
+                    <value key="scope" if="!${security}">test</value>
+                </map>
             </list>
         </model>
     </output>

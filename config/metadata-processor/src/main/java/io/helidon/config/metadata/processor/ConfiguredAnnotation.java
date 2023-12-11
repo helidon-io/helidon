@@ -44,14 +44,18 @@ record ConfiguredAnnotation(Optional<String> description,
     }
 
     static ConfiguredAnnotation createBuilder(TypeInfo blueprint) {
-        Optional<String> config = blueprint.findAnnotation(CONFIGURED).flatMap(Annotation::stringValue)
+        Optional<String> config = blueprint.findAnnotation(CONFIGURED)
+                .flatMap(Annotation::stringValue)
                 .filter(Predicate.not(String::isBlank));
+        boolean isRoot = config.isPresent() && blueprint.findAnnotation(CONFIGURED)
+                .flatMap(it -> it.booleanValue("root"))
+                .orElse(true);
 
         return new ConfiguredAnnotation(
                 blueprint.findAnnotation(DESCRIPTION).flatMap(Annotation::stringValue),
                 config,
                 toProvidesBuilder(blueprint),
-                config.isPresent(),
+                isRoot,
                 false
         );
     }

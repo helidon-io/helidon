@@ -77,7 +77,7 @@ Learn how to set up an OIDC Helidon SE application
 
 [CARD]
 .Helidon SE Upgrade Guide
-[link=migration.adoc]
+[link=upgrade.adoc]
 --
 Learn how to Upgrade your Helidon SE application
 --

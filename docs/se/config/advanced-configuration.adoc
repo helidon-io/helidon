@@ -155,14 +155,13 @@ Config config = Config.create(
 [source,java]
 ----
 Config config = Config.create(
-        ConfigSources.create("app.greeting = Hi", "text/x-java-properties")); // <2>
+        ConfigSources.create("app.greeting = Hi", MediaTypes.create("text/x-java-properties")));
 ----
 ==== `Map`
 [source,java]
 ----
 Config config = Config.crate(
         ConfigSources.create(Map.of("app.page-size", "20"))
-            .lax()             // <3>
             .build());         // <1>
 ----
 ==== _ad hoc_ Config Nodes
@@ -177,12 +176,9 @@ Config config = Config.create(
                                    .build()));
 ----
 <1> `ConfigSources.create` variants for `Properties` or `Map` arguments return a
- `ConfigSources.MapBuilder` instance.
-<2> A similar `create` variant accepts a `Readable` instead of a `String`.
-<3> `MapBuilder` by default throws an exception if a key appears more than once
-in the map. The `lax()` method relaxes this; the config system logs a warning instead.
+ `MapConfigSource.Builder` instance.
 
-=== Multi-Source ``Config``s and Composite Config Sources
+=== Multi-Source Configs and Composite Config Sources
 Although the examples above use a single source, you can build a single `Config`
 from multiple sources.
 
@@ -259,37 +255,27 @@ sources gives your application a way to access all config elements distinctly ev
 if their keys would otherwise conflict.
 
 ===== Merging Strategies
-The `ConfigSources.create(Supplier<ConfigSource>...)` and `ConfigSources.create(List<Supplier<ConfigSource>...)`
-methods return a `CompositeBuilder`.
-By default, earlier sources in the list have higher priority than later ones, meaning
-that if the same key appears in two or more sources the source earlier in the
-list prevails.
+When creating config from multiple sources, it is possible that the same key comes from multiple
+sources. By default, earlier sources in the list have higher priority than later ones. This means
+that if the same key appears in two or more sources, then the source earlier in the list prevails.
 
-Each ``CompositeConfigSource``'s _merging strategy_ actually controls this behavior.
 The config system provides the
 `FallbackMergingStrategy`
 which implements the default, "first wins" algorithm. You can write your own
-implementation of
-link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.MergingStrategy.html[`ConfigSources.MergingStrategy`]
+implementation of MergingStrategy interface
 and use it instead to provide a different algorithm.
 
 [source,java]
 .Composite config source example
 ----
-Config config = Config.create(                                               // <1>
-        ConfigSources.create(file("conf/dev.properties").optional(),         // <2>
-                           file("conf/config.properties").optional())        // <2>
-                .add(classpath("application.properties"))                    // <3>
-                .mergingStrategy(ConfigSources.MergingStrategy.fallback())); // <4>
+Config config = Config.builder()
+                .addSource(file("config-file.properties"))
+                .addSource(classpath("application.yaml"))
+                .mergingStrategy(MergingStrategy.fallback())  // <1>
+                .build();
 ----
 
-<1> Creates a new `Config` instance from a single composite config source.
-<2> Method `ConfigSources.create(sources...)` returns `CompositeBuilder` instance
- initialized with two sources (from `dev.properties` and `config.properties`
- files).
-<3> Adds third config source (`application.properties` on
- classpath) to the same `CompositeBuilder`.
-<4> Specifies the merging strategy. This example uses the default fallback
+<1> Specifies the merging strategy. This example uses the default fallback
  merging strategy.
 
 == Advanced Config Parsers
@@ -328,7 +314,7 @@ because there might be more than one inferred media type.
 .Specify `mediaType` for config source
 ----
 Config config = Config.create(classpath("props")                             // <1>
-                                    .mediaType("text/x-java-properties")); // <2>
+                                    .mediaType(MediaTypes.create("text/x-java-properties"))); // <2>
 ----
 
 <1> The config system cannot infer the media type because there is no file
@@ -358,7 +344,7 @@ a `ConfigException` when trying to prepare the configuration.
 
 ===== By Application Directive
 Your application can specify which parser to use for a config source. The
-`AbstractParsableConfigSource.Builder` class exposes the `parser` method, which
+`AbstractConfigSourceBuilder` class exposes the `parser` method, which
 accepts the `ConfigParser` to be used for that source. Several methods
 on `ConfigSources` such as `classpath`, `directory`, and `file` return this
 builder class.
@@ -416,15 +402,15 @@ Config config = Config.create(
         classpath("application.yaml")
                 .mediaTypeMapping(                          // <1>
                         key -> "app".equals(key.toString()) // <2>
-                                ? "application/json"
-                                : null));
+                                        ? Optional.of(MediaTypes.APPLICATION_JSON)
+                                        : Optional.empty()));
 
 assert config.get("secrets.username").asString()            // <3>
         .get().equals("jose");
 assert config.get("secrets.password").asString()            // <3>
         .get().equals("^ery$ecretP&ssword");
 
-assert config.get("app").type() == Type.OBJECT;             // <4>
+assert config.get("app").type() == Config.Type.OBJECT;      // <4>
 
 assert config.get("app.greeting")                           // <3>
         .asString().get().equals("Hello");
@@ -458,7 +444,7 @@ you want to use for parsing those keys' values.
 .Specify JSON formatted property' parser instance
 ----
 Config config = Config.create(
-        ConfigSources.classpath("application.yaml")
+        classpath("application.yaml")
                 .parserMapping(                                           // <1>
                         key -> "app".equals(key.toString())               // <2>
                                 ? Optional.of(HoconConfigParser.create())
@@ -637,9 +623,8 @@ Each of these uses an executor to perform its work. The config system provides d
 executors, but your application can specify different ones if necessary.
 
 === Executors for Polling Strategy
-The two methods `PollingStrategies.regular(Duration)` and
-`PollingStrategies.watch(Path)` return builders for their respective strategies.
-Both builders expose the `executor` method which your application can invoke, passing a
+The method `PollingStrategies.regular(Duration)` returns builder for polling strategy.
+This builder provides `executor` method which your application can invoke, passing a
 `java.util.concurrent.ScheduledExecutorService` instance it requires for the
 polling work. By default, each polling strategy instance uses a separate thread
 pool executor.
@@ -656,49 +641,45 @@ Config config = Config.create(
                 .pollingStrategy(
                         PollingStrategies.regular(Duration.ofSeconds(2)) // <2>
                                 .executor(executor)),                    // <3>
-        ConfigSources.create("conf/config.properties")
+        ConfigSources.file("conf/config.properties")
                 .pollingStrategy(
-                        path -> PollingStrategies.watch(path)            // <4>
-                                .executor(executor)));                   // <5>
+                        PollingStrategies.regular(Duration.ofSeconds(5)) // <2>
+                                .executor(executor)));                   // <4>
 ----
 
-<1> Prepares a thread pool executor with core pool size set `2` to be shared by
- all polling strategies.
+<1> Prepares a thread pool executor with core pool size set `2`.
 <2> Selects the built-in periodic polling strategy.
 <3> Tells the config system to use the specific executor to poll the
 `dev.properties` config source.
-<4> Uses the Java filesystem `WatchService` to monitor the specified path.
-<5> Tells the config system to use the same executor to monitor the path.
+<4> Tells the config system to use the specific executor to poll the
+`config.properties` config source.
 
-=== Publishers for Source Change Events
-Recall that when a polling strategy detects a change in a source, it informs
+=== Executors for Source Change Events
+Recall that when a change watcher detects a change in a source, it informs
 interested parties of the changes. By default, each `Config.Builder` arranges
 for the resulting `Config` tree to use a shared executor that reuses available threads
 from a pool, creating new threads as needed. The same executor is used for actually
 reloading the source.
 
-Your application can invoke the polling strategy builder's `changesExecutor` method to
-tell the builder
-to use a different `Executor`. (As an aside, your application can also control
-the size of the buffer used for holding source change events by invoking the
-builder's `changesMaxBuffer` method. The default is 256.)
+Your application can invoke the system watcher builder's `executor` method to
+tell the builder to use a different `Executor`.
 
 [source,java]
 .Customize config and override sources' executors
 ----
-Executor executor = Executors.newCachedThreadPool();               // <1>
+ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);// <1>
 
 Config config = Config.builder()
         .overrides(
                 OverrideSources.file("conf/overrides.properties")
-                        .pollingStrategy(PollingStrategies::watch)
-                        .changesExecutor(executor)                 // <2>
-                        .changesMaxBuffer(4))                      // <3>
+                        .changeWatcher(FileSystemWatcher.builder()
+                                               .executor(executor)      // <2>
+                                               .build()))
         .sources(
                 ConfigSources.file("conf/env.yaml")
-                        .pollingStrategy(PollingStrategies::watch)
-                        .changesExecutor(executor)                 // <4>
-                        .changesMaxBuffer(4))                      // <4>
+                        .changeWatcher(FileSystemWatcher.builder()
+                                               .executor(executor)      // <3>
+                                               .build()))
         .build();
 ----
 
@@ -706,88 +687,8 @@ Config config = Config.builder()
 <2> Tells the builder that the resulting overrides source should use the specified
 `Executor` for notifying interested parties of changes and for reloading the
 override source.
-<3> Specifies an event buffer size of 4.
-<4> Uses the same `Executor` and event buffer size for the config source as for
+<3> Uses the same `Executor` and event buffer size for the config source as for
 the override source above.
-
-=== Composite Config Source Executor
-When your application supplies multiple sources to a config builder, as with
-`Config.create(Supplier<ConfigSource>...)` and `Config.create(List<Supplier<ConfigSource>>)`,
-the config system
-automatically uses a _composite config source_ which aggregates the separate
-sources but also listens for changes to any of the individual sources, so it can
-delegate the change notification. For this change detection and notification the
-config system, by default, uses an executor with a dedicated thread pool that is
-shared across all `Config` instances.
-
-Your application can invoke the builder's `changesExecutor` method to use a
-different `ScheduledExecutorService` instance.
-The builder returned by the `from` methods mentioned above is a
-link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.CompositeBuilder.html[CompositeBuilder]
-which extends `Config.Builder`.
-
-Because a composite source might yield more numerous change events -- because of the
-multiple underlying sources -- your application can specify _debounce timeout_
-for the composite source by invoking the `CompositeBuilder.changesDebounce(Duration)`
-method. The composite source aggregates multiple change events within this _debounce timeout_
-period into a single event and broadcasts that one instead. Next, it reloads the sources at
-that time, not necessarily in response to every single change in any source.
-The default is `100` milliseconds.
-
-[source,java]
-.Customize composite source executors
-----
-ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);       // <1>
-
-Config config = Config.create(
-        ConfigSources.create(file("conf/dev.properties")                         // <2>
-                                   .pollingStrategy(PollingStrategies::watch),
-                           file("conf/config.properties")                      // <2>
-                                   .pollingStrategy(PollingStrategies::watch))
-                .changesExecutor(executor)                                     // <3>
-                .changesMaxBuffer(4)                                           // <4>
-                .changesDebounce(Duration.ofSeconds(1)));                      // <5>
-----
-
-<1> Prepares a thread pool executor.
-<2> `ConfigSources.create(Supplier<ConfigSource>...)` creates and returns a
-`CompositeBuilder` based on the two sources.
-<3> Specifies a particular executor for monitoring and change event notification.
-<4> Sets the subscriber's buffer size to 4 events. The composite source discards
-any events not consumed by a subscriber if it needs to create room for more
-recent events.
-<5> Change events will not fire more frequently than once per a second.
-
-=== Config Custom Executor
-A loaded config tree subscribes to change events publishes by its source(s).
-By default, each `Config` uses an executor which manages a dedicated thread pool
-reusing previously-created threads when they are available and creating new threads
-as needed.
-All `Config` instances share the dedicated thread pool.
-
-Your application
-can specify a non-default `Executor` for a tree to use for accepting and propagating
-those events by invoking the `changesExecutor` method on the `Config.Builder`.
-Each source subscriber has a dedicated buffer for holding changes events. This
-defaults to 256, but you can tailor this value as needed.
-
-[source,java]
-.Customize config executor
-----
-Executor executor = Executors.newCachedThreadPool();        // <1>
-
-Config config = Config.create(
-        file("conf/config.properties")
-                .pollingStrategy(PollingStrategies::watch))
-        .changesExecutor(executor)                          // <2>
-        .changesMaxBuffer(16)                               // <3>
-        .build();
-----
-
-<1> Prepares a specific thread pool executor.
-<2> Specifies the executor the `Config` tree will use to listen for and propagate
-change events.
-<3> Sets the event subscriber buffer to `16` events.
 
 === Retry Policy Custom Executor
 You can control which executor a retry policy should use for its work.

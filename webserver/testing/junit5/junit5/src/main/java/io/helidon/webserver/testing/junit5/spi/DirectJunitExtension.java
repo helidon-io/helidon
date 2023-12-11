@@ -17,7 +17,10 @@
 package io.helidon.webserver.testing.junit5.spi;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Optional;
+
+import io.helidon.webserver.spi.ServerFeature;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -46,10 +49,11 @@ public interface DirectJunitExtension extends HelidonJunitExtension {
     /**
      * Check if the type is supported and return a handler for it.
      *
-     * @param type type of the parameter to {@link io.helidon.webserver.testing.junit5.SetUpRoute} method
+     * @param features
+     * @param type     type of the parameter to {@link io.helidon.webserver.testing.junit5.SetUpRoute} method
      * @return parameter handler if the type is supported, empty otherwise
      */
-    default Optional<ParamHandler<?>> setUpRouteParamHandler(Class<?> type) {
+    default Optional<ParamHandler<?>> setUpRouteParamHandler(List<ServerFeature> features, Class<?> type) {
         return Optional.empty();
     }
 

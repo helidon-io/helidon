@@ -28,7 +28,7 @@ public final class UserIdLogEntry implements AccessLogEntry {
      * Create a new access log entry for user id.
      *
      * @return an entry that always considers user id to be undefined
-     * @see AccessLogFeature.Builder#add(AccessLogEntry)
+     * @see AccessLogConfig.Builder#addEntry(AccessLogEntry)
      * @see UserLogEntry
      */
     public static UserIdLogEntry create() {

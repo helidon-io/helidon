@@ -20,3 +20,12 @@ app:
 server:
   port: 8080
   host: 0.0.0.0
+  # default behavior to discover Server features (observability, openapi, metrics)
+  # features-discovers-services: true
+  # all of the below is discovered automatically
+  # features:
+  #  observe:
+  #    observers:
+  #      metrics:
+  #      health:
+  #        enabled: false

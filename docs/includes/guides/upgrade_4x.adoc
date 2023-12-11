@@ -1,0 +1,31 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Upgrading from 3.x
+:description: Helidon Upgrade Guide
+:keywords: helidon upgrade migration
+
+include::../attributes.adoc[]
+
+== Upgrade Guides
+
+Helidon 4.x is not fully backwards compatible with Helidon 3.x. For information
+concerning upgrading from Helidon 3.x to 4.x see the following upgrade guides:
+
+* xref:../mp/guides/upgrade_4x.adoc[Helidon MP 4.x Upgrade Guide]
+* xref:../se/guides/upgrade_4x.adoc[Helidon SE 4.x Upgrade Guide]

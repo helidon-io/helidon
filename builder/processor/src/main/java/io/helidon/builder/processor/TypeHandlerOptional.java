@@ -16,7 +16,9 @@
 
 package io.helidon.builder.processor;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.common.processor.classmodel.Field;
@@ -25,14 +27,45 @@ import io.helidon.common.processor.classmodel.Javadoc;
 import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
 import static io.helidon.common.processor.GeneratorTools.capitalize;
+import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
+import static io.helidon.common.types.TypeNames.BOXED_BYTE;
+import static io.helidon.common.types.TypeNames.BOXED_CHAR;
+import static io.helidon.common.types.TypeNames.BOXED_DOUBLE;
+import static io.helidon.common.types.TypeNames.BOXED_FLOAT;
+import static io.helidon.common.types.TypeNames.BOXED_INT;
+import static io.helidon.common.types.TypeNames.BOXED_LONG;
+import static io.helidon.common.types.TypeNames.BOXED_SHORT;
+import static io.helidon.common.types.TypeNames.BOXED_VOID;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_BOOLEAN;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_BYTE;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_CHAR;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_DOUBLE;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_FLOAT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_SHORT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_VOID;
 
 // declaration in builder is always non-generic, so no need to modify default values
 class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
+
+    private static final Map<TypeName, TypeName> BOXED_TO_PRIMITIVE = Map.of(
+            BOXED_BOOLEAN, PRIMITIVE_BOOLEAN,
+            BOXED_BYTE, PRIMITIVE_BYTE,
+            BOXED_SHORT, PRIMITIVE_SHORT,
+            BOXED_INT, PRIMITIVE_INT,
+            BOXED_LONG, PRIMITIVE_LONG,
+            BOXED_CHAR, PRIMITIVE_CHAR,
+            BOXED_FLOAT, PRIMITIVE_FLOAT,
+            BOXED_DOUBLE, PRIMITIVE_DOUBLE,
+            BOXED_VOID, PRIMITIVE_VOID
+    );
 
     TypeHandlerOptional(String name, String getterName, String setterName, TypeName declaredType) {
         super(name, getterName, setterName, declaredType);
@@ -61,6 +94,13 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
 
     @Override
     TypeName argumentTypeName() {
+        TypeName type = actualType();
+        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive()) {
+            return TypeName.builder(OPTIONAL)
+                    .addTypeArgument(type)
+                    .build();
+        }
+
         return TypeName.builder(OPTIONAL)
                 .addTypeArgument(toWildcard(actualType()))
                 .build();
@@ -87,7 +127,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                     .description(blueprintJavadoc.content())
                     .returnType(returnType, "updated builder instance")
                     .addParameter(param -> param.name(name())
-                            .type(actualType())
+                            .type(toPrimitive(actualType()))
                             .description(blueprintJavadoc.returnDescription()))
                     .addJavadocTag("see", "#" + getterName() + "()")
                     .typeName(Objects.class)
@@ -140,15 +180,17 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                     .addTypeArgument(builderType)
                     .build();
 
+            Javadoc javadoc = setterJavadoc(blueprintJavadoc)
+                            .addParameter(argumentName, blueprintJavadoc.returnDescription())
+                            .build();
+
             classBuilder.addMethod(builder -> builder.name(setterName())
                     .accessModifier(setterAccessModifier(configured))
-                    .description(blueprintJavadoc.content())
-                    .returnType(returnType, "updated builder instance")
+                    .returnType(returnType)
                     .addParameter(param -> param.name(argumentName)
-                            .type(argumentType)
-                            .description(blueprintJavadoc.returnDescription()))
-                    .addJavadocTag("see", "#" + getterName() + "()")
+                            .type(argumentType))
                     .typeName(Objects.class)
+                    .javadoc(javadoc)
                     .addLine(".requireNonNull(" + argumentName + ");")
                     .add("var builder = ")
                     .typeName(fm.typeWithFactoryMethod().genericTypeName())
@@ -173,7 +215,9 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                 .addJavadocTag("see", "#" + getterName() + "()")
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(" + name() + ");")
-                .addLine("this." + name() + " = " + name() + ".orElse(null);")
+                .addLine("this." + name() + " = " + name()
+                                 + ".map(" + actualType().fqName() + ".class::cast)"
+                                 + ".orElse(this." + name() + ");")
                 .addLine("return self();"));
     }
 
@@ -195,5 +239,10 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             return ".orElse(null)";
         }
         return "";
+    }
+
+    private TypeName toPrimitive(TypeName typeName) {
+        return Optional.ofNullable(BOXED_TO_PRIMITIVE.get(typeName))
+                .orElse(typeName);
     }
 }

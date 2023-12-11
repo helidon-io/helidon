@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2016, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+server:
+  features:
+    security:
+      # Configuration of integration with web server
+      defaults:
+        authenticate: true
+      paths:
+        - path: "/noRoles"
+          methods: [ "get" ]
+        - path: "/user[/{*}]"
+          methods: [ "get" ]
+          roles-allowed: [ "user" ]
+        - path: "/admin"
+          methods: [ "get" ]
+          roles-allowed: [ "admin" ]
+        - path: "/deny"
+          methods: [ "get" ]
+          roles-allowed: [ "deny" ]
+          audit: true
+        - path: "/noAuthn"
+          roles-allowed: [ "admin" ]
+          authentication-optional: true
+          audit: true
+
 
 security:
     config:
@@ -33,24 +58,3 @@ security:
                     - login: "john"
                       password: "${CLEAR=password}"
                       roles: []
-    web-server:
-        # Configuration of integration with web server
-        defaults:
-            authenticate: true
-        paths:
-            - path: "/noRoles"
-              methods: ["get"]
-            - path: "/user[/{*}]"
-              methods: ["get"]
-              roles-allowed: ["user"]
-            - path: "/admin"
-              methods: ["get"]
-              roles-allowed: ["admin"]
-            - path: "/deny"
-              methods: ["get"]
-              roles-allowed: ["deny"]
-              audit: true
-            - path: "/noAuthn"
-              roles-allowed: ["admin"]
-              authentication-optional: true
-              audit: true

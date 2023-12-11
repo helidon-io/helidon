@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,10 +100,8 @@ public class CacheExtension implements Extension {
                             .scope(ApplicationScoped.class)
                             .addTransitiveTypeClosure(Cache.class)
                             .addTypes(types)
-                            .createWith(cc -> {
-                                return CacheBuilder.create(name, getConfigNode(qualifiers), keyType.rawType(),
-                                                           valueType.rawType());
-                            })
+                            .createWith(cc -> CacheBuilder.create(name, getConfigNode(qualifiers), keyType.rawType(),
+                                                       valueType.rawType()))
                             .destroyWith((cache, context) -> cache.close());
                 }
             }

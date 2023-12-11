@@ -94,8 +94,8 @@ How you set up Helidon MP's named data source integration differs
 depending on which of these two connection pools, which JDBC driver,
 and which relational database product you use.
 
-Representative setups are described below.  The list of such setups is
-not exhaustive.
+Representative setups are described below.  This list of setups is not
+exhaustive.
 
 === Project Setup [[DS-Setup]]
 
@@ -171,10 +171,10 @@ managed]
 
 ===== Overview
 
-Regardless of which connection pool you use, at the lowest level JDBC
-database driver classes are responsible for making any connections to
-a relational database.  JDBC database driver classes are
-database-product-specific.
+Regardless of which connection pool you use, at the lowest level, JDBC
+database driver classes are what is ultimately responsible for making
+any connections to a relational database.  JDBC database driver
+classes are database-product-specific.
 
 Once you have decided upon a relational database product to use, and
 JDBC driver classes to use to connect to it,
@@ -187,8 +187,8 @@ See the
 link:{jdk-javadoc-url}/java.sql/java/sql/package-summary.html[JDBC 4.3
 Specification] for more information about JDBC.
 
-Representative setups are described below.  The list of such setups is
-not exhaustive.
+Representative setups are described below.  This list of setups is not
+exhaustive.
 
 ===== Setting Up H2 [[DS-H2-Driver-Project-Setup]]
 
@@ -296,8 +296,8 @@ typically supply:
 * Information required for the vendor-supplied `DataSource` to
   authenticate to the database and otherwise tailor itself to it
 
-Some examples for representative configurations follow.  The list of
-such configurations is not exhaustive.
+Some examples for representative configurations follow.  This list of
+configurations is not exhaustive.
 
 ==== Configuration Prefixes [[DS-Configuration-Prefixes]]
 
@@ -857,8 +857,9 @@ details below for the JPA provider you have chosen to use.
 
 To generate and compile the Jakarta Persistence static metamodel for
 your application, regardless of whether you are using Hibernate ORM or
-Eclipselink, make sure the `<plugin>` element in the following code
-snippet is present as a child element of the
+Eclipselink, xref:../about/managing-dependencies.adoc[ensure your
+dependencies are managed], and then make sure the `<plugin>` element
+in the following code snippet is present as a child element of the
 `<pluginManagement><plugins>` element sequence as shown below:
 
 [source,xml]
@@ -878,7 +879,7 @@ snippet is present as a child element of the
                             <annotationProcessorPath>
                                 <groupId>org.hibernate.orm</groupId>
                                 <artifactId>hibernate-jpamodelgen</artifactId> <!--1-->
-                                <version>6.1.1.Final</version> <!--2-->
+                                <version>${version.lib.hibernate}</version> <!--2-->
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                     </configuration>
@@ -896,10 +897,9 @@ snippet is present as a child element of the
     annotation processor that generates the static metamodel source
     code], to the Java compiler's annotation processor path so that it
     is active at compile time.
-<2> Always check
-    https://search.maven.org/artifact/org.hibernate.orm/hibernate-jpamodelgen[Maven
-    Central] for up to date versions and make sure the version used is
-    that of Hibernate ORM itself.
+<2> Because your xref:../about/managing-dependencies.adoc[dependencies
+    are managed], this will resolve to the currently supported version
+    of Hibernate ORM.
 
 For more on the Hibernate ORM `hibernate-jpamodelgen` annotation
 processor, see
@@ -928,7 +928,7 @@ managed]
 ----
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
-    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+    <artifactId>helidon-integrations-cdi-hibernate</artifactId>
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----
@@ -959,7 +959,7 @@ project's `pom.xml` file's `<plugins>` element:
         for up-to-date versions, and make sure the version is the same
         as that of Hibernate ORM itself.
     -->
-    <!-- <version>6.1.1.Final</version> -->
+    <!-- <version>6.3.1.Final</version> -->
     <executions>
         <execution>
             <id>Statically enhance JPA entities for Hibernate</id>
@@ -976,20 +976,6 @@ project's `pom.xml` file's `<plugins>` element:
     </executions>
 </plugin>
 ----
-
-You must also
-https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#appendix-legacy-bootstrap:~:text=Place%20a%20file%20named%20hibernate.properties%20in%20a%20root%20directory%20of%20the%20classpath[add
-a file named `src/main/resources/META-INF/hibernate.properties`] with
-the following line as its sole contents:
-
-.`src/main/resources/META-INF/hibernate.properties`
-[source,properties]
-----
-hibernate.bytecode.provider=none # <1>
-----
-<1> The value of `none` instructs Hibernate ORM to
-    link:{hibernate-javadoc-base-url}/org/hibernate/cfg/Environment.html#BYTECODE_PROVIDER_NAME_NONE[not
-    attempt to perform weaving at runtime].
 
 For more on the `hibernate-enhance-maven-plugin` in particular, see
 link:{hibernate-doc-jboss-url}/userguide/html_single/Hibernate_User_Guide.html#tooling-maven[its
@@ -1081,31 +1067,71 @@ Weaving] in the Eclipselink documentation.
 
 To configure Helidon MP's Jakarta Persistence integration, you author
 a
-link:{jakarta-persistence-spec-url}#persistence-xml-file[`src/main/resources/META-INF/persistence.xml`
+link:{jakarta-persistence-spec-url}#persistence-xml-file[`META-INF/persistence.xml`
 file].  It contains a mix of standardized elements and JPA
 provider-specific properties.
+
+If you are writing a component or a library, then you place this in
+your Maven project's `src/test/resources` directory (because a library
+or component is not itself an application, and by definition can be
+included in many applications, so it is inappropriate to put
+application-level configuration in your component).  If you are
+working on a project that contains the `main` method (or similar) that
+starts your application, then and only then do you place a
+`META-INF/persistence.xml` in your persistence-oriented Maven
+project's `src/main/resources` directory.
 
 For details about the structure and syntax of the
 `META-INF/persistence.xml` file, see
 link:{jakarta-persistence-spec-url}#persistence-xml-file[persistence.xml
 file] in the Jakarta Persistence specification.
 
+==== Use Only One `META-INF/persistence.xml` Per Application
+
+Like any configuration, a `META-INF/persistence.xml` file is normally
+an _application-level_ concern, not a _component-level_ concern. In
+other words, your Java application, made up of various components, or
+libraries, some of which you may have written, and many of which you
+have not, should normally have exactly one `META-INF/persistence.xml`
+on its classpath, describing the persistence-related aspects of the
+application in its particular environment. There are very few use
+cases where multiple `META-INF/persistence.xml` classpath resources
+are called for.
+
+A common mistake is to write a component or library&mdash;by
+definition intended for use in possibly more than one
+application&mdash;and include a
+`src/main/resources/META-INF/persistence.xml` in its Maven project.
+If two components or libraries containing `META-INF/persistence.xml`
+classpath resources like this are deployed as part of an application,
+it can make for a confusing state of affairs at application runtime,
+and may lead to exceptions indicating more _persistence units_ are
+present than are expected.
+
+Most library projects that work with JPA artifacts should probably
+have a `src/test/resources/META-INF/persistence.xml` in their Maven
+projects instead. This allows you to test your JPA-centric work
+against a test configuration, rather than a "main" or production one,
+which is almost certainly what you want in nearly all cases.
+
+==== Persistence Units
+
 Fundamentally, a `META-INF/persistence.xml` file contains a collection
 of _persistence units_.  A persistence unit represents a collection of
 entities in a relational database loosely coupled to a <<DS, named
 data source>> that knows how to connect to it.
 
-Your `src/main/resources/META-INF/persistence.xml` file must begin
+Your `META-INF/persistence.xml` file must begin
 (and end) with the following XML:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
-                                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
-             version="3.0"> <!--1-->
+                                 https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
+             version="3.1"> <!--1-->
 
     <!--2-->
 
@@ -1113,7 +1139,7 @@ Your `src/main/resources/META-INF/persistence.xml` file must begin
 ----
 <1> Helidon MP's Jakarta Persistence integration supports
     link:{jakarta-persistence-base-url}/[Jakarta Persistence version
-    3.0].
+    3.1].
 <2> `<persistence-unit> elements are listed here.
 
 ==== Persistence Unit
@@ -1126,16 +1152,16 @@ code, and represents a collection of entities in a relational database.
 
 ===== Example: Persistence Unit Skeleton
 
-Here is a partial example of a persistence unit named `prod` with a
+Here is a partial example of a persistence unit named `test` with a
 helpful description:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... -->
 
-<persistence-unit name="prod" transaction-type="JTA"> <!--1-->
-    <description>The production database</description>
+<persistence-unit name="test" transaction-type="JTA"> <!--1-->
+    <description>A testing database</description>
 
     <!--2-->
 
@@ -1174,16 +1200,16 @@ configured>>.
 
 ====== Example: Persistence Unit with JTA Data Source
 
-Here is a partial example of a persistence unit named `prod`, with a
+Here is a partial example of a persistence unit named `test`, with a
 helpful description, linked with a JTA data source named `main`:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... --->
 
-<persistence-unit name="prod" transaction-type="JTA">
-    <description>The production database</description>
+<persistence-unit name="test" transaction-type="JTA">
+    <description>A testing database</description>
     <jta-data-source>main</jta-data-source> <!--1-->
 
     <!--2-->
@@ -1226,17 +1252,17 @@ given JPA provider.
 
 ====== Example: Persistence Unit with Class Elements
 
-Here is a partial example of a persistence unit named `prod`, with a
+Here is a partial example of a persistence unit named `test`, with a
 helpful description, linked with a JTA data source named `main`,
 containing two entity classes:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... --->
 
-<persistence-unit name="prod" transaction-type="JTA">
-    <description>The production database</description>
+<persistence-unit name="test" transaction-type="JTA">
+    <description>A testing database</description>
     <jta-data-source>main</jta-data-source>
     <class>com.example.ExampleEntity0</class> <!--1-->
     <class>com.example.ExampleEntity1</class>
@@ -1269,19 +1295,19 @@ Data Source>> section above for how a persistence unit is linked to a
 
 ====== Example: Persistence Unit with Properties
 
-Here is a partial exmaple of a persistence unit named `prod`, with a
-helpful description, linked with a JTA data source named `main`,
+Here is a partial exmaple of a persistence unit named `test`, with a
+helpful description, linked with a JTA data source named `sample`,
 containing two entity classes, configuring a Hibernate ORM-specific
 property:
 
-.`src/main/resources/META-INF/persistence.xml`
+.`META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... --->
 
-<persistence-unit name="prod" transaction-type="JTA">
-    <description>The production database</description>
-    <jta-data-source>main</jta-data-source> <!--1-->
+<persistence-unit name="test" transaction-type="JTA">
+    <description>A testing database</description>
+    <jta-data-source>sample</jta-data-source> <!--1-->
     <class>com.example.ExampleEntity0</class>
     <class>com.example.ExampleEntity1</class>
     <properties>
@@ -1323,7 +1349,8 @@ Property Extensions Reference] in the Eclipselink documentation.
 To use Helidon MP's Jakarta Persistence integration, once you have
 <<JPA-Setup, set up>> and <<JPA-Configuration, configured>> your
 project, you use the Jakarta Persistence APIs in almost the same
-manner as if your project were deployed to a Jakarta EE server.
+manner as if your project were deployed to a Jakarta EE application
+server.
 
 Specifically, you:
 

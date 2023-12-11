@@ -37,11 +37,11 @@ module io.helidon.integrations.microstream.cdi {
     requires io.helidon.integrations.microstream.cache;
     requires io.helidon.integrations.microstream;
     requires jakarta.annotation;
-    requires microstream.base;
+    //requires microstream.base;
     requires microstream.cache;
-    requires microstream.persistence;
+    //requires microstream.persistence;
     requires microstream.storage.embedded;
-    requires microstream.storage;
+    //requires microstream.storage;
 
     requires static io.helidon.common.features.api;
 

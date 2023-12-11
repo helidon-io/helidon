@@ -76,36 +76,51 @@ Optional dependency to use built-in health checks:
 ----
 
 == API
+To add custom health checks to your application, you need to
+
+* write the code which performs the health checks, and
+* make those custom health checks known to Helidon.
+
+=== Writing Custom Health Checks
 
 A health check is a Java functional interface that returns a
-`HealthCheckResponse` instance. You can choose to implement a health check
-inline with a lambda expression or you can reference a method with the double
-colon operator `::`.
+`HealthCheckResponse` instance. You can create custom health checks in several ways, among them:
+
+* write a class which implements the `HealthCheck` interface,
+* write an in-line lambda expression, or
+* use a method reference a method with the double colon operator `::`.
 
 [source,java]
 .Health check with a lambda expression:
 ----
-HealthCheck hc = () -> HealthCheckResponse
-        .named("exampleHealthCheck")
-        .up()
-        .build();
+Supplier<HealthCheckResponse> hcr = () -> HealthCheckResponse
+                .builder()
+                .detail("exampleValue", "looking-good")
+                .status(HealthCheckResponse.Status.UP) // always "up"
+                .build();
 ----
 
 [source,java]
-.Health check with method reference:
+.Health check with method reference (in class `Main`):
 ----
-HealthCheckResponse exampleHealthCheck() {
-    return HealthCheckResponse
-        .named("exampleHealthCheck")
-        .up()
-        .build();
-}
-HealthCheck hc = this::exampleHealthCheck;
-----
+static HealthCheckResponse exampleHealthCheck() {
+        return HealthCheckResponse
+                .builder()
+                .detail("exampleValue", "looking-good")
+                .status(HealthCheckResponse.Status.UP) // always "up"
+                .build();
+    }
 
-`HealthSupport` is a WebServer service that contains a collection of
-registered `HealthCheck` instances. When queried, it invokes the registered
-health check and returns a response with a status code representing the overall
+Supplier<HealthCheckResponse> hcr = Main::exampleHealthCheck;
+----
+A real health check would compute its status dynamically based on the conditions in the server rather than hard-coding a fixed value.
+
+=== Adding Custom Health Checks to Helidon
+
+Health support in Helidon is part of Helidon's observability feature.
+`HealthObserver` is a Helidon-provided observability implementation that contains a collection of
+registered `HealthCheck` instances and, when queried, invokes the registered
+health checks and returns a response with a status code representing the overall
 status of the application.
 
 [cols="1,5",role="flex, sm7"]
@@ -117,41 +132,40 @@ status of the application.
 | `500` | An error occurred while reporting the health.
 |=======
 
-HTTP `GET` responses include JSON content showing the detailed results of all the health checks which the server executed after receiving the request.
-HTTP `HEAD` requests return only the status with no payload.
+You control, either using configuration or adding code to your application, whether the HTTP responses to `GET` requests contain detailed information about each health check.
+With details enabled, HTTP `GET` responses include JSON content showing the detailed results of all the health checks which the server executed after receiving the request.
+With details disabled, HTTP `GET` responses have no payload.
+HTTP `HEAD` requests always return only the status with no payload.
 
-The following code snippets show how to register health checks while building an
-instance of `HealthSupport`:
+If you add the Helidon health dependency to your `pom.xml` file, Helidon automatically registers the `HelidonObserver` service and responds to the default `/observe/health` endpoint.
+Further, if you add the built-in health checks dependency, Helidon automatically finds them and adds those checks to the `HealthObserver`.
 
-[source,java]
-.Create the health support service:
-----
-HealthSupport health = HealthSupport.builder()
-    .addLiveness(hc)        // hc created above
-    .build();
-----
+The following example shows how to register your own custom health checks while building and registering an
+instance of `HealthObserver`:
 
 [source,java]
-.Create a custom health check:
+.Create and register the health observer feature with a custom health check
 ----
-HealthSupport health = HealthSupport.builder()
-    .addLiveness(() -> HealthCheckResponse.named("exampleHealthCheck")
-                 .up()
-                 .withData("time", System.currentTimeMillis())
-                 .build())
-    .build();
+WebServer server = WebServer.builder()
+        .config(config.get("server"))
+        .addFeature(ObserveFeature.create(HealthObserver.builder()                     // <1>
+                                                  .addCheck(hcr,                       // <2>
+                                                            HealthCheckType.READINESS, // <3>
+                                                            "exampleCheck")            // <4>
+                                                  .details(true)                       // <5>
+                                                  .build()))                           // <6>
+        .routing(Main::routing)
+        .build()
+        .start();
 ----
+<1> Create a builder for the `HealthObserver`.
+<2> Create and add a custom health check to the builder, passing the supplier of the health check response (the `hcr` variable in this example).
+<3> Set the type of health check.
+<4> Set the name of the health check.
+<5> Set the health observer to include details in the output. (optional)
+<6> Build the `HealthObserver` so it can be added to the observability feature that is registered with the webserver.
 
-The custom health check above returns a status of `UP` and the current time.
-After creating the `HealthCheck` and registering it in a `HealthSupport`, we
-must add the latter to the WebServer routes as follows:
-
-[source,java]
-----
-Routing.builder()
-        .register(health)
-        .build();
-----
+Invoke `addCheck` multiple times to add multiple custom health checks.
 
 Here is a sample response to the custom health check registered above:
 
@@ -159,16 +173,16 @@ Here is a sample response to the custom health check registered above:
 .JSON response:
 ----
 {
-    "status": "UP",
-    "checks": [
+  "status": "UP",
+  "checks": [
         {
-            "name": "exampleHealthCheck",
-            "status": "UP",
-            "data": {
-                "time": 1546958376613
-            }
-        }
-    ]
+      "name": "exampleCheck",
+      "status": "UP",
+      "data": {
+        "exampleValue": "looking-good"
+      }
+    },
+...
 }
 ----
 
@@ -187,7 +201,7 @@ The following table provides a summary of the Health Check API classes.
 | Result of a health check invocation that contains a status
 
 | `io.helidon.webserver.observe.health.HealthObserver`
-| WebServer service that exposes `/health` and invokes the registered health
+| WebServer service that exposes `/observe/health` and invokes the registered health
 checks
 |=======
 
@@ -223,23 +237,29 @@ common health check statuses:
 |`98`
 |=======
 
-The following code adds the default built-in health checks to your application:
+Simply adding the built-in health check dependency is sufficient to register all the built-in health checks automatically.
+If you want to use only some of the built-in checks in your application, you can disable automatic discovery of the built-in health checks and register only the ones you want.
+
+The following code adds only selected built-in health checks to your application:
 
 [source,java]
+.Adding selected built-in health checks
 ----
-HealthObserver health = HealthObserver.builder()
-    .addChecks(HealthChecks.healthChecks())   // <1>
-    .build();
-
-Routing.builder()
-       .addFeature(ObserveFeature.builder()
-                .addObserver(health))   // <2>
-       .build();
+WebServer server = WebServer.builder()
+        .config(config.get("server"))
+        .addFeature(ObserveFeature.create(HealthObserver.builder()
+                                                  .useSystemServices(false) // <1>
+                                                  .addCheck(HealthChecks.deadlockCheck()) // <2>
+                                                  .addCheck(hc) // <3>
+                                                  .details(true)
+                                                  .build()))
+        .routing(Main::routing)
+        .build()
+        .start();
 ----
-<1> Add built-in health checks using defaults (requires the `helidon-health-checks`
-dependency).
-<2> Add the created `HealthObserver` to the `ObserveFeature` registered in the web server routing (adds the
-`/observe/health` endpoint).
+<1> Disables automatic registration of the built-in health checks.
+<2> Adds the specific built-in check(s) you want.
+<3> Adds a custom check.
 
 You can control the thresholds for built-in health checks in either of two ways:
 

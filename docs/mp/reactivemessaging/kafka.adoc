@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,20 +17,27 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Kafka Connector
-:toc:
-:toc-placement: preamble
 :description: Reactive Messaging support for Kafka in Helidon MP
 :keywords: helidon, mp, messaging, kafka
 :feature-name: Reactive Kafka Connector
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
 
+include::{rootdir}/includes/mp.adoc[]
+
 == Contents
 
 - <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Config Example, Config Example>>
 - <<NACK Strategy, NACK Strategy>>
+- <<Examples, Examples>>
 
-include::{rootdir}/includes/mp.adoc[]
+== Overview
+Connecting streams to Kafka with Reactive Messaging is easy to do.
+There is a standard Kafka client behind the scenes, all the link:{kafka-client-base-url}#producerconfigs[producer] and link:{kafka-client-base-url}#consumerconfigs[consumer] configs can
+be propagated through messaging config.
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -41,10 +48,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Overview
-Connecting streams to Kafka with Reactive Messaging couldn't be easier.
-There is a standard Kafka client behind the scenes, all the link:{kafka-client-base-url}#producerconfigs[producer] and link:{kafka-client-base-url}#consumerconfigs[consumer] configs can
-be propagated through messaging config.
+== Config Example
 
 [source,yaml]
 .Example of connector config:
@@ -114,7 +118,7 @@ topic is present on the same Kafka cluster.
 Serializers are derived from deserializers used for consumption
 `org.apache.kafka.common.serialization.StringDeserializer` >
 `org.apache.kafka.common.serialization.StringSerializer`.
-In this ideal case only the name of error topic is needed.
+Note that the name of the error topic is needed only in this case.
 
 [source,yaml]
 .Example of derived DLQ config:
@@ -125,8 +129,7 @@ mp.messaging:
       nack-dlq: dql_topic_name
 ----
 
-In case custom connection is needed, all the usual producer configuration is possible
-under the `nack-dlq` key.
+If a custom connection is needed, then use the 'nack-dlq' key for all of the producer configuration.
 
 [source,yaml]
 .Example of custom DLQ config:
@@ -155,6 +158,8 @@ mp.messaging:
     my-channel:
       nack-log-only: true
 ----
+
+== Examples
 
 Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 

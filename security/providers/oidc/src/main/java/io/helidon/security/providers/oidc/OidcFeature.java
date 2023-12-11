@@ -60,7 +60,7 @@ import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.webserver.security.SecurityFeature;
+import io.helidon.webserver.security.SecurityHttpFeature;
 
 import jakarta.json.JsonObject;
 
@@ -335,11 +335,11 @@ public final class OidcFeature implements HttpFeature {
         Context context = Contexts.context().orElseThrow(() -> new SecurityException("Context must be available"));
 
         Map<String, List<String>> newHeaders = context
-                .get(SecurityFeature.CONTEXT_ADD_HEADERS, Map.class)
+                .get(SecurityHttpFeature.CONTEXT_ADD_HEADERS, Map.class)
                 .map(theMap -> (Map<String, List<String>>) theMap)
                 .orElseGet(() -> {
                     Map<String, List<String>> newMap = new HashMap<>();
-                    context.register(SecurityFeature.CONTEXT_ADD_HEADERS, newMap);
+                    context.register(SecurityHttpFeature.CONTEXT_ADD_HEADERS, newMap);
                     return newMap;
                 });
 

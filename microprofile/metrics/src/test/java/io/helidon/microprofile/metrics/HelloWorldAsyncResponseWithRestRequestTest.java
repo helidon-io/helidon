@@ -51,6 +51,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
+@AddConfig(key = "metrics.permit-all", value = "true")
 class HelloWorldAsyncResponseWithRestRequestTest {
 
     @Inject

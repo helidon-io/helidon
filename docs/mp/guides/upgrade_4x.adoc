@@ -1,0 +1,164 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP 4.x Upgrade Guide
+:description: Helidon MP 4.x Upgrade Guide
+:keywords: helidon, porting, migration, upgrade, incompatibilities, 3.x
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+In Helidon 4.x we have made some changes to APIs and runtime behavior. This guide
+will help you upgrade a Helidon MP 3.x application to 4.x.
+
+== Java 21 Runtime
+
+Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
+
+Helidon 4 no longer uses Netty. Helidon MP is now running on Helidon WebServer which is based on virtual threads technology, available in Java 21.
+
+== MicroProfile 6.0 support
+
+MicroProfile 6.0 enables MicroProfile APIs to be used together with Jakarta EE 10 Core Profile.
+
+=== MicroProfile specifications
+
+Most of the MicroProfile specifications had relatively minor changes. The exception is Metrics which had substantial changes.
+
+* *MicroProfile Config {version-lib-microprofile-config}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-config-3.0.1/microprofile-config-spec-3.0.1.html#_incompatible_changes[MicroProfile Config {version-lib-microprofile-config} Specification]
+
+* *MicroProfile Fault Tolerance {version-lib-microprofile-fault-tolerance-api}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html#_backward_incompatible_changes=[MicroProfile Fault Tolerance {version-lib-microprofile-fault-tolerance-api} Specification]
+
+* *MicroProfile Health {version-lib-microprofile-health}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html#_incompatible_changes[MicroProfile Health {version-lib-microprofile-health} Specification]
+
+* *MicroProfile JWT Authentication {version-lib-microprofile-jwt}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.0/microprofile-jwt-auth-spec-2.0.html#_incompatible_changes[MicroProfile JWT Authentication {version-lib-microprofile-jwt} Specification]
+
+* *MicroProfile Metrics {version-lib-microprofile-metrics-api}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-metrics-5.0/microprofile-metrics-spec-5.0.html#_incompatible_changes[MicroProfile Metrics {version-lib-microprofile-metrics-api} Specification]
+
+* *MicroProfile OpenAPI {version-lib-microprofile-openapi-api}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-open-api-3.1/microprofile-openapi-spec-3.1.html#incompatible_changes_30[MicroProfile OpenAPI {version-lib-microprofile-openapi-api} Specification]
+
+* *MicroProfile Rest Client {version-lib-microprofile-rest-client}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_incompatible_changes[MicroProfile Rest Client {version-lib-microprofile-rest-client} Specification]
+
+* *MicroProfile Telemetry Tracing {version-lib-microprofile-telemetry}*:
++
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-telemetry-1.0/tracing/microprofile-telemetry-tracing-spec-1.0.html#_incompatible_changes[MicroProfile Telemetry Tracing {version-lib-microprofile-telemetry} Specification]
+
+=== Supported Jakarta EE specifications
+
+* *CDI (Jakarta Contexts and Dependency Injection) {version-lib-jakarta-cdi}*:
++
+Changes described in link:https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html#architecture[CDI (Jakarta Contexts and Dependency Injection) {version-lib-jakarta-cdi} Specification]
+
+* *JAX-RS (Jakarta RESTful Web Services) {version-lib-jakarta-jaxrs-api}*:
++
+Changes described in link:https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_incompatible_changes[JAX-RS (Jakarta RESTful Web Services) {version-lib-jakarta-jaxrs-api} Specification]
+
+* *JSON-B (Jakarta JSON Binding) {version-lib-jakarta-jsonb-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/jsonb/2.0/jakarta-jsonb-spec-2.0.html#change-log[JSON-B (Jakarta JSON Binding) {version-lib-jakarta-jsonb-api} Specification]
+
+* *JSON-P (Jakarta JSON Processing) {version-lib-jakarta-jsonp-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/jsonp/2.1/apidocs/[JSON-P (Jakarta JSON Parsing) {version-lib-jakarta-jsonp-api} Specification]
+
+* *Jakarta Annotations {version-lib-jakarta-annotations-api}*:
++
+Full information in link:https://jakarta.ee/specifications/annotations/2.0/annotations-spec-2.0.html[Jakarta Annotations {version-lib-jakarta-annotations-api} Specification]
+
+* *Jakarta Persistence API {version-lib-jakarta-persistence-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#revision-history[Jakarta Persistence API {version-lib-jakarta-persistence-api} Specification]
+
+* *Jakarta Transactions API {version-lib-jakarta-transaction-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html#revision-history[Jakarta Transactions API {version-lib-jakarta-transaction-api} Specification]
+
+* *Jakarta WebSocket API {version-lib-jakarta-websockets-api}*:
++
+Changes described in link:https://jakarta.ee/specifications/websocket/2.0/websocket-spec-2.0.html#changes[Jakarta WebSocket API {version-lib-jakarta-websockets-api} Specification]
+
+* *Jakarta Bean Validation {version-lib-jakarta-bean-validation}*:
++
+Changes described in link:https://jakarta.ee/specifications/bean-validation/2.0/bean-validation_2.0.html#changelog[Jakarta Bean Validation {version-lib-jakarta-bean-validation} Specification]
+
+NOTE: Please, read each specification carefully for incompatible changes!
+
+=== Significant changes
+
+==== Jandex
+
+Jandex group id was `org.jboss.jandex` and now is `io.smallrye`.
+
+==== Testing
+
+Testing is now in a new package. It was:
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.tests</groupId>
+    <artifactId>helidon-microprofile-tests-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+Now is:
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.testing</groupId>
+    <artifactId>helidon-microprofile-testing-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+And the Java package has changed from `io.helidon.microprofile.tests.junit5` to `io.helidon.microprofile.testing.junit5`
+
+=== Logging
+
+The Helidon console handler has changed from `io.helidon.common.HelidonConsoleHandler` to `io.helidon.logging.jul.HelidonConsoleHandler`.
+
+If you use this handler in your `logging.properties` you will need to update it and add the following dependency:
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.logging</groupId>
+    <artifactId>helidon-logging-jul</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+== Conclusion
+
+Please proceed to xref:../introduction.adoc[Helidon MP Introduction] to find more information and documentation about each module.

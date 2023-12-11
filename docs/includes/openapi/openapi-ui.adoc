@@ -26,6 +26,8 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 :feature-name: Helidon OpenAPI UI support
 :screen-capture-start: openapi-ui-screen-capture-greeting-{flavor-lc}-start.png
 :screen-capture-expanded: openapi-ui-screen-capture-greeting-{flavor-lc}-expanded.png
+ifdef::mp-flavor[:ui-config-prefix: mp.openapi.services.ui]
+ifdef::se-flavor[:ui-config-prefix: openapi.services.ui]
 // end::preamble[]
 
 // tag::intro[]
@@ -46,7 +48,11 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 SmallRye offers an link:{smallrye-openapi-ui-base-url}[OpenAPI user interface component] which displays a web page based on your application's OpenAPI document.
 Through that UI, users can invoke the operations declared in the document.
-While not generally suitable for end-users, the OpenAPI UI can be useful for demonstrating and "test driving" your service's endpoints.
+
+[NOTE]
+====
+The Helidon team discourages including the OpenAPI UI in production applications. The OpenAPI UI _can_ be useful for demonstrating and testing your service's endpoints prior to deployment.
+====
 
 The Helidon OpenAPI component allows you to integrate the SmallRye UI into your application, adding the UI web page to your application very simply.
 
@@ -59,19 +65,29 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml,subs=+macros]
 ----
 <dependency>
-    <groupId>io.helidon.openapi</groupId>
-    <artifactId>helidon-openapi-ui</artifactId>
+    <groupId>io.helidon.integrations.openapi-ui</groupId>
+    <artifactId>helidon-integrations-openapi-ui</artifactId>
 ifdef::mp-flavor[    <scope>runtime</scope>]
 </dependency>
 ----
 
+And add a runtime dependency on the SmallRye UI.
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.smallrye</groupId>
+    <artifactId>smallrye-open-api-ui</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
 // end::dependencies[]
 
 // tag::usage[]
 // tag::usage-start[]
 == Usage
 ifdef::se-flavor[]
-Make sure your application creates a Helidon `OpenAPISupport` instance and registers it for routing (described in detail in link:{openapi-page}[the Helidon OpenAPI documentation]). `OpenAPISupport` automatically prepares the OpenAPI UI with default settings if you also declare a dependency on the Helidon OpenAPI UI integration component as explained above. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the UI behavior.
+Make sure your application incorporates Helidon OpenAPI support as  described in detail in link:{openapi-page}[the Helidon OpenAPI documentation]). Helidon automatically prepares the OpenAPI UI with default settings if you also declare a dependency on the Helidon OpenAPI UI integration component as explained above. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the UI behavior.
 endif::se-flavor[]
 
 After you modify, build, and start your Helidon {flavor-uc} service, you can access the OpenAPI UI by default at `http://your-host:your-port/openapi/ui`.
@@ -120,12 +136,12 @@ image::{screen-capture-expanded}[align="center",title="Example OpenAPI UI Screen
 
 // tag::config-intro[]
 == Configuration
-To use configuration to control how the Helidon OpenAPI UI service behaves, add an `openapi.ui` section to
-ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
-ifdef::se-flavor[your configuration file, such as `application.yaml`.]
+To use configuration to control how the Helidon OpenAPI UI service behaves, add
+ifdef::mp-flavor[`{ui-config-prefix}` settings to your `META-INF/microprofile-config.properties` file.]
+ifdef::se-flavor[an `{ui-config-prefix}` section to your configuration file, such as `application.yaml`.]
 
-include::{rootdir}/config/io_helidon_openapi_OpenApiUi_Builder.adoc[tag=config,leveloffset=+1]
-The default UI `web-context` value is the web context for your `OpenAPISupport` service with the added suffix `/ui`. If you use the default web context for both `OpenAPISupport` and the UI, the UI responds at `/openapi/ui`.
+include::{rootdir}/config/io_helidon_integrations_openapi_ui_OpenApiUi.adoc[tag=config,leveloffset=+1]
+The default UI `web-context` value is the web context for your `OpenApiFeature` service with the added suffix `/ui`. If you use the default web context for both `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
 
 // end::config-intro[]
 
@@ -148,7 +164,7 @@ endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,properties]
 ----
-openapi.web-context=/my-openapi
+mp.openapi.web-context=/my-openapi
 ----
 endif::mp-flavor[]
 +
@@ -162,25 +178,27 @@ ifdef::se-flavor[]
 [source,yaml]
 ----
 openapi:
-  ui:
-    web-context: /my-ui
+  services:
+    ui:
+      web-context: /my-ui
 ----
 endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,properties]
 ----
-openapi.ui.web-context=/my-ui
+mp.openapi.services.ui.web-context=/my-ui
 ----
 endif::mp-flavor[]
 +
 [NOTE]
 ====
-The `openapi.ui.web-context` setting assigns the _entire_ web-context for the UI, not the suffix appended to the `OpenAPISupport` endpoint.
+The `{ui-config-prefix}.web-context` setting assigns the _entire_ web-context for the UI, not the suffix appended to the `OpenApiFeature` endpoint.
 ====
 With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
 
 The SmallRye OpenAPI UI component accepts several options, but they are of minimal use to application developers and they must be passed to the SmallRye UI code programmatically.
-Helidon allows you to specify these values using configuration in the `openapi.ui.options` section. Helidon then passes the corresponding options to SmallRye for you.
+Helidon allows you to specify these values using configuration in the `{ui-config-prefix}.options`
+section. Helidon then passes the corresponding options to SmallRye for you.
 To configure any of these settings, use the enum values--they are all lower case--declared in  the SmallRye link:{smallrye-openapi-ui-base-url}/src/main/java/io/smallrye/openapi/ui/Option.java[`Option.java`] class as the keys in your Helidon configuration.
 
 [NOTE]

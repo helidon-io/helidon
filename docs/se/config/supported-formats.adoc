@@ -91,21 +91,21 @@ which the Helidon YAML parser matches.
 .YAML parser specified - no file type on source
 ----
 Config config = Config.create(classpath("my-config")                                    // <1>
-                                    .parser(YamlConfigParserBuilder.buildDefault())); // <2>
+                                    .parser(YamlConfigParser.create())); // <2>
 ----
 
 <1> The media type of the source `my-config` is unknown, so the config system
 cannot choose a parser automatically.
 <2> The config system will parse the resource `my-config` on the runtime classpath
 using the YAML parser instance created by the
-link:{config-javadoc-base-url}/io/helidon/config/yaml/YamlConfigParserBuilder.html[`YamlConfigParserBuilder`].
-The `buildDefault()` method creates a config parser with default behavior.
+link:{config-javadoc-base-url}/io/helidon/config/yaml/YamlConfigParser.html[`YamlConfigParser`].
+The `create()` method creates a config parser with default behavior.
 
 [source,java]
 .Media type specified
 ----
 Config config = Config.create(classpath("my-config")                     // <1>
-                                    .mediaType("application/x-yaml")); // <2>
+                                    .mediaType(MediaTypes.APPLICATION_X_YAML)); // <2>
 ----
 
 <1> The media type of the source `my-config` is unknown, so the config system
@@ -118,7 +118,7 @@ use its matching algorithm with the available parsers to choose a parser for tha
 ----
 Config config = Config.builder(classpath("application.yaml"))
         .disableParserServices()                                  // <1>
-        .addParser(YamlConfigParserBuilder.buildDefault())        // <2>
+        .addParser(YamlConfigParser.create())        // <2>
         .build();
 ----
 
@@ -185,7 +185,7 @@ The `create()` method creates a config parser with default behavior.
 .Media type specified
 ----
 Config config = Config.create(classpath("my-config")                    // <1>
-                                    .mediaType("application/hocon")); // <2>
+                                    .mediaType(MediaTypes.APPLICATION_HOCON)); // <2>
 ----
 
 <1> The media type of the source `my-config` is unknown, so the config system
@@ -254,19 +254,19 @@ module myModule {
 
 ==== Using the Etcd Config Source
 To read configuration from an Etcd source, your application uses the
-link:{config-javadoc-base-url}/io/helidon/config/etcd/EtcdConfigSourceBuilder.html[`EtcdConfigSourceBuilder`].
+link:{config-etcd-javadoc-base-url}/io/helidon/config/etcd/EtcdConfigSourceBuilder.html[`EtcdConfigSourceBuilder`].
 
 [source,java]
 .Use Etcd config source
 ----
 Config config = Config.create(
-        EtcdConfigSourceBuilder                             // <1>
+        EtcdConfigSource                             // <1>
                 .create(URI.create("http://my-etcd:2379"),  // <2>
                       "/config.yaml",                       // <3>
                       EtcdConfigSourceBuilder.EtcdApi.v3)); // <4>
 ----
 
-<1> Use the factory method `EtcdConfigSourceBuilder.create` to initialize the builder.
+<1> Use the factory method `EtcdConfigSource.create` to create the `EtcdConfigSource`.
 <2> Specify the Etcd endpoint address.
 <3> Specify the Etcd key of the configuration document.
 <4> Version of the Etcd API to use; `v3` is supported. `v2` is deprecated.
@@ -275,29 +275,29 @@ The config system will use the <<Config-ModuleYaml,YAML parser>> automatically i
 because the file type of the key is `.yaml`.
 
 The `EtcdConfigSourceBuilder` class extends
-link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractParsableConfigSource.Builder.html[`AbstractParsableConfigSource.Builder`]
+link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractConfigSourceBuilder.html[`AbstractConfigSourceBuilder`]
 and so supports the usual settings on config sources.
 
 ==== Monitoring for Source Changes
-The Etcd support includes a polling strategy designed for an etcd config source.
+The Etcd support includes a change watcher strategy designed for an etcd config source.
 
 [source,java]
 .Use Etcd config source
 ----
 Config config = Config.create(
-        EtcdConfigSourceBuilder
-                .create(URI.create("http://my-etcd:2379"), "/config.yaml", EtcdApi.v3)
-                .pollingStrategy(EtcdWatchPollingStrategy::new));                    // <1>
+        EtcdConfigSource
+                 .builder()
+                 .uri(URI.create("http://my-etcd:2379"))
+                 .key("/config.yaml")
+                 .api(EtcdConfigSourceBuilder.EtcdApi.v3)
+                 .changeWatcher(EtcdWatcher.create()));                    // <1>
 ----
 
-<1> Use the etcd-specific polling strategy.
+<1> Use the etcd-specific change watcher strategy.
 
 
 ==== Loading Meta-configuration via Etcd
-The config system can load information about config sources from
-xref:advanced-configuration.adoc#Config-Advanced-Config-MetaConfig[meta-configuration]
-rather than requiring your application to construct the builder. To read
-meta-configuration from an Etcd source set the following required properties
+To read meta-configuration from an Etcd source set the following required properties
 for the source:
 
 * `type` to `etcd`, or `class` to `io.helidon.config.etcd.EtcdConfigSourceBuilder`
@@ -307,8 +307,8 @@ for the source:
  version. `v2` is deprecated.
 
 Other optional `properties` are inherited from
- `AbstractParsableConfigSource.Builder`. (see
-link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
+ `AbstractConfigSourceBuilder`. (see
+link:{config-javadoc-base-url}/io/helidon/config/AbstractConfigSourceBuilder.html#init-io.helidon.config.Config-[javadoc])
 
 [source,java]
 .Load Config from meta-configuration
@@ -325,14 +325,14 @@ sources:
           uri: "http://my-etcd:2379"                               # <2>
           key: "/config.yaml"                                      # <2>
           api: "v3"                                                # <2>
-          polling-strategy:
-              class: "io.helidon.config.etcd.EtcdWatchPollingStrategy" # <3>
+          change-watcher:
+              type: "etcd"                                         # <3>
 
 ----
 
 <1> `etcd` config source type
 <2> Etcd source-specific (mandatory) `properties`: `uri`, `key` and `api`.
-<3> Polling strategy `EtcdWatchPollingStrategy` is automatically initialized by
+<3> Watcher strategy `EtcdWatcher` is automatically initialized by
  specified mandatory `properties`.
 
 === git [[Config-ModuleGit]]
@@ -360,21 +360,20 @@ module myModule {
 
 ==== Using the git Config Source
 To read configuration from a git source, your application uses the
-link:{config-javadoc-base-url}/io/helidon/config/git/GitConfigSourceBuilder.html[`GitConfigSourceBuilder`].
+link:{config-git-javadoc-base-url}/io/helidon/config/git/GitConfigSourceBuilder.html[`GitConfigSourceBuilder`].
 
 [source,java]
 .Use git config source
 ----
 Config config = Config.create(
-        GitConfigSourceBuilder
-                .create("application.conf")                                           // <1>
-                    .uri(URI.create("https://github.com/okosatka/test-config.git")) // <2>
-                    .directory(Paths.get("/config"))                                // <3>
-                    .branch("dev"));                                                // <4>
+        GitConfigSource
+                .builder()                                                          // <1>
+                .uri(URI.create("https://github.com/okosatka/test-config.git"))     // <2>
+                .directory(Paths.get("/config"))                                    // <3>
+                .branch("dev"));                                                    // <4>
 ----
 
-<1> Use the factory method `GitConfigSourceBuilder.create` to initialize the builder
- with a mandatory  path to the configuration file.
+<1> Use the factory method `GitConfigSource.builder` to initialize the builder.
 <2> Specify the git repository URI.
 <3> Specify a directory where the git repository is already cloned or it will be cloned.
 <4> Specify the git branch.
@@ -385,7 +384,7 @@ HOCON config module must be on module-path or classpath.
 
 The `GitConfigSourceBuilder` supports the usual source builder properties because
  it extends
-link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractParsableConfigSource.Builder.html[`AbstractParsableConfigSource.Builder`].
+link:{config-javadoc-base-url}/io/helidon/config/AbstractConfigSourceBuilder.html[`AbstractConfigSourceBuilder`].
 
 ==== Monitoring for Source Changes
 Your application can monitor changes to a configuration loaded from a git source

@@ -18,11 +18,13 @@ package io.helidon.webserver.testing.junit5.websocket;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.webclient.websocket.WsClient;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.testing.junit5.Junit5Util;
 import io.helidon.webserver.testing.junit5.spi.DirectJunitExtension;
 import io.helidon.webserver.websocket.WsRouting;
@@ -79,7 +81,7 @@ public class WsDirectExtension implements DirectJunitExtension {
     }
 
     @Override
-    public Optional<ParamHandler<?>> setUpRouteParamHandler(Class<?> type) {
+    public Optional<ParamHandler<?>> setUpRouteParamHandler(List<ServerFeature> features, Class<?> type) {
         if (WsRouting.Builder.class.equals(type)) {
             return Optional.of(new RoutingParamHandler(clients));
         }

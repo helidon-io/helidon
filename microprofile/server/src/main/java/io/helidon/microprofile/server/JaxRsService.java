@@ -233,6 +233,7 @@ class JaxRsService implements HttpService {
                 // reset may be impossible if data has already been written over the network
                 if (res instanceof RoutingResponse routing) {
                     if (routing.reset()) {
+                        res.status(Status.OK_200);
                         routing.next();
                     }
                 }

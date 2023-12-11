@@ -24,16 +24,12 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
-@Disabled("3.0.0-JAKARTA") // Micronaut - validation Error instantiating bean of type
-// [io.helidon.examples.integrations.micronaut.data.DbPopulateData$ApplicationEventListener$init1$Intercepted]:
-// Error loading bean [io.micronaut.validation.ValidatingInterceptor]: javax/validation/Validator
 class MicronautExampleTest {
     @Inject
     private WebTarget webTarget;

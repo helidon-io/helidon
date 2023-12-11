@@ -21,8 +21,6 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.SocketOption;
-import java.net.StandardSocketOptions;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +28,9 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -48,8 +43,9 @@ import io.helidon.webserver.spi.ServerConnectionSelector;
 /**
  * Configuration of a server listener (server socket).
  */
-@Configured
-@Prototype.Blueprint(decorator = ListenerConfigBlueprint.ConfigDecorator.class)
+@Prototype.Configured
+@Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
+@Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
@@ -68,8 +64,9 @@ interface ListenerConfigBlueprint {
      *
      * @return all defined protocol configurations, loaded from service loader by default
      */
-    @ConfiguredOption(provider = true, providerType = ProtocolConfigProvider.class)
+    @Option.Configured
     @Option.Singular
+    @Option.Provider(ProtocolConfigProvider.class)
     List<ProtocolConfig> protocols();
 
     /**
@@ -79,7 +76,7 @@ interface ListenerConfigBlueprint {
      *
      * @return HTTP Routing for this listener/server
      */
-    Optional<HttpRouting> routing();
+    Optional<HttpRouting.Builder> routing();
 
     /**
      * List of all routings (possibly for multiple protocols). This allows adding non-http protocols as well,
@@ -88,7 +85,7 @@ interface ListenerConfigBlueprint {
      * @return router for this listener/server
      */
     @Option.Singular
-    List<Routing> routings();
+    List<io.helidon.common.Builder<?, ? extends Routing>> routings();
 
     /**
      * Name of this socket. Defaults to {@code @default}.
@@ -96,7 +93,8 @@ interface ListenerConfigBlueprint {
      *
      * @return name of the socket
      */
-    @ConfiguredOption("@default")
+    @Option.Configured
+    @Option.Default(WebServer.DEFAULT_SOCKET_NAME)
     String name();
 
     /**
@@ -104,7 +102,8 @@ interface ListenerConfigBlueprint {
      *
      * @return host address to listen on (for the default socket)
      */
-    @ConfiguredOption("0.0.0.0")
+    @Option.Configured
+    @Option.Default("0.0.0.0")
     String host();
 
     /**
@@ -120,7 +119,8 @@ interface ListenerConfigBlueprint {
      *
      * @return port to listen on (for the default socket)
      */
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int port();
 
     /**
@@ -128,7 +128,8 @@ interface ListenerConfigBlueprint {
      *
      * @return backlog
      */
-    @ConfiguredOption("1024")
+    @Option.Configured
+    @Option.DefaultInt(1024)
     int backlog();
 
     /**
@@ -140,7 +141,8 @@ interface ListenerConfigBlueprint {
      *
      * @return maximal number of bytes of entity
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultInt(-1)
     long maxPayloadSize();
 
     /**
@@ -148,7 +150,7 @@ interface ListenerConfigBlueprint {
      *
      * @return buffer size in bytes
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Integer> receiveBufferSize();
 
     /**
@@ -156,7 +158,8 @@ interface ListenerConfigBlueprint {
      *
      * @return maximal number of queued writes, defaults to 0
      */
-    @ConfiguredOption("0")
+    @Option.Configured
+    @Option.DefaultInt(0)
     int writeQueueLength();
 
     /**
@@ -165,7 +168,8 @@ interface ListenerConfigBlueprint {
      *
      * @return initial buffer size used for writing
      */
-    @ConfiguredOption("512")
+    @Option.Configured
+    @Option.DefaultInt(512)
     int writeBufferSize();
 
     /**
@@ -175,7 +179,8 @@ interface ListenerConfigBlueprint {
      *
      * @return grace period
      */
-    @ConfiguredOption("PT0.5S")
+    @Option.Configured
+    @Option.Default("PT0.5S")
     Duration shutdownGracePeriod();
 
     /**
@@ -183,6 +188,7 @@ interface ListenerConfigBlueprint {
      *
      * @return connection configuration
      */
+    @Option.Configured
     Optional<ConnectionConfig> connectionConfig();
 
     /**
@@ -190,7 +196,7 @@ interface ListenerConfigBlueprint {
      *
      * @return tls of this configuration
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Tls> tls();
 
     /**
@@ -200,7 +206,7 @@ interface ListenerConfigBlueprint {
      *
      * @return content encoding context
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<ContentEncodingContext> contentEncoding();
 
     /**
@@ -210,7 +216,7 @@ interface ListenerConfigBlueprint {
      *
      * @return media context
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<MediaContext> mediaContext();
 
     /**
@@ -219,7 +225,7 @@ interface ListenerConfigBlueprint {
      *
      * @return socket options
      */
-    @ConfiguredOption
+    @Option.Configured
     SocketOptions connectionOptions();
 
     /**
@@ -228,7 +234,8 @@ interface ListenerConfigBlueprint {
      *
      * @return number of TCP connections that can be opened to this listener, regardless of protocol
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultInt(-1)
     int maxTcpConnections();
 
     /**
@@ -239,7 +246,8 @@ interface ListenerConfigBlueprint {
      *
      * @return number of requests that can be processed on this listener, regardless of protocol
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultInt(-1)
     int maxConcurrentRequests();
 
     /**
@@ -250,7 +258,8 @@ interface ListenerConfigBlueprint {
      *
      * @return timeout of idle connections
      */
-    @ConfiguredOption("PT5M")
+    @Option.Configured
+    @Option.Default("PT5M")
     Duration idleConnectionTimeout();
 
     /**
@@ -259,7 +268,8 @@ interface ListenerConfigBlueprint {
      *
      * @return period of checking for idle connections
      */
-    @ConfiguredOption("PT2M")
+    @Option.Configured
+    @Option.Default("PT2M")
     Duration idleConnectionPeriod();
 
     /**
@@ -274,7 +284,8 @@ interface ListenerConfigBlueprint {
      *
      * @return maximal number of bytes to buffer in memory for supported writers
      */
-    @ConfiguredOption("131072")
+    @Option.Configured
+    @Option.DefaultInt(131072)
     int maxInMemoryEntity();
 
     /**
@@ -317,6 +328,19 @@ interface ListenerConfigBlueprint {
     Optional<Context> listenerContext();
 
     /**
+     * Enable proxy protocol support for this socket. This protocol is supported by
+     * some load balancers/reverse proxies as a means to convey client information that
+     * would otherwise be lost. If enabled, the proxy protocol header must be present
+     * on every new connection established with your server. For more information,
+     * see <a href="https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt">
+     * the specification</a>. Default is {@code false}.
+     *
+     * @return proxy support status
+     */
+    @Option.Default("false")
+    boolean enableProxyProtocol();
+
+    /**
      * Requested URI discovery context.
      *
      * @return discovery context
@@ -340,43 +364,4 @@ interface ListenerConfigBlueprint {
         }
     }
 
-    class ConfigDecorator implements Prototype.BuilderDecorator<ListenerConfig.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(ListenerConfig.BuilderBase<?, ?> target) {
-            String name = target.name();
-            if (name == null && target.config().isPresent()) {
-                Config config = target.config().get();
-                if (config.exists()) {
-                    target.name(config.get("name").asString().orElse(config.name()));
-                }
-            }
-            name = target.name();
-            if (name == null) {
-                target.name(WebServer.DEFAULT_SOCKET_NAME);
-            }
-
-            if (target.connectionOptions().isEmpty()) {
-                target.connectionOptions(SocketOptions.create());
-            }
-            if (target.address().isEmpty()) {
-                try {
-                    target.address(InetAddress.getByName(target.host()));
-                } catch (UnknownHostException e) {
-                    throw new IllegalArgumentException("Failed to get address from host: " + target.host(), e);
-                }
-            }
-            Map<SocketOption<?>, Object> socketOptions = target.listenerSocketOptions();
-            if (!socketOptions.containsKey(StandardSocketOptions.SO_REUSEADDR)) {
-                target.putListenerSocketOption(StandardSocketOptions.SO_REUSEADDR, true);
-            }
-            if (!socketOptions.containsKey(StandardSocketOptions.SO_RCVBUF)) {
-                target.putListenerSocketOption(StandardSocketOptions.SO_RCVBUF, 4096);
-            }
-            if (target.requestedUriDiscoveryContext().isEmpty()) {
-                target.requestedUriDiscoveryContext(RequestedUriDiscoveryContext.builder()
-                                                            .socketId(target.name())
-                                                            .build());
-            }
-        }
-    }
 }

@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -130,11 +131,13 @@ interface MetricsConfigBlueprint {
     boolean enabled();
 
     /**
-     * Whether metrics endpoint should be authorized.
+     * Whether to allow anybody to access the endpoint.
      *
-     * @return if metrics are configured to be authorized
+     * @return whether to permit access to metrics endpoint to anybody, defaults to {@code true}
+     * @see #roles()
      */
     @ConfiguredOption
+    @Option.DefaultBoolean(true)
     boolean permitAll();
 
     /**
@@ -143,6 +146,7 @@ interface MetricsConfigBlueprint {
      * @return list of hints
      */
     @ConfiguredOption
+    @Option.Default("observe")
     List<String> roles();
 
     /**

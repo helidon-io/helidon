@@ -18,7 +18,7 @@ import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Java for cloud security module.
+ * Helidon security module.
  *
  * @see io.helidon.security.Security
  * @see io.helidon.security.SecurityContext

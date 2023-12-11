@@ -15,7 +15,7 @@
 #
 
 # 1st stage, build the app
-FROM container-registry.oracle.com/java/openjdk:21 as maven
+FROM container-registry.oracle.com/java/openjdk:21 as build
 
 # Install maven
 WORKDIR /usr/share

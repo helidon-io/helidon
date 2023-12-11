@@ -27,15 +27,9 @@
     <exec src="/mp/custom/custom-mp.xml"/>
     <output>
         <model>
-            <value key="title">Helidon MP Database</value>
             <value key="readme-description">Helidon MP application that uses JPA with an in-memory H2 database.</value>
             <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
-            </list>
-            <list key="modules">
-                <value>jakarta.annotation</value>
-                <value>jakarta.persistence</value>
-                <value>jakarta.transaction</value>
             </list>
         </model>
     </output>

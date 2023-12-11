@@ -54,6 +54,7 @@ import static org.hamcrest.Matchers.notNullValue;
                 + KEY_PERFORMANCE_INDICATORS_CONFIG_KEY
                 + ".extended",
         value = "true")
+@AddConfig(key = "metrics.permit-all", value = "true")
 public class HelloWorldAsyncResponseTest {
 
     @Inject

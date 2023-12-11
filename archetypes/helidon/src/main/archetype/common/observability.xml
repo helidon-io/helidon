@@ -142,7 +142,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     @Inject
     private MetricRegistry registry;]]></value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value>io.helidon.microprofile.metrics</value>
                                     </list>
                                 </model>
@@ -238,7 +238,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <list key="MainTest-static-imports">
                                         <value>static org.junit.jupiter.api.Assertions.assertEquals</value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value>io.helidon.microprofile.metrics</value>
                                     </list>
                                 </model>
@@ -252,12 +252,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                              optional="true">
                         <output>
                             <model>
-                                <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                    <value>io.helidon.webserver.observe.ObserveFeature</value>
-                                </list>
-                                <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                    <value>.addFeature(ObserveFeature.create())</value>
-                                </list>
                                 <list key="dependencies">
                                     <map if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.webserver.observe</value>
@@ -279,22 +273,22 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     }
 ]]></value>
                                 </list>
-                                <list key="modules">
+                                <list key="module-requires">
                                     <value if="${flavor} == 'se'">io.helidon.webserver.observe.metrics</value>
                                     <value if="${flavor} == 'se'">io.helidon.metrics.api</value>
                                 </list>
-                                <list key="readme-sections">
+                                <list key="readme-sections" if="${flavor} == 'se'">
                                     <value><![CDATA[
 ## Try metrics
 
 ```
 # Prometheus Format
-curl -s -X GET http://localhost:8080/metrics
+curl -s -X GET http://localhost:8080/observe/metrics
 # TYPE base:gc_g1_young_generation_count gauge
 . . .
 
 # JSON Format
-curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 {"base":...
 . . .
 ```
@@ -323,16 +317,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value key="groupId">io.helidon.microprofile.health</value>
                                         <value key="artifactId">helidon-microprofile-health</value>
                                     </map>
-                                </list>
-                                <list key="Main-createRouting" if="${flavor} == 'mp'">
-                                    <value template="mustache" order="0"><![CDATA[
-        HealthObserver health = HealthObserver.builder()
-                .addChecks(HealthChecks.healthChecks()) // Adds a convenient set of checks
-{{#Main-healthBuilder}}
-{{.}}
-{{/Main-healthBuilder}}
-                .build();]]>
-                                    </value>
                                 </list>
                                 <list key="MainTest-methods" if="${flavor} == 'mp'">
                                     <value><![CDATA[
@@ -366,43 +350,8 @@ curl -s -X GET http://localhost:8080/health
                                         <value key="artifactId">helidon-health-checks</value>
                                     </map>
                                 </list>
-                                <list key="Observe-feature-builder" if="${flavor} == 'se'">
-                                    <value><![CDATA[.addObserver(HealthObserver.builder()
-                                               .details(true)
-                                               .useSystemServices(false)
-                                               .addCheck(() -> HealthCheckResponse.builder()
-                                                        .status(HealthCheckResponse.Status.UP)
-                                                        .detail("time", System.currentTimeMillis())
-                                                        .build(), HealthCheckType.READINESS)
-                                               .addCheck(() -> HealthCheckResponse.builder()
-                                                        .status(isStarted())
-                                                        .detail("time", System.currentTimeMillis())
-                                                        .build(), HealthCheckType.STARTUP)
-                                               .build())]]></value>
-                                </list>
-                                <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                    <value>io.helidon.health.HealthCheckResponse</value>
-                                    <value>io.helidon.health.HealthCheckType</value>
-                                    <value>io.helidon.webserver.observe.health.HealthObserver</value>
-                                </list>
                                 <list key="MainTest-static-imports" if="${flavor} == 'se'">
                                     <value>org.hamcrest.CoreMatchers.containsString</value>
-                                </list>
-                                <list key="Main-java-imports" if="${flavor} == 'se'">
-                                    <value>java.time.Duration</value>
-                                </list>
-                                <list key="main-class-fields" if="${flavor} == 'se'">
-                                    <value><![CDATA[    private static long serverStartTime;]]></value>
-                                </list>
-                                <list key="Main-main" if="${flavor} == 'se'">
-                                    <value><![CDATA[serverStartTime = System.currentTimeMillis();]]></value>
-                                </list>
-                                <list key="main-class-content" if="${flavor} == 'se'">
-                                    <value><![CDATA[
-    private static boolean isStarted() {
-        return Duration.ofMillis(System.currentTimeMillis() - serverStartTime).getSeconds() >= 8;
-    }
-]]></value>
                                 </list>
                                 <list key="Abstract-test" if="${flavor} == 'se'">
                                     <value><![CDATA[
@@ -428,13 +377,13 @@ Note the port number reported by the application.
 Probe the health endpoints:
 
 ```bash
-curl -X GET http://localhost:8080/observe/observe/health/
-curl -X GET http://localhost:8080/observe/observe/health/ready
+curl -X GET http://localhost:8080/observe/health
+curl -X GET http://localhost:8080/observe/health/ready
 ```
 
 ]]></value>
                                 </list>
-                                <list key="modules" if="${flavor} == 'se'">
+                                <list key="module-requires" if="${flavor} == 'se'">
                                     <value>io.helidon.webserver.observe.health</value>
                                     <value>io.helidon.health.checks</value>
                                 </list>
@@ -455,20 +404,11 @@ curl -X GET http://localhost:8080/observe/observe/health/ready
                           optional="true">
                         <option value="jaeger"
                                 name="Jaeger"
-                                description="Send traces to a Jaeger backend" >
+                                description="Send traces to a Jaeger backend">
                             <output>
                                 <model>
-                                    <list key="dependencies">
-                                        <map order="800">
-                                            <value key="groupId">io.helidon.tracing.providers</value>
-                                            <value key="artifactId">helidon-tracing-providers-jaeger</value>
-                                        </map>
-                                    </list>
                                     <list key="readme-sections">
                                         <value file="/common/files/README.jaeger.md"/>
-                                    </list>
-                                    <list key="config-properties">
-                                        <value>tracing.global=false</value>
                                     </list>
                                 </model>
                             </output>
@@ -478,12 +418,6 @@ curl -X GET http://localhost:8080/observe/observe/health/ready
                                 description="Send traces to a Zipkin backend">
                             <output>
                                 <model>
-                                    <list key="dependencies">
-                                        <map order="800">
-                                            <value key="groupId">io.helidon.tracing.providers</value>
-                                            <value key="artifactId">helidon-tracing-providers-zipkin</value>
-                                        </map>
-                                    </list>
                                     <list key="readme-sections">
                                         <value file="/common/files/README.zipkin.md"/>
                                     </list>
@@ -504,6 +438,12 @@ curl -X GET http://localhost:8080/observe/observe/health/ready
                 <value key="health.builtin" if="${health}">${health.builtin}</value>
                 <value key="tracing" if="${tracing}">true</value>
                 <value key="tracing.provider" if="${tracing}">${tracing.provider}</value>
+                <list key="dependencies" if="${flavor} == 'mp' &amp;&amp; ${extra} contains 'fault-tolerance'">
+                    <map if="!(${metrics}) || ${metrics.provider} == 'micrometer'">
+                        <value key="groupId">io.helidon.microprofile.metrics</value>
+                        <value key="artifactId">helidon-microprofile-metrics</value>
+                    </map>
+                </list>
             </model>
         </output>
     </step>

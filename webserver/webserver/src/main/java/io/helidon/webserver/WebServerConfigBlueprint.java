@@ -23,19 +23,16 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
-import io.helidon.config.ConfigException;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.configdriven.api.ConfigBean;
+import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * WebServer configuration bean.
  * See {@link WebServer#create(java.util.function.Consumer)}.
  */
-@Prototype.Blueprint(decorator = WebServerConfigBlueprint.ServerConfigDecorator.class)
+@Prototype.Blueprint(decorator = WebServerConfigSupport.ServerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.CustomMethods.class)
-@Configured(root = true, prefix = "server")
-@ConfigBean(wantDefault = true)
+@Prototype.Configured("server")
 interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
     /**
      * When true the webserver registers a shutdown hook with the JVM Runtime.
@@ -44,7 +41,8 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      *
      * @return whether to register a shutdown hook
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean shutdownHook();
 
     /**
@@ -54,7 +52,7 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      *
      * @return map of listener configurations, except for the default one
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular
     Map<String, ListenerConfig> sockets();
 
@@ -67,7 +65,17 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      */
     @Option.Singular
     @Option.Access("")
-    Map<String, List<Routing>> namedRoutings();
+    Map<String, List<io.helidon.common.Builder<?, ? extends Routing>>> namedRoutings();
+
+    /**
+     * Server features allow customization of the server, listeners, or routings.
+     *
+     * @return server features
+     */
+    @Option.Configured
+    @Option.Singular
+    @Option.Provider(ServerFeatureProvider.class)
+    List<ServerFeature> features();
 
     /**
      * Context for the WebServer, if none defined, a new one will be created with global context as the root.
@@ -76,17 +84,4 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      */
     Optional<Context> serverContext();
 
-    class ServerConfigDecorator implements Prototype.BuilderDecorator<WebServerConfig.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(WebServerConfig.BuilderBase<?, ?> target) {
-            if (target.sockets().containsKey(WebServer.DEFAULT_SOCKET_NAME)) {
-                throw new ConfigException("Default socket must be configured directly on server config node, or through"
-                                                  + " \"ServerConfig.Builder\", not as a separated socket.");
-            }
-            if (target.namedRoutings().containsKey(WebServer.DEFAULT_SOCKET_NAME)) {
-                throw new ConfigException("Default routing must be configured directly on server config node, or through"
-                                                  + " \"ServerConfig.Builder\", not as a named routing.");
-            }
-        }
-    }
 }

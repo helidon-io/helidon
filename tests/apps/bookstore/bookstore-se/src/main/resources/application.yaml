@@ -21,13 +21,3 @@ server:
   # Random port
   port: -1
   host: 0.0.0.0
-
-observe:
-  observers:
-    health:
-      endpoint: "/health"
-#  ssl:
-#    private-key:
-#      keystore-resource-path: "certificate.p12"
-#      keystore-passphrase: "helidon"
-

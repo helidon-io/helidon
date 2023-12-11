@@ -1,0 +1,52 @@
+db:
+  source: "mongoDb"
+  connection:
+    url: "mongodb://127.0.0.1:27017/pokemon"
+  init-schema: false
+{{#db-health-check}}
+  health-check:
+    type: "query"
+    statementName: "health-check"
+{{/db-health-check}}
+  statements:
+{{#db-health-check}}
+    # Health check statement. HealthCheck statement type must be a query.
+    health-check: '{
+            "operation": "command",
+            "query": { ping: 1 }
+        }'
+{{/db-health-check}}
+    # Insert operation contains collection name, operation type and data to be inserted.
+    # Name variable is stored as MongoDB primary key attribute _id
+    insert2: '{
+            "collection": "pokemons",
+            "value": {
+                "_id": $name,
+                "type": $type
+            }
+        }'
+    select-all: '{
+            "collection": "pokemons",
+            "query": {}
+        }'
+    select-one: '{
+            "collection": "pokemons",
+            "query": {
+              "_id": ?
+            }
+        }'
+    update: '{
+            "collection": "pokemons",
+            "query": {
+                "_id": $name
+            },
+            "value": {
+                $set: { "type": $type }
+            }
+        }'
+    delete: '{
+            "collection": "pokemons",
+            "query": {
+                "_id": ?
+            }
+        }'

@@ -17,17 +17,15 @@
 package io.helidon.webclient.http1;
 
 import java.io.InputStream;
-import java.time.Duration;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.http.ClientRequestHeaders;
@@ -35,6 +33,7 @@ import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
@@ -57,6 +56,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final AtomicBoolean closed = new AtomicBoolean();
 
     private final HttpClientConfig clientConfig;
+    private final Http1ClientProtocolConfig protocolConfig;
     private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
@@ -70,36 +70,45 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final ClientUri lastEndpointUri;
 
     private final ClientConnection connection;
-    private final CompletableFuture<io.helidon.http.Headers> trailers = new CompletableFuture<>();
+    private final LazyValue<Headers> trailers;
     private boolean entityRequested;
     private long entityLength;
+    private boolean entityFullyRead = false;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
+                            Http1ClientProtocolConfig protocolConfig,
                             Status responseStatus,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
                             ClientConnection connection,
                             InputStream inputStream, // can be null if no entity
                             MediaContext mediaContext,
-                            ParserMode parserMode,
                             ClientUri lastEndpointUri,
                             CompletableFuture<Void> whenComplete) {
         this.clientConfig = clientConfig;
+        this.protocolConfig = protocolConfig;
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.connection = connection;
         this.inputStream = inputStream;
         this.mediaContext = mediaContext;
-        this.parserMode = parserMode;
+        this.parserMode = clientConfig.mediaTypeParserMode();
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
+        this.trailers = LazyValue.create(() -> Http1HeadersParser.readHeaders(
+                connection.reader(),
+                protocolConfig.maxHeaderSize(),
+                protocolConfig.validateResponseHeaders()
+        ));
 
-        if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
-            this.entityLength = Long.parseLong(responseHeaders.get(HeaderNames.CONTENT_LENGTH).value());
+        OptionalLong contentLength = responseHeaders.contentLength();
+        if (contentLength.isPresent()) {
+            this.entityLength = contentLength.getAsLong();
         } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             this.entityLength = ENTITY_LENGTH_CHUNKED;
         }
+
         if (responseHeaders.contains(HeaderNames.TRAILER)) {
             this.hasTrailers = true;
             this.trailerNames = responseHeaders.get(HeaderNames.TRAILER).allValues(true);
@@ -122,27 +131,10 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     @Override
     public ClientResponseTrailers trailers() {
         if (hasTrailers) {
-            // Block until trailers arrive
-            Duration timeout = clientConfig.readTimeout()
-                    .orElseGet(() -> clientConfig.socketOptions().readTimeout());
-
             if (!this.entityRequested) {
                 throw new IllegalStateException("Trailers requested before reading entity.");
             }
-
-            try {
-                return ClientResponseTrailers.create(this.trailers.get(timeout.toMillis(), TimeUnit.MILLISECONDS));
-            } catch (TimeoutException e) {
-                throw new IllegalStateException("Timeout " + timeout + " reached while waiting for trailers.", e);
-            } catch (InterruptedException e) {
-                throw new IllegalStateException("Interrupted while waiting for trailers.", e);
-            } catch (ExecutionException e) {
-                if (e.getCause() instanceof IllegalStateException ise) {
-                    throw ise;
-                } else {
-                    throw new IllegalStateException(e.getCause());
-                }
-            }
+            return ClientResponseTrailers.create(this.trailers.get());
         } else {
             return ClientResponseTrailers.create();
         }
@@ -161,15 +153,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
-                    if (entityLength == 0) {
+                    if (entityFullyRead || entityLength == 0) {
                         connection.releaseResource();
-                    } else if (entityLength == ENTITY_LENGTH_CHUNKED) {
-                        if (hasTrailers) {
-                            readTrailers();
-                            connection.releaseResource();
-                        } else {
-                            connection.closeResource();
-                        }
                     } else {
                         connection.closeResource();
                     }
@@ -208,15 +193,16 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         }
         return ClientResponseEntity.create(
                 this::readBytes,
-                this::close,
+                this::entityFullyRead,
                 requestHeaders,
                 responseHeaders,
                 mediaContext
         );
     }
 
-    private void readTrailers() {
-        this.trailers.complete(Http1HeadersParser.readHeaders(connection.reader(), 1024, true));
+    private void entityFullyRead() {
+        this.entityFullyRead = true;
+        this.close();
     }
 
     private BufferData readBytes(int estimate) {

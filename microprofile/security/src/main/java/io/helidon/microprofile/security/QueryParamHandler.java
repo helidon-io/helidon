@@ -19,7 +19,7 @@ package io.helidon.microprofile.security;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.security.QueryParamMapping;
 import io.helidon.security.util.TokenHandler;
 

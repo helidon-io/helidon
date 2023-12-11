@@ -175,7 +175,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      * Creates a new extension instance.
      */
     public MetricsCdiExtension() {
-        super(LOGGER, "observe.providers.metrics", "metrics");
+        super(LOGGER, nestedConfigKey("metrics"), "metrics");
     }
 
     /**
@@ -328,7 +328,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         registerRestRequestMetrics();
 
         Set<String> vendorMetricsAdded = new HashSet<>();
-        vendorMetricsAdded.add(server.observeRouting());
 
         // now we may have additional sockets we want to add vendor metrics to
         componentConfig().get("vendor-metrics-routings")
@@ -552,13 +551,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
 
         Contexts.globalContext().register(metricsFactory);
-        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder().config(config);
-        MetricsConfig metricsConfig = metricsConfigBuilder.build();
+        MetricsConfig metricsConfig = metricsFactory.metricsConfig();
         MeterRegistry meterRegistry = metricsFactory.globalRegistry(metricsConfig);
-        RegistryFactory.getInstance(meterRegistry); // initialize before first use
-        return builder.metricsConfig(metricsConfigBuilder)
+        return builder.metricsConfig(metricsConfig)
                 .meterRegistry(meterRegistry)
-                .metricsConfig(MetricsConfig.builder(metricsConfig))
                 .build();
     }
 

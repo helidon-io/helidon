@@ -19,7 +19,6 @@ import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * The application main class.
@@ -66,7 +65,6 @@ public final class ServerMain {
      * @param routing routing builder
      */
     private static void routing(HttpRouting.Builder routing) {
-        routing.addFeature(ObserveFeature.create())
-               .register("/greet", new GreetService());
+        routing.register("/greet", new GreetService());
     }
 }

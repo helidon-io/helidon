@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
+import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
-import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -503,7 +503,6 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
              */
             public Builder config(Config config) {
                 config.get("outbound-token")
-                        .asNode()
                         .map(TokenHandler::create)
                         .ifPresent(this::tokenHandler);
 
@@ -805,12 +804,18 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             config.get("allow-impersonation").asBoolean().ifPresent(this::allowImpersonation);
             config.get("principal-type").asString().map(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
-            config.get("atn-token").ifExists(this::verifyKeys);
-            config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
-            config.get("atn-token.verify-signature").asBoolean().ifPresent(this::verifySignature);
-            config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
-            config.get("sign-token").ifExists(this::outbound);
+            config.get("atn-token.handler").map(TokenHandler::create).ifPresent(this::atnTokenHandler);
+            Config atnToken = config.get("atn-token");
+            if (atnToken.exists()) {
+                verifyKeys(atnToken);
+                atnToken.get("jwt-audience").asString().ifPresent(this::expectedAudience);
+                atnToken.get("verify-signature").asBoolean().ifPresent(this::verifySignature);
+            }
+            Config signToken = config.get("sign-token");
+            if (signToken.exists()) {
+                outboundConfig(OutboundConfig.create(signToken));
+                outbound(signToken);
+            }
             config.get("allow-unsigned").asBoolean().ifPresent(this::allowUnsigned);
             config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
 
@@ -841,14 +846,14 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         private void verifyKeys(Config config) {
-            config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
+            config.get("jwk.resource").map(Resource::create).ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {
             config.get("jwt-issuer").asString().ifPresent(this::issuer);
 
             // jwk is optional, we may be propagating existing token
-            config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+            config.get("jwk.resource").map(Resource::create).ifPresent(this::signJwk);
         }
     }
 }

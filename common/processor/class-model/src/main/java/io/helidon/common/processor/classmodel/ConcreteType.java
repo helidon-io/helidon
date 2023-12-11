@@ -40,7 +40,13 @@ class ConcreteType extends Type {
             this.declaringType = null;
         } else {
             String parents = String.join(".", typeName.enclosingNames());
-            TypeName parent = TypeName.create(typeName.packageName() + "." + parents);
+            TypeName parent;
+            if (typeName.packageName().isEmpty()) {
+                parent = TypeName.create(parents);
+            } else {
+                parent = TypeName.create(typeName.packageName() + "." + parents);
+            }
+
             this.declaringType = Type.fromTypeName(parent);
         }
         this.typeParams = List.copyOf(builder.typeParams);

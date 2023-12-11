@@ -19,93 +19,11 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <exec src="tracing-outputs.xml" if="${tracing}" />
     <output>
         <model if="${health} || ${metrics} || ${tracing}">
-            <list key="Main-helidon-imports">
-                <value>io.helidon.webserver.observe.ObserveFeature</value>
-            </list>
-            <list key="Main-routing">
-                <value template="mustache" if="${health}"><![CDATA[
-        ObserveFeature observe = ObserveFeature.builder()
-                                               .observersDiscoverServices(false)
-                                               {{#Observe-feature-builder}}
-                                               {{.}}
-                                               {{/Observe-feature-builder}}
-                                               .build();
-]]></value>
-            </list>
-            <list key="Main-routing-builder">
-                <value>.addFeature(observe)</value>
-            </list>
-            <list key="dependencies">
-                <map if="${tracing}">
-                    <value key="groupId">io.helidon.webserver</value>
-                    <value key="artifactId">helidon-webserver-tracing</value>
-                </map>
-                <map if="${tracing}">
-                    <value key="groupId">io.helidon.webserver</value>
-                    <value key="artifactId">helidon-webserver-http2</value>
-                </map>
-            </list>
-            <list key="Main-helidon-imports" if="${health}">
-                <value>io.helidon.health.checks.DeadlockHealthCheck</value>
-                <value>io.helidon.health.checks.DiskSpaceHealthCheck</value>
-                <value>io.helidon.health.checks.HeapMemoryHealthCheck</value>
-                <value>io.helidon.webserver.observe.health.HealthObserver</value>
-            </list>
-            <list key="Main-helidon-imports" if="${tracing}">
-                <value>io.helidon.webserver.http2.Http2Route</value>
-                <value>io.helidon.webserver.http.Handler</value>
-                <value>io.helidon.webserver.http.ServerRequest</value>
-                <value>io.helidon.webserver.http.ServerResponse</value>
-                <value>io.helidon.webserver.http1.Http1Route</value>
-                <value>io.helidon.webserver.tracing.TracingFeature</value>
-                <value>io.helidon.tracing.Span</value>
-                <value>io.helidon.tracing.Tracer</value>
-                <value>io.helidon.tracing.TracerBuilder</value>
-            </list>
-            <list key="Main-static-imports" if="${tracing}">
-                <value>static io.helidon.http.Method.GET</value>
-            </list>
-            <list key="Main-routing-builder" if="${tracing}">
-                <value if="${tracing}"><![CDATA[.addFeature(TracingFeature.create(tracer))
-                .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
-                .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))]]></value>
-            </list>
-            <list key="Main-routing" if="${tracing}">
-                <value><![CDATA[Tracer tracer = TracerBuilder.create("server").build();
-]]></value>
-            </list>
-            <list key="main-class-content" if="${tracing}">
-                <value><![CDATA[
-    private static class TracedHandler implements Handler {
-        private final Tracer tracer;
-        private final String message;
-
-        private TracedHandler(Tracer tracer, String message) {
-            this.tracer = tracer;
-            this.message = message;
-        }
-
-        @Override
-        public void handle(ServerRequest req, ServerResponse res) {
-            Span span = tracer.spanBuilder("custom-span")
-                    .start();
-            try {
-                span.addEvent("my nice log");
-                res.send(message);
-            } finally {
-                span.end();
-            }
-        }
-    }
-]]></value>
-            </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.webserver.observe</value>
-                <value if="${tracing}">io.helidon.webserver.http2</value>
-                <value if="${tracing}">io.helidon.webserver.tracing</value>
-                <value if="${tracing}">io.helidon.tracing</value>
             </list>
         </model>
     </output>

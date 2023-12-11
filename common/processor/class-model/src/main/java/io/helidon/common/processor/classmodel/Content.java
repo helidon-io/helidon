@@ -63,11 +63,7 @@ class Content {
                 TypeName typeName = TypeName.create(key);
                 return imports.typeName(Type.fromTypeName(typeName), true);
             });
-            try {
-                content.replace(position.start - offset, position.end - offset, replacement);
-            } catch (StringIndexOutOfBoundsException e) {
-                System.out.printf("");
-            }
+            content.replace(position.start - offset, position.end - offset, replacement);
             //Since we are replacing values in the StringBuilder, previously obtained position indexes for class name tokens
             //will differ and because fo that, these changes need to be reflected via calculating overall offset
             offset += (position.end - position.start) - replacement.length();
@@ -92,6 +88,7 @@ class Content {
     static final class Builder implements io.helidon.common.Builder<Builder, Content> {
 
         private static final Pattern TYPE_NAME_PATTERN = Pattern.compile(TYPE_TOKEN + "(.*?)" + TYPE_TOKEN);
+        private static final Pattern TYPE_IDENTIFICATION_PATTERN = Pattern.compile("[.a-zA-Z0-9_]+");
 
         private final StringBuilder content = new StringBuilder();
         private final Set<String> toImport = new HashSet<>();
@@ -186,7 +183,9 @@ class Content {
          * @return updated builder instance
          */
         Builder typeName(String fqClassName) {
-            return add(ClassModel.TYPE_TOKEN_PATTERN.replace("name", fqClassName));
+            String processedFqName = TYPE_IDENTIFICATION_PATTERN.matcher(fqClassName)
+                    .replaceAll(className -> ClassModel.TYPE_TOKEN_PATTERN.replace("name", className.group()));
+            return add(processedFqName);
         }
 
         /**

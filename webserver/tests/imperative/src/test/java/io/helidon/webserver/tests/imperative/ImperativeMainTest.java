@@ -16,11 +16,11 @@
 
 package io.helidon.webserver.tests.imperative;
 
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.Socket;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +39,11 @@ class ImperativeMainTest {
 
     @SetUpRoute
     static void setUpRoute(HttpRouting.Builder routing) {
+        ImperativeMain.routing(routing);
+    }
+
+    @SetUpRoute("admin")
+    static void setUpRouteAdmin(HttpRouting.Builder routing) {
         ImperativeMain.routing(routing);
     }
 

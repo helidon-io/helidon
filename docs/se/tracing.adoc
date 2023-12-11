@@ -31,9 +31,8 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Additional Information, Additional Information>>
-** <<Span Propagation, Span Propagation>>
-** <<Zipkin Tracing, Zipkin Tracing>>
 ** <<Jaeger Tracing, Jaeger Tracing>>
+** <<Zipkin Tracing, Zipkin Tracing>>
 - <<Reference, Reference>>
 
 == Overview
@@ -43,8 +42,7 @@ within a service and across multiple services. This provides insight to sequence
 which helps you identify performance and operational issues.
 Helidon includes support for distributed tracing through its own API, backed by either
 through the https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API], or by
-https://opentracing.io[OpenTracing API]. Tracing is integrated with WebServer, gRPC Server,
-and Security.
+https://opentracing.io[OpenTracing API]. Tracing is integrated with WebServer and Security.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -53,7 +51,51 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 <dependency>
     <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
+    <artifactId>helidon-tracing</artifactId>    <1>
+</dependency>
+    <dependency>
+        <groupId>io.helidon.webserver.observe</groupId>
+        <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+    </dependency>
+----
+<1> Helidon tracing dependency.
+<2> Observability dependencies for tracing.
+
+For further processing of the tracing data, different providers are used.
+
+For Jaeger:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+</dependency>
+----
+
+For Zipkin:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-zipkin</artifactId>
+</dependency>
+----
+
+For OpenTelemetry:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+</dependency>
+----
+
+For OpenTracing:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-opentracing</artifactId>
 </dependency>
 ----
 // end::tracing-dependency[]
@@ -83,69 +125,42 @@ Helidon provides such an implementation for:
 === Setup WebServer
 
 [source,java]
-.Configuring OpenTracing `Tracer`
-----
-ServerConfiguration.builder()
-         .tracer(TracerBuilder.create("my-application")                    // <1>
-                       .collectorUri(URI.create("http://10.0.0.18:9411"))  // <2>
-                       .build())
-         .build()
-----
-<1> The name of the application (service) to associate with the tracing events
-<2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
-
-=== Setup gRPC Server
-
-[source,java]
 .Configuring `Tracer`
 ----
-Tracer tracer = TracerBuilder.create("Server")
-        .collectorUri(URI.create("http://10.0.0.18:9411"))   // <1>
-        .build();
-----
-<1> If using zipkin tracing system, the endpoint would be: `http://10.0.0.18:9411/api/v2/spans`
-
-[source,java]
-.Configuring Tracing Attributes
-----
-GrpcTracingConfig tracingConfig = new GrpcTracingConfig.Builder()
-                .withStreaming()
-                .withVerbosity()
-                .withTracedAttributes(ServerRequestAttribute.CALL_ATTRIBUTES,
-                     ServerRequestAttribute.HEADERS,
-                     ServerRequestAttribute.METHOD_NAME)
+Tracer tracer = TracerBuilder.create("helidon") <1>
                 .build();
-----
 
-[source,java]
-.Configuring gRPC Server
+WebServer.builder()
+        .addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
+        ...
+        .build()
+        .start();
 ----
-GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
-                .tracer(tracer)
-                .tracingConfig(tracingConfig)
-                .build();
-----
+<1> Create a `Tracer`.
+<2> Add an observability feature using the created `Tracer`.
 
 === Creating Custom Spans
 
-To create a custom span that is a child of the WebServer request:
+To create a custom span from tracer:
 
 [source,java]
 ----
-Span span = request.tracer()
-        .spanBuilder("my-operation")
-        .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent))
-                         .start();
-         try {
-            // Do some work and send a normal response.
-            span.end();
-        } catch (Throwable t) {
-            // Send an error response.
-            span.end(t);
-        }
+Span span = tracer.spanBuilder("name")  <1>
+        .tag("key", "value")
+        .start();
 
+try (...){                              <2>
+    //do some work
+    span.end();
+} catch (Throwable t) {                 <3>
+    span.end(t);
+}
 ----
-
+<1> Create span from tracer.
+<2> Do some work and end span.
+<3> End span with exception.
 
 == Helidon Spans
 
@@ -208,17 +223,23 @@ tracing:
 [source,java]
 .Use the configuration in web server
 ----
-routing.register(WebTracingConfig.create(config.get("tracing")));
+Tracer tracer = TracerBuilder.create(config.get("tracing")).build();    <1>
+
+server.addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
 ----
+<1> Create `Tracer` using `TracerBuilder` from configuration.
+<2> Add the `Tracer` as an observability feature.
 
 ==== Path-based Configuration in Helidon WebServer
 
-For WebServer we have path-based support for configuring tracing, in addition
+For Web Server we have path-based support for configuring tracing, in addition
 to the configuration described above.
 
 Configuration of path can use any path string supported by the
 WebServer. The configuration itself has the same possibilities
- as traced configuration described above. The path specific configuration
+ as traced configuration described above. The path-specific configuration
  will be merged with global configuration (path is the "newer" configuration, global is the "older")
 
 [source,yaml]
@@ -244,19 +265,14 @@ tracing:
 [source,java]
 .Configuration with Web Server
 ----
-routingBuilder.register(WebTracingConfig.create(config.get("tracing"));
-----
+Tracer tracer = TracerBuilder.create(config.get("tracing")).build();    <1>
 
-[source,java]
-.Configuration with Web Server using a builder
+server.addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
 ----
-routingBuilder.register(WebTracingConfig.builder()
-    .addPathConfig(PathTracingConfig.builder()
-        .path("/metrics")
-        .tracingConfig(TracingConfig.DISABLED)
-        .build();
-    .build());
-----
+<1> Create `Tracer` using `TracerBuilder` from configuration.
+<2> Add the `Tracer` as an observability feature.
 
 ==== Renaming top level span using request properties
 
@@ -284,7 +300,7 @@ Parameters provided:
 
 == Additional Information
 
-=== Span Propagation
+=== WebClient Span Propagation
 
 Span propagation is supported with Helidon WebClient.
 Tracing propagation is automatic as long as the current span context is available in Helidon Context
@@ -310,15 +326,10 @@ WebClient client = WebClient.builder()
     .addService(WebClientTracing.create())
     .build();
 
-Single<String> response = client.get()
+String response = client.get()
     .uri(uri)
     .request(String.class);
 ----
-
-=== Zipkin Tracing [[zipkin-tracing]]
-
-include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
-include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
 
 === Jaeger Tracing [[jaeger-tracing]]
 
@@ -329,7 +340,15 @@ include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-configuration]
 
 As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger tracing in your Helidon application.
 
+
+=== Zipkin Tracing [[zipkin-tracing]]
+
+include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
+include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
+
+
 == Reference
 
 * link:https://opentracing.io/[Opentracing Project]
+* link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
 * link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]

@@ -29,7 +29,7 @@ To control how the Helidon metrics subsystem behaves, add a `metrics` section to
 ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
 ifdef::se-flavor[your configuration file, such as `application.yaml`.]
 
-include::{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsFeature.adoc[tag=config,leveloffset=+1]
+include::{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsObserver.adoc[tag=config,leveloffset=+1]
 
 // end::config-intro[]
 
@@ -41,12 +41,12 @@ Metrics configuration is quite extensive and powerful and, therefore, a bit comp
 The rest of this section illustrates some of the most common scenarios:
 
 * <<config-disable,Disable metrics entirely.>>
-* <<config-selective,Selectively enable or disable metrics by metric registry type and, within type, by name.>>
 * <<config-kpi,Choose whether to collect extended key performance indicator metrics.>>
 ifdef::mp-flavor[]
 * <<config-rest-request,Control `REST.request` metrics collection.>>
 
 endif::[]
+
 [#config-disable]
 ==== Disable Metrics Subsystem
 
@@ -60,76 +60,31 @@ endif::[]
 ifdef::se-flavor[]
 [source,yaml]
 ----
-metrics:
-  enabled: false
+server:
+  features:
+    observe:
+      observers:
+        metrics:
+          enabled: false
 ----
 endif::[]
-Helidon does not update metrics, and the `/metrics` endpoints respond with `404` plus a message that the metrics subsystem is disabled.
-
-[#config-selective]
-==== Disable Selected Metrics
-
-You can be even more selective. Within a registry type you can configure up to two regular expression patterns:
-
-* one matching metric names to _exclude_, and
-* one matching metric names to _include_.
-
-Helidon updates and reports a metric only if two conditions hold:
-
-* the metric name _does not_ match the `exclude` regex pattern (if you define one), and
-* either
-** there is no `include` regex pattern, or
-** the metric name matches the `include` pattern.
-
-[NOTE]
-====
-Make sure any `include` regex pattern you specify matches _all_ the metric names you want to capture.
-====
-Suppose your application creates and updates a group of metrics with names such as `myapp.xxx.queries`, `myapp.xxx.creates`, `myapp.xxx.updates`, and `myapp.xxx.deletes` where `xxx` can be either `supplier` or `customer`.
-
-The following example gathers all metrics _except_ those from your application regarding suppliers _although_ supplier updates are _included_:
-
-.Disabling and enabling metrics by name
-ifdef::mp-flavor[]
-[source,properties]
-----
-metrics.registries.0.type=application
-metrics.registries.0.application.filter.exclude=myapp\.supplier\..*
-metrics.registries.0.application.filter.include=myapp\.supplier\.updates
-----
-endif::[]
-ifdef::se-flavor[]
-[source,yaml]
-----
-metrics:
-  registries:
-    - type: application
-      filter:
-        exclude: "myapp\.supplier\..*"
-        include: "myapp\.supplier\.updates"
-----
-endif::[]
-
-This setting excludes metrics with names starting with `myapp.supplier` _except_ for the metric `myapp.supplier.updates`. The `exclude` and `include` values are regular expressions.
+Helidon does not update metrics, and the `{metrics-endpoint}` endpoints respond with `404`..
 
 [#config-kpi]
-==== Collecting Basic and Extended Key Performance Indicator (KPI) Metrics
+==== Collecting Basic and Extended Key Performance Indicator (KPI) {metrics_uc}
 
-Any time you include the Helidon metrics module in your application, Helidon tracks two basic performance indicator metrics:
+Any time you include the Helidon metrics module in your application, Helidon tracks a basic performance indicator {metric}: a `Counter` of all requests received (`requests.count`)
 
-* a `Counter` of all requests received (`requests.count`), and
-* a `Meter` of all requests received (`requests.meter`).
+Helidon {h1-prefix} also includes additional, extended KPI {metrics} which are disabled by default:
 
-Helidon {h1-prefix} also includes additional, extended KPI metrics which are disabled by default:
+* current number of requests in-flight - a `Gauge` (`requests.inFlight`) of requests currently being processed
+* long-running requests - a `Counter` (`requests.longRunning`) measuring the total number of requests which take at least a given amount of time to complete; configurable, defaults to 10000 milliseconds (10 seconds)
+* load - a `Counter` (`requests.load`) measuring the number of requests worked on (as opposed to received)
+* deferred - a `Gauge` (`requests.deferred`) measuring delayed request processing (work on a request was delayed after Helidon received the request)
 
-* current number of requests in-flight - a `ConcurrentGauge` (`requests.inFlight`) of requests currently being processed
-* long-running requests - a `Meter` (`requests.longRunning`) measuring the rate at which Helidon processes requests which take at least a given amount of time to complete; configurable, defaults to 10000 milliseconds (10 seconds)
-* load - a `Meter` (`requests.load`) measuring the rate at which requests are worked on (as opposed to received)
-* deferred - a `Meter` (`requests.deferred`) measuring the rate at which a request's processing is delayed after Helidon receives the request
+You can enable and control these {metrics} using configuration:
 
-You can enable and control these metrics using configuration:
-
-.Controlling extended KPI metrics
+.Controlling extended KPI {metrics}
 ifdef::mp-flavor[]
 [source,properties]
 ----
@@ -140,24 +95,28 @@ endif::[]
 ifdef::se-flavor[]
 [source,yaml]
 ----
-metrics:
-  key-performance-indicators:
-    extended: true
-    long-running:
-      threshold-ms: 2000
+server:
+  features:
+    observe:
+      observers:
+        metrics:
+          key-performance-indicators:
+            extended: true
+            long-running:
+              threshold-ms: 2000
 ----
 endif::[]
 
 [#config-rest-request]
 ifdef::mp-flavor[]
-==== Enable `REST.request` Metrics
+==== Enable `REST.request` {metrics_uc}
 
-.Controlling REST request metrics
+.Controlling REST request {metrics}
 [source,properties]
 ----
 metrics.rest-request-enabled=true
 ----
-Helidon automatically registers and updates `SimpleTimer` metrics for every REST endpoint in your service.
+Helidon automatically registers and updates `Timer` {metrics} for every REST endpoint in your service.
 endif::[]
 
 // end::config-examples[]

@@ -78,7 +78,7 @@ This type provides the following service implementations:
  Not used by default.
 |`cookie-name` |string |`JSESSIONID` |Name of the cookie to use.
  Defaults to `DEFAULT_COOKIE_NAME`.
-|`cookie-name-tenant` |string |`HELIDON_TENANT` |Name of the cookie to use for tenant name.
+|`cookie-name-tenant` |string |`HELIDON_TENANT` |The name of the cookie to use for the tenant name.
  Defaults to `DEFAULT_TENANT_COOKIE_NAME`.
 |`cookie-path` |string |`/` |Path the cookie is valid for.
  Defaults to "/".
@@ -124,7 +124,7 @@ This type provides the following service implementations:
 |`proxy-protocol` |string |`http` |Proxy protocol to use when proxy is used.
  Defaults to `DEFAULT_PROXY_PROTOCOL`.
 |`query-param-name` |string |`accessToken` |Name of a query parameter that contains the JWT token when parameter is used.
-|`query-param-tenant-name` |string |`h_tenant` |Name of a query parameter that contains the tenant name when parameter is used.
+|`query-param-tenant-name` |string |`h_tenant` |Name of a query parameter that contains the tenant name when the parameter is used.
  Defaults to #DEFAULT_TENANT_PARAM_NAME.
 |`query-param-use` |boolean |`false` |Whether to use a query parameter to send JWT token from application to this
  server.

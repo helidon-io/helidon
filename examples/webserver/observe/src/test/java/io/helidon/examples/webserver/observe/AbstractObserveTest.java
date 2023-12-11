@@ -16,7 +16,6 @@
 
 package io.helidon.examples.webserver.observe;
 
-import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -37,9 +36,7 @@ abstract class AbstractObserveTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        Config config = Config.create();
-
-        ObserveMain.routing(config, builder);
+        ObserveMain.routing(builder);
     }
 
     @Test

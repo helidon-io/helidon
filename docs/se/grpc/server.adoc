@@ -31,19 +31,17 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 ** <<gRPC Server Routing, gRPC Server Routing>>
 ** <<Service Implementation, Service Implementation>>
-** <<Interceptors, Interceptors>>
-** <<Service Health Checks, Service Health Checks>>
-** <<Service Metrics, Service Metrics>>
-** <<Security, Security>>
-** <<Marshalling, Marshalling>>
 - <<Configuration, Configuration>>
 ** <<Configuring the gRPC Server in the Code, Configuring the gRPC Server in the Code>>
-** <<Configuring the gRPC Server in a Configuration File, Configuring the gRPC Server in a Configuration File>>
 - <<Examples, Examples>>
-** <<Quick Start, Quick Start>>
-** <<Additional gRPC Server Examples, Additional gRPC Server Examples>>
 
 == Overview
+
+gRPC scope is temporarily smaller in Helidon, please follow issue
+https://github.com/helidon-io/helidon/issues/5418
+As this is still work in progress, the WebServer gRPC module is release in preview mode, as we may introduce backward
+incompatible changes to our APIs, so we can re-introduce features.
+
 The Helidon gRPC server provides a framework for creating link:http://grpc.io/[gRPC] applications.
 While it allows you to deploy any standard gRPC service that
 implements `io.grpc.BindableService` interface, including services generated
@@ -57,14 +55,7 @@ model, simplifying the learning curve for developers.
 * It provides a number of helper methods that make service implementation
 significantly simpler.
 
-* It allows you to configure some of the Helidon value-added features, such
-as <<Security, security>> and <<Service Metrics, metrics collection>>
-down to the method level.
-
-* It allows you to easily specify custom marshallers for requests and
-responses if Protobuf does not satisfy your needs.
-
-* It provides built-in support for <<Service Health Checks, health checks>>.
+* It allows you to run gRPC and HTTP endpoints on the same WebServer, and even on the same port.
 
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -72,45 +63,38 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.grpc</groupId>
-    <artifactId>helidon-grpc-server</artifactId>
-</dependency>
-----
-
-[[security_maven_coordinartes]]
-If `gRPC server security` is required as described in the <<Security>> section, add the following dependency to your project’s pom.xml:
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.security.integration</groupId>
-    <artifactId>helidon-security-integration-grpc</artifactId>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-grpc</artifactId>
 </dependency>
 ----
 
 == Usage
 === gRPC Server Routing
 - <<Customizing Service Definitions, Customizing Service Definitions>>
-- <<Specifying Global Interceptors, Specifying Global Interceptors>>
 
-Unlike the webserver, which allows you to route requests based on path expression
+Unlike the HTTP server, which allows you to route requests based on path expression
 and the HTTP verb, the gRPC server always routes requests based on the service and
 method name. This makes routing configuration somewhat simpler -- all you need
 to do is register your services:
 
 [source,java]
 ----
-private static GrpcRouting createRouting(Config config) {
+private static GrpcRouting.Builder createRouting(Config config) {
     return GrpcRouting.builder()
-            .register(new GreetService(config)) // <1>
-            .register(new EchoService())        // <2>
-            .register(new MathService())        // <3>
-            .build();
+            .service(new GreetService(config)) // <1>
+            .service(new EchoService())        // <2>
+            .service(new MathService())        // <3>
+            .unary(Strings.getDescriptor(),    // <4>
+                    "StringService",
+                    "Upper",
+                    Main::grpcUpper);
 }
 ----
 
 <1> Register `GreetService` instance.
 <2> Register `EchoService` instance.
 <3> Register `MathService` instance.
+<4> Register a custom unary gRPC route
 
 Both "standard" gRPC services that implement `io.grpc.BindableService` interface
 (typically implemented by extending the generated server-side stub and overriding
@@ -123,95 +107,9 @@ make service implementation easier, as we'll see in a moment.
 ==== Customizing Service Definitions
 
 When registering a service, regardless of its type, you can customize its
-descriptor by providing a configuration consumer as a second argument to the
-`register` method.
-
-This is particularly useful when registering standard `BindableService`
-instances, as it allows you to add certain Helidon-specific behaviors, such as
-<<Service Health Checks, health checks>> and <<Service Metrics, metrics>> to them:
-
-[source,java]
-----
-private static GrpcRouting createRouting(Config config) {
-    return GrpcRouting.builder()
-            .register(new GreetService(config))
-            .register(new EchoService(), service -> {
-                service.healthCheck(CustomHealthChecks::echoHealthCheck)  // <1>
-                       .metered();                                        // <2>
-            })
-            .build();
-}
-----
-
-<1> Add custom health check to the service.
-<2> Specify that all the calls to service methods should be metered.
-
-==== Specifying Global Interceptors
-
-`GrpcRouting` also allows you to specify <<Interceptors, custom interceptors>> that will be applied to all registered services.
-
-This is useful to configure features such as tracing, security and metrics collection,
-and we provide built-in interceptors for those purposes that you can simply register
-with the routing definition:
-
-[source,java]
-----
-private static GrpcRouting createRouting(Config config) {
-    return GrpcRouting.builder()
-            .intercept(GrpcMetrics.timed())     // <1>
-            .register(new GreetService(config))
-            .register(new EchoService())
-            .register(new MathService())
-            .build();
-}
-----
-
-<1> Register `GrpcMetrics` interceptor that will collect timers for all methods of all services (but can be overridden at the individual service or even method level).
+descriptor by providing an instance of `ServerServiceDefinition` to `service` method.
 
 === Service Implementation
-
-At the very basic level, all you need to do in order to implement a Helidon
-gRPC service is create a class that implements the `io.helidon.grpc.server.GrpcService`
-interface and define one or more methods for the service:
-
-[source,java]
-----
-class EchoService implements GrpcService {
-
-    @Override
-    public void update(ServiceDescriptor.Rules rules) {
-        rules.marshallerSupplier(new JsonbMarshaller.Supplier()) // <1>
-             .unary("Echo", this::echo); // <2>
-    }
-
-    /**
-     * Echo the message back to the caller.
-     *
-     * @param request   the echo request containing the message to echo
-     * @param observer  the response observer
-     */
-    public void echo(String request, StreamObserver<String> observer) {  // <3>
-        complete(observer, request);  // <4>
-    }
-}
-----
-
-<1> Specify a custom marshaller to marshall requests and responses.
-<2> Define unary method `Echo` and map it to the `this::echo` handler.
-<3> Create a handler for the `Echo` method.
-<4> Send the request string back to the client by completing response observer.
-
-NOTE: The `complete` method shown in the example above is just one of many helper
-methods available in the `GrpcService` class. See the full list
-link:{grpc-server-javadoc-base-url}/io/helidon/grpc/server/GrpcService.html[here].
-
-The example above implements a service with a single unary method which will be
-exposed at the `EchoService/Echo' endpoint. The service explicitly defines
-a marshaller for requests and responses, so this implies that you will have to
-implement clients by hand and configure them to use the same marshaller as the
-server. Obviously, one of the major selling points of gRPC is that it makes it easy to
-generate clients for a number of languages (as long as you use Protobuf for marshalling),
-so let's see how we would implement Protobuf enabled Helidon gRPC service.
 
 ==== Implementing Protobuf Services
 
@@ -256,11 +154,14 @@ The service implementation will be very similar to our original implementation:
 [source,java]
 ----
 class EchoService implements GrpcService {
+    @Override
+    public Descriptors.FileDescriptor proto() {
+        return Echo.getDescriptor(); // <1>
+    }
 
     @Override
     public void update(ServiceDescriptor.Rules rules) {
-        rules.proto(Echo.getDescriptor())  // <1>
-             .unary("Echo", this::echo);   // <2>
+        rules.unary("Echo", this::echo); // <2>
     }
 
     /**
@@ -285,583 +186,9 @@ enable Protobuf marshalling.
 <5> Create the response containing extracted message.
 <6> Send the response back to the client by completing response observer.
 
-=== Interceptors
-
-Helidon gRPC allows you to configure standard interceptors using `io.grpc.ServerInterceptor`.
-
-For example, you could implement an interceptor that logs each RPC call:
-
-[source,java]
-----
-class LoggingInterceptor implements ServerInterceptor {   // <1>
-
-    private static final Logger LOG = Logger.getLogger(LoggingInterceptor.class.getName());
-
-    @Override
-    public <ReqT, ResT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, ResT> call,
-                                                                 Metadata metadata,
-                                                                 ServerCallHandler<ReqT, ResT> handler) {
-
-        LOG.info(() -> "CALL: " + call.getMethodDescriptor());  // <2>
-        return handler.startCall(call, metadata);               // <3>
-    }
-}
-----
-
-<1> Implement the interceptor class using `io.grpc.ServerInterceptor`.
-<2> Implement the logging logic.
-<3> The intercepted call is started.
-
-==== Registering Interceptors
-
-You can register interceptors globally, in which case they will be applied to all
-methods of all services, by simply adding them to the `GrpcRouting` instance:
-
-[source,java]
-----
-private static GrpcRouting createRouting(Config config) {
-    return GrpcRouting.builder()
-            .intercept(new LoggingInterceptor())  // <1>
-            .register(new GreetService(config))
-            .register(new EchoService())
-            .build();
-}
-----
-
-<1> Adds `LoggingInterceptor` to all methods of `GreetService` and `EchoService`.
-
-You can also register an interceptor for a specific service, either by implementing
-`GrpcService.update` method:
-
-[source,java]
-----
-public class MyService implements GrpcService {
-
-    @Override
-    public void update(ServiceDescriptor.Rules rules) {
-        rules.intercept(new LoggingInterceptor())   // <1>
-                .unary("MyMethod", this::myMethod);
-    }
-
-    private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
-        // do something
-    }
-}
-----
-
-<1> Adds `LoggingInterceptor` to all methods of `MyService`.
-
-Or by configuring `ServiceDescriptor` externally, when creating `GrpcRouting`, which
-allows you to add interceptors to plain `io.grpc.BindableService` services as well:
-
-[source,java]
-----
-private static GrpcRouting createRouting(Config config) {
-    return GrpcRouting.builder()
-            .register(new GreetService(config), cfg -> cfg.intercept(new LoggingInterceptor()))  // <1>
-            .register(new EchoService())
-            .build();
-}
-----
-
-<1> Adds `LoggingInterceptor` to all methods of `GreetService` only.
-
-Finally, you can also register an interceptor at the method level:
-
-[source,java]
-----
-public class MyService implements GrpcService {
-
-    @Override
-    public void update(ServiceDescriptor.Rules rules) {
-        rules.unary("MyMethod",
-                     this::myMethod,
-                     cfg -> cfg.intercept(new LoggingInterceptor()));  // <1>
-    }
-
-    private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
-        // do something
-    }
-}
-----
-
-<1> Adds `LoggingInterceptor` to `MyService::MyMethod` only.
-
-=== Service Health Checks
-
-Helidon gRPC services provide built-in support for Helidon Health Checks.
-
-Unless a custom health check is implemented by the service developer, each service
-deployed to the gRPC server will be provisioned with a default health check, which
-always returns status of `UP`.
-
-This allows all services, including the ones that don't have a meaningful health check,
-to show up in the health report (or to be queried for health) without service developer
-having to do anything.
-
-However, services that do need custom health checks can easily define one,
-directly within `GrpcService` implementation:
-
-[source,java]
-----
-public class MyService implements GrpcService {
-
-    @Override
-    public void update(ServiceDescriptor.Rules rules) {
-        rules.unary("MyMethod", this::myMethod)
-                .healthCheck(this::healthCheck);  // <1>
-    }
-
-    private HealthC
-heckResponse healthCheck() {
-        boolean fUp = isMyServiceUp();            // <2>
-        return HealthCheckResponse
-                .named(name())                    // <3>
-                .state(fUp)                       // <4>
-                .withData("ts", System.currentTimeMillis())  // <5>
-                .build();
-    }
-
-    private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
-        // do something
-    }
-}
-----
-
-<1> Configure a custom health check for the service.
-<2> Determine the service status.
-<3> Use service name as a health check name for consistency.
-<4> Set the determined service status.
-<5> Optionally provide additional metadata.
-
-You can also define custom health checks for an existing service, including plain
-`io.grpc.BindableService` implementations, using a service configurer inside the
-`GrpcRouting` definition:
-
-[source,java]
-----
-private static GrpcRouting createRouting() {
-    return GrpcRouting.builder()
-            .register(new EchoService(), cfg -> cfg.healthCheck(MyCustomHealthChecks::echoHealthCheck))  // <1>
-            .build();
-}
-----
-
-<1> Configure custom health check for an existing or legacy service.
-
-==== Exposing Health Checks
-
-All gRPC service health checks are managed by the Helidon gRPC server, and are
-automatically exposed to the gRPC clients using a custom implementation of the
-standard gRPC `HealthService` API.
-
-However, they can also be exposed to REST clients via the standard Helidon/Microprofile
-`/health` endpoint:
-
-[source,java]
-----
-        GrpcServer grpcServer = GrpcServer.create(grpcServerConfig(), createRouting(config));  // <1>
-        grpcServer.start();                                                                    // <2>
-
-        HealthSupport health = HealthSupport.builder()
-                .add(grpcServer.healthChecks())     // <3>
-                .build();
-
-        Routing routing = Routing.builder()
-                .register(health)                   // <4>
-                .build();
-
-        WebServer.create(webServerConfig(), routing).start();   // <5>
-----
-
-<1> Create the `GrpcServer` instance.
-<2> Start the gRPC server which will deploy all the services and register default and custom health checks.
-<3> Add gRPC server managed health checks to `HealthSupport` instance.
-<4> Add `HealthSupport` to the web server routing definition.
-<5> Create and start the web server.
-
-All gRPC health checks will now be available via the `/health` REST endpoint, in
-addition to the standard gRPC `HealthService`
-
-=== Service Metrics
-- <<Enabling Metrics Capture, Enabling Metrics Capture>>
-- <<Overriding Metrics Capture, Overriding Metrics Capture>>
-- <<Exposing Metrics Externally, Exposing Metrics Externally>>
-- <<Specifying Metric Metadata, Specifying Metric Metadata>>
-- <<Overriding the Metric Name, Overriding the Metric Name>>
-
-The Helidon gRPC server has built-in support for metrics capture, which allows
-service developers to easily enable application-level metrics for their services.
-
-==== Enabling Metrics Capture
-
-By default, the gRPC server only captures two vendor-level metrics: `grpc.request.count`
-and `grpc.request.meter`. These metrics provide an aggregate view of requests across
-all services, and serve as an indication of the overall server load.
-
-However, users can enable more fine-grained metrics by simply configuring a built-in
-`GrpcMetrics` interceptor within the routing:
-
-[source,java]
-----
-private static GrpcRouting createRouting(Config config) {
-    return GrpcRouting.builder()
-            .intercept(GrpcMetrics.timed())       // <1>
-            .register(new GreetService(config))
-            .register(new EchoService())
-            .build();
-}
-----
-
-<1> Capture the metrics for all methods of all services as a `timer`.
-
-In the example above we have chosen to create and keep a `timer` metric type for
-each method of each service. Alternatively, we could've chosen to use a
-`counter`, `meter` or a `histogram` instead.
-
-==== Overriding Metrics Capture
-
-While global metrics capture is certainly useful, it is not always sufficient.
-Keeping a separate `timer` for each gRPC method may be excessive, so the user
-could decide to use a lighter-weight metric type, such as a `counter` or a `meter`.
-
-However, the user may still want to enable a `histogram` or a `timer` for some services,
-or even only some methods of some services.
-
-This can be easily accomplished by overriding the type of the captured metric at
-either the service or the method level:
-
-[source,java]
-----
-private static GrpcRouting createRouting(Config config) {
-    return GrpcRouting.builder()
-            .intercept(GrpcMetrics.counted())  // <1>
-            .register(new MyService())
-            .build();
-}
-
-public static class MyService implements GrpcService {
-
-    @Override
-    public void update(ServiceDescriptor.Rules rules) {
-        rules
-            .intercept(GrpcMetrics.metered())  // <2>
-            .unary("MyMethod", this::myMethod,
-                       cfg -> cfg.intercept(GrpcMetrics.timer())); // <3>
-    }
-
-    private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
-        // do something
-    }
-}
-----
-
-<1> Use `counter` for all methods of all services, unless overridden.
-<2> Use `meter` for all methods of `MyService`.
-<3> Use `timer` for `MyService::MyMethod`.
-
-==== Exposing Metrics Externally
-
-Collected metrics are stored in the standard Helidon metric registries, such as the vendor and
-application registries, and can be exposed via the standard `/metrics` REST API.
-
-[source,java]
-----
-Routing routing = Routing.builder()
-        .register(MetricsSupport.create())    // <1>
-        .build();
-
-WebServer.create(webServerConfig(), routing)  // <2>
-         .start()
-----
-<1> Add the `MetricsSupport` instance to web server routing.
-<2> Create and start the Helidon web server.
-
-See xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics] documentation for more details.
-
-==== Specifying Metric Metadata
-
-Helidon metrics contain metadata such as tags, a description, units etc. It is possible to
-add this additional metadata when specifying the metrics.
-
-===== Adding Tags
-
-To add tags to a metric, a `Map` of key/value tags can be supplied.
-
-[source,java]
-----
-Map<String, String> tagMap = new HashMap<>();
-tagMap.put("keyOne", "valueOne");
-tagMap.put("keyTwo", "valueTwo");
-
-GrpcRouting routing = GrpcRouting.builder()
-        .intercept(GrpcMetrics.counted().tags(tagMap))   // <1>
-        .register(new MyService())
-        .build();
-----
-<1> The `tags()` method is used to add the `Map` of tags to the metric.
-
-===== Adding a Description
-
-A meaningful description can be added to a metric.
-
-[source,java]
-----
-GrpcRouting routing = GrpcRouting.builder()
-        .intercept(GrpcMetrics.counted().description("Something useful")) // <1>
-        .register(new MyService())
-        .build();
-----
-
-<1> The `description()` method is used to add the description to the metric.
-
-===== Adding Metric Units
-
-A `units` value can be added to a metric.
-
-[source,java]
-----
-GrpcRouting routing = GrpcRouting.builder()
-        .intercept(GrpcMetrics.timed().units(MetricUnits.SECONDS)) // <1>
-        .register(new MyService())
-        .build();
-----
-<1> The `units()` method is used to specify the metric units,
-the value of which is one of the constants from the `org.eclipse.microprofile.metrics.MetricUnits` class.
-
-==== Overriding the Metric Name
-
-By default, the metric name is the gRPC service name followed by a dot ('.') followed by the method name.
-It is possible to supply a function that can be used to override the default behaviour.
-
-The function should implement the `io.helidon.grpc.metrics.GrpcMetrics.NamingFunction` interface.
-
-[source,java]
-----
-@FunctionalInterface
-public interface NamingFunction {
-    /**
-     * Create a metric name.
-     *
-     * @param service    the service descriptor
-     * @param methodName the method name
-     * @param metricType the metric type
-     * @return the metric name
-     */
-    String createName(ServiceDescriptor service, String methodName, MetricType metricType);
-}
-----
-This is a functional interface so a lambda expression can be used too.
-
-[source,java]
-----
-GrpcRouting routing = GrpcRouting.builder()
-        .intercept(GrpcMetrics.counted()
-                .nameFunction((svc, method, metric) -> "grpc." + service.name() + '.' + method) // <1>
-----
-<1> The `NamingFunction` is just a lambda that returns the concatenated service name and method name
-with the prefix ``grpc.``. So for a service "Foo" and method "bar", the above example would produce a name "grpc.Foo.bar".
-
-=== Security
-To enable server security, refer to the earlier section about <<security_maven_coordinartes, Security maven coordinates>> for guidance on what dependency to add in the project's pom.xml.
-
-==== Bootstrapping
-
-There are two steps to configure security with the gRPC server:
-
-1. Create the security instance and register it the with server.
-2. Protect the gRPC services of the server with various security features.
-
-[source,java]
-.Example using builders
-----
-// gRPC server's routing
-GrpcRouting.builder()
-    // This is step 1 - register security instance with gRPC server processing
-    // security - instance of security either from config or from a builder
-    // securityDefaults - default enforcement for each service that has a security definition
-    .intercept(GrpcSecurity.create(security).securityDefaults(GrpcSecurity.authenticate()))
-    // this is step 2 - protect a service
-    // register and protect this service with authentication (from defaults) and role "user"
-    .register(greetService, GrpcSecurity.rolesAllowed("user"))
-    .build();
-----
-
-[source,java]
-.Example using builders for more fine grained method level security
-----
-// create the service descriptor
-ServiceDescriptor greetService = ServiceDescriptor.builder(new GreetService())
-        // Add an instance of gRPC security that will apply to all methods of
-        // the service - in this case require the "user" role
-        .intercept(GrpcSecurity.rolesAllowed("user"))
-        // Add an instance of gRPC security that will apply to the "SetGreeting"
-        // method of the service - in this case require the "admin" role
-        .intercept("SetGreeting", GrpcSecurity.rolesAllowed("admin"))
-        .build();
-
-// Create the gRPC server's routing
-GrpcRouting.builder()
-    // This is step 1 - register security instance with gRPC server processing
-    // security - instance of security either from config or from a builder
-    // securityDefaults - default enforcement for each service that has a security definition
-    .intercept(GrpcSecurity.create(security).securityDefaults(GrpcSecurity.authenticate()))
-    // this is step 2 - add the service descriptor
-    .register(greetService)
-    .build();
-----
-
-[source,java]
-.Example using configuration
-----
-GrpcRouting.builder()
-    // helper method to load both security and gRPC server security from configuration
-    .intercept(GrpcSecurity.create(config))
-    // continue with gRPC server route configuration...
-    .register(new GreetService())
-    .build();
-----
-
-[source,conf]
-.Example using configuration - configuration (HOCON)
-----
-# This may change in the future - to align with gRPC server configuration,
-# once it is supported
-security
-  grpc-server:
-    # Configuration of integration with gRPC server
-    defaults:
-        authenticate: true
-    # Configuration security for individual services
-    services:
-    - name: "GreetService"
-      defaults:
-      roles-allowed: ["user"]
-      # Configuration security for individual methods of the service
-      methods:
-      - name: "SetGreeting"
-        roles-allowed: ["admin"]
-----
-
-===== Client Security
-When using the Helidon SE gRPC client, API security can be configured for a gRPC service
-or at the individual method level. The client API has a custom `CallCredentials` implementation that
-integrates with the Helidon security APIs.
-
-[source,java]
-.Example configuring client security for a service
-----
-Security security = Security.builder()  // <1>
-        .addProvider(HttpBasicAuthProvider.create(config.get("http-basic-auth")))
-        .build();
-
-GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(security.createContext("test.client")) // <2>
-        .property(EndpointConfig.PROPERTY_OUTBOUND_ID, user)
-        .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
-        .build();
-
-ClientServiceDescriptor descriptor = ClientServiceDescriptor // <3>
-        .builder(StringService.class)
-        .unary("Lower")
-        .callCredentials(clientSecurity)                     // <4>
-        .build();
-
-GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor); // <5>
-
-String response = client.blockingUnary("Lower", "ABCD"); // <6>
-----
-<1> Create the Helidon `Security` instance which, in this case, will use the basic auth provider.
-<2> Create the `GrpcClientSecurity` gRPC `CallCredentials` adding the user and password
-property expected by the basic auth provider.
-<3> Create the gRPC `ClientServiceDescriptor` for the `StringService` gRPC service.
-<4> Set the `GrpcClientSecurity` instance as the call credentials for all methods of the service.
-<5> Create a `GrpcServiceClient` that will allow methods to be called on the service.
-<6> Call the "Lower" method which will use the configured basic auth credentials.
-
-
-[source,java]
-.Example configuring client security for a specific method
-----
-GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(security.createContext("test.client")) // <1>
-        .property(EndpointConfig.PROPERTY_OUTBOUND_ID, user)
-        .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
-        .build();
-
-ClientServiceDescriptor descriptor = ClientServiceDescriptor // <2>
-        .builder(StringService.class)
-        .unary("Lower")
-        .unary("Upper", rules -> rules.callCredentials(clientSecurity)) // <3>
-        .build();
-----
-<1> Create the `GrpcClientSecurity` call credentials in the same way as above.
-<2> Create the `ClientServiceDescriptor`, this time with two unary methods, "Lower" and "Upper".
-<3> The "Upper" method is configured to use the `GrpcClientSecurity` call credentials, the "Lower" method
-will be called without any credentials.
-
-
-===== Outbound security
-Outbound security covers three scenarios:
-
-* Calling a secure gRPC service from inside a gRPC service method handler.
-* Calling a secure gRPC service from inside a web server method handler.
-* Calling a secure web endpoint from inside a gRPC service method handler.
-
-Within each scenario, credentials can be propagated if the gRPC/http method
-handler is executing within a security context or credentials can be overridden
-to provide a different set of credentials to use for calling the outbound endpoint.
-
-[source,java]
-.Example calling a secure gRPC service from inside a gRPC service method handler
-----
-// Obtain the SecurityContext from the current gRPC call Context
-SecurityContext securityContext = GrpcSecurity.SECURITY_CONTEXT.get();
-
-// Create a gRPC CallCredentials that will use the current request's
-// security context to configure outbound credentials
-GrpcClientSecurity clientSecurity = GrpcClientSecurity.create(securityContext);
-
-// Create the gRPC stub using the CallCredentials
-EchoServiceGrpc.EchoServiceBlockingStub stub = noCredsEchoStub.withCallCredentials(clientSecurity);
-----
-
-[source,java]
-.Example calling a secure gRPC service from inside a web server method handler
-----
-private static void propagateCredentialsWebRequest(ServerRequest req, ServerResponse res) {
-    try {
-        // Create a gRPC CallCredentials that will use the current request's
-        // security context to configure outbound credentials
-        GrpcClientSecurity clientSecurity = GrpcClientSecurity.create(req);
-
-        // Create the gRPC stub using the CallCredentials
-        EchoServiceGrpc.EchoServiceBlockingStub stub = noCredsEchoStub.withCallCredentials(clientSecurity);
-
-        String message = req.queryParams().first("message").orElse(null);
-        Echo.EchoResponse echoResponse = stub.echo(Echo.EchoRequest.newBuilder().setMessage(message).build());
-        res.send(echoResponse.getMessage());
-    } catch (StatusRuntimeException e) {
-        res.status(GrpcHelper.toHttpResponseStatus(e)).send();
-    } catch (Throwable thrown) {
-        res.status(Http.ResponseStatus.create(500, thrown.getMessage())).send();
-    }
-}
-----
-
-[source,java]
-.Example calling a secure web endpoint from inside a gRPC service method handler
-----
-// Obtain the SecurityContext from the gRPC call Context
-SecurityContext securityContext = GrpcSecurity.SECURITY_CONTEXT.get();
-
-// Use the SecurityContext as normal to make a http request
-Response webResponse = client.target(url)
-        .path("/test")
-        .request()
-        .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)
-        .get();
-----
-
-include::{rootdir}/includes/grpc-marshalling.adoc[leveloffset=2]
+NOTE: The `complete` method shown in the example above is just one of many helper
+methods available in the `ResponseHelper` class. See the full list
+link:{grpc-server-javadoc-base-url}/io/helidon/webserver/grpc/ResponseHelper.html[here].
 
 == Configuration
 Configure the gRPC server using the Helidon configuration framework, either programmatically
@@ -869,89 +196,30 @@ or via a configuration file.
 
 === Configuring the gRPC Server in the Code
 
-The easiest way to configure the gRPC server is in the application code.
+Currently we do not have any custom configuration options for gRPC protocol.
+
+To register a routing with Helidon WebServer, simply add the routing to the listener
+(WebServer configuration is itself the default listener configuration)
 
 [source,java]
 ----
-GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                                                       .port(8080)
-                                                       .build();
-GrpcServer grpcServer = GrpcServer.create(configuration, routing);
+WebServer.builder()
+    .port(8080)
+    .routing(httpRouting -> httpRouting.get("/greet", (req, res) -> res.send("Hi!"))) // <1>
+    .addRouting(GrpcRouting.builder()  // <2>
+                   .unary(String.getDescriptor(),
+                          "StringService",
+                          "Upper",
+                          Main::grpcUpper))
+   .build()
+   .start();
 ----
 
-See all configuration options
-link:{javadoc-base-url}/io.helidon.grpc/GrpcServerConfiguration.html[here].
-
-=== Configuring the gRPC Server in a Configuration File
-
-You can also define the gRPC server configuration in a file.
-
-// grpc now shares the same server instance
-// include::{rootdir}/config/io_helidon_grpc_server_GrpcServerConfiguration.adoc[leveloffset=1, tag=config]
-
-.GrpcServer configuration file example using  `application.yaml`
-[source,yaml]
-----
-grpc:
-  port: 3333
-----
-
-Then, in your application code, load the configuration from that file.
-
-[source,java]
-.GrpcServer initialization using the `application.conf` file located on the classpath
-----
-GrpcServerConfiguration configuration = GrpcServerConfiguration.create(
-        Config.builder()
-              .sources(classpath("application.conf"))
-              .build());
-
-GrpcServer grpcServer = GrpcServer.create(configuration, routing);
-----
+<1> Configure HTTP routing of the server
+<2> Configure gRPC routing of the server
 
 == Examples
-=== Quick Start
 
-Here is the code for a minimalist gRPC application that runs on a default port (1408):
+The following gRPC examples for Helidon SE are available:
 
-[source,java]
-----
-public static void main(String[] args) throws Exception {
-    GrpcServer grpcServer = GrpcServer
-            .create(GrpcRouting.builder()
-                            .register(new HelloService()) // <1>
-                            .build())
-            .start() // <2>
-            .toCompletableFuture()
-            .get(10, TimeUnit.SECONDS); // Implement the simplest possible gRPC service. // <3>
-
-    System.out.println("gRPC server started at: http://localhost:" + grpcServer.port()); // <4>
-}
-
-static class HelloService implements GrpcService { // <5>
-    @Override
-    public void update(ServiceDescriptor.Rules rules) {
-        rules.marshallerSupplier(new JsonbMarshaller.Supplier()) // <6>
-             .unary("SayHello", ((request, responseObserver) -> complete(responseObserver, "Hello " + request))); // <7>
-    }
-}
-----
-
-<1> Register the gRPC service.
-<2> Start the server.
-<3> Wait for the server to start while throwing possible errors as exceptions.
-<4> The server is bound to a default port (1408).
-<5> Implement the simplest possible gRPC service.
-<6> Specify a custom marshaller using the built-in JsonB marshaller to marshall requests and responses.
-<7> Add unary method `HelloService/SayHello` to the service definition.
-
-=== Additional gRPC Server Examples
-A set of gRPC server examples for Helidon SE can be found in the following links:
-
-* link:{helidon-github-tree-url}/examples/grpc/basics[Basic gRPC Server]
-* link:{helidon-github-tree-url}/examples/grpc/metrics[gRPC Server Metrics]
-* link:{helidon-github-tree-url}/examples/grpc/opentracing[OpenTracing on a gRPC Server]
-* link:{helidon-github-tree-url}/examples/grpc/security[Basic Auth Security on a gRPC Server]
-* link:{helidon-github-tree-url}/examples/grpc/security-abac[Attribute-Based Access Control (ABAC) security on a gRPC Server]
-* link:{helidon-github-tree-url}/examples/grpc/security-outbound[Outbound Security on a gRPC Server]
-
+* link:{helidon-github-tree-url}/examples/webserver/protocols[Multiple protocols on a single WebServer]

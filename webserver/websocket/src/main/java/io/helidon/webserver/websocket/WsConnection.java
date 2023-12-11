@@ -45,11 +45,14 @@ import io.helidon.websocket.WsSession;
 public class WsConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(WsConnection.class.getName());
 
+    static final String MAX_FRAME_LENGTH = "1048576";
+
     private final ConnectionContext ctx;
     private final HttpPrologue prologue;
     private final Headers upgradeHeaders;
     private final String wsKey;
     private final WsListener listener;
+    private final WsConfig wsConfig;
 
     private final BufferData sendBuffer = BufferData.growing(1024);
     private final DataReader dataReader;
@@ -75,6 +78,13 @@ public class WsConnection implements ServerConnection, WsSession {
         this.listener = wsRoute.listener();
         this.dataReader = ctx.dataReader();
         this.lastRequestTimestamp = DateTime.timestamp();
+        this.wsConfig = (WsConfig) ctx.listenerContext()
+                                      .config()
+                                      .protocols()
+                                      .stream()
+                                      .filter(p -> p instanceof WsConfig)
+                                      .findFirst()
+                                      .orElseThrow(() -> new InternalError("Unable to find WebSocket config"));
     }
 
     /**
@@ -243,8 +253,9 @@ public class WsConnection implements ServerConnection, WsSession {
 
     private ClientWsFrame readFrame() {
         try {
-            // TODO check may payload size, danger of oom
-            return ClientWsFrame.read(ctx, dataReader, Integer.MAX_VALUE);
+            return ClientWsFrame.read(ctx, dataReader, wsConfig.maxFrameLength());
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            throw new CloseConnectionException("Socket closed by the other side", e);
         } catch (WsCloseException e) {
             close(e.closeCode(), e.getMessage());
             throw new CloseConnectionException("WebSocket failed to read client frame", e);
@@ -274,9 +285,18 @@ public class WsConnection implements ServerConnection, WsSession {
         opCodeFull |= usedCode.code();
         sendBuffer.write(opCodeFull);
 
-        if (frame.payloadLength() < 126) {
-            sendBuffer.write((int) frame.payloadLength());
-            // TODO finish other options (payload longer than 126 bytes)
+        long length = frame.payloadLength();
+        if (length < 126) {
+            sendBuffer.write((int) length);
+        } else if (length < 1 << 16) {
+            sendBuffer.write(126);
+            sendBuffer.write((int) (length >>> 8));
+            sendBuffer.write((int) (length & 0xFF));
+        } else {
+            sendBuffer.write(127);
+            for (int i = 56; i >= 0; i -= 8){
+                sendBuffer.write((int) (length >>> i) & 0xFF);
+            }
         }
         sendBuffer.write(frame.payloadData());
         ctx.dataWriter().writeNow(sendBuffer);

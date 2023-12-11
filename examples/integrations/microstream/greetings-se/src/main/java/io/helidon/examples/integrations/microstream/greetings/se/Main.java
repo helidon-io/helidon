@@ -22,7 +22,6 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * Microstream demo with a simple rest application.
@@ -66,7 +65,6 @@ public class Main {
      */
     static void routing(HttpRouting.Builder routing, Config config) {
         GreetingService greetService = new GreetingService(config);
-        routing.addFeature(ObserveFeature.create())
-               .register("/greet", greetService);
+        routing.register("/greet", greetService);
     }
 }

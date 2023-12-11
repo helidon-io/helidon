@@ -16,11 +16,16 @@
 
 package io.helidon.webserver.observe.info;
 
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Observer for application information.
@@ -85,8 +90,22 @@ public class InfoObserver implements Observer, RuntimeType.Api<InfoObserverConfi
     }
 
     @Override
-    public void register(HttpRouting.Builder routing, String endpoint) {
-        // register the service itself
-        routing.register(endpoint, new InfoService(this.config.values()));
+    public void register(ServerFeature.ServerFeatureContext featureContext,
+                         List<HttpRouting.Builder> observeEndpointRouting,
+                         UnaryOperator<String> endpointFunction) {
+        String endpoint = endpointFunction.apply(config.endpoint());
+
+        if (config.enabled()) {
+            for (HttpRouting.Builder routing : observeEndpointRouting) {
+                // register the service itself
+                routing.register(endpoint, new InfoService(this.config.values()));
+            }
+        } else {
+            for (HttpRouting.Builder builder : observeEndpointRouting) {
+                builder.any(endpoint + "/*", (req, res) -> {
+                    throw new HttpException("Info endpoint is disabled", Status.SERVICE_UNAVAILABLE_503, true);
+                });
+            }
+        }
     }
 }

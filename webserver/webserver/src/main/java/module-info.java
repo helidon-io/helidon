@@ -31,17 +31,11 @@ module io.helidon.webserver {
     requires io.helidon.common.features;
     requires io.helidon.common.task;
     requires io.helidon.common.uri;
-    requires io.helidon.inject.api;  // needed to compile injection generated classes
     requires io.helidon.logging.common;
-    requires jakarta.annotation;
     requires java.logging; // only used to keep logging active until shutdown hook finishes
     requires java.management;
 
     requires static io.helidon.config.metadata;
-    requires static io.helidon.inject.configdriven.runtime;
-    requires static io.helidon.inject.runtime;
-    requires static jakarta.inject;
-    requires static java.compiler;
 
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.context;
@@ -63,14 +57,15 @@ module io.helidon.webserver {
     exports io.helidon.webserver.http1;
     exports io.helidon.webserver.http1.spi;
 
-    uses io.helidon.webserver.http1.spi.Http1UpgradeProvider;
     uses io.helidon.webserver.spi.ServerConnectionSelectorProvider;
-    uses io.helidon.webserver.http.spi.SinkProvider;
     uses io.helidon.webserver.spi.ProtocolConfigProvider;
+    uses io.helidon.webserver.spi.ServerFeatureProvider;
+    uses io.helidon.webserver.http.spi.SinkProvider;
+    uses io.helidon.webserver.http1.spi.Http1UpgradeProvider;
+
 
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http1.Http1ProtocolConfigProvider;
     provides io.helidon.webserver.spi.ServerConnectionSelectorProvider with io.helidon.webserver.http1.Http1ConnectionProvider;
-    provides io.helidon.inject.api.ModuleComponent with io.helidon.webserver.Injection$$Module;
 
 }

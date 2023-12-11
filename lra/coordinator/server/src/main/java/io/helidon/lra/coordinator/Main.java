@@ -48,6 +48,8 @@ public class Main {
                 .build();
 
         WebServer server = WebServer.builder()
+                .featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.just(MetricsObserver.create(), HealthObserver.create(HealthChecks.healthChecks())))
                 .routing(it -> updateRouting(it, config, coordinatorService))
                 .config(config.get("helidon.lra.coordinator.server"))
                 .build();
@@ -61,8 +63,7 @@ public class Main {
     }
 
     private static void updateRouting(HttpRouting.Builder routing, Config config, CoordinatorService coordinatorService) {
-        routing.addFeature(ObserveFeature.just(MetricsObserver.create(), HealthObserver.create(HealthChecks.healthChecks())))
-                .register(config.get("mp.lra.coordinator.context.path")
+        routing.register(config.get("mp.lra.coordinator.context.path")
                         .asString()
                         .orElse("/lra-coordinator"), coordinatorService)
                 .build();

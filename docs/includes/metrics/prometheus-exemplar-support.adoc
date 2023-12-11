@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../..]
 ifndef::flavor-lc[:flavor-lc: se]
+ifdef::se-flavor[:metrics-endpoint: /observe/metrics]
+ifndef::se-flavor[:metrics-endpoint: /metrics]
 
 :description: Helidon metrics
 :keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
 :feature-name: OpenMetrics exemplar support
+:openmetrics-media-type: application/openmetrics-text
 
 == Contents
 
@@ -33,12 +36,12 @@ ifndef::flavor-lc[:flavor-lc: se]
 
 == Overview
 
-A metric typically reflects the usage of a _single_ point in your service processing _multiple_ requests over time.
-A value such as the total time consumed by a given REST endpoint underscores the aggregate nature of metric values; Helidon accumulates the time from all requests in the total duration.
+A meter typically reflects the usage of a _single_ point in your service which processes _multiple_ requests over time.
+A value such as the total time consumed by a given REST endpoint which can be invoked multiple times underscores the aggregate nature of meter values; Helidon accumulates the time from all requests in the total duration.
 
 Tracing, on the other hand, captures the usage of _multiple_ parts of your code as your service responds to a _single_ request.
 
-Metrics and tracing come together in Helidon's support for examplars.
+Metrics and tracing come together in Helidon's support for exemplars.
 
 [NOTE]
 --
@@ -47,7 +50,9 @@ link:https://www.merriam-webster.com/dictionary/exemplar[_exemplar_] - one that 
 -- Merriam-Webster Dictionary
 --
 
-In the context of metrics, an _exemplar_ for a given metric is a specific sample which, in some sense, made a typical contribution to the metric's value. For example, an exemplar for a `SimpleTimer` might be a sample in which the duration it contributed to the value of a `SimpleTimer` is near the mean of the durations over all samples. The metrics output identifies the exemplar sample using the trace ID of the trace which triggered that sample.
+In the context of metrics, an _exemplar_ for a given meter is a specific sample which, in some sense, made a typical contribution to the meter's value. For example, an exemplar for a `Counter` might be the most recent sample which updated the counter. The metrics output identifies the exemplar sample using the span and trace IDs of the span and trace which triggered that sample.
+
+Exemplar support in Helidon relies on the exemplar support provided by the underlying metrics implementation. Currently, Helidon's Micrometer implementation supports exemplars as recorded by Micrometer's Prometheus meter registry and exposed by the OpenMetrics output (media type `{openmetrics-media-type}`).
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -78,38 +83,14 @@ include::{rootdir}/mp/tracing.adoc[tag=tracing-dependency]
 endif::[]
 
 == Usage
-Once you add the appropriate dependencies to your project, exemplar support runs automatically as part of Helidon metrics. You do not need to change your application or configuration.
+Once you add the appropriate dependencies to your project, exemplar support runs automatically as part of the Helidon metrics implementation using Micrometer. You do not need to change your application or configuration.
 
 === Interpreting Exemplars
 
-Helidon automatically records a sample (label, value, and timestamp) with each update to a histogram, simple timer, or counter. When a client accesses the `/metrics` endpoint, Helidon adds the label, value, and timestamp to the OpenMetrics response.
+Each exemplar reflects a sample described by a label, a value, and a timestamp.
+When a client accesses the `{metrics-endpoint}` endpoint and specifies that it accepts the `{openmetrics-media-type}` media type, the label, value, and timestamp appear in the OpenMetrics response for meters that support exemplars.
 
-Helidon adds an exemplar to the output for each statistical value--such as minimum, maximum, mean, and quantiles--for histograms, timers, simple times, and for counters. The exemplar information in the output describes a single, actual sample that is representative of the statistical value.
-Helidon chooses the representative examplar for each value using information that is already recorded for each type of metric:
-
-.Selection of exemplars for types of metrics
-[%autowidth]
-|====
-|Metric Value Type| Example | Sample Selected as Exemplar
-
-| corresponds directly to a specific sample
-| minimum or maximum of a value
-| any sample with that exact value
-
-| collects samples into bins (quantiles)
-| histogram (as with timers)
-| any sample from the bin
-
-| maintains running statistics
-| counts, totals
-| most recent sample
-
-| computes its value from multiple samples
-| mean
-| sample for which its value is at least as close as other samples to the statistical calculation
-|====
-
-In cases with multiple representative samples (for example, two samples' values are equally close to the mean), Helidon chooses one of them arbitrarily.
+The exemplar information in the output describes a single, actual sample that is representative of the statistical value as recorded by the underlying Micrometer Prometheus meter registry.
 
 === Output Format
 In the OpenMetrics output, an exemplar actually appears as a comment appended to the normal OpenMetrics output.
@@ -117,11 +98,11 @@ In the OpenMetrics output, an exemplar actually appears as a comment appended to
 .OpenMetrics format with exemplars
 [source,subs="quotes"]
 ----
-_metric-identifier_ _metric-value_ # _exemplar-label_ _sample-timestamp_
+_meter-identifier_ _meter-value_ # _exemplar-label_ _sample-timestamp_
 ----
 Even downstream consumers of OpenMetrics output that do not recognize the exemplar format should continue to work correctly (as long as they _do_ recognize comments).
 
-But some consumers, such as trace collectors and their U/Is, understand the exemplar format, and they allow you to browse metrics and then navigate directly to the trace for the metric's exemplar.
+But some consumers, such as trace collectors and their UIs, understand the exemplar format, and they allow you to browse meters and then navigate directly to the trace for the meter's exemplar.
 
 == Examples
 
@@ -131,33 +112,15 @@ endif::[]
 
 Once you enable exemplar support you can see the exemplars in the metrics output.
 
-.Exemplar output - `Timer`
+.Exemplar output - `Counter`
 [listing,subs="quotes"]
 ----
-# TYPE application_getTimer_mean_seconds gauge
-application_getTimer_mean_seconds 8.303030623354298E-4 *# {trace_id="067632454fe4e8d1"} 1.14701E-4 1617723032.570000*
+# TYPE counterForPersonalizedGreetings counter
+# HELP counterForPersonalizedGreetings
+counterForPersonalizedGreetings_total{scope="application"} 4.0 # {span_id="6b1fc9f9fd42fb0c",trace_id="6b1fc9f9fd42fb0c"} 1.0 1696889651.779
 
-# TYPE application_getTimer_max_seconds gauge
-application_getTimer_max_seconds 0.003952636 *# {trace_id="fce183094e471633"} 0.003952636 1617723030.108000*
-
-# TYPE application_getTimer_min_seconds gauge
-application_getTimer_min_seconds 5.5254E-5 *# {trace_id="0b1a4bf22b4e47fd"} 5.5254E-5 1617723033.311000*
 ----
-The first exemplar is a sample with value at least as close to the mean for that timer as any other sample.
-
-This second exemplar is for an exact sample with value the same as the maximum value the timer has observed.
-
-.Exemplar output - `SimpleTimer`
-[listing,subs="quotes"]
-----
-# TYPE application_globalRequestTracker_total counter
-# HELP application_globalRequestTracker_total
-application_globalRequestTracker_total 4 *# {trace_id="daf26fe35fee9917"} 0.001183992 1617725180.234000*
-
-# TYPE application_globalRequestTracker_elapsedTime_seconds gauge
-application_globalRequestTracker_elapsedTime_seconds 0.030309068 *# {trace_id="daf26fe35fee9917"} 0.001183992 1617725180.234000*
-----
-The exemplar for a `SimpleTimer` is the same for the `total` and the `elapsedTime` sub metrics: always the most recent sample which updated the `SimpleTimer`.
+The exemplar (the portion following the `#`) is a sample corresponding to an update to the counter, showing the span and trace identifiers, the amount by which the counter was updated (`1.0`), and the timestamp recording when the update occurred expressed as seconds in the UNIX epoch (`1696889651.779`).
 
 == Additional Information
 

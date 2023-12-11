@@ -66,8 +66,8 @@ dependency is required to find and load the SSE service in the WebServer.
 [source,xml,subs="attributes+"]
 ----
 <dependency>
-    <groupId>io.helidon.sse</groupId>
-    <artifactId>helidon-sse-webserver</artifactId>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-sse</artifactId>
 </dependency>
 ----
 
@@ -156,8 +156,8 @@ dependency is required to find and load the service in the WebClient.
 [source,xml,subs="attributes+"]
 ----
 <dependency>
-    <groupId>io.helidon.sse</groupId>
-    <artifactId>helidon-sse-webclient</artifactId>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-sse</artifactId>
 </dependency>
 ----
 

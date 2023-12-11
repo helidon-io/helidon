@@ -18,6 +18,7 @@ package io.helidon.microprofile.metrics;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
@@ -31,6 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
+@AddConfig(key = "metrics.permit-all", value = "true")
 public class MpFeatureTest {
     
     @Inject

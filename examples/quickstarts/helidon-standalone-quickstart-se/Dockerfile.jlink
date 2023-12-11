@@ -15,7 +15,7 @@
 #
 
 # 1st stage, build the app
-FROM container-registry.oracle.com/java/openjdk:21 as maven
+FROM container-registry.oracle.com/java/openjdk:21 as build
 
 # Install maven
 WORKDIR /usr/share
@@ -44,6 +44,6 @@ RUN echo "done!"
 
 FROM debian:stretch-slim
 WORKDIR /helidon
-COPY --from=build /helidon/target/helidon-quickstart-se-jri ./
+COPY --from=build /helidon/target/helidon-standalone-quickstart-se-jri ./
 ENTRYPOINT ["/bin/bash", "/helidon/bin/start"]
 EXPOSE 8080

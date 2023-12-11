@@ -47,6 +47,9 @@ This is a standalone configuration type, prefix from configuration root: `server
 |`backlog` |int |`1024` |Accept backlog.
 
  @return backlog
+|`connection-config` |xref:{rootdir}/config/io_helidon_webserver_ConnectionConfig.adoc[ConnectionConfig] |{nbsp} |Configuration of a connection (established from client against our server).
+
+ @return connection configuration
 |`connection-options` |xref:{rootdir}/config/io_helidon_common_socket_SocketOptions.adoc[SocketOptions] |{nbsp} |Options for connections accepted by this listener.
  This is not used to setup server connection.
 
@@ -56,6 +59,19 @@ This is a standalone configuration type, prefix from configuration root: `server
  If no content encoding context is registered, content encoding context of the webserver would be used.
 
  @return content encoding context
+|`features` |io.helidon.webserver.spi.ServerFeature[&#93; (service provider interface)
+
+Such as:
+
+ - xref:{rootdir}/config/io_helidon_webserver_observe_ObserveFeature.adoc[observe (ObserveFeature)]
+ - xref:{rootdir}/config/io_helidon_webserver_context_ContextFeature.adoc[context (ContextFeature)]
+ - xref:{rootdir}/config/io_helidon_webserver_cors_CorsFeature.adoc[cors (CorsFeature)]
+ - xref:{rootdir}/config/io_helidon_webserver_security_SecurityFeature.adoc[security (SecurityFeature)]
+ - xref:{rootdir}/config/io_helidon_webserver_accesslog_AccessLogFeature.adoc[access-log (AccessLogFeature)]
+
+ |{nbsp} |Server features allow customization of the server, listeners, or routings.
+
+ @return server features
 |`host` |string |`0.0.0.0` |Host of the default socket. Defaults to all host addresses (`0.0.0.0`).
 
  @return host address to listen on (for the default socket)
@@ -109,13 +125,7 @@ This is a standalone configuration type, prefix from configuration root: `server
  If configured to `0` (the default), server starts on a random port.
 
  @return port to listen on (for the default socket)
-|`protocols` |io.helidon.webserver.spi.ProtocolConfig[&#93; (service provider interface)
-
-Such as:
-
- - xref:{rootdir}/config/io_helidon_webserver_http1_Http1Config.adoc[Http1Config]
-
- |{nbsp} |Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
+|`protocols` |io.helidon.webserver.spi.ProtocolConfig[&#93; (service provider interface) |{nbsp} |Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
  As the order is not important (providers are ordered by weight by default), we can use a configuration as an object,
  such as:
  <pre>

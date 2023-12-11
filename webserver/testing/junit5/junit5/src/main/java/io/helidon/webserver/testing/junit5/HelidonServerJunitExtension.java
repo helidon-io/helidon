@@ -89,12 +89,12 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         extensions.forEach(it -> it.beforeAll(context));
         extensions.forEach(it -> it.updateServerBuilder(builder));
 
-        setupServer(builder);
-        addRouting(builder);
-
         // port will be random
         builder.port(0)
                 .shutdownHook(false);
+
+        setupServer(builder);
+        addRouting(builder);
 
         server = builder.build().start();
         if (server.hasTls()) {
@@ -241,10 +241,10 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
         routerBuilders.forEach((socketName, routerBuilder) -> {
             if (DEFAULT_SOCKET_NAME.equals(socketName)) {
-                builder.addRoutings(routerBuilder.build().routings());
+                builder.addRoutings(routerBuilder.routings());
             } else {
                 listenerConfigs.computeIfAbsent(socketName, it -> ListenerConfig.builder())
-                        .addRoutings(routerBuilder.build().routings());
+                        .addRoutings(routerBuilder.routings());
             }
         });
 

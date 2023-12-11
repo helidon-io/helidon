@@ -25,16 +25,9 @@ import io.helidon.config.FileSystemWatcher;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.security.Security;
-import io.helidon.tracing.Tracer;
-import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.accesslog.AccessLogFeature;
-import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
-import io.helidon.webserver.tracing.TracingFeature;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.environmentVariables;
@@ -77,17 +70,10 @@ public final class Main {
     private static void setup(WebServerConfig.Builder server) {
         Config config = buildConfig();
 
-        Security security = Security.create(config.get("security"));
-        Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
-
         ConfigValue<URI> backendEndpoint = config.get("services.backend.endpoint").as(URI.class);
 
-        server.config(config.get("webserver"))
+        server.config(config.get("server"))
                 .routing(routing -> routing
-                        .addFeature(AccessLogFeature.create())
-                        .addFeature(ObserveFeature.create())
-                        .addFeature(SecurityFeature.create(security, config.get("security")))
-                        .addFeature(TracingFeature.create(tracer))
                         // redirect POST / to GET /
                         .post("/", (req, res) -> {
                             res.header(HeaderNames.LOCATION, "/");

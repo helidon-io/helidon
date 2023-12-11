@@ -17,11 +17,13 @@
 package io.helidon.webclient.http1;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
@@ -33,30 +35,37 @@ import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.spi.ClientConnectionCache;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * Cache of HTTP/1.1 connections for keep alive.
  */
-class Http1ConnectionCache {
+class Http1ConnectionCache extends ClientConnectionCache {
     private static final System.Logger LOGGER = System.getLogger(Http1ConnectionCache.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final String HTTPS = "https";
-    private static final Http1ConnectionCache SHARED = create();
+    private static final Http1ConnectionCache SHARED = new Http1ConnectionCache(true);
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
     private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new ConcurrentHashMap<>();
+    private final AtomicBoolean closed = new AtomicBoolean();
+
+    protected Http1ConnectionCache(boolean shared) {
+        super(shared);
+    }
 
     static Http1ConnectionCache shared() {
         return SHARED;
     }
 
     static Http1ConnectionCache create() {
-        return new Http1ConnectionCache();
+        return new Http1ConnectionCache(false);
     }
 
     ClientConnection connection(Http1ClientImpl http1Client,
+                                Duration requestReadTimeout,
                                 Tls tls,
                                 Proxy proxy,
                                 ClientUri uri,
@@ -65,10 +74,20 @@ class Http1ConnectionCache {
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
         if (keepAlive) {
-            return keepAliveConnection(http1Client, effectiveTls, uri, proxy);
+            return keepAliveConnection(http1Client, requestReadTimeout, effectiveTls, uri, proxy);
         } else {
             return oneOffConnection(http1Client, effectiveTls, uri, proxy);
         }
+    }
+
+    @Override
+    public void closeResource() {
+        if (closed.getAndSet(true)) {
+            return;
+        }
+        cache.values().stream()
+                .flatMap(Collection::stream)
+                .forEach(TcpClientConnection::closeResource);
     }
 
     private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {
@@ -87,14 +106,21 @@ class Http1ConnectionCache {
     }
 
     private ClientConnection keepAliveConnection(Http1ClientImpl http1Client,
+                                                 Duration requestReadTimeout,
                                                  Tls tls,
                                                  ClientUri uri,
                                                  Proxy proxy) {
+
+        if (closed.get()) {
+            throw new IllegalStateException("Connection cache is closed");
+        }
+
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
         ConnectionKey connectionKey = new ConnectionKey(uri.scheme(),
                                                         uri.host(),
                                                         uri.port(),
+                                                        clientConfig.readTimeout().orElse(requestReadTimeout),
                                                         tls,
                                                         clientConfig.dnsResolver(),
                                                         clientConfig.dnsAddressLookup(),
@@ -138,6 +164,7 @@ class Http1ConnectionCache {
                                           new ConnectionKey(uri.scheme(),
                                                             uri.host(),
                                                             uri.port(),
+                                                            clientConfig.readTimeout().orElse(Duration.ZERO),
                                                             tls,
                                                             clientConfig.dnsResolver(),
                                                             clientConfig.dnsAddressLookup(),

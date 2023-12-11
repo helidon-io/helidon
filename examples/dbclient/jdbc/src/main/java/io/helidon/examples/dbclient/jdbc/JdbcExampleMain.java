@@ -18,12 +18,12 @@ package io.helidon.examples.dbclient.jdbc;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.tracing.TracingFeature;
+import io.helidon.webserver.observe.health.HealthObserver;
 
 /**
  * Simple Hello World rest application.
@@ -46,22 +46,30 @@ public final class JdbcExampleMain {
         LogConfig.configureRuntime();
 
         // By default, this will pick up application.yaml from the classpath
-        Config config = Config.create();
+        Config config = Config.global();
+
+        Config dbConfig = config.get("db");
+        DbClient dbClient = DbClient.create(dbConfig);
+
+        ObserveFeature observe = ObserveFeature.builder()
+                .config(config.get("server.features.observe"))
+                .addObserver(HealthObserver.builder()
+                                     .addCheck(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
+                                     .build())
+                .build();
 
         // Prepare routing for the server
         WebServer server = WebServer.builder()
-                .routing(routing -> routing(routing, config))
                 .config(config.get("server"))
+                .addFeature(observe)
+                .routing(routing -> routing(routing, dbClient))
                 .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
     }
 
-    static void routing(HttpRouting.Builder routing, Config config) {
-        routing.addFeature(ObserveFeature.create(config))
-                .addFeature(TracingFeature.create(TracerBuilder.create(config.get("tracing")).build()))
-                .register("/db", new PokemonService(DbClient.create(config.get("db"))))
-                .build();
+    static void routing(HttpRouting.Builder routing, DbClient dbClient) {
+        routing.register("/db", new PokemonService(dbClient));
     }
 }

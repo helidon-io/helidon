@@ -277,6 +277,11 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         }
 
         @Override
+        public io.helidon.config.Config root() {
+            return getCurrent().root();
+        }
+
+        @Override
         public io.helidon.config.Config get(Key key) {
             return getCurrent().get(key);
         }

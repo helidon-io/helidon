@@ -23,7 +23,7 @@ import io.helidon.security.spi.AuthorizationProvider;
 /**
  * Authorization provider example. The most simplistic approach.
  *
- * @see AtnProviderSync on how to use custom objects, config and annotations in a provider
+ * @see AtnProviderImpl on how to use custom objects, config and annotations in a provider
  */
 public class AtzProviderSync implements AuthorizationProvider {
     @Override

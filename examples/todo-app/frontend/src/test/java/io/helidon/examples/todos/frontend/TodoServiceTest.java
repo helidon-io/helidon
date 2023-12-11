@@ -25,15 +25,12 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.http.media.jsonp.JsonpSupport;
-import io.helidon.security.Security;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
@@ -88,12 +85,9 @@ class TodoServiceTest {
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
         Config config = Config.create(classpath("application-test.yaml"));
-        Config securityConfig = config.get("security");
-        Security security = Security.create(securityConfig);
 
-        server.routing(routing -> routing
-                        .addFeature(ContextFeature.create())
-                        .addFeature(SecurityFeature.create(security, securityConfig))
+        server.config(config.get("server"))
+                .routing(routing -> routing
                         .register("/api", new TodoService(new BackendServiceClient(() -> backendUri))))
                 .putSocket("backend", socket -> socket
                         .routing(routing -> routing

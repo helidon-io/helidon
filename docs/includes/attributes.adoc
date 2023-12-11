@@ -27,7 +27,7 @@ ifndef::attributes-included[]
 :helidon-version-is-release: false
 
 ifeval::["{helidon-version-is-release}" != "true"]
-:helidon-github-tree-url: https://github.com/oracle/helidon/tree/master
+:helidon-github-tree-url: https://github.com/oracle/helidon/tree/main
 endif::[]
 
 ifeval::["{helidon-version-is-release}" == "true"]
@@ -37,7 +37,7 @@ endif::[]
 // versions
 :version-plugin-helidon: 3.0.5
 
-:version-lib-microprofile-api: 5.0
+:version-lib-microprofile-api: 6.0
 
 // microprofile specifications
 :version-lib-microprofile-lra-api: 2.0
@@ -52,9 +52,11 @@ endif::[]
 :version-lib-microprofile-rs-operators-api: 3.1.1
 :version-lib-microprofile-rest-client: 3.0
 :version.lib.microprofile-telemetry-tck: 1.0
+:version-lib-microprofile-telemetry: 1.0
 :version-lib-microprofile-tracing: 3.0
 
 // jakarta specifications
+:version-lib-jakarta-core: 10
 :version-lib-jakarta-cdi: 4.0.1
 :version-lib-jakarta-websockets-api: 2.1.0
 :version-lib-jakarta-bean-validation: 3.0
@@ -188,10 +190,15 @@ endif::[]
 
 // Helidon component javadoc base URLs
 :http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
+:uri-javadoc-base-url: {javadoc-base-url}/io.helidon.common.uri
+:common-javadoc-base-url: {javadoc-base-url}/io.helidon.common
 :config-javadoc-base-url: {javadoc-base-url}/io.helidon.config
-:configurable-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.common.configurable
+:config-etcd-javadoc-base-url: {javadoc-base-url}/io.helidon.config.etcd
+:config-git-javadoc-base-url: {javadoc-base-url}/io.helidon.config.git
+:config-mapping-javadoc-base-url: {javadoc-base-url}/io.helidon.config.objectmapping
+:configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
-:grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server
+:grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
 :integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 :media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonp

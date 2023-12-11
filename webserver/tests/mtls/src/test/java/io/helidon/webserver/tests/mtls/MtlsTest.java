@@ -19,6 +19,7 @@ package io.helidon.webserver.tests.mtls;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -30,6 +31,7 @@ import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.ConnectionConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
@@ -46,31 +48,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class MtlsTest {
     private static WebServer server;
-    private final WebClient client;
+    private final int port;
 
     MtlsTest(WebServer server) {
         MtlsTest.server = server;
-        int port = server.port();
-
-        Keys privateKeyConfig = Keys.builder()
-                .keystore(keystore -> keystore
-                        .keystore(Resource.create("client.p12"))
-                        .passphrase("password"))
-                .build();
-
-        Tls tls = Tls.builder()
-                .clientAuth(TlsClientAuth.REQUIRED)
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
-                .trustAll(true) // todo need to have this from a keystore as well
-                // insecure setup, as we have self-signed certificate
-                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
-                .build();
-
-        client = WebClient.builder()
-                .baseUri("https://localhost:" + port)
-                .tls(tls)
-                .build();
+        this.port = server.port();
     }
 
     @SetUpRoute
@@ -98,9 +80,11 @@ class MtlsTest {
                             .clientAuth(TlsClientAuth.REQUIRED)
                             .privateKey(privateKeyConfig.privateKey().get())
                             .privateKeyCertChain(privateKeyConfig.certChain())
-                            .trustAll(true)
-                            // insecure setup, as we have self-signed certificate
-                            .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                            .trust(trust -> trust
+                                    .keystore(store -> store
+                                            .passphrase("password")
+                                            .trustStore(true)
+                                            .keystore(Resource.create("second-valid/server.p12"))))
                             .build();
 
                     server.reloadTls(tls);
@@ -124,16 +108,20 @@ class MtlsTest {
                 .clientAuth(TlsClientAuth.REQUIRED)
                 .privateKey(privateKeyConfig.privateKey().get())
                 .privateKeyCertChain(privateKeyConfig.certChain())
-                .trustAll(true)
-                // insecure setup, as we have self-signed certificate
-                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("server.p12"))))
                 .build();
 
-        builder.tls(tls);
+        builder.connectionConfig(ConnectionConfig.builder().readTimeout(Duration.ZERO)
+                .connectTimeout(Duration.ZERO).build()).tls(tls);
     }
 
     @Test
     void testMutualTlsPrincipal() {
+        WebClient client = client();
         ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/name")
                 .request(String.class);
@@ -144,6 +132,7 @@ class MtlsTest {
 
     @Test
     void testMutualTlsCertificates() {
+        WebClient client = client();
         ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/certs")
                 .request(String.class);
@@ -154,6 +143,7 @@ class MtlsTest {
 
     @Test
     void testTlsReload() {
+        WebClient client = client();
         ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/serverCert")
                 .request(String.class);
@@ -190,5 +180,33 @@ class MtlsTest {
 
             res.send(String.join("|", certDefs));
         }
+    }
+
+    private WebClient client() {
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("client.p12"))
+                        .passphrase("password"))
+                .build();
+
+        Tls tls = Tls.builder()
+                .clientAuth(TlsClientAuth.REQUIRED)
+                .privateKey(privateKeyConfig.privateKey().get())
+                .privateKeyCertChain(privateKeyConfig.certChain())
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
+
+        WebClient client = WebClient.builder()
+                .baseUri("https://localhost:" + port)
+                .tls(tls)
+                .connectTimeout(Duration.ZERO)
+                .readTimeout(Duration.ZERO)
+                .build();
+
+        return client;
     }
 }

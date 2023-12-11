@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -89,6 +90,15 @@ public interface Meter extends Wrapper {
          * Other.
          */
         OTHER;
+
+        /**
+         * Type name suitable for metadata output.
+         *
+         * @return name of the type formatted for human output
+         */
+        public String typeName() {
+            return name().toLowerCase(Locale.ROOT);
+        }
 
     }
 

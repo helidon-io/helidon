@@ -17,12 +17,14 @@
 package io.helidon.webserver.http;
 
 import java.io.InputStream;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import io.helidon.common.context.Context;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.ProxyProtocolData;
 
 /**
  * HTTP server request.
@@ -110,4 +112,12 @@ public interface ServerRequest extends HttpRequest {
      * @param filterFunction the function to replace input stream of this request with a user provided one
      */
     void streamFilter(UnaryOperator<InputStream> filterFunction);
+
+    /**
+     * Access proxy protocol data for the connection on which this request was sent.
+     *
+     * @return proxy protocol data, if available
+     * @see io.helidon.webserver.ListenerConfig#enableProxyProtocol()
+     */
+    Optional<ProxyProtocolData> proxyProtocolData();
 }

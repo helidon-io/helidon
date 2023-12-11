@@ -31,11 +31,23 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * Extension of MicroProfile to add support for access log.
  */
 public class AccessLogCdiExtension implements Extension {
+    private static final System.Logger LOGGER = System.getLogger(AccessLogCdiExtension.class.getName());
+
     private void setUpAccessLog(@Observes @Priority(PLATFORM_BEFORE + 10) @RuntimeStart Config config,
                                 BeanManager beanManager) {
         Config alConfig = config.get("server.access-log");
+        Config newAlConfig = config.get("server.features.access-log");
 
+        if (!alConfig.exists() && newAlConfig.exists()) {
+            // do nothing, server will pick it up automatically
+            return;
+        }
+        // default to old behavior
+        if (alConfig.exists()) {
+            LOGGER.log(System.Logger.Level.WARNING, "Configuration key server.access-log is deprecated,"
+                    + " please use server.features.access-log instead");
+        }
         beanManager.getExtension(ServerCdiExtension.class)
-                .serverRoutingBuilder().addFeature(AccessLogFeature.create(alConfig));
+                .addFeature(AccessLogFeature.create(alConfig));
     }
 }

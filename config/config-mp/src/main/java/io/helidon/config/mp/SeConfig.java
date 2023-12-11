@@ -102,6 +102,11 @@ class SeConfig implements Config {
     }
 
     @Override
+    public Config root() {
+        return new SeConfig(mapper, prefix, Key.create(""), prefix, delegate, delegateImpl);
+    }
+
+    @Override
     public Config get(Key key) {
         return children.computeIfAbsent(key,
                                         it -> new SeConfig(mapper,

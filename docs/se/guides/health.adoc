@@ -51,8 +51,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 === Using the Built-In Health Checks
 
-Helidon has a set of built-in health checks that can be optionally enabled to report various
- health check statuses that are commonly used:
+Helidon has a set of built-in health checks:
 
 * deadlock detection
 * available disk space
@@ -70,494 +69,240 @@ from the root directory of your project (helidon-quickstart-se).
 </dependency>
 ----
 
+Handling health checks is part of Helidon's observability support.
+By default, when you add the dependency for the built-in health checks, Helidon automatically registers the built-in checks.
+But the generated project explicitly suppresses the build-in health checks, thereby highlighting the custom health checks it adds.
+
 [source,java]
-.Have a look at `Main.java`, and the `createRouting` method:
+.Excerpt from `Main.main`:
 ----
-private static Routing createRouting(Config config) {
+ObserveFeature observe = ObserveFeature.builder()
+     .config(config.get("server.features.observe")) // <1>
+     .addObserver(HealthObserver.builder() // <2>
+         .details(true) // <3>
+         .useSystemServices(false) // <4>
+         .addCheck(() -> HealthCheckResponse.builder() // <5>
+                  .status(HealthCheckResponse.Status.UP)
+                  .detail("time", System.currentTimeMillis())
+                  .build(), HealthCheckType.READINESS)
+         .addCheck(() -> HealthCheckResponse.builder() // <6>
+                  .status(isStarted())
+                  .detail("time", System.currentTimeMillis())
+                  .build(), HealthCheckType.STARTUP)
+         .build()) // <7>
+     .build();
 
-    HealthSupport health = HealthSupport.builder()
-      .add(HealthChecks.healthChecks())  // <1>
-      .build();
-
-    return Routing.builder()
-      .register(health)  // <2>
-      .build();
-}
 ----
-<1> Add built-in health checks (requires the `helidon-health-checks`
- dependency).
-<2> Register the created health support with web server routing (adds the
-`/health` endpoint).
+<1> Finds and applies configuration for observability.
+<2> Begins preparing the `HealthObserver` according to this app's specific needs.
+<3> Turns on detailed output in HTTP responses to the health endpoint.
+<4> Suppresses automatic registration of built-in health checks.
+<5> Adds a custom readiness health check which always reports `UP`'.
+<6> Adds a custom start-up health check.
+<7> Builds the `HealthObserver` for addition to the `ObserveFeature`.
 
+To see the built-in health checks, temporarily change `useSystemServices` to `true`:
+[source,java]
+.Temporarily enable all built-in health checks
+----
+         .useSystemServices(true)
+----
 
 [source,bash]
-.Build the application, skipping unit tests, then run it:
+.Build the application then run it:
 ----
-mvn package -DskipTests=true
+mvn package
 java -jar target/helidon-quickstart-se.jar
 ----
 
 [source,bash]
 .Verify the health endpoint in a new terminal window:
 ----
-curl http://localhost:8080/health
+curl http://localhost:8080/observe/health
 ----
 
 [source,json]
-.JSON response:
+.Built-in health checks in the JSON response:
 ----
 {
-  "status": "UP",
+  "status": "DOWN",
   "checks": [
-    {
-      "name": "deadlock",
-      "status": "UP"
-    },
+    ...
     {
       "name": "diskSpace",
       "status": "UP",
       "data": {
-        "free": "319.58 GB",
-        "freeBytes": 343144304640,
-        "percentFree": "68.63%",
         "total": "465.63 GB",
-        "totalBytes": 499963174912
+        "percentFree": "15.77%",
+        "totalBytes": 499963174912,
+        "free": "73.42 GB",
+        "freeBytes": 78837497856
       }
     },
     {
       "name": "heapMemory",
       "status": "UP",
       "data": {
-        "free": "196.84 MB",
-        "freeBytes": 206404016,
-        "max": "3.56 GB",
-        "maxBytes": 3817865216,
-        "percentFree": "98.66%",
-        "total": "245.50 MB",
-        "totalBytes": 257425408
-      }
-    }
-  ]
-}
-----
-
-=== Custom Liveness Health Checks
-
-You can create application specific custom health checks and integrate them with Helidon
-using the `HealthSupport` class, which is a  WebServer service that contains
-a collection of registered `HealthCheck` instances. When queried, it invokes the registered
-health check and returns a response with a status code representing the overall
-state of the application.
-
-[source,xml]
-.Notice the custom health checks dependency is already in the project's pom.xml file:
-----
-<dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health</artifactId>
-</dependency>
-----
-
-[source,java]
-.Replace the `HealthSupport` builder in the `Main.createRouting` method:
-----
-HealthSupport health = HealthSupport.builder()
-  .addLiveness(() -> HealthCheckResponse.named("LivenessCheck")
-      .up()
-      .withData("time", System.currentTimeMillis())
-      .build()) // <1>
-  .build();
-
-----
-<1> Add a custom liveness health check. This example returns `UP` and current time.
-
-[source,bash]
-.Build and run the application, then verify the custom health endpoint:
-----
-curl http://localhost:8080/health
-----
-
-[source,json]
-.JSON response:
-----
-{
-    "status": "UP",
-    "checks": [
-        {
-            "name": "LivenessCheck",
-            "status": "UP",
-            "data": {
-                "time": 1546958376613
-            }
-        }
-    ]
-}
-----
-
-=== Custom Readiness Health Checks
-
-You can add readiness checks to indicate that the application is ready to be used.  In this
-example, the server will wait five seconds before it becomes ready.
-
-[source,java]
-.Add a `readyTime` variable to the `Main` class, then set it five seconds after the application starts:
-----
-import java.util.concurrent.atomic.AtomicLong; // <1>
-
-public final class Main {
-
-  private static AtomicLong readyTime = new AtomicLong(0); // <2>
-
-    static WebServer startServer() throws IOException {
-
-      server.start();
-
-        // Server threads are not daemon. No need to block. Just react.
-      try {
-        Thread.sleep(5000); // <3>
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-
-      readyTime.set(System.currentTimeMillis()); // <4>
-      return server;
-----
-<1> Import AtomicLong.
-<2> Declare the `readyTime` variable.
-<3> Sleep five seconds.
-<4> Set the `readyTime` to the time when the server became ready.
-
-
-[source,java]
-.Add a readiness check to the `HealhSupport` builder in the `Main.createRouting` method:
-----
-HealthSupport health = HealthSupport.builder()
-  .addLiveness(() -> HealthCheckResponse.named("LivenessCheck")
-      .up()
-      .withData("time", System.currentTimeMillis())
-      .build())
-  .addReadiness(() -> HealthCheckResponse.named("ReadinessCheck")
-      .status(readyTime.get() != 0 )
-      .withData( "time", readyTime.get())
-      .build()) // <1>
-  .build();
-----
-<1> Add the readiness check.
-
-[source,bash]
-.Build and run the application.  Issue the `curl` command with -v within five seconds and you see the application is not ready:
-----
-curl -v  http://localhost:8080/health/ready
-----
-
-[source,json]
-.HTTP response:
-----
-...
-< HTTP/1.1 503 Service Unavailable // <1>
-...
-{
-  "status": "DOWN",
-  "checks": [
-    {
-      "name": "ReadinessCheck",
-      "status": "DOWN",
-      "data": {
-        "time,": 0
-      }
-    }
-  ]
-}
-----
-<1> The HTTP status is `503` since the application is not ready.
-
-[source,bash]
-.After five seconds you will see the application is ready:
-----
-curl -v http://localhost:8080/health/ready
-----
-
-[source,json]
-.JSON response:
-----
-...
-< HTTP/1.1 200 OK // <1>
-...
-{
-  "status": "UP",
-  "checks": [
-    {
-      "name": "ReadinessCheck",
-      "status": "UP",
-      "data": {
-        "time,": 1566243562097
-      }
-    }
-  ]
-}
-----
-<1> The HTTP status is `200` indicating that the application is ready.
-
-=== Custom Startup Health Checks
-
-You can create custom startup health checks to indicate when the application has fully started and, therefore, when the readiness and liveness checks are meaningful.
-
-This example reuses the `readyTime` field added above for the custom readiness check and adds a startup check that waits three additional seconds past the "ready" time before declaring the application started.
-
-[source,java]
-.Add a startup check to the `HealhSupport` builder in the `Main.createRouting` method:
-----
-HealthSupport health = HealthSupport.builder()
-  .addLiveness(() -> HealthCheckResponse.named("LivenessCheck")
-      .up()
-      .withData("time", System.currentTimeMillis())
-      .build())
-  .addReadiness(() -> HealthCheckResponse.named("ReadinessCheck")
-      .status(readyTime.get() != 0 )
-      .withData("time", readyTime.get())
-      .build())
-  .addStartup(() -> HealthCheckResponse.named("StartupCheck") // <1>
-      .status(readyTime.get() != 0
-              && Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 3)
-      .withData("time", readyTime.get())
-      .build())
-  .build();
-----
-<1> Add the startup check.
-
-[source,bash]
-.Build and run the application.  Issue the `curl` command with -v within eight seconds and you see the application is not reported as started:
-----
-curl -v  http://localhost:8080/health/started
-----
-
-[source,json]
-.HTTP response:
-----
-...
-< HTTP/1.1 503 Service Unavailable // <1>
-...
-{
-  "status": "DOWN",
-  "checks": [
-    {
-      "name": "StartupCheck",
-      "status": "DOWN",
-      "data": {
-        "time": 1566243562097
-      }
-    }
-  ]
-}
-----
-<1> The HTTP status is `503` since the application is not started.
-
-[source,bash]
-.After eight seconds you will see the application is started:
-----
-curl -v http://localhost:8080/health/started
-----
-
-[source,json]
-.JSON response:
-----
-...
-< HTTP/1.1 200 OK // <1>
-...
-{
-  "status": "UP",
-  "checks": [
-    {
-      "name": "StartupCheck",
-      "status": "UP",
-      "data": {
-        "time": 1566243562097
-      }
-    }
-  ]
-}
-----
-<1> The HTTP status is `200` indicating that the application is started.
-
-
-When using the health check URLs, you can get the following health check data
-
-* liveness only - http://localhost:8080/health/live
-* readiness only -  http://localhost:8080/health/ready
-* startup only - http://localhost:8080/health/started
-* all -  http://localhost:8080/health
-
-
-[source,bash]
-.Get all of liveness, readiness, and startup data from a single query:
-----
-curl http://localhost:8080/health
-----
-
-[source,json]
-.JSON response:
-----
-{
-  "status": "UP",
-  "checks": [
-    {
-      "name": "LivenessCheck",
-      "status": "UP",
-      "data": {
-        "time": 1566244094548
-      }
-    },
-    {
-      "name": "ReadinessCheck",
-      "status": "UP",
-      "data": {
-        "time,": 1566244093012
-      }
-    },
-    {
-      "name": "StartupCheck",
-      "status": "UP",
-      "data": {
-        "time": 1566244093012
-      }
-    }
-  ]
-}
-----
-
-=== Combine Built-In and Custom Health Checks
-
-You can combine built-in and custom health checks using the same `HealthSupport` builder.
-
-[source,java]
-.Register a custom health check in the `Main.createRouting` method:
-----
-HealthSupport health = HealthSupport.builder()
-    .add(HealthChecks.healthChecks())  // <1>
-    .addLiveness(() -> HealthCheckResponse.named("LivenessCheck")
-      .up()
-      .withData("time", System.currentTimeMillis())
-      .build())
-    .addReadiness(() -> HealthCheckResponse.named("ReadinessCheck")
-      .status(readyTime.get() != 0)
-      .withData("time", readyTime.get())
-      .build())
-    .addStartup(() -> HealthCheckResponse.named("StartupCheck")
-      .status(readyTime.get() != 0
-              && Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 3)
-      .withData("time", readyTime.get())
-      .build())
-    .build();
-----
-<1> Add the built-in health checks back to `HealthSupport` builder.
-
-[source,bash]
-.Build and run the application, then verify the health endpoint.  You will see both the built-in and custom health check data:
-----
-curl http://localhost:8080/health
-----
-
-[source,json]
-.JSON response:
-----
-{
-  "status": "UP",
-  "checks": [
-    {
-      "name": "LivenessCheck",
-      "status": "UP",
-      "data": {
-        "time": 1566245527673
-      }
-    },
-    {
-      "name": "ReadinessCheck",
-      "status": "UP",
-      "data": {
-        "time,": 1566245527620
-      },
-    {
-      "name": "StartupCheck",
-      "status": "UP",
-      "data": {
-        "time,": 1566245527620
+        "total": "516.00 MB",
+        "percentFree": "99.81%",
+        "max": "8.00 GB",
+        "totalBytes": 541065216,
+        "maxBytes": 8589934592,
+        "free": "500.80 MB",
+        "freeBytes": 525126760
       }
     },
     {
       "name": "deadlock",
       "status": "UP"
-    },
+    }
+  ]
+}
+
+----
+
+
+
+=== Adding Custom Health Checks
+
+As illustrated above, the generated `Main` class in the QuickStart project adds two custom health checks.
+Your own checks typically assess the conditions in and around your application and report whether the service should be considered started, live, and/or ready.
+
+As a trivial but illustrative example, the custom start-up health check in the generated `Main` class reports that the app is _not_ started until eight seconds after the server has started. After that, the start-up check reports that the app _is_ started.
+
+To see this start-up check in action, stop your running server (press ^C), then rerun it.
+
+[source,bash]
+.Stop the application:
+----
+^C
+----
+and note the output from the server
+[listing]
+----
+Shutdown requested by JVM shutting down
+[0x4fdb2ff3] @default socket closed.
+Shutdown finished
+----
+then restart the server
+[source,bash]
+----
+java -jar target/helidon-quickstart-se.jar
+----
+
+In another terminal window, within eight seconds access the health endpoint [source,bash]
+.Verify the health endpoint in a new terminal window:
+----
+curl http://localhost:8080/observe/health
+----
+and notice the output.
+[source,json]
+----
+{
+  "status": "DOWN",                              // <1>
+  "checks": [
     {
-      "name": "diskSpace",
+      "name": "Main$$Lambda/0x00000001310a8dc8", // <2>
       "status": "UP",
       "data": {
-        "free": "326.17 GB",
-        "freeBytes": 350224424960,
-        "percentFree": "70.05%",
-        "total": "465.63 GB",
-        "totalBytes": 499963174912
+        "time": 1697584867358
       }
     },
     {
-      "name": "heapMemory",
+      "name": "Main$$Lambda/0x00000001310a9a78", // <3>
+      "status": "DOWN",
+      "data": {
+        "time": 1697584867358
+      }
+    },
+...
+}
+----
+<1> Overall health (`DOWN` because at least one check reports `DOWN`).
+<2> The custom readiness check (hard-coded as `UP`).
+<3> The custom start-up check (`DOWN` because the server has not been up for at least eight seconds yet).
+
+Now wait eight seconds and access the endpoint again.
+
+[source,json]
+----
+{
+  "status": "UP",                                // <1>
+  "checks": [
+    {
+      "name": "Main$$Lambda/0x00000001310a8dc8",
       "status": "UP",
       "data": {
-        "free": "247.76 MB",
-        "freeBytes": 259791680,
-        "max": "4.00 GB",
-        "maxBytes": 4294967296,
-        "percentFree": "99.80%",
-        "total": "256.00 MB",
-        "totalBytes": 268435456
+        "time": 1697584869478
+      }
+    },
+    {
+      "name": "Main$$Lambda/0x00000001310a9a78", // <2>
+      "status": "UP",
+      "data": {
+        "time": 1697584869478
+      }
+    },
+...
+}
+----
+<1> Overall status (now `UP` because all checks report `UP`).
+<2> The custom start-up check (now `UP` because the server has been up at least eight seconds).
+
+=== Accessing Specific Health Check Types
+You can choose which category of health check to retrieve when you access the health endpoint by adding the health check type as an additional part of the resource path:
+
+* liveness only - http://localhost:8080/observe/health/live
+* readiness only -  http://localhost:8080/observe/health/ready
+* startup only - http://localhost:8080/observe/health/started
+* all -  http://localhost:8080/observe/health
+
+
+[source,bash]
+.Get only start-up health checks
+----
+curl http://localhost:8080/observe/started
+----
+
+[source,json]
+.JSON response:
+----
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "Main$$Lambda/0x00000001360a9a78",
+      "status": "UP",
+      "data": {
+        "time": 1697585727515
       }
     }
   ]
 }
 ----
-
 
 === Custom Health Check URL Path
 
-You can use a custom URL path for heath checks by setting the `WebContext`.  In the following example, only
-the liveness URL is changed, but you can do the same for the readiness, startup, and default
-health checks.
+You can use a custom URL path for heath checks by setting the `endpoint` for the `HealthObserver`.
 
 [source,java]
-.Register a custom URL path with the custom health check in the `Main.createRouting` method:
+.Set a custom endpoint path:
 ----
-HealthSupport health = HealthSupport.builder()
-    .webContext("/probe/live")// <1>
-    .addLiveness(() -> HealthCheckResponse.named("livenessProbe")
-      .up()
-      .withData("time", System.currentTimeMillis())
-      .build())
-    .build();
-
+ObserveFeature observe = ObserveFeature.builder()
+     .config(config.get("server.features.observe"))
+     .addObserver(HealthObserver.builder()
+     .endpoint("/myhealth") // <1>
+     .details(true)
+...
 ----
-<1> Change the liveness URL path using a `WebContext`.
+<1> Changes the health endpoint path to `/myhealth`.
 
 [source,bash]
-.Build and run the application, then verify that the liveness endpoint is using the `/probe/live`:
+.Build and run the application, then verify that the health check endpoint responds at `/myhealth`:
 ----
-curl http://localhost:8080/probe/live
+curl http://localhost:8080/myhealth
 ----
 
-[source,json]
-.JSON response:
-----
-{
-  "status": "UP",
-  "checks": [
-    {
-      "name": "livenessProbe",
-      "status": "UP",
-      "data": {
-        "time": 1546958376613
-      }
-    }
-  ]
-}
-----
 
 === Using Liveness, Readiness, and Startup Health Checks with Kubernetes
 
@@ -565,29 +310,41 @@ The following example shows how to integrate the Helidon health API in an applic
 health endpoints for the Kubernetes liveness, readiness, and startup probes.
 
 [source,java]
-.Change the `HealthSupport` builder in the `Main.createRouting` method to use the built-in liveness checks and custom liveness, readiness, and startup checks:
+.Add a `readyTime` variable to the `Main` class:
 ----
-HealthSupport health = HealthSupport.builder()
-    .add(HealthChecks.healthChecks()) // <1>
-    .addLiveness(() -> HealthCheckResponse.named("LivenessCheck")  // <2>
-      .up()
-      .withData("time", System.currentTimeMillis())
-      .build())
-    .addReadiness(() -> HealthCheckResponse.named("ReadinessCheck")  // <3>
-      .status(readyTime.get() != 0 )
-      .withData("time", readyTime.get())
-      .build())
-    .addStartup(() -> HealthCheckResponse.named("StartupCheck")  // <4>
-      .status(readyTime.get() != 0
-              && Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 3)
-      .withData("time", readyTime.get())
-      .build())
-    .build();
+private static AtomicLong readyTime = new AtomicLong(0);
+----
+
+[source,java]
+.Change the `HealthObserver` builder in the `Main.main` method to use new built-in liveness checks and custom liveness, readiness, and startup checks:
+----
+ObserveFeature observe = ObserveFeature.builder()
+    .config(config.get("server.features.observe"))
+    .addObserver(HealthObserver.builder()
+    .useSystemServices(true)                      // <1>
+    .addCheck(() -> HealthCheckResponse.builder()
+             .status(readyTime.get() != 0)
+             .detail("time", readyTime.get())
+             .build(), HealthCheckType.READINESS) // <2>
+    .addCheck(() -> HealthCheckResponse.builder()
+             .status(readyTime.get() != 0
+                     && Duration.ofMillis(System.currentTimeMillis()
+                                             - readyTime.get())
+                                 .getSeconds() >= 3)
+             .detail("time", readyTime.get())
+             .build(), HealthCheckType.STARTUP)   // <3>
+    .addCheck(() -> HealthCheckResponse.builder()
+            .status(HealthCheckResponse.Status.UP)
+            .detail("time", System.currentTimeMillis())
+            .build(), HealthCheckType.LIVENESS)   // <4>
+    .build())
+.build();
+
 ----
 <1> Add built-in health checks.
-<2> Add a custom liveness check.
-<3> Add a custom readiness check.
-<4> Add a custom startup check.
+<2> Add a custom readiness check.
+<3> Add a custom start-up check.
+<4> Add a custom liveness check.
 
 
 [source,bash]
@@ -711,9 +468,9 @@ kubectl delete -f ./health.yaml
 ----
 
 === Summary
-This guide demonstrated how to use health checks in a Helidon SE application as follows:
+This guide demonstrates how to use health checks in a Helidon SE application as follows:
 
-* Access the default health check
+* Access the default health checks
 * Create and use custom readiness, liveness, and startup checks
 * Customize the health check root path
 * Integrate Helidon health check with Kubernetes

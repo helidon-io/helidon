@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Generic cache with eviction support.
  * Default implementation is backed by {@link java.util.concurrent.ConcurrentHashMap} and provides
- * configuration to set this map up, as can be done through {@link #builder()}, and {@link #create(io.helidon.config.Config)}.
+ * configuration to set this map up, as can be done through {@link #builder()},
+ * and {@link #create(io.helidon.common.config.Config)}.
  *
  * Cache timeouts:
  * <ul>

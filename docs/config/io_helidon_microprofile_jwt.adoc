@@ -18,9 +18,11 @@
 
 // MANUALLY CREATED DOC
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.microprofile.jwt
-:keywords: helidon, config, health
+:keywords: helidon, security, jwt, microprofile
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.microprofile.jwt.adoc
+include::{rootdir}/includes/attributes.adoc[]
 
 = JWT Configuration
 
@@ -36,12 +38,20 @@
 |key |type |default value |description
 
 |`mp.jwt.verify.publickey` |string |{nbsp} |The property allows the Public Verification Key text itself to be supplied as a string.
-|`mp.jwt.verify.publickey.location` |string |{nbsp} | The property allows for an external or internal location of Public Verification Key to be specified. The value may be a relative path or a URL.
+|`mp.jwt.verify.publickey.location` |string |{nbsp} |The property allows for an external or internal location of Public Verification Key to be specified. The value may be a relative path or a URL.
 |`mp.jwt.verify.publickey.algorithm` |string |{nbsp} |The  configuration property allows for specifying which Public Key Signature Algorithm is supported by the MP JWT endpoint. This property can be set to either `RS256` or `ES256`. Default value is `RS256`. Support for the other asymmetric signature algorithms such as `RS512`, `ES512` and others is optional.
+|`mp.jwt.verify.issuer` |string |{nbsp} |Configuration key for expected issuer of incoming tokens.
+|`mp.jwt.verify.audiences` |string |{nbsp} |Configuration key for expected audiences of incoming tokens.
+|`mp.jwt.verify.token.age` |int |{nbsp} |Max number of seconds since token issue time. If this number of second accedes configured value, validation will fail.
+|`mp.jwt.verify.clock.skew` |int |{nbsp} |Number of seconds for the clock skew during the token age verification and expiry.
+|`mp.jwt.token.cookie` |string |{nbsp} |Cookie property name which is expected to contain a JWT token.
+|`mp.jwt.token.header` |string |{nbsp} |Header name which is expected to contain a JWT token.
+|`mp.jwt.decrypt.key.location` |string |{nbsp} |The property allows for an external or internal location of Private Decryption Key to be specified. The value may be a relative path or a URL.
+|`mp.jwt.decrypt.key.algorithm` |string |{nbsp} |The configuration property allows for specifying which key management algorithm is supported by the MP JWT endpoint. Supported algorithms are either `RSA-OAEP` or `RSA-OAEP-256`. If no algorithm is set, both algorithms must be accepted.
 
 |===
 
-.Optional configuration options:
+.Helidon configuration options:
 [cols="3,3,2,5a"]
 
 |===
@@ -55,13 +65,13 @@ an important distinction when more than one provider is used
 |`atn-token` |string |{nbsp} |A group for configuring authentication of the request
 |`atn-token.verify-signature`|boolean |`true` |Whether to verify signature in incoming JWT. If disabled, _ANY_ JWT will be accepted
 |`atn-token.jwt-audience`|string |{nbsp} |Expected audience of the JWT. If not defined, any audience is accepted (and we may accept JWT not inteded for us)
-|`atn-token.jwk.resource.*`|string |{nbsp} |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys. This may be: jwk.resource.path, jwk.resource.resource-path, jwk.resource.url, jwk.resource.content-plain (actual JSON string), jwk.resource.content (base64)
+|`atn-token.jwk.resource`|xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys.
 |`atn-token.handler`|string |`Authorization` header with `bearer ` prefix |A handler configuration for inbound token - e.g. how to extract it
 |`atn-token.handler.header`|string |{nbsp} |Name of a header the token is expected in
 |`atn-token.handler.prefix`|string |{nbsp}  |Prefix before the token value (optional)
 |`atn-token.handler.regexp`|string |{nbsp} |Regular expression to obtain the token, first matching group is used (optional)
 |`sign-token`|string |{nbsp} |A group for configuring outbound security
-|`sign-token.jwk.resource.*` |{nbsp} |Configuration of the JWK to use when generating tokens (follows same rules as atn-token.jwk above), this JWK must contain private keys when using asymmetric ciphers
+|`sign-token.jwk.resource`|xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Configuration of the JWK to use when generating tokens (follows the same rules as atn-token.jwk above). The JWK must contain private keys when using asymmetric ciphers.
 |`sign-token.jwt-issuer`|string |{nbsp} |When we issue a new token, this is the issuer to be placed into it (validated by target service)
 |`sign-token.outbound`|string |{nbsp} |A group for configuring outbound rules (based on transport, host and.or path)
 |`sign-token.outbound.*.name`|string |{nbsp} |A short descriptive name for configured target service(s)

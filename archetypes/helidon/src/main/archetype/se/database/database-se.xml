@@ -27,7 +27,7 @@
     <exec src="/se/custom/custom-se.xml"/>
     <output>
         <model>
-            <value key="title">Helidon SE Database</value>
+            <value key="readme-description">Helidon SE application that uses a database with JPA</value>
         </model>
     </output>
 </archetype-script>

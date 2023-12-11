@@ -21,13 +21,14 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.observe.ObserverConfigBase;
+import io.helidon.webserver.observe.spi.ObserveProvider;
 
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.Provides(ObserveProvider.class)
 interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<ConfigObserver> {
     @Option.Configured
     @Option.Default("config")
-    @Override
     String endpoint();
 
     @Override

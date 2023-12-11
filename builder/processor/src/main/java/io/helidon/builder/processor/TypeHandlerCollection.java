@@ -52,6 +52,7 @@ import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
+import static io.helidon.builder.processor.Types.CONFIG_TYPE;
 import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
@@ -165,9 +166,26 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         TypeName actualType = actualType().genericTypeName();
 
         if (factoryMethods.createFromConfig().isPresent()) {
-            method.addLine(configGet(configured)
-                                   + generateFromConfig(factoryMethods)
-                                   + ".ifPresent(this::" + setterName() + ");");
+            FactoryMethods.FactoryMethod factoryMethod = factoryMethods.createFromConfig().get();
+            TypeName returnType = factoryMethod.factoryMethodReturnType();
+            boolean mapList = true;
+            if (returnType.isList() || returnType.isSet()) {
+                mapList = false;
+            } else {
+                // return type is some other type, we must check it is the same as this one,
+                // or we expect another method to be used
+                mapList = returnType.equals(actualType);
+            }
+            if (mapList) {
+                method.addLine(configGet(configured)
+                                       + ".mapList("
+                                       + generateMapListFromConfig(factoryMethods)
+                                       + ").ifPresent(this::" + setterName() + ");");
+            } else {
+                method.addLine(configGet(configured)
+                                       + generateFromConfig(factoryMethods)
+                                       + ".ifPresent(this::" + setterName() + ");");
+            }
         } else if (BUILT_IN_MAPPERS.contains(actualType)) {
             // types we support in config can be simplified,
             // this also supports comma separated lists for string based types
@@ -185,6 +203,14 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                    + "." + collector + ")"
                                    + ".ifPresent(this::" + setterName() + ");");
         }
+    }
+
+    String generateMapListFromConfig(FactoryMethods factoryMethods) {
+        return factoryMethods.createFromConfig()
+                .map(it -> it.typeWithFactoryMethod().genericTypeName().fqName() + "::" + it.createMethodName())
+                .orElseThrow(() -> new IllegalStateException("This should have been called only if factory method is present for "
+                                                                     + declaredType()  + " " + name()));
+
     }
 
     @Override
@@ -270,16 +296,18 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 .build();
         String argumentName = "consumer";
 
+        Javadoc javadoc = setterJavadoc(blueprintJavadoc)
+                .addParameter(argumentName, blueprintJavadoc.returnDescription())
+                .build();
+
         Method.Builder builder = Method.builder()
                 .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType)
                 .addParameter(param -> param.name(argumentName)
-                        .type(argumentType)
-                        .description(blueprintJavadoc.returnDescription()))
+                        .type(argumentType))
                 .accessModifier(setterAccessModifier(configured))
                 .typeName(Objects.class)
+                .javadoc(javadoc)
                 .addLine(".requireNonNull(" + argumentName + ");")
                 .add("var builder = ")
                 .typeName(factoryMethod.typeWithFactoryMethod().genericTypeName())
@@ -311,12 +339,13 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
 
         Method.Builder builder = Method.builder()
                 .name(methodName)
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .javadoc(setterJavadoc(blueprintJavadoc)
+                                 .addParameter(singularName, blueprintJavadoc.returnDescription())
+                                 .build())
+                .returnType(returnType)
+                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .addParameter(param -> param.name(singularName)
-                        .type(actualType())
-                        .description(blueprintJavadoc.returnDescription()))
+                        .type(actualType()))
                 .accessModifier(setterAccessModifier(configured))
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(" + singularName + ");")
@@ -330,6 +359,10 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                TypeName returnType,
                                Javadoc blueprintJavadoc,
                                FactoryMethods.FactoryMethod factoryMethod) {
+        if (factoryMethod.argumentType().equals(CONFIG_TYPE)) {
+            // if the factory method uses config as a parameter, then it is not desired on the builder
+            return;
+        }
         String argumentName = name() + "Config";
         Method.Builder builder = Method.builder()
                 .name(setterName())

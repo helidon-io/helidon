@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,8 +73,8 @@ public class OutboundConfigTest {
         assertThat(target.name(), is("default"));
         assertThat(target.hosts(), hasItems("a.b.com"));
         assertThat(target.transports(), hasItems("https"));
-        Optional<Config> targetsConfigOpt = target.getConfig();
-        Config targetsConfig = targetsConfigOpt.orElseGet(() -> {
+        var targetsConfigOpt = target.getConfig();
+        var targetsConfig = targetsConfigOpt.orElseGet(() -> {
             fail("Config was expected to be non-null");
             return null;
         });
@@ -108,8 +108,8 @@ public class OutboundConfigTest {
         assertThat(target.name(), is("default"));
         assertThat(target.transports(), hasItems("https"));
         assertThat(target.hosts(), hasItems("a.b.com"));
-        Optional<Config> targetsConfigOpt = target.getConfig();
-        Config targetsConfig = targetsConfigOpt.orElseGet(() -> {
+        var targetsConfigOpt = target.getConfig();
+        var targetsConfig = targetsConfigOpt.orElseGet(() -> {
             fail("Config was expected to be non-null");
             return null;
         });
@@ -147,7 +147,7 @@ public class OutboundConfigTest {
         assertThat(target.name(), is("default"));
         assertThat(target.transports(), hasItems("https"));
         assertThat(target.hosts(), hasItems("www.google.com"));
-        Optional<Config> targetsConfig = target.getConfig();
+        var targetsConfig = target.getConfig();
         assertThat(targetsConfig.isPresent(), is(false));
 
         target = targetList.get(1);
@@ -163,7 +163,7 @@ public class OutboundConfigTest {
         assertThat(target.hosts(), hasItems("b.c.com", "d.e.org"));
         targetsConfig = target.getConfig();
 
-        Config config = targetsConfig.orElseGet(() -> {
+        var config = targetsConfig.orElseGet(() -> {
             fail("Config was expected to be non-null");
             return null;
         });
@@ -222,16 +222,16 @@ public class OutboundConfigTest {
             return;
         }
 
-        Optional<Config> optConfig = target.getConfig();
+        var optConfig = target.getConfig();
 
         if (!optConfig.isPresent()) {
             fail("Expecting properties to be defined, yet config is empty: " + expectedProps);
         }
 
-        Config config = optConfig.get();
+        var config = optConfig.get();
 
         expectedProps.forEach((key, value) -> {
-            Config keyConfig = config.get(key);
+            var keyConfig = config.get(key);
             assertThat(keyConfig.asString(), is(simpleValue(value)));
         });
     }

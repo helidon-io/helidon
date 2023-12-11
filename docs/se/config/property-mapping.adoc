@@ -489,7 +489,7 @@ object from the config data.
 By default, the system matches potential JavaBean property names with
 config keys in the configuration.
 
-Use the link:{config-javadoc-base-url}/io/helidon/config/Value.html[`Value`] annotation to control some of JavaBean processing for a given property.
+Use the link:{config-mapping-javadoc-base-url}/io/helidon/config/objectmapping/Value.html[`Value`] annotation to control some of JavaBean processing for a given property.
 
 .`Value` Annotation
 |===
@@ -501,7 +501,7 @@ Use the link:{config-javadoc-base-url}/io/helidon/config/Value.html[`Value`] ann
 |===
 
 To exclude a bean property from the config system bean processing annotate it with
-link:{config-javadoc-base-url}/io/helidon/config/Config.Transient.html[`Config.Transient`].
+link:{config-mapping-javadoc-base-url}/io/helidon/config/objectmapping/Transient.html[`Transient`].
 
 Here is an example using the `app` portion of the example configuration from the
 introduction.
@@ -543,7 +543,7 @@ public class AppConfig {
         return basicRange;
     }
 
-    @Config.Transient                                             // <7>
+    @Transient                                             // <7>
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }

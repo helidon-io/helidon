@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -43,6 +45,13 @@ import static org.hamcrest.Matchers.not;
 class TestPrometheusFormatting {
 
     private static final String SCOPE_TAG_NAME = "this-scope";
+
+    /*
+    Only OpenMetrics format, not the Prometheus exposition format, has the trailing EOF which (for example) the Prometheus
+    server expects to see when it probes targets. That's why, below, when we format the output, we specify OpenMetrics as the
+    media type.
+     */
+    private static final String OPENMETRICS_EOF = "# EOF\n";
     private static MeterRegistry meterRegistry;
 
     private static MetricsConfig metricsConfig;
@@ -87,13 +96,15 @@ class TestPrometheusFormatting {
         e.record(2, TimeUnit.SECONDS);
 
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
                 .scopeTagName(SCOPE_TAG_NAME)
                 .build();
         Optional<Object> outputOpt = formatter.format();
 
         assertThat("Formatted output",
                    checkAndCast(outputOpt),
-                   allOf(containsString(scopeExpr("c1_total",
+                   allOf(
+                           containsString(scopeExpr("c1_total",
                                                   "this_scope",
                                                   "app",
                                                   "1.0")),
@@ -108,7 +119,9 @@ class TestPrometheusFormatting {
                          containsString(scopeExpr("t1_1_seconds_count",
                                                   "this_scope",
                                                   "app",
-                                                  "1.0"))));
+                                                  "1.0")),
+                         endsWith(OPENMETRICS_EOF)));
+
     }
 
     @Test
@@ -122,6 +135,7 @@ class TestPrometheusFormatting {
         d.record(7, TimeUnit.SECONDS);
 
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
                 .scopeTagName(SCOPE_TAG_NAME)
                 .meterNameSelection(Set.of("c2"))
                 .build();
@@ -139,7 +153,8 @@ class TestPrometheusFormatting {
                                                       "1.0"))),
                          not(containsString(scopeExpr("t2_seconds_sum",
                                                       "this_scope",
-                                                      "app", "7.0")))));
+                                                      "app", "7.0"))),
+                         endsWith(OPENMETRICS_EOF)));
 
     }
 
@@ -159,6 +174,7 @@ class TestPrometheusFormatting {
         e.record(2, TimeUnit.SECONDS);
 
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
                 .scopeTagName(SCOPE_TAG_NAME)
                 .scopeSelection(Set.of("app"))
                 .build();
@@ -182,11 +198,12 @@ class TestPrometheusFormatting {
                          containsString(scopeExpr("t3_1_seconds_count",
                                                   "this_scope",
                                                   "app",
-                                                  "1.0"))));
+                                                  "1.0")),
+                         endsWith(OPENMETRICS_EOF)));
     }
 
     private static String scopeExpr(String meterName, String key, String value, String suffix) {
-        return meterName + "{" + key + "=\"" + value + "\",} " + suffix;
+        return meterName + "{" + key + "=\"" + value + "\"} " + suffix;
     }
 
     private static String checkAndCast(Optional<Object> outputOpt) {

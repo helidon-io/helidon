@@ -35,9 +35,12 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-WebClient is an HTTP client of Helidon SE. It handles the responses to the HTTP requests in a programmatic way.
+WebClient is an HTTP client for Helidon SE. It can be used to send requests and retrieve corresponding responses in a programmatic way.
 
 Helidon WebClient provides the following features:
+
+* *Blocking approach* +
+The Webclient uses the blocking approach to synchronously process a request and its correspond response. Both `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the user. Additionally, for `HTTP/2`, virtual thread is employed to manage the connection.
 
 * *Builder-like setup and execution* +
 Creates every client and request as a builder pattern. This improves readability and code maintenance.
@@ -58,11 +61,23 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
+The `helidon-webclient` dependency has built-in support for `HTTP/1.1`.
+
+If support for `HTTP/2` is a requirement, below dependency needs to be added:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-http2</artifactId>
+</dependency>
+----
+
 == Usage
 
-=== Creating the WebClient
+=== Instantiating the WebClient
 
-You can create WebClient by executing `WebClient.create()` method. This will create an instance of client with default settings and without a base uri set.
+You can create an instance of a WebClient by executing `WebClient.create()` which will have default settings and without a base uri set.
 
 To change the default settings and register
 additional services, you can use simple builder that allows you to customize the client behavior.
@@ -75,31 +90,151 @@ WebClient client = WebClient.builder()
         .build();
 ----
 
-=== Creating and Executing the WebClient Request
+=== Creating the Request
 
-WebClient executes requests to the target endpoints and returns specific response type.
+WebClient offers a set of request methods that are used to specify the type of action to be performed on a given resource. Below are some examples of request methods:
 
-It offers variety of methods to specify the type of request you want to execute:
-
-* `put()`
 * `get()`
+* `post()`
+* `put()`
 * `method(String methodName)`
 
-These methods set specific request type based on their name or parameter to the new instance of `WebClientRequesBuilder` and return this instance based on configurations for specific request type.
+Check out link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClient.html[HttpClient] API to learn more about request methods. These methods will create a new instance of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest] which can then be configured to add optional settings that will customize the behavior of the request.
 
-You can set configuration for every request type before it is sent as described in <<Request Configuration>>.
+=== Customizing the Request
 
-For the final execution, use the following methods with variations and different parameters:
+Configuration can be set for every request type before it is sent. Below are some examples of the optional parameters.
 
-* `Single<T> submit(Object entity, Class<T> responseType)`
-* `Single<T> request(Class<T> responseType)`
+|===
+|Parameter |Description
 
-.Execute a simple GET request to endpoint:
+|`uri("http://example.com")`   |Overrides baseUri from WebClient
+|`path("/path")`   |Adds path to the uri
+|`queryParam("query", "parameter")`   |Adds query parameter to the request
+|`fragment("someFragment")`   |Adds fragment to the request
+|`headers(headers -> headers.addAccept(MediaType.APPLICATION_JSON))`   |Adds header to the request
+|===
+
+For more information about these optional parameters, check out link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/ClientRequestBase.html[ClientRequestBase] API, which is a parent class of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest].
+
+link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest] class also provides specific header methods that help the user to set a particular header. Some examples of these are:
+
+* `contentType` (MediaType contentType)
+* `accept` (MediaType... mediaTypes)
+
+For more information about these methods, check out  link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/ClientRequest.html[ClientRequest] API, which is a parent class of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest].
+
+=== Sending the Request
+
+Once the request setup is completed, the following methods can be used to send it:
+
+* `HttpClientResponse request()`
+* `<E> ClientResponseTyped<E> request(Class<E> type)`
+* `<E> E requestEntity(Class<E> type)`
+* `HttpClientResponse submit(Object entity)`
+* `<T> ClientResponseTyped<T> submit(Object entity, Class<T> requestedType)`
+* `HttpClientResponse outputStream(OutputStreamHandler outputStreamConsumer)`
+* `<T> ClientResponseTyped<T> outputStream(OutputStreamHandler outputStreamConsumer, Class<T> requestedType)`
+
+Each of the methods will provide a way to allow response to be retrieved in a particular response type. Refer to link:{webclient-javadoc-base-url}..api/io/helidon/webclient/api/ClientRequest.html[ClientRequest API] for more details about these methods.
+
+.Execute a simple GET request to endpoint and receive a String response:
 [source,java]
 ----
-Single<String> response = client.get()
-        .path("/endpoint")
-        .request(String.class);
+ClientResponseTyped<String> response = webClient.get()
+                .path("/endpoint")
+                .request(String.class);
+String entityString = response.entity();
+----
+
+=== Protocol Used
+WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the rules on which specific protocol will be used:
+
+* Using plain socket triggers WebClient to process a request using `HTTP/1.1`.
+* When using TLS, the client will use ALPN (protocol negotiation) to use appropriate HTTP version (either 1.1, or 2). `HTTP/2` has a higher weight, so it is chosen if supported by both sides.
+* A specific protocol can be explicitly selected by calling `HttpClientRequest#protocolId(String)`.
+[source,java]
+----
+String result = webClient.get()
+                         .protocolId("http/1.1")
+                         .requestEntity(String.class);
+----
+* If `HTTP/2` is used, an upgrade attempt will be performed. If it fails, the client falls-back to `HTTP/1.1`.
+* The parameter `prior-knowledge` can be defined using `HTTP/2` protocol configuration. Please refer to <<Setting Protocol configuration>> on how to customize `HTTP/2`. In such a case, `prior-knowledge` will be used and fail if it is unable to switch to `HTTP/2`.
+
+=== Adding Media Support
+
+Webclient supports the following built-in Helidon Media Support libraries:
+
+1. JSON Processing (JSON-P)
+2. JSON Binding (JSON-B)
+3. Jackson
+
+They can be activated by adding their corresponding libraries into the classpath. This can simply be done by adding their corresponding dependencies.
+
+.Add JSON-P support:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jsonp</artifactId>
+</dependency>
+----
+.Add JSON-B support:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jsonb</artifactId>
+</dependency>
+----
+.Add Jackson support:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jackson</artifactId>
+</dependency>
+----
+
+Users can also create their own Custom Media Support library and make them work by following either of the approaches:
+
+* Create a Provider of the Custom Media Support and expose it via Service Loader followed by adding the Media Support library to the classpath.
+* Explicitly register the Custom Media Support from WebClient.
+
+[source,java]
+----
+WebClient webclient = WebClient.builder()
+        .mediaContext(MediaContext.builder()
+                .addMediaSupport(CustomMediaSupport.create())   <1>
+                .build())
+        .build()
+----
+<1> Register CustomMedia support from the WebClient.
+
+=== DNS Resolving
+
+Webclient provides three DNS resolver implementations out of the box:
+
+* `Java DNS resolution` is the default.
+* `*First* DNS resolution` uses the first IP address from a DNS lookup. To enable this option, add below dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient.dns.resolver</groupId>
+    <artifactId>helidon-webclient-dns-resolver-first</artifactId>
+</dependency>
+----
+
+* `*Round-Robin* DNS resolution` cycles through IP addresses from a DNS lookup. To enable this option, add this dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient.dns.resolver</groupId>
+    <artifactId>helidon-webclient-dns-resolver-round-robin</artifactId>
+</dependency>
 ----
 
 == Configuring the WebClient
@@ -108,7 +243,18 @@ The class responsible for WebClient configuration is:
 
 include::{rootdir}/config/io_helidon_webclient_api_WebClient.adoc[leveloffset=+1,tag=config]
 
+=== Protocol Specific Configuration
 
+Protocol specific configuration can be set using the  `protocol-configs` parameter. Webclient currently supports `HTTP/1.1.` and `HTTP/2`. Below are the options for each of the protocol type:
+
+* `HTTP/1.1`
+
+include::{rootdir}/config/io_helidon_webclient_http1_Http1ClientProtocolConfig.adoc[leveloffset=2,tag=config]
+
+
+* `HTTP/2`
+
+include::{rootdir}/config/io_helidon_webclient_http2_Http2ClientProtocolConfig.adoc[leveloffset=2,tag=config]
 
 === Example of a WebClient Runtime Configuration
 
@@ -130,171 +276,102 @@ client:
   read-timeout-millis: 2000
   follow-redirects: true <1>
   max-redirects: 5
-  cookies:
+  cookie-manager: <2>
     automatic-store-enabled: true
     default-cookies:
-      - name: "env"
-        value: "dev"
-  headers:
-    - name: "Accept"
-      value: ["application/json","text/plain"] <2>
-  services: <3>
-    config:
-      metrics:
-        - methods: ["PUT", "POST", "DELETE"]
-        - type: METER
-          name-format: "client.meter.overall"
-        - type: TIMER
-          # meter per method
-          name-format: "client.meter.%1$s"
-        - methods: ["GET"]
-          type: COUNTER
-          errors: false
-          name-format: "client.counter.%1$s.success"
-          description: "Counter of successful GET requests"
-        - methods: ["PUT", "POST", "DELETE"]
-          type: COUNTER
-          success: false
-          name-format: "wc.counter.%1$s.error"
-          description: "Counter of failed PUT, POST and DELETE requests"
-        - methods: ["GET"]
-          type: GAUGE_IN_PROGRESS
-          name-format: "client.inprogress.%2$s"
-          description: "In progress requests to host"
-      tracing:
-  proxy: <4>
-    use-system-selector: false
+      flavor3: strawberry
+      flavor4: raspberry
+  default-headers: <3>
+    Accept: '"application/json","text/plain"'
+  services: <4>
+    metrics:
+      - methods: ["PUT", "POST", "DELETE"]
+        type: METER
+        name-format: "client.meter.overall"
+      - type: TIMER
+        # meter per method
+        name-format: "client.meter.%1$s"
+      - methods: ["GET"]
+        type: COUNTER
+        errors: false
+        name-format: "client.counter.%1$s.success"
+        description: "Counter of successful GET requests"
+      - methods: ["PUT", "POST", "DELETE"]
+        type: COUNTER
+        success: false
+        name-format: "wc.counter.%1$s.error"
+        description: "Counter of failed PUT, POST and DELETE requests"
+    tracing:
+  protocol-configs: <5>
+    http_1_1:
+      max-header-size: 20000
+      validate-request-headers: true
+    h2:
+      prior-knowledge: true
+  proxy: <6>
     host: "hostName"
     port: 80
     no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"]
-  tls: <5>
-    server:
-      trust-all: true
-      disable-hostname-verification: true
+  tls: <7>
+    trust:
       keystore:
         passphrase: "password"
         trust-store: true
-        resource:
-          resource-path: "client.p12"
-    client:
-      keystore:
-        passphrase: "password"
         resource:
           resource-path: "client.p12"
 ----
 
 <1> Client functional settings
-<2> Default client headers and cookies
-<3> Client service configuration
-<4> Proxy configuration
-<5> TLS configuration
+<2> Cookie management
+<3> Default client headers
+<4> Client service configuration
+<5> Protocol configuration
+<6> Proxy configuration
+<7> TLS configuration
 
 == Examples
 
-=== Request Configuration
+=== Webclient with Proxy
+Configure Proxy setup either programmatically or via the Helidon configuration framework.
 
-The request settings are based on the following optional parameters, and change when a specific request is executed.
-
-|===
-|Parameter |Description
-
-|`uri("http://example.com")`   |Overrides baseUri from WebClient
-|`path("/path")`   |Adds path to the uri
-|`queryParam("query", "parameter")`   |Adds query parameter to the request
-|`fragment("someFragment")`   |Adds fragment to the request
-|`headers(headers -> headers.addAccept(MediaType.APPLICATION_JSON))`   |Adds header to the request
-|===
-
-`WebClientRequestBuilder` class also provides specific header methods that help the user to set a particular header. The methods are:
-
-* `contentType` (MediaType contentType)
-* `accept` (MediaType... mediaTypes)
-
-For more details, see the link:{webserver-javadoc-base-url}/io/helidon/webserver/RequestHeaders.html[Request Headers] API.
-
-=== Adding JSON Processing Media Support to the WebClient
-
-JSON Processing (JSON-P) media support is not present in the WebClient by default. So, in this case, you must first register it before making a request.
-This example shows how to register `JsonpSupport` using the following two methods.
-
-[source,java]
-.Register JSON-P support to the WebClient.
-----
-WebClient.builder()
-        .baseUri("http://localhost")
-        .addReader(JsonpSupport.reader()) // <1>
-        .addWriter(JsonpSupport.writer()) // <2>
-        .addMediaService(JsonpSupport.create()) // <3>
-        .build();
-----
-<1> Adds JSON-P reader to all client requests.
-<2> Adds JSON-P writer to all client requests.
-<3> Adds JSON-P writer and reader to all client requests.
-
-[source,java]
-.Register JSON-P support only to the specific request.
-
-----
-WebClient webClient = WebClient.create();
-
-WebClientRequestBuilder requestBuilder = webClient.get();
-requestBuilder.writerContext().registerWriter(JsonSupport.writer()); // <1>
-requestBuilder.readerContext().registerReader(JsonSupport.reader()); // <2>
-
-requestBuilder.request(JsonObject.class)
-----
-<1> Adds JSON-P writer only to this request.
-<2> Adds JSON-P reader only to this request.
-
-=== WebClient TLS setup
-
-Configure TLS either programmatically or by the Helidon configuration framework.
-
-==== Configuring TLS in your code
-
-One way to configure TLS in WebClient is in your application code as shown below.
-
+==== Configuring Proxy in your code
+Proxy can be set directly from WebClient builder.
 [source,java]
 ----
-KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-                //Whether this keystore is also trust store
-                .trustStore()
-                //Keystore location/name
-                .keystore(Resource.create("client.p12"))
-                //Password to the keystore
-                .keystorePassphrase("password")
+Proxy proxy = Proxy.builder()
+                .type(Proxy.ProxyType.HTTP)
+                .host(PROXY_HOST)
+                .port(PROXY_PORT)
                 .build();
-
-WebClient.builder()
-         .tls(WebClientTls.builder()
-               .certificateTrustStore(keyConfig)
-               .clientKeyStore(keyConfig)
-               .build())
+WebClient webClient = WebClient.builder()
+         .proxy(proxy)
          .build();
 ----
 
-==== Configuring TLS in the config file
+Alternative is to set proxy directly from the request via  `HttpClientRequest`.
 
-Another way to configure TLS in WebClient is through the `application.yaml` configuration file.
+[source,java]
+----
+// Using System Proxy
+Proxy proxy = Proxy.create();
+System.setProperty("http.proxyHost", PROXY_HOST);
+System.setProperty("http.proxyPort", PROXY_PORT);
+System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1|10.*.*.*|*.example.com|etc|" + TARGET_HOST);
+webClient.get("/proxiedresource").proxy(proxy).request()
+----
+
+==== Configuring Proxy in the config file
+
+Proxy can also be configured in WebClient through the `application.yaml` configuration file.
 
 [source,yaml]
-.WebClient TLS configuration file `application.yaml`
+.WebClient Proxy configuration in `application.yaml`
 ----
 webclient:
-  tls:
-    #Server part defines settings for server certificate validation and truststore
-    server:
-      keystore:
-        passphrase: "password"
-        trust-store: true
-        resource:
-          resource-path: "keystore.p12"
-    #Client part defines access to the keystore with client private key or certificate
-    client:
-      keystore:
-        passphrase: "password"
-        resource:
-          resource-path: "keystore.p12"
+  proxy:
+    host: "hostName"
+    port: 80
+    no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"]
 ----
 Then, in your application code, load the configuration from that file.
 
@@ -304,18 +381,194 @@ Then, in your application code, load the configuration from that file.
 Config config = Config.create();
 WebClient webClient = WebClient.create(config.get("webclient"));
 ----
-Or you can only create WebClientTls instance based on the config file.
+
+=== WebClient TLS Setup
+
+Configure TLS either programmatically or by the Helidon configuration framework.
+
+==== Configuring TLS in your code
+
+One way to configure TLS in WebClient is in your application code as shown below.
 
 [source,java]
-.WebClientTls instance based on `application.yaml` file located on the classpath
+----
+WebClient.builder()
+         .tls(Tls.builder()
+                     .trust(trust -> trust
+                             .keystore(store -> store
+                                     .passphrase("password")
+                                     .trustStore(true)
+                                     .keystore(Resource.create("client.p12"))))
+                     .build())
+         .build();
+----
+
+==== Configuring TLS in the config file
+
+Another way to configure TLS in WebClient is through the `application.yaml` configuration file.
+
+[source,yaml]
+.WebClient TLS configuration in `application.yaml`
+----
+webclient:
+  tls:
+    trust:
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "client.p12"
+----
+
+NOTE: The `passphrase` value on the config file can be encrypted if stronger security is required. For more information on how secrets can be encrypted using a master password and store them in a configuration file, please see xref:{rootdir}/mp/security/configuration-secrets.adoc[Configuration Secrets].
+
+In the application code, load the settings from the configuration file.
+
+[source,java]
+.WebClient initialization using the `application.yaml` file located on the classpath
 ----
 Config config = Config.create();
-WebClientTls.builder()
-    .config(config.get("webclient.tls"))
+WebClient webClient = WebClient.create(config.get("webclient"));
+----
+
+=== Adding Service to WebClient
+
+WebClient currently supports 3 built-in services namely `metrics`, `tracing` and `security`.
+
+==== Enabling the service
+
+In order for a service to function, their dependency needs to be added in the application's pom.xml. Below are examples on how to enable the built-in services:
+
+* `metrics`
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-metrics</artifactId>
+</dependency>
+----
+* `tracing`
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-tracing</artifactId>
+</dependency>
+----
+* `security`
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-security</artifactId>
+</dependency>
+----
+
+==== Adding a service in your code
+
+Services can be added in WebClient as shown in the code below.
+
+[source,java]
+----
+//Creates new metric which will count all GET requests and has format of example.metric.GET.<host-name>
+WebClientService clientService = WebClientMetrics.counter()
+        .methods(Method.GET)
+        .nameFormat("example.metric.%1$s.%2$s")
+        .build();
+
+//This newly created metric now needs to be registered to WebClient.
+WebClient client = WebClient.builder()
+        .baseUri(url)
+        .config(config)
+        .addService(clientService)
+        .build();
+----
+
+==== Adding service in the config file
+
+Adding service in WebClient can also be done through the `application.yaml` configuration file.
+
+[source,yaml]
+.WebClient Service configuration in `application.yaml`
+----
+webclient:
+  services:
+    metrics:
+      - type: METER
+        name-format: "client.meter.overall"
+      - type: TIMER
+        # meter per method
+        name-format: "client.meter.%1$s"
+      - methods: ["PUT", "POST", "DELETE"]
+        type: COUNTER
+        success: false
+        name-format: "wc.counter.%1$s.error"
+        description: "Counter of failed PUT, POST and DELETE requests"
+    tracing:
+----
+Then, in your application code, load the configuration from that file.
+
+[source,java]
+.WebClient initialization using the `application.yaml` file located on the classpath
+----
+Config config = Config.create();
+WebClient webClient = WebClient.create(config.get("webclient"));
+----
+
+=== Setting Protocol configuration
+Individual protocols can be customized using the `protocol-config` parameter.
+
+==== Setting up protocol configuration in your code
+
+Below is an example of customizing `HTTP/1.1` protocol in the application code.
+
+[source,java]
+----
+WebClient client = WebClient.builder()
+    .baseUri(url)
+    .config(config.get("client"))
+    .addProtocolConfig(Http1ClientProtocolConfig.builder()
+                    .defaultKeepAlive(false)
+                    .validateRequestHeaders(true)
+                    .validateResponseHeaders(false)
+                    .build())
     .build();
 ----
 
+==== Setting up protocol configuration in the config file
+
+Protocol configuration can also be set in the `application.yaml` configuration file.
+
+[source,yaml]
+.Setting up `HTTP/1.1` and `HTTP/2` protocol using `application.yaml` file.
+----
+webclient:
+  protocol-configs:
+    http_1_1:
+      max-header-size: 20000
+      validate-request-headers: true
+    h2:
+      prior-knowledge: true
+----
+Then, in your application code, load the configuration from that file.
+
+[source,java]
+.WebClient initialization using the `application.yaml` file located on the classpath
+----
+Config config = Config.create();
+WebClient webClient = WebClient.create(config.get("webclient"));
+----
+
+
+
 == Reference
 
-* link:https://helidon.io/docs/v2/apidocs/io.helidon.webclient/module-summary.html[Helidon WebClient JavaDoc]
+* link:{webclient-javadoc-base-url}.api/module-summary.html[Helidon Webclient API]
+* link:{webclient-javadoc-base-url}.http1/module-summary.html[Helidon WebClient HTTP/1.1 Support]
+* link:{webclient-javadoc-base-url}.http2/module-summary.html[Helidon WebClient HTTP/2 Support]
+* link:{webclient-javadoc-base-url}.dns.resolver.first/module-summary.html[Helidon WebClient DNS Resolver First Support]
+* link:{webclient-javadoc-base-url}.dns.resolver.roundrobin/module-summary.html[Helidon WebClient DNS Resolver Round Robin Support]
+* link:{webclient-javadoc-base-url}.metrics/module-summary.html[Helidon WebClient Metrics Support]
+* link:{webclient-javadoc-base-url}.security/module-summary.html[Helidon WebClient Security Support]
+* link:{webclient-javadoc-base-url}.tracing/module-summary.html[Helidon WebClient Tracing Support]
 

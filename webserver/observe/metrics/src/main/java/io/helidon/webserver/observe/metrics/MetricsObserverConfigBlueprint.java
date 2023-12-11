@@ -23,16 +23,17 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.webserver.observe.ObserverConfigBase;
+import io.helidon.webserver.observe.spi.ObserveProvider;
 
 /**
  * Metrics Observer configuration.
  */
 @Prototype.Blueprint
 @Prototype.Configured("metrics")
+@Prototype.Provides(ObserveProvider.class)
 interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<MetricsObserver> {
     @Option.Configured
     @Option.Default("metrics")
-    @Override
     String endpoint();
 
     @Override

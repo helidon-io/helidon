@@ -16,6 +16,8 @@
 
 package io.helidon.examples.integrations.neo4j;
 
+import java.util.List;
+
 import io.helidon.config.Config;
 import io.helidon.examples.integrations.neo4j.domain.MovieRepository;
 import io.helidon.health.checks.DeadlockHealthCheck;
@@ -28,6 +30,7 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthObserver;
+import io.helidon.webserver.spi.ServerFeature;
 
 import org.neo4j.driver.Driver;
 
@@ -56,41 +59,47 @@ public class Main {
     }
 
     static void startServer() {
+        Neo4j neo4j = Neo4j.create(Config.create().get("neo4j"));
+        Driver neo4jDriver = neo4j.driver();
 
         WebServer server = WebServer.builder()
-                .routing(Main::routing)
+                .featuresDiscoverServices(false)
+                .features(features(neo4jDriver))
+                .routing(it -> routing(it, neo4jDriver))
                 .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/api/movies");
     }
 
+    static List<ServerFeature> features(Driver neo4jDriver) {
+        Neo4jHealthCheck healthCheck = Neo4jHealthCheck.create(neo4jDriver);
+        return List.of(ObserveFeature.just(HealthObserver.builder()
+                                                             .useSystemServices(false)
+                                                             .addCheck(HeapMemoryHealthCheck.create())
+                                                             .addCheck(DiskSpaceHealthCheck.create())
+                                                             .addCheck(DeadlockHealthCheck.create())
+                                                             .addCheck(healthCheck)
+                                                             .build()));
+    }
+
     /**
      * Updates HTTP Routing.
      */
-    static void routing(Builder routing) {
-        Neo4j neo4j = Neo4j.create(Config.create().get("neo4j"));
-        Driver neo4jDriver = neo4j.driver();
+    static void routing(Builder routing, Driver neo4jDriver) {
+
 
         Neo4jMetricsSupport.builder()
                            .driver(neo4jDriver)
                            .build()
                            .initialize();
 
-        Neo4jHealthCheck healthCheck = Neo4jHealthCheck.create(neo4jDriver);
 
         MovieService movieService = new MovieService(new MovieRepository(neo4jDriver));
 
-        ObserveFeature observe = ObserveFeature.just(HealthObserver.builder()
-                                                                  .useSystemServices(false)
-                                                                  .addCheck(HeapMemoryHealthCheck.create())
-                                                                  .addCheck(DiskSpaceHealthCheck.create())
-                                                                  .addCheck(DeadlockHealthCheck.create())
-                                                                  .addCheck(healthCheck)
-                                                                  .build());
 
-        routing.register(movieService)
-                .addFeature(observe);
+
+        routing.register(movieService);
     }
 }
 

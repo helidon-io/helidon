@@ -23,6 +23,7 @@ import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -67,8 +68,8 @@ interface SocketOptionsBlueprint {
      * @return buffer size, in bytes
      * @see java.net.StandardSocketOptions#SO_RCVBUF
      */
-    @ConfiguredOption("32768")
-    int socketReceiveBufferSize();
+    @ConfiguredOption
+    Optional<Integer> socketReceiveBufferSize();
 
     /**
      * Socket send buffer size.
@@ -76,8 +77,8 @@ interface SocketOptionsBlueprint {
      * @return buffer size, in bytes
      * @see java.net.StandardSocketOptions#SO_SNDBUF
      */
-    @ConfiguredOption("32768")
-    int socketSendBufferSize();
+    @ConfiguredOption
+    Optional<Integer> socketSendBufferSize();
 
     /**
      * Socket reuse address.
@@ -129,8 +130,8 @@ interface SocketOptionsBlueprint {
     class BuilderDecorator implements Prototype.BuilderDecorator<SocketOptions.BuilderBase<?, ?>> {
         @Override
         public void decorate(SocketOptions.BuilderBase<?, ?> target) {
-            target.putSocketOption(StandardSocketOptions.SO_RCVBUF, target.socketReceiveBufferSize());
-            target.putSocketOption(StandardSocketOptions.SO_SNDBUF, target.socketSendBufferSize());
+            target.socketReceiveBufferSize().ifPresent(i -> target.putSocketOption(StandardSocketOptions.SO_RCVBUF, i));
+            target.socketSendBufferSize().ifPresent(i -> target.putSocketOption(StandardSocketOptions.SO_SNDBUF, i));
             target.putSocketOption(StandardSocketOptions.SO_REUSEADDR, target.socketReuseAddress());
             target.putSocketOption(StandardSocketOptions.SO_KEEPALIVE, target.socketKeepAlive());
             target.putSocketOption(StandardSocketOptions.TCP_NODELAY, target.tcpNoDelay());

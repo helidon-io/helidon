@@ -119,6 +119,9 @@ public abstract class AbstractLogEntry implements AccessLogEntry {
         private boolean sanitize = true;
         private int maxLength = DEFAULT_MAX_LENGTH;
 
+        /**
+         * Create a new instance, no side effects.
+         */
         protected Builder() {
         }
 

@@ -53,6 +53,13 @@ This is a standalone configuration type, prefix from configuration root: `openap
 |`manager` |io.helidon.openapi.OpenApiManager (service provider interface) |{nbsp} |OpenAPI manager.
 
  @return the OpenAPI manager
+|`permit-all` |boolean |{nbsp} |Whether to allow anybody to access the endpoint.
+
+ @return whether to permit access to metrics endpoint to anybody, defaults to `true`
+ @see #roles()
+|`roles` |string[&#93; |{nbsp} |Hints for role names the user is expected to be in.
+
+ @return list of hints
 |`services` |io.helidon.openapi.OpenApiService[&#93; (service provider interface) |{nbsp} |OpenAPI services.
 
  @return the OpenAPI services

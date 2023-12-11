@@ -16,9 +16,13 @@
 
 package io.helidon.webserver.observe.spi;
 
+import java.util.List;
+import java.util.function.UnaryOperator;
+
 import io.helidon.common.config.NamedService;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserverConfigBase;
+import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * An observer adds observability feature to Helidon {@link io.helidon.webserver.observe.ObserveFeature},
@@ -57,18 +61,16 @@ public interface Observer extends NamedService {
      * Register the observer features, services, and/or filters.
      * This is used by the observe feature.
      * Do NOT use this method directly, kindly start with {@link io.helidon.webserver.observe.ObserveFeature} and register
-     * it with the routing.
-     * <p>
-     * If this method is used directly, it will NOT do the following (as this is handled by
-     * {@link io.helidon.webserver.observe.ObserveFeature}):
-     * <ul>
-     *     <li>It will NOT register CORS</li>
-     *     <li>It will NOT honor enabled configuration</li>
-     * </ul>
+     * it with the server builder.
      *
-     * @param routing  routing builder
-     * @param endpoint observer endpoint, combined with observability feature endpoint if needed
+     * @param featureContext         access to all routing builders, for cases where this observer needs to register additional
+     *                               components to other sockets
+     * @param observeEndpointRouting routing builders that expose observability endpoints, and this feature must use these to
+     *                               register any endpoints exposed for observability
+     * @param endpointFunction       function to obtain the final endpoint for observers that expose observe endpoints (such as
+     *                               {@code /observe/health} would be provider for {@code health} by default)
      */
-    void register(HttpRouting.Builder routing,
-                  String endpoint);
+    void register(ServerFeature.ServerFeatureContext featureContext,
+                  List<HttpRouting.Builder> observeEndpointRouting,
+                  UnaryOperator<String> endpointFunction);
 }

@@ -41,7 +41,6 @@
             <groupId>io.helidon.integrations.microstream</groupId>
             <artifactId>helidon-integrations-microstream</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>

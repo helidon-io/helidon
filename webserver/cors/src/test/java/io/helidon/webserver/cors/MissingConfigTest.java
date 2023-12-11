@@ -27,7 +27,9 @@ import io.helidon.config.Config;
 import io.helidon.cors.Aggregator;
 import io.helidon.cors.CorsSupportBase;
 import io.helidon.cors.CrossOriginConfig;
+import io.helidon.logging.common.LogConfig;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -50,11 +52,16 @@ class MissingConfigTest {
     private ByteArrayOutputStream os;
     private StreamHandler handler;
 
+    @BeforeAll
+    static void setup() {
+        LogConfig.configureRuntime();
+    }
+
     @BeforeEach
     void setupLoggingCapture() {
         os = new ByteArrayOutputStream();
         handler = new StreamHandler(os, new SimpleFormatter());
-        handler.setLevel(Level.INFO);
+        handler.setLevel(Level.FINEST);
     }
 
     @Test

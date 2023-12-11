@@ -92,30 +92,22 @@ Once a security instance is built, it can be used to initialize an
 ----
 // create a security context
 SecurityContext context = security.contextBuilder(UUID.randomUUID().toString())
-                .env(SecurityEnvironment.builder()
-                             .method("get")
-                             .path("/test")
-                             .transport("http")
-                             .header("Authorization", "Bearer abcdefgh")
-                             .build())
-                .build();
+        .env(SecurityEnvironment.builder()
+                     .method("get")
+                     .path("/test")
+                     .transport("http")
+                     .header("Authorization", "Bearer abcdefgh")
+                     .build())
+        .build();
 
 // use the context to authenticate a request
-context.atnClientBuilder()
-                .submit()
-                .whenComplete((response, exception) -> {
-                    // this is to show the features, not a real-world production code...
-                    if (null == exception) {
-                        if (response.getStatus().isSuccess()) {
-                            System.out.println(response.getUser());
-                            System.out.println(response.getService());
-                        } else {
-                            System.out.println("Authentication failed: " + response.getDescription());
-                        }
-                    } else {
-                        exception.printStackTrace();
-                    }
-                });
+AuthenticationResponse response = context.atnClientBuilder().submit();
+if (response.status().isSuccess()) {
+    System.out.println(response.user());
+    System.out.println(response.service());
+} else {
+    System.out.println("Authentication failed: " + response.description());
+}
 ----
 
 === Builder Pattern

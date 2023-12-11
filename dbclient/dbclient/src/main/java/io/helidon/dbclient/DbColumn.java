@@ -60,7 +60,7 @@ public interface DbColumn extends Value<Object> {
      */
     @Override
     default Object get() {
-        return as(javaType());
+        return as(javaType()).get();
     }
 
     /**

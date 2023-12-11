@@ -1,0 +1,15 @@
+    - jwt:
+        atn-token:
+          jwk.resource.resource-path: "verifying-jwk.json"
+          jwt-audience: "http://my.service"
+        sign-token:
+          jwk.resource.resource-path: "signing-jwk.json"
+          jwt-issuer: "http://my.server/identity"
+          outbound:
+            - name: "propagate-token"
+              hosts: ["*.internal.org"]
+            - name: "generate-token"
+              hosts: ["1.partner-service"]
+              jwk-kid: "partner-1"
+              jwt-kid: "helidon"
+              jwt-audience: "http://1.partner-service"

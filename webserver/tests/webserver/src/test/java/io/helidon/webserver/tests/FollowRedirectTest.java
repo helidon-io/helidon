@@ -23,18 +23,24 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.http.Status.INTERNAL_SERVER_ERROR_500;
 import static org.hamcrest.CoreMatchers.is;
@@ -43,30 +49,34 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class FollowRedirectTest {
+    private static final HeaderName REDIRECT_TO_OTHER_NAME = HeaderNames.create("redirect-to-other");
+    private static final Header REDIRECT_TO_OTHER = HeaderValues.create(REDIRECT_TO_OTHER_NAME, "redirectToOtherPort");
     private static final StringBuilder BUFFER = new StringBuilder();
     private final Http1Client webClient;
+    private static int otherPort;
 
-    FollowRedirectTest(Http1Client client) {
+    FollowRedirectTest(WebServer server, Http1Client client) {
         this.webClient = client;
+        otherPort = server.port("other");
     }
 
-    @SetUpRoute
-    static void router(HttpRouting.Builder router) {
+    @SetUpRoute("other")
+    static void otherRouter(HttpRouting.Builder router) {
         router.route(Method.PUT, "/infiniteRedirect", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
-                    .header(HeaderNames.LOCATION, "/infiniteRedirect2")
+                    .header(redirectLocation(req, "/infiniteRedirect2"))
                     .send();
         }).route(Method.PUT, "/infiniteRedirect2", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
-                    .header(HeaderNames.LOCATION, "/infiniteRedirect")
+                    .header(redirectLocation(req, "/infiniteRedirect"))
                     .send();
         }).route(Method.PUT, "/redirect", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
-                    .header(HeaderNames.LOCATION, "/plain")
+                    .header(redirectLocation(req, "/plain"))
                     .send();
         }).route(Method.PUT, "/redirectNoEntity", (req, res) -> {
             res.status(Status.FOUND_302)
-                    .header(HeaderNames.LOCATION, "/plain")
+                    .header(redirectLocation(req, "/plain"))
                     .send();
         }).route(Method.PUT, "/plain", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
@@ -88,7 +98,7 @@ class FollowRedirectTest {
                     BUFFER.append("\n").append(new String(buffer, 0, read));
                 }
                 res.status(Status.SEE_OTHER_303)
-                        .header(HeaderNames.LOCATION, "/afterUpload")
+                        .header(redirectLocation(req, "/afterUpload"))
                         .send();
             } catch (Exception e) {
                 res.status(INTERNAL_SERVER_ERROR_500)
@@ -121,14 +131,28 @@ class FollowRedirectTest {
             }
         });
     }
+    @SetUpRoute
+    static void router(HttpRouting.Builder router) {
+        // routes are common for both sockets
+        otherRouter(router);
+    }
+
+    private static Header redirectLocation(ServerRequest req, String context) {
+        if (req.headers().contains(REDIRECT_TO_OTHER)) {
+            return HeaderValues.create(HeaderNames.LOCATION, "http://localhost:" + otherPort + context);
+        } else {
+            return HeaderValues.create(HeaderNames.LOCATION, context);
+        }
+    }
 
     @AfterEach
     void clearBuffer() {
         BUFFER.setLength(0);
     }
 
-    @Test
-    void testOutputStreamFollowRedirect() {
+    @ParameterizedTest
+    @ValueSource(strings = {"redirectToOtherPort", "redirectLocally"})
+    void testOutputStreamFollowRedirect(String redirectToOtherPort) {
         String expected = """
                 Test data:
                 0123456789
@@ -136,6 +160,7 @@ class FollowRedirectTest {
                 0123456789""";
         try (Http1ClientResponse response = webClient.put()
                 .path("/redirect")
+                .header(REDIRECT_TO_OTHER_NAME, redirectToOtherPort)
                 .outputStream(it -> {
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
@@ -146,11 +171,13 @@ class FollowRedirectTest {
         }
     }
 
-    @Test
-    void testOutputStreamEntityNotKept() {
+    @ParameterizedTest
+    @ValueSource(strings = {"redirectToOtherPort", "redirectLocally"})
+    void testOutputStreamEntityNotKept(String redirectToOtherPort) {
         String expected = "GET plain endpoint reached";
         try (Http1ClientResponse response = webClient.put()
                 .path("/redirectNoEntity")
+                .header(REDIRECT_TO_OTHER_NAME, redirectToOtherPort)
                 .outputStream(it -> {
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
@@ -161,18 +188,21 @@ class FollowRedirectTest {
         }
     }
 
-    @Test
-    void testEmptyOutputStreamWithRedirectAfter() {
+    @ParameterizedTest
+    @ValueSource(strings = {"redirectToOtherPort", "redirectLocally"})
+    void testEmptyOutputStreamWithRedirectAfter(String redirectToOtherPort) {
         String expected = "Upload completed!";
         try (Http1ClientResponse response = webClient.put()
                 .path("/redirectAfterUpload")
+                .header(REDIRECT_TO_OTHER_NAME, redirectToOtherPort)
                 .outputStream(OutputStream::close)) {
             assertThat(response.entity().as(String.class), is(expected));
         }
     }
 
-    @Test
-    void testEntityOutputStreamWithRedirectAfter() {
+    @ParameterizedTest
+    @ValueSource(strings = {"redirectToOtherPort", "redirectLocally"})
+    void testEntityOutputStreamWithRedirectAfter(String redirectToOtherPort) {
         String expected = """
                 Upload completed!
                 0123456789
@@ -180,6 +210,7 @@ class FollowRedirectTest {
                 0123456789""";
         try (Http1ClientResponse response = webClient.put()
                 .path("/redirectAfterUpload")
+                .header(REDIRECT_TO_OTHER_NAME, redirectToOtherPort)
                 .outputStream(it -> {
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
@@ -190,11 +221,13 @@ class FollowRedirectTest {
         }
     }
 
-    @Test
-    void testOutputStreamEntityNotKeptIntercepted() {
+    @ParameterizedTest
+    @ValueSource(strings = {"redirectToOtherPort", "redirectLocally"})
+    void testOutputStreamEntityNotKeptIntercepted(String redirectToOtherPort) {
         String expected = "GET plain endpoint reached";
         try (Http1ClientResponse response = webClient.put()
                 .path("/redirectNoEntity")
+                .header(REDIRECT_TO_OTHER_NAME, redirectToOtherPort)
                 .outputStream(it -> {
                     try {
                         it.write("0123456789".getBytes(StandardCharsets.UTF_8));
@@ -208,10 +241,12 @@ class FollowRedirectTest {
         }
     }
 
-    @Test
-    void testMaxNumberOfRedirections() {
+    @ParameterizedTest
+    @ValueSource(strings = {"redirectToOtherPort", "redirectLocally"})
+    void testMaxNumberOfRedirections(String redirectToOtherPort) {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> webClient.put()
                 .path("/infiniteRedirect")
+                .header(REDIRECT_TO_OTHER_NAME, redirectToOtherPort)
                 .outputStream(it -> {
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
@@ -220,12 +255,14 @@ class FollowRedirectTest {
         assertThat(exception.getMessage(), is("Maximum number of request redirections (10) reached."));
     }
 
-    @Test
-    void test100ContinueTimeout() {
+    @ParameterizedTest
+    @ValueSource(strings = {"redirectToOtherPort", "redirectLocally"})
+    void test100ContinueTimeout(String redirectToOtherPort) {
         // the webclient just starts sending entity (that is the reason for the timeout, for servers that may not send continue)
         ClientResponseTyped<String> http1ClientResponse = webClient.put()
                 .path("/wait")
                 .readContinueTimeout(Duration.ofMillis(200))
+                .header(REDIRECT_TO_OTHER_NAME, redirectToOtherPort)
                 .outputStream(it -> {
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));

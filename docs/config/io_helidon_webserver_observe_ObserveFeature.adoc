@@ -1,0 +1,96 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.webserver.observe.ObserveFeature
+:keywords: helidon, config, io.helidon.webserver.observe.ObserveFeature
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.observe.ObserveFeature
+include::{rootdir}/includes/attributes.adoc[]
+
+= ObserveFeature (webserver.observe) Configuration
+
+// tag::config[]
+
+
+Type: link:{javadoc-base-url}/io.helidon.webserver.observe/io/helidon/webserver/observe/ObserveFeature.html[io.helidon.webserver.observe.ObserveFeature]
+
+
+[source,text]
+.Config key
+----
+observe
+----
+
+
+This type provides the following service implementations:
+
+- `io.helidon.webserver.spi.ServerFeatureProvider`
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`cors` |xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[CrossOriginConfig] |`@io.helidon.cors.CrossOriginConfig@.create()` |Cors support inherited by each observe provider, unless explicitly configured.
+
+ @return cors support to use
+|`enabled` |boolean |`true` |Whether the observe support is enabled.
+
+ @return `false` to disable observe feature
+|`endpoint` |string |`/observe` |Root endpoint to use for observe providers. By default, all observe endpoint are under this root endpoint.
+
+ Example:
+ <br>
+ If root endpoint is `/observe` (the default), and default health endpoint is `health` (relative),
+ health endpoint would be `/observe/health`.
+
+ @return endpoint to use
+|`observers` |io.helidon.webserver.observe.spi.Observer[&#93; (service provider interface)
+
+Such as:
+
+ - xref:{rootdir}/config/io_helidon_webserver_observe_config_ConfigObserver.adoc[ConfigObserver]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_info_InfoObserver.adoc[InfoObserver]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_log_LogObserver.adoc[LogObserver]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_tracing_TracingObserver.adoc[TracingObserver]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsObserver.adoc[metrics (MetricsObserver)]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_health_HealthObserver.adoc[health (HealthObserver)]
+
+ |{nbsp} |Observers to use with this observe features.
+ Each observer type is registered only once, unless it uses a custom name (default name is the same as the type).
+
+ @return list of observers to use in this feature
+|`sockets` |string[&#93; |{nbsp} |Sockets the observability endpoint should be exposed on. If not defined, defaults to the default socket
+ (`io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME`.
+ Each observer may have its own configuration of sockets that are relevant to it, this only controls the endpoints!
+
+ @return list of sockets to register observe endpoint on
+|`weight` |double |`80.0` |Change the weight of this feature. This may change the order of registration of this feature.
+ By default, observability weight is `ObserveFeature#WEIGHT` so it is registered after routing.
+
+ @return weight to use
+
+|===
+
+// end::config[]

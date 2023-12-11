@@ -173,3 +173,5 @@ HotSpot VM might be more appropriate.
 
 For information about creating custom Java runtime images see
 xref:{guidesdir}/jlink-image.adoc[Custom Runtime Images with `jlink`].
+
+NOTE: When building Helidon using native-image, we check features on classpath, and warn if there is a problem or restriction of support

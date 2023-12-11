@@ -91,6 +91,7 @@ abstract class TypeHandlerMetaApiBase extends TypeHandlerBase {
                                                                                                optional,
                                                                                                type.kind(),
                                                                                                data.provider(),
+                                                                                               data.providerType(),
                                                                                                deprecated,
                                                                                                data.merge(),
                                                                                                allowedValues);

@@ -69,38 +69,8 @@
             <artifactId>helidon-http-encoding</artifactId>
         </dependency>
         <dependency>
-            <!-- @ConfigBean, @ConfigDriven -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features</artifactId>
-        </dependency>
-        <dependency>
-            <!-- Required classes for compilation -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-processor</artifactId>
-            <optional>true</optional> <!-- force reactor ordering -->
-        </dependency>
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -184,11 +154,6 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
                             <groupId>io.helidon.common.processor</groupId>
                             <artifactId>helidon-common-processor-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -204,11 +169,6 @@
                     <dependency>
                         <groupId>io.helidon.config</groupId>
                         <artifactId>helidon-config-metadata-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

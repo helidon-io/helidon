@@ -63,14 +63,21 @@ public final class Se1Main {
 
         // By default this will pick up application.yaml from the classpath
         Config config = buildConfig();
+        HealthObserver health = HealthObserver.builder()
+                .addCheck(() -> HealthCheckResponse.builder()
+                        .detail("timestamp",
+                                System.currentTimeMillis())
+                        .build())
+                .build();
+        ObserveFeature observe = ObserveFeature.just(health);
 
         // Get webserver config from the "server" section of application.yaml
         WebServer server = WebServer.builder()
                 .port(7076)
+                .addFeature(observe)
                 .addRouting(createRouting(config))
                 .addRouting(WsRouting.builder()
-                                    .endpoint("/ws/messages", WebSocketEndpoint::new)
-                                    .build())
+                                    .endpoint("/ws/messages", WebSocketEndpoint::new))
                 .build()
                 .start();
 
@@ -96,28 +103,19 @@ public final class Se1Main {
      * @param config configuration of this server
      * @return routing configured with JSON support, a health check, and a service
      */
-    private static HttpRouting createRouting(Config config) {
+    private static HttpRouting.Builder createRouting(Config config) {
 
         GreetService greetService = new GreetService(config);
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
-        HealthObserver health = HealthObserver.builder()
-                .addCheck(() -> HealthCheckResponse.builder()
-                        .detail("timestamp",
-                                System.currentTimeMillis())
-                        .build())
-                .build();
-        ObserveFeature observe = ObserveFeature.just(health);
 
         return HttpRouting.builder()
-                .addFeature(observe)
                 .register("/static/path", StaticContentService.create(Paths.get("web")))
                 .register("/static/classpath", StaticContentService.create("web"))
                 .register("/static/jar", StaticContentService.create("web-jar"))
                 .register("/greet", greetService)
                 .register("/wc", webClientService)
-                .register("/zipkin", zipkinService)
-                .build();
+                .register("/zipkin", zipkinService);
     }
 
 }

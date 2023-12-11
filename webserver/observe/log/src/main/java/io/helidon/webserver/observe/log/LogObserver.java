@@ -16,11 +16,16 @@
 
 package io.helidon.webserver.observe.log;
 
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Observer for information about loggers, and possibly to obtain log stream.
@@ -85,8 +90,22 @@ public class LogObserver implements Observer, RuntimeType.Api<LogObserverConfig>
     }
 
     @Override
-    public void register(HttpRouting.Builder routing, String endpoint) {
-        // register the service itself
-        routing.register(endpoint, new LogService(this.config));
+    public void register(ServerFeature.ServerFeatureContext featureContext,
+                         List<HttpRouting.Builder> observeEndpointRouting,
+                         UnaryOperator<String> endpointFunction) {
+        String endpoint = endpointFunction.apply(config.endpoint());
+
+        if (config.enabled()) {
+            for (HttpRouting.Builder routing : observeEndpointRouting) {
+                // register the service itself
+                routing.register(endpoint, new LogService(this.config));
+            }
+        } else {
+            for (HttpRouting.Builder builder : observeEndpointRouting) {
+                builder.any(endpoint + "/*", (req, res) -> {
+                    throw new HttpException("Log endpoint is disabled", Status.SERVICE_UNAVAILABLE_503, true);
+                });
+            }
+        }
     }
 }

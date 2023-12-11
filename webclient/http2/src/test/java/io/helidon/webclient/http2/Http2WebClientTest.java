@@ -38,6 +38,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ConnectionSelector;
@@ -91,9 +92,11 @@ class Http2WebClientTest {
             .shareConnectionCache(false)
             .baseUri("https://localhost:" + tlsPort + "/versionspecific")
             .tls(Tls.builder()
-                         .enabled(true)
-                         .trustAll(true)
-                         .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                    .trust(trust -> trust
+                            .keystore(store -> store
+                                    .passphrase("password")
+                                    .trustStore(true)
+                                    .keystore(Resource.create("client.p12"))))
                          .build())
             .build();
 
@@ -108,14 +111,47 @@ class Http2WebClientTest {
 
         Keys privateKeyConfig =
                 Keys.builder()
-                        .keystore(keystore -> keystore.keystore(Resource.create("certificate.p12"))
-                                .passphrase("helidon"))
+                        .keystore(keystore -> keystore.keystore(Resource.create("server.p12"))
+                                .passphrase("password"))
                         .build();
 
         Tls tls = Tls.builder()
                 .privateKey(privateKeyConfig.privateKey().get())
                 .privateKeyCertChain(privateKeyConfig.certChain())
                 .build();
+
+        HttpRouting.Builder router = HttpRouting.builder()
+                .get("/", (req, res) -> res.send("Hello world!"))
+                .route(Http1Route.route(GET, "/versionspecific", (req, res) -> res.send("HTTP/1.1 route")))
+                .route(Http2Route.route(GET, "/versionspecific", (req, res) -> {
+                    res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).get());
+                    res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
+                    res.send("HTTP/2 route");
+                }))
+                .route(Http2Route.route(PUT, "/versionspecific", (req, res) -> {
+                    res.header(SERVER_CUSTOM_HEADER_NAME, req.headers().get(CLIENT_CUSTOM_HEADER_NAME).get());
+                    res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).get());
+                    res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
+                    res.send("PUT " + req.content().as(String.class));
+                }))
+                .route(Http2Route.route(POST, "/versionspecific", (req, res) -> {
+                    res.header(SERVER_CUSTOM_HEADER_NAME, req.headers().get(CLIENT_CUSTOM_HEADER_NAME).get());
+                    res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).get());
+                    res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
+                    res.send("POST " + req.content().as(String.class));
+                }))
+                .route(Http2Route.route(GET, "/versionspecific/h2streaming", (req, res) -> {
+                           res.status(Status.OK_200);
+                           String execId = req.query().get("execId");
+                           try (OutputStream os = res.outputStream()) {
+                               for (int i = 0; i < 5; i++) {
+                                   os.write(String.format(execId + "BAF%03d", i).getBytes());
+                                   Thread.sleep(10);
+                               }
+                           } catch (IOException | InterruptedException e) {
+                               throw new RuntimeException(e);
+                           }
+                       }));
 
         serverBuilder
                 .port(-1)
@@ -131,39 +167,9 @@ class Http2WebClientTest {
                         .receiveBufferSize(4096)
                         .backlog(8192)
                 )
-                .routing(router -> router
-                        .get("/", (req, res) -> res.send("Hello world!"))
-                        .route(Http1Route.route(GET, "/versionspecific", (req, res) -> res.send("HTTP/1.1 route")))
-                        .route(Http2Route.route(GET, "/versionspecific", (req, res) -> {
-                            res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
-                            res.send("HTTP/2 route");
-                        }))
-                        .route(Http2Route.route(PUT, "/versionspecific", (req, res) -> {
-                            res.header(SERVER_CUSTOM_HEADER_NAME, req.headers().get(CLIENT_CUSTOM_HEADER_NAME).value());
-                            res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
-                            res.send("PUT " + req.content().as(String.class));
-                        }))
-                        .route(Http2Route.route(POST, "/versionspecific", (req, res) -> {
-                            res.header(SERVER_CUSTOM_HEADER_NAME, req.headers().get(CLIENT_CUSTOM_HEADER_NAME).value());
-                            res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
-                            res.send("POST " + req.content().as(String.class));
-                        }))
-                        .route(Http2Route.route(GET, "/versionspecific/h2streaming", (req, res) -> {
-                            res.status(Status.OK_200);
-                            String execId = req.query().get("execId");
-                            try (OutputStream os = res.outputStream()) {
-                                for (int i = 0; i < 5; i++) {
-                                    os.write(String.format(execId + "BAF%03d", i).getBytes());
-                                    Thread.sleep(10);
-                                }
-                            } catch (IOException | InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }))
-                );
+                .routing(router)
+                // we want the same routing on the other socket
+                .routing("https", router.copy());
     }
 
     static Stream<Arguments> clientTypes() {
@@ -194,9 +200,9 @@ class Http2WebClientTest {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("HTTP/2 route"));
-            assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
-            assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
+            assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).get(),
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.get()));
+            assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).get(),
                        is("test-get"));
         }
     }
@@ -215,11 +221,11 @@ class Http2WebClientTest {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("PUT " + payload));
-            assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
-            assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).value(),
+            assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).get(),
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.get()));
+            assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).get(),
                        is(custHeaderValue));
-            assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
+            assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).get(),
                        is("test-put"));
         }
     }
@@ -238,11 +244,11 @@ class Http2WebClientTest {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("POST " + payload));
-            assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
-            assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).value(),
+            assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).get(),
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.get()));
+            assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).get(),
                        is(custHeaderValue));
-            assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
+            assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).get(),
                        is("test-post"));
         }
     }

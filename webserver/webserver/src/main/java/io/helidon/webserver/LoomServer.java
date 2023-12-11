@@ -19,11 +19,9 @@ package io.helidon.webserver;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Timer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -41,25 +39,16 @@ import java.util.logging.Logger;
 
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
-import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Startable;
-import io.helidon.inject.configdriven.api.ConfigDriven;
 import io.helidon.webserver.http.DirectHandlers;
-import io.helidon.webserver.http.HttpFeature;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.spi.ServerFeature;
 
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
-
-@ConfigDriven(value = WebServerConfigBlueprint.class, activateByDefault = true)
-class LoomServer implements WebServer, Startable {
+class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
@@ -86,36 +75,19 @@ class LoomServer implements WebServer, Startable {
         this.executorService = Executors.newVirtualThreadPerTaskExecutor();
 
         Map<String, ListenerConfig> sockets = new HashMap<>(serverConfig.sockets());
-        if (sockets.containsKey(DEFAULT_SOCKET_NAME)) {
-            throw new ConfigException("Configuration of default socket MUST be done on server config directly, not as a separate"
-                                              + " socket with " + DEFAULT_SOCKET_NAME + " name.");
-        }
         sockets.put(DEFAULT_SOCKET_NAME, serverConfig);
 
-        // for each socket name, use the default router by default, override if customized in builder
-        Optional<HttpRouting> routing = serverConfig.routing();
-        List<Routing> routings = serverConfig.routings();
-
-        Router.Builder routerBuilder = Router.builder();
-        routings.forEach(routerBuilder::addRouting);
-        routing.ifPresent(routerBuilder::addRouting);
-        if (routing.isEmpty() && routings.isEmpty()) {
-            routerBuilder.addRouting(HttpRouting.create());
+        // features ordered by weight
+        List<ServerFeature> features = serverConfig.features();
+        ServerFeatureContextImpl featureContext = ServerFeatureContextImpl.create(serverConfig);
+        for (ServerFeature feature : features) {
+            feature.setup(featureContext);
         }
-        Router router = routerBuilder.build();
 
         Timer idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
         Map<String, ServerListener> listenerMap = new HashMap<>();
         sockets.forEach((name, socketConfig) -> {
-            List<Routing> socketRoutings = serverConfig.namedRoutings().get(name);
-            Router socketRouter;
-            if (socketRoutings != null) {
-                socketRouter = Router.builder()
-                        .update(b -> socketRoutings.forEach(b::addRouting))
-                        .build();
-            } else {
-                socketRouter = router;
-            }
+            Router socketRouter = featureContext.router(name);
             listenerMap.put(name,
                             new ServerListener(name,
                                                socketConfig,
@@ -130,20 +102,9 @@ class LoomServer implements WebServer, Startable {
         listeners = Map.copyOf(listenerMap);
     }
 
-    // based on Injection services
-    @Inject
-    LoomServer(WebServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
-        this(addFeatures(serverConfig, features));
-    }
-
     @Override
     public WebServerConfig prototype() {
         return serverConfig;
-    }
-
-    @Override
-    public void startService() {
-        start();
     }
 
     @Override
@@ -173,7 +134,6 @@ class LoomServer implements WebServer, Startable {
     }
 
     @Override
-    @PreDestroy
     public WebServer stop() {
         try {
             lifecycleLock.lockInterruptibly();
@@ -227,55 +187,6 @@ class LoomServer implements WebServer, Startable {
         return context;
     }
 
-    private static WebServerConfig addFeatures(WebServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
-        WebServerConfig.Builder newBuilder = WebServerConfig.builder(serverConfig);
-
-        List<HttpFeature> defaultSocket = new ArrayList<>();
-        Map<String, List<HttpFeature>> customSockets = new LinkedHashMap<>();
-        Map<String, List<HttpFeature>> missingSockets = new LinkedHashMap<>();
-
-        for (ServiceProvider<HttpFeature> featureProvider : features) {
-            HttpFeature feature = featureProvider.get();
-            String socket = feature.socket();
-            if (DEFAULT_SOCKET_NAME.equals(socket)) {
-                defaultSocket.add(feature);
-            } else {
-                if (serverConfig.sockets().containsKey(socket)) {
-                    customSockets.computeIfAbsent(socket, it -> new ArrayList<>())
-                            .add(feature);
-                } else {
-                    if (feature.socketRequired()) {
-                        missingSockets.computeIfAbsent(socket, it -> new ArrayList<>())
-                                .add(feature);
-                    } else {
-                        defaultSocket.add(feature);
-                    }
-                }
-            }
-        }
-
-        if (!missingSockets.isEmpty()) {
-            throw new IllegalArgumentException("Server is configured with the following sockets: "
-                                                       + serverConfig.sockets().keySet()
-                                                       + ", yet there are services that require other sockets. Map of socket "
-                                                       + "names to features: "
-                                                       + missingSockets);
-        }
-        newBuilder.routing(routing -> {
-           defaultSocket.forEach(routing::addFeature);
-        });
-        customSockets.forEach((socketName, featureList) -> {
-            // we have validated the socket names exist, so we are fine to just use it
-            ListenerConfig.Builder newSocketBuilder = ListenerConfig.builder(newBuilder.sockets().get(socketName));
-            newSocketBuilder.routing(routing -> {
-                featureList.forEach(routing::addFeature);
-            });
-            newBuilder.putSocket(socketName, newSocketBuilder.build());
-        });
-
-        return newBuilder.buildPrototype();
-    }
-
     private void stopIt() {
         // We may be in a shutdown hook and new threads may not be created
         for (ServerListener listener : listeners.values()) {
@@ -299,6 +210,7 @@ class LoomServer implements WebServer, Startable {
             if (startFutures != null) {
                 startFutures.forEach(future -> future.future().cancel(true));
             }
+            running.set(false);
             return;
         }
         if (registerShutdownHook) {

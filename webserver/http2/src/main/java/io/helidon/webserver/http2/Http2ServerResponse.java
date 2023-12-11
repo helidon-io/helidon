@@ -62,6 +62,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public Http2ServerResponse header(Header header) {
+        if (streamingEntity) {
+            throw new IllegalStateException("Cannot set response header after requesting output stream.");
+        }
+        if (isSent()) {
+            throw new IllegalStateException("Cannot set response header after response was already sent.");
+        }
         headers.set(header);
         return this;
     }

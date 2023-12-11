@@ -35,9 +35,6 @@
         </templates>
         <model>
             <value key="readme-description">Sample Helidon MP project that includes multiple REST operations.</value>
-            <list key="readme-exercise-the-application">
-                <value file="files/README.md"/>
-            </list>
             <list key="MainTest-java-imports">
                 <value>jakarta.ws.rs.client.Entity</value>
                 <value>jakarta.ws.rs.core.MediaType</value>
@@ -96,7 +93,7 @@
                     <value key="artifactId">helidon-microprofile-openapi</value>
                 </map>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.microprofile.openapi</value>
             </list>
         </model>

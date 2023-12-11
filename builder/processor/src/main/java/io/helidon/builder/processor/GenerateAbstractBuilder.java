@@ -36,6 +36,7 @@ import io.helidon.common.processor.classmodel.Javadoc;
 import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.processor.classmodel.TypeArgument;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
@@ -138,7 +139,7 @@ final class GenerateAbstractBuilder {
 
         Method.Builder builder = Method.builder()
                 .name("build")
-                .addAnnotation(Annotation.create(Override.class))
+                .addAnnotation(Annotations.OVERRIDE)
                 .returnType(builtObject)
                 .add("return ");
         if (hasRuntimeObject) {
@@ -161,7 +162,7 @@ final class GenerateAbstractBuilder {
         if (!isBuilder) {
             classBuilder.addMethod(method -> method.name("get")
                     .returnType(builtObject)
-                    .addAnnotation(Annotation.create(Override.class))
+                    .addAnnotation(Annotations.OVERRIDE)
                     .addLine("return build();"));
         }
     }
@@ -243,7 +244,8 @@ final class GenerateAbstractBuilder {
                 }
                 // now we have a method called config with wrong return type - this is not supported
                 throw new IllegalArgumentException("Configured property named \"config\" can only be of type "
-                                                           + CONFIG_TYPE.fqName() + ", but is: " + child.typeName().fqName());
+                                                           + CONFIG_TYPE.declaredName() + ", but is: "
+                                                           + child.typeName().declaredName());
             }
             /*
             String host() {
@@ -254,9 +256,17 @@ final class GenerateAbstractBuilder {
                     .name(getterName)
                     .returnType(child.builderGetterType())
                     .addLine("return " + child.builderGetter() + ";");
-            if (child.configuredOption().javadoc() != null) {
-                method.description(child.configuredOption().javadoc().content())
-                        .returnType(child.builderGetterType(), "the " + toHumanReadable(child.name()));
+
+            for (io.helidon.common.types.Annotation annotation : child.configuredOption().annotations()) {
+                method.addAnnotation(annotation);
+            }
+
+            Javadoc javadoc = child.configuredOption().javadoc();
+
+            if (javadoc != null) {
+                method.javadoc(Javadoc.builder(javadoc)
+                                       .returnDescription("the " + toHumanReadable(child.name()))
+                                       .build());
             }
             classBuilder.addMethod(method);
         }
@@ -305,7 +315,7 @@ final class GenerateAbstractBuilder {
                 .addParameter(param -> param.name("config")
                         .type(CONFIG_TYPE)
                         .description("configuration instance used to obtain values to update this builder"))
-                .addAnnotation(Annotation.create(Override.class))
+                .addAnnotation(Annotations.OVERRIDE)
                 .typeName(Objects.class)
                 .addLine(".requireNonNull(config);")
                 .addLine("this.config = config;");
@@ -491,7 +501,8 @@ final class GenerateAbstractBuilder {
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
                                     .add(property.name())
-                                    .add("DiscoverServices")
+                                    .add("DiscoverServices, ")
+                                    .add(property.name())
                                     .addLine("));");
                         } else {
                             preBuildBuilder.add("discoverService(config, \"")
@@ -499,10 +510,12 @@ final class GenerateAbstractBuilder {
                                     .add("\", serviceLoader, ")
                                     .typeName(providerType)
                                     .add(".class, ")
-                                    .typeName(property.typeHandler().actualType())
+                                    .typeName(property.typeHandler().actualType().genericTypeName())
                                     .add(".class, ")
                                     .add(property.name())
-                                    .add("DiscoverServices).ifPresent(this::")
+                                    .add("DiscoverServices, @java.util.Optional@.ofNullable(")
+                                    .add(property.name())
+                                    .add(")).ifPresent(this::")
                                     .add(property.setterName())
                                     .addLine(");");
                         }
@@ -672,7 +685,7 @@ final class GenerateAbstractBuilder {
                     method.addAnnotation(Annotation.parse(annotation));
                 }
                 if (!customMethod.generatedMethod().annotations().contains(OVERRIDE)) {
-                    method.addAnnotation(Annotation.create(Override.class));
+                    method.addAnnotation(Annotations.OVERRIDE);
                 }
                 generated.arguments()
                         .forEach(argument -> method.addParameter(param -> param.name(argument.name()).type(argument.typeName())));
@@ -721,7 +734,7 @@ final class GenerateAbstractBuilder {
         Method.Builder method = Method.builder()
                 .name("equals")
                 .returnType(TypeName.create(boolean.class))
-                .addAnnotation(Annotation.create(Override.class))
+                .addAnnotation(Annotations.OVERRIDE)
                 .addParameter(param -> param.name("o")
                         .type(Object.class))
                 // same instance
@@ -766,7 +779,7 @@ final class GenerateAbstractBuilder {
         Method.Builder method = Method.builder()
                 .name("hashCode")
                 .returnType(TypeName.create(int.class))
-                .addAnnotation(Annotation.create(Override.class));
+                .addAnnotation(Annotations.OVERRIDE);
         if (equalityFields.isEmpty()) {
             // no fields on this type
             if (hasSuper) {
@@ -814,7 +827,7 @@ final class GenerateAbstractBuilder {
         Method.Builder method = Method.builder()
                 .name("toString")
                 .returnType(TypeName.create(String.class))
-                .addAnnotation(Annotation.create(Override.class))
+                .addAnnotation(Annotations.OVERRIDE)
                 .add("return \"" + typeName);
 
         List<PrototypeProperty> toStringFields = typeContext.propertyData()
@@ -872,7 +885,7 @@ final class GenerateAbstractBuilder {
 
             classBuilder.addMethod(method -> method.name(getterName)
                     .returnType(child.typeHandler().declaredType())
-                    .addAnnotation(Annotation.create(Override.class))
+                    .addAnnotation(Annotations.OVERRIDE)
                     .addLine("return " + fieldName + ";"));
         }
     }

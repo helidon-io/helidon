@@ -68,8 +68,8 @@
         </dependency>
 <!--
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
         </dependency>
 -->
 <!--
@@ -97,8 +97,8 @@
             <artifactId>helidon-webserver-observe</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-tracing</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -108,6 +108,14 @@
             <groupId>io.helidon.examples.dbclient</groupId>
             <artifactId>helidon-examples-dbclient-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver.observe</groupId>

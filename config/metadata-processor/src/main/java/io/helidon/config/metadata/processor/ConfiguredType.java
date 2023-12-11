@@ -156,6 +156,7 @@ final class ConfiguredType {
         }
         if (property.provider) {
             optionBuilder.add("provider", true);
+            optionBuilder.add("providerType", property.providerType.fqName());
         }
         if (property.deprecated()) {
             optionBuilder.add("deprecated", true);
@@ -231,6 +232,7 @@ final class ConfiguredType {
         private final boolean optional;
         private final String kind;
         private final boolean provider;
+        private final TypeName providerType;
         private final boolean deprecated;
         private final boolean merge;
         private final List<ConfiguredOptionData.AllowedValue> allowedValues;
@@ -246,6 +248,7 @@ final class ConfiguredType {
                            boolean optional,
                            String kind,
                            boolean provider,
+                           TypeName providerType,
                            boolean deprecated,
                            boolean merge,
                            List<ConfiguredOptionData.AllowedValue> allowedValues) {
@@ -258,6 +261,7 @@ final class ConfiguredType {
             this.optional = optional;
             this.kind = kind;
             this.provider = provider;
+            this.providerType = providerType == null ? type : providerType;
             this.deprecated = deprecated;
             this.merge = merge;
             this.allowedValues = allowedValues;

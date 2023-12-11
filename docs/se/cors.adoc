@@ -109,41 +109,28 @@ the `CorsSupport` API to influence the xref:{rootdir}/se/webserver.adoc#routing[
 thereby determining how that resource is shared. (If desired, you can use <<Configuration, configuration>> instead
 of the low-level API.)
 
-The following code shows how to prepare your application's routing to support metrics and health support, as well as
-CORS.
+The following code shows one way to prepare your application's routing to support CORS.
 
 [[intro-quick-start-code-example]]
 [source,java]
 ----
-private static Routing createRouting(Config config) {
-    MetricsSupport metrics = MetricsSupport.create();
-    GreetService greetService = new GreetService(config);
-    HealthSupport health = HealthSupport.builder()
-            .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
-            .build();
+static void routing(HttpRouting.Builder routing) {
     CorsSupport corsSupport = CorsSupport.builder()  // <1>
-            .addCrossOriginConfig(CrossOriginConfig.builder() // <2>
+            .addCrossOrigin(CrossOriginConfig.builder() // <2>
                         .allowOrigins("http://foo.com", "http://there.com") // <3>
                         .allowMethods("PUT", "DELETE") // <4>
                         .build()) // <5>
-            .addCrossOriginConfig(CrossOriginConfig.create()) // <6>
+            .addCrossOrigin(CrossOriginConfig.create()) // <6>
             .build(); // <7>
-
-    // Note: Add the CORS routing *before* registering the GreetService routing.
-    return Routing.builder()
-            .register(JsonSupport.create())
-            .register(health)                   // Health at "/health"
-            .register(metrics)                 // Metrics at "/metrics"
-            .register("/greet", corsSupport, greetService) // <8>
-            .build();
+    routing.register("/greet", corsSupport, new GreetService()); // <8>
 }
 ----
 <1> Create a `CorsSupport.Builder` instance.
-<2> Add a `CrossOriginSupport` instance (using _its_ builder) to constrain resource sharing.
+<2> Add a `CrossOriginConfig` instance (using _its_ builder) to constrain resource sharing.
 <3> List the origins (sites) allowed to share resources from this app.
 <4> List the HTTP methods the constraint applies to.
-<5> Build the `CrossOriginSupport` instance.
-<6> Add a `CrossOriginSupport` instance that permits all sharing (the default).
+<5> Build the `CrossOriginConfig` instance.
+<6> Add a `CrossOriginConfig` instance that permits all sharing (the default).
 <7> Build the `CorsSupport` instance.
 <8> Register the new `CorsSupport` instance with -- but in front of -- the service which implements the business logic.
 
@@ -152,7 +139,7 @@ scans the `CrossOriginConfig` instances in the order they were added to the `Cor
 it finds a `CrossOriginConfig` instance for which `allowMethods` matches the HTTP method of the
 request.
 
-The few additional lines described above allow the greeting application to participate in CORS.
+By adding the few additional lines described above you allow the greeting application to participate in CORS.
 
 == Configuration
 
@@ -196,30 +183,22 @@ As an alternative to using the low-level API, this example uses config to create
 
 [source,java]
 ----
-private static Routing createRouting(Config config) {
+static void routing(HttpRouting.Builder routing) {
 
-    MetricsSupport metrics = MetricsSupport.create();
-    GreetService greetService = new GreetService(config);
-    HealthSupport health = HealthSupport.builder()
-            .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
-            .build();
     CorsSupport.Builder builder = CorsSupport.builder();
 
-    Config config = Config.create(); // Created from the current config sources
+    Config config = Config.global();
     config.get("my-cors") // <1>
             .ifExists(builder::mappedConfig);
     config.get("restrictive-cors") // <2>
             .ifExists(builder::config);
-    builder.addCrossOriginConfig(CrossOriginConfig.create()); // <3>
+    builder.addCrossOrigin(CrossOriginConfig.create()); // <3>
 
     CorsSupport corsSupport = builder.build(); // <4>
 
     // Note: Add the CORS routing *before* registering the GreetService routing.
     return Routing.builder()
-            .register(JsonSupport.create())
-            .register(health)                   // Health at "/health"
-            .register(metrics)                 // Metrics at "/metrics"
-            .register("/greet", corsSupport, greetService) // <5>
+            .register("/greet", corsSupport, new GreetService()) // <5>
             .build();
 }
 ----

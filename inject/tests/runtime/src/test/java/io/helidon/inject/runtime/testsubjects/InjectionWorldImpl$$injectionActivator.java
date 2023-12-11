@@ -18,18 +18,18 @@ package io.helidon.inject.runtime.testsubjects;
 
 import java.util.Map;
 
+import io.helidon.common.Generated;
 import io.helidon.common.Weight;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.ServiceInfo;
 import io.helidon.inject.runtime.AbstractServiceProvider;
 import io.helidon.inject.runtime.Dependencies;
 
-import jakarta.annotation.Generated;
 import jakarta.inject.Singleton;
 
 import static io.helidon.inject.api.ServiceInfoBasics.DEFAULT_INJECT_WEIGHT;
 
-@Generated(value = "example", comments = "API Version: n")
+@Generated(value = "example", comments = "API Version: n", trigger = "io.helidon.inject.runtime.testsubjects.InjectionWorldImpl")
 @Singleton
 @Weight(DEFAULT_INJECT_WEIGHT)
 public class InjectionWorldImpl$$injectionActivator extends AbstractServiceProvider<InjectionWorldImpl> {

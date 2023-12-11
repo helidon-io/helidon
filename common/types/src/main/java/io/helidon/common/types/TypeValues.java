@@ -18,7 +18,11 @@ package io.helidon.common.types;
 
 /**
  * Constants to be used with {@link io.helidon.common.types.TypeInfo} and {@link io.helidon.common.types.TypedElementInfo}.
+ *
+ * @deprecated use {@link io.helidon.common.types.ElementKind}, {@link io.helidon.common.types.Modifier} and
+ *              {@link io.helidon.common.types.AccessModifier} instead, and appropriate methods that return these types
  */
+@Deprecated(forRemoval = true)
 public final class TypeValues {
     /**
      * The {@code public} modifier.

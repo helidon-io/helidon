@@ -130,7 +130,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         // either use the explicit connection, or obtain one (keep alive or one-off)
-        effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
+        effectiveConnection = connection == null ? obtainConnection(serviceRequest, timeout) : connection;
         effectiveConnection.readTimeout(this.timeout);
 
         DataWriter writer = effectiveConnection.writer();
@@ -157,7 +157,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             // When CONNECT, the first line contains the remote host:port, in the same way as the HOST header.
             nonEntityData.writeAscii(request.method().text()
                     + " "
-                    + request.headers().get(HeaderNames.HOST).value()
+                    + request.headers().get(HeaderNames.HOST).get()
                     + " HTTP/1.1\r\n");
         } else {
             // When proxy is set, ensure that the request uses absolute URI because of Section 5.1.2 Request-URI in
@@ -287,9 +287,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return true;
     }
 
-    private ClientConnection obtainConnection(WebClientServiceRequest request) {
+    private ClientConnection obtainConnection(WebClientServiceRequest request, Duration requestReadTimeout) {
         return http1Client.connectionCache()
                 .connection(http1Client,
+                            requestReadTimeout,
                             tls,
                             proxy,
                             request.uri(),
@@ -526,7 +527,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             BufferData chunk = reader.readBuffer(length);
 
             if (LOGGER.isLoggable(TRACE)) {
-                helidonSocket.log(LOGGER, TRACE, "client read chunk %s", chunk.debugDataHex(true));
+                helidonSocket.log(LOGGER, TRACE, "client read chunk\n%s", chunk.debugDataHex(true));
             }
 
             reader.skip(2); // trailing CRLF after each chunk

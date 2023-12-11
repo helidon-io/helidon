@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.is;
 @HelidonTest
 @AddConfig(key = "metrics.scoping.tag-enabled", value = "true")
 @AddConfig(key = "metrics.scoping.tag-name", value = "mp-config")
+@AddConfig(key = "metrics.permit-all", value = "true")
 class TestBasicPerformanceIndicators {
 
     @Inject

@@ -32,9 +32,10 @@ import io.helidon.tracing.providers.opentracing.OpenTracing;
 import io.helidon.tracing.providers.zipkin.ZipkinTracer;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.tracing.TracingObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.tracing.TracingFeature;
 
 import brave.Tracing;
 import brave.opentracing.BraveSpanContext;
@@ -84,12 +85,14 @@ class OpenTraceableClientE2ETest {
     OpenTraceableClientE2ETest(WebServer server) {
         this.server = server;
     }
-
     @SetUpServer
     static void setup(WebServerConfig.Builder serverBuilder) {
-        serverBuilder.routing(routing -> routing
-                .any((req, res) -> res.send("OK"))
-                .addFeature(TracingFeature.create(tracer("test-server"))));
+        serverBuilder
+                .addFeature(ObserveFeature.builder()
+                                    .addObserver(TracingObserver.create(tracer("test-server")))
+                                    .build())
+                .routing(routing -> routing
+                .any((req, res) -> res.send("OK")));
         client = ClientBuilder.newClient(new ClientConfig(ClientTracingFilter.class));
     }
 

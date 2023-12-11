@@ -45,9 +45,6 @@ The API was implemented as a layer above JDBC or MongoDB Java Driver, so any rel
 with JDBC driver or MongoDB are supported.
 * *Observability*:
 Support for health checks, metrics and tracing.
-* *Backpressure*:
-Performs database operations only when it is requested by the consumer.
-This is propagated all the way to the TCP layer.
 * *Portability between relational database drivers*:
 Works with native database statements that can be used inline in the code or defined as named statements
 in database configuration. By moving the native query code to configuration files, the Helidon DB Client allows you to
@@ -106,7 +103,7 @@ docker build -f Dockerfile.h2 . -t h2db
 [source,bash]
 .Run the H2 docker image
 ----
-docker run --rm -p 8082:8082 -p 9092:9092 --name=h2 h2db
+docker run --rm -p 8082:8082 -p 9092:9092 --name=h2 -it h2db
 ----
 
 ==== From the Command Line
@@ -123,26 +120,18 @@ If H2 is not installed on your machine, here are few steps to quickly download a
 
  3. Open a terminal window and run the following command to start H2:.
 
-[source,bash]
-..Replace `\{latest-version}` with your current H2 version:
+[source, bash]
+.Replace `\{latest-version}` with your current H2 version:
+----
+java -cp h2-{latest-version}.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql "" # <1>
+java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers -web -tcp # <2>
+----
+<1> Pre-create the database (optional if the file `~/test` already exists)
+<2> Start the database
 
-----
-java -jar h2-\{latest-version}.jar -webAllowOthers -tcpAllowOthers
-----
-
-
-[source,bash]
-.Terminal output
-----
-Web Console server running at http://127.0.1.1:8082 (others can connect)
-Opening in existing browser session.
-TCP server running at tcp://127.0.1.1:9092 (others can connect)
-PG server running at pg://127.0.1.1:5435 (only local connections)
-----
 === Connect to the Database
 
-
-Open the console at http://127.0.1.1:8082 in your favorite browser. It displays a login window.
+Open the console at http://127.0.0.1:8082 in your favorite browser. It displays a login window.
 Select `Generic H2` from `Saved Settings`. The following settings should be set by default:
 
 * Driver Class: org.h2.Driver
@@ -185,44 +174,58 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
 .Copy these dependencies to pom.xml:
 ----
 <dependencies>
+    <!-- ... -->
     <dependency>
-        <groupId>io.helidon.dbclient</groupId>       <!--1-->
-        <artifactId>helidon-dbclient</artifactId>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient</artifactId> <!--1-->
     </dependency>
     <dependency>
-        <groupId>io.helidon.dbclient</groupId>      <!--2-->
-        <artifactId>helidon-dbclient-jdbc</artifactId>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-jdbc</artifactId> <!--2-->
     </dependency>
     <dependency>
-        <groupId>io.helidon.integrations.db</groupId>   <!--3-->
-        <artifactId>h2</artifactId>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-hikari</artifactId> <!--3-->
     </dependency>
     <dependency>
-        <groupId>io.helidon.dbclient</groupId>      <!--4-->
-        <artifactId>helidon-dbclient-health</artifactId>
+        <groupId>io.helidon.integrations.db</groupId>
+        <artifactId>h2</artifactId> <!--4-->
     </dependency>
     <dependency>
-        <groupId>io.helidon.dbclient</groupId>      <!--5-->
-        <artifactId>helidon-dbclient-metrics</artifactId>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-jdk14</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.helidon.dbclient</groupId>      <!--6-->
-        <artifactId>helidon-dbclient-jsonp</artifactId>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-health</artifactId> <!--5-->
     </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-metrics</artifactId> <!--6-->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-metrics-hikari</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-jsonp</artifactId> <!--7-->
+    </dependency>
+    <!-- ... -->
 </dependencies>
 ----
 <1> DB Client API dependency.
 <2> Using JDBC driver for this example.
-<3> H2 driver dependency.
-<4> Support for health check.
-<5> Support for metrics.
-<6> Support for Jsonp.
+<3> Using HikariCP as a connection pool.
+<4> H2 driver dependency.
+<5> Support for health check.
+<6> Support for metrics.
+<7> Support for Jsonp.
 
 === Configure the DB Client
 
-To configure the application, Helidon uses the `application.yaml`. The DB Client configuration can be joined in the same file and is located here: `src/main/resources`.
-
-
+To configure the application, Helidon uses the `application.yaml`. The DB Client configuration can be joined in the same
+file and is located here: `src/main/resources`.
 
 [source,yaml]
 .Copy these properties into application.yaml
@@ -234,98 +237,73 @@ db:
     username: "sa"
     password:
   statements:   # <3>
+    health-check: "SELECT 0"
     create-table: "CREATE TABLE IF NOT EXISTS LIBRARY (NAME VARCHAR NOT NULL, INFO VARCHAR NOT NULL)"
     insert-book: "INSERT INTO LIBRARY (NAME, INFO) VALUES (:name, :info)"
     select-book: "SELECT INFO FROM LIBRARY WHERE NAME = ?"
     delete-book: "DELETE FROM LIBRARY WHERE NAME = ?"
+  health-check:
+    type: "query"
+    statementName: "health-check"
+  services:
+    metrics:
+      - type: COUNTER # <4>
+        statement-names: [ "select-book" ]
 ----
 <1> Source property support two values: jdbc and mongo.
 <2> Connection detail we used to set up H2.
 <3> SQL statements to manage the database.
+<4> Add a counter for metrics only for the `select-book` statement.
 
-===  Build and Set Up Helidon DB Client
+[source,yaml]
+.Copy these properties into application-test.yaml
+----
+db:
+  connection:
+    url: "jdbc:h2:mem:test" # <1>
+----
+<1> Override the JDBC URL to use an in-memory database for the tests
 
-In the application `Main.class`, an instance of DbClient is created based on the configuration from
-application.yaml.
+=== Set Up Helidon DB Client
 
 [source,java]
-.Create a DbClient in the Main.startServer method:
+.Update the `main` method in `Main.java`
 ----
-import io.helidon.dbclient.metrics.DbClientMetrics; // <1>
-import io.helidon.dbclient.DbClient;
+public static void main(String[] args) {
 
-Config config = Config.create(); // Landmark to add DB client
+    // load logging configuration
+    LogConfig.configureRuntime();
 
-DbClient dbClient = DbClient.builder()
-                .config(config.get("db"))       // <2>
-                .addService(DbClientMetrics.counter().statementNames("select-book"))   // <3>
-                .build();
-----
-<1> Add import statements
-<2> Configure the DB Client with the "db" section of application.yaml.
-<3> Add a counter for metrics.
+    // initialize global config from default configuration
+    Config config = Config.create();
+    Config.global(config);
 
-The DB Client metric counter will be executed only for the  `select-book` statement and it will check how many times it was invoked.
-At this point, the database is empty, and needs to be initialized. To achieve that, the DB Client can be used
-to create a table in the database.
+    DbClient dbClient = DbClient.create(config.get("db")); // <1>
+    Contexts.globalContext().register(dbClient); // <2>
 
-[source,java]
-.Insert a createTable method below the dbClient:
-----
-DbClient dbClient = DbClient.builder()
-                .config(config.get("db"))
-                .addService(DbClientMetrics.counter().statementNames("select-book"))
-                .build();
-
-createTable(dbClient);
-----
-
-[source,java]
-.Use the DbClient to build a table:
-----
-private static void createTable(DbClient dbClient) {
-    dbClient.execute(exec -> exec.namedDml("create-table"))     // <1>
-            .await();
-}
-----
-<1> Use the "create-table" script to build a table with book name and information.
-
-The `createTable` is invoked only once and creates an empty table with two columns: name and info. The script is used to boostrap
-the server, so the `await` method is called in this particular case because the table must be created before the server
-starts. A new service can manage requests to interact with this table which represents our library. The services are
- are
-registered in the `createRouting` method.
-
-[source,java]
-.Modify the createRouting method:
-----
-import io.helidon.dbclient.health.DbClientHealthCheck;
-
-WebServer server = WebServer.builder(createRouting(config, dbClient))   // <1>
-                .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-
-private static Routing createRouting(Config config, DbClient dbClient) {
-    HealthSupport health = HealthSupport.builder()
-            .addLiveness(DbClientHealthCheck.create(dbClient))  // <2>
+    ObserveFeature observe = ObserveFeature.builder() // <3>
+            .config(config.get("server.features.observe"))
+            .addObserver(HealthObserver.builder()
+                                 .useSystemServices(false)
+                                 .details(true)
+                                 .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
+                                 .build())
             .build();
 
-    return Routing.builder()
-            .register(health)                   // Health at "/health"
-            .register(MetricsSupport.create())                  // Metrics at "/metrics"
-            .register("/greet", new GreetService(config))
-            .register("/library", new LibraryService(dbClient))  // <3>
-            .build();
+    WebServer server = WebServer.builder()
+            .config(config.get("server"))
+            .addFeature(observe) // <4>
+            .routing(Main::routing)
+            .build()
+            .start();
+
+    System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
 }
 ----
-<1> Add dbClient as a parameter of createRouting method.
-<2> Add Health check to control the application behavior.
-<3> Register the LibraryService to the Routing.
-
-The library service does not yet exist, but you'll create it in the next step of the guide. It has a constructor with the DB Client as a parameter because it will manage the library. The DB Client health check uses the `select-book` statement
-from the configuration. As shown above, to create a DB Client health check, call the `DbClientHealthCheck.create` method
-and pass the concerned DbClient. Then add it to the health support builder and register it to the routing.
+<1> Create the DbClient instance
+<2> Register it in the global context
+<3> Create an instance of ObserveFeature to register a DbClientHealthCheck
+<4> Register the ObserveFeature on the server
 
 === Create the Library service
 
@@ -336,27 +314,36 @@ Create LibraryService class into `io.helidon.examples.quickstart.se` package.
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.http.Http;     // <1>
+import io.helidon.common.context.Contexts; // <1>
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
-import io.helidon.webserver.HttpRules;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.http.NotFoundException;
+import io.helidon.http.Status;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+
+import jakarta.json.JsonObject;
 
 public class LibraryService implements HttpService {
 
     private final DbClient dbClient;    // <2>
 
-    LibraryService(DbClient pDbClient){
-        this.dbClient = pDbClient;      // <3>
+    LibraryService() {
+        this.dbClient = Contexts.globalContext()
+                .get(DbClient.class)
+                .orElseGet(() -> DbClient.create(Config.global().get("db"))); // <3>
+        dbClient.execute().namedDml("create-table"); // <4>
     }
 }
 ----
 <1> Add new import statement
-<2> Declare the Helidon DB Client
-<3> A DB Client instance is provided when LibraryService is instantiated.
+<2> Declare the DB Client instance
+<3> Initialize the DB Client instance using global config
+<4> Initialize the database schema
 
-As the LibraryService implements `io.helidon.webserver.Service`, the `update(Routing)` method has to be implemented.
+As the LibraryService implements `io.helidon.webserver.HttpService`, the `routing(HttpRules)` method has to be implemented.
 It defines application endpoints and Http request which can be reached by clients.
 
 [source,java]
@@ -385,32 +372,23 @@ name. The architecture of the application is defined, so the next step is to cre
 .Add getBook to the LibraryService:
 ----
 private void getBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-    String bookName = serverRequest.path().param("name");   // <1>
-
-    dbClient.execute(exec -> exec.namedGet("select-book", bookName))    // <2>
-            .thenAccept(row -> {
-                if (row.isPresent()) {
-                    serverResponse.send(row.get().column("INFO").as(String.class)); // <3>
-                } else {
-                    serverResponse.status(Http.Status.NOT_FOUND_404)    // <4>
-                            .send();
-                }
-            })
-            .exceptionally(serverResponse::send);   // <5>
+    String bookName = serverRequest.path().pathParameters().get("name");   // <1>
+    String bookInfo = dbClient.execute().namedGet("select-book", bookName)   // <2>
+            .map(row -> row.column("INFO").asString().get())
+            .orElseThrow(() -> new NotFoundException("Book not found: " + bookName)); // <3>
+    serverResponse.send(bookInfo); // <4>
 }
 ----
 <1> Get the book name from the path in the URL.
 <2> Helidon DB Client executes the `select-book` SQL script from application.yaml.
-<3> Sends book information to the client.
-<4> Sends 404 HTTP status if no book was found for the given name.
-<5> If an exception occurred during the process, it is sent to the client.
-
+<3> Sends 404 HTTP status if no book was found for the given name.
+<4> Sends book information to the client.
 
 The `getBook` method reach the book from the database and send the information to the client. The name of the book is
-located into the url path. If the book is not present in the database, a HTTP 404 is sent back.
-The `execute(Function<DbExecute, T> executor)` method is called on the dbClient instance to execute one statement.
-Nevertheless, it is possible to execute a set of tasks into a single execution unit by using
- `inTransaction (Function<DbTransaction, T> executor)` method.
+located into the url path. If the book is not present in the database, an HTTP 404 is sent back.
+The `execute()` method is called on the dbClient instance to execute one statement.
+Nevertheless, it is possible to execute a set of tasks into a single execution unit by using the
+ `transaction()` method.
 
 DbExecute class provides many builders to create statements such as, DML, insert, update, delete, query and get
 statements. For each statement there are two builders which can be regrouped in 2 categories. Builders with methods
@@ -423,18 +401,12 @@ Client xref:../dbclient.adoc[here].
 .Add getJsonBook to the LibraryService:
 ----
 private void getJsonBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-    String bookName = serverRequest.path().param("name");
+    String bookName = serverRequest.path().pathParameters().get("name");
 
-    dbClient.execute(exec -> exec.namedGet("select-book", bookName))
-            .thenAccept(row -> {
-                if (row.isPresent()) {
-                    serverResponse.send(row.get().as(JsonObject.class));
-                } else {
-                    serverResponse.status(Http.Status.NOT_FOUND_404)
-                            .send();
-                }
-            })
-            .exceptionally(serverResponse::send);
+    JsonObject bookJson = dbClient.execute().namedGet("select-book", bookName)
+            .map(row -> row.as(JsonObject.class))
+            .orElseThrow(() -> new NotFoundException("Book not found: " + bookName));
+    serverResponse.send(bookJson);
 }
 ----
 
@@ -445,18 +417,14 @@ database as a `JsonObject`.
 .Add addBook to the LibraryService:
 ----
 private void addBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-    String bookName = serverRequest.path().param("name");
+    String bookName = serverRequest.path().pathParameters().get("name");
 
-    serverRequest.content()
-            .as(String.class)
-            .thenAccept(newValue -> {
-                dbClient.execute(exec -> exec.createNamedInsert("insert-book")
-                        .addParam("name", bookName)     // <1>
-                        .addParam("info", newValue)
-                        .execute())
-                        .thenAccept(count -> serverResponse.status(Http.Status.CREATED_201).send())     // <2>
-                        .exceptionally(serverResponse::send);
-            });
+    String newValue = serverRequest.content().as(String.class);
+    dbClient.execute().createNamedInsert("insert-book")
+            .addParam("name", bookName)     // <1>
+            .addParam("info", newValue)
+            .execute();
+    serverResponse.status(Status.CREATED_201).send(); // <2>
 }
 ----
 <1> The SQL statement requires the book name and its information. They are provided with `addParam` method.
@@ -465,17 +433,16 @@ private void addBook(ServerRequest serverRequest, ServerResponse serverResponse)
 When a user adds a new book, it uses HTTP PUT method where the book name is in the URL and the information in the
 request content. To catch this content, the information is retrieved as a string and then the DB Client execute the
 `insert-book` script to add the book to the library. It requires two parameters, the book name and information which are
-passed to the dbClient thanks to `addParam` method. A HTTP 201 is sent back as a confirmation if no exception is thrown.
+passed to the dbClient thanks to `addParam` method. A HTTP 201 is sent back as a confirmation.
 
 [source,java]
 .Add deleteBook to LibraryService:
 ----
 private void deleteBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-    String bookName = serverRequest.path().param("name");
+    String bookName = serverRequest.path().pathParameters().get("name");
 
-    dbClient.execute(exec ->  exec.namedDelete("delete-book", bookName))     // <1>
-                        .thenAccept(count -> serverResponse.status(Http.Status.NO_CONTENT_204).send())   // <2>
-                        .exceptionally(serverResponse::send);
+    dbClient.execute().namedDelete("delete-book", bookName);     // <1>
+    serverResponse.status(Status.NO_CONTENT_204).send();    // <2>
 }
 ----
 <1> Execute SQL script from application.yaml to remove a book from the library by its name.
@@ -483,6 +450,23 @@ private void deleteBook(ServerRequest serverRequest, ServerResponse serverRespon
 
 To remove a book from the library, use the "delete-book" script in the way than previously. If the book is removed
 successfully, a HTTP 204 is sent back.
+
+=== Set Up Routing
+
+[source,java]
+.Modify the `routing` method in `Main.java`:
+----
+static void routing(HttpRouting.Builder routing) {
+        routing
+                .register("/greet", new GreetService())
+                .register("/library", new LibraryService()) // <1>
+                .get("/simple-greet", (req, res) -> res.send("Hello World!"));
+}
+----
+<1> Register the LibraryService to the Routing.
+
+The library service does not yet exist, but you'll create it in the next step of the guide.
+
 
 == Build and Run the Library Application
 
@@ -625,16 +609,20 @@ The book is not found. We quickly checked, thanks to this suite of command, the 
 [source,bash]
 .Check the health of your application:
 ----
-curl http://localhost:8080/health
+curl http://localhost:8080/observe/health
 ----
 
 [source,json]
 .Response body
 ----
 {
-  "state" : "UP",
-  "status" : "UP",
-  "name" : "jdbc:h2"
+  "status": "UP",
+  "checks": [
+    {
+      "name": "jdbc:h2",
+      "status": "UP"
+    }
+  ]
 }
 ----
 
@@ -643,7 +631,7 @@ It confirms that the database is UP.
 [source,bash]
 .Check the metrics of your application:
 ----
-curl -H "Accept: application/json" http://localhost:8080/metrics/application
+curl -H "Accept: application/json" http://localhost:8080/observe/metrics/application
 ----
 
 [source,json]
@@ -659,4 +647,4 @@ The select-book statement was invoked four times.
 === Summary
 
 This guide provided an introduction to the Helidon DB Client's key features. If you want to learn more, see the
-Helidon DB Client samples in https://medium.com/helidon/helidon-db-client-e12bbdc85b7.
+Helidon DB Client samples in link:{helidon-github-tree-url}/examples/dbclient[GitHub].

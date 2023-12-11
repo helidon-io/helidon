@@ -79,6 +79,7 @@ If full control over the dependencies is required, and you want to minimize the 
 To enable built-in health checks add the following dependency
 (or use the xref:introduction/microprofile.adoc[helidon-microprofile bundle] )
 
+//tag::built-in-health-checks-depc[]
 [source,xml]
 ----
 <dependency>
@@ -86,7 +87,7 @@ To enable built-in health checks add the following dependency
     <artifactId>helidon-health-checks</artifactId>
 </dependency>
 ----
-
+//end::built-in-health-checks-depc[]
 
 == Usage
 
@@ -152,9 +153,9 @@ Health checks may be configured using the following properties.
 
 The class responsible for configuration is:
 
-include::{rootdir}/config/io_helidon_webserver_observe_health_HealthFeature.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_webserver_observe_health_HealthObserver.adoc[leveloffset=+1,tag=config]
 
-Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `health` prefix.
+Properties may be set in `application.yaml` or in `microprofile-config.properties`, in both cases using the `health` prefix.
 
 For example, you can specify a custom port and root context for the root health endpoint path.
 However, you cannot use different ports, such as http://localhost:8080/myhealth and http://localhost:8081/myhealth/live.
@@ -163,18 +164,18 @@ The example below will change the root path.
 [source,properties]
 .Create a file named `microprofile-config.properties` in the `resources/META-INF` directory with the following contents:
 ----
-health.web-context=myhealth  #<1>
+health.endpoint=/myhealth  #<1>
 ----
-<1> The web-context specifies a new root path for the health endpoint.
+<1> The `endpoint` setting specifies the root path for the health endpoint.
 
 == Examples
 
-Generate Helidon MP Quickstart project following these xref:guides/quickstart.adoc[Instruction]
+Generate Helidon MP Quickstart project following these xref:guides/quickstart.adoc[instructions].
 
 === Using the Built-In Health Checks
 
-Helidon has a set of built-in health checks that are enabled to report various
-health check statuses that are commonly used:
+Helidon has a set of built-in health checks that can report various
+conditions:
 
 * deadlock detection
 * available disk space
@@ -182,6 +183,10 @@ health check statuses that are commonly used:
 
 The following example will demonstrate how to use the built-in health checks.  These examples are all executed
 from the root directory of your project (helidon-quickstart-mp).
+
+[source,xml]
+.Include the built-in health checks dependency in your `pom.xml`:
+include::{rootdir}/mp/health.adoc[tag=built-in-health-checks-depc]
 
 [source,bash]
 .Build the application, then run it:
@@ -281,9 +286,6 @@ curl http://localhost:8080/health/live
   ]
 }
 ----
-
-Full example code is available link:{helidon-github-tree-url}/examples/microprofile[here].
-
 
 === Custom Readiness Health Checks
 

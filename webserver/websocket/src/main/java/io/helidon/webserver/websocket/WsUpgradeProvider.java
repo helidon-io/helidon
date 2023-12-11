@@ -25,7 +25,7 @@ import io.helidon.webserver.http1.spi.Http1Upgrader;
  */
 public class WsUpgradeProvider implements Http1UpgradeProvider<WsConfig> {
     /**
-     * HTTP/2 server connection provider configuration node name.
+     * WebSocket server connection provider configuration node name.
      */
     protected static final String CONFIG_NAME = "websocket";
 

@@ -1,0 +1,83 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.webserver.observe.metrics.MetricsObserver
+:keywords: helidon, config, io.helidon.webserver.observe.metrics.MetricsObserver
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.observe.metrics.MetricsObserver
+include::{rootdir}/includes/attributes.adoc[]
+
+= MetricsObserver (webserver.observe.metrics) Configuration
+
+// tag::config[]
+
+
+Type: link:{javadoc-base-url}/io.helidon.webserver.observe.metrics/io/helidon/webserver/observe/metrics/MetricsObserver.html[io.helidon.webserver.observe.metrics.MetricsObserver]
+
+
+This is a standalone configuration type, prefix from configuration root: `metrics`
+
+
+This type provides the following service implementations:
+
+- `io.helidon.webserver.observe.spi.ObserveProvider`
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`app-name` |string |{nbsp} |Value for the application tag to be added to each meter ID.
+
+ @return application tag value
+|`app-tag-name` |string |{nbsp} |Name for the application tag to be added to each meter ID.
+
+ @return application tag name
+|`enabled` |boolean |`true` |Whether metrics functionality is enabled.
+
+ @return if metrics are configured to be enabled
+|`endpoint` |string |`metrics` |
+|`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.adoc[KeyPerformanceIndicatorMetricsConfig] |{nbsp} |Key performance indicator metrics settings.
+
+ @return key performance indicator metrics settings
+|`permit-all` |boolean |{nbsp} |Whether to allow anybody to access the endpoint.
+
+ @return whether to permit access to metrics endpoint to anybody, defaults to `true`
+ @see #roles()
+|`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
+
+ @return true/false
+|`roles` |string[&#93; |{nbsp} |Hints for role names the user is expected to be in.
+
+ @return list of hints
+|`scoping` |xref:{rootdir}/config/io_helidon_metrics_api_ScopingConfig.adoc[ScopingConfig] |{nbsp} |Settings related to scoping management.
+
+ @return scoping settings
+|`tags` |xref:{rootdir}/config/io_helidon_metrics_api_Tag.adoc[Tag[&#93;] |{nbsp} |Global tags.
+
+ @return name/value pairs for global tags
+
+|===
+
+// end::config[]

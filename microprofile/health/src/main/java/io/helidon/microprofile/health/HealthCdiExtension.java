@@ -58,7 +58,7 @@ public class HealthCdiExtension extends HelidonRestCdiExtension {
      * Creates a new instance of the health CDI extension.
      */
     public HealthCdiExtension() {
-        super(LOGGER, "observe.providers.health", "health");
+        super(LOGGER, nestedConfigKey("health"), "health");
     }
 
     /**

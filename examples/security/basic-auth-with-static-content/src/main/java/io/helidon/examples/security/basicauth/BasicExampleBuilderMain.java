@@ -31,7 +31,6 @@ import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
@@ -95,10 +94,14 @@ public final class BasicExampleBuilderMain {
     }
 
     static void setup(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
+        server.featuresDiscoverServices(false)
+                // only add security feature (as we do not use configuration, only features listed here will be available)
+                .addFeature(SecurityFeature.builder()
+                                    .security(buildSecurity())
+                                    .defaults(SecurityFeature.authenticate())
+                                    .build())
+                .routing(routing -> routing
                 // must be configured first, to protect endpoints
-                .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
                 .any("/static[/{*}]", SecurityFeature.rolesAllowed("user"))
                 .register("/static", StaticContentService.create("/WEB"))
                 .get("/noRoles", SecurityFeature.enforce())
@@ -119,15 +122,14 @@ public final class BasicExampleBuilderMain {
                 }));
     }
 
-    private static SecurityFeature buildWebSecurity() {
-        Security security = Security.builder()
+    private static Security buildSecurity() {
+        return Security.builder()
                 .addAuthenticationProvider(
                         HttpBasicAuthProvider.builder()
                                 .realm("helidon")
                                 .userStore(buildUserStore()),
                         "http-basic-auth")
                 .build();
-        return SecurityFeature.create(security);
     }
 
     private static SecureUserStore buildUserStore() {

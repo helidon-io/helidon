@@ -14,8 +14,13 @@
 # limitations under the License.
 #
 
-webserver:
+server:
   port: 0
+  features:
+    security:
+      paths:
+        - path: "/api/{+}"
+          authenticate: true
 
 security:
   providers:
@@ -24,7 +29,3 @@ security:
         users:
           - login: "john"
             password: "password"
-  web-server:
-    paths:
-      - path: "/api/{+}"
-        authenticate: true

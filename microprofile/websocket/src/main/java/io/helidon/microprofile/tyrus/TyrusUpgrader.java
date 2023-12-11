@@ -25,6 +25,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Weight;
@@ -60,17 +62,10 @@ import org.glassfish.tyrus.spi.WebSocketEngine;
 public class TyrusUpgrader extends WsUpgrader {
     private static final System.Logger LOGGER = System.getLogger(TyrusUpgrader.class.getName());
 
-    // there is a single instance of an upgrader used by all connections, do not store request related information in a field
-    private final TyrusRouting tyrusRouting;
-    private final WebSocketEngine engine;
+    private final EngineHolder engine = new EngineHolder();
 
     private TyrusUpgrader(WsConfig origins) {
         super(origins);
-        TyrusCdiExtension extension = CDI.current().select(TyrusCdiExtension.class).get();
-        Objects.requireNonNull(extension);
-        this.tyrusRouting = extension.tyrusRouting();
-        TyrusServerContainer tyrusServerContainer = initializeTyrus();
-        this.engine = tyrusServerContainer.getWebSocketEngine();
     }
 
     /**
@@ -83,13 +78,12 @@ public class TyrusUpgrader extends WsUpgrader {
         return new TyrusUpgrader(config);
     }
 
-
     @Override
     public ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers) {
         // Check required header
         String wsKey;
         if (headers.contains(WS_KEY)) {
-            wsKey = headers.get(WS_KEY).value();
+            wsKey = headers.get(WS_KEY).get();
         } else {
             // this header is required
             return null;
@@ -98,7 +92,7 @@ public class TyrusUpgrader extends WsUpgrader {
         // Verify protocol version
         String version;
         if (headers.contains(WS_VERSION)) {
-            version = headers.get(WS_VERSION).value();
+            version = headers.get(WS_VERSION).get();
         } else {
             version = SUPPORTED_VERSION;
         }
@@ -115,9 +109,12 @@ public class TyrusUpgrader extends WsUpgrader {
         UriQuery query = prologue.query();
 
         // Check if this a Tyrus route exists
-        TyrusRoute route = ctx.router()
-                .routing(TyrusRouting.class, tyrusRouting)
-                .findRoute(prologue);
+        TyrusRouting routing = ctx.router()
+                .routing(TyrusRouting.class, null);
+        if (routing == null) {
+            return null;
+        }
+        TyrusRoute route = routing.findRoute(prologue);
         if (route == null) {
             return null;
         }
@@ -125,7 +122,7 @@ public class TyrusUpgrader extends WsUpgrader {
         // Validate origin
         if (!anyOrigin()) {
             if (headers.contains(HeaderNames.ORIGIN)) {
-                String origin = headers.get(HeaderNames.ORIGIN).value();
+                String origin = headers.get(HeaderNames.ORIGIN).get();
                 if (!origins().contains(origin)) {
                     throw RequestException.builder()
                             .message("Invalid Origin")
@@ -136,7 +133,7 @@ public class TyrusUpgrader extends WsUpgrader {
         }
 
         // Protocol handshake with Tyrus
-        WebSocketEngine.UpgradeInfo upgradeInfo = protocolHandshake(headers, query, path);
+        WebSocketEngine.UpgradeInfo upgradeInfo = protocolHandshake(routing, headers, query, path);
 
         // todo support subprotocols (must be provided by route)
         // Sec-WebSocket-Protocol: sub-protocol (list provided in PROTOCOL header, separated by comma space
@@ -155,59 +152,10 @@ public class TyrusUpgrader extends WsUpgrader {
         return super.origins();
     }
 
-    TyrusServerContainer initializeTyrus() {
-        Set<Class<?>> allEndpointClasses = tyrusRouting.routes()
-                .stream()
-                .map(TyrusRoute::endpointClass)
-                .collect(Collectors.toSet());
-
-        TyrusServerContainer tyrusServerContainer = new TyrusServerContainer(allEndpointClasses) {
-            private final WebSocketEngine engine =
-                    TyrusWebSocketEngine.builder(this).build();
-
-            @Override
-            public void register(Class<?> endpointClass) {
-                throw new UnsupportedOperationException("Cannot register endpoint class");
-            }
-
-            @Override
-            public void register(ServerEndpointConfig serverEndpointConfig) {
-                throw new UnsupportedOperationException("Cannot register ServerEndpointConfig");
-            }
-
-            @Override
-            public Set<Extension> getInstalledExtensions() {
-                return tyrusRouting.extensions();
-            }
-
-            @Override
-            public WebSocketEngine getWebSocketEngine() {
-                return engine;
-            }
-        };
-
-        // Register classes with context path "/"
-        WebSocketEngine engine = tyrusServerContainer.getWebSocketEngine();
-        tyrusRouting.routes().forEach(route -> {
-            try {
-                if (route.serverEndpointConfig() != null) {
-                    LOGGER.log(Level.DEBUG, () -> "Registering ws endpoint "
-                            + route.path()
-                            + route.serverEndpointConfig().getPath());
-                    engine.register(route.serverEndpointConfig(), route.path());
-                } else {
-                    LOGGER.log(Level.DEBUG, () -> "Registering annotated ws endpoint " + route.path());
-                    engine.register(route.endpointClass(), route.path());
-                }
-            } catch (DeploymentException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        return tyrusServerContainer;
-    }
-
-    WebSocketEngine.UpgradeInfo protocolHandshake(WritableHeaders<?> headers, UriQuery uriQuery, String path) {
+    WebSocketEngine.UpgradeInfo protocolHandshake(TyrusRouting routing,
+                                                  WritableHeaders<?> headers,
+                                                  UriQuery uriQuery,
+                                                  String path) {
         LOGGER.log(Level.DEBUG, "Initiating WebSocket handshake with Tyrus...");
 
         // Create Tyrus request context, copy request headers and query params
@@ -225,7 +173,7 @@ public class TyrusUpgrader extends WsUpgrader {
 
         // Use Tyrus to process a WebSocket upgrade request
         final TyrusUpgradeResponse upgradeResponse = new TyrusUpgradeResponse();
-        final WebSocketEngine.UpgradeInfo upgradeInfo = engine.upgrade(requestContext, upgradeResponse);
+        final WebSocketEngine.UpgradeInfo upgradeInfo = engine.get(routing).upgrade(requestContext, upgradeResponse);
 
         // Map Tyrus response headers back to Helidon
         upgradeResponse.getHeaders()
@@ -236,4 +184,94 @@ public class TyrusUpgrader extends WsUpgrader {
         return upgradeInfo;
     }
 
+    // to initialize Tyrus only once
+    private static final class EngineHolder {
+        private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+
+        private volatile WebSocketEngine engine;
+
+        WebSocketEngine get(TyrusRouting routing) {
+
+            try {
+                rwLock.readLock().lock();
+                if (engine != null) {
+                    return engine;
+                }
+            } finally {
+                rwLock.readLock().unlock();
+            }
+
+            // was not there
+            try {
+                rwLock.writeLock().lock();
+                if (engine != null) {
+                    // competing thread managed to obtain the write lock before us and initailized it
+                    return engine;
+                }
+                engine = createTyrusEngine(routing);
+                return engine;
+            } finally {
+                rwLock.writeLock().unlock();
+            }
+        }
+
+        private WebSocketEngine createTyrusEngine(TyrusRouting routing) {
+            TyrusCdiExtension extension = CDI.current().select(TyrusCdiExtension.class).get();
+            Objects.requireNonNull(extension);
+            TyrusServerContainer tyrusServerContainer = initializeTyrus(routing);
+            return tyrusServerContainer.getWebSocketEngine();
+        }
+
+        private TyrusServerContainer initializeTyrus(TyrusRouting tyrusRouting) {
+            Set<Class<?>> allEndpointClasses = tyrusRouting.routes()
+                    .stream()
+                    .map(TyrusRoute::endpointClass)
+                    .collect(Collectors.toSet());
+
+            TyrusServerContainer tyrusServerContainer = new TyrusServerContainer(allEndpointClasses) {
+                private final WebSocketEngine engine =
+                        TyrusWebSocketEngine.builder(this).build();
+
+                @Override
+                public void register(Class<?> endpointClass) {
+                    throw new UnsupportedOperationException("Cannot register endpoint class");
+                }
+
+                @Override
+                public void register(ServerEndpointConfig serverEndpointConfig) {
+                    throw new UnsupportedOperationException("Cannot register ServerEndpointConfig");
+                }
+
+                @Override
+                public Set<Extension> getInstalledExtensions() {
+                    return tyrusRouting.extensions();
+                }
+
+                @Override
+                public WebSocketEngine getWebSocketEngine() {
+                    return engine;
+                }
+            };
+
+            // Register classes with context path "/"
+            WebSocketEngine engine = tyrusServerContainer.getWebSocketEngine();
+            tyrusRouting.routes().forEach(route -> {
+                try {
+                    if (route.serverEndpointConfig() != null) {
+                        LOGGER.log(Level.DEBUG, () -> "Registering ws endpoint "
+                                + route.path()
+                                + route.serverEndpointConfig().getPath());
+                        engine.register(route.serverEndpointConfig(), route.path());
+                    } else {
+                        LOGGER.log(Level.DEBUG, () -> "Registering annotated ws endpoint " + route.path());
+                        engine.register(route.endpointClass(), route.path());
+                    }
+                } catch (DeploymentException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            return tyrusServerContainer;
+        }
+    }
 }

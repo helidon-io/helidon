@@ -454,6 +454,22 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Write raw proxy protocol header before a request.
+     *
+     * @param header header to write
+     */
+    public void writeProxyHeader(byte[] header) {
+        try {
+            if (socket == null) {
+                connect();
+            }
+            socket.getOutputStream().write(header);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
      * Disconnect from server socket.
      */
     public void disconnect() {

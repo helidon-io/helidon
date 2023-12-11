@@ -29,9 +29,11 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,23 +58,33 @@ class OpenApiFeatureTest {
         this.client = client;
     }
 
-    @SetUpRoute
-    static void setup(HttpRouting.Builder routing) {
-        routing.addFeature(OpenApiFeature.builder()
-                                   .servicesDiscoverServices(false)
-                                   .staticFile("src/test/resources/greeting.yml")
-                                   .webContext("/openapi-greeting")
-                                   .cors(cors -> cors.enabled(false)))
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        server.addFeature(OpenApiFeature.builder()
+                                  .servicesDiscoverServices(false)
+                                  .staticFile("src/test/resources/greeting.yml")
+                                  .webContext("/openapi-greeting")
+                                  .cors(cors -> cors.enabled(false))
+                                  .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
                                     .staticFile("src/test/resources/time-server.yml")
                                     .webContext("/openapi-time")
-                                    .cors(cors -> cors.allowOrigins("http://foo.bar", "http://bar.foo")))
+                                    .name("openapi-time")
+                                    .cors(cors -> cors.allowOrigins("http://foo.bar", "http://bar.foo"))
+                                    .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
                                     .staticFile("src/test/resources/petstore.yaml")
                                     .webContext("/openapi-petstore")
-                                    .cors(cors -> cors.enabled(false)));
+                                    .name("openapi-petstore")
+                                    .cors(cors -> cors.enabled(false))
+                                    .build());
+
+    }
+
+    @SetUpRoute
+    static void setup(HttpRouting.Builder routing) {
     }
 
     @Test

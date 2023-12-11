@@ -97,8 +97,7 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         @Override
         protected Builder secondaryLookupSupplier(
                 Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
-            super.secondaryLookupSupplier(secondaryLookupSupplier);
-            return this;
+            return super.secondaryLookupSupplier(secondaryLookupSupplier);
         }
     }
 

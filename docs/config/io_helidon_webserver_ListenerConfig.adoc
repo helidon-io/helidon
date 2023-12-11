@@ -45,6 +45,9 @@ Type: link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/Listener
 |`backlog` |int |`1024` |Accept backlog.
 
  @return backlog
+|`connection-config` |xref:{rootdir}/config/io_helidon_webserver_ConnectionConfig.adoc[ConnectionConfig] |{nbsp} |Configuration of a connection (established from client against our server).
+
+ @return connection configuration
 |`connection-options` |xref:{rootdir}/config/io_helidon_common_socket_SocketOptions.adoc[SocketOptions] |{nbsp} |Options for connections accepted by this listener.
  This is not used to setup server connection.
 
@@ -107,13 +110,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/Listener
  If configured to `0` (the default), server starts on a random port.
 
  @return port to listen on (for the default socket)
-|`protocols` |io.helidon.webserver.spi.ProtocolConfig[&#93; (service provider interface)
-
-Such as:
-
- - xref:{rootdir}/config/io_helidon_webserver_http1_Http1Config.adoc[Http1Config]
-
- |{nbsp} |Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
+|`protocols` |io.helidon.webserver.spi.ProtocolConfig[&#93; (service provider interface) |{nbsp} |Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
  As the order is not important (providers are ordered by weight by default), we can use a configuration as an object,
  such as:
  <pre>

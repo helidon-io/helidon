@@ -141,7 +141,7 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
                            Router.RouterBuilder<?> routerBuilder,
                            HttpRouting.Builder value) {
 
-            routerBuilder.addRouting(value.build());
+            routerBuilder.addRouting(value);
         }
     }
 

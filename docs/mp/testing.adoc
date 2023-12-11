@@ -115,32 +115,89 @@ In addition to this simplification, the following annotations are supported:
 
 |Used `@io.helidon.microprofile.testing.junit5.DisableDiscovery`
 |to disable automated discovery of beans and extensions
+
+|Used `@io.helidon.microprofile.testing.junit5.DisableDiscovery`
+|to disable automated discovery of beans and extensions
+
+|Used `@io.helidon.microprofile.testing.junit5.AddJaxRs`
+a|add JaxRs support to the test class. Only used with `@DisableDiscovery` annotation, otherwise an exception will be thrown. Automatically adds the following Beans and Extensions to the test class:
+
+* `ServerCdiExtension`
+* `JaxRsCdiExtension`
+* `CdiComponentProvider`
+* `org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes`
+* `org.glassfish.jersey.weld.se.WeldRequestScope`
 |===
 
 == Examples
 
-In current example Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
+In the current example, Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
 
 [source,java]
 .Code sample
 ----
-@HelidonTest
-@DisableDiscovery
-@AddBean(MyBean.class)
-@AddExtension(ConfigCdiExtension.class)
-@AddConfig(key = "app.greeting", value = "TestHello")
+@HelidonTest    <1>
+@DisableDiscovery   <2>
+@AddBean(MyBean.class)  <3>
+@AddExtension(ConfigCdiExtension.class) <4>
+@AddConfig(key = "app.greeting", value = "TestHello")   <5>
 class TestExample {
     @Inject
-    private MyBean myBean;
+    private MyBean myBean;  <6>
 
     @Test
-    void testGreeting() {
+    void testGreeting() {   <7>
         assertThat(myBean, notNullValue());
         assertThat(myBean.greeting(), is("TestHello"));
     }
 }
 ----
+<1> Start the Helidon container.
+<2> Set disabled Bean Discovery for the current test class.
+<3> Add `MyBean` to current context.
+<4> Add a configuration CDI extension to the current test.
+<5> Add configuration properties.
+<6> Inject `MyBean` as it is available in the CDI context.
+<7> Run rests.
 
+To test `@RequestScoped` bean with JaxRs support:
+
+[source,java]
+.Test `RequestScoped` bean
+----
+
+@HelidonTest    <1>
+@DisableDiscovery <2>
+
+@AddJaxRs <3>
+@AddBean(TestReqScopeDisabledDiscovery.MyController.class)
+public class TestReqScopeDisabledDiscovery {
+
+    @Inject
+    private WebTarget target;
+
+    @Test
+    void testGet() {
+        assertEquals("Hallo!", target
+                .path("/greeting")
+                .request()
+                .get(String.class));
+    }
+
+    @Path("/greeting")
+    @RequestScoped  <4>
+    public static class MyController {
+        @GET
+        public Response get() {
+            return Response.ok("Hallo!").build();
+        }
+    }
+}
+----
+<1> Start the Helidon container.
+<2> Set disabled Bean discovery.
+<3> Add JaxRs support to the current test class.
+<4> Define a `RequestScoped` bean.
 
 == Additional Information
 

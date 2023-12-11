@@ -57,8 +57,8 @@ public class DirectWebClient implements WebClient {
      *
      * @param routing routing to use
      */
-    public DirectWebClient(HttpRouting routing) {
-        this.routing = routing;
+    public DirectWebClient(HttpRouting.Builder routing) {
+        this.routing = routing.build();
         this.webClient = WebClient.builder()
                 .baseUri("http://helidon-unit:65000")
                 .build();
@@ -96,6 +96,11 @@ public class DirectWebClient implements WebClient {
         HelidonSocket socket = DirectSocket.create(clientPeer, localPeer, isTls);
         return webClient.method(method)
                 .connection(new DirectClientConnection(socket, router));
+    }
+
+    @Override
+    public void closeResource() {
+        // Nothing to close in connection-less client
     }
 
     @Override

@@ -18,7 +18,6 @@ package io.helidon.webserver.http;
 
 import java.util.function.Supplier;
 
-import io.helidon.inject.api.Contract;
 import io.helidon.webserver.ServerLifecycle;
 import io.helidon.webserver.WebServer;
 
@@ -34,7 +33,6 @@ import io.helidon.webserver.WebServer;
  * {@link io.helidon.common.Weighted} to order features according to their weight. Higher weighted features are registered first.
  * This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
  */
-@Contract
 public interface HttpFeature extends Supplier<HttpFeature>, ServerLifecycle {
     @Override
     default HttpFeature get() {

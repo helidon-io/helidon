@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Generated;
 import io.helidon.common.Weight;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
@@ -33,7 +34,6 @@ import io.helidon.inject.api.ServiceInfo;
 import io.helidon.inject.runtime.AbstractServiceProvider;
 import io.helidon.inject.runtime.Dependencies;
 
-import jakarta.annotation.Generated;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
@@ -42,7 +42,7 @@ import static io.helidon.inject.api.ServiceInfoBasics.DEFAULT_INJECT_WEIGHT;
 /**
  * Serves as an exemplar of what will is normally code generated.
  */
-@Generated(value = "example", comments = "API Version: N")
+@Generated(value = "example", comments = "API Version: N", trigger = "io.helidon.inject.runtime.testsubjects.HelloInjectionImpl")
 @Singleton
 @Weight(DEFAULT_INJECT_WEIGHT)
 @SuppressWarnings({"unchecked", "checkstyle:TypeName"})

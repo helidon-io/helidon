@@ -29,7 +29,6 @@
     </parent>
     <groupId>io.helidon.examples.translator</groupId>
     <artifactId>helidon-examples-translator-backend</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
     <name>Helidon Examples Translator Backend</name>
 
     <description>
@@ -54,8 +53,8 @@
             <artifactId>helidon-tracing-providers-zipkin</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-tracing</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-tracing</artifactId>
         </dependency>
     </dependencies>
 

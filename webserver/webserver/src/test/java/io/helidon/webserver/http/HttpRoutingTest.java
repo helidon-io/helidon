@@ -177,5 +177,10 @@ class HttpRoutingTest {
             this.handler = handler;
             return route(HttpRoute.builder().methods(method).handler(handler));
         }
+
+        @Override
+        public HttpRouting.Builder copy() {
+            return this;
+        }
     }
 }

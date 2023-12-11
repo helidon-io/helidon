@@ -24,7 +24,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-Helidon SE is Helidon's foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking.
+Helidon SE is Helidon's foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking. 
 
 == Components
 
@@ -34,13 +34,6 @@ Helidon SE supports a number of additional Helidon features:
 
 [PILLARS]
 ====
-//aot
-[CARD]
-.Ahead-of-Time Compilation (AOT)
-[icon=save,link=aot.adoc]
---
-Use GraalVM native image to compile Helidon applications into a native executable.
---
 //config
 [CARD]
 .Config
@@ -62,7 +55,7 @@ Add support for CORS to your application using a Helidon module.
 .DB Client
 [icon=storage,link=dbclient.adoc]
 --
-Unified API for working with databases.
+Provides a unified, reactive API for working with databases in non-blocking way.
 --
 //GraphQL
 [CARD]
@@ -134,7 +127,7 @@ Profile and monitor your applications across multiple services.
 .WebClient
 [icon=http,link=webclient.adoc]
 --
-A programmatic API to make HTTP requests.
+HTTP client that handles responses to the HTTP requests.
 --
 
 //WebServer
@@ -142,7 +135,7 @@ A programmatic API to make HTTP requests.
 .WebServer
 [icon=settings_ethernet,link=webserver.adoc]
 --
-A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests.
+A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests. 
 // Each request runs in its own dedicated thread so it is free to perform blocking operations in a simple synchronous way without blocking a platform thread or starving other requests.
 
 --
@@ -158,31 +151,32 @@ Enables Java applications to participate in WebSocket interactions as both serve
 
 
 
-== Migration
+== Upgrade
 
-Use the Helidon migration guides to upgrade your current version of Helidon.
+In case you need to upgrade the version of Helidon, follow the upgrade guides:
 
 [PILLARS]
 ====
 [CARD]
-.Helidon SE 4x Migration Guide
-[icon=upgrade,link=guides/migration_3x.adoc]
+.Helidon SE 4x Upgrade Guide
+[icon=upgrade,link=guides/upgrade_4x.adoc]
 --
-Follow this guide to migrate your application from Helidon 3x to 4x.
---
-[CARD]
-.Helidon SE 3x Migration Guide
-[icon=upgrade,link=guides/migration_3x.adoc]
---
-Follow this guide to migrate your application from Helidon 2x to 3x.
+Follow this guide to migrate your application from Helidon 3.x to 4.x.
 --
 
 [CARD]
-.Helidon SE 2x Migration Guide
-[icon=upgrade,link=guides/migration.adoc]
+.Helidon SE 3x Upgrade Guide
+[icon=upgrade,link=guides/upgrade_3x.adoc]
 --
-Follow this guide to migrate your application from Helidon 1x to 2x.
+Follow this guide to migrate your application from Helidon 2.x to 3.x.
 --
+[CARD]
+.Helidon SE 2.x Upgrade Guide
+[icon=upgrade,link=guides/upgrade.adoc]
+--
+Follow this guide to migrate your application from Helidon 1.x to 2.x.
+--
+
 
 
 

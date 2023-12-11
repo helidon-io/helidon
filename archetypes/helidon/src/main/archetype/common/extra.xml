@@ -38,7 +38,7 @@
                                     <value key="artifactId">helidon-webclient</value>
                                 </map>
                             </list>
-                            <list key="modules">
+                            <list key="module-requires">
                                 <value>io.helidon.webclient</value>
                             </list>
                             <list key="Abstract-tests">
@@ -97,12 +97,8 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                     <value key="groupId">io.helidon.microprofile</value>
                                     <value key="artifactId">helidon-microprofile-fault-tolerance</value>
                                 </map>
-                                <map>
-                                    <value key="groupId">io.helidon.microprofile.metrics</value>
-                                    <value key="artifactId">helidon-microprofile-metrics</value>
-                                </map>
                             </list>
-                            <list key="modules">
+                            <list key="module-requires">
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.faulttolerance</value>
                             </list>
                             <list key="maven-plugins" if="${flavor} == 'mp'">
@@ -151,7 +147,7 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                 <value>jakarta.ws.rs.core.Response</value>
                                 <value>jakarta.ws.rs.HttpMethod</value>
                             </list>
-                            <list key="modules">
+                            <list key="module-requires">
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.cors</value>
                                 <value if="${flavor} == 'se'">io.helidon.webserver.cors</value>
                                 <value if="${flavor} == 'se'">io.helidon.cors</value>
@@ -278,13 +274,13 @@ restrictive-cors:
 ]]></value>
                             </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(config), new GreetService())
+                                <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(), new GreetService())
 ]]></value>
                             </list>
                             <list key="main-class-content" if="${flavor} == 'se'">
                                 <value><![CDATA[
-    private static CorsSupport corsSupportForGreeting(Config config) {
-        Config restrictiveConfig = config.get("restrictive-cors");
+    private static CorsSupport corsSupportForGreeting() {
+        Config restrictiveConfig = Config.global().get("restrictive-cors");
         if (!restrictiveConfig.exists()) {
             Logger.getLogger(Main.class.getName())
                     .warning("Missing restrictive config; continuing with default CORS support");
@@ -292,7 +288,7 @@ restrictive-cors:
 
         CorsSupport.Builder corsBuilder = CorsSupport.builder();
 
-        config.get("cors")
+        Config.global().get("cors")
                 .ifExists(c -> {
                     Logger.getLogger(Main.class.getName()).info("Using the override configuration");
                     corsBuilder.mappedConfig(c);
@@ -317,9 +313,7 @@ restrictive-cors:
                                 <value>io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN</value>
                                 <value>io.helidon.http.HeaderNames.HOST</value>
                                 <value>io.helidon.http.HeaderNames.ORIGIN</value>
-                            </list>
-                            <list key="MainTest-static-imports">
-                                <value if="${flavor} == 'se'">org.hamcrest.CoreMatchers.containsString</value>
+                                <value>org.hamcrest.CoreMatchers.containsString</value>
                             </list>
                             <list key="Abstract-tests" if="${flavor} == 'se'">
                                 <value><![CDATA[

@@ -36,11 +36,11 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
-Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
+Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
-which helps you identify performance and operational issues.  Helidon SE includes support for distributed tracing
-through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer, gRPC Server,
-and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
+which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either
+through the https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API], or by
+https://opentracing.io[OpenTracing API].
 
 === Tracing Concepts
 
@@ -52,15 +52,14 @@ A span is associated to a single service, but its descendants can belong to diff
 A _trace_ contains a collection of spans from one or more services, running on one or more hosts. For example,
 if you trace a service endpoint that calls another service, then the trace would contain spans from both services.
 Within a trace, spans are organized as a directed acyclic graph (DAG) and
-can belong to multiple services, running on multiple hosts.  The _OpenTracing Data Model_ describes the details
-at https://opentracing.io/specification[The OpenTracing Semantic Specification].
+can belong to multiple services, running on multiple hosts.
 Spans are automatically created by Helidon as needed during execution of the REST request.
 
 == Getting Started with Tracing
 
 The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace
-across multiple services, and how to integrate with tracing with Kubernetes.  All examples use Zipkin and traces
-will be viewed using both the Zipkin API and UI.
+across multiple services, and how to integrate with tracing with Kubernetes. All examples use Jaeger and traces
+will be viewed using the Jaeger UI.
 
 === Create a Sample Helidon SE Project
 
@@ -84,109 +83,117 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-se
 ----
 
-=== Set up Zipkin
+=== Set up Jaeger
 
-First, you need to run the Zipkin tracer.  Helidon will communicate with this tracer at runtime.
-
-[source,bash]
-.Run Zipkin within a docker container, then check the Zipkin server health:
-----
-docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin  // <1>
-----
-<1> Run the Zipkin docker image named `openzipkin/zipkin`.
-
+First, you need to run the Jaeger tracer.  Helidon will communicate with this tracer at runtime.
 
 [source,bash]
-.Check the Zipkin server health:
+.Run Jaeger within a docker container, then check the Jaeger server working:
 ----
-curl http://localhost:9411/health // <1>
-----
-<1> Invoke the Zipkin REST API to check the Zipkin server health.
+docker run -d --name jaeger \                  <1>
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -p 14250:14250 \
+  -p 14268:14268 \
+  -p 14269:14269 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.50
 
-[source, json]
 ----
-{
-  "status": "UP", // <1>
-  "zipkin": {
-    "status": "UP",
-    "details": {
-      "InMemoryStorage{}": {
-        "status": "UP"
-      }
-    }
-  }
-}
-----
-<1> All `status` fields should be `UP`.
+<1> Run the Jaeger docker image.
 
 === Enable Tracing in the Helidon Application
 
-Update the pom.xml file and add the following Zipkin dependency to the `<dependencies>`
-section (*not* `<dependencyManagement>`).  This will enable Helidon to use Zipkin at the
-default host and port, `localhost:9411`.
+Update the pom.xml file and add the following Jaeger dependency to the `<dependencies>`
+section (*not* `<dependencyManagement>`). This will enable Helidon to use Jaeger at the
+default host and port, `localhost:14250`.
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
-</dependency>
+ <dependency>
+     <groupId>io.helidon.tracing</groupId>
+     <artifactId>helidon-tracing</artifactId>   <1>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.webserver.observe</groupId>
+     <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.tracing.providers</groupId>
+     <artifactId>helidon-tracing-providers-jaeger</artifactId>  <3>
+ </dependency>
 ----
+<1> Helidon Tracing dependencies.
+<2> Observability features for tracing.
+<3> Jaeger tracing provider.
 
-All spans sent by Helidon to Zipkin need to be associated with a service.  Specify the service name below.
+All spans sent by Helidon to Jaeger need to be associated with a service.  Specify the service name below.
 
 [source,bash]
-.Add the following line to `resources/application.yaml`:
+.Add the following lines to `resources/application.yaml`:
 ----
 tracing:
   service: helidon-se-1
+  protocol: http
+  port: 14250
+  path: /api/traces
+  tags:
+    env: development
+  enabled: true
+  sampler-type: "const"
+  sampler-param: 1
+  log-spans: true
+  propagation: b3
 ----
 
 [source,java]
-.Update the `Main` class; Add Tracer to the WebServer builder
+.Update the `Main` class. Add Tracer to the WebServer builder
 ----
-import io.helidon.tracing.TracerBuilder; // <1>
+import io.helidon.tracing.TracerBuilder;
 ...
+
+Tracer tracer = TracerBuilder.create("helidon") <1>
+                .build();
+
 WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build()) // <2>
+                .addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 ----
-<1> Add a new import statement.
-<2> Build and register a `Tracer` object using the tracing configuration.
+<1> Create the `Tracer` object.
+<2> Add an observability feature using the created `Tracer`.
 
 [source,java]
-.Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class: replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span; // <1>
-...
-    private void getDefaultMessageHandler(ServerRequest request,
-                                   ServerResponse response) {
+private void getDefaultMessageHandler(ServerRequest request,
+                                      ServerResponse response) {
+    var spanBuilder = Tracer.global().spanBuilder("mychildSpan"); <1>
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder)); <2>
+    var span = spanBuilder.start(); <3>
 
-        var spanBuilder = request.tracer()  // <2>
-                .buildSpan("getDefaultMessageHandler");  // <3>
-        request.spanContext().ifPresent(spanBuilder::asChildOf);  // <4>
-        Span span = spanBuilder.start();  // <5>
-
-        try {
-            sendResponse(response, "World");
-        } finally {
-            span.finish();  // <6>
-        }
+    try {
+        sendResponse(response, "World");
+        span.end(); <4>
+    } catch (Throwable t) {
+        span.end(t);    <5>
     }
+}
 ----
-<1> Add new import statement.
-<2> Get the `Tracer` object from the request.
-<3> Build a new span named `getDefaultMessageHandler`.
-<4> Make the new span a child of the current span.
-<5> Start the span.  The current timestamp is used as the starting time for the span.
-<6> Finish the span.  The current timestamp is used as the ending time for the span.
+<1> Create a new `Span` using the global tracer.
+<2> Set the parent of the new span to the span from the `Request` if available.
+<3> Start the span.
+<4> End the span normally after the response is sent.
+<5> End the span with an exception if one was thrown.
 
 
 [source,bash]
@@ -207,87 +214,15 @@ curl http://localhost:8080/greet
 ----
 
 
-=== Viewing Tracing Using Zipkin REST API
+=== Viewing Tracing Using Jaeger UI
 
-Because you had tracing enabled, the previous `/greet` endpoint invocation resulted in a new trace being created.
-Let's get the trace data that was generated using the Zipkin API.  First, get the service information.
-
-[source,bash]
-.Run the curl command and check the response:
-----
-curl http://localhost:9411/api/v2/services
-...
-["helidon-se-1"] // <1>
-----
-<1> This is the tracing service name specified in `resources/application.yaml`.
-
-Each span used by a service has a name, which is unique within a trace. If you
-invoke the `/greet` endpoint multiple times, you will still get the same set
-of names.
-
-[source,bash]
-.Invoke the endpoint below and check the response:
-----
-// <1>
-curl -X GET "http://localhost:9411/api/v2/spans?serviceName=helidon-se-1" -H "accept: application/json"
-...
-[ // <2>
-  "content-write",
-  "getdefaultmessagehandler",
-  "http request"
-]
-----
-<1> Get the span names for the `helidon-se-1` service.
-<2> These are the span names.  If you invoke the `/greet` endpoint again, then
-invoke the `/spans` endpoint, you will get the same response.
-
-
-Next, get the spans in the trace as shown below.
-
-[source,bash]
-.Invoke the endpoint below and check the response:
-----
-// <1>
-curl -X GET "http://localhost:9411/api/v2/traces?serviceName=helidon-se-1&limit=1" -H "accept: application/json"
-...
-[
-  [ // <2>
-    {
-      "traceId": "f193adb3f2bab3b3",
-      "parentId": "f193adb3f2bab3b3", // <3>
-      "id": "1536021daf3845e1",
-      "kind": "SERVER",
-      "name": "content-write",
-      "timestamp": 1568245972222815,
-      "duration": 527,
-      "localEndpoint": {
-        "serviceName": "helidon-se-1",
-        "ipv4": "192.168.1.115"
-      },
-      "tags": {
-        "response.type": "org.glassfish.json.JsonObjectBuilderImpl$JsonObjectImpl"
-      }
-    },
-...
-(truncated)
-]
-
-----
-<1> Get the newest trace only, using the `limit=1` query param.  There are other query params that let you restrict
-results to a specific time window.
-<2> The request will return 3 spans, one for each name.
-<3> Each span has a `parentId` field, except the `http request` span, which is the root.
-
-=== Viewing Tracing Using Zipkin UI
-
-The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents
-a structure of spans.  Zipkin provides a web-based UI at http://localhost:9411/zipkin, where you can see a visual
+The tracing output data is verbose and can be challenging to interpret using the REST API, especially since it represents
+a structure of spans. Jaeger provides a web-based UI at http://localhost:16686/search, where you can see a visual
 representation of the same data and the relationship between spans within a trace.
 
-Click on the UI refresh button (the search icon) as shown in the image below.  Notice that you can change the look-back time
-to restrict the trace list.
+Click on the UI Find traces button (the search icon) as shown in the image below.  Notice that you can change the look-back time to restrict the trace list.
 
-.Trace refresh
+.Jaeger UI
 image::guides/12_tracing_se_refresh.png[Trace Refresh]
 
 The image below shows the trace summary, including start time and duration of each trace. There are two traces,
@@ -297,30 +232,30 @@ longer duration since there is one-time initialization that occurs.
 .Tracing list view
 image::guides/12_tracing_se_top.png[Traces]
 
-Click on a trace and you will see the trace detail page where the spans are listed.  You can clearly
+Click on a trace, and you will see the trace detail page where the spans are listed. You can clearly
 see the root span and the relationship among all the spans in the trace, along with timing information.
 
 .Trace detail page
 image::guides/12_tracing_se_detail.png[Trace Detail]
 
-NOTE: A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see
+NOTE: For OpenTracing, a parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see
 https://github.com/opentracing/specification/blob/master/specification.md[Open Tracing Semantic Spec].
 
 You can examine span details by clicking on the span row.  Refer to the image below, which shows the span details, including timing information.
 You can see times for each space relative to the root span.  These rows are annotated with `Server Start` and `Server Finish`, as shown in the third column.
 
 .Span detail page
-image::guides/12_tracing_se_span_detail.png[Span Details]
+image::guides/12_tracing_span_detail.png[Span Details]
 
 
 === Tracing Across Services
 
-Helidon automatically traces across services, providing that the services use the same tracer, for example, the same instance of Zipkin.
-This means a single trace can include spans from multiple services and hosts.  OpenTracing uses a `SpanContext` to
+Helidon automatically traces across services if the services use the same tracer, for example, the same instance of Jaeger.
+This means a single trace can include spans from multiple services and hosts.  Helidon uses a `SpanContext` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
+internally call OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
 
-To demonstrate distributed tracing, you will need to create a second project, where the server listens on port 8081.
+To demonstrate distributed tracing, you will need to create a second project, where the server listens to on port 8081.
 Create a new root directory to hold this new project, then do the following steps, similar to
 what you did at the start of this guide:
 
@@ -345,17 +280,24 @@ cd helidon-quickstart-se-2
 ----
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
-</dependency>
+ <dependency>
+     <groupId>io.helidon.tracing</groupId>
+     <artifactId>helidon-tracing</artifactId>   <1>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.webserver.observe</groupId>
+     <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+ </dependency>
+ <dependency>
+     <groupId>io.helidon.tracing.providers</groupId>
+     <artifactId>helidon-tracing-providers-jaeger</artifactId>  <3>
+ </dependency>
 ----
+<1> Helidon Tracing API.
+<2> Observability features for tracing.
+<3> Jaeger tracing provider.
 
 [source,bash]
 .Replace `resources/application.yaml` with the following:
@@ -364,44 +306,59 @@ app:
   greeting: "Hello From SE-2"
 
 tracing:
-  service: "helidon-se-2"
+  service: helidon-se-2
+  protocol: http
+  port: 14250
+  path: /api/traces
+  tags:
+    env: development
+  enabled: true
+  sampler-type: "const"
+  sampler-param: 1
+  log-spans: true
+  propagation: b3
 
 server:
   port: 8081
   host: 0.0.0.0
 ----
 
+NOTE: The settings above are for development and experimental purposes only. For production environment, please see the link:../tracing.adoc[Tracing documentation].
+
 [source,java]
 .Update the `Main` class; Add Tracer to the WebServer builder
 ----
-import io.helidon.tracing.TracerBuilder;
-...
+Tracer tracer = TracerBuilder.create("helidon") <1>
+                .build();
+
 WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build())
+                .addFeature(ObserveFeature.builder()
+                            .addObserver(TracingObserver.create(tracer)) <2>
+                            .build())
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 ----
+<1> Create the `Tracer` object.
+<2> Add an observability feature using the created `Tracer`.
 
 [source,java]
-.Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class. Replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span;
-//...
-    private void getDefaultMessageHandler(ServerRequest request,
-                                   ServerResponse response) {
+private void getDefaultMessageHandler(ServerRequest request,
+                               ServerResponse response) {
 
-        var spanBuilder = request.tracer()
-                .buildSpan("getDefaultMessageHandler");
-        request.spanContext().ifPresent(spanBuilder::asChildOf);
-        Span span = spanBuilder.start();
+    var spanBuilder = request.tracer()
+            .buildSpan("getDefaultMessageHandler");
+    request.spanContext().ifPresent(spanBuilder::asChildOf);
+    Span span = spanBuilder.start();
 
-        try {
-            sendResponse(response, "World");
-        } finally {
-            span.finish();
-        }
+    try {
+        sendResponse(response, "World");
+    } catch (Throwable t) {
+        span.end(t);
     }
+}
 ----
 
 [source,bash]
@@ -451,26 +408,6 @@ call it.
 [source,java]
 .Replace the `GreetService` class with the following code:
 ----
-package io.helidon.examples.quickstart.se;
-
-import io.helidon.http.Http;
-import io.helidon.config.Config;
-import io.helidon.tracing.jersey.client.ClientTracingFilter;
-import io.helidon.webserver.HttpRules;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.opentracing.Span;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.WebTarget;
-
 public class GreetService implements HttpService {
 
   private final AtomicReference<String> greeting = new AtomicReference<>();
@@ -494,16 +431,15 @@ public class GreetService implements HttpService {
   }
 
   private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-
-    var spanBuilder = request.tracer()
-                .buildSpan("getDefaultMessageHandler");
-    request.spanContext().ifPresent(spanBuilder::asChildOf);
-    Span span = spanBuilder.start();
+    var spanBuilder = Tracer.global().spanBuilder("getDefaultMessageHandler");
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder));
+    var span = spanBuilder.start();
 
     try {
-      sendResponse(response, "World");
-    } finally {
-      span.finish();
+        sendResponse(response, "World");
+        span.end();
+    } catch (Throwable t) {
+        span.end(t);
     }
   }
 
@@ -530,35 +466,23 @@ public class GreetService implements HttpService {
   private void outboundMessageHandler(ServerRequest request, ServerResponse response) {
     Invocation.Builder requestBuilder = webTarget.request();
 
-    // <2>
-    var spanBuilder = request.tracer()
-                .buildSpan("outboundMessageHandler");
-    request.spanContext().ifPresent(spanBuilder::asChildOf);
-    Span span = spanBuilder.start();
+    var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder));
+    var span = spanBuilder.start();     // <2>
 
     try {
       requestBuilder.property(
-          ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext());  // <3>
+          ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, span.context());  // <3>
 
-      requestBuilder   // <4>
-          .rx()
-          .get(String.class)
-          .thenAccept(response::send)
-          .exceptionally(
-              throwable -> {
-                // process exception
-                response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-                response.send("Failed with: " + throwable);
-                return null;
-              });
-    } finally {
-      span.finish();   // <5>
+      String result = requestBuilder   // <4>
+          .get(String.class);
+      response.send(result);
+      span.end();
+    } catch (Throwable t) {
+      span.end(t);   // <5>
     }
   }
 
-  private void updateGreetingHandler(ServerRequest request, ServerResponse response) {
-    request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
-  }
 }
 ----
 <1> Add `outboundMessageHandler` to the routing rules.
@@ -579,12 +503,7 @@ curl -i http://localhost:8080/greet/outbound // <1>
 <1> The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
 <2> Notice the greeting came from the second service.
 
-Refresh the Zipkin UI trace listing page and notice that there is a trace across two services.
-
-.Tracing multiple service list view
-image::guides/12_tracing_se_top_2_services.png[Traces]
-
-Click on the trace with two services to see the detail view.
+Refresh the Jaeger UI trace listing page and notice that there is a trace across two services.
 
 .Tracing across multiple services detail view
 image::guides/12_tracing_se_detail_2_services.png[Traces]
@@ -593,11 +512,11 @@ In the image above, you can see that the trace includes spans from two services.
 which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
 see that the delay no longer exists.
 
-You can now stop your second service, it is not longer used in this guide.
+You can now stop your second service, it is no longer used in this guide.
 
 == Integration with Kubernetes
 
-The following example demonstrate how to use Zipkin from a Helidon application running in Kubernetes.
+The following example demonstrates how to use Jaeger from a Helidon application running in Kubernetes.
 
 [source,bash]
 .Replace the tracing configuration in `resources/application.yaml` with the following:
@@ -605,9 +524,9 @@ The following example demonstrate how to use Zipkin from a Helidon application r
 // <1>
 tracing:
   service: helidon-se-1
-  host: zipkin
+  host: jaeger
 ----
-<1> Helidon service `helidon-se-1` will connect to the Zipkin server at host name `zipkin`.
+<1> Helidon service `helidon-se-1` will connect to the Jaeger server at host name `jaeger`.
 
 [source,bash]
 .Stop the application and build the docker image for your application:
@@ -615,50 +534,50 @@ tracing:
 docker build -t helidon-tracing-se .
 ----
 
-=== Deploy Zipkin into Kubernetes
+=== Deploy Jaeger into Kubernetes
 
 [source,yaml]
-.Create the Kubernetes YAML specification, named `zipkin.yaml`, with the following contents:
+.Create the Kubernetes YAML specification, named `jaeger.yaml`, with the following contents:
 ----
 apiVersion: v1
 kind: Service
 metadata:
-  name: zipkin
+  name: jaeger
 spec:
   ports:
-    - port: 9411
+    - port: 16686
       protocol: TCP
   selector:
-    app: zipkin
+    app: jaeger
 ---
 kind: Pod
 apiVersion: v1
 metadata:
-  name: zipkin
+  name: jaeger
   labels:
-    app: zipkin
+    app: jaeger
 spec:
   containers:
-    - name: zipkin
-      image: openzipkin/zipkin
+    - name: jaeger
+      image: jaegertracing/all-in-one
       imagePullPolicy: IfNotPresent
       ports:
-        - containerPort: 9411
+        - containerPort: 16686
 ----
 
 [source,bash]
-.Create the Zipkin pod and ClusterIP service:
+.Create the Jaeger pod and ClusterIP service:
 ----
-kubectl apply -f ./zipkin.yaml
+kubectl apply -f ./jaeger.yaml
 ----
 
 [source,bash]
-.Create a Zipkin external server to view the UI and expose it on port 9142:
+.Create a Jaeger external server to view the UI and expose it on port 9142:
 ----
-kubectl expose pod  zipkin --name=zipkin-external --port=9412 --target-port=9411 --type=LoadBalancer
+kubectl expose pod  jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer
 ----
 
-Navigate to http://localhost:9412/zipkin to validate that you can access Zipkin running in Kubernetes.  It may
+Navigate to http://localhost:16687/jaeger to validate that you can access Jaeger running in Kubernetes. It may
 take a few seconds before it is ready.
 
 
@@ -713,7 +632,7 @@ spec:
 kubectl apply -f ./tracing.yaml
 ----
 
-=== Access Your Application and the Zipkin Trace
+=== Access Your Application and the Jaeger Trace
 
 [source,bash]
 .Get the application service information:
@@ -738,29 +657,29 @@ curl http://localhost:31143/greet
 }
 ----
 
-Access the Zipkin UI at http://localhost:9412/zipkin and click on the refresh icon to see the trace that was just created.
+Access the Jaeger UI at http://localhost:9412/jaeger and click on the refresh icon to see the trace that was just created.
 
 
 === Cleanup
 
-You can now delete the Kubernetes resources that were just created during this example.
+You can now delete the Kubernetes resources just created during this example.
 
 [source,bash]
 .Delete the Kubernetes resources:
 ----
-kubectl delete -f ./zipkin.yaml
+kubectl delete -f ./jaeger.yaml
 kubectl delete -f ./tracing.yaml
-kubectl delete service zipkin-external
-docker rm -f zipkin
+kubectl delete service jaeger-external
+docker rm -f jaeger
 ----
 
 == Summary
 
-This guide has demonstrated how to use the Helidon SE tracing feature with Zipkin.  You have learned to do the following:
+This guide has demonstrated how to use the Helidon SE tracing feature with Jaeger. You have learned to do the following:
 
 - Enable tracing within a service
 - Use tracing with JAX-RS
-- Use the Zipkin REST API and UI
+- Use the Jaeger REST API and UI
 - Use tracing across multiple services
 - Integrate tracing with Kubernetes
 
@@ -769,5 +688,6 @@ Refer to the following references for additional information:
 
 - link:{microprofile-tracing-spec-url}[MicroProfile OpenTracing specification]
 - link:{microprofile-tracing-javadoc-url}[MicroProfile OpenTracing Javadoc]
+* link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
 - link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,16 @@
 #
 
 # 1st stage, build the app
-FROM maven:3.6.3-openjdk-17-slim as build
+FROM container-registry.oracle.com/java/openjdk:21 as build
+
+# Install maven
+WORKDIR /usr/share
+RUN set -x && \
+    curl -O https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz && \
+    tar -xvf apache-maven-*-bin.tar.gz  && \
+    rm apache-maven-*-bin.tar.gz && \
+    mv apache-maven-* maven && \
+    ln -s /usr/share/maven/bin/mvn /bin/
 
 WORKDIR /helidon
 
@@ -33,7 +42,7 @@ RUN mvn package -DskipTests
 RUN echo "done!"
 
 # 2nd stage, build the runtime image
-FROM openjdk:17-jdk-slim
+FROM container-registry.oracle.com/java/openjdk:21
 WORKDIR /helidon
 
 # Copy the binary built in the 1st stage

@@ -71,7 +71,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         private final List<TypedElementInfo> otherElementInfo = new ArrayList<>();
         private final Map<TypeName, String> referencedModuleNames = new LinkedHashMap<>();
         private final Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations = new LinkedHashMap<>();
+        private final Set<Modifier> elementModifiers = new LinkedHashSet<>();
         private final Set<String> modifiers = new LinkedHashSet<>();
+        private AccessModifier accessModifier;
+        private ElementKind kind;
+        private Object originatingElement;
         private String module;
         private String typeKind;
         private TypeInfo superTypeInfo;
@@ -92,6 +96,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER from(TypeInfo prototype) {
             typeName(prototype.typeName());
             typeKind(prototype.typeKind());
+            kind(prototype.kind());
             addElementInfo(prototype.elementInfo());
             addOtherElementInfo(prototype.otherElementInfo());
             addReferencedTypeNamesToAnnotations(prototype.referencedTypeNamesToAnnotations());
@@ -99,7 +104,10 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             superTypeInfo(prototype.superTypeInfo());
             addInterfaceTypeInfo(prototype.interfaceTypeInfo());
             addModifiers(prototype.modifiers());
+            addElementModifiers(prototype.elementModifiers());
+            accessModifier(prototype.accessModifier());
             module(prototype.module());
+            originatingElement(prototype.originatingElement());
             addAnnotations(prototype.annotations());
             return self();
         }
@@ -113,6 +121,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER from(TypeInfo.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
             builder.typeKind().ifPresent(this::typeKind);
+            builder.kind().ifPresent(this::kind);
             addElementInfo(builder.elementInfo());
             addOtherElementInfo(builder.otherElementInfo());
             addReferencedTypeNamesToAnnotations(builder.referencedTypeNamesToAnnotations());
@@ -120,7 +129,10 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             builder.superTypeInfo().ifPresent(this::superTypeInfo);
             addInterfaceTypeInfo(builder.interfaceTypeInfo());
             addModifiers(builder.modifiers());
+            addElementModifiers(builder.elementModifiers());
+            builder.accessModifier().ifPresent(this::accessModifier);
             builder.module().ifPresent(this::module);
+            builder.originatingElement().ifPresent(this::originatingElement);
             addAnnotations(builder.annotations());
             return self();
         }
@@ -180,11 +192,34 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @param typeKind the type element kind.
          * @return updated builder instance
+         * @deprecated use {@link #kind()} instead
+         * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
          * @see #typeKind()
          */
+        @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER typeKind(String typeKind) {
             Objects.requireNonNull(typeKind);
             this.typeKind = typeKind;
+            return self();
+        }
+
+        /**
+         * The kind of this type.
+         * <p>
+         * Such as:
+         * <ul>
+         *     <li>{@link io.helidon.common.types.ElementKind#CLASS}</li>
+         *     <li>{@link io.helidon.common.types.ElementKind#INTERFACE}</li>
+         *     <li>{@link io.helidon.common.types.ElementKind#ANNOTATION_TYPE}</li>
+         * </ul>
+         *
+         * @param kind element kind of this type
+         * @return updated builder instance
+         * @see #kind()
+         */
+        public BUILDER kind(ElementKind kind) {
+            Objects.requireNonNull(kind);
+            this.kind = kind;
             return self();
         }
 
@@ -552,11 +587,69 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @param modifier element modifiers
          * @return updated builder instance
+         * @deprecated use {@link #elementModifiers()} instead
+         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
          * @see #modifiers()
          */
+        @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER addModifier(String modifier) {
             Objects.requireNonNull(modifier);
             this.modifiers.add(modifier);
+            return self();
+        }
+
+        /**
+         * Type modifiers.
+         *
+         * @param elementModifiers set of modifiers that are present on the type (and that we understand)
+         * @return updated builder instance
+         * @see #elementModifiers()
+         */
+        public BUILDER elementModifiers(Set<? extends Modifier> elementModifiers) {
+            Objects.requireNonNull(elementModifiers);
+            this.elementModifiers.clear();
+            this.elementModifiers.addAll(elementModifiers);
+            return self();
+        }
+
+        /**
+         * Type modifiers.
+         *
+         * @param elementModifiers set of modifiers that are present on the type (and that we understand)
+         * @return updated builder instance
+         * @see #elementModifiers()
+         */
+        public BUILDER addElementModifiers(Set<? extends Modifier> elementModifiers) {
+            Objects.requireNonNull(elementModifiers);
+            this.elementModifiers.addAll(elementModifiers);
+            return self();
+        }
+
+        /**
+         * Type modifiers.
+         *
+         * @param elementModifier set of modifiers that are present on the type (and that we understand)
+         * @return updated builder instance
+         * @see io.helidon.common.types.Modifier
+         * @see #accessModifier()
+         * @see #elementModifiers()
+         */
+        public BUILDER addElementModifier(Modifier elementModifier) {
+            Objects.requireNonNull(elementModifier);
+            this.elementModifiers.add(elementModifier);
+            return self();
+        }
+
+        /**
+         * Access modifier.
+         *
+         * @param accessModifier access modifier
+         * @return updated builder instance
+         * @see #accessModifier()
+         */
+        public BUILDER accessModifier(AccessModifier accessModifier) {
+            Objects.requireNonNull(accessModifier);
+            this.accessModifier = accessModifier;
             return self();
         }
 
@@ -581,6 +674,32 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER module(String module) {
             Objects.requireNonNull(module);
             this.module = module;
+            return self();
+        }
+
+        /**
+         * Clear existing value of this property.
+         *
+         * @return updated builder instance
+         * @see #originatingElement()
+         */
+        public BUILDER clearOriginatingElement() {
+            this.originatingElement = null;
+            return self();
+        }
+
+        /**
+         * The element used to create this instance.
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+         * or a {@code ClassInfo} when using classpath scanning.
+         *
+         * @param originatingElement originating element
+         * @return updated builder instance
+         * @see #originatingElement()
+         */
+        public BUILDER originatingElement(Object originatingElement) {
+            Objects.requireNonNull(originatingElement);
+            this.originatingElement = originatingElement;
             return self();
         }
 
@@ -663,9 +782,29 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * </ul>
          *
          * @return the type kind
+         * @deprecated use {@link #kind()} instead
+         * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
+         * @see #typeKind()
          */
+        @Deprecated(since = "4.1.0", forRemoval = true)
         public Optional<String> typeKind() {
             return Optional.ofNullable(typeKind);
+        }
+
+        /**
+         * The kind of this type.
+         * <p>
+         * Such as:
+         * <ul>
+         *     <li>{@link io.helidon.common.types.ElementKind#CLASS}</li>
+         *     <li>{@link io.helidon.common.types.ElementKind#INTERFACE}</li>
+         *     <li>{@link io.helidon.common.types.ElementKind#ANNOTATION_TYPE}</li>
+         * </ul>
+         *
+         * @return the kind
+         */
+        public Optional<ElementKind> kind() {
+            return Optional.ofNullable(kind);
         }
 
         /**
@@ -729,9 +868,34 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Element modifiers.
          *
          * @return the modifiers
+         * @deprecated use {@link #elementModifiers()} instead
+         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
+         * @see #modifiers()
          */
+        @Deprecated(since = "4.1.0", forRemoval = true)
         public Set<String> modifiers() {
             return modifiers;
+        }
+
+        /**
+         * Type modifiers.
+         *
+         * @return the element modifiers
+         * @see io.helidon.common.types.Modifier
+         * @see #accessModifier()
+         * @see #elementModifiers()
+         */
+        public Set<Modifier> elementModifiers() {
+            return elementModifiers;
+        }
+
+        /**
+         * Access modifier.
+         *
+         * @return the access modifier
+         */
+        public Optional<AccessModifier> accessModifier() {
+            return Optional.ofNullable(accessModifier);
         }
 
         /**
@@ -741,6 +905,17 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public Optional<String> module() {
             return Optional.ofNullable(module);
+        }
+
+        /**
+         * The element used to create this instance.
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+         * or a {@code ClassInfo} when using classpath scanning.
+         *
+         * @return the originating element
+         */
+        public Optional<Object> originatingElement() {
+            return Optional.ofNullable(originatingElement);
         }
 
         /**
@@ -757,10 +932,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public String toString() {
             return "TypeInfoBuilder{"
                     + "typeName=" + typeName + ","
-                    + "typeKind=" + typeKind + ","
+                    + "kind=" + kind + ","
                     + "elementInfo=" + elementInfo + ","
                     + "superTypeInfo=" + superTypeInfo + ","
-                    + "modifiers=" + modifiers + ","
+                    + "elementModifiers=" + elementModifiers + ","
+                    + "accessModifier=" + accessModifier + ","
                     + "module=" + module + ","
                     + "annotations=" + annotations
                     + "}";
@@ -770,6 +946,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
+            new TypeInfoSupport.TypeInfoDecorator().decorate(this);
         }
 
         /**
@@ -783,6 +960,12 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             if (typeKind == null) {
                 collector.fatal(getClass(), "Property \"typeKind\" is required, but not set");
             }
+            if (kind == null) {
+                collector.fatal(getClass(), "Property \"kind\" is required, but not set");
+            }
+            if (accessModifier == null) {
+                collector.fatal(getClass(), "Property \"accessModifier\" must not be null, but not set");
+            }
             collector.collect().checkValid();
         }
 
@@ -795,7 +978,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         BUILDER superTypeInfo(Optional<? extends TypeInfo> superTypeInfo) {
             Objects.requireNonNull(superTypeInfo);
-            this.superTypeInfo = superTypeInfo.orElse(null);
+            this.superTypeInfo = superTypeInfo.map(TypeInfo.class::cast).orElse(this.superTypeInfo);
             return self();
         }
 
@@ -806,9 +989,24 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @return updated builder instance
          * @see #module()
          */
-        BUILDER module(Optional<? extends String> module) {
+        BUILDER module(Optional<String> module) {
             Objects.requireNonNull(module);
-            this.module = module.orElse(null);
+            this.module = module.map(java.lang.String.class::cast).orElse(this.module);
+            return self();
+        }
+
+        /**
+         * The element used to create this instance.
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+         * or a {@code ClassInfo} when using classpath scanning.
+         *
+         * @param originatingElement originating element
+         * @return updated builder instance
+         * @see #originatingElement()
+         */
+        BUILDER originatingElement(Optional<?> originatingElement) {
+            Objects.requireNonNull(originatingElement);
+            this.originatingElement = originatingElement.map(java.lang.Object.class::cast).orElse(this.originatingElement);
             return self();
         }
 
@@ -817,6 +1015,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         protected static class TypeInfoImpl implements TypeInfo {
 
+            private final AccessModifier accessModifier;
+            private final ElementKind kind;
             private final List<Annotation> annotations;
             private final List<TypeInfo> interfaceTypeInfo;
             private final List<TypedElementInfo> elementInfo;
@@ -824,7 +1024,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             private final Map<TypeName, String> referencedModuleNames;
             private final Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations;
             private final Optional<TypeInfo> superTypeInfo;
+            private final Optional<Object> originatingElement;
             private final Optional<String> module;
+            private final Set<Modifier> elementModifiers;
             private final Set<String> modifiers;
             private final String typeKind;
             private final TypeName typeName;
@@ -837,15 +1039,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             protected TypeInfoImpl(TypeInfo.BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
                 this.typeKind = builder.typeKind().get();
+                this.kind = builder.kind().get();
                 this.elementInfo = List.copyOf(builder.elementInfo());
                 this.otherElementInfo = List.copyOf(builder.otherElementInfo());
-                this.referencedTypeNamesToAnnotations = Collections.unmodifiableMap(
-                        new LinkedHashMap<>(builder.referencedTypeNamesToAnnotations()));
+                this.referencedTypeNamesToAnnotations =
+                        Collections.unmodifiableMap(new LinkedHashMap<>(builder.referencedTypeNamesToAnnotations()));
                 this.referencedModuleNames = Collections.unmodifiableMap(new LinkedHashMap<>(builder.referencedModuleNames()));
                 this.superTypeInfo = builder.superTypeInfo();
                 this.interfaceTypeInfo = List.copyOf(builder.interfaceTypeInfo());
                 this.modifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.modifiers()));
+                this.elementModifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.elementModifiers()));
+                this.accessModifier = builder.accessModifier().get();
                 this.module = builder.module();
+                this.originatingElement = builder.originatingElement();
                 this.annotations = List.copyOf(builder.annotations());
             }
 
@@ -857,6 +1063,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             @Override
             public String typeKind() {
                 return typeKind;
+            }
+
+            @Override
+            public ElementKind kind() {
+                return kind;
             }
 
             @Override
@@ -895,8 +1106,23 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             }
 
             @Override
+            public Set<Modifier> elementModifiers() {
+                return elementModifiers;
+            }
+
+            @Override
+            public AccessModifier accessModifier() {
+                return accessModifier;
+            }
+
+            @Override
             public Optional<String> module() {
                 return module;
+            }
+
+            @Override
+            public Optional<Object> originatingElement() {
+                return originatingElement;
             }
 
             @Override
@@ -908,10 +1134,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             public String toString() {
                 return "TypeInfo{"
                         + "typeName=" + typeName + ","
-                        + "typeKind=" + typeKind + ","
+                        + "kind=" + kind + ","
                         + "elementInfo=" + elementInfo + ","
                         + "superTypeInfo=" + superTypeInfo + ","
-                        + "modifiers=" + modifiers + ","
+                        + "elementModifiers=" + elementModifiers + ","
+                        + "accessModifier=" + accessModifier + ","
                         + "module=" + module + ","
                         + "annotations=" + annotations
                         + "}";
@@ -926,17 +1153,25 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                     return false;
                 }
                 return Objects.equals(typeName, other.typeName())
-                        && Objects.equals(typeKind, other.typeKind())
+                        && Objects.equals(kind, other.kind())
                         && Objects.equals(elementInfo, other.elementInfo())
                         && Objects.equals(superTypeInfo, other.superTypeInfo())
-                        && Objects.equals(modifiers, other.modifiers())
+                        && Objects.equals(elementModifiers, other.elementModifiers())
+                        && Objects.equals(accessModifier, other.accessModifier())
                         && Objects.equals(module, other.module())
                         && Objects.equals(annotations, other.annotations());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(typeName, typeKind, elementInfo, superTypeInfo, modifiers, module, annotations);
+                return Objects.hash(typeName,
+                                    kind,
+                                    elementInfo,
+                                    superTypeInfo,
+                                    elementModifiers,
+                                    accessModifier,
+                                    module,
+                                    annotations);
             }
 
         }

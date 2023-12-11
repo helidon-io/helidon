@@ -50,6 +50,7 @@
         <module>neo4j</module>
         <module>micrometer</module>
         <module>oci</module>
+        <module>openapi-ui</module>
         <module>vault</module>
         <module>microstream</module>
     </modules>

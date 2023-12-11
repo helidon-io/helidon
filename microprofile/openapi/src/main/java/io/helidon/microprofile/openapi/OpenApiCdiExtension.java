@@ -67,7 +67,7 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension {
                 .config(componentConfig())
                 .manager(new MpOpenApiManager(ConfigProvider.getConfig()))
                 .build();
-        feature.setup(server.serverRoutingBuilder(), routingBuilder(server));
+        server.addFeature(feature);
     }
 
     @Override

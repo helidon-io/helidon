@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ include::{rootdir}/config/io_helidon_security_providers_httpauth_HttpBasicAuthPr
 
 ==== Example code
 
-See the link:{helidon-github-tree-url}/master/examples/security/outbound-override[example] on GitHub.
+See the link:{helidon-github-tree-url}/examples/security/outbound-override[example] on GitHub.
 
 [source,yaml]
 .Configuration example
@@ -89,8 +89,8 @@ Subject is created based on the username and roles provided by the user store.
 When identity propagation is configured, there are several options for identifying username and password to propagate:
 
 1. We propagate the current username and password (inbound request must be authenticated using basic authentication).
-2. We use username and password from an explicitly configured property (See `HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER`
-    and `HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD`)
+2. We use username and password from an explicitly configured property (See `EndpointConfig.PROPERTY_OUTBOUND_ID`
+    and `EndpointConfig.PROPERTY_OUTBOUND_SECRET`)
 3. We use username and password associated with an outbound target (see example configuration above)
 
 Identity is propagated only if:
@@ -104,7 +104,7 @@ Java service loader service `io.helidon.security.providers.httpauth.spi.UserStor
  users to the provider, such as when validated against an internal database or LDAP server.
 The user store is defined so you never need the clear text password of the user.
 
-_Warning on security of HTTP Basic Authenticaton (or lack thereof)_
+_Warning on security of HTTP Basic Authentication (or lack thereof)_
 
 Basic authentication uses base64 encoded username and password and passes it over the network. Base64 is only encoding,
  not encryption - so anybody that gets hold of the header value can learn the actual username and password of the user.

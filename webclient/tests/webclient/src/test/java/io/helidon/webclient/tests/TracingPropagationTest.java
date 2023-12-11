@@ -35,7 +35,11 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.tracing.WebClientTracing;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.tracing.TracingObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import io.opentracing.mock.MockSpan;
@@ -80,16 +84,21 @@ class TracingPropagationTest {
     }
 
     @SetUpServer
-    public static void setup(WebServerConfig.Builder server) {
+    static void server(WebServerConfig.Builder server) {
         tracer = new MockTracer() {
             @Override
             protected void onSpanFinished(MockSpan mockSpan) {
                 SPAN_COUNT_LATCH.get().countDown();
             }
         };
-        Config config = Config.create();
-        server.config(config);
-        server.routing(routing -> Main.routing(routing, config, tracer));
+        server.addFeature(ObserveFeature.builder()
+                                  .addObserver(TracingObserver.create(OpenTracing.create(tracer)))
+                                  .build());
+    }
+
+    @SetUpRoute
+    static void routing(HttpRouting.Builder http) {
+        http.register("/greet", new GreetService());
     }
 
     @Test
@@ -112,6 +121,12 @@ class TracingPropagationTest {
         List<MockSpan> mockSpans = tracer.finishedSpans();
 
         // the server traces asynchronously, some spans may be written after we receive the response.
+        /*
+        There should bet:
+        - webclient GET span
+        - webserver HTTP Request
+        - webserver content-write
+         */
         assertThat("There should be 3 spans reported", tracer.finishedSpans(), hasSize(EXPECTED_NUMBER_OF_SPANS));
 
         // we need the first span - parentId 0

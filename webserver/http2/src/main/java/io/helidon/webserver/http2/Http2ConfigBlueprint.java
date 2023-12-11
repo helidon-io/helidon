@@ -106,6 +106,36 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     boolean sendErrorDetails();
 
     /**
+     * Period for counting rapid resets(stream RST sent by client before any data have been sent by server).
+     * Default value is {@code PT10S}.
+     *
+     * @return duration
+     * @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
+     * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
+     */
+    @ConfiguredOption("PT10S")
+    Duration rapidResetCheckPeriod();
+
+    /**
+     * Maximum number of rapid resets(stream RST sent by client before any data have been sent by server).
+     * When reached within {@link #rapidResetCheckPeriod()}, GOAWAY is sent to client and connection is closed.
+     * Default value is {@code 100}.
+     *
+     * @return maximum number of rapid resets
+     * @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
+     */
+    @ConfiguredOption("100")
+    int maxRapidResets();
+
+    /**
+     * Maximum number of consecutive empty frames allowed on connection.
+     *
+     * @return max number of consecutive empty frames
+     */
+    @ConfiguredOption("10")
+    int maxEmptyFrames();
+
+    /**
      * If set to false, any path is accepted (even containing illegal characters).
      *
      * @return whether to validate path

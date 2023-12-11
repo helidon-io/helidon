@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,20 +31,20 @@ import io.helidon.config.Config;
  * given {@code Builder} by invoking
  * {@link Config.Builder#disableFilterServices()}.
  * <p>
- * A filter can specify a {@link jakarta.annotation.Priority}. If no priority is
- * explicitly assigned, the value of {@value PRIORITY} is assumed.
+ * A filter can specify a {@link io.helidon.common.Weight}. If no weight is
+ * explicitly assigned, the value of {@value io.helidon.common.Weighted#DEFAULT_WEIGHT} is assumed.
  * <h2>Initializing Filters</h2>
  * Any filter that uses the {@code Config} instance during its initialization
  * should do so in its {@link #init(Config)} method,
  * <em>not</em>
  * in its constructor. The {@code Config.Builder.build()} method invokes each
- * filter's `init` method according to the filters' priority order and just
+ * filter's `init` method according to the filters' weight and just
  * before returning the new {@code Config} instance to the application.
  * <p>
  * If a filter's {@code init} method uses {@code Config#get} to retrieve config
  * information, then -- as always -- the config system will invoke the
  * {@code apply} method on every filter which the application added to the
- * builder. But the {@code init} methods of filters with lower priority than the
+ * builder. But the {@code init} methods of filters with lower weight than the
  * current filter <em>will not</em> have executed. Developers should keep this
  * in mind while writing filter {@code init} methods.
  *
@@ -53,11 +53,6 @@ import io.helidon.config.Config;
  */
 @FunctionalInterface
 public interface ConfigFilter {
-
-    /**
-     * Default priority of the filter if registered by {@link io.helidon.config.Config.Builder} automatically.
-     */
-    int PRIORITY = 100;
 
     /**
      * Filters an elementary config value before it is made available to the

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-class HeaderValueList extends HeaderValueBase {
+class HeaderValueList extends HeaderWritableValueBase {
     private List<String> values;
 
     HeaderValueList(HeaderName name, boolean changing, boolean sensitive, Collection<String> values) {

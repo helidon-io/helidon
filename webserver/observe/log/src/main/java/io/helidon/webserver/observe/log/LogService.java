@@ -103,7 +103,6 @@ class LogService implements HttpService {
 
         rules.get("/loggers")
                 .get("/loggers", this::allLoggersHandler)
-                .get("/loggers", this::allLoggersHandler)
                 .get("/loggers/{logger}", this::loggerHandler)
                 .post("/loggers/{logger}", this::setLevelHandler)
                 .delete("/loggers/{logger}", this::unsetLoggerHandler);
@@ -165,7 +164,6 @@ class LogService implements HttpService {
     }
 
     private void setLevelHandler(ServerRequest req, ServerResponse res) {
-        System.out.println("Here");
         String logger = req.path().pathParameters().first("logger").orElse("");
         JsonObject requestJson = READER.read(JsonpSupport.JSON_OBJECT_TYPE,
                                              req.content().inputStream(),

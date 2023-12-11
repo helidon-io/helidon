@@ -53,8 +53,8 @@ public class DirectClient implements Http1Client {
      *
      * @param routing routing to use
      */
-    public DirectClient(HttpRouting routing) {
-        this.routing = routing;
+    public DirectClient(HttpRouting.Builder routing) {
+        this.routing = routing.build();
         this.httpClient = Http1Client.builder()
                 .baseUri(URI.create("http://helidon-unit:65000"))
                 .build();
@@ -98,6 +98,11 @@ public class DirectClient implements Http1Client {
 
         return httpClient.method(method)
                 .connection(new DirectClientConnection(socket, router));
+    }
+
+    @Override
+    public void closeResource() {
+        // Nothing to close in connection-less client
     }
 
     /**

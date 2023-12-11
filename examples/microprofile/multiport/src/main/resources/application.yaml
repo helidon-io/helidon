@@ -23,7 +23,7 @@ server:
       port: 8082
       # bind address is optional, if not defined, server host will be used)
       bind-address: "localhost"
-
-# Metrics and health run on admin port
-observe:
-  routing: "admin"
+  features:
+    observe:
+      # Metrics and health run on admin port
+      sockets: "admin"

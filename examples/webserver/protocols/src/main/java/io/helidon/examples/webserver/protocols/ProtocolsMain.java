@@ -79,11 +79,9 @@ public class ProtocolsMain {
                                     .unary(Strings.getDescriptor(),
                                            "StringService",
                                            "Upper",
-                                           ProtocolsMain::grpcUpper)
-                                    .build())
+                                           ProtocolsMain::grpcUpper))
                 .addRouting(WsRouting.builder()
-                                    .endpoint("/tyrus/echo", ProtocolsMain::wsEcho)
-                                    .build())
+                                    .endpoint("/tyrus/echo", ProtocolsMain::wsEcho))
                 .build()
                 .start();
     }

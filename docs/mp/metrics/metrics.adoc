@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,6 +26,11 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
+:metric: metric
+:metrics: metrics
+:metric_uc: Metric
+:metrics_uc: Metrics
+:metrics-endpoint: /metrics
 
 == Contents
 
@@ -54,13 +59,16 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 Adding this dependency packages the full-featured metrics implementation with your service.
 
-=== Other packaging options
-Helidon gives you flexibility in how you make metrics available to your service. xref:{rootdir}/mp/metrics/metrics-capable-components.adoc[This document] explains your options.
-
 == Usage
 
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 
+=== {Metric_uc} Registries
+A _{metric} registry_ collects registered {metrics} of a given scope. Helidon supports one metrics registry for each scope.
+
+When you add code to your service to create a metric programmatically, the code first locates the appropriate registry and then registers the metric with that registry.
+
+include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-retrieving]
 
 == API
 
@@ -80,17 +88,8 @@ The MicroProfile Metrics specification describes several metric types you can cr
 | link:{microprofile-metrics-javadoc-annotation-url}/Counted.html[`@Counted`]
 | Monotonically increasing count of events.
 
-| link:{microprofile-metrics-javadoc-annotation-url}ConcurrentGauge.html[`@ConcurrentGauge`]
-| Increasing and decreasing measurement of currently-executing blocks of code.
-
 | link:{microprofile-metrics-javadoc-annotation-url}/Gauge.html[`@Gauge`]
 | Access to a value managed by other code in the service.
-
-| link:{microprofile-metrics-javadoc-annotation-url}/Metered.html[`@Metered`]
-| Count of invocations and how frequently invocations have occurred.
-
-| link:{microprofile-metrics-javadoc-annotation-url}/SimplyTimed.html[`@SimplyTimed`]
-| Count of invocations and the total duration consumed by those invocations.
 
 | link:{microprofile-metrics-javadoc-annotation-url}/Timed.html[`@Timed`]
 | Frequency of invocations and the distribution of how long the invocations take.
@@ -190,7 +189,7 @@ java -jar target/helidon-quickstart-mp.jar
 ----
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ----
 // end::access-cards-example[]
 
@@ -200,21 +199,26 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 .JSON response:
 ----
 {
-  "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 // <1>
+  "io.helidon.examples.quickstart.mp.GreetingCards.any-card": 2,   //  <1>
+  "personalizedGets": 0,
+  "allGets": {
+    "count": 0,
+    "elapsedTime": 0,
+    "max": 0,
+    "mean": 0
+  }
 }
 ----
-<1> The any-card count is two, since you invoked the endpoint twice.
+<1> The any-card count is two, since you invoked the endpoint twice. The other metrics are from the `SimpleGreetResource` class.
 
 NOTE: Notice the counter name is fully qualified with the class and method names.  You can remove the prefix by using the `absolute=true` field in the `@Counted` annotation.
 You must use  `absolute=false` (the default) for class-level annotations.
 
 ==== Additional Method-level Metrics
 
-The `@ConcurrentGauge`, @Timed`, `@Metered`, and `@SimplyTimed` annotations can also be used with a method.  For the following example.
-you can just annotate the same method with `@Metered` and `@Timed`. These metrics collect significant
+You can also use the @Timed` annotation with a method.  For the following example.
+you can just annotate the same method with `@Timed`. Timers  significant
 information about the measured methods, but at a cost of some overhead and more complicated output.
-Use `@SimplyTimed` in cases where capturing the invocation count and the total elapsed time
-spent in a block of code is sufficient.
 
 Note that when using multiple annotations on a method, you *must* give the metrics different names as shown below (although they do not have to be absolute).
 
@@ -245,9 +249,8 @@ public class GreetingCards {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "cardCount", absolute = true) //<1>
-  @Metered(name = "cardMeter", absolute = true, unit = MetricUnits.MILLISECONDS) //<2>
-  @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) //<3>
+  @Counted(name = "cardCount", absolute = true) // <1>
+  @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) // <2>
   public JsonObject anyCard() {
     return createResponse("Here are some random cards ...");
   }
@@ -259,8 +262,7 @@ public class GreetingCards {
 
 ----
 <1> Specify a custom name for the `Counter` metric and set `absolute=true` to remove the path prefix from the name.
-<2> Add the `@Metered` annotation to get a `Meter` metric.
-<3> Add the `@Timed` annotation to get a `Timer` metric.
+<2>Add the `@Timed` annotation to get a `Timer` metric.
 
 include::metrics.adoc[tag=build-and-access-cards-example]
 
@@ -268,41 +270,26 @@ include::metrics.adoc[tag=build-and-access-cards-example]
 .JSON response:
 ----
 {
-  "cardCount": 2,
-  "cardMeter": { // <1>
+  "cardTimer": {
     "count": 2,
-    "meanRate": 0.15653506570241812,
-    "oneMinRate": 0,
-    "fiveMinRate": 0,
-    "fifteenMinRate": 0
+    "elapsedTime": 0.002941925,
+    "max": 0.002919973,
+    "mean": 0.0014709625
   },
-  "cardTimer": { // <2>
-    "count": 2,
-    "elapsedTime": 2,
-    "meanRate": 0.15651866263362785,
-    "oneMinRate": 0,
-    "fiveMinRate": 0,
-    "fifteenMinRate": 0,
-    "min": 0,
-    "max": 2,
-    "mean": 1.0506565,
-    "stddev": 1.0405735,
-    "p50": 2.09123,
-    "p75": 2.09123,
-    "p95": 2.09123,
-    "p98": 2.09123,
-    "p99": 2.09123,
-    "p999": 2.09123
-  }
+  "personalizedGets": 0,
+  "allGets": {
+    "count": 0,
+    "elapsedTime": 0,
+    "max": 0,
+    "mean": 0
+  },
+  "cardCount": 2
 }
 ----
-<1> The `Meter` metric includes the count field (it is a superset of `Counter`).
-<2> The `Timer` metric includes the `Meter` fields (it is a superset of `Meter`).
-
 
 ==== Class-level Metrics
 
-You can collect metrics at the class-level to aggregate data from all methods in that class using the same metric.
+You can collect metrics at the class level to aggregate data from all methods in that class using the same metric.
 The following example introduces a metric to count all card queries.  In the following example, the method-level metrics are not
 needed to aggregate the counts, but they are left in the example to demonstrate the combined output of all three metrics.
 
@@ -349,7 +336,7 @@ public class GreetingCards {
   }
 }
 ----
-<1> This class is annotated with `@Counted`, which aggregates count data from all the method that have a `Count` annotation.
+<1> This class is now annotated with `@Counted`, which aggregates count data from all the method that have a `Count` annotation.
 <2> Use `absolute=true` to remove path prefix for method-level annotations.
 <3> Add a method with a `Counter` metric to get birthday cards.
 
@@ -359,26 +346,34 @@ include::metrics.adoc[tag=build-cards-example]
 ----
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards/birthday
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ----
 
 [source,json]
-.JSON response from `/metrics/application`:
+.JSON response from `/metrics?scope=application`:
 ----
 {
-  "anyCard": 1,
   "birthdayCard": 1,
-  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2  // <1>
+  "personalizedGets": 0,
+  "allGets": {
+    "count": 0,
+    "elapsedTime": 0,
+    "max": 0,
+    "mean": 0
+  },
+  "anyCard": 1,
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2    // <1>
 }
+
 ----
-<1> The `totalCards` count is a total of all the method-level `Counter` metrics.  Class level metric names are always
+<1> The `totalCards.GreetingCards` count is a total of all the method-level `Counter` metrics.  Class level metric names are always
 fully qualified.
 
 
 ==== Field Level Metrics
 
 Field level metrics can be injected into managed objects, but they need to be updated by the application code.
-This annotation can be used on fields of type `Meter`, `Timer`, `Counter`, and `Histogram`.
+This annotation can be used on fields of type `Timer`, `Counter`, and `Histogram`.
 
 The following example shows how to use a field-level `Counter` metric to track cache hits.
 
@@ -454,16 +449,23 @@ curl http://localhost:8080/cards
 curl http://localhost:8080/cards/birthday
 curl http://localhost:8080/cards/birthday
 curl http://localhost:8080/cards/birthday
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ----
 
 [source,json]
 .JSON response from `/metrics/application`:
 ----
 {
-  "anyCard": 2,
   "birthdayCard": 3,
-  "cacheHits": 2, // <1>
+  "personalizedGets": 0,
+  "allGets": {
+    "count": 0,
+    "elapsedTime": 0,
+    "max": 0,
+    "mean": 0
+  },
+  "anyCard": 2,
+  "cacheHits": 2,    // <1>
   "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 5
 }
 ----
@@ -473,11 +475,10 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 The metrics you have tested so far are updated in response to an application REST request, i.e GET `/cards`.  These
 metrics can be declared in a request scoped class and Helidon will store the metric in the `MetricRegistry`, so the value persists
-across requests. When GET `/metrics/application` is invoked, Helidon will return the current value of the metric stored in the `MetricRegistry`.
-The `Gauge` metric is different from all the other metrics. The application must provide a getter to return the gauge value in an
-application scoped class. When GET `/metrics/application` is invoked, Helidon will call the `Gauge` getter, store that value
-in the `MetricsRegistry`, and return it as part of the metrics response payload.  So, the `Gauge` metric value is updated real-time, in response to the
-get metrics request.
+across requests. When GET `/metrics?scope=application` is invoked, Helidon will return the current value of the metric stored in the `MetricRegistry`.
+
+The `Gauge` annotation is different from the other metric annotations. The application must provide a method to return the gauge value in an
+application-scoped class. When GET `/metrics?scope=application` is invoked, Helidon will call the `Gauge` method, using the returned value as the value of the gauge as part of the metrics response.
 
 The following example demonstrates how to use a `Gauge` to track application up-time.
 
@@ -508,7 +509,7 @@ public class GreetingCardsAppMetrics {
   }
 }
 ----
-<1> This managed object must be application scoped to properly register and use the `Gauge` metric.
+<1> This managed object must be application scoped to properly register and use the annotated `Gauge` metric.
 <2> Declare an `AtomicLong` field to hold the start time of the application.
 <3> Initialize the application start time.
 <4> Return the application `appUpTimeSeconds` metric, which will be included in the application metrics.
@@ -552,18 +553,26 @@ public class GreetingCards {
 [source,bash]
 .Build and run the application, then invoke the application metrics endpoint:
 ----
-curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ----
 
 [source,json]
 .JSON response from `/metrics/application`:
 ----
 {
-  "cardCount": 0,
-  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 6 // <1>
+  "personalizedGets": 0,
+  "allGets": {
+    "count": 0,
+    "elapsedTime": 0,
+    "max": 0,
+    "mean": 0
+  },
+  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 23,    // <1>
+  "cardCount": 0
 }
+
 ----
-<1> The application has been running for 6 seconds.
+<1> The application has been running for 23 seconds.
 
 // Config examples
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-examples]

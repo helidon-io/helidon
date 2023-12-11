@@ -25,8 +25,6 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
-import io.helidon.webserver.security.SecurityFeature;
 
 /**
  * Example of HTTP digest authentication with Web Server fully configured in config file.
@@ -78,10 +76,8 @@ public final class DigestExampleConfigMain {
 
     static void setup(WebServerConfig.Builder server) {
         Config config = Config.create();
-        // helper method to load both security and web server security from configuration
-        server.routing(routing -> routing
-                .addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(config.get("security")))
+        server.config(config.get("server"))
+                .routing(routing -> routing
                 // web server does not (yet) have possibility to configure routes in config files, so explicit...
                 .get("/{*}", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);

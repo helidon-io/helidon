@@ -25,7 +25,6 @@
     <source src="/common/sources.xml"/>
     <output>
         <model>
-            <value key="mainClass">${package}.Main</value>
             <value key="parent-artifactId">helidon-mp</value>
             <list key="dependencies">
                 <map>
@@ -73,8 +72,6 @@
                 <value>io.helidon.microprofile.testing.junit5.HelidonTest</value>
             </list>
             <list key="MainTest-other-imports">
-                <value>org.junit.jupiter.api.AfterAll</value>
-                <value>org.junit.jupiter.api.BeforeAll</value>
                 <value>org.junit.jupiter.api.Test</value>
             </list>
             <list key="MainTest-static-imports">

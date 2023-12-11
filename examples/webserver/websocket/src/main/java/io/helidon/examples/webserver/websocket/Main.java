@@ -38,8 +38,7 @@ public class Main {
                        .register("/web", staticContent)
                        .register("/rest", messageQueueService))
                .addRouting(WsRouting.builder()
-                                    .endpoint("/websocket/board", new MessageBoardEndpoint())
-                                    .build());
+                                    .endpoint("/websocket/board", new MessageBoardEndpoint()));
     }
 
     /**

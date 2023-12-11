@@ -29,11 +29,20 @@
     <artifactId>helidon-integrations-cdi-hibernate</artifactId>
     <name>Helidon CDI Integrations Hibernate</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+    
     <dependencies>
         <!-- Test-scoped dependencies. -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -71,13 +80,6 @@
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
             <scope>compile</scope>
-            <!-- Use the io.smallrye jandex artifact (which the rest of Helidon uses) instead of the org.jboss one. -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss</groupId>
-                    <artifactId>jandex</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <!-- As we exclude javax from hibernate, we need to add jakarta -->

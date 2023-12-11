@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -43,6 +44,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -207,6 +209,7 @@ class JsonFormatter implements MeterRegistryFormatter {
 
                 JsonObjectBuilder builderForThisName = metadataOutputBuilderWithinParent
                         .computeIfAbsent(name, k -> JSON.createObjectBuilder());
+                addNonEmpty(builderForThisName, "type", meter.type().typeName());
                 meter.baseUnit().ifPresent(u -> addNonEmpty(builderForThisName, "unit", u));
                 meter.description().ifPresent(d -> addNonEmpty(builderForThisName, "description", d));
                 isAnyOutput.set(true);
@@ -451,14 +454,16 @@ class JsonFormatter implements MeterRegistryFormatter {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
                     } else if (child instanceof DistributionSummary typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
-                        sameNameBuilder.add(valueId("max", childID), typedChild.snapshot().max());
-                        sameNameBuilder.add(valueId("mean", childID), typedChild.snapshot().mean());
+                        sameNameBuilder.add(valueId("max", childID), typedChild.max());
+                        sameNameBuilder.add(valueId("mean", childID), typedChild.mean());
                         sameNameBuilder.add(valueId("total", childID), typedChild.totalAmount());
+                        addDetails(typedChild.snapshot(), childID, null);
                     } else if (child instanceof Timer typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
-                        sameNameBuilder.add(valueId("elapsedTime", childID), typedChild.totalTime(TimeUnit.SECONDS));
                         sameNameBuilder.add(valueId("max", childID), typedChild.max(TimeUnit.SECONDS));
                         sameNameBuilder.add(valueId("mean", childID), typedChild.mean(TimeUnit.SECONDS));
+                        sameNameBuilder.add(valueId("elapsedTime", childID), typedChild.totalTime(TimeUnit.SECONDS));
+                        addDetails(typedChild.snapshot(), childID, timeUnit(typedChild));
                     } else if (child instanceof FunctionalCounter typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
                     } else if (child instanceof Gauge typedChild) {
@@ -469,6 +474,42 @@ class JsonFormatter implements MeterRegistryFormatter {
                     }
                 });
                 builder.add(meterId.name(), sameNameBuilder);
+            }
+
+            private void addDetails(HistogramSnapshot snapshot, Meter.Id childId, TimeUnit timeUnit) {
+                snapshot.percentileValues().forEach(vap ->
+                                                            sameNameBuilder
+                                                                    .add(valueId(percentileName(vap.percentile()),
+                                                                                 childId),
+                                                                         timeUnit != null
+                                                                                 ? vap.value(timeUnit)
+                                                                                 : vap.value()));
+                snapshot.histogramCounts().forEach(bucket ->
+                                                           sameNameBuilder
+                                                                   .add(valueId(bucketName(timeUnit != null
+                                                                                                   ? bucket.boundary(timeUnit)
+                                                                                                   : bucket.boundary()),
+                                                                                childId),
+                                                                        bucket.count()));
+            }
+
+            private static String percentileName(double percentile) {
+                return "p" + percentile;
+            }
+
+            private static String bucketName(double boundary) {
+                return "b" + boundary;
+            }
+
+            private static TimeUnit timeUnit(Timer timer) {
+                if (timer.baseUnit().isPresent()) {
+                    try {
+                        return TimeUnit.valueOf(timer.baseUnit().get().toUpperCase(Locale.getDefault()));
+                    } catch (IllegalArgumentException ex) {
+                        return TimeUnit.SECONDS;
+                    }
+                }
+                return TimeUnit.SECONDS;
             }
 
             private static String valueId(String valueName, Meter.Id meterId) {

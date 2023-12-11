@@ -1,0 +1,56 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.webserver.observe.info.InfoObserver
+:keywords: helidon, config, io.helidon.webserver.observe.info.InfoObserver
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.observe.info.InfoObserver
+include::{rootdir}/includes/attributes.adoc[]
+
+= InfoObserver (webserver.observe.info) Configuration
+
+// tag::config[]
+
+
+Type: link:{javadoc-base-url}/io.helidon.webserver.observe.info/io/helidon/webserver/observe/info/InfoObserver.html[io.helidon.webserver.observe.info.InfoObserver]
+
+
+
+This type provides the following service implementations:
+
+- `io.helidon.webserver.observe.spi.ObserveProvider`
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`endpoint` |string |`info` |
+|`values` |Map&lt;string, string&gt; |{nbsp} |Values to be exposed using this observability endpoint.
+
+ @return value map
+
+|===
+
+// end::config[]

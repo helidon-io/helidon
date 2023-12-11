@@ -39,7 +39,7 @@ public class Main {
 
     public static WebServer startServer(boolean ssl) {
         Keys privateKeyConfig = Keys.builder()
-                .keystore(store -> store.passphrase("helidon")
+                .keystore(store -> store.passphrase("password")
                         .keystore(Resource.create("server.p12")))
                 .build();
 
@@ -74,8 +74,7 @@ public class Main {
                                                     + " route " + req.prologue().method() + "\n");
                                }))
                 .addRouting(WsRouting.builder()
-                                    .endpoint("/ws-echo", new EchoWsListener())
-                                    .build())
+                                    .endpoint("/ws-echo", new EchoWsListener()))
                 .build()
                 .start();
     }

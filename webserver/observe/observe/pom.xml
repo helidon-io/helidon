@@ -41,6 +41,15 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
+            <!--
+             needed to disable a compiler warning about "unknown enum constant Kind.LIST"
+             the annotations have CLASS retention, so this is not a runtime issue
+            -->
+            <artifactId>helidon-config-metadata</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

@@ -16,11 +16,8 @@
 
 package io.helidon.webserver.security;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +28,11 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -47,7 +45,6 @@ import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ClassToInstanceStore;
 import io.helidon.security.QueryParamMapping;
-import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityRequest;
@@ -68,30 +65,21 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 
 /**
  * Handles security for web server. This handler is registered either by hand on router config,
- * or automatically from configuration when integration done through {@link SecurityFeature#create(Config)}
- * or {@link SecurityFeature#create(Security, Config)}.
+ * or automatically from configuration when integration done through {@link io.helidon.webserver.security.SecurityFeature},
+ * or {@link SecurityHttpFeature#create(io.helidon.common.config.Config)}.
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-public final class SecurityHandler implements Handler {
+@RuntimeType.PrototypedBy(SecurityHandlerConfig.class)
+public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityHandlerConfig> {
+    static final String DEFAULT_AUDIT_EVENT_TYPE = "request";
+    static final String DEFAULT_AUDIT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";
     private static final Logger LOGGER = Logger.getLogger(SecurityHandler.class.getName());
-    private static final String KEY_ROLES_ALLOWED = "roles-allowed";
-    private static final String KEY_AUTHENTICATOR = "authenticator";
-    private static final String KEY_AUTHORIZER = "authorizer";
-    private static final String KEY_AUTHENTICATE = "authenticate";
-    private static final String KEY_AUTHENTICATION_OPTIONAL = "authentication-optional";
-    private static final String KEY_AUTHORIZE = "authorize";
-    private static final String KEY_AUDIT = "audit";
-    private static final String KEY_AUDIT_EVENT_TYPE = "audit-event-type";
-    private static final String KEY_AUDIT_MESSAGE_FORMAT = "audit-message-format";
-    private static final String KEY_QUERY_PARAM_HANDLERS = "query-params";
-    private static final String DEFAULT_AUDIT_EVENT_TYPE = "request";
-    private static final String DEFAULT_AUDIT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";
     private static final SecurityHandler DEFAULT_INSTANCE = builder().build();
 
+    private final SecurityHandlerConfig config;
     private final Optional<Set<String>> rolesAllowed;
     private final Optional<ClassToInstanceStore<Object>> customObjects;
-    private final Optional<Config> config;
     private final Optional<String> explicitAuthenticator;
     private final Optional<String> explicitAuthorizer;
     private final Optional<Boolean> authenticate;
@@ -107,34 +95,59 @@ public final class SecurityHandler implements Handler {
     // lazily initialized (as it requires a context value to first create it)
     private final AtomicReference<SecurityHandler> combinedHandler = new AtomicReference<>();
 
-    private SecurityHandler(Builder builder) {
-        // must copy values to be safely immutable
-        this.rolesAllowed = builder.rolesAllowed.flatMap(strings -> {
-            Set<String> newRoles = new HashSet<>(strings);
-            return Optional.of(newRoles);
-        });
+    private SecurityHandler(SecurityHandlerConfig config) {
+        this.config = config;
 
         // must copy values to be safely immutable
-        this.customObjects = builder.customObjects.flatMap(store -> {
-            ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
-            ctis.putAll(store);
-            return Optional.of(ctis);
-        });
+        Set<String> rolesAllowedSet = config.rolesAllowed();
+        if (rolesAllowedSet.isEmpty()) {
+            this.rolesAllowed = Optional.empty();
+        } else {
+            this.rolesAllowed = Optional.of(rolesAllowedSet);
+        }
 
-        config = builder.config;
-        explicitAuthenticator = builder.explicitAuthenticator;
-        explicitAuthorizer = builder.explicitAuthorizer;
-        authenticate = builder.authenticate;
-        authenticationOptional = builder.authenticationOptional;
-        audited = builder.audited;
-        auditEventType = builder.auditEventType;
-        auditMessageFormat = builder.auditMessageFormat;
-        authorize = builder.authorize;
-        combined = builder.combined;
+        // must copy values to be safely immutable
+        this.customObjects = config.customObjects()
+                .map(it -> {
+                    ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
+                    ctis.putAll(it);
+                    return ctis;
+                });
 
-        queryParamHandlers.addAll(builder.queryParamHandlers);
+        explicitAuthenticator = config.authenticator();
+        explicitAuthorizer = config.authorizer();
+        authenticate = config.authenticate();
+        authenticationOptional = config.authenticationOptional();
+        audited = config.audit();
+        auditEventType = config.auditEventType();
+        auditMessageFormat = config.auditMessageFormat();
+        authorize = config.authorize();
+        combined = config.combined();
 
-        config.ifPresent(conf -> conf.asNodeList().get().forEach(node -> configMap.put(node.name(), node)));
+        queryParamHandlers.addAll(config.queryParams());
+
+        config.config().ifPresent(conf -> conf.asNodeList().get().forEach(node -> configMap.put(node.name(), node)));
+    }
+
+    /**
+     * Create a new fluent API builder for security handler.
+     *
+     * @return a new builder
+     */
+    public static SecurityHandlerConfig.Builder builder() {
+        return SecurityHandlerConfig.builder();
+    }
+
+    /**
+     * Create a new instance, customizing its configuration.
+     *
+     * @param consumer consumer of configuration builder
+     * @return a new configured handler
+     */
+    public static SecurityHandler create(Consumer<SecurityHandlerConfig.Builder> consumer) {
+        return builder()
+                .update(consumer)
+                .build();
     }
 
     /**
@@ -144,7 +157,7 @@ public final class SecurityHandler implements Handler {
      * <pre>
      * {
      *   #
-     *   # these are used by {@link SecurityFeature} when loaded from config, to register with {@link io.helidon.webserver.WebServer}
+     *   # these are used by {@link SecurityHttpFeature} when loaded from config, to register with {@link io.helidon.webserver.WebServer}
      *   #
      *   path = "/noRoles"
      *   methods = ["get"]
@@ -191,73 +204,15 @@ public final class SecurityHandler implements Handler {
      * @param defaults Default values to copy
      * @return an instance configured from the config (using defaults from defaults parameter for missing values)
      */
-    static SecurityHandler create(Config config, SecurityHandler defaults) {
-        Builder builder = builder(defaults);
+    public static SecurityHandler create(Config config, SecurityHandler defaults) {
+        return builder()
+                .from(defaults.prototype())
+                .config(config)
+                .build();
+    }
 
-        config.get(KEY_ROLES_ALLOWED).asList(String.class)
-                .ifPresentOrElse(builder::rolesAllowed,
-                                 () -> defaults.rolesAllowed.ifPresent(builder::rolesAllowed));
-        if (config.exists()) {
-            builder.config(config);
-        }
-
-        config.get(KEY_AUTHENTICATOR).asString().or(() -> defaults.explicitAuthenticator)
-                .ifPresent(builder::authenticator);
-        config.get(KEY_AUTHORIZER).asString().or(() -> defaults.explicitAuthorizer)
-                .ifPresent(builder::authorizer);
-        config.get(KEY_AUTHENTICATE).as(Boolean.class).or(() -> defaults.authenticate)
-                .ifPresent(builder::authenticate);
-        config.get(KEY_AUTHENTICATION_OPTIONAL).asBoolean()
-                .or(() -> defaults.authenticationOptional)
-                .ifPresent(builder::authenticationOptional);
-        config.get(KEY_AUDIT).asBoolean().or(() -> defaults.audited)
-                .ifPresent(builder::audit);
-        config.get(KEY_AUTHORIZE).asBoolean().or(() -> defaults.authorize)
-                .ifPresent(builder::authorize);
-        config.get(KEY_AUDIT_EVENT_TYPE).asString().or(() -> defaults.auditEventType)
-                .ifPresent(builder::auditEventType);
-        config.get(KEY_AUDIT_MESSAGE_FORMAT).asString().or(() -> defaults.auditMessageFormat)
-                .ifPresent(builder::auditMessageFormat);
-        config.get(KEY_QUERY_PARAM_HANDLERS).asList(QueryParamHandler::create)
-                .ifPresent(it -> it.forEach(builder::addQueryParamHandler));
-
-        // now resolve implicit behavior
-
-        // roles allowed implies atn and atz
-        if (config.get(KEY_ROLES_ALLOWED).exists()) {
-            // we have roles allowed defined
-            if (!config.get(KEY_AUTHENTICATE).exists()) {
-                builder.authenticate(true);
-            }
-            if (!config.get(KEY_AUTHORIZE).exists()) {
-                builder.authorize(true);
-            }
-        }
-
-        // optional atn implies atn
-        config.get(KEY_AUTHENTICATION_OPTIONAL).asBoolean().ifPresent(aBoolean -> {
-            if (aBoolean) {
-                if (!config.get(KEY_AUTHENTICATE).exists()) {
-                    builder.authenticate(true);
-                }
-            }
-        });
-
-        // explicit atn provider implies atn
-        config.get(KEY_AUTHENTICATOR).asString().ifPresent(value -> {
-            if (!config.get(KEY_AUTHENTICATE).exists()) {
-                builder.authenticate(true);
-            }
-        });
-
-        // explicit atz provider implies atz
-        config.get(KEY_AUTHORIZER).asString().ifPresent(value -> {
-            if (!config.get(KEY_AUTHORIZE).exists()) {
-                builder.authorize(true);
-            }
-        });
-
-        return builder.build();
+    static SecurityHandler create(SecurityHandlerConfig config) {
+        return new SecurityHandler(config);
     }
 
     static SecurityHandler create() {
@@ -268,15 +223,12 @@ public final class SecurityHandler implements Handler {
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
         Context context = Contexts.context()
-                .orElseThrow(() -> new SecurityException(
-                        "Security requires Context feature to be registered (modules helidon-security-context and "
-                                + "helidon-webserver-context)"));
+                .orElseGet(req::context);
         //process security
         SecurityContext securityContext = context
                 .get(SecurityContext.class)
                 .orElseThrow(() -> new SecurityException(
-                        "Security context not present. Maybe you forgot to Routing.builder().register(WebSecurity.from"
-                                + "(security))..."));
+                        "Security context not present. The security feature must be applied on this socket."));
 
         if (combined) {
             processSecurity(securityContext, req, res);
@@ -293,13 +245,21 @@ public final class SecurityHandler implements Handler {
                     combinedHandler.set(this);
                 } else {
                     combinedHandler.compareAndSet(null,
-                                                  builder(defaultHandler).configureFrom(this).combined().build());
+                                                  builder().from(defaultHandler.prototype())
+                                                          .from(this.prototype())
+                                                          .combined(true)
+                                                          .build());
                 }
             }
 
             combinedHandler.get().processSecurity(securityContext, req, res);
         }
 
+    }
+
+    @Override
+    public SecurityHandlerConfig prototype() {
+        return config;
     }
 
     /**
@@ -319,7 +279,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authenticator(String explicitAuthenticator) {
-        return builder(this).authenticator(explicitAuthenticator).build();
+        return builder().from(prototype()).authenticator(explicitAuthenticator).build();
     }
 
     /**
@@ -331,7 +291,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authorizer(String explicitAuthorizer) {
-        return builder(this).authorizer(explicitAuthorizer).build();
+        return builder().from(prototype()).authorizer(explicitAuthorizer).build();
     }
 
     /**
@@ -345,7 +305,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler rolesAllowed(String... roles) {
-        return builder(this).rolesAllowed(roles).authorize(true).authenticate(true).build();
+        return builder().from(prototype()).rolesAllowed(Set.of(roles)).authorize(true).authenticate(true).build();
 
     }
 
@@ -357,7 +317,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authenticationOptional() {
-        return builder(this).authenticationOptional(true).build();
+        return builder().from(prototype()).authenticationOptional(true).build();
     }
 
     /**
@@ -367,7 +327,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authenticate() {
-        return builder(this).authenticate(true).build();
+        return builder().from(prototype()).authenticate(true).build();
     }
 
     /**
@@ -377,7 +337,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler skipAuthentication() {
-        return builder(this).authenticate(false).build();
+        return builder().from(prototype()).authenticate(false).build();
     }
 
     /**
@@ -388,7 +348,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler customObject(Object object) {
-        return builder(this).customObject(object).build();
+        return builder().from(prototype()).addObject(object).build();
     }
 
     /**
@@ -398,7 +358,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler auditEventType(String eventType) {
-        return builder(this).auditEventType(eventType).build();
+        return builder().from(prototype()).auditEventType(eventType).build();
     }
 
     /**
@@ -408,7 +368,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler auditMessageFormat(String messageFormat) {
-        return builder(this).auditMessageFormat(messageFormat).build();
+        return builder().from(prototype()).auditMessageFormat(messageFormat).build();
     }
 
     /**
@@ -418,7 +378,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authorize() {
-        return builder(this).authorize(true).build();
+        return builder().from(prototype()).authorize(true).build();
     }
 
     /**
@@ -429,7 +389,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler skipAuthorization() {
-        return builder(this).authorize(false).build();
+        return builder().from(prototype()).authorize(false).build();
     }
 
     /**
@@ -446,7 +406,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler audit() {
-        return builder(this).audit(true).build();
+        return builder().from(prototype()).audit(true).build();
     }
 
     /**
@@ -463,7 +423,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler skipAudit() {
-        return builder(this).audit(false).build();
+        return builder().from(prototype()).audit(false).build();
     }
 
     /**
@@ -474,8 +434,8 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance
      */
     public SecurityHandler queryParam(String queryParamName, TokenHandler headerHandler) {
-        return builder(this)
-                .addQueryParamHandler(QueryParamHandler.create(queryParamName, headerHandler))
+        return builder().from(prototype())
+                .addQueryParam(QueryParamHandler.create(queryParamName, headerHandler))
                 .build();
     }
 
@@ -498,14 +458,6 @@ public final class SecurityHandler implements Handler {
                                       Consumer<T> builderMethod,
                                       Class<T> clazz) {
         config.get(key).as(clazz).or(() -> defaultValue).ifPresent(builderMethod);
-    }
-
-    private static Builder builder() {
-        return new Builder();
-    }
-
-    private static Builder builder(SecurityHandler toCopy) {
-        return new Builder().configureFrom(toCopy);
     }
 
     private void processSecurity(SecurityContext securityContext, ServerRequest req, ServerResponse res) {
@@ -833,208 +785,6 @@ public final class SecurityHandler implements Handler {
         @SuppressWarnings("unused")
         private AtxResult(SecurityRequest ignored) {
             this.proceed = true;
-        }
-    }
-
-    // WARNING: builder methods must not have side-effects, as they are used to build instance from configuration
-    // if you want side effects, use methods on SecurityHandler
-    private static final class Builder implements io.helidon.common.Builder<Builder, SecurityHandler> {
-        private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
-        private Optional<Set<String>> rolesAllowed = Optional.empty();
-        private Optional<ClassToInstanceStore<Object>> customObjects = Optional.empty();
-        private Optional<Config> config = Optional.empty();
-        private Optional<String> explicitAuthenticator = Optional.empty();
-        private Optional<String> explicitAuthorizer = Optional.empty();
-        private Optional<Boolean> authenticate = Optional.empty();
-        private Optional<Boolean> authenticationOptional = Optional.empty();
-        private Optional<Boolean> authorize = Optional.empty();
-        private Optional<Boolean> audited = Optional.empty();
-        private Optional<String> auditEventType = Optional.empty();
-        private Optional<String> auditMessageFormat = Optional.empty();
-        private boolean combined;
-
-        private Builder() {
-        }
-
-        @Override
-        public SecurityHandler build() {
-            return new SecurityHandler(this);
-        }
-
-        /**
-         * Add a new handler to extract query parameter and store it in security request header.
-         *
-         * @param handler handler to extract data
-         * @return updated builder instance
-         */
-        public Builder addQueryParamHandler(QueryParamHandler handler) {
-            this.queryParamHandlers.add(handler);
-            return this;
-        }
-
-        /**
-         * Use a named authenticator (as supported by security - if not defined, default authenticator is used).
-         *
-         * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
-         * @return updated builder instance
-         */
-        Builder authenticator(String explicitAuthenticator) {
-            this.explicitAuthenticator = Optional.of(explicitAuthenticator);
-            return this;
-        }
-
-        /**
-         * Use a named authorizer (as supported by security - if not defined, default authorizer is used, if none defined, all is
-         * permitted).
-         *
-         * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
-         * @return updated builder instance
-         */
-        Builder authorizer(String explicitAuthorizer) {
-            this.explicitAuthorizer = Optional.of(explicitAuthorizer);
-            return this;
-        }
-
-        /**
-         * An array of allowed roles for this path - must have a security provider supporting roles.
-         *
-         * @param roles if subject is any of these roles, allow access
-         * @return updated builder instance
-         */
-        Builder rolesAllowed(String... roles) {
-            return rolesAllowed(Arrays.asList(roles));
-        }
-
-        /**
-         * If called, authentication failure will not abort request and will continue as anonymous (defaults to false).
-         *
-         * @param isOptional whether authn is optional
-         * @return updated builder instance
-         */
-        Builder authenticationOptional(boolean isOptional) {
-            this.authenticationOptional = Optional.of(isOptional);
-            return this;
-        }
-
-        /**
-         * If called, request will go through authentication process - defaults to false (even if authorize is true).
-         *
-         * @param authenticate whether to authenticate or not
-         * @return updated builder instance
-         */
-        Builder authenticate(boolean authenticate) {
-            this.authenticate = Optional.of(authenticate);
-            return this;
-        }
-
-        /**
-         * Register a custom object for security request(s).
-         * This creates a hard dependency on a specific security provider, so use with care.
-         *
-         * @param object An object expected by security provider
-         * @return updated builder instance
-         */
-        Builder customObject(Object object) {
-            customObjects
-                    .ifPresentOrElse(store -> store.putInstance(object), () -> {
-                        ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
-                        ctis.putInstance(object);
-                        customObjects = Optional.of(ctis);
-                    });
-
-            return this;
-        }
-
-        /**
-         * Override for event-type, defaults to {@value #DEFAULT_AUDIT_EVENT_TYPE}.
-         *
-         * @param eventType audit event type to use
-         * @return updated builder instance
-         */
-        Builder auditEventType(String eventType) {
-            this.auditEventType = Optional.of(eventType);
-            return this;
-        }
-
-        /**
-         * Override for audit message format, defaults to {@value #DEFAULT_AUDIT_MESSAGE_FORMAT}.
-         *
-         * @param messageFormat audit message format to use
-         * @return updated builder instance
-         */
-        Builder auditMessageFormat(String messageFormat) {
-            this.auditMessageFormat = Optional.of(messageFormat);
-            return this;
-        }
-
-        /**
-         * Enable authorization for this route.
-         *
-         * @param authorize whether to authorize
-         * @return updated builder instance
-         */
-        Builder authorize(boolean authorize) {
-            this.authorize = Optional.of(authorize);
-            return this;
-        }
-
-        /**
-         * Whether to audit this request - defaults to false, if enabled, request is audited with event type "request".
-         *
-         * @return updated builder instance
-         */
-        Builder audit(boolean audited) {
-            this.audited = Optional.of(audited);
-            return this;
-        }
-
-        Builder rolesAllowed(Collection<String> roles) {
-            rolesAllowed.ifPresentOrElse(strings -> strings.addAll(roles),
-                                         () -> {
-                                             Set<String> newRoles = new HashSet<>(roles);
-                                             rolesAllowed = Optional.of(newRoles);
-                                         });
-            return this;
-        }
-
-        private Builder combined() {
-            this.combined = true;
-
-            return this;
-        }
-
-        // add to this builder
-        private Builder configureFrom(SecurityHandler handler) {
-            handler.rolesAllowed.ifPresent(this::rolesAllowed);
-            handler.customObjects.ifPresent(this::customObjects);
-            handler.config.ifPresent(this::config);
-            handler.explicitAuthenticator.ifPresent(this::authenticator);
-            handler.explicitAuthorizer.ifPresent(this::authorizer);
-            handler.authenticate.ifPresent(this::authenticate);
-            handler.authenticationOptional.ifPresent(this::authenticationOptional);
-            handler.audited.ifPresent(this::audit);
-            handler.auditEventType.ifPresent(this::auditEventType);
-            handler.auditMessageFormat.ifPresent(this::auditMessageFormat);
-            handler.authorize.ifPresent(this::authorize);
-            this.queryParamHandlers.addAll(handler.queryParamHandlers());
-
-            return this;
-        }
-
-        private Builder customObjects(ClassToInstanceStore<Object> store) {
-            customObjects
-                    .ifPresentOrElse(myStore -> myStore.putAll(store), () -> {
-                        ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
-                        ctis.putAll(store);
-                        this.customObjects = Optional.of(ctis);
-                    });
-
-            return this;
-        }
-
-        private Builder config(Config config) {
-            this.config = Optional.of(config);
-            return this;
         }
     }
 

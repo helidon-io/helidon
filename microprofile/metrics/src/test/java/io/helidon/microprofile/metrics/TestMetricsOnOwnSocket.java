@@ -38,13 +38,14 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
-@HelidonTest()
+@HelidonTest
 // Set up the metrics endpoint on its own socket
 @AddConfig(key = "server.sockets.0.name", value = "metrics")
 // No port setting, so use any available one
 @AddConfig(key = "server.sockets.0.bind-address", value = "0.0.0.0")
-@AddConfig(key = "observe.routing", value = "metrics")
+@AddConfig(key = "server.features.observe.sockets", value = "metrics")
 @AddConfig(key = "metrics.key-performance-indicators.extended", value = "true")
+@AddConfig(key = "metrics.permit-all", value = "true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestMetricsOnOwnSocket {
 

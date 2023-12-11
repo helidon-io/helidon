@@ -17,57 +17,16 @@
 
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <exec src="/common/presets.xml"/>
     <presets>
-        <list path="media">
-            <value>json</value>
-        </list>
         <boolean path="db">false</boolean>
-        <enum path="media.json-lib">jsonp</enum>
-        <boolean path="metrics">true</boolean>
-        <enum path="metrics.provider">microprofile</enum>
-        <boolean path="metrics.builtin">true</boolean>
-        <boolean path="health">true</boolean>
-        <boolean path="health.builtin">true</boolean>
-        <boolean path="tracing">false</boolean>
-        <list path="extra"/>
-        <boolean path="security">false</boolean>
-        <boolean path="docker">true</boolean>
-        <boolean path="docker.native-image">true</boolean>
-        <boolean path="docker.jlink-image">true</boolean>
-        <boolean path="k8s">false</boolean>
-        <boolean path="v8o">false</boolean>
     </presets>
     <exec src="/se/custom/custom-se.xml"/>
-    <source src="/common/sources.xml"/>
     <output>
         <model>
-            <list key="readme-exercise-the-application">
-                <value><![CDATA[
-```
-curl -X GET http://localhost:8080/greet
-{"message":"Hello World!"}
-
-curl -X GET http://localhost:8080/greet/Joe
-{"message":"Hello Joe!"}
-
-curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
-
-curl -X GET http://localhost:8080/greet/Jose
-{"message":"Hola Jose!"}
-```
-]]></value>
-            </list>
-            <list key="dependencies">
-                <map order="999">
-                    <value key="groupId">io.helidon.webclient</value>
-                    <value key="artifactId">helidon-webclient</value>
-                </map>
-            </list>
-            <list key="modules">
-                <value>io.helidon.webclient</value>
-            </list>
+            <value key="readme-description">Sample Helidon SE project that includes multiple REST operations.</value>
         </model>
     </output>
 </archetype-script>

@@ -19,7 +19,7 @@ docker run -d --name jaeger\
    -p 14268:14268\
    -p 14269:14269\
    -p 9411:9411\
-   jaegertracing/all-in-one:1.38
+   jaegertracing/all-in-one:1.43
 ```
 
 ### View Tracing Using Jaeger UI

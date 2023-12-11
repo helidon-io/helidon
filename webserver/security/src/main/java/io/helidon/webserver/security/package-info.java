@@ -22,11 +22,11 @@
  * // WebServer routing builder - this is our integration point
  * {@link io.helidon.webserver.http.HttpRouting} routing = HttpRouting.builder()
  * // register the WebSecurity to create context (shared by all routes)
- * .register({@link io.helidon.webserver.security.SecurityFeature}.{@link
- * io.helidon.webserver.security.SecurityFeature#create(io.helidon.security.Security) from(security)})
+ * .register({@link io.helidon.webserver.security.SecurityHttpFeature}.{@link
+ * io.helidon.webserver.security.SecurityHttpFeature#create(io.helidon.security.Security) from(security)})
  * // authenticate all paths under /user and require role "user"
  * .get("/user[/{*}]", WebSecurity.{@link io.helidon.webserver.security.SecurityFeature#authenticate() authenticate()}
- * .{@link io.helidon.webserver.security.SecurityFeature#rolesAllowed(java.lang.String...) rolesAllowed("user")})
+ * .{@link io.helidon.webserver.security.SecurityFeature#rolesAllowed(String...) rolesAllowed("user")})
  * // authenticate "/admin" path and require role "admin"
  * .get("/admin", WebSecurity.rolesAllowed("admin")
  * .authenticate()
@@ -36,13 +36,12 @@
  * </pre>
  *
  * <p>
- * The main security methods are duplicate - first as static methods on {@link io.helidon.webserver.security.SecurityFeature} and
+ * The main security methods are duplicate - first as static methods on {@link io.helidon.webserver.security.SecurityHttpFeature} and
  * then as instance methods on {@link io.helidon.webserver.security.SecurityHandler} that is returned by the static methods
- * above. This is to provide a single starting point for security integration ({@link io.helidon.webserver.security.SecurityFeature})
+ * above. This is to provide a single starting point for security integration ({@link io.helidon.webserver.security.SecurityHttpFeature})
  * and fluent API to build the "gate" to each route that is protected.
  *
- * @see io.helidon.webserver.security.SecurityFeature#create(io.helidon.security.Security)
- * @see io.helidon.webserver.security.SecurityFeature#create(io.helidon.config.Config)
- * @see io.helidon.webserver.security.SecurityFeature#create(io.helidon.security.Security, io.helidon.config.Config)
+ * @see io.helidon.webserver.security.SecurityHttpFeature#create(io.helidon.security.Security)
+ * @see io.helidon.webserver.security.SecurityHttpFeature#create(io.helidon.config.Config)
  */
 package io.helidon.webserver.security;

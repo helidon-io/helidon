@@ -42,7 +42,6 @@ public class AccessLogHandler extends FileHandler {
     /**
      * Construct a default {@code AccessLogHandler}. This will be configured
      * entirely from {@link System.Logger}.
-     * <p>
      *
      * @throws java.io.IOException  if there are IO problems opening the files.
      * @throws SecurityException    if a security manager exists and if

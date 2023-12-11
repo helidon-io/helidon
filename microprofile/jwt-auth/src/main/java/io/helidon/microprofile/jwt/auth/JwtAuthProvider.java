@@ -52,9 +52,9 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
-import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -1109,13 +1109,13 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             config.get("allow-impersonation").asBoolean().ifPresent(this::allowImpersonation);
             config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
-            config.get("atn-token").ifExists(this::verifyKeys);
+            config.get("atn-token.handler").map(TokenHandler::create).ifPresent(this::atnTokenHandler);
+            config.get("atn-token").asNode().ifPresent(this::verifyKeys);
             config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
             config.get("atn-token.default-key-id").asString().ifPresent(this::defaultKeyId);
             config.get("atn-token.verify-key").asString().ifPresent(this::publicKeyPath);
-            config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
-            config.get("sign-token").ifExists(this::outbound);
+            config.get("sign-token").asNode().ifPresent(outbound -> outboundConfig(OutboundConfig.create(outbound)));
+            config.get("sign-token").asNode().ifPresent(this::outbound);
             config.get("load-on-startup").asBoolean().ifPresent(this::loadOnStartup);
 
             org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance().getConfig();
@@ -1277,14 +1277,14 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         }
 
         private void verifyKeys(Config config) {
-            config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
+            config.get("jwk.resource").map(Resource::create).ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {
             config.get("jwt-issuer").asString().ifPresent(this::issuer);
 
             // jwk is optional, we may be propagating existing token
-            config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+            config.get("jwk.resource").map(Resource::create).ifPresent(this::signJwk);
         }
     }
 

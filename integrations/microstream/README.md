@@ -2,7 +2,7 @@
 
 This projects add [Microstream](https://microstream.one) support to Helidon.
 
-The offical [Microstream documentation](https://manual.docs.microstream.one/) can be found here.
+The official [Microstream documentation](https://manual.docs.microstream.one/) can be found here.
 
 ## helidon-integrations-microstream
 
@@ -101,7 +101,7 @@ Cache<Integer, String> cache = CacheBuilder.create("myCache", config, Integer.cl
 for a list of all possible properties
 see [Microstream Cache configuration properties](https://manual.docs.microstream.one/cache/configuration/properties)
 
-### CDI extention for Microstream
+### CDI extension for Microstream
 
 the example below shows how to create a Microstream-Cache instance using a provided configuration.
 
@@ -131,7 +131,7 @@ Use the following maven dependency
 
 ### Usage
 
-Register an instance of MicrostreamHealthCheck to your server to provide a HealtCheck for a specific microstream instance.
+Register an instance of MicrostreamHealthCheck to your server to provide a HealthCheck for a specific microstream instance.
 
 ## helidon-integrations-microstream-metrics
 

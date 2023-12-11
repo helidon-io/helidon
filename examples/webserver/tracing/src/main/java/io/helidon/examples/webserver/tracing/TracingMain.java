@@ -28,7 +28,8 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
-import io.helidon.webserver.tracing.TracingFeature;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.tracing.TracingObserver;
 
 import static io.helidon.http.Method.GET;
 
@@ -52,8 +53,10 @@ public class TracingMain {
         WebServer.builder()
                 .port(8080)
                 .host("127.0.0.1")
+                .addFeature(ObserveFeature.builder()
+                                    .addObserver(TracingObserver.create(tracer))
+                                    .build())
                 .routing(router -> router
-                        .addFeature(TracingFeature.create(tracer))
                         .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
                         .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))
                         .get("/client", new ClientHandler(tracer)))

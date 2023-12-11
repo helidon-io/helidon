@@ -27,7 +27,7 @@ import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.config.TracingConfig;
-import io.helidon.webserver.tracing.TracingFeature;
+import io.helidon.webserver.observe.tracing.TracingObserver;
 
 import io.opentelemetry.opentracingshim.OpenTracingShim;
 import io.opentracing.Tracer;
@@ -117,8 +117,7 @@ public class TracingCdiExtension implements Extension {
         ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
         JaxRsCdiExtension jaxrs = bm.getExtension(JaxRsCdiExtension.class);
 
-        server.serverRoutingBuilder()
-                .addFeature(TracingFeature.create(tracer, config));
+        server.addObserver(TracingObserver.create(tracer, config));
 
         // we need that `tracing.service` is a required configuration, yet we do not want to just fail
         // if not present. Let's make a "guess" about the service name

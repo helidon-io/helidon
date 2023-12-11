@@ -20,11 +20,11 @@ import java.util.Optional;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,8 +43,7 @@ abstract class ContextFeatureBase {
     static void routing(HttpRouting.Builder router) {
         Contexts.globalContext().register(ContextFeatureBase.class, "fixed-value");
 
-        router.addFeature(ContextFeature.create())
-                .get("/*", ContextFeatureBase::testingHandler);
+        router.get("/*", ContextFeatureBase::testingHandler);
     }
 
     @Test

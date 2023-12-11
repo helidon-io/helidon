@@ -28,12 +28,16 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webserver.cors {
 
     requires io.helidon.webserver;
-    requires java.logging;
 
     requires static io.helidon.common.features.api;
 
+    requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.common;
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.cors;
+
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+            with io.helidon.webserver.cors.CorsFeatureProvider;
 
     exports io.helidon.webserver.cors;
 

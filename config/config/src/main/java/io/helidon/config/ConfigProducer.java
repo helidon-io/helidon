@@ -57,6 +57,11 @@ class ConfigProducer implements Config {
     }
 
     @Override
+    public Config root() {
+        return config.root();
+    }
+
+    @Override
     public Config get(String key) throws ConfigException {
         return config.get(key);
     }

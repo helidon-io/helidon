@@ -45,11 +45,18 @@ This will mount `~/.oci` as a volume in the running docker container.
         <boolean path="docker.jlink-image">false</boolean>
         <boolean path="k8s">true</boolean>
         <boolean path="v8o">false</boolean>
+        <boolean path="jpms">false</boolean>
     </presets>
     <call method="pre-processed-models"/>
     <exec src="/common/common.xml"/>
     <exec src="/common/packaging.xml"/>
     <output>
+        <templates engine="mustache" transformations="mustache,module-dir">
+            <directory>../custom/files</directory>
+            <includes>
+                <include>src/*/resources/**/application.yaml.mustache</include>
+            </includes>
+        </templates>
         <templates engine="mustache" transformations="mustache,packaged">
             <directory>files</directory>
             <includes>
@@ -390,13 +397,14 @@ Mount this volume as part of your application containers specification
                                 ]]></value>
             </list>
             <list key="poms">
-                <value>client/pom.xml</value>
-                <value>server/pom.xml</value>
+                <value>ADD pom.xml pom.xml</value>
+                <value>ADD client/pom.xml client/pom.xml</value>
+                <value>ADD server/pom.xml server/pom.xml</value>
             </list>
             <list key="src-dirs">
-                <value>client/src</value>
-                <value>server/src</value>
-                <value>spec/api.yaml</value>
+                <value>ADD client/src client/src</value>
+                <value>ADD server/src server/src</value>
+                <value>ADD spec/api.yaml spec/api.yaml</value>
             </list>
         </model>
     </output>

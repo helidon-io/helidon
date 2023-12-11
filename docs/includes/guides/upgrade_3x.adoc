@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,5 +27,5 @@ include::../attributes.adoc[]
 Helidon 3.x is not fully backwards compatible with Helidon 2.x. For information
 concerning upgrading from Helidon 2.x to 3.x see the following upgrade guides:
 
-* xref:../mp/guides/migration_3x.adoc[Helidon MP 3.x Upgrade Guide]
-* xref:../se/guides/migration_3x.adoc[Helidon SE 3.x Upgrade Guide]
+* xref:../mp/guides/upgrade_3x.adoc[Helidon MP 3.x Upgrade Guide]
+* xref:../se/guides/upgrade_3x.adoc[Helidon SE 3.x Upgrade Guide]

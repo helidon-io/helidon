@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,28 +16,31 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LRA
-:toc:
-:toc-placement: preamble
+= Long Running Actions (LRA)
 :description: Long Running Actions
 :keywords: helidon, mp, lra
 :h1Prefix: MP
 :feature-name: Long Running Actions
 :spec-version: 1.0-RC3
-:spec-name: Micro Profile {feature-name} specification
+:spec-name: MicroProfile {feature-name} specification
 :javadoc-link: https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/apidocs/org/eclipse/microprofile/lra/annotation/
 :rootdir: {docdir}/..
 
+include::{rootdir}/includes/mp.adoc[]
+
 == Contents
 
-- <<Overview, Overview>>
-- <<Maven Coordinates, Maven Coordinates>>
-- <<Usage, Usage>>
-- <<API, API>>
-- <<Configuration, Configuration>>
-- <<Examples, Examples>>
-- <<Additional Information, Additional Information>>
-- <<Reference, Reference>>
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Usage, Usage>>
+* <<API, API>>
+* <<Configuration, Configuration>>
+* <<Examples, Examples>>
+* <<Additional Information, Additional Information>>
+** <<Coordinator, Coordinator>>
+** <<Helidon LRA Coordinator, Helidon LRA Coordinator>>
+** <<Narayana, Narayana>>
+* <<Reference, Reference>>
 
 == Overview
 
@@ -61,22 +64,21 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-LRA transactions need to be coordinated over REST API by the LRA coordinator. <<Coordinator, Coordinator>>
+The LRA transactions need to be coordinated over REST API by the LRA coordinator. <<Coordinator, Coordinator>>
 keeps track of all transactions and calls the `@Compensate` or `@Complete` endpoints for all participants involved in the particular
 transaction. LRA transaction is first started, then joined by <<Participant, participant>>.
-Participant reports the successful finish of transaction by calling complete. Coordinator then calls the JAX-RS
+The participant reports the successful finish of the transaction by calling it complete. The coordinator then calls the JAX-RS
 _complete_ endpoint that was registered during the join of each
 <<Participant, participant>>. As the completed or compensated participants don't have to be on same instance,
 the whole architecture is highly scalable.
 
 image::lra/lra-complete-lb.svg[Complete]
 
-In case of error during the LRA transaction, participant reports cancel of LRA to coordinator.
-<<Coordinator, Coordinator>> calls compensate on all the joined participants.
+If an error occurs during the LRA transaction, the participant reports a cancellation of LRA to the coordinator. <<Coordinator, Coordinator>> calls compensate on all the joined participants.
 
 image::lra/lra-compensate-lb-error.svg[Cancel]
 
-When participant joins the LRA with timeout defined `@LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, coordinator compensate if timeout occurs before close is reported by participants.
+When a participant joins the LRA with timeout defined `@LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, the coordinator compensates if the timeout occurred before the close is reported by the participants.
 
 image::lra/lra-compensate-lb-timeout.svg[Timeout]
 
@@ -114,7 +116,7 @@ LRA options:
 
 Method parameters:
 
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - id of the LRA transaction
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - ID of the LRA transaction
 
 [source,java]
 ----
@@ -128,9 +130,9 @@ public Response startLra(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId, String
 
 {javadoc-link}Compensate.html[~javadoc~]
 
-WARNING: Expected to be called by LRA <<Coordinator, coordinator>> only!
+CAUTION: Expected to be called by LRA <<Coordinator, coordinator>> only!
 
-Compensate method is called by <<Coordinator, coordinator>> when LRA is cancelled,
+Compensate method is called by a <<Coordinator, coordinator>> when LRA is cancelled,
 usually by error during execution of method body of <<lra-method,@LRA annotated method>>.
 If the method responds with 500 or 202, coordinator will eventually try the call again.
 If participant has <<status-participant-method,@Status annotated method>>, <<Coordinator, coordinator>>
@@ -139,8 +141,8 @@ retrieves the status to find out if retry should be done.
 
 ==== JAX-RS variant with supported LRA context values:
 
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - id of the LRA transaction
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER[LRA_HTTP_PARENT_CONTEXT_HEADER] - parent LRA id in case of nested LRA
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - ID of the LRA transaction
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER[LRA_HTTP_PARENT_CONTEXT_HEADER] - parent LRA ID in case of nested LRA
 
 [source,java]
 ----
@@ -155,7 +157,7 @@ public Response compensateWork(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
 
 ==== Non JAX-RS variant with supported LRA context values:
 
-* URI with LRA id
+* URI with LRA ID
 
 [source,java]
 ----
@@ -167,7 +169,7 @@ public void compensate(URI lraId)
 
 {javadoc-link}Complete.html[~javadoc~]
 
-WARNING: Expected to be called by LRA <<Coordinator, coordinator>> only!
+CAUTION: Expected to be called by LRA <<Coordinator, coordinator>> only!
 
 Complete method is called by <<Coordinator, coordinator>> when LRA is successfully closed.
 If the method responds with 500 or 202, coordinator will eventually try the call again.
@@ -175,8 +177,8 @@ If participant has <<status-participant-method,@Status annotated method>>, <<Coo
 
 ==== JAX-RS variant with supported LRA context values:
 
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - id of the LRA transaction
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER[LRA_HTTP_PARENT_CONTEXT_HEADER] - parent LRA id in case of nested LRA
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - ID of the LRA transaction
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER[LRA_HTTP_PARENT_CONTEXT_HEADER] - parent LRA ID in case of nested LRA
 
 [source,java]
 ----
@@ -189,7 +191,7 @@ public Response complete(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
 
 ==== Non JAX-RS variant with supported LRA context values:
 
-* URI with LRA id
+* URI with LRA ID
 
 [source,java]
 ----
@@ -201,7 +203,7 @@ public void complete(URI lraId)
 
 {javadoc-link}Forget.html[~javadoc~]
 
-WARNING: Expected to be called by LRA <<Coordinator, coordinator>> only!
+CAUTION: Expected to be called by LRA <<Coordinator, coordinator>> only!
 
 <<complete-participant-method,Complete>> and <<complete-participant-method,compensate>>
 methods can fail(500) or report that compensation/completion is in progress(202).
@@ -211,8 +213,8 @@ When <<Coordinator, coordinator>> decides all the participants have finished, me
 
 ==== JAX-RS variant with supported LRA context values:
 
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - id of the LRA transaction
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER[LRA_HTTP_PARENT_CONTEXT_HEADER] - parent LRA id in case of nested LRA
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - ID of the LRA transaction
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER[LRA_HTTP_PARENT_CONTEXT_HEADER] - parent LRA ID in case of nested LRA
 
 [source,java]
 ----
@@ -225,7 +227,7 @@ public Response forget(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
 
 ==== Non JAX-RS variant with supported LRA context values:
 
-* URI with LRA id
+* URI with LRA ID
 
 [source,java]
 ----
@@ -242,7 +244,7 @@ Method annotated with @Leave called with LRA context(with header {javadoc-link}w
 Method body is executed after leave signal is sent.
 As a result, participant methods complete and compensate won't be called when the particular LRA ends.
 
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - id of the LRA transaction
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - ID of the LRA transaction
 
 [source,java]
 ----
@@ -256,7 +258,7 @@ public Response leaveLRA(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraIdtoLeave)
 
 {javadoc-link}Status.html[~javadoc~]
 
-WARNING: Expected to be called by LRA <<Coordinator, coordinator>> only!
+CAUTION: Expected to be called by LRA <<Coordinator, coordinator>> only!
 
 If the coordinator's call to the participant's method fails, then it will retry the call.
 If the participant is not idempotent, then it may need to report its state to coordinator by declaring method
@@ -265,7 +267,7 @@ annotated with @Status for reporting if previous call did change participant sta
 
 ==== JAX-RS variant with supported LRA context values:
 
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - id of the LRA transaction
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER[LRA_HTTP_CONTEXT_HEADER] - ID of the LRA transaction
 * {javadoc-link}ParticipantStatus.html[ParticipantStatus] - Status of the participant reported to <<Coordinator, coordinator>>
 
 [source,java]
@@ -280,7 +282,7 @@ public Response reportStatus(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
 
 ==== Non JAX-RS variant with supported LRA context values:
 
-* URI with LRA id
+* URI with LRA ID
 * {javadoc-link}ParticipantStatus.html[ParticipantStatus] - Status of the participant reported to <<Coordinator, coordinator>>
 
 [source,java]
@@ -295,14 +297,14 @@ public Response reportStatus(URI lraId){
 
 {javadoc-link}AfterLRA.html[~javadoc~]
 
-WARNING: Expected to be called by LRA <<Coordinator, coordinator>> only!
+CAUTION: Expected to be called by LRA <<Coordinator, coordinator>> only!
 
 Method annotated with {javadoc-link}AfterLRA.html[@AfterLRA] in the same class as the one with @LRA annotation gets invoked after particular LRA finishes.
 
 ==== JAX-RS variant with supported LRA context values:
 
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_ENDED_CONTEXT_HEADER[LRA_HTTP_ENDED_CONTEXT_HEADER] - id of the finished LRA transaction
-* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER[LRA_HTTP_PARENT_CONTEXT_HEADER] - parent LRA id in case of nested LRA
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_ENDED_CONTEXT_HEADER[LRA_HTTP_ENDED_CONTEXT_HEADER] - ID of the finished LRA transaction
+* Header {javadoc-link}ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER[LRA_HTTP_PARENT_CONTEXT_HEADER] - parent LRA ID in case of nested LRA
 * {javadoc-link}LRAStatus.html[LRAStatus] - Final status of the LRA ({javadoc-link}LRAStatus.html#Cancelled[Cancelled], {javadoc-link}LRAStatus.html#Closed[Closed], {javadoc-link}LRAStatus.html#FailedToCancel[FailedToCancel], {javadoc-link}LRAStatus.html#FailedToClose[FailedToClose])
 
 [source,java]
@@ -317,7 +319,7 @@ public Response whenLRAFinishes(@HeaderParam(LRA_HTTP_ENDED_CONTEXT_HEADER) URI 
 
 ==== Non JAX-RS variant with supported LRA context values:
 
-* URI with finished LRA id
+* URI with finished LRA ID
 * {javadoc-link}LRAStatus.html[LRAStatus] - Final status of the LRA ({javadoc-link}LRAStatus.html#Cancelled[Cancelled], {javadoc-link}LRAStatus.html#Closed[Closed], {javadoc-link}LRAStatus.html#FailedToCancel[FailedToCancel], {javadoc-link}LRAStatus.html#FailedToClose[FailedToClose])
 
 [source,java]
@@ -373,7 +375,7 @@ public Response startExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId, <2
 @Complete <5>
 @Path("complete-example")
 public Response completeExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
-    LOGGER.log(Level.INFO, "LRA id: {0} completed 🎉", lraId);
+    LOGGER.log(Level.INFO, "LRA ID: {0} completed 🎉", lraId);
     return LRAResponse.completed();
 }
 
@@ -381,12 +383,12 @@ public Response completeExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId)
 @Compensate <6>
 @Path("compensate-example")
 public Response compensateExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
-    LOGGER.log(Level.SEVERE, "LRA id: {0} compensated 🦺", lraId);
+    LOGGER.log(Level.SEVERE, "LRA ID: {0} compensated 🦺", lraId);
     return LRAResponse.compensated();
 }
 ----
 <1> This JAX-RS PUT method will start new LRA transactions and join it before method body gets executed
-<2> LRA id assigned by coordinator to this LRA transaction
+<2> LRA ID assigned by coordinator to this LRA transaction
 <3> When method execution finishes exceptionally, cancel signal for this particular LRA is sent to coordinator
 <4> When method execution finishes successfully, complete signal for this particular LRA is sent to coordinator
 <5> Method which will be called by coordinator when LRA is completed
@@ -403,7 +405,7 @@ In addition, participant also keeps track of timeouts, retries participant calls
 * Helidon LRA coordinator
 * https://narayana.io/lra[Narayana coordinator].
 
-=== Helidon LRA coordinator
+=== Helidon LRA Coordinator
 
 CAUTION: Experimental tool, usage in production is not advised.
 
@@ -411,7 +413,7 @@ CAUTION: Experimental tool, usage in production is not advised.
 .Build and run Helidon LRA coordinator
 ----
 docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git#:lra/coordinator/server
-docker run -dp 8070:8070 --name lra-coordinator --network="host" helidon/lra-coordinator
+docker run --name lra-coordinator --network="host" helidon/lra-coordinator
 ----
 
 Helidon LRA coordinator is compatible with Narayana clients, you need to add an additional dependency for Narayana client:
@@ -457,4 +459,4 @@ with port `8070` defined in the snippet above you need to configure your Helidon
 * https://github.com/eclipse/microprofile-lra[MicroProfile LRA GitHub Repository]
 * {microprofile-lra-spec-url}[{spec-name}]
 * https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/apidocs/org/eclipse/microprofile/lra/[Microprofile LRA JavaDoc]
-* https://helidon.io/docs/v2/apidocs/io.helidon.lra.coordinator.client/module-summary.html[Helidon LRA Client JavaDoc]
+* https://helidon.io/docs/v4/apidocs/io.helidon.lra.coordinator.client/module-summary.html[Helidon LRA Client JavaDoc]

@@ -724,6 +724,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.db</groupId>
+                <artifactId>helidon-integrations-db-mysql</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-delegates</artifactId>
                 <version>${helidon.version}</version>
@@ -911,8 +916,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.openapi</groupId>
-                <artifactId>helidon-openapi-ui</artifactId>
+                <groupId>io.helidon.integrations.openapi-ui</groupId>
+                <artifactId>helidon-integrations-openapi-ui</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1184,8 +1189,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.webserver</groupId>
-                <artifactId>helidon-webserver-tracing</artifactId>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

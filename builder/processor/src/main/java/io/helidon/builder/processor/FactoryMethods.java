@@ -23,9 +23,9 @@ import java.util.Set;
 
 import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.processor.GeneratorTools;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
@@ -107,6 +107,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                     TypeName builderTypeName = TypeName.builder(builderCandidate)
                             .className("Builder")
                             .enclosingNames(List.of(builderCandidate.className()))
+                            .typeArguments(builderCandidate.typeArguments())
                             .build();
                     secondary = new FactoryMethod(builderCandidate, builderTypeName, "builder", null);
                 }
@@ -166,7 +167,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                 // it should have create(Config) with the correct typing
                 Optional<FactoryMethod> foundMethod = BuilderInfoPredicates.findMethod(
                                 new MethodSignature(typeInfo.typeName(), createMethod, List.of(CONFIG_TYPE)),
-                                Set.of(TypeValues.MODIFIER_STATIC),
+                                Set.of(Modifier.STATIC),
                                 typeInfo)
                         .map(it -> new FactoryMethod(typeInfo.typeName(),
                                 typeInfo.typeName(),
@@ -188,12 +189,27 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                 // we are now interested in a method with signature "static T create(Config)" where T is the type we are handling
                 Optional<FactoryMethod> foundMethod = BuilderInfoPredicates.findMethod(
                                 new MethodSignature(candidateTypeName, createMethod, List.of(CONFIG_TYPE)),
-                                Set.of(TypeValues.MODIFIER_STATIC),
+                                Set.of(Modifier.STATIC),
                                 typeInfo)
                         .map(it -> new FactoryMethod(candidateTypeName, candidateTypeName, createMethod, CONFIG_TYPE));
                 if (foundMethod.isPresent()) {
                     return foundMethod;
                 }
+            }
+        }
+
+        // if there is a "public static T create(io.helidon.commmon.config.Config)" method available, just use it
+        for (TypeInfo typeInfo : candidates) {
+            // similar to above - but we first want to find the best candidate, this is a fallback
+            TypeName candidateTypeName = typeInfo.typeName();
+            Optional<FactoryMethod> foundMethod = BuilderInfoPredicates.findMethod(
+                            new MethodSignature(candidateTypeName, createMethod, List.of(CONFIG_TYPE)),
+                            Set.of(Modifier.STATIC),
+                            typeInfo)
+                    .filter(ElementInfoPredicates::isPublic)
+                    .map(it -> new FactoryMethod(candidateTypeName, candidateTypeName, createMethod, CONFIG_TYPE));
+            if (foundMethod.isPresent()) {
+                return foundMethod;
             }
         }
 

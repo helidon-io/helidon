@@ -516,9 +516,9 @@ public final class Mp1Main {
                     }
                 }
 
-                healthExistsAndUp(collector, checkMap, "deadlock");
                 healthExistsAndUp(collector, checkMap, "diskSpace");
                 healthExistsAndUp(collector, checkMap, "heapMemory");
+                healthExistsAndUp(collector, checkMap, "mp1-live");
             }
         } catch (ServiceUnavailableException e) {
             collector.fatal(e, "Failed to invoke health endpoint. Exception: " + e.getClass().getName()

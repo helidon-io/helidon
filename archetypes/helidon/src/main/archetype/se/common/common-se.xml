@@ -58,11 +58,11 @@
             </list>
             <list key="MainTest-helidon-imports">
                 <value>io.helidon.http.Status</value>
-                <value>io.helidon.config.Config</value>
-                <value>io.helidon.webserver.testing.junit5.SetUpRoute</value>
+                <value>io.helidon.webclient.api.ClientResponseTyped</value>
                 <value>io.helidon.webclient.http1.Http1Client</value>
                 <value>io.helidon.webclient.http1.Http1ClientResponse</value>
                 <value>io.helidon.webserver.http.HttpRouting</value>
+                <value>io.helidon.webserver.testing.junit5.SetUpRoute</value>
             </list>
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.Test</value>
@@ -74,7 +74,7 @@
             <list key="GreetService-imports">
                 <value>io.helidon.config.Config</value>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.webserver</value>
                 <value>io.helidon.http</value>
                 <value>io.helidon.config</value>
@@ -83,13 +83,7 @@
                 <value><![CDATA[.register("/greet", new GreetService())]]></value>
             </list>
             <list key="application-yaml-entries">
-                <value><![CDATA[
-app:
-    greeting: "Hello"]]></value>
-            </list>
-            <list key="config-test">
-                <value><![CDATA[
-app:
+                <value><![CDATA[app:
     greeting: "Hello"]]></value>
             </list>
             <value key="main-class-javadoc"><![CDATA[
@@ -102,34 +96,44 @@ app:
      */]]></value>
             <list key="main-class-fields">
                 <value order="0"><![CDATA[
-   /**
+    /**
      * Cannot be instantiated.
      */
-   private Main() {
-   }
+    private Main() {
+    }
 ]]></value>
             </list>
             <list key="main-method-content">
                 <value template="mustache"><![CDATA[
-         // load logging configuration
+        // load logging configuration
         LogConfig.configureRuntime();
-
-        {{#Main-main}}
-        {{.}}
-        {{/Main-main}}
 
         // initialize global config from default configuration
         Config config = Config.create();
         Config.global(config);
 
+        {{#Main-main}}
+        {{.}}
+        {{/Main-main}}
+
         WebServer server = WebServer.builder()
-                .config(Config.global().get("server"))
+                .config(config.get("server"))
+                {{#Main-server-builder}}
+                {{.}}
+                {{/Main-server-builder}}
                 .routing(Main::routing)
                 .build()
                 .start();
 
+        {{#Main-after-server}}
+        {{.}}
+        {{/Main-after-server}}
+
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
-                    ]]></value>
+        {{#Main-logging}}
+        {{.}}
+        {{/Main-logging}}
+]]></value>
             </list>
             <list key="main-class-content">
                 <value template="mustache"><![CDATA[
@@ -137,11 +141,9 @@ app:
      * Updates HTTP Routing.
      */
     static void routing(HttpRouting.Builder routing) {
-        Config config = Config.global();
         {{#Main-routing}}
         {{.}}
         {{/Main-routing}}
-
         routing
                {{#Main-routing-builder}}
                {{.}}{{#last}}; {{/last}}

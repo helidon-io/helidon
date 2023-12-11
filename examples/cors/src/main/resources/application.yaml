@@ -20,7 +20,7 @@ app:
 server:
   port: 8080
   host: 0.0.0.0
-  
+
 restrictive-cors:
   allow-origins: ["http://foo.com", "http://there.com"]
   allow-methods: ["PUT", "DELETE"]

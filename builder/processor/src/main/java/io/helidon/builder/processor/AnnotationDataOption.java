@@ -16,16 +16,19 @@
 
 package io.helidon.builder.processor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
 import io.helidon.common.processor.classmodel.Javadoc;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.CONFIGURED_OPTION_TYPE;
+import static io.helidon.builder.processor.Types.DEPRECATED_TYPE;
 import static io.helidon.builder.processor.Types.DESCRIPTION_TYPE;
 import static io.helidon.builder.processor.Types.OPTION_ACCESS_TYPE;
 import static io.helidon.builder.processor.Types.OPTION_ALLOWED_VALUES_TYPE;
@@ -65,7 +68,9 @@ record AnnotationDataOption(Javadoc javadoc,
                             boolean toStringRedundant,
                             boolean confidential,
                             List<AllowedValue> allowedValues,
-                            String defaultValue) {
+                            String defaultValue,
+                            DeprecationData deprecationData,
+                            List<Annotation> annotations) {
     private static final String UNCONFIGURED = "io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED";
 
     // this is temporary, when we stop supporting config metadata, we can refactor this method
@@ -282,10 +287,15 @@ record AnnotationDataOption(Javadoc javadoc,
             javadoc = element.description()
                     .map(Javadoc::parse)
                     .orElseGet(() -> Javadoc.builder()
-                    .addLine("Option " + handler.name())
-                    .returnDescription(handler.name())
-                    .build());
+                            .addLine("Option " + handler.name())
+                            .returnDescription(handler.name())
+                            .build());
         }
+
+        DeprecationData deprecationData = DeprecationData.create(element, javadoc);
+
+        List<Annotation> annotations = new ArrayList<>();
+        javadoc = processDeprecation(deprecationData, annotations, javadoc);
 
         // default/is required only based on annotations
         return new AnnotationDataOption(javadoc,
@@ -305,7 +315,9 @@ record AnnotationDataOption(Javadoc javadoc,
                                         toStringRedundant,
                                         confidential,
                                         allowedValues,
-                                        defaultValue);
+                                        defaultValue,
+                                        deprecationData,
+                                        annotations);
     }
 
     boolean hasDefault() {
@@ -314,6 +326,40 @@ record AnnotationDataOption(Javadoc javadoc,
 
     boolean hasAllowedValues() {
         return allowedValues != null && !allowedValues.isEmpty();
+    }
+
+    private static Javadoc processDeprecation(DeprecationData deprecationData, List<Annotation> annotations, Javadoc javadoc) {
+        if (javadoc == null) {
+            return null;
+        }
+
+        if (!deprecationData.deprecated()) {
+            return javadoc;
+        }
+
+        io.helidon.common.types.Annotation.Builder deprecated = io.helidon.common.types.Annotation.builder()
+                .typeName(DEPRECATED_TYPE);
+        if (deprecationData.since() != null) {
+            deprecated.putValue("since", deprecationData.since());
+        }
+        if (deprecationData.forRemoval()) {
+            deprecated.putValue("forRemoval", true);
+        }
+
+        if (Annotations.findFirst(DEPRECATED_TYPE, annotations).isEmpty()) {
+            annotations.add(deprecated.build());
+        }
+
+        if (deprecationData.alternativeOption() != null || deprecationData.description() != null) {
+            Javadoc.Builder javadocBuilder = Javadoc.builder(javadoc);
+            if (deprecationData.alternativeOption() == null) {
+                javadocBuilder.deprecation(deprecationData.description());
+            } else {
+                javadocBuilder.deprecation("use {@link #" + deprecationData.alternativeOption() + "()} instead");
+            }
+            javadoc = javadocBuilder.build();
+        }
+        return javadoc;
     }
 
     private static String singularName(String optionName) {

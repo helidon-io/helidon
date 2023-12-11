@@ -23,14 +23,21 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
+:metric: meter
+:metrics: meters
+:metric_uc: Meter
+:metrics_uc: Meters
+:meter: meter
+:meters: meters
+:meter_uc: Meter
+:meters_uc: Meters
+:metrics-endpoint: /observe/metrics
 
 == Contents
 
  - <<Overview, Overview>>
  - <<Maven Coordinates, Maven Coordinates>>
-** <<Other Packaging Options, Other Packaging Options>>
  - <<Usage, Usage>>
-** <<Enabling the MetricsSupport REST Service, Enabling the MetricsSupport REST Service>>
  - <<API, API>>
 ** <<Helidon Metrics API, Helidon Metrics API>>
  - <<Configuration, Configuration>>
@@ -41,97 +48,151 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Support for the Prometheus Metrics API, Support for the Prometheus Metrics API>>
 
 == Overview
-Helidon SE metrics is inspired by--but does not fully implement--the MicroProfile Metrics specification.
-In particular, the Helidon metrics subsystem furnishes
+Helidon SE metrics is a neutral metrics API which provides
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=overview]
+
+=== A Word about Terminology
+Helidon {flavor-uc} uses the term "metrics" to refer to the subsystem in Helidon which manages the registration of, updates to, and reporting of aggregate statistical measurements about the service.
+The term "{meter}" refers to an entity which collects these measurements, such as a counter or a timer.
 
 // Maven coordinates comes next
 include::{rootdir}/includes/dependencies.adoc[]
 
-.Packaging full-featured metrics
+.Packaging the metrics API
 [source,xml]
 ----
 <dependency>
     <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics</artifactId>
+    <artifactId>helidon-metrics-api</artifactId>
 </dependency>
 ----
+This dependency adds the metrics API and a no-op implementation of that API to your project.
+The no-op implementation:
 
-Adding this dependency packages the full-featured metrics implementation with your service.
+* does not register {metrics} in a registry
+* does not update {metric} values
+* does not expose the metrics endpoint for reporting {metric} values.
 
-=== Other Packaging Options
-Helidon gives you flexibility in how you make metrics available to your service. xref:{rootdir}/se/metrics/metrics-capable-components.adoc[This document] explains your options.
+To include the full-featured metrics implementation, add the following dependency to your project:
+
+.Packaging a full-featured metrics implementation
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId>
+</dependency>
+----
+Adding this dependency packages the full-featured metrics implementation and support for the metrics endpoint with your service.
+
+You might notice the transitive dependency `io.helidon.metrics.providers:helidon-metrics-providers-micrometer` in your project.
+This component contains an implementation of the Helidon metrics API that uses Micrometer as the underlying metrics technology.
+
+Helidon provides several built-in {meters} in a separate artifact.
+To include the build-in {meters}, add the following dependency to your project:
+
+.Packaging the built-in {meters}
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-system-meters</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
 
 == Usage
 
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 
-===  Enabling the MetricsSupport REST Service
-To enable the metrics REST endpoint:
+=== Meter Registry
+Helidon stores all meters in a _meter registry_. Typically, applications use the global meter registry which is the registry where Helidon stores built-in meters.
+Application code refers to the global registry using `Metrics.globalRegistry()`.
 
-. Create an instance of link:{metrics-serviceapi-javadoc-base-url}/MetricsSupport.html[`MetricsSupport`], either directly as shown below or using its link:{metrics-serviceapi-javadoc-base-url}/MetricsSupport.Builder.html[`Builder`].
-. Include the `MetricsSupport` instance in your application's routing.
+
+include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-retrieving]
+
+
+===  Enabling the Metrics REST Service
+If you add the dependencies described above, your service automatically supports the metrics REST endpoint as long as the `WebServer` is configured to discover features automatically.
+
+If you disable auto-discovery, you can add the metrics observer explicitly.
+
+. Create an instance of `MetricsObserver`, either directly as shown below or using its builder.
+. Include the `MetricsObserver` instance in your application's `ObserveFeature`.
+. Register your `ObserveFeature` with your `WebServer`.
 
 [source,java]
 ----
-import io.helidon.metrics.serviceapi.MetricsSupport;
+Config config = Config.create();
+Config.global(config);
 
-Routing.builder()
-        .register(MetricsSupport.create())
-        .register("/myapp", new MyService())
+ObserveFeature observe = ObserveFeature.builder()
+        .config(config.get("server.features.observe"))
+        .addObserver(MetricsObserver.create())
         .build();
+
+WebServer server = WebServer.builder()
+                .config(Config.global().get("server"))
+                .featuresDiscoverServices(false)
+                .addFeature(observe)
+                .routing(Main::routing)
+                .build()
+                .start();
+
 ----
 
 
 == API
 To work with Helidon Metrics in your code, follow these steps:
 
-. Use a static method on the link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`] to get a reference to the  link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/MetricRegistry.html[`MetricRegistry`] instance you want to use.
-. Use the `MetricRegistry` instance to register new metrics and look up previously-registered metrics.
-. Use the metric reference returned from the `MetricRegistry` to update the metric or get its value.
+. Use the static `globalRegistry` method on the link:{metrics-javadoc-base-url}/Metrics.html[`Metrics`] interface to get a reference to the global  link:{metrics-javadoc-base-url}/MeterRegistry.html[`MeterRegistry`] instance.
+. Use the `MeterRegistry` instance to register new {metrics} and look up previously-registered {metrics}.
+. Use the {metric} reference returned from the `MeterRegistry` to update the {metric} or get its value.
 
-You can also use the `MetricRegistry` to remove an existing metric.
+You can also use the `MeterRegistry` to remove an existing {metric}.
 
 === Helidon Metrics API
 
-The Helidon Metrics API is aligned with the link:{microprofile-metrics-javadoc-url}[MicroProfile Metrics API].
-That API defines the classes and interfaces for metric types, metric registries, and other related items. Helidon Metrics reuses that API for classes and interfaces (but not for annotations which Helidon SE does not support).
+The Helidon Metrics API defines the classes and interfaces for {metric} types and other related items.
 
-The following table summarizes the metric types.
+The following table summarizes the {metric} types.
 
-.Metric Types
+.{Metric_uc} Types
 [%autowidth]
 |====
-| Metric Type | Usage
+| {Metric_uc} Type | Usage
 
-| link:{microprofile-metrics-javadoc-metric-url}/Counter.html[`Counter`]
+| link:{metrics-javadoc-base-url}/Counter.html[`Counter`]
 | Monotonically increasing count of events.
 
-| link:{microprofile-metrics-javadoc-metric-url}ConcurrentGauge.html[`ConcurrentGauge`]
-| Increasing and decreasing measurement of currently-executing blocks of code.
-
-| link:{microprofile-metrics-javadoc-metric-url}/Gauge.html[`Gauge`]
+| link:{metrics-javadoc-base-url}/Gauge.html[`Gauge`]
 | Access to a value managed by other code in the service.
 
-|link:{microprofile-metrics-javadoc-metric-url}/Histogram.html[`Histogram`]
+|link:{metrics-javadoc-base-url}/DistributionSummary.html[`DistributionSummary`]
 |Calculates the distribution of a value.
 
 
-| link:{microprofile-metrics-javadoc-metric-url}/Meter.html[`Meter`]
-| Count of invocations and how frequently invocations have occurred.
-
-| link:{microprofile-metrics-javadoc-metric-url}/SimpleTimer.html[`SimpleTimer`]
-| Count of invocations and the total duration consumed by those invocations.
-
-| link:{microprofile-metrics-javadoc-metric-url}/Timer.html[`Timer`]
+| link:{metrics-javadoc-base-url}/Timer.html[`Timer`]
 | Frequency of invocations and the distribution of how long the invocations take.
 
 |====
 
-Each metric type has its own set of methods for updating and retrieving the metric's value.
+Each {metric} type has its own set of methods for updating and retrieving the metric's value.
 
+=== The `MeterRegistry` API
+To register or look up {meters} programmatically, your service code uses the global `MeterRegistry`.
+Simply invoke `Metrics.globalRegistry()` to get a reference to the global meter registry.
 
-include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=metric-registry-api]
+To locate an existing meter or register a new one, your code:
+
+. Creates a builder of the appropriate type of meter, setting the name and possibly other characteristics of the meter.
+. Invokes the `MeterRegistry.getOrCreate` method, passing the builder.
+
+The meter registry returns a reference to a previously-registered meter with the specified name and tags or, if none exists, a newly-registered meter.
+Your code can then operate on the returned meter as needed to record new measurements or retrieve existing data.
+
+The example code in the <<_examples,Examples>> section below illustrates how to register, retrieve, and update meters.
 
 // Here's Configuration.
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
@@ -140,45 +201,84 @@ include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=example-apps]
 
-The rest of this section shows how to add a metric to your code and how to configure the Helidon metrics subsystem.
+The rest of this section shows how to add a custom meter to your code and how to configure the Helidon metrics subsystem.
 
 === Example Application Code
 
-The following example illustrates registering and updating a new `Counter` in application code.
+The following example, based on the Helidon SE QuickStart application, shows how to register and update a new `Counter` in application code. The counter tracks the number of times any of the service endpoints is accessed.
 
 .Define and use a `Counter`
 [source,java]
 ----
-import io.helidon.metrics.api.RegistryFactory;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import io.helidon.metrics.api.Counter;
 //...
 
-public class MyService implements HttpService {
+public class GreetService implements HttpService {
 
-    private final MetricRegistry registry = RegistryFactory.getInstance()
-        .getRegistry(MetricRegistry.Type.APPLICATION); // <1>
-    private final Counter accessCtr = registry.counter("accessctr"); // <2>
+    private final Counter accessCtr = Metrics.globalRegistry() // <1>
+            .getOrCreate(Counter.builder("accessctr"));        // <2>
 
     @Override
     public void routing(HttpRules rules) {
         rules
-             .any(this::countAccess)
-             .get("/", this::myGet);
+            .any(this::countAccess)                            // <3>
+            .get("/", this::getDefaultMessageHandler)
+            .get("/{name}", this::getMessageHandler)
+            .put("/greeting", this::updateGreetingHandler)
+
     }
 
-    private void countAccess(ServerRequest request, ServerResponse response) {
-            accessCtr.inc(); // <3>
+    private void countAccess(ServerRequest request,
+                             ServerResponse response) {
+            accessCtr.inc();                                   // <4>
             request.next();
     }
 }
 ----
-<1> Get the application metric registry.
-<2> Create a counter in that registry.
-<3> Increment the counter for every request.
+<1> Get the global meter registry.
+<2> Create (or find) a counter named "accessctr" in the global registry.
+<3> Route every request to the `countAccess` method.
+<4> Increment the access counter for every request.
 
-NOTE: Helidon-provided endpoints for `/metrics` do their work synchronously, using the same thread on which the request arrived via Netty. To prevent performance degradation, avoid including long-running code that can be invoked by these handlers while Helidon is responding to the metric.
-For example, if you implement your own application-specific metric types, you will write logic to format the JSON and OpenMetrics output for those metric types. Helidon invokes this formatting logic whenever a client accesses the /metrics endpoints, so make that formatting code as efficient as possible.
+Perform the following steps to see the new counter in action.
+
+.Build and run the application
+[source,bash]
+----
+mvn package
+java -jar target/helidon-quickstart-se.jar
+----
+
+.Retrieve `application` metrics
+[source.bash]
+----
+curl 'http://localhost:8080/observe/metrics?scope=application' # <1>
+
+# HELP accessctr_total
+# TYPE accessctr_total counter
+accessctr_total{scope="application",} 0.0 // <2>
+----
+<1> Access the metrics endpoint, selecting only application meters.
+<2> Note the counter is zero; we have not accessed a service endpoint yet.
+
+.Access a service endpoint to retrieve a greeting
+[source,bash]
+----
+curl http://localhost:8080/greet
+
+{"message":"Hello World"}
+----
+
+.Retrieve `application` metrics again
+[source,bash]
+----
+curl 'http://localhost:8080/observe/metrics?scope=application'
+
+# HELP accessctr_total
+# TYPE accessctr_total counter
+accessctr_total{scope="application",} 1.0 // <1>
+----
+<1> The counter now reports 1, reflecting our earlier access to the `/greet` endpoint.
 
 // example configuration
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-examples]
@@ -223,10 +323,9 @@ Your code creates a link:{prometheus-javadoc-base-url}/PrometheusSupport.html[`P
 ----
 import io.helidon.metrics.prometheus.PrometheusSupport;
 
-Routing.builder()
-                .register(PrometheusSupport.create())
-                .register("/myapp", new MyService())
-                .build();
+routing
+            .register(PrometheusSupport.create())
+            .register("/myapp", new MyService());
 ----
 
 This example uses the default Prometheus `CollectorRegistry`. By default, the `PrometheusSupport` and exposes its REST endpoint at the path

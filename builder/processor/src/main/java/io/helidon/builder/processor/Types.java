@@ -81,6 +81,8 @@ final class Types {
     static final TypeName PROTOTYPE_CUSTOM_METHOD_TYPE = TypeName.create(PROTOTYPE_CUSTOM_METHOD);
     static final TypeName BUILDER_CUSTOM_METHOD_TYPE = TypeName.create(BUILDER_CUSTOM_METHOD);
     static final TypeName DESCRIPTION_TYPE = TypeName.create(DESCRIPTION);
+    static final TypeName DEPRECATED_TYPE = TypeName.create(Deprecated.class);
+    static final TypeName OPTION_DEPRECATED_TYPE = TypeName.create("io.helidon.builder.api.Option.Deprecated");
     static final TypeName OPTION_SINGULAR_TYPE = TypeName.create(OPTION_SINGULAR);
     static final TypeName OPTION_SAME_GENERIC_TYPE = TypeName.create(OPTION_SAME_GENERIC);
     static final TypeName OPTION_CONFIDENTIAL_TYPE = TypeName.create(OPTION_CONFIDENTIAL);
@@ -98,6 +100,7 @@ final class Types {
     static final TypeName OPTION_DEFAULT_LONG_TYPE = TypeName.create(OPTION_DEFAULT_LONG);
     static final TypeName OPTION_DEFAULT_METHOD_TYPE = TypeName.create(OPTION_DEFAULT_METHOD);
     static final TypeName OPTION_DEFAULT_CODE_TYPE = TypeName.create(OPTION_DEFAULT_CODE);
+    static final TypeName OPTION_TYPE = TypeName.create("io.helidon.builder.api.Option.Type");
 
     static final TypeName VOID_TYPE = TypeName.create(void.class);
     static final TypeName STRING_TYPE = TypeName.create(String.class);

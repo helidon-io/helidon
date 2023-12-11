@@ -40,7 +40,6 @@ import static io.helidon.metrics.api.Meter.BaseUnits.BYTES;
 public class MicrostreamMetricsSupport {
 
     private static final String CONFIG_METRIC_ENABLED_VENDOR = "vendor.";
-    static final String BASE_ENABLED_KEY = CONFIG_METRIC_ENABLED_VENDOR + "enabled";
 
     private static final GaugeInfo<StorageRawFileStatistics> GLOBAL_FILE_COUNT =
             new GaugeInfo<>("microstream.globalFileCount",
@@ -62,7 +61,6 @@ public class MicrostreamMetricsSupport {
 
     private final Config config;
     private final EmbeddedStorageManager embeddedStorageManager;
-    private final MetricsFactory metricsFactory;
     private final MeterRegistry vendorRegistry;
 
     private MicrostreamMetricsSupport(Builder builder) {
@@ -70,6 +68,7 @@ public class MicrostreamMetricsSupport {
         this.config = builder.config();
         this.embeddedStorageManager = builder.embeddedStorageManager();
 
+        MetricsFactory metricsFactory;
         if (builder.metricsFactory() == null) {
             metricsFactory = MetricsFactory.getInstance(config.get(MetricsConfig.METRICS_CONFIG_KEY));
         } else {
@@ -103,7 +102,7 @@ public class MicrostreamMetricsSupport {
                              ToDoubleFunction<T> fn,
                              Tag... tags) {
 
-        Gauge.Builder builder(T stateObject) {
+        Gauge.Builder<Double> builder(T stateObject) {
             Gauge.Builder<Double> builder = Gauge.builder(name, stateObject, fn)
                     .description(description);
             if (unit != null) {

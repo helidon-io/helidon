@@ -39,10 +39,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-config</artifactId>
         </dependency>
@@ -53,10 +49,6 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-media-type</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.logging</groupId>
-            <artifactId>helidon-logging-jul</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>

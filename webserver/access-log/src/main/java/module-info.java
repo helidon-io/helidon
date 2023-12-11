@@ -30,11 +30,15 @@ module io.helidon.webserver.accesslog {
     requires io.helidon.common.security;
     requires io.helidon.webserver;
     requires java.logging;
+    requires io.helidon.logging.jul;
 
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.config;
 
     exports io.helidon.webserver.accesslog;
+
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+            with io.helidon.webserver.accesslog.AccessLogFeatureProvider;
 
 }

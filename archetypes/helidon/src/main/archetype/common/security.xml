@@ -29,160 +29,12 @@
                      optional="true">
                 <inputs>
                     <list id="atn" name="Select Authentication Providers" optional="true">
-                        <option value="oidc" name="OIDC" description="OpenID Connect">
-                            <output>
-                                <model>
-                                    <list key="providers-config-entries">
-                                        <value file="files/application.oidc.yaml" if="${flavor} == 'mp'"/>
-                                        <value if="${flavor} == 'se'"><![CDATA[
-  - oidc:
-      client-id: "your-client-id"
-      client-secret: "your-client-secret"
-      identity-uri: "https://your-tenant-id.identity.oracle.com"
-      # A prefix used for custom scopes
-      scope-audience: "http://localhost:7987/test-application"
-      proxy-host: ""
-      # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
-      # If explicitly defined, will override host header
-      # frontend-uri: "http://localhost:7987"
-      # support for non-public signature JWK (and maybe other IDCS specific handling)
-      server-type: "idcs"
-      logout-enabled: true
-      # Can define just a path, host will be taken from header
-      post-logout-uri: "/loggedout"
-      # We want to redirect to login page (and token can be received either through cookie or header)
-      redirect: true
-  - idcs-role-mapper:
-      multitenant: false
-      oidc-config:
-        # we must repeat IDCS configuration, as in this case
-        # IDCS serves both as open ID connect authenticator and
-        # as a role mapper. Using minimal configuration here
-        client-id: "your-client-id"
-        client-secret: "your-client-secret"
-        identity-uri: "https://your-tenant-id.identity.oracle.com"]]></value>
-                                    </list>
-                                    <list key="paths-config-entries">
-                                        <value if="${flavor} == 'se'"><![CDATA[      - path: "/rest/profile"
-        methods: ["get"]
-        authenticate: true
-        roles-allowed: ["my_admins"]]]></value>
-                                    </list>
-                                    <list key="dependencies">
-                                        <map if="${flavor} == 'mp'">
-                                            <value key="groupId">io.helidon.microprofile</value>
-                                            <value key="artifactId">helidon-microprofile-oidc</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.security.providers</value>
-                                            <value key="artifactId">helidon-security-providers-oidc</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.security.providers</value>
-                                            <value key="artifactId">helidon-security-providers-idcs-mapper</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.config</value>
-                                            <value key="artifactId">helidon-config-encryption</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.smallrye</value>
-                                            <value key="artifactId">jandex</value>
-                                            <value key="scope">runtime</value>
-                                            <value key="optional">true</value>
-                                        </map>
-                                    </list>
-                                    <list key="Main-java-imports" if="${flavor} == 'se'">
-                                        <value>java.util.Optional</value>
-                                    </list>
-                                    <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                        <value>io.helidon.common.context.Contexts</value>
-                                        <value>io.helidon.http.HttpMediaTypes</value>
-                                        <value>io.helidon.security.Security</value>
-                                        <value>io.helidon.security.SecurityContext</value>
-                                        <value>io.helidon.security.Subject</value>
-                                        <value>io.helidon.webserver.security.SecurityFeature</value>
-                                        <value>io.helidon.security.providers.oidc.OidcFeature</value>
-                                    </list>
-                                    <list key="Main-routing" if="${flavor} == 'se'">
-                                        <value><![CDATA[
-        Security security = Security.create(config.get("security"));
-        // this is needed for proper encryption/decryption of cookies
-        Contexts.globalContext().register(security);
-
-        if (config.get("security.enabled").asBoolean().orElse(true)) {
-            // IDCS requires a web resource for redirects
-            routing.addFeature(OidcFeature.create(config));
-        }
-]]></value>
-                                    </list>
-                                    <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                        <value><![CDATA[                        .addFeature(SecurityFeature.create(security, config.get("security")))
-                        // web server does not (yet) have possibility to configure routes in config files, so explicit...
-                        .get("/rest/profile", (req, res) -> {
-                            Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                            res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
-                            res.send("Response from config based service, you are: \n" + securityContext
-                                    .flatMap(SecurityContext::user)
-                                    .map(Subject::toString)
-                                    .orElse("Security context is null"));
-                        })
-                        .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]></value>
-                                    </list>
-                                    <list key="maven-plugins" if="${flavor} == 'se'">
-                                        <value><![CDATA[
-            <plugin>
-                <groupId>io.smallrye</groupId>
-                <artifactId>jandex-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>make-index</id>
-                    </execution>
-                </executions>
-            </plugin>]]></value>
-                                    </list>
-                                    <list key="modules" if="${flavor} == 'se'">
-                                        <value>io.helidon.security.providers.oidc</value>
-                                    </list>
-                                    <list key="modules">
-                                        <value if="${flavor} == 'se'">io.helidon.security</value>
-                                    </list>
-                                </model>
-                            </output>
-                        </option>
+                        <option value="oidc" name="OIDC" description="OpenID Connect"/>
                         <option value="jwt" name="JWT" description="JSON Web Token">
                             <output>
                                 <model>
-                                    <list key="providers-config-entries">
-                                        <value file="files/application.jwt.yaml" if="${flavor} == 'mp'"/>
-                                    </list>
-                                    <list key="dependencies">
-                                        <map if="${flavor} == 'mp'">
-                                            <value key="groupId">io.helidon.security.providers</value>
-                                            <value key="artifactId">helidon-security-providers-jwt</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.webclient</value>
-                                            <value key="artifactId">helidon-webclient-security</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.security.providers</value>
-                                            <value key="artifactId">helidon-security-providers-http-auth</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.security.providers</value>
-                                            <value key="artifactId">helidon-security-providers-jwt</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.bundles</value>
-                                            <value key="artifactId">helidon-bundles-config</value>
-                                        </map>
-                                    </list>
-                                    <list key="modules">
-                                        <value if="${flavor} == 'se'">io.helidon.webclient.security</value>
-                                        <value>io.helidon.security.providers.jwt</value>
+                                    <list key="module-requires">
                                         <value>io.helidon.webserver.context</value>
-                                        <value>io.helidon.webclient.http1</value>
                                     </list>
                                 </model>
                             </output>
@@ -190,55 +42,18 @@
                         <option value="google" name="Google Login" description="Google identity">
                             <output>
                                 <model>
-                                    <list key="providers-config-entries">
-                                        <value file="files/application.google.yaml" if="${flavor} == 'mp'"/>
-                                        <value if="${flavor} == 'se'"><![CDATA[    - google-login:
-        # Create your own application in Google developer console
-        # Also update the client id configured in header of index.html
-        # Detailed how-to for login button (including links how to create an application):
-        # https://developers.google.com/identity/sign-in/web/sign-in
-        client-id: "your-app-id.apps.googleusercontent.com"
-        # Defaults for Helidon
-        # realm: "helidon"
-        # Configure proxy host if needed
-        proxy-host: ""
-        # proxy-port: 80
-
-        # This is the default for GoogleTokenProvider
-        #token:
-        #  header: "Authorization"
-        # or do not specify - then the whole header is considered to be the token value
-        #  prefix: "bearer "
-        # optional alternative - looking for first matching group
-        #  regexp: "bearer (.*)"
-        #}]]></value>
-                                    </list>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-google-login</value>
                                         </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.config</value>
-                                            <value key="artifactId">helidon-config-encryption</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.bundles</value>
-                                            <value key="artifactId">helidon-bundles-config</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.webserver</value>
-                                            <value key="artifactId">helidon-webserver-static-content</value>
-                                        </map>
                                     </list>
                                     <list key="paths-config-entries">
-                                        <value><![CDATA[
-    paths:
-      - path: "/rest/profile"
-        methods: ["get"]
-        authenticate: true]]></value>
+                                        <value><![CDATA[    - path: "/rest/profile"
+      methods: ["get"]
+      authenticate: true]]></value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value>io.helidon.webserver.context</value>
                                         <value>io.helidon.webserver.staticcontent</value>
                                         <value>io.helidon.security.providers.google.login</value>
@@ -255,38 +70,11 @@
                                     </includes>
                                 </files>
                                 <model>
-                                    <list key="providers-config-entries">
-                                        <value file="files/application.http-signature.yaml" if="${flavor} == 'mp'"/>
-                                    </list>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-http-sign</value>
                                         </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.webclient</value>
-                                            <value key="artifactId">helidon-webclient-security</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.bundles</value>
-                                            <value key="artifactId">helidon-bundles-security</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.config</value>
-                                            <value key="artifactId">helidon-config-hocon</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.config</value>
-                                            <value key="artifactId">helidon-config-hocon</value>
-                                        </map>
-                                    </list>
-                                    <list key="modules" if="${flavor} == 'se'">
-                                        <value>io.helidon.webclient.http1</value>
-                                        <value>io.helidon.common.pki</value>
-                                        <value>io.helidon.webserver.context</value>
-                                        <value>io.helidon.security.providers.common</value>
-                                        <value>io.helidon.security.providers.httpauth</value>
-                                        <value>io.helidon.security.providers.httpsign</value>
                                     </list>
                                 </model>
                             </output>
@@ -296,25 +84,14 @@
                         <option value="abac" name="ABAC" description="Attribute Based Access Control">
                             <output>
                                 <model>
-                                    <list key="providers-config-entries">
-                                        <value file="files/application.abac.yaml"/>
-                                    </list>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-abac</value>
                                         </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.security.abac</value>
-                                            <value key="artifactId">helidon-security-abac-scope</value>
-                                        </map>
-                                        <map if="${flavor} == 'se'">
-                                            <value key="groupId">io.helidon.security.abac</value>
-                                            <value key="artifactId">helidon-security-abac-role</value>
-                                        </map>
                                     </list>
                                     <list key="paths-config-entries">
-                                        <value order="90"><![CDATA[         roles-allowed: ["user"]]]></value>
+                                        <value order="90" if="!(${security.atn} contains 'oidc')"><![CDATA[         roles-allowed: ["user"]]]></value>
                                     </list>
                                 </model>
                             </output>
@@ -324,34 +101,26 @@
                 <output>
                     <model>
                         <value key="security">true</value>
-                        <list key="dependencies">
-                            <map if="${flavor} == 'mp'">
-                                <value key="groupId">io.helidon.microprofile</value>
-                                <value key="artifactId">helidon-microprofile-security</value>
-                            </map>
-                            <map if="${flavor} == 'se'">
-                                <value key="groupId">io.helidon.webserver</value>
-                                <value key="artifactId">helidon-webserver-security</value>
-                            </map>
-                        </list>
-                        <list key="paths-config-entries">
-                            <value if="${flavor} == 'mp'"><![CDATA[       - path: "/simple-greet"
-         methods: ["get"]
-         authenticate: true]]></value>
-                        </list>
-                        <list key="config-test" if="${flavor} == 'se'">
-                            <value><![CDATA[
-security:
-  enabled: false
+                        <value key="features">true</value>
+                        <list key="server-features">
+                            <value template="mustache"><![CDATA[
+    security:
+      defaults:
+        authenticate: true
+      web-server:
+        # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
+        paths:
+        {{#paths-config-entries}}
+        {{.}}
+        {{/paths-config-entries}}
 ]]></value>
-                        </list>
-                        <list key="modules" if="${flavor} == 'se'">
-                            <value>io.helidon.security.integration.common</value>
-                            <value>io.helidon.webserver.security</value>
                         </list>
                     </model>
                 </output>
             </boolean>
         </inputs>
+        <variables>
+            <boolean path="application-yaml" if="${security}">true</boolean>
+        </variables>
     </step>
 </archetype-script>

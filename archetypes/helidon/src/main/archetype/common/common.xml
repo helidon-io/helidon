@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,9 +28,6 @@
         <transformation id="packaged">
             <replace regex="__pkg__" replacement="${package/\./\/}"/>
         </transformation>
-        <transformation id="package-name">
-            <replace regex="package" replacement="${package}"/>
-        </transformation>
         <transformation id="json-mustache">
             <replace regex="\.json.mustache$" replacement=""/>
         </transformation>
@@ -49,11 +46,18 @@
             <includes>
                 <include>.helidon.mustache</include>
                 <include>README.md.mustache</include>
-                <include>src/main/java/**/*.java.mustache</include>
+                <include if="${flavor} == 'se'">src/main/java/**/Main.java.mustache</include>
             </includes>
         </templates>
         <model>
             <value key="dot-helidon-schema-version">1.1.0</value>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.logging</value>
+                    <value key="artifactId">helidon-logging-jul</value>
+                    <value key="scope">runtime</value>
+                </map>
+            </list>
         </model>
     </output>
 </archetype-script>

@@ -66,20 +66,16 @@ xref:{rootdir}/se/guides/quickstart.adoc[Using the SE Quick Start Guide]
 
 --
 
-//Migration Guides
+//Upgrade Guides
 [CARD]
 .Upgrading Helidon
 [icon=storage]
 --
-Use the migration guides to help you upgrade your existing Helidon applications to the latest version of Helidon.
+Use the upgrade guides to help you upgrade your existing Helidon applications to the latest version of Helidon.
 
-xref:{rootdir}/mp/guides/migration_3x.adoc[Upgrade From Helidon MP 3.x]
+xref:{rootdir}/mp/guides/upgrade_4x.adoc[Upgrade From Helidon MP 3.x]
 
-xref:{rootdir}/mp/guides/migration.adoc[Upgrade From Helidon MP 2.x]
-
-xref:{rootdir}/se/guides/migration_3x.adoc[Upgrade From Helidon SE 3.x]
-
-xref:{rootdir}/se/guides/migration.adoc[Upgrade From Helidon SE 2.x]
+xref:{rootdir}/se/guides/upgrade_4x.adoc[Upgrade From Helidon SE 3.x]
 
 --
 
@@ -94,7 +90,8 @@ Use these hands-on development tutorials to learn how to generate a small "Hello
 
 xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon MP Tutorial]
 
-xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon SE Tutorial]
+// We do not have an SE application tutorial. So for now point at quickstart.
+xref:{rootdir}/se/guides/quickstart.adoc[Helidon SE Quickstart]
 
 --
 

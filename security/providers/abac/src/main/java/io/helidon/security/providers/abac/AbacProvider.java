@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthorizationResponse;

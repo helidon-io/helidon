@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
@@ -42,21 +41,16 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
-import io.helidon.common.socket.HelidonSocket;
-import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.http.DirectHandlers;
-import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
@@ -71,10 +65,8 @@ class ServerListener implements ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
 
     @SuppressWarnings("rawtypes")
-    private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() -> {
-        return HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class))
-                .asList();
-    });
+    private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() ->
+            HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class)).asList());
 
     private final ConnectionProviders connectionProviders;
     private final String socketName;
@@ -165,22 +157,8 @@ class ServerListener implements ListenerContext {
             port = 0;
         }
         this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
+        this.router = router;
 
-        // for each socket name, use the default router by default, override if customized in builder
-        Optional<HttpRouting> routing = listenerConfig.routing();
-        List<Routing> routings = listenerConfig.routings();
-
-        Router.Builder routerBuilder = Router.builder();
-        routings.forEach(routerBuilder::addRouting);
-        routing.ifPresent(routerBuilder::addRouting);
-
-        if (routing.isEmpty() && routings.isEmpty()) {
-            // inherit from web server
-            this.router = router;
-        } else {
-            // customize routing
-            this.router = routerBuilder.build();
-        }
         // handle idle connection timeout
         IdleTimeoutHandler ith = new IdleTimeoutHandler(idleConnectionTimer,
                                                         listenerConfig,
@@ -359,37 +337,16 @@ class ServerListener implements ListenerContext {
                 Socket socket = serverSocket.accept();
 
                 try {
-                    ConnectionHandler handler;
-                    String channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
                     connectionOptions.configureSocket(socket);
-
-                    HelidonSocket helidonSocket;
-                    if (tls.enabled()) {
-                        SSLSocket sslSocket = (SSLSocket) socket;
-                        sslSocket.setHandshakeApplicationProtocolSelector(
-                                (sslEngine, list) -> {
-                                    for (String protocolId : list) {
-                                        if (connectionProviders.supportedApplicationProtocols()
-                                                .contains(protocolId)) {
-                                            return protocolId;
-                                        }
-                                    }
-                                    return null;
-                                });
-                        sslSocket.startHandshake();
-                        helidonSocket = TlsSocket.server(sslSocket, channelId, serverChannelId);
-                    } else {
-                        helidonSocket = PlainSocket.server(socket, channelId, serverChannelId);
-                    }
-
-                    handler = new ConnectionHandler(this,
+                    ConnectionHandler handler = new ConnectionHandler(this,
                                                     connectionSemaphore,
                                                     requestSemaphore,
                                                     connectionProviders,
                                                     activeConnections,
-                                                    helidonSocket,
-                                                    router);
-
+                                                    socket,
+                                                    serverChannelId,
+                                                    router,
+                                                    tls);
                     readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");

@@ -105,6 +105,7 @@ class TestDefaultCorsSupport {
         WebClient client;
         try {
             server = WebServer.builder()
+                    .featuresDiscoverServices(false)
                     .routing(it -> prepRouting(it, false))
                     .build()
                     .start();

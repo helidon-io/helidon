@@ -20,19 +20,19 @@ import java.util.Optional;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.http.HttpMediaTypes;
 import io.helidon.config.Config;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.config.ConfigSources;
+import io.helidon.http.HttpMediaTypes;
+import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.context.ContextFeature;
-import io.helidon.security.Security;
-import io.helidon.security.SecurityContext;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 /**
- * Unit test for {@link SecurityFeature}.
+ * Unit test for {@link SecurityHttpFeature}.
  */
 @ServerTest
 public class WebSecurityFromConfigTest extends WebSecurityTests {
@@ -45,18 +45,21 @@ public class WebSecurityFromConfigTest extends WebSecurityTests {
     public static void setup(WebServerConfig.Builder serverBuilder) {
         UnitTestAuditProvider myAuditProvider = new UnitTestAuditProvider();
 
-        Config securityConfig = Config.create().get("security");
+        Config config = Config.just(ConfigSources.classpath("security-application.yaml"));
 
-        Security security = Security.builder(securityConfig)
+        Security security = Security.builder()
+                .config(config.get("security"))
                 .addAuditProvider(myAuditProvider).build();
+        // needed for other features, such as integration with webserver
+        Contexts.globalContext().register(security);
 
         Context context = Context.create();
         context.register(myAuditProvider);
 
-        serverBuilder.serverContext(context)
-                .routing(routing -> routing.addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.create(security, securityConfig))
-                .get("/*", (req, res) -> {
+        serverBuilder
+                .serverContext(context)
+                .config(config.get("server"))
+                .routing(routing -> routing.get("/*", (req, res) -> {
                     Optional<SecurityContext> securityContext = Contexts.context()
                             .flatMap(ctx -> ctx.get(SecurityContext.class));
                     res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);

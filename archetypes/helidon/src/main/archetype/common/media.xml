@@ -22,7 +22,8 @@
 
     <step name="Media Support" optional="true">
         <variables>
-            <text path="media.default-json-lib">jsonb</text>
+            <text path="media.default-json-lib" if="${flavor} == 'mp'">jsonb</text>
+            <text path="media.default-json-lib" if="${flavor} == 'se'">jsonp</text>
         </variables>
         <inputs>
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/699 -->
@@ -49,18 +50,14 @@
                                         <list key="Abstract-tests">
                                             <value><![CDATA[
     @Test
-    void testRootRoute() {
-        try (Http1ClientResponse response = client.get("/greet")
-                .request()) {
-
-            assertThat(response.status(), is(Status.OK_200));
-            JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("message"), is("Hello World!"));
-        }
+    void testGreeting() {
+        ClientResponseTyped<JsonObject> response = client.get("/greet").request(JsonObject.class);
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity().getString("message"), is("Hello World!"));
     }
 ]]></value>
                                         </list>
-                                        <list key="modules">
+                                        <list key="module-requires">
                                             <value>jakarta.json</value>
                                         </list>
                                     </model>
@@ -83,9 +80,15 @@
                                                 <value key="artifactId">jersey-media-json-jackson</value>
                                                 <value key="scope">runtime</value>
                                             </map>
+                                            <map order="500" if="${flavor} == 'mp'">
+                                                <value key="groupId">jakarta.xml.bind</value>
+                                                <value key="artifactId">jakarta.xml.bind-api</value>
+                                            </map>
                                         </list>
-                                        <list key="modules">
+                                        <list key="module-requires">
                                             <value>com.fasterxml.jackson.annotation</value>
+                                            <value>com.fasterxml.jackson.core</value>
+                                            <value if="${flavor} == 'mp'">jakarta.xml.bind</value>
                                         </list>
                                     </model>
                                 </output>
@@ -112,23 +115,22 @@
                                             <value><![CDATA[
     @Test
     void testGreet() {
-        try (Http1ClientResponse response = client.get("/greet").request()) {
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(Message.class).getMessage(), is("Hello World!"));
-        }
+        ClientResponseTyped<Message> response = client.get("/greet").request(Message.class);
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity().getMessage(), is("Hello World!"));
     }
 
     @Test
     void testGreetJoe() {
-        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(Message.class).getMessage(), is("Hello Joe!"));
-        }
+        ClientResponseTyped<Message> response = client.get("/greet/Joe").request(Message.class);
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity().getMessage(), is("Hello Joe!"));
     }
 ]]></value>
                                         </list>
-                                        <list key="modules">
+                                        <list key="module-requires">
                                             <value>jakarta.json</value>
+                                            <value>jakarta.json.bind</value>
                                         </list>
                                     </model>
                                 </output>
@@ -161,17 +163,16 @@
                                     <value key="artifactId">jakarta.json-api</value>
                                 </map>
                             </list>
-                            <list key="modules" if="${flavor} == 'se'">
+                            <list key="module-requires" if="${flavor} == 'se'">
                                 <value>jakarta.json</value>
                                 <value>io.helidon.http.media.multipart</value>
                                 <value>io.helidon.webserver.staticcontent</value>
                             </list>
-                            <list key="modules" if="${flavor} == 'mp'">
+                            <list key="module-requires" if="${flavor} == 'mp'">
                                 <value>jakarta.json</value>
                                 <value>jersey.media.multipart</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                <value>io.helidon.http.Header</value>
                                 <value>io.helidon.http.Status</value>
                                 <value>io.helidon.http.HeaderNames</value>
                                 <value>io.helidon.http.HeaderValues</value>
@@ -198,6 +199,9 @@
     }
 ]]></value>
                             </list>
+                            <list key="module-requires">
+                                <value if="${flavor} == 'mp'">org.jvnet.mimepull</value>
+                            </list>
                         </model>
                     </output>
                 </option>
@@ -215,6 +219,23 @@
                 <value key="media-json-jackson" if="!(${media} contains 'json' &amp;&amp; ${media.json-lib} == 'jackson')">false</value>
                 <value key="json-lib" if="${media} contains 'json'">${media.json-lib}</value>
                 <value key="multipart" if="${media} contains 'multipart'">true</value>
+                <list key="readme-exercise-the-application">
+                    <value order="900" if="${media} contains 'json'"><![CDATA[
+JSON:
+```
+curl -X GET http://localhost:8080/greet
+{"message":"Hello World!"}
+
+curl -X GET http://localhost:8080/greet/Joe
+{"message":"Hello Joe!"}
+
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
+
+curl -X GET http://localhost:8080/greet/Jose
+{"message":"Hola Jose!"}
+```
+]]></value>
+                </list>
             </model>
         </output>
     </step>

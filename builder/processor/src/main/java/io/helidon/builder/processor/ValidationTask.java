@@ -22,9 +22,9 @@ import java.util.function.Consumer;
 
 import io.helidon.common.Errors;
 import io.helidon.common.processor.ElementInfoPredicates;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.RUNTIME_OBJECT_TYPE;
@@ -164,7 +164,7 @@ abstract class ValidationTask {
         @Override
         public void validate(Errors.Collector errors) {
             // must be package local
-            if (blueprint.modifiers().contains(TypeValues.MODIFIER_PUBLIC)) {
+            if (blueprint.accessModifier() == AccessModifier.PUBLIC) {
                 errors.fatal(blueprint.typeName().fqName() + " is defined as public, it must be package local");
             }
         }
@@ -352,16 +352,14 @@ abstract class ValidationTask {
                                   "As " + configObjectType.fqName() + " implements "
                                           + Types.PROTOTYPE_FACTORY_TYPE.classNameWithEnclosingNames()
                                           + "<"
-                                          + runtimeTypeInfo.typeName()
-                                          .fqName() + ">, the type " + runtimeTypeInfo.typeName().className()
+                                          + runtimeTypeInfo.typeName().resolvedName() + ">, the type "
+                                          + runtimeTypeInfo.typeName().className()
                                           + " must implement the following "
                                           + "method:\n"
                                           + "static "
                                           + runtimeTypeInfo.typeName().className()
-                                          + " create(" + consumerArgument.fqName() + " consumer) {\n"
-                                          + "  var builder = " + configObjectType.className() + ".builder();\n"
-                                          + "  consumer.accept(builder);"
-                                          + "  return builder.build();"
+                                          + " create(" + consumerArgument.resolvedName() + " consumer) {\n"
+                                          + "  return builder().update(consumer).build();"
                                           + "}");
         }
     }

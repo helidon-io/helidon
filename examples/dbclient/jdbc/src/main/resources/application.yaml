@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 server:
   port: 8079
   host: 0.0.0.0
-  features:
-    print-details: true
 
 tracing:
   service: jdbc-db
@@ -61,8 +59,8 @@ db:
         # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
         name-prefix: "hikari."
   health-check:
-    type: "query"
-    statementName: "health-check"
+    - type: "query"
+      statementName: "health-check"
   services:
     tracing:
       # would trace all statement names that start with select-
@@ -75,7 +73,6 @@ db:
       - type: METER
         # meter per statement name (default name format)
       - type: METER
-        # meter per statement type
         name-format: "db.meter.%1$s"
       - type: TIMER
         errors: false

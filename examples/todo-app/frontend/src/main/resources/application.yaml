@@ -15,8 +15,15 @@
 #
 env: docker
 
-webserver:
+server:
   port: 8080
+  features:
+    access-log:
+      enabled: true
+    security:
+      paths:
+        - path: "/api/{+}"
+          authenticate: true
 
 cors:
   allow-origins: ["https://cdnjs.cloudflare.com", "https://raw.githubusercontent.com"]
@@ -54,7 +61,3 @@ security:
             signature:
               key-id: "frontend"
               hmac.secret: "${CLEAR=frontend2backend}"
-  web-server:
-    paths:
-      - path: "/api/{+}"
-        authenticate: true

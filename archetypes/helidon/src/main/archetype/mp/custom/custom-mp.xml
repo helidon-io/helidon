@@ -20,28 +20,30 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-
+    <variables>
+        <boolean path="application-yaml">false</boolean>
+    </variables>
+    <exec src="/mp/common/common-mp.xml"/>
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
     <exec src="/common/security.xml"/>
-    <exec src="/mp/custom/database.xml"/>
+    <exec src="database-input.xml"/>
     <source src="/common/extra.xml"/>
     <source src="/common/observability.xml"/>
     <exec src="/common/packaging.xml"/>
-    <exec src="/mp/common/common-mp.xml"/>
-    <source src="/mp/custom/observability.xml"/>
+    <source src="observability.xml"/>
+    <exec src="database-outputs.xml" if="${db}"/>
+    <source src="security-outputs.xml" if="${security}"/>
     <output>
+        <templates engine="mustache" transformations="mustache" if="${application-yaml}">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/application.yaml.mustache</include>
+            </includes>
+        </templates>
         <model>
             <value key="helidon-test">true</value>
-            <value key="readme-description">Minimal Helidon MP project suitable to start from scratch.</value>
-            <list key="readme-exercise-the-application">
-                <value file="files/README.md"/>
-            </list>
-            <list key="native-sections" if="${docker}">
-                <value file="files/README.native.md.mustache"
-                       if="${docker.native-image} &amp;&amp; !(${db})"
-                       template="mustache"/>
-            </list>
+            <value key="mainClass" if="${jpms}">${package}.Main</value>
             <list key="microprofile-config-entries">
                 <value file="files/microprofile-config.properties"/>
             </list>
@@ -78,7 +80,16 @@
                     <value key="artifactId">helidon-microprofile-core</value>
                 </map>
             </list>
-            <list key="modules">
+            <list key="readme-exercise-the-application">
+                <value order="999"><![CDATA[
+Basic:
+```
+curl -X GET http://localhost:8080/simple-greet
+Hello World!
+```
+]]></value>
+            </list>
+            <list key="module-requires">
                 <value>jakarta.cdi</value>
                 <value>jakarta.inject</value>
                 <value>jakarta.ws.rs</value>
@@ -86,6 +97,7 @@
                 <value>io.helidon.microprofile.config</value>
                 <value>io.helidon.microprofile.server</value>
             </list>
+            <value key="module-opens">true</value>
         </model>
     </output>
 </archetype-script>

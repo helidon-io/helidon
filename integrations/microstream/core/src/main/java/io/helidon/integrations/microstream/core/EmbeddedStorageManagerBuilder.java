@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Map;
 import io.helidon.config.Config;
 
 import one.microstream.configuration.types.ByteSize;
+import one.microstream.persistence.binary.jdk17.types.BinaryHandlersJDK17;
 import one.microstream.storage.embedded.configuration.types.EmbeddedStorageConfigurationBuilder;
 import one.microstream.storage.embedded.configuration.types.EmbeddedStorageFoundationCreatorConfigurationBased;
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
@@ -62,8 +63,12 @@ public class EmbeddedStorageManagerBuilder implements io.helidon.common.Builder<
 
     @Override
     public EmbeddedStorageManager build() {
-        return EmbeddedStorageFoundationCreatorConfigurationBased.New(configurationBuilder.buildConfiguration())
-                .createEmbeddedStorageFoundation().createEmbeddedStorageManager();
+        var embeddedStorageFoundation = EmbeddedStorageFoundationCreatorConfigurationBased
+                .New(configurationBuilder
+                        .buildConfiguration())
+                .createEmbeddedStorageFoundation();
+        embeddedStorageFoundation.onConnectionFoundation(BinaryHandlersJDK17::registerJDK17TypeHandlers);
+        return embeddedStorageFoundation.createEmbeddedStorageManager();
     }
 
     /**
@@ -229,7 +234,7 @@ public class EmbeddedStorageManagerBuilder implements io.helidon.common.Builder<
     }
 
     /**
-     * Interval in milliseconds for the houskeeping. This is work like garbage
+     * Interval in milliseconds for the housekeeping. This is work like garbage
      * collection or cache checking. In combination with
      * {@link #housekeepingTimeBudget(Duration)} the maximum processor time for
      * housekeeping work can be set. Default is <code>1000</code> (every second).

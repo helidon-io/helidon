@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.logging.common.LogConfig;
@@ -32,7 +33,6 @@ import io.helidon.security.providers.oidc.OidcProvider;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.security.SecurityFeature;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -96,10 +96,11 @@ public final class IdcsBuilderMain {
                         .config(config)
                         .oidcConfig(oidcConfig))
                 .build();
+        // security needs to be available for other features, such as server security feature
+        Contexts.globalContext().register(security);
 
         server.port(PORT)
                 .routing(routing -> routing
-                        .addFeature(SecurityFeature.create(security, config.get("security")))
                         // IDCS requires a web resource for redirects
                         .addFeature(OidcFeature.create(config))
                         // web server does not (yet) have possibility to configure routes in config files, so explicit...

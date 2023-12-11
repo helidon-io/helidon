@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,164 +16,79 @@
 
 package io.helidon.webserver.security;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.function.Consumer;
 
-import io.helidon.common.Weighted;
-import io.helidon.common.context.Context;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.http.ForbiddenException;
-import io.helidon.http.Method;
-import io.helidon.http.PathMatchers;
-import io.helidon.http.UnauthorizedException;
-import io.helidon.security.EndpointConfig;
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.security.Security;
-import io.helidon.security.SecurityContext;
-import io.helidon.security.SecurityEnvironment;
-import io.helidon.security.SecurityException;
-import io.helidon.tracing.Span;
-import io.helidon.webserver.http.FilterChain;
-import io.helidon.webserver.http.HttpFeature;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.http.HttpSecurity;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.spi.ServerFeature;
+
+import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 
 /**
- * Integration of security into WebServer.
+ * Server feature for security, to be registered with
+ * {@link io.helidon.webserver.WebServerConfig.Builder#addFeature}.
  * <p>
- * Methods that start with "from" are to register WebSecurity with {@link io.helidon.webserver.WebServer}
- * - to create {@link SecurityContext} for requests:
- * <ul>
- * <li>{@link #create(Security)}</li>
- * <li>{@link #create(Config)}</li>
- * <li>{@link #create(Security, Config)}</li>
- * </ul>
- * <p>
- * Example:
- * <pre>
- * // WebServer routing builder - this is our integration point
- * {@link io.helidon.webserver.http.HttpRouting} routing = HttpRouting.builder()
- * // register the WebSecurity to create context (shared by all routes)
- * .register({@link SecurityFeature}.{@link
- * SecurityFeature#create(Security) from(security)})
- * </pre>
- * <p>
- * Other methods are to create security enforcement points (gates) for routes (e.g. you are expected to use them for a get, post
- * etc. routes on specific path).
- * These methods are starting points that provide an instance of {@link SecurityHandler} that has finer grained methods to
- * control the gate behavior. <br>
- * Note that if any gate is configured, auditing will be enabled by default except for GET and HEAD methods - if you want
- * to audit any method, invoke {@link #audit()} to create a gate that will always audit the route.
- * If you want to create a gate and not audit it, use {@link SecurityHandler#skipAudit()} on the returned instance.
- * <ul>
- * <li>{@link #secure()} - authentication and authorization</li>
- * <li>{@link #rolesAllowed(String...)} - role based access control (implies authentication and authorization)</li>
- * <li>{@link #authenticate()} - authentication only</li>
- * <li>{@link #authorize()} - authorization only</li>
- * <li>{@link #allowAnonymous()} - authentication optional</li>
- * <li>{@link #audit()} - audit all requests (including GET and HEAD)</li>
- * <li>{@link #authenticator(String)} - use explicit authenticator (named - as configured in config or through builder)</li>
- * <li>{@link #authorizer(String)} - use explicit authorizer (named - as configured in config or through builder)</li>
- * <li>{@link #enforce()} - use defaults (e.g. no authentication, authorization, audit calls except for GET and HEAD); this
- * also give access to more fine-grained methods of {@link SecurityHandler}</li>
- * </ul>
- * <p>
- * Example:
- * <pre>
- * // continue from example above...
- * // create a gate for method GET: authenticate all paths under /user and require role "user" for authorization
- * .get("/user[/{*}]", WebSecurity.{@link SecurityFeature#rolesAllowed(String...)
- * rolesAllowed("user")})
- * </pre>
+ * This feature adds a filter to register {@link io.helidon.security.SecurityContext}
+ * in request {@link io.helidon.common.context.Context},
+ * and registers {@link io.helidon.webserver.http.HttpRouting.Builder#security(io.helidon.webserver.http.HttpSecurity)}.
+ * If configured, it also adds protection points to endpoints.
  */
-public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighted {
-    /**
-     * Security can accept additional headers to be added to security request.
-     * This will be used to obtain multivalue string map (a map of string to list of strings) from context (appropriate
-     * to the integration).
-     */
-    public static final String CONTEXT_ADD_HEADERS = "security.addHeaders";
-
-    private static final Logger LOGGER = Logger.getLogger(SecurityFeature.class.getName());
-    private static final AtomicInteger SECURITY_COUNTER = new AtomicInteger();
-    private static final double WEIGHT = 800;
+@RuntimeType.PrototypedBy(SecurityFeatureConfig.class)
+public class SecurityFeature implements ServerFeature, RuntimeType.Api<SecurityFeatureConfig> {
+    static final double WEIGHT = 800;
+    static final String SECURITY_ID = "security";
+    private static final System.Logger LOGGER = System.getLogger(SecurityFeature.class.getName());
 
     private final Security security;
-    private final Config config;
-    private final SecurityHandler defaultHandler;
-    private final double weight;
+    private final SecurityFeatureConfig featureConfig;
 
-    private SecurityFeature(Security security, Config config) {
-        this(security, config, SecurityHandler.create());
-    }
-
-    private SecurityFeature(Security security, Config config, SecurityHandler defaultHandler) {
-        this.security = security;
-        this.config = config;
-        this.defaultHandler = defaultHandler;
-        this.weight = (config == null) ? WEIGHT : config.get("web-server.weight").asDouble().orElse(WEIGHT);
+    private SecurityFeature(SecurityFeatureConfig featureConfig) {
+        this.security = featureConfig.security();
+        this.featureConfig = featureConfig;
     }
 
     /**
-     * Create a consumer of routing config to be
-     * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)   registered} with
-     * web server routing to process security requests.
-     * This method is to be used together with other routing methods to protect web resources programmatically.
-     * Example:
-     * <pre>
-     * .get("/user[/{*}]", WebSecurity.authenticate()
-     * .rolesAllowed("user"))
-     * </pre>
+     * Fluent API builder to set up an instance.
      *
-     * @param security initialized security
-     * @return routing config consumer
+     * @return a new builder
      */
-    public static SecurityFeature create(Security security) {
-        return new SecurityFeature(security, null);
+    public static SecurityFeatureConfig.Builder builder() {
+        return SecurityFeatureConfig.builder();
     }
 
     /**
-     * Create a consumer of routing config to be
-     * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)  registered} with
-     * web server routing to process security requests.
-     * This method configures security and web server integration from a config instance
+     * Create a new instance from its configuration.
      *
-     * @param config Config instance to load security and web server integration from configuration
-     * @return routing config consumer
+     * @param config configuration
+     * @return a new feature
      */
-    public static SecurityFeature create(Config config) {
-        Security security = Security.create(config);
-        return create(security, config);
+    public static SecurityFeature create(SecurityFeatureConfig config) {
+        return new SecurityFeature(config);
     }
 
     /**
-     * Create a consumer of routing config to be
-     * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)  registered} with
-     * web server routing to process security requests.
-     * This method expects initialized security and creates web server integration from a config instance
+     * Create a new instance customizing its configuration.
      *
-     * @param security Security instance to use
-     * @param config   Config instance to load security and web server integration from configuration
-     * @return routing config consumer
+     * @param builderConsumer consumer of configuration
+     * @return a new feature
      */
-    public static SecurityFeature create(Security security, Config config) {
-        return new SecurityFeature(security, config);
+    public static SecurityFeature create(Consumer<SecurityFeatureConfig.Builder> builderConsumer) {
+        return builder()
+                .update(builderConsumer)
+                .build();
     }
 
     /**
      * Secure access using authentication and authorization.
      * Auditing is enabled by default for methods modifying content.
      * When using RBAC (role based access control), just use {@link #rolesAllowed(String...)}.
-     * If you use a security provider, that requires additional data, use {@link SecurityHandler#customObject(Object)}.
+     * If you use a security provider, that requires additional data, use {@link io.helidon.webserver.security.SecurityHandler#customObject(Object)}.
      * <p>
      * Behavior:
      * <ul>
@@ -182,7 +97,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * <li>Audit: not modified (default: enabled except for GET and HEAD methods)</li>
      * </ul>
      *
-     * @return {@link SecurityHandler} instance configured with authentication and authorization
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance configured with authentication and authorization
      */
     public static SecurityHandler secure() {
         return SecurityHandler.create().authenticate().authorize();
@@ -198,7 +113,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * <li>Audit: not modified (default: enabled except for GET and HEAD methods)</li>
      * </ul>
      *
-     * @return {@link SecurityHandler} instance
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance
      */
     public static SecurityHandler authenticate() {
         return SecurityHandler.create().authenticate();
@@ -215,7 +130,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * <li>Audit: enabled for any method this gate is registered on</li>
      * </ul>
      *
-     * @return {@link SecurityHandler} instance
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance
      */
     public static SecurityHandler audit() {
         return SecurityHandler.create().audit();
@@ -231,8 +146,16 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * <li>Audit: not modified (default: enabled except for GET and HEAD methods)</li>
      * </ul>
      *
-     * @param explicitAuthenticator name of authenticator as configured in {@link Security}
-     * @return {@link SecurityHandler} instance
+     * This type replaces for most use cases the {@link SecurityHttpFeature} (intentionally
+     * has the same class name, so the use cases are re-visited).
+     * <p>
+     * This type is discovered automatically by {@link io.helidon.webserver.WebServer}. To configure it, use the
+     * {@code server.features.security} configuration node (for mapping of protected paths). Configuration of security itself
+     * is still under root node {@code security}.
+     *
+     * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance
+     * @see SecurityHttpFeature
      */
     public static SecurityHandler authenticator(String explicitAuthenticator) {
         return SecurityHandler.create().authenticate().authenticator(explicitAuthenticator);
@@ -249,8 +172,8 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * <li>Audit: not modified (default: enabled except for GET and HEAD methods)</li>
      * </ul>
      *
-     * @param explicitAuthorizer name of authorizer as configured in {@link Security}
-     * @return {@link SecurityHandler} instance
+     * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance
      */
     public static SecurityHandler authorizer(String explicitAuthorizer) {
         return SecurityHandler.create().authenticate().authorize().authorizer(explicitAuthorizer);
@@ -267,7 +190,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * </ul>
      *
      * @param roles if subject is any of these roles, allow access
-     * @return {@link SecurityHandler} instance
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance
      */
     public static SecurityHandler rolesAllowed(String... roles) {
         return SecurityHandler.create().rolesAllowed(roles);
@@ -284,7 +207,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * <li>Audit: not modified (default: enabled except for GET and HEAD methods)</li>
      * </ul>
      *
-     * @return {@link SecurityHandler} instance
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance
      */
     public static SecurityHandler allowAnonymous() {
         return SecurityHandler.create().authenticate().authenticationOptional();
@@ -300,7 +223,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * <li>Audit: not modified (default: enabled except for GET and HEAD methods)</li>
      * </ul>
      *
-     * @return {@link SecurityHandler} instance
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance
      */
     public static SecurityHandler authorize() {
         return SecurityHandler.create().authorize();
@@ -316,157 +239,101 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
      * <li>Audit: not modified (default: enabled except for GET and HEAD methods)</li>
      * </ul>
      *
-     * @return {@link SecurityHandler} instance
+     * @return {@link io.helidon.webserver.security.SecurityHandler} instance
      */
     public static SecurityHandler enforce() {
         return SecurityHandler.create();
     }
 
-    /**
-     * Create a new web security instance using the default handler as base defaults for all handlers used.
-     * If handlers are loaded from config, than this is the least significant value.
-     *
-     * @param defaultHandler if a security handler is configured for a route, it will take its defaults from this handler
-     * @return new instance of web security with the handler default
-     */
-    public SecurityFeature securityDefaults(SecurityHandler defaultHandler) {
-        Objects.requireNonNull(defaultHandler, "Default security handler must not be null");
-        return new SecurityFeature(security, config, defaultHandler);
+    @Override
+    public SecurityFeatureConfig prototype() {
+        return featureConfig;
     }
 
     @Override
-    public void setup(HttpRouting.Builder rules) {
+    public String name() {
+        return featureConfig.name();
+    }
+
+    @Override
+    public String type() {
+        return SECURITY_ID;
+    }
+
+    @Override
+    public void setup(ServerFeatureContext featureContext) {
         if (!security.enabled()) {
-            LOGGER.info("Security is disabled. Not registering any security handlers");
+            LOGGER.log(System.Logger.Level.TRACE, "Security is disabled. Not registering any security handlers");
             return;
         }
-        rules.security(this);
-        rules.addFilter(this::registerContext);
 
-        if (null != config) {
-            // only configure routing if we were asked to do so (otherwise it must be configured by hand on web server)
-            registerRouting(rules);
+        SecurityHandler defaults = featureConfig.defaults();
+        Set<String> defaultSockets = new HashSet<>();
+        SecurityHandlerConfig defaultConfig = defaults.prototype();
+        if (defaultConfig.sockets().isEmpty()) {
+            defaultSockets.addAll(featureContext.sockets());
+            defaultSockets.add(DEFAULT_SOCKET_NAME);
+        } else {
+            defaultSockets.addAll(defaultConfig.sockets());
+        }
+
+        Map<String, List<PathsConfig>> configurations = new HashMap<>();
+
+        List<PathsConfig> paths = featureConfig.paths();
+        for (PathsConfig path : paths) {
+            List<String> sockets = new ArrayList<>(path.sockets());
+            if (sockets.isEmpty()) {
+                sockets.addAll(defaultSockets);
+            }
+            for (String socket : sockets) {
+                // add this handler to each configured socket
+                configurations.computeIfAbsent(socket, it -> new ArrayList<>())
+                        .add(path);
+            }
+        }
+        Set<String> allSockets = new HashSet<>(featureContext.sockets());
+        allSockets.add(DEFAULT_SOCKET_NAME);
+
+        configurations.forEach((socketName, configs) -> {
+            if (featureContext.socketExists(socketName)) {
+                allSockets.remove(socketName);
+                SocketBuilders socket = featureContext.socket(socketName);
+                SecurityHttpFeature routingFeature = routingFeature(defaults, configs);
+                socket.httpRouting().addFeature(routingFeature);
+            }
+        });
+
+        for (String allSocket : allSockets) {
+            // for remaining socket, we still need to register SecurityContext
+            SocketBuilders socket = featureContext.socket(allSocket);
+            SecurityHttpFeature routingFeature = routingFeature(defaults, List.of());
+            socket.httpRouting().addFeature(routingFeature);
         }
     }
 
-    @Override
-    public boolean authenticate(ServerRequest request, ServerResponse response, boolean requiredHint)
-            throws UnauthorizedException {
-        // if the authentication is required and we were not configured to handle this already, just throw
-        if (requiredHint) {
-            if (!request.context()
-                    .get(SecurityContext.class)
-                    .map(SecurityContext::isAuthenticated)
-                    .orElse(false)) {
-                throw new UnauthorizedException("User not authenticated");
+    SecurityHttpFeature routingFeature() {
+        SecurityHandler defaults = featureConfig.defaults();
+
+        List<PathsConfig> configurations = new ArrayList<>();
+
+        List<PathsConfig> paths = featureConfig.paths();
+        for (PathsConfig path : paths) {
+            List<String> sockets = new ArrayList<>(path.sockets());
+            if (sockets.isEmpty() || sockets.contains(DEFAULT_SOCKET_NAME)) {
+                configurations.add(path);
             }
         }
-        return true;
+
+        return SecurityHttpFeature.create(security,
+                                          featureConfig.weight(),
+                                          defaults,
+                                          configurations);
     }
 
-    @Override
-    public boolean authorize(ServerRequest request, ServerResponse response, String... roleHint) throws ForbiddenException {
-        Optional<SecurityContext> maybeContext = request.context().get(SecurityContext.class);
-
-        if (maybeContext.isEmpty()) {
-            if (roleHint.length == 0) {
-                return true;
-            }
-            throw new ForbiddenException("This endpoint is restricted");
-        }
-
-        SecurityContext ctx = maybeContext.get();
-
-        if (roleHint.length == 0) {
-            if (!ctx.isAuthorized()) {
-                throw new ForbiddenException("This endpoint is restricted");
-            }
-            return true;
-        }
-        if (!ctx.isAuthorized()) {
-            for (String role : roleHint) {
-                if (ctx.isUserInRole(role)) {
-                    return true;
-                }
-            }
-            throw new ForbiddenException("This endpoint is restricted");
-        }
-        // authorized through security already
-        return true;
-    }
-
-    private void registerContext(FilterChain chain, ServerRequest req, ServerResponse res) {
-        // todo use Headers instead, this is not case insensitive
-        Map<String, List<String>> allHeaders = new HashMap<>(req.headers().toMap());
-
-        Context context = req.context();
-        Optional<Map> newHeaders = context.get(CONTEXT_ADD_HEADERS, Map.class);
-        newHeaders.ifPresent(allHeaders::putAll);
-
-        //make sure there is no context
-        if (context.get(SecurityContext.class).isEmpty()) {
-            SecurityEnvironment env = security.environmentBuilder()
-                    .targetUri(req.requestedUri().toUri())
-                    .path(req.path().path())
-                    .method(req.prologue().method().text())
-                    .addAttribute("remotePeer", req.remotePeer())
-                    .addAttribute("userIp", req.remotePeer().host())
-                    .addAttribute("userPort", req.remotePeer().port())
-                    .transport(req.isSecure() ? "https" : "http")
-                    .headers(allHeaders)
-                    .build();
-            EndpointConfig ec = EndpointConfig.builder()
-                    .build();
-
-            SecurityContext.Builder contextBuilder = security.contextBuilder(String.valueOf(SECURITY_COUNTER.incrementAndGet()))
-                    .env(env)
-                    .endpointConfig(ec);
-
-            // only register if exists
-            Span.current().ifPresent(it -> contextBuilder.tracingSpan(it.context()));
-
-            SecurityContext securityContext = contextBuilder.build();
-
-            context.register(securityContext);
-            context.register(defaultHandler);
-        }
-
-        chain.proceed();
-    }
-
-    @Override
-    public double weight() {
-        return weight;
-    }
-
-    private void registerRouting(HttpRules routing) {
-        Config wsConfig = config.get("web-server");
-        SecurityHandler defaults = SecurityHandler.create(wsConfig.get("defaults"), defaultHandler);
-
-        ConfigValue<List<Config>> configuredPaths = wsConfig.get("paths").asNodeList();
-        if (configuredPaths.isPresent()) {
-            List<Config> paths = configuredPaths.get();
-            for (Config pathConfig : paths) {
-                List<Method> methods = pathConfig.get("methods").asNodeList().orElse(List.of())
-                        .stream()
-                        .map(Config::asString)
-                        .map(ConfigValue::get)
-                        .map(Method::create)
-                        .collect(Collectors.toList());
-
-                String path = pathConfig.get("path")
-                        .asString()
-                        .orElseThrow(() -> new SecurityException(pathConfig
-                                                                         .key() + " must contain path key with a path to "
-                                                                         + "register to web server"));
-                if (methods.isEmpty()) {
-                    routing.any(path, SecurityHandler.create(pathConfig, defaults));
-                } else {
-                    routing.route(Method.predicate(methods),
-                                  PathMatchers.create(path),
-                                  SecurityHandler.create(pathConfig, defaults));
-                }
-            }
-        }
+    private SecurityHttpFeature routingFeature(SecurityHandler defaults, List<PathsConfig> configs) {
+        return SecurityHttpFeature.create(security,
+                                          featureConfig.weight(),
+                                          defaults,
+                                          configs);
     }
 }
