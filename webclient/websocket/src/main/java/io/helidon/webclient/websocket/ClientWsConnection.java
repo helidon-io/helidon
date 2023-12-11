@@ -175,12 +175,18 @@ public class ClientWsConnection implements WsSession, Runnable {
         opCodeFull |= opCode.code();
         sendBuffer.write(opCodeFull);
 
-        long payloadLength = frame.payloadLength();
-        if (frame.payloadLength() < 126) {
-            // this is a masked frame (all client frames MUST be masked)
-            payloadLength = payloadLength | 0b10000000;
-            sendBuffer.write((int) payloadLength);
-            // TODO finish other options (payload longer than 126 bytes)
+        long length = frame.payloadLength();
+        if (length < 126) {
+            sendBuffer.write((int) length | 0b10000000);
+        } else if (length < 1 << 16) {
+            sendBuffer.write(126 | 0b10000000);
+            sendBuffer.write((int) (length >>> 8));
+            sendBuffer.write((int) (length & 0xFF));
+        } else {
+            sendBuffer.write(127 | 0b10000000);
+            for (int i = 56; i >= 0; i -= 8){
+                sendBuffer.write((int) (length >>> i) & 0xFF);
+            }
         }
 
         // write masking key

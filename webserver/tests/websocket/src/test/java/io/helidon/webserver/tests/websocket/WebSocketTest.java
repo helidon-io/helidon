@@ -215,7 +215,7 @@ class WebSocketTest {
         }
     }
 
-    private static String randomString(int length) {
+    static String randomString(int length) {
         int leftLimit = 97; // letter 'a'
         int rightLimit = 122; // letter 'z'
         return new Random().ints(leftLimit, rightLimit + 1)
