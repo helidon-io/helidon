@@ -27,23 +27,28 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 import static io.helidon.builder.codegen.Types.PROTOTYPE_BUILDER_METHOD;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_CONSTANT;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_CUSTOM_METHODS;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_PROTOTYPE_METHOD;
 
 record CustomMethods(List<CustomMethod> factoryMethods,
                      List<CustomMethod> builderMethods,
-                     List<CustomMethod> prototypeMethods) {
+                     List<CustomMethod> prototypeMethods,
+                     List<CustomConstant> customConstants) {
 
     CustomMethods() {
-        this(List.of(), List.of(), List.of());
+        this(List.of(), List.of(), List.of(), List.of());
     }
 
     static CustomMethods create(CodegenContext ctx, TypeContext.TypeInformation typeInformation) {
@@ -74,9 +79,11 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                                                           errors,
                                                           PROTOTYPE_PROTOTYPE_METHOD,
                                                           CustomMethods::prototypeMethod);
+        List<CustomConstant> customConstants = findConstants(customMethodsInfo,
+                                                             errors);
 
         errors.collect().checkValid();
-        return new CustomMethods(factoryMethods, builderMethods, prototypeMethods);
+        return new CustomMethods(factoryMethods, builderMethods, prototypeMethods, customConstants);
     }
 
     // methods to be part of prototype interface (signature), and implement in both builder and impl
@@ -223,6 +230,46 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                                               customMethod.javadoc()),
                                    annotations,
                                    codeGenerator);
+    }
+
+    private static List<CustomConstant> findConstants(TypeInfo customMethodsType,
+                                                      Errors.Collector errors) {
+        return customMethodsType.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isField)
+                .filter(ElementInfoPredicates.hasAnnotation(PROTOTYPE_CONSTANT))
+                .map(it -> {
+                    if (!it.elementModifiers().contains(Modifier.STATIC)) {
+                        errors.fatal(it,
+                                     "A field annotated with @Prototype.Constant must be static, final, "
+                                             + "and at least package local. Not static.");
+                    }
+                    if (!it.elementModifiers().contains(Modifier.FINAL)) {
+                        errors.fatal(it,
+                                     "A field annotated with @Prototype.Constant must be static, final, "
+                                             + "and at least package local. Not final.");
+                    }
+                    if (it.accessModifier() == AccessModifier.PRIVATE) {
+                        errors.fatal(it,
+                                     "A field annotated with @Prototype.Constant must be static, final, "
+                                             + "and at least package local. Private.");
+                    }
+                    TypeName fieldType = it.typeName();
+                    String name = it.elementName();
+                    Javadoc javadoc = it.description()
+                            .map(Javadoc::parse)
+                            .orElseGet(() -> Javadoc.builder()
+                                    .add(fieldType.equals(TypeNames.STRING)
+                                                 ? "Constant for {@value}."
+                                                 : "Code generated constant.")
+                                    .build());
+
+                    return new CustomConstant(customMethodsType.typeName(),
+                                              fieldType,
+                                              name,
+                                              javadoc);
+                })
+                .toList();
     }
 
     private static List<CustomMethod> findMethods(TypeContext.TypeInformation typeInformation,

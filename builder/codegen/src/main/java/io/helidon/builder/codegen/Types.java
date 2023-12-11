@@ -47,6 +47,7 @@ final class Types {
     static final TypeName PROTOTYPE_BUILDER_METHOD = TypeName.create("io.helidon.builder.api.Prototype.BuilderMethod");
     static final TypeName PROTOTYPE_PROTOTYPE_METHOD = TypeName.create("io.helidon.builder.api.Prototype.PrototypeMethod");
     static final TypeName PROTOTYPE_BUILDER_DECORATOR = TypeName.create("io.helidon.builder.api.Prototype.BuilderDecorator");
+    static final TypeName PROTOTYPE_CONSTANT = TypeName.create("io.helidon.builder.api.Prototype.Constant");
 
     static final TypeName RUNTIME_PROTOTYPE = TypeName.create("io.helidon.builder.api.RuntimeType.PrototypedBy");
     static final TypeName RUNTIME_PROTOTYPED_BY = TypeName.create("io.helidon.builder.api.RuntimeType.PrototypedBy");

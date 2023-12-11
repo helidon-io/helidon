@@ -324,7 +324,7 @@ record AnnotationDataOption(Javadoc javadoc,
 
     /*
     Method name is camel case (such as maxInitialLineLength)
-    result is dash separated and lower cased (such as max-initial-line-length).
+    result is kebab-case (such as max-initial-line-length).
     Note that this same method was created in ConfigUtils in common-config, but since this
     module should not have any dependencies in it a copy was left here as well.
     */
