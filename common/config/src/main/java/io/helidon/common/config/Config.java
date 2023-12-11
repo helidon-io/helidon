@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 /**
  * Immutable tree-structured configuration.
- *
+ * <p>
  * See {@link ConfigValue}.
  */
 public interface Config {
