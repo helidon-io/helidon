@@ -134,7 +134,8 @@ public abstract class AbstractPokemonService implements HttpService {
     private void listPokemons(ServerRequest req, ServerResponse res) {
         res.send(dbClient.execute()
                 .namedQuery("select-all")
-                .map(it -> it.as(JsonObject.class)));
+                .map(it -> it.as(JsonObject.class))
+                .toList());
     }
 
     /**

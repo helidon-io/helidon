@@ -18,47 +18,51 @@ package io.helidon.examples.dbclient.pokemons;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.config.Config;
 import io.helidon.http.Status;
+import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.WebServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-/**
- * Tests {@link io.helidon.examples.dbclient.pokemons.PokemonService}.
- */
-@ServerTest
-class PokemonServiceTest {
-
+abstract class AbstractPokemonServiceTest {
     private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
-    private final Http1Client client;
+    private static WebServer server;
+    private static WebClient client;
 
-    PokemonServiceTest(Http1Client client) {
-        this.client = client;
+    static void beforeAll() {
+        server = Main.setupServer(WebServer.builder()).start();
+        client = WebClient.create(config -> config.baseUri("http://localhost:" + server.port())
+                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonpSupport.create()));
     }
 
-    @SetUpRoute
-    static void routing(HttpRouting.Builder routing) {
-        routing.register("/db", new PokemonService());
+    static void afterAll() {
+        if (server != null && server.isRunning()) {
+            server.stop();
+        }
     }
 
     @Test
     void testListAllPokemons() {
         ClientResponseTyped<JsonArray> response = client.get("/db/pokemon").request(JsonArray.class);
         assertThat(response.status(), is(Status.OK_200));
-        List<String> names = response.entity().stream().map(e -> e.asJsonObject().getString("NAME")).toList();
+        List<String> names = response.entity().stream().map(AbstractPokemonServiceTest::mapName).toList();
         assertThat(names, is(pokemonNames()));
     }
 
@@ -66,7 +70,7 @@ class PokemonServiceTest {
     void testListAllPokemonTypes() {
         ClientResponseTyped<JsonArray> response = client.get("/db/type").request(JsonArray.class);
         assertThat(response.status(), is(Status.OK_200));
-        List<String> names = response.entity().stream().map(e -> e.asJsonObject().getString("NAME")).toList();
+        List<String> names = response.entity().stream().map(AbstractPokemonServiceTest::mapName).toList();
         assertThat(names, is(pokemonTypes()));
     }
 
@@ -74,14 +78,14 @@ class PokemonServiceTest {
     void testGetPokemonById() {
         ClientResponseTyped<JsonObject> response = client.get("/db/pokemon/2").request(JsonObject.class);
         assertThat(response.status(), is(Status.OK_200));
-        assertThat(response.entity().getString("NAME"), is("Charmander"));
+        assertThat(name(response.entity()), is("Charmander"));
     }
 
     @Test
     void testGetPokemonByName() {
         ClientResponseTyped<JsonObject> response = client.get("/db/pokemon/name/Squirtle").request(JsonObject.class);
         assertThat(response.status(), is(Status.OK_200));
-        assertThat(response.entity().getInt("ID"), is(3));
+        assertThat(id(response.entity()), is(3));
     }
 
     @Test
@@ -118,14 +122,30 @@ class PokemonServiceTest {
 
     private static List<String> pokemonNames() {
         try (JsonReader reader = Json.createReader(PokemonService.class.getResourceAsStream("/pokemons.json"))) {
-            return reader.readArray().stream().map(e -> e.asJsonObject().getString("name")).toList();
+            return reader.readArray().stream().map(AbstractPokemonServiceTest::mapName).toList();
         }
     }
 
     private static List<String> pokemonTypes() {
         try (JsonReader reader = Json.createReader(PokemonService.class.getResourceAsStream("/pokemon-types.json"))) {
-            return reader.readArray().stream().map(e -> e.asJsonObject().getString("name")).toList();
+            return reader.readArray().stream().map(AbstractPokemonServiceTest::mapName).toList();
         }
+    }
+
+    private static String mapName(JsonValue value) {
+        return name(value.asJsonObject());
+    }
+
+    private static String name(JsonObject json) {
+        return json.containsKey("name")
+                ? json.getString("name")
+                : json.getString("NAME");
+    }
+
+    private static int id(JsonObject json) {
+        return json.containsKey("id")
+                ? json.getInt("id")
+                : json.getInt("ID");
     }
 
 }

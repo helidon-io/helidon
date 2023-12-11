@@ -23,6 +23,7 @@ import io.helidon.dbclient.metrics.DbClientMetrics;
 import io.helidon.dbclient.tracing.DbClientTracing;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 
 /**
@@ -55,17 +56,20 @@ public final class MongoDbExampleMain {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default, this will pick up application.yaml from the classpath
-        Config config = Config.create();
-
-        WebServer server = WebServer.builder()
-                .routing(routing -> routing(routing, config))
-                .config(config.get("server"))
-                .build()
-                .start();
+        WebServer server = setupServer(WebServer.builder());
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
         return server;
+    }
+
+    static WebServer setupServer(WebServerConfig.Builder builder) {
+        // By default, this will pick up application.yaml from the classpath
+        Config config = Config.create();
+
+        return builder.routing(routing -> routing(routing, config))
+                .config(config.get("server"))
+                .build()
+                .start();
     }
 
     /**

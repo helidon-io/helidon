@@ -25,7 +25,7 @@ import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbRow;
 
 /**
- * Maps database statements to {@link io.helidon.examples.dbclient.common.Pokemon} class.
+ * Maps database statements to {@link io.helidon.examples.dbclient.pokemons.Pokemon} class.
  */
 public class PokemonMapper implements DbMapper<Pokemon> {
 
