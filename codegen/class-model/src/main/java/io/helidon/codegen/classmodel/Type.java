@@ -16,6 +16,7 @@
 package io.helidon.codegen.classmodel;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
 
@@ -62,16 +63,12 @@ abstract class Type extends ModelComponent {
         StringBuilder nameBuilder = new StringBuilder(name);
 
         if (!instance.typeArguments().isEmpty()) {
-            nameBuilder.append("<");
-            int i = 0;
-            for (TypeName param : instance.typeArguments()) {
-                if (i > 0) {
-                    nameBuilder.append(", ");
-                }
-                nameBuilder.append(param.resolvedName());
-                i++;
-            }
-            nameBuilder.append(">");
+            nameBuilder.append('<')
+                    .append(instance.typeArguments()
+                                    .stream()
+                                    .map(TypeName::resolvedName)
+                                    .collect(Collectors.joining(", ")))
+                    .append('>');
         }
 
         if (instance.array()) {

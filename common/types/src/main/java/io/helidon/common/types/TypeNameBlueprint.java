@@ -179,6 +179,15 @@ interface TypeNameBlueprint {
     }
 
     /**
+     * Indicates whether this type is a {@link java.util.function.Supplier}.
+     *
+     * @return if this is a supplier
+     */
+    default boolean isSupplier() {
+        return TypeNames.SUPPLIER.fqName().equals(fqName());
+    }
+
+    /**
      * Simple class name with generic declaration (if part of this name).
      *
      * @return class name with generics, such as {@code Consumer<java.lang.String>}, or {@code Consumer<T>}

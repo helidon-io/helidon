@@ -272,5 +272,10 @@ public final class Field extends AnnotatedComponent {
         public Builder accessModifier(AccessModifier accessModifier) {
             return super.accessModifier(accessModifier);
         }
+
+        @Override
+        public Builder javadoc(Javadoc javadoc) {
+            return super.javadoc(javadoc);
+        }
     }
 }

@@ -48,9 +48,16 @@ import static java.lang.System.Logger.Level.WARNING;
 public final class AptProcessor extends AbstractProcessor {
     private static final TypeName GENERATOR = TypeName.create(AptProcessor.class);
 
-
     private AptContext ctx;
     private Codegen codegen;
+
+    /**
+     * Only for {@link java.util.ServiceLoader}, to be loaded by compiler.
+     */
+    @Deprecated
+    public AptProcessor() {
+        super();
+    }
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
