@@ -60,8 +60,8 @@ server:
     read-timeout: PT0S     
     connect-timeout: PT0S
     
-    # Default (false) is best for most cases. But can make big differences depending
-    # on workload and OS.
+    # Default (false: Nagle's algorithm enabled) is best for most cases. But for some OS and
+    # workloads enabling TCP_NODELAY (disable Nagle's algorithm) can improve performance.
     tcp-no-delay: true|false
 
     # The default is TCP autotuning which is best for most cases.

@@ -70,7 +70,9 @@ Type: link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/Connecti
 
  @return buffer size, in bytes
  @see java.net.StandardSocketOptions#SO_SNDBUF
-|`tcp-no-delay` |boolean |`false` |This option may improve performance on some systems.
+|`tcp-no-delay` |boolean |`false` |Disable Nagle's algorithm by setting
+ TCP_NODELAY to true. This can result in better performance on Mac or newer linux kernels for some
+ payload types.
  Default is `false`.
 
  @return whether to use TCP_NODELAY, defaults to `false`

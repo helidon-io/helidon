@@ -107,7 +107,9 @@ interface ConnectionConfigBlueprint {
     boolean reuseAddress();
 
     /**
-     * This option may improve performance on some systems.
+     * Disable <a href="https://en.wikipedia.org/wiki/Nagle%27s_algorithm">Nagle's algorithm</a> by setting
+     * TCP_NODELAY to true. This can result in better performance on Mac or newer linux kernels for some
+     * payload types.
      * Default is {@code false}.
      *
      * @return whether to use TCP_NODELAY, defaults to {@code false}
