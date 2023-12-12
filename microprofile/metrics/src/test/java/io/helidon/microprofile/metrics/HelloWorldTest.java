@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -41,7 +42,6 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
@@ -56,6 +56,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
 @AddConfig(key = "metrics.permit-all", value = "true")
+@AddBean(CatchAllExceptionMapper.class)
 class HelloWorldTest {
 
     @Inject
@@ -175,7 +176,6 @@ class HelloWorldTest {
     }
 
     @Test
-    @Disabled("CatchAllExceptionMapper was removed")
     void testUnmappedException() throws Exception {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "triggerUnmappedException")};
