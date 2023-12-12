@@ -181,4 +181,50 @@
     <cve>CVE-2022-4245</cve>
 </suppress>
 
+<!--
+    False Positives. These CVEs are against the Brave web browser, not brave-opentracing.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: brave-opentracing-1.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
+   <cve>CVE-2022-47932</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: brave-opentracing-1.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
+   <cve>CVE-2022-47933</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: brave-opentracing-1.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
+   <cve>CVE-2022-47934</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: brave-opentracing-1.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
+   <cve>CVE-2021-22929</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: brave-opentracing-1.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
+   <cve>CVE-2022-30334</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: brave-opentracing-1.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
+   <cve>CVE-2023-28360</cve>
+</suppress>
+
 </suppressions>
