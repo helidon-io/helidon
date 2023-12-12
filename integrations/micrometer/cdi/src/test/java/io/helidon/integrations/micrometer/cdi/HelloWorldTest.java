@@ -29,7 +29,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
@@ -42,6 +41,7 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 @HelidonTest
 @AddBean(HelloWorldResource.class)
+@AddBean(CatchAllExceptionMapper.class)
 public class HelloWorldTest {
 
     @Inject
@@ -101,7 +101,6 @@ public class HelloWorldTest {
     }
 
     @Test
-    @Disabled("Failing")
     public void testFastFailCounter() {
         int exp = 8;
         IntStream.range(0, exp).forEach(
@@ -123,7 +122,6 @@ public class HelloWorldTest {
     }
 
     @Test
-    @Disabled("Failing")
     public void testSlowFailNoCounter() {
         try {
             webTarget
@@ -138,7 +136,6 @@ public class HelloWorldTest {
     }
 
     @Test
-    @Disabled("Failing")
     public void testSlowFailCounter() {
         int exp = 6;
         IntStream.range(0, exp).forEach(
