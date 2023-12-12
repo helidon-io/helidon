@@ -184,14 +184,14 @@ The following trivial but illustrative example adds a custom start-up check that
 ----
 AtomicLong serverStartTime = new AtomicLong();  // <1>
 
-ObserveFeature observe = ObserveFeature.builder()
+ObserveFeature o = ObserveFeature.builder()
         .config(config.get("server.features.observe")) // <2>
         .addObserver(HealthObserver.builder() // <3>
                              .details(true) // <4>
                              .addCheck(() -> HealthCheckResponse.builder() // <5>
-                                               .status(System.currentTimeMillis() - serverStartTime.get() >= 8000)
-                                               .detail("time", System.currentTimeMillis())
-                                               .build(),
+                                         .status(System.currentTimeMillis() - serverStartTime.get() >= 8000)
+                                         .detail("time", System.currentTimeMillis())
+                                         .build(),
                                        HealthCheckType.STARTUP,
                                        "warmedUp")
                              .build()) // <6>
@@ -329,7 +329,7 @@ Once it creates a custom health observer, your code has full responsibility for 
 The next example customizes the URL path for the health endpoint, first explicitly in the code and then via configuration.
 
 ==== Customizing the endpoint path in the code
-Customize the URL path for heath checks by invoking the `endpoint` method on the `HealthObserver.Builder`.
+Customize the URL path for health checks by invoking the `endpoint` method on the `HealthObserver.Builder`.
 
 [source,java]
 .Set a custom endpoint path
@@ -356,7 +356,7 @@ Earlier you added health config to the `application.yaml` config file to turn on
 The output _remains_ detailed because your code--which has full responsibility for determining the custom health observer's behavior--does not apply configuration to the custom observer's builder.
 
 ==== Adding configuration to a custom observer
-In addition to preparing the health observer builder with hard-coded settings, your code can also apply configuration for health so your user could set any health behavior there as well.
+In addition to preparing the health observer builder with hard-coded settings, your code can also apply configuration for health. This allows someone who deploys your application to control the behavior of the health subsystem using configuration without requiring source code changes to your application.
 
 The generated `Main` class in the application already creates a `Config` object for the top-level config node. Using the following code to create the observe feature also applies any health-related configuration settings to the custom health observer. Notice the added line just before the `HealthObserver.Build` `build()` invocation near the end of the example code.
 
@@ -369,9 +369,9 @@ ObserveFeature observe = ObserveFeature.builder()
                              .endpoint("/myhealth")
                              .details(true)
                              .addCheck(() -> HealthCheckResponse.builder()
-                                               .status(System.currentTimeMillis() - serverStartTime.get() >= 8000)
-                                               .detail("time", System.currentTimeMillis())
-                                               .build(),
+                                         .status(System.currentTimeMillis() - serverStartTime.get() >= 8000)
+                                         .detail("time", System.currentTimeMillis())
+                                         .build(),
                                        HealthCheckType.STARTUP,
                                        "warmedUp")
                              .config(config.get("server.features.observe.observers.health")) // <1>
@@ -381,7 +381,7 @@ ObserveFeature observe = ObserveFeature.builder()
 ----
 <1> Find and apply any health-related settings from configuration at the `server.features.observe.observers.health` config key.
 
-Your code decides what config key to use for retrieving the configuration. Recall earlier, before adding custom health checks, you added a config section for health--to set `details` to `true`--at `server.features.observe.observers.health`. Helidon used that configuration to set up the health observer _it_ created automatically. To be consistent for your users, it's a good idea for your application code, as it preares a custom `HealthObserver`, to look in the same place Helidon does for health config.
+Your code decides what config key to use for retrieving the configuration. Recall earlier, before adding custom health checks, you added a config section for health--to set `details` to `true`--at `server.features.observe.observers.health`. Helidon used that configuration to set up the health observer _it_ created automatically. To be consistent for anyone preparing the configuration file, it's a good idea for your application code--as it prepares a custom `HealthObserver`--to look in the same place Helidon does for health config.
 
 Order is important. Here, the code first sets `details` to `true` explicitly and later applies configuration. If your end user sets `details` in the `server.features.observe.observers.health` config to `false`, that setting overrides the hard-coded `true` setting in the code _because of where in the code you apply the configuration_. Try changing the `details` value to `false` in the config file and then stop, rebuild, and rerun the application. Access the health endpoint and notice that the output is no longer detailed.
 

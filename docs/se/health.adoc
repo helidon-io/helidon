@@ -107,7 +107,7 @@ The various styles are functionally equivalent; for a given custom health check 
 The examples below, in no particular order, implement the same custom health check functionality in different ways to illustrate.
 
 ==== Option 1: Using a `HealthCheckResponse` supplier method
-If you gather the logic for computing the health check response into a method you can use a method reference to register the health check.
+If you gather the logic for computing the health check response into a method, then you can use a method reference to register the health check.
 
 [source,java]
 .Declaring a health check response supplier method
@@ -125,19 +125,21 @@ static HealthCheckResponse slowStartLivenessResponse() {
 .Registering a health check using a method reference
 ----
 ObserveFeature observe = ObserveFeature.builder()
-                             .config(config.get("server.features.observe")) // <1>
-                             .addObserver(HealthObserver.builder()          // <2>
-                             .useSystemServices(true) // Include Helidon-provided health checks.
-                             .addCheck(Main::slowStartLivenessResponse, // <3>
-                                       HealthCheckType.READINESS,       // <4>
-                                       "live-after-8-seconds")          // <5>
+        .config(config.get("server.features.observe"))                  // <1>
+        .addObserver(HealthObserver.builder()                           // <2>
+                             .useSystemServices(true)                   // <3>
+                             .addCheck(Main::slowStartLivenessResponse, // <4>
+                                       HealthCheckType.LIVENESS,        // <5>
+                                       "live-after-8-seconds")          // <6>
+                             .build())
         .build();
 ----
 <1> Apply configuration to auto-discovered observers (e.g., health, metrics).
 <2> Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`. This replaces the auto-discovered health observer.
-<3> Add the custom health check, passing a reference to the method which returns the health check responses.
-<4> Set the type of the custom health check.
-<5> Set the name of the custom health check.
+<3> Include the Helidon-supplied health checks.
+<4> Add the custom health check, passing a reference to the method which returns the health check responses.
+<5> Set the type of the custom health check.
+<6> Set the name of the custom health check.
 
 ==== Option 2: Using an in-line lambda expression
 If the logic for computing the health check response is fairly simple, express it as an in-line lambda when you register the health check.
