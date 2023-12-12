@@ -16,6 +16,7 @@
 
 package io.helidon.grpc.server;
 
+import java.time.Duration;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
@@ -222,7 +223,7 @@ public class GrpcServerConfigurationTest {
     }
 
     @Test
-    public void shouldHaveDefaultMaxRstFrames() {
+    public void shouldHaveDefaultMaxRapidResets() {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
                 .build();
 
@@ -230,7 +231,7 @@ public class GrpcServerConfigurationTest {
     }
 
     @Test
-    public void shouldSetMaxRstFrames() {
+    public void shouldSetMaxRapidResets() {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
                 .maxRapidResets(19)
                 .build();
@@ -239,20 +240,19 @@ public class GrpcServerConfigurationTest {
     }
 
     @Test
-    public void shouldSetMaxRstFramesToZero() {
+    public void shouldHaveDefaultRapidResetCheckPeriod() {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                .maxRapidResets(0)
                 .build();
 
-        assertThat(configuration.maxRapidResets(), is(200));
+        assertThat(configuration.rapidResetCheckPeriod(), is(Duration.ofSeconds(30)));
     }
 
     @Test
-    public void shouldSetMaxRstFramesToLessThanZero() {
+    public void shouldSetRapidResetCheckPeriod() {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                .maxRapidResets(-19)
+                .rapidResetCheckPeriod(Duration.ofSeconds(19))
                 .build();
 
-        assertThat(configuration.maxRapidResets(), is(200));
+        assertThat(configuration.rapidResetCheckPeriod(), is(Duration.ofSeconds(19)));
     }
 }

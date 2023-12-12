@@ -184,9 +184,9 @@ public interface GrpcServerConfiguration {
 
         private Context context;
 
-        private int maxRapidResets;
+        private int maxRapidResets = 200;
 
-        private Duration rapidResetCheckPeriod;
+        private Duration rapidResetCheckPeriod = Duration.ofSeconds(30);
 
         private Builder() {
         }
