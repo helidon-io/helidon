@@ -48,9 +48,9 @@ public class Scheduling {
      * Build a task executed periodically at a fixed rate.
      *
      * @return this builder
-     * @deprecated
+     * @deprecated use {@link #fixedRate()} instead
      */
-    @Deprecated(since = "4.0.2")
+    @Deprecated(since = "4.0.2", forRemoval = true)
     public static FixedRateBuilder fixedRateBuilder() {
         return new FixedRateBuilder();
     }
@@ -68,8 +68,9 @@ public class Scheduling {
      * Build a task executed periodically according to provided cron expression.
      *
      * @return this builder
+     * @deprecated use {@link #cron()} instead
      */
-    @Deprecated(since = "4.0.2")
+    @Deprecated(since = "4.0.2", forRemoval = true)
     public static CronBuilder cronBuilder() {
         return new CronBuilder();
     }
@@ -85,8 +86,10 @@ public class Scheduling {
 
     /**
      * Builder for task executed periodically at a fixed rate.
+     *
+     * @deprecated use {@link io.helidon.scheduling.FixedRateConfig.Builder} instead
      */
-    @Deprecated(since = "4.0.2")
+    @Deprecated(since = "4.0.2", forRemoval = true)
     public static final class FixedRateBuilder implements io.helidon.common.Builder<FixedRateBuilder, Task> {
 
         private ScheduledExecutorService executorService;
@@ -186,8 +189,10 @@ public class Scheduling {
 
     /**
      * Builder for task executed periodically according to provided cron expression.
+     *
+     * @deprecated use {@link io.helidon.scheduling.CronConfig.Builder} instead
      */
-    @Deprecated(since = "4.0.2")
+    @Deprecated(since = "4.0.2", forRemoval = true)
     public static final class CronBuilder implements io.helidon.common.Builder<CronBuilder, Task> {
 
         static final String DEFAULT_THREAD_NAME_PREFIX = "scheduled-";

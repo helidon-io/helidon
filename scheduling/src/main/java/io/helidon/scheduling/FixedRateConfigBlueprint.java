@@ -21,14 +21,14 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-@Prototype.Blueprint(decorator = TaskConfigBlueprint.TaskConfigDecorator.class)
+@Prototype.Blueprint(decorator = TaskConfigDecorator.class)
 @Prototype.Configured
 interface FixedRateConfigBlueprint extends TaskConfigBlueprint, Prototype.Factory<FixedRate> {
 
     /**
      * Initial delay of the first invocation. Time unit is by default {@link java.util.concurrent.TimeUnit#SECONDS},
      * can be specified with
-     * {@link io.helidon.scheduling.Scheduling.FixedRateBuilder#timeUnit(java.util.concurrent.TimeUnit) timeUnit()}.
+     * {@link io.helidon.scheduling.FixedRateConfig.Builder#timeUnit(java.util.concurrent.TimeUnit) timeUnit()}.
      *
      * @return initial delay value
      */
@@ -38,7 +38,7 @@ interface FixedRateConfigBlueprint extends TaskConfigBlueprint, Prototype.Factor
 
     /**
      * Fixed rate delay between each invocation. Time unit is by default {@link java.util.concurrent.TimeUnit#SECONDS},
-     * can be specified with {@link io.helidon.scheduling.Scheduling.FixedRateBuilder#timeUnit(java.util.concurrent.TimeUnit)}.
+     * can be specified with {@link io.helidon.scheduling.FixedRateConfig.Builder#timeUnit(java.util.concurrent.TimeUnit)}.
      *
      * @return delay between each invocation
      */
@@ -53,7 +53,7 @@ interface FixedRateConfigBlueprint extends TaskConfigBlueprint, Prototype.Factor
      * @return delay type
      */
     @Option.Configured
-    @Option.DefaultCode("@io.helidon.scheduling.FixedRate.DelayType@.SINCE_PREVIOUS_START")
+    @Option.Default("SINCE_PREVIOUS_START")
     FixedRate.DelayType delayType();
 
     /**
@@ -65,12 +65,12 @@ interface FixedRateConfigBlueprint extends TaskConfigBlueprint, Prototype.Factor
 
     /**
      * {@link java.util.concurrent.TimeUnit TimeUnit} used for interpretation of values provided with
-     * {@link io.helidon.scheduling.Scheduling.FixedRateBuilder#delay(long)}
-     * and {@link io.helidon.scheduling.Scheduling.FixedRateBuilder#initialDelay(long)}.
+     * {@link io.helidon.scheduling.FixedRateConfig.Builder#delay(long)}
+     * and {@link io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)}.
      *
      * @return time unit for interpreting values
-     *         in {@link io.helidon.scheduling.Scheduling.FixedRateBuilder#delay(long)}
-     *         and {@link io.helidon.scheduling.Scheduling.FixedRateBuilder#initialDelay(long)}
+     *         in {@link io.helidon.scheduling.FixedRateConfig.Builder#delay(long)}
+     *         and {@link io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)}
      */
     @Option.Configured
     @Option.Default("TimeUnit.SECONDS")

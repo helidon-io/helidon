@@ -16,19 +16,18 @@
 
 package io.helidon.scheduling;
 
-import java.util.concurrent.ScheduledExecutorService;
-
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 
-@Prototype.Blueprint(decorator = TaskConfigDecorator.class)
-@Prototype.Configured
-interface TaskConfigBlueprint {
+class TaskConfigDecorator implements Prototype.BuilderDecorator<TaskConfig.BuilderBase<?, ?>> {
 
-    /**
-     * Custom {@link java.util.concurrent.ScheduledExecutorService ScheduledExecutorService} used for executing scheduled task.
-     *
-     * @return custom ScheduledExecutorService
-     */
-    ScheduledExecutorService executor();
-
+    @Override
+    public void decorate(TaskConfig.BuilderBase<?, ?> target) {
+        if (target.executor().isEmpty()) {
+            target.executor(ScheduledThreadPoolSupplier.builder()
+                                    .threadNamePrefix("scheduled-")
+                                    .build()
+                                    .get());
+        }
+    }
 }
