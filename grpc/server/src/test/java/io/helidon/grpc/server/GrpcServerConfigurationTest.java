@@ -226,33 +226,33 @@ public class GrpcServerConfigurationTest {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
                 .build();
 
-        assertThat(configuration.maxRstFramesPerSecond(), is(Integer.MAX_VALUE));
+        assertThat(configuration.maxRapidResets(), is(200));
     }
 
     @Test
     public void shouldSetMaxRstFrames() {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                .maxRstFramesPerSecond(19)
+                .maxRapidResets(19)
                 .build();
 
-        assertThat(configuration.maxRstFramesPerSecond(), is(19));
+        assertThat(configuration.maxRapidResets(), is(19));
     }
 
     @Test
     public void shouldSetMaxRstFramesToZero() {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                .maxRstFramesPerSecond(0)
+                .maxRapidResets(0)
                 .build();
 
-        assertThat(configuration.maxRstFramesPerSecond(), is(Integer.MAX_VALUE));
+        assertThat(configuration.maxRapidResets(), is(200));
     }
 
     @Test
     public void shouldSetMaxRstFramesToLessThanZero() {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                .maxRstFramesPerSecond(-19)
+                .maxRapidResets(-19)
                 .build();
 
-        assertThat(configuration.maxRstFramesPerSecond(), is(Integer.MAX_VALUE));
+        assertThat(configuration.maxRapidResets(), is(200));
     }
 }

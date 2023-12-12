@@ -15,6 +15,7 @@
  */
 package io.helidon.grpc.server;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -108,16 +109,19 @@ public interface GrpcServerConfiguration {
     GrpcTlsDescriptor tlsConfig();
 
     /**
-     * Returns the limit for the rate of incoming RST_STREAM frames per connection to maxRstStream per second.
-     * When exceeded on a connection, the connection is closed. This can reduce the impact of
-     * an attacker continually resetting RPCs before they complete.
-     * <p>
-     * Clients send RST_STREAM when they cancel RPCs, so some RST_STREAMs are normal and
-     * setting this too low can cause errors for legitimate clients.
+     * Returns the period for counting rapid resets (stream RST sent by client before any data have been sent by server).
      *
-     * @return the limit for the rate of incoming RST_STREAM frames per connection to maxRstStream per second
+     * @return the period for counting rapid resets
      */
-    int maxRstFramesPerSecond();
+    Duration rapidResetCheckPeriod();
+
+    /**
+     * Returns the maximum allowed number of rapid resets (stream RST sent by client before any data have been sent by server).
+     * When reached within {@link #rapidResetCheckPeriod()}, GOAWAY is sent to client and connection is closed.
+     *
+     * @return the maximum allowed number of rapid resets
+     */
+    int maxRapidResets();
 
     /**
      * Creates new instance with default values for all configuration properties.
@@ -180,7 +184,9 @@ public interface GrpcServerConfiguration {
 
         private Context context;
 
-        private int maxRstFramesPerSecond;
+        private int maxRapidResets;
+
+        private Duration rapidResetCheckPeriod;
 
         private Builder() {
         }
@@ -202,7 +208,8 @@ public interface GrpcServerConfiguration {
 
             name = config.get("name").asString().orElse(DEFAULT_NAME);
             port = config.get("port").asInt().orElse(DEFAULT_PORT);
-            maxRstFramesPerSecond = config.get("maxRstFramesPerSecond").asInt().orElse(Integer.MAX_VALUE);
+            maxRapidResets = config.get("max-rapid-resets").asInt().orElse(200);
+            rapidResetCheckPeriod = config.get("rapid-reset-check-period").as(Duration.class).orElse(Duration.ofSeconds(30));
             useNativeTransport = config.get("native").asBoolean().orElse(false);
             config.get("workers").asInt().ifPresent(this::workersCount);
 
@@ -239,23 +246,33 @@ public interface GrpcServerConfiguration {
         }
 
         /**
-         * Limits the rate of incoming RST_STREAM frames per connection to maxRstStream per second.
-         * When exceeded on a connection, the connection is closed. This can reduce the impact of
-         * an attacker continually resetting RPCs before they complete.
-         * <p>
-         * Clients send RST_STREAM when they cancel RPCs, so some RST_STREAMs are normal and
-         * setting this too low can cause errors for legitimate clients.
-         * <p>
-         * By default, there is no limit. If the {@code maxRstStream} parameter is set to less than
-         * or equal to zero then there will be no limit.
+         * Period for counting rapid resets(stream RST sent by client before any data have been sent by server).
+         * Default value is {@code PT30S}.
          *
-         * @param maxRstStream the positive limit of RST_STREAM frames per connection per period, or
-         *                     {@code Integer.MAX_VALUE} for unlimited
-         * @return an updated builder
+         * @param rapidResetCheckPeriod duration
+         * @return updated builder
+         * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
+         * @see #maxRapidResets()
          */
-        @ConfiguredOption(value = "" + Integer.MAX_VALUE)
-        public Builder maxRstFramesPerSecond(int maxRstStream) {
-            this.maxRstFramesPerSecond = maxRstStream;
+         @ConfiguredOption("PT30S")
+        public Builder rapidResetCheckPeriod(Duration rapidResetCheckPeriod) {
+            Objects.requireNonNull(rapidResetCheckPeriod);
+            this.rapidResetCheckPeriod = rapidResetCheckPeriod;
+            return this;
+        }
+
+        /**
+         * Maximum number of rapid resets(stream RST sent by client before any data have been sent by server).
+         * When reached within {@link #rapidResetCheckPeriod()}, GOAWAY is sent to client and connection is closed.
+         * Default value is {@code 200}.
+         *
+         * @param maxRapidResets maximum number of rapid resets
+         * @return updated builder
+         * @see #rapidResetCheckPeriod()
+         */
+         @ConfiguredOption("200")
+        public Builder maxRapidResets(int maxRapidResets) {
+            this.maxRapidResets = maxRapidResets;
             return this;
         }
 
@@ -368,8 +385,12 @@ public interface GrpcServerConfiguration {
             return workers;
         }
 
-        int maxRstFramesPerSecond() {
-            return maxRstFramesPerSecond;
+        int maxRapidResets() {
+            return maxRapidResets;
+        }
+
+        Duration rapidResetCheckPeriod() {
+            return rapidResetCheckPeriod;
         }
 
         @Override
@@ -402,10 +423,6 @@ public interface GrpcServerConfiguration {
 
             if (workers <= 0) {
                 workers = DEFAULT_WORKER_COUNT;
-            }
-
-            if (maxRstFramesPerSecond <= 0) {
-                maxRstFramesPerSecond = Integer.MAX_VALUE;
             }
 
             return GrpcServerBasicConfig.create(this);

@@ -102,7 +102,7 @@ public class GrpcChannelDescriptor {
 
     /**
      * Get the {@link NameResolver.Factory} to use.
-     * <p/>
+     * <p>
      * This method is deprecated due to the deprecation of the
      * {@link io.grpc.ManagedChannelBuilder#nameResolverFactory(io.grpc.NameResolver.Factory)}
      * method in the gRPC Java API.
@@ -228,7 +228,7 @@ public class GrpcChannelDescriptor {
         /**
          * Set the {@link io.grpc.NameResolver.Factory} to use.
          * @param factory the {@link io.grpc.NameResolver.Factory} to use
-         * <p/>
+         * <p>
          * This method is deprecated due to the deprecation of the
          * {@link io.grpc.ManagedChannelBuilder#nameResolverFactory(io.grpc.NameResolver.Factory)}
          * method in the gRPC Java API.

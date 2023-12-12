@@ -16,6 +16,8 @@
 
 package io.helidon.grpc.server;
 
+import java.time.Duration;
+
 import io.helidon.common.context.Context;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.tracing.Tracer;
@@ -42,7 +44,10 @@ public class GrpcServerBasicConfig
 
     private final Context context;
 
-    private final int maxRstFramesPerSecond;
+    private final int maxRapidResets;
+
+    private final Duration rapidResetCheckPeriod;
+
     /**
      * Construct {@link GrpcServerBasicConfig} instance.
      *
@@ -58,7 +63,8 @@ public class GrpcServerBasicConfig
         this.tracingConfig = builder.tracingConfig();
         this.workers = builder.workers();
         this.tlsConfig = builder.tlsConfig();
-        this.maxRstFramesPerSecond = builder.maxRstFramesPerSecond();
+        this.maxRapidResets = builder.maxRapidResets();
+        this.rapidResetCheckPeriod = builder.rapidResetCheckPeriod();
     }
 
     /**
@@ -136,7 +142,12 @@ public class GrpcServerBasicConfig
     }
 
     @Override
-    public int maxRstFramesPerSecond() {
-        return maxRstFramesPerSecond;
+    public Duration rapidResetCheckPeriod() {
+        return rapidResetCheckPeriod;
+    }
+
+    @Override
+    public int maxRapidResets() {
+        return maxRapidResets;
     }
 }

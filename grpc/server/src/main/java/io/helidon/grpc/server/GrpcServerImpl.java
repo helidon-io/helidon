@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -178,17 +179,15 @@ public class GrpcServerImpl implements GrpcServer {
 
             HandlerRegistry handlerRegistry = this.handlerRegistry;
 
-            int maxRstFramesPerSecond = config.maxRstFramesPerSecond();
-            if (maxRstFramesPerSecond <= 0) {
-                maxRstFramesPerSecond = Integer.MAX_VALUE;
-            }
+            int maxRapidResets = config.maxRapidResets();
+            Duration rapidResetCheckPeriod = config.rapidResetCheckPeriod();
 
             server = configureNetty(builder)
                     .directExecutor()
                     .addService(healthService)
                     .addService(ProtoReflectionService.newInstance())
                     .fallbackHandlerRegistry(handlerRegistry)
-                    .maxRstFramesPerWindow(maxRstFramesPerSecond, 1)
+                    .maxRstFramesPerWindow(maxRapidResets, (int) rapidResetCheckPeriod.toSeconds())
                     .build()
                     .start();
 
