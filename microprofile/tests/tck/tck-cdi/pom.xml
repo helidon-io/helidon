@@ -84,12 +84,50 @@
                         <dependency>jakarta.enterprise:cdi-tck-core-impl</dependency>
                     </dependenciesToScan>
                     <includes>
-                        <include>org/jboss/cdi/tck/**/*Test.java</include>
+                        <include>**/*Test.java</include>
                     </includes>
                     <excludes>
                         <!-- TCK Challenge accepted: https://github.com/jakartaee/cdi-tck/issues/485 -->
                         <exclude>org/jboss/cdi/tck/tests/definition/bean/types/ManagedBeanTypesTest.java</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <stripVersion>true</stripVersion>
+                            <overWriteReleases>true</overWriteReleases>
+                            <outputDirectory>target/classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.netbeans.tools</groupId>
+                <artifactId>sigtest-maven-plugin</artifactId>
+                <version>${version.lib.sigtest}</version>
+                <executions>
+                    <execution>
+                        <id>sigtest</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <sigfile>${project.build.directory}/classes/cdi-api-jdk11.sig</sigfile>
+                    <packages>jakarta.decorator,jakarta.enterprise,jakarta.interceptor</packages>
+                    <classes>${project.build.directory}/classes</classes>
+                    <report>${project.build.directory}/cdi-sig-report.txt</report>
                 </configuration>
             </plugin>
         </plugins>
