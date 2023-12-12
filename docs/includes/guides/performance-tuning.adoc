@@ -41,12 +41,6 @@ you understand these options before using them. See the documentation referenced
 .application.yaml snippet
 ----
 server:
-  # Depends on the workload and kernel version
-  backlog: NNNN
-  receive-buffer-size: NNNNN
-  write-buffer-size: NNNNN
-  write-queue-length: NN # 0 means direct write
-  
   # These are used to prevent unbounded resource consumption of the server
   idle-connection-period: PT2M  # Check idle connections every 2 minutes
   idle-connection-timeout: PT5M # Close connections that have been idle for 5 minutes
@@ -56,20 +50,26 @@ server:
   max-payload-size: NNNNNNN     # Reject requests with payload sizes greater than this. -1 is unlimited (bytes)
 
   # Depends on the workload and kernel version
+  backlog: NNNN
+  receive-buffer-size: NNNNN
+  write-buffer-size: NNNNN
+  write-queue-length: NN # 0 means direct write
+
   connection-options:
     # 0 means indefinite (and less clutter on socket impl)
     read-timeout: PT0S     
     connect-timeout: PT0S
     
-    # Can make quite difference between Mac, Linux kernels < 5.15 and Linux kernels > 5.15
+    # Default (false) is best for most cases. But can make big differences depending
+    # on workload and OS.
     tcp-no-delay: true|false
 
-    # when set, TCP autotuning is off (auto-tuning is better for variable or large payloads)
+    # The default is TCP autotuning which is best for most cases.
     socket-send-buffer-size: NNNNN     
     socket-receive-buffer-size: NNNNN
 
-  # Turn off safety features
-  # Carefull with this! Can be dangerous in production!
+  # Protocol validation.
+  # Careful with this! Can be dangerous if you turn these off.
   protocols:
     "http_1_1":
       validate-request-headers: true|false
