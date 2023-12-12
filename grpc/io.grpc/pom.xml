@@ -33,6 +33,7 @@
     <description>Bundle of grpc dependencies provided for backwards compatibility</description>
 
     <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
         <spotbugs.skip>true</spotbugs.skip>
     </properties>
 
