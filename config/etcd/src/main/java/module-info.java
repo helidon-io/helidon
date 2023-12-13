@@ -24,9 +24,9 @@ module io.helidon.config.etcd {
     requires java.logging;
     requires transitive io.helidon.config;
     requires etcd4j;
-    requires grpc.protobuf;
-    requires grpc.stub;
-    requires grpc.api;
+    requires io.grpc.protobuf;
+    requires io.grpc.stub;
+    requires io.grpc;
     requires com.google.protobuf;
     requires com.google.common;
     requires io.helidon.common;

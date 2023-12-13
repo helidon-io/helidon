@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -179,11 +180,15 @@ public class GrpcServerImpl implements GrpcServer {
 
             HandlerRegistry handlerRegistry = this.handlerRegistry;
 
+            int maxRapidResets = config.maxRapidResets();
+            Duration rapidResetCheckPeriod = config.rapidResetCheckPeriod();
+
             server = configureNetty(builder)
                     .directExecutor()
                     .addService(healthService)
                     .addService(ProtoReflectionService.newInstance())
                     .fallbackHandlerRegistry(handlerRegistry)
+                    .maxRstFramesPerWindow(maxRapidResets, (int) rapidResetCheckPeriod.toSeconds())
                     .build()
                     .start();
 
