@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.grpc.server;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -108,6 +109,21 @@ public interface GrpcServerConfiguration {
     GrpcTlsDescriptor tlsConfig();
 
     /**
+     * Returns the period for counting rapid resets (stream RST sent by client before any data have been sent by server).
+     *
+     * @return the period for counting rapid resets
+     */
+    Duration rapidResetCheckPeriod();
+
+    /**
+     * Returns the maximum allowed number of rapid resets (stream RST sent by client before any data have been sent by server).
+     * When reached within {@link #rapidResetCheckPeriod()}, GOAWAY is sent to client and connection is closed.
+     *
+     * @return the maximum allowed number of rapid resets
+     */
+    int maxRapidResets();
+
+    /**
      * Creates new instance with default values for all configuration properties.
      *
      * @return a new instance
@@ -168,6 +184,10 @@ public interface GrpcServerConfiguration {
 
         private Context context;
 
+        private int maxRapidResets = 200;
+
+        private Duration rapidResetCheckPeriod = Duration.ofSeconds(30);
+
         private Builder() {
         }
 
@@ -188,6 +208,8 @@ public interface GrpcServerConfiguration {
 
             name = config.get("name").asString().orElse(DEFAULT_NAME);
             port = config.get("port").asInt().orElse(DEFAULT_PORT);
+            maxRapidResets = config.get("max-rapid-resets").asInt().orElse(200);
+            rapidResetCheckPeriod = config.get("rapid-reset-check-period").as(Duration.class).orElse(Duration.ofSeconds(30));
             useNativeTransport = config.get("native").asBoolean().orElse(false);
             config.get("workers").asInt().ifPresent(this::workersCount);
 
@@ -220,6 +242,37 @@ public interface GrpcServerConfiguration {
         @ConfiguredOption(value = "" + DEFAULT_PORT)
         public Builder port(int port) {
             this.port = port < 0 ? 0 : port;
+            return this;
+        }
+
+        /**
+         * Period for counting rapid resets(stream RST sent by client before any data have been sent by server).
+         * Default value is {@code PT30S}.
+         *
+         * @param rapidResetCheckPeriod duration
+         * @return updated builder
+         * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
+         * @see #maxRapidResets()
+         */
+         @ConfiguredOption("PT30S")
+        public Builder rapidResetCheckPeriod(Duration rapidResetCheckPeriod) {
+            Objects.requireNonNull(rapidResetCheckPeriod);
+            this.rapidResetCheckPeriod = rapidResetCheckPeriod;
+            return this;
+        }
+
+        /**
+         * Maximum number of rapid resets(stream RST sent by client before any data have been sent by server).
+         * When reached within {@link #rapidResetCheckPeriod()}, GOAWAY is sent to client and connection is closed.
+         * Default value is {@code 200}.
+         *
+         * @param maxRapidResets maximum number of rapid resets
+         * @return updated builder
+         * @see #rapidResetCheckPeriod()
+         */
+         @ConfiguredOption("200")
+        public Builder maxRapidResets(int maxRapidResets) {
+            this.maxRapidResets = maxRapidResets;
             return this;
         }
 
@@ -330,6 +383,14 @@ public interface GrpcServerConfiguration {
 
         int workers() {
             return workers;
+        }
+
+        int maxRapidResets() {
+            return maxRapidResets;
+        }
+
+        Duration rapidResetCheckPeriod() {
+            return rapidResetCheckPeriod;
         }
 
         @Override

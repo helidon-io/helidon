@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.grpc.server;
+
+import java.time.Duration;
 
 import io.helidon.common.context.Context;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
@@ -42,6 +44,10 @@ public class GrpcServerBasicConfig
 
     private final Context context;
 
+    private final int maxRapidResets;
+
+    private final Duration rapidResetCheckPeriod;
+
     /**
      * Construct {@link GrpcServerBasicConfig} instance.
      *
@@ -57,6 +63,8 @@ public class GrpcServerBasicConfig
         this.tracingConfig = builder.tracingConfig();
         this.workers = builder.workers();
         this.tlsConfig = builder.tlsConfig();
+        this.maxRapidResets = builder.maxRapidResets();
+        this.rapidResetCheckPeriod = builder.rapidResetCheckPeriod();
     }
 
     /**
@@ -131,5 +139,15 @@ public class GrpcServerBasicConfig
     @Override
     public GrpcTlsDescriptor tlsConfig() {
         return tlsConfig;
+    }
+
+    @Override
+    public Duration rapidResetCheckPeriod() {
+        return rapidResetCheckPeriod;
+    }
+
+    @Override
+    public int maxRapidResets() {
+        return maxRapidResets;
     }
 }

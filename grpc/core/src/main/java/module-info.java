@@ -31,11 +31,11 @@ module io.helidon.grpc.core {
     requires io.helidon.common.context;
     requires io.helidon.common.http;
 
-    requires grpc.netty;
-    requires transitive grpc.protobuf;
-    requires grpc.protobuf.lite;
-    requires transitive grpc.stub;
-    requires transitive grpc.api;
+    requires io.grpc.netty;
+    requires transitive io.grpc.protobuf;
+    requires io.grpc.protobuf.lite;
+    requires transitive io.grpc.stub;
+    requires transitive io.grpc;
     requires io.netty.handler;
     requires io.netty.transport;
     requires transitive com.google.protobuf;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.grpc.server;
 
+import java.time.Duration;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
@@ -219,5 +220,39 @@ public class GrpcServerConfigurationTest {
         assertThat(serverConfig.port(), is(19));
         assertThat(serverConfig.useNativeTransport(), is(true));
         assertThat(serverConfig.workers(), is(51));
+    }
+
+    @Test
+    public void shouldHaveDefaultMaxRapidResets() {
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .build();
+
+        assertThat(configuration.maxRapidResets(), is(200));
+    }
+
+    @Test
+    public void shouldSetMaxRapidResets() {
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .maxRapidResets(19)
+                .build();
+
+        assertThat(configuration.maxRapidResets(), is(19));
+    }
+
+    @Test
+    public void shouldHaveDefaultRapidResetCheckPeriod() {
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .build();
+
+        assertThat(configuration.rapidResetCheckPeriod(), is(Duration.ofSeconds(30)));
+    }
+
+    @Test
+    public void shouldSetRapidResetCheckPeriod() {
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .rapidResetCheckPeriod(Duration.ofSeconds(19))
+                .build();
+
+        assertThat(configuration.rapidResetCheckPeriod(), is(Duration.ofSeconds(19)));
     }
 }
