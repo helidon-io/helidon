@@ -54,7 +54,6 @@ public interface ServiceDescriptor<T> extends ServiceInfo {
      * @param injected             mutable set of already injected methods from subtypes
      * @param instance             instance to update
      */
-
     default void inject(InjectionContext ctx,
                         InterceptionMetadata interceptionMetadata,
                         Set<String> injected,
