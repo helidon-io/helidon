@@ -172,7 +172,7 @@ class ServerSseTest {
         // Wait for server to detect connection closed
         if (future != null) {
             try {
-                future.get(200000000, TimeUnit.MILLISECONDS);
+                future.get(2000, TimeUnit.MILLISECONDS);
             } catch (RuntimeException | Error e) {
                 fail("Closing of SSE connection not detected!", e);
             } catch (InterruptedException e) {
@@ -247,7 +247,7 @@ class ServerSseTest {
     @Path("/test4")
     public final class TestResource4 {
         private static final int TIME_SECONDS = 2;
-        private volatile boolean fail = true;
+        private boolean fail = true;
 
         @GET
         @Path("sse")
