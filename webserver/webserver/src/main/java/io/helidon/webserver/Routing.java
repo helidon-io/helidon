@@ -20,4 +20,12 @@ package io.helidon.webserver;
  * Routing abstraction.
  */
 public interface Routing extends ServerLifecycle {
+
+    /**
+     * The class used by a {@link Router} to identify this {@link Routing} type and associate a connection with it.
+     *
+     * @return this routing type
+     */
+	public default Class<? extends Routing> routingType() { return getClass(); }
+
 }

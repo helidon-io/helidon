@@ -42,6 +42,9 @@ public class TyrusRouting implements Routing {
         this.extensions = builder.extensions;
     }
 
+    @Override
+    public Class<? extends Routing> routingType() { return TyrusRouting.class; }
+
     /**
      * Builder for WebSocket routing.
      *

@@ -42,6 +42,9 @@ public class GrpcRouting implements Routing {
         this.routes = new ArrayList<>(builder.routes);
     }
 
+    @Override
+    public Class<? extends Routing> routingType() { return GrpcRouting.class; }
+
     /**
      * New routing builder.
      *

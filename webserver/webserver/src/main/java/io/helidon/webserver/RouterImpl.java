@@ -30,7 +30,7 @@ class RouterImpl implements Router {
         builder.routings.values()
                 .forEach(it -> {
                     Routing routing = it.build();
-                    routings.put(routing.getClass(), routing);
+                    routings.put(routing.routingType(), routing);
                 });
     }
 

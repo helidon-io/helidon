@@ -37,6 +37,9 @@ public class WsRouting implements Routing {
         this.routes = new ArrayList<>(builder.routes);
     }
 
+    @Override
+    public Class<? extends Routing> routingType() { return WsRouting.class; }
+
     /**
      * Builder for WebSocket routing.
      *
