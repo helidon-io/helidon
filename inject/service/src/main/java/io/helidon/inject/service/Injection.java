@@ -24,8 +24,6 @@ import java.lang.annotation.Target;
 
 import io.helidon.common.types.TypeName;
 
-import static java.lang.annotation.ElementType.TYPE;
-
 /**
  * Injection annotations.
  * This is the entry point for any annotation related to service definition in Helidon Inject.
@@ -81,7 +79,7 @@ public final class Injection {
     @Qualifier
     @Retention(RetentionPolicy.CLASS)
     @Documented
-    @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, TYPE})
+    @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, ElementType.TYPE})
     public @interface Named {
         /**
          * Type name of this annotation.
@@ -125,6 +123,11 @@ public final class Injection {
      * <p>
      * A singleton instance is guaranteed to have its constructor, post-construct, and pre-destroy methods invoked once within
      * the lifecycle of the service registry.
+     * <p>
+     * Alternative to this annotation is {@link io.helidon.inject.service.Injection.Service} (or no annotation on a type
+     * that has {@link io.helidon.inject.service.Injection.Inject} on its elements). Such a service would be injected
+     * every time its provider is invoked (each injection point, or on call to {@link java.util.function.Supplier#get()} if
+     * supplier is injected).
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
@@ -232,7 +235,7 @@ public final class Injection {
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
-    @Target(TYPE)
+    @Target(ElementType.TYPE)
     public @interface RunLevel {
 
         /**

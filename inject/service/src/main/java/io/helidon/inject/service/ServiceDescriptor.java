@@ -103,7 +103,8 @@ public interface ServiceDescriptor<T> extends ServiceInfo {
 
         result.addAll(superType.stream()
                               .filter(it -> it.elementKind() == ElementKind.METHOD)
-                              .filter(it -> injectedMethods.add(it.method().orElse("")))
+                              .filter(it -> it.method().isPresent())
+                              .filter(it -> injectedMethods.add(it.method().get())) // we check presence above
                               .toList());
 
         return List.copyOf(result);
