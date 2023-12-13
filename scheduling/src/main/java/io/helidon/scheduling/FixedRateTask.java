@@ -21,28 +21,47 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-class FixedRateTask implements Task {
+import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+
+class FixedRateTask implements FixedRate {
 
     private static final System.Logger LOGGER = System.getLogger(FixedRateTask.class.getName());
 
     private final AtomicLong iteration = new AtomicLong(0);
-    private ScheduledExecutorService executorService;
+    private final ScheduledExecutorService executorService;
     private final long initialDelay;
     private final long delay;
     private final TimeUnit timeUnit;
     private final ScheduledConsumer actualTask;
+    private FixedRateConfig config = null;
 
-    FixedRateTask(ScheduledExecutorService executorService,
-                  long initialDelay,
-                  long delay,
-                  TimeUnit timeUnit,
-                  ScheduledConsumer actualTask) {
-        this.executorService = executorService;
-        this.initialDelay = initialDelay;
-        this.delay = delay;
-        this.timeUnit = timeUnit;
-        this.actualTask = actualTask;
-        executorService.scheduleAtFixedRate(this::run, initialDelay, delay, timeUnit);
+    FixedRateTask(FixedRateConfig config) {
+        this.config = config;
+
+        this.initialDelay = config.initialDelay();
+        this.delay = config.delay();
+        this.timeUnit = config.timeUnit();
+        this.actualTask = config.task();
+
+        if (config.executor() == null) {
+            executorService = ScheduledThreadPoolSupplier.builder()
+                    .threadNamePrefix("scheduled-")
+                    .build()
+                    .get();
+        } else {
+            this.executorService = config.executor();
+        }
+
+        switch (config.delayType()) {
+        case SINCE_PREVIOUS_START -> executorService.scheduleAtFixedRate(this::run, initialDelay, delay, timeUnit);
+        case SINCE_PREVIOUS_END -> executorService.scheduleWithFixedDelay(this::run, initialDelay, delay, timeUnit);
+        default -> throw new IllegalStateException("Unexpected delay type " + config.delayType());
+        }
+    }
+
+    @Override
+    public FixedRateConfig prototype() {
+        return config;
     }
 
     @Override

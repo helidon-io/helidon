@@ -125,3 +125,7 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder.adoc[ZipkinTracerBuilder (tracing.providers.zipkin)]
 - xref:{rootdir}/config/io_opentracing_Tracer.adoc[io_opentracing_Tracer]
 - xref:{rootdir}/config/org_eclipse_microprofile_config_Config.adoc[org_eclipse_microprofile_config_Config]
+- xref:{rootdir}/config/io_helidon_scheduling_Cron.adoc[Cron (scheduling)]
+- xref:{rootdir}/config/io_helidon_scheduling_FixedRate.adoc[FixedRate (scheduling)]
+- xref:{rootdir}/config/io_helidon_scheduling_TaskConfig.adoc[TaskConfig (scheduling)]
+

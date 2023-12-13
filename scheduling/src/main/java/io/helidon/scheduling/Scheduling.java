@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,31 @@ public class Scheduling {
      * Build a task executed periodically at a fixed rate.
      *
      * @return this builder
+     * @deprecated use {@link #fixedRate()} instead
      */
+    @Deprecated(since = "4.0.2", forRemoval = true)
     public static FixedRateBuilder fixedRateBuilder() {
         return new FixedRateBuilder();
+    }
+
+    /**
+     * Build a task executed periodically at a fixed rate.
+     *
+     * @return this builder
+     */
+    public static FixedRateConfig.Builder fixedRate() {
+        return FixedRate.builder();
+    }
+
+    /**
+     * Build a task executed periodically according to provided cron expression.
+     *
+     * @return this builder
+     * @deprecated use {@link #cron()} instead
+     */
+    @Deprecated(since = "4.0.2", forRemoval = true)
+    public static CronBuilder cronBuilder() {
+        return new CronBuilder();
     }
 
     /**
@@ -58,13 +80,16 @@ public class Scheduling {
      *
      * @return this builder
      */
-    public static CronBuilder cronBuilder() {
-        return new CronBuilder();
+    public static CronConfig.Builder cron() {
+        return Cron.builder();
     }
 
     /**
      * Builder for task executed periodically at a fixed rate.
+     *
+     * @deprecated use {@link io.helidon.scheduling.FixedRateConfig.Builder} instead
      */
+    @Deprecated(since = "4.0.2", forRemoval = true)
     public static final class FixedRateBuilder implements io.helidon.common.Builder<FixedRateBuilder, Task> {
 
         private ScheduledExecutorService executorService;
@@ -151,14 +176,23 @@ public class Scheduling {
                         .build()
                         .get();
             }
-            return new FixedRateTask(executorService, initialDelay, delay, timeUnit,
-                    invocation -> task.run((FixedRateInvocation) invocation));
+            return FixedRate.builder()
+                    .executor(executorService)
+                    .initialDelay(initialDelay)
+                    .delay(delay)
+                    .delayType(FixedRate.DelayType.SINCE_PREVIOUS_START)
+                    .timeUnit(timeUnit)
+                    .task(task)
+                    .build();
         }
     }
 
     /**
      * Builder for task executed periodically according to provided cron expression.
+     *
+     * @deprecated use {@link io.helidon.scheduling.CronConfig.Builder} instead
      */
+    @Deprecated(since = "4.0.2", forRemoval = true)
     public static final class CronBuilder implements io.helidon.common.Builder<CronBuilder, Task> {
 
         static final String DEFAULT_THREAD_NAME_PREFIX = "scheduled-";
@@ -240,10 +274,13 @@ public class Scheduling {
                         .get();
             }
 
-            CronTask task = new CronTask(executorService, cronExpression, concurrentExecution,
-                    invocation -> this.task.run((CronInvocation) invocation));
+            return Cron.builder()
+                    .executor(executorService)
+                    .expression(cronExpression)
+                    .concurrentExecution(concurrentExecution)
+                    .task(task)
+                    .build();
 
-            return task;
         }
     }
 }

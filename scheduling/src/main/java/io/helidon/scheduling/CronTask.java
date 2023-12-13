@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.cronutils.descriptor.CronDescriptor;
-import com.cronutils.model.Cron;
 import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
@@ -35,7 +34,7 @@ import com.cronutils.parser.CronParser;
 
 import static com.cronutils.model.CronType.QUARTZ;
 
-class CronTask implements Task {
+class CronTask implements Cron {
 
     private static final System.Logger LOGGER = System.getLogger(CronTask.class.getName());
 
@@ -44,24 +43,28 @@ class CronTask implements Task {
     private final boolean concurrentExecution;
     private final ScheduledConsumer<CronInvocation> actualTask;
     private final ScheduledExecutorService executorService;
-    private final Cron cron;
+    private final com.cronutils.model.Cron cron;
     private final ReentrantLock scheduleNextLock = new ReentrantLock();
+    private final CronConfig config;
     private ZonedDateTime lastNext = null;
 
-    CronTask(ScheduledExecutorService executorService,
-             String cronExpression,
-             boolean concurrentExecution,
-             ScheduledConsumer<CronInvocation> actualTask) {
-        this.executorService = executorService;
-        this.concurrentExecution = concurrentExecution;
-        this.actualTask = actualTask;
+    CronTask(CronConfig config) {
+        this.config = config;
+        this.executorService = config.executor();
+        this.concurrentExecution = config.concurrentExecution();
+        this.actualTask = config.task();
 
         CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
         CronParser parser = new CronParser(cronDefinition);
-        cron = parser.parse(cronExpression);
+        cron = parser.parse(config.expression());
         executionTime = ExecutionTime.forCron(cron);
 
         scheduleNext();
+    }
+
+    @Override
+    public CronConfig prototype() {
+        return this.config;
     }
 
     void run() {

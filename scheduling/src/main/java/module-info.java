@@ -21,15 +21,16 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Scheduling module for Helidon reactive implementation.
  */
 @Feature(value = "Scheduling",
-        description = "Scheduling of periodical tasks",
-        in = HelidonFlavor.SE,
-        path = "Scheduling"
+         description = "Scheduling of periodical tasks",
+         in = HelidonFlavor.SE,
+         path = "Scheduling"
 )
 module io.helidon.scheduling {
 
     requires com.cronutils;
     requires io.helidon.common.config;
     requires io.helidon.common.configurable;
+    requires io.helidon.builder.api;
 
     requires static io.helidon.common.features.api;
 
