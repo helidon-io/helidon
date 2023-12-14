@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,7 @@
  */
 
 /**
- * gRPC Client Module.
+ * The deprecated repackaged gRPC Module.
  */
-module io.helidon.grpc.client {
-    exports io.helidon.grpc.client;
-
-    requires io.grpc.netty;
-    requires io.netty.handler;
-
-    requires transitive io.helidon.grpc.core;
-
-    requires io.helidon.tracing;
-    requires io.opentracing.api;
-    requires opentracing.grpc;
+module io.helidon.grpc.deprecated {
 }
