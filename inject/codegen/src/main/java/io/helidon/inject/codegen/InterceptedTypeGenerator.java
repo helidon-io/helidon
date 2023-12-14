@@ -55,9 +55,8 @@ class InterceptedTypeGenerator {
     }
 
     ClassModel.Builder generate() {
-        ClassModel.Builder classModel = ClassModel.builder();
-
-        classModel.copyright(CodegenUtil.copyright(GENERATOR,
+        ClassModel.Builder classModel = ClassModel.builder()
+                .copyright(CodegenUtil.copyright(GENERATOR,
                                                    serviceType,
                                                    interceptedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
@@ -66,6 +65,7 @@ class InterceptedTypeGenerator {
                                                                "1",
                                                                ""))
                 .description("Intercepted sub-type for {@link " + serviceType.fqName() + "}.")
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .type(interceptedType)
                 .superType(serviceType);
 
@@ -147,6 +147,7 @@ class InterceptedTypeGenerator {
 
     private void generateConstructor(ClassModel.Builder classModel) {
         classModel.addConstructor(constructor -> constructor
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addParameter(interceptMeta -> interceptMeta.type(InjectCodegenTypes.INTERCEPTION_METADATA)
                         .name("helidonInject__interceptMeta"))
                 .addParameter(descriptor -> descriptor.type(descriptorType)
