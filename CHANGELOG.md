@@ -9,6 +9,18 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.5]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- OCI: Adds support for Provider-specializing injection points in OciExtension [8028](https://github.com/helidon-io/helidon/pull/8028)
+- Dependencies: Update gRPC version to 1.60.0 [8147](https://github.com/helidon-io/helidon/pull/8147)
+- Dependencies: Upgrade slf4j to 2.0.9 and logback to 1.4.14 [8121](https://github.com/helidon-io/helidon/pull/8121)
+- Dependencies: Upgrade to mysql-connector-j 8.2.0 [8017](https://github.com/helidon-io/helidon/pull/8017)
+- Docs: Correct errors in how OpenAPI generator config settings are set [7971](https://github.com/helidon-io/helidon/pull/7971)
+
 ## [2.6.4]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2191,6 +2203,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.5]: https://github.com/oracle/helidon/compare/2.6.4...2.6.5
 [2.6.4]: https://github.com/oracle/helidon/compare/2.6.3...2.6.4
 [2.6.3]: https://github.com/oracle/helidon/compare/2.6.2...2.6.3
 [2.6.2]: https://github.com/oracle/helidon/compare/2.6.1...2.6.2
