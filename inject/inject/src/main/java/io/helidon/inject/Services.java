@@ -69,8 +69,8 @@ public interface Services {
      *         if the result may contain an unknown provider type
      * @throws io.helidon.inject.InjectionException if resolution fails to resolve a match
      */
-    default <T> Supplier<T> first(Lookup lookup) {
-        return this.<T>find(lookup)
+    default <T> Supplier<T> get(Lookup lookup) {
+        return this.<T>first(lookup)
                 .orElseThrow(() -> new InjectionException("There are no services matching " + lookup));
     }
 
@@ -82,8 +82,8 @@ public interface Services {
      * @return the best service provider matching the lookup
      * @throws io.helidon.inject.InjectionException if resolution fails to resolve a match
      */
-    default <T> Supplier<T> first(Class<T> type) {
-        return this.find(type)
+    default <T> Supplier<T> get(Class<T> type) {
+        return this.first(type)
                 .orElseThrow(() -> new InjectionException("There are no services with type (or contract) of " + type.getName()));
     }
 
@@ -95,7 +95,7 @@ public interface Services {
      * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      */
-    <T> Optional<Supplier<T>> find(Lookup lookup);
+    <T> Optional<Supplier<T>> first(Lookup lookup);
 
     /**
      * Find the first service provider matching the provided type with the expectation that there may not be a match available.
@@ -104,8 +104,8 @@ public interface Services {
      * @param <T>  service type or service contract
      * @return the best service provider matching the lookup
      */
-    default <T> Optional<Supplier<T>> find(Class<T> type) {
-        return find(Lookup.builder()
+    default <T> Optional<Supplier<T>> first(Class<T> type) {
+        return first(Lookup.builder()
                             .addContract(type)
                             .build());
     }
@@ -141,8 +141,8 @@ public interface Services {
      * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      */
-    default <T> Optional<ServiceProvider<T>> findServiceProvider(Lookup lookup) {
-        return this.<T>serviceProviders(lookup)
+    default <T> Optional<ServiceProvider<T>> firstProvider(Lookup lookup) {
+        return this.<T>allProviders(lookup)
                 .stream()
                 .findFirst();
     }
@@ -155,8 +155,8 @@ public interface Services {
      * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      */
-    default <T> ServiceProvider<T> firstServiceProvider(Lookup lookup) {
-        return this.<T>findServiceProvider(lookup)
+    default <T> ServiceProvider<T> getProvider(Lookup lookup) {
+        return this.<T>firstProvider(lookup)
                 .orElseThrow(() -> new InjectionException("There are no services matching " + lookup));
     }
 
@@ -168,7 +168,7 @@ public interface Services {
      * @param <T>    type of the expected service providers, use {@code Object} if not known, or may contain a mix of types
      * @return list of service providers
      */
-    <T> List<ServiceProvider<T>> serviceProviders(Lookup lookup);
+    <T> List<ServiceProvider<T>> allProviders(Lookup lookup);
 
     /**
      * Get a service provider for a descriptor.

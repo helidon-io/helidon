@@ -40,7 +40,7 @@ interface InjectionConfigBlueprint {
 
     /**
      * Flag indicating whether service lookups
-     * (i.e., via {@link io.helidon.inject.Services#find(Lookup)}) are cached.
+     * (i.e., via {@link io.helidon.inject.Services#first(Lookup)}) are cached.
      *
      * @return the flag indicating whether service lookups are cached, defaults to {@code false}
      */

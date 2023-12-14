@@ -45,7 +45,7 @@ class CbrProvider extends ServiceProviderBase<ConfigBeanRegistryImpl>
             ConfigBeanRegistryImpl cbr = ConfigBeanRegistryImpl.CONFIG_BEAN_REGISTRY.get();
             if (services.limitRuntimePhase() == Phase.ACTIVE) {
                 // we can lookup from the registry, as services can be activated
-                cbr.initialize(services.find(Config.class)
+                cbr.initialize(services.first(Config.class)
                                        .map(Supplier::get)
                                        .orElseGet(GlobalConfig::config));
             } else {

@@ -74,7 +74,7 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         if (services instanceof ServicesImpl si) {
             allInterceptors = si.interceptors();
         } else {
-            allInterceptors = services.serviceProviders(Lookup.builder()
+            allInterceptors = services.allProviders(Lookup.builder()
                                                                 .addContract(Interception.Interceptor.class)
                                                                 .addQualifier(Qualifier.WILDCARD_NAMED)
                                                                 .build());
