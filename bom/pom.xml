@@ -1334,6 +1334,11 @@
             <!-- Injection Core -->
             <dependency>
                 <groupId>io.helidon.inject</groupId>
+                <artifactId>helidon-inject-service</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.inject</groupId>
                 <artifactId>helidon-inject-api</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
