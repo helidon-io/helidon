@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.metrics.tck;
 
+import io.helidon.microprofile.server.CatchAllExceptionMapper;
+
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;

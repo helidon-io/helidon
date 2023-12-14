@@ -19,6 +19,7 @@ package io.helidon.integrations.micrometer.cdi;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
+import io.helidon.microprofile.server.CatchAllExceptionMapper;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 

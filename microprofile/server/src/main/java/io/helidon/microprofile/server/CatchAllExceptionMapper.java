@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.micrometer.cdi;
+package io.helidon.microprofile.server;
 
 import java.lang.System.Logger.Level;
 
@@ -28,15 +28,24 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
 /**
- * Default mapper for exceptions that are not caught.
+ * Mapper for exceptions that are not caught.
+ *
+ * It is not configured by default in Helidon but it is provided for explicit usage.
  */
 @Provider
 @Priority(5000)
 public class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
 
     private static final System.Logger LOGGER = System.getLogger(CatchAllExceptionMapper.class.getName());
+
     @Context
     private ServerRequest serverRequest;
+
+    /**
+     * Default empty constructor.
+     */
+    public CatchAllExceptionMapper() {
+    }
 
     @Override
     public Response toResponse(Exception exception) {
