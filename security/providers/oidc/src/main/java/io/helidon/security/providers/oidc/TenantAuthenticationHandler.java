@@ -180,7 +180,9 @@ class TenantAuthenticationHandler {
             if (oidcConfig.useParam()) {
                 idToken = idToken.or(() -> PARAM_ID_HEADER_HANDLER.extractToken(providerRequest.env().headers()));
                 if (idToken.isEmpty()) {
-                    idToken = idToken.or(() -> providerRequest.env().queryParams().first(oidcConfig.idTokenParamName()).asOptional());
+                    idToken = idToken.or(() -> providerRequest.env()
+                            .queryParams()
+                            .first(oidcConfig.idTokenParamName()).asOptional());
                 }
             }
             if (oidcConfig.useCookie() && idToken.isEmpty()) {
