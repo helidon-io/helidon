@@ -165,14 +165,14 @@ class Invocation<V> implements Interception.Interceptor.Chain<V> {
                     throw t;
                 }
 
-                throw (interceptorProvider instanceof ServiceProvider)
-                        ? new InvocationException("Error in interceptor chain processing",
-                                                  t,
-                                                  (ServiceProvider<?>) interceptorProvider,
-                                                  call == null)
-                        : new InvocationException("Error in interceptor chain processing",
-                                                  t,
-                                                  call == null);
+                String message = "Error in interceptor chain processing";
+                boolean called = call == null;
+
+                if (interceptor instanceof ServiceProvider<?> sp) {
+                    throw new InvocationException(message, t, sp, called);
+                } else {
+                    throw new InvocationException(message, t, called);
+                }
             }
         }
 

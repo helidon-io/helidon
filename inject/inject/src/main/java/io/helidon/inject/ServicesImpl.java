@@ -221,8 +221,7 @@ class ServicesImpl implements Services, ServiceBinder {
         servicesByContract.values()
                 .forEach(result::addAll);
 
-        return result.stream()
-                .toList();
+        return List.copyOf(result);
     }
 
     private static boolean hasNamed(Set<Qualifier> qualifiers) {
@@ -286,8 +285,8 @@ class ServicesImpl implements Services, ServiceBinder {
             TypeName theOnlyContractRequested = criteria.contracts().iterator().next();
             Set<ServiceProvider<?>> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
             if (subsetOfMatches != null) {
+                // the subset is ordered, cannot use parallel
                 List<ServiceProvider<?>> result = subsetOfMatches.stream()
-                        .parallel()
                         .filter(criteria::matches)
                         .limit(limit)
                         .toList();
