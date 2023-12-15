@@ -55,8 +55,10 @@ interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * web-context's, then they would need to provide these exclusions manually.
      *
      * The default path configs below are overridable via configuration. For example,
-     * health could be enabled by setting {@code tracing.paths.0.path=/health} and
+     * health could be enabled by setting {@code tracing.paths.0.path=/observe/health} and
      * {@code tracing.paths.0.enabled=true}.
+     *
+     * We disable both the SE-style paths ({@code /observe/health}) and the MP-style paths ({@code /health}).
      */
     /**
      * Path specific configuration of tracing.
@@ -68,16 +70,28 @@ interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
     @Option.DefaultCode("new @java.util.ArrayList@(@java.util.List@.of(PathTracingConfig.builder()\n"
             + "                                  .path(\"/metrics/*\")\n"
             + "                                  .tracingConfig(TracingConfig.DISABLED)\n"
-            + "                                  .build(), "
+            + "                                  .build(), \n"
+            + "                                  PathTracingConfig.builder()\n"
+            + "                                  .path(\"/observe/metrics/*\")\n"
+            + "                                  .tracingConfig(TracingConfig.DISABLED)\n"
+            + "                                  .build(), \n"
             + "                                  PathTracingConfig.builder()\n"
             + "                                  .path(\"/health/*\")\n"
             + "                                  .tracingConfig(TracingConfig.DISABLED)\n"
-            + "                                  .build(),"
+            + "                                  .build(), \n"
+            + "                                  PathTracingConfig.builder()\n"
+            + "                                  .path(\"/observe/health/*\")\n"
+            + "                                  .tracingConfig(TracingConfig.DISABLED)\n"
+            + "                                  .build(), \n"
             + "                                  PathTracingConfig.builder()\n"
             + "                                  .path(\"/openapi/*\")\n"
             + "                                  .tracingConfig(TracingConfig.DISABLED)\n"
+            + "                                  .build(), \n"
+            + "                                  PathTracingConfig.builder()\n"
+            + "                                  .path(\"/observe/openapi/*\")\n"
+            + "                                  .tracingConfig(TracingConfig.DISABLED)\n"
             + "                                  .build()))")
-    List<PathTracingConfig> pathConfigs();
+    List<PathTracingConfig> paths();
 
     /**
      * Tracer to use to extract inbound span context.
