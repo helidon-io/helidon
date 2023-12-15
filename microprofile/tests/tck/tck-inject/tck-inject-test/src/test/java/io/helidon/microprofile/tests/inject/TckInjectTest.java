@@ -16,8 +16,11 @@
 
 package io.helidon.microprofile.tests.inject;
 
+import static org.junit.Assert.fail;
+
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
+import junit.framework.TestResult;
 import org.atinject.tck.Tck;
 import org.atinject.tck.auto.Car;
 import org.atinject.tck.auto.Convertible;
@@ -44,7 +47,23 @@ class TckInjectTest {
                         SpareTire.class)
                 .initialize();
         Car tckCar = container.select(Car.class).get();
-        Tck.testsFor(tckCar, false, true);
+        junit.framework.Test suite = Tck.testsFor(tckCar, false, true);
+        TestResult result = new TestResult();
+        suite.run(result);
+        String results = printResults(result);
+        if (!result.wasSuccessful()) {
+            fail(results);
+        } else {
+            System.out.println(results);
+        }
     }
 
+    // Tests run: 1, Failures: 0, Errors: 1
+    private String printResults(TestResult result) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Tests run: ").append(result.runCount());
+        builder.append(", Failures: ").append(result.failureCount());
+        builder.append(", Errors: ").append(result.errorCount());
+        return builder.toString();
+    }
 }

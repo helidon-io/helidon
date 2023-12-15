@@ -631,7 +631,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
                 return null;
             }
             if (result == RoutingResult.NONE) {
-                throw new NotFoundException("Endpoint not found");
+                throw new NotFoundException("Not Found");
             }
 
             // rerouting, do the more heavyweight while loop
@@ -653,7 +653,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
                 response.commit();
                 return null;
             }
-            throw new NotFoundException("Endpoint not found");
+            throw new NotFoundException("Not Found");
         }
 
         private RoutingResult doRoute(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) throws Exception {

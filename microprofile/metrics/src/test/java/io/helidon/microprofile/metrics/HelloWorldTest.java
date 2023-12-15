@@ -24,6 +24,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import io.helidon.microprofile.server.CatchAllExceptionMapper;
+import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -55,6 +57,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
 @AddConfig(key = "metrics.permit-all", value = "true")
+@AddBean(CatchAllExceptionMapper.class)
 class HelloWorldTest {
 
     @Inject

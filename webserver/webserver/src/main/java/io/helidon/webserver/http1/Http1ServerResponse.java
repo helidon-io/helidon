@@ -111,7 +111,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             buffer.write(OK_200);
         } else {
             buffer.write(HTTP_BYTES);
-            String reasonPhrase = status.reasonPhrase().isEmpty() ? status.codeText() : status.reasonPhrase();
+            String reasonPhrase = status.reasonPhrase() == null || status.reasonPhrase().isEmpty()
+                    ? status.codeText() : status.reasonPhrase();
             buffer.write((status.code() + " " + reasonPhrase).getBytes(StandardCharsets.US_ASCII));
             buffer.write('\r');
             buffer.write('\n');

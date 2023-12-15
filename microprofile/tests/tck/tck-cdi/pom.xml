@@ -73,37 +73,61 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <systemPropertyVariables>
+                        <org.jboss.weld.construction.relaxed>false</org.jboss.weld.construction.relaxed>
+                    </systemPropertyVariables>
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
-                    <excludedGroups>cdi-full,se</excludedGroups>
+                    <!-- https://jakartaee.github.io/cdi-tck/#_using_the_cdi_tck_with_the_jakarta_ee_core_profile -->
+                    <excludedGroups>cdi-full,integration,javaee-full,se</excludedGroups>
                     <dependenciesToScan>
                         <dependency>jakarta.enterprise:cdi-tck-core-impl</dependency>
                     </dependenciesToScan>
                     <includes>
-                        <include>org/jboss/cdi/tck/tests/**/*Test.java</include>
-                        <include>org/jboss/cdi/tck/interceptors/DependentContextTesttests/**/*Test.java</include>
+                        <include>**/*Test.java</include>
                     </includes>
                     <excludes>
-                        <exclude>org/jboss/cdi/tck/tests/fulSyntheticBeanWithLookupTestl/extensions/lifecycle/bbd/broken/passivatingScope/AddingPassivatingScopeTest.java</exclude>
-                        <!-- FIXME: Next tests must be enabled -->
-                        <exclude>org/jboss/cdi/tck/tests/build/compatible/extensions/changeObserverQualifier/ChangeObserverQualifierTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/build/compatible/extensions/customStereotype/CustomStereotypeTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/build/compatible/extensions/syntheticBeanWithLookup/SyntheticBeanWithLookupTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/context/dependent/DependentContextTest.java</exclude>
+                        <!-- TCK Challenge accepted: https://github.com/jakartaee/cdi-tck/issues/485 -->
                         <exclude>org/jboss/cdi/tck/tests/definition/bean/types/ManagedBeanTypesTest.java</exclude>
-                        <exclude>org/jboss/cdi.tck/tests/event/EventTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/event/lifecycle/StartupShutdownTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/event/observer/broken/validation/unsatisfied/ObserverMethodParameterInjectionValidationTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/event/observer/broken/validation/ambiguous/ObserverMethodParameterInjectionValidationTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/event/observer/runtimeException/ObserverExceptionRethrownTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/event/observer/conditional/ConditionalObserverTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/event/observer/ObserverNotificationTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/event/observer/async/executor/FireAsyncWithCustomExecutorTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/inheritance/generics/MemberLevelInheritanceTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/lookup/clientProxy/unproxyable/privateConstructor/PrivateConstructorTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/lookup/clientProxy/unproxyable/beanConstructor/BeanConstructorWithParametersTest.java</exclude>
-                        <exclude>org/jboss/cdi/tck/tests/implementation/simple/lifecycle/unproxyable/UnproxyableManagedBeanTest.java</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <stripVersion>true</stripVersion>
+                            <overWriteReleases>true</overWriteReleases>
+                            <outputDirectory>target/classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.netbeans.tools</groupId>
+                <artifactId>sigtest-maven-plugin</artifactId>
+                <version>${version.lib.sigtest}</version>
+                <executions>
+                    <execution>
+                        <id>sigtest</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <sigfile>${project.build.directory}/classes/cdi-api-jdk11.sig</sigfile>
+                    <packages>jakarta.decorator,jakarta.enterprise,jakarta.interceptor</packages>
+                    <classes>${project.build.directory}/classes</classes>
+                    <report>${project.build.directory}/cdi-sig-report.txt</report>
                 </configuration>
             </plugin>
         </plugins>

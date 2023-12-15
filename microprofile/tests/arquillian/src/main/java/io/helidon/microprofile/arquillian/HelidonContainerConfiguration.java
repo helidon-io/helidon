@@ -17,7 +17,10 @@
 package io.helidon.microprofile.arquillian;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
@@ -36,7 +39,14 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  * is empty)</li>
  * <li>replaceConfigSourcesWithMp: (Optional) defaults to false: whether to replace config sources with microprofile if it
  * exists</li>
- * <li>inWebContainer: defaults to false: sets web app context root, load WEB-INF/beans.xml and find any jakarta.ws.rs.core.Application in the webapp classes</li>
+ * <li>inWebContainer: (Optional) defaults to false: loads WEB-INF/beans.xml and find any
+ * jakarta.ws.rs.core.Application in the webapp classes</li>
+ * <li>useBeanXmlTemplate: (Optional) defaults to true: will create the default templates/beans.xml when beans.xml is missing</li>
+ * <li>includeWarContextPath: (Optional) defaults to false: will include the war name as a root context.
+ * For example, if a example.war is deployed, the root context is going to be /example.</li>
+ * <li>skipContextPaths: (Optional) defaults to empty: define the context paths to be excluded.</li>
+ * <li>multipleDeployments: (Optional) defaults to true: workaround for tests that unintentionally
+ * executes 1+ times @org.jboss.arquillian.container.test.api.Deployment</li>
  * </ul>
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
@@ -47,7 +57,15 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private boolean useRelativePath = false;
     private boolean useParentClassloader = true;
     private boolean inWebContainer = false;
+    private boolean useBeanXmlTemplate = true;
+    private boolean multipleDeployments = true;
+    /*
+     *  Restful requires it, but core profile don't (because rest used to be deployed in a
+     *  web container together with other apps and in core profile there is only one app)
+     */
+    private boolean includeWarContextPath = false;
     private final List<Consumer<ConfigBuilder>> builderConsumers = new ArrayList<>();
+    private final Set<String> skipContextPaths = new HashSet<>();
 
     /**
      * Access container's config builder.
@@ -114,6 +132,30 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
         this.inWebContainer = inWebContainer;
     }
 
+    public boolean isUseBeanXmlTemplate() {
+        return useBeanXmlTemplate;
+    }
+
+    public void setUseBeanXmlTemplate(boolean useBeanXmlTemplate) {
+        this.useBeanXmlTemplate = useBeanXmlTemplate;
+    }
+
+    public boolean isIncludeWarContextPath() {
+        return includeWarContextPath;
+    }
+
+    public void setIncludeWarContextPath(boolean includeWarContextPath) {
+        this.includeWarContextPath = includeWarContextPath;
+    }
+
+    public boolean isMultipleDeployments() {
+        return multipleDeployments;
+    }
+
+    public void setMultipleDeployments(boolean multipleDeployments) {
+        this.multipleDeployments = multipleDeployments;
+    }
+
     @Override
     public void validate() throws ConfigurationException {
         if ((port <= 0) || (port > Short.MAX_VALUE)) {
@@ -128,5 +170,21 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     ConfigBuilder useBuilder(ConfigBuilder configBuilder) {
         this.builderConsumers.forEach(builderConsumer -> builderConsumer.accept(configBuilder));
         return configBuilder;
+    }
+
+    /**
+     * Getter of skipContextPaths.
+     * @return the skipContextPaths
+     */
+    public Set<String> getSkipContextPaths() {
+        return skipContextPaths;
+    }
+
+    /**
+     * List of comma separated context roots that should be excluded.
+     * @param skipContextPaths the context paths
+     */
+    public void setSkipContextPaths(String skipContextPaths) {
+        this.skipContextPaths.addAll(Arrays.asList(skipContextPaths.trim().split(",")));
     }
 }

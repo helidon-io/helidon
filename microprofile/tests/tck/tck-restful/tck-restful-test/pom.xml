@@ -59,9 +59,28 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.glassfish.jersey.ext.cdi</groupId>
+                    <artifactId>jersey-weld2-se</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.rest-client</groupId>
+            <artifactId>helidon-microprofile-rest-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-binding</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.json.bind</groupId>
+            <artifactId>jakarta.json.bind-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
@@ -82,6 +101,20 @@
                 </configuration>
             </plugin>
             <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -90,55 +123,26 @@
                     <dependenciesToScan>
                         <dependency>jakarta.ws.rs:jakarta-restful-ws-tck</dependency>
                     </dependenciesToScan>
+                    <excludedGroups>xml_binding,servlet,security,se_bootstrap</excludedGroups>
                     <includes>
                         <include>*IT.java</include>
                     </includes>
                     <excludes>
-                        <!-- Gets stuck -->
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/core/request/JAXRSClientIT.java</exclude>
-                        <!-- FIXME: Next tests must be enabled -->
-                        <exclude>ee.jakarta.tck.ws.rs.ee.resource.webappexception.mapper.JAXRSClientIT</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/client/exceptions/ClientExceptionsIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/container/responsecontext/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/pathparam/sub/JAXRSSubClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/matrixparam/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/resourceconstructor/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/pathparam/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/beanparam/plain/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/ext/providers/JAXRSProvidersClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/jaxrs21/ee/sse/sseeventsink/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/provider/sort/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/cookieparam/locator/JAXRSLocatorClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/headerparam/sub/JAXRSSubClientIT.java</exclude>
+                        <!-- Requires this in Jersey https://github.com/eclipse-ee4j/jersey/pull/5490 -->
                         <exclude>ee/jakarta/tck/ws/rs/jaxrs21/ee/sse/sseeventsource/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/ext/paramconverter/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/beanparam/matrix/plain/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/beanparam/path/plain/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/pathparam/locator/JAXRSLocatorClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/provider/standard/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/signaturetest/jaxrs/JAXRSSigTestIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/queryparam/sub/JAXRSSubClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/jaxrs21/ee/client/executor/rx/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/contextprovider/JsonbContextProviderIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/resource/locator/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/matrixparam/locator/JAXRSLocatorClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/jaxrs21/ee/sse/ssebroadcaster/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/core/configurable/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/resource/annotationprecedence/subclass/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/sebootstrap/SeBootstrapIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/core/uriinfo/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/cookieparam/sub/JAXRSSubClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/matrixparam/sub/JAXRSSubClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/formparam/sub/JAXRSSubClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/formparam/locator/JAXRSLocatorClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/servlet3/rs/applicationpath/JAXRSClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/headerparam/locator/JAXRSLocatorClientIT.java</exclude>
-                        <exclude>ee/jakarta/tck/ws/rs/spec/resource/valueofandfromstring/JAXRSClientIT.java</exclude>
+                        <!-- TCK Challenge: https://github.com/jakartaee/rest/issues/1199 -->
+                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/container/responsecontext/JAXRSClientIT.java</exclude>
                     </excludes>
-                    <excludedGroups>xml_binding,servlet,security</excludedGroups>
                     <systemPropertyVariables>
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>
+                        <jersey.config.client.ignoreExceptionResponse>false</jersey.config.client.ignoreExceptionResponse>
+                        <jersey.config.allowSystemPropertiesProvider>true</jersey.config.allowSystemPropertiesProvider>
+                        <org.jboss.weld.bootstrap.concurrentDeployment>false</org.jboss.weld.bootstrap.concurrentDeployment>
+                        <org.jboss.weld.construction.relaxed>false</org.jboss.weld.construction.relaxed>
+                        <org.jboss.weld.executor.threadPoolType>SINGLE_THREAD</org.jboss.weld.executor.threadPoolType>
+                        <jimage.dir>${project.build.directory}/jdk11-bundle</jimage.dir>
+                        <signature.sigTestClasspath>${project.build.directory}/lib/jakarta.xml.bind-api-${version.lib.jakarta.xml.bind-api}.jar:${project.build.directory}/lib/jakarta.ws.rs-api-${version.lib.jakarta.jaxrs-api}.jar:${project.build.directory}/jdk11-bundle/java.base:${project.build.directory}/jdk11-bundle/java.rmi:${project.build.directory}/jdk11-bundle/java.sql:${project.build.directory}/jdk11-bundle/java.naming</signature.sigTestClasspath>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

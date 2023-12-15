@@ -33,33 +33,6 @@
 
     <modules>
         <module>tck-jsonp-test</module>
+        <module>tck-jsonp-pluggability-test</module>
     </modules>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://www.eclipse.org/downloads/download.php?file=/ee4j/jakartaee-tck/jakartaee10/promoted/eftl/jakarta-jsonp-tck-2.1.0.zip" dest="jakarta-jsonp-tck-2.1.0.zip"/>
-                                <unzip src="jakarta-jsonp-tck-2.1.0.zip" dest="./target"/>
-                                <copy file="artifact-install.sh" todir="target/jsonp-tck/artifacts"/>
-                                <chmod file="target/jsonp-tck/artifacts/artifact-install.sh" perm="+x"/>
-                                <exec dir="target/jsonp-tck/artifacts" executable="sh">
-                                    <arg line="artifact-install.sh 2.1.0"/>
-                                </exec>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

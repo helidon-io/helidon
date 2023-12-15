@@ -29,6 +29,7 @@
     <container qualifier="helidon-embedded" default="true">
         <configuration>
             <property name="inWebContainer">true</property>
+            <property name="useBeanXmlTemplate">false</property>
         </configuration>
     </container>
 </arquillian>

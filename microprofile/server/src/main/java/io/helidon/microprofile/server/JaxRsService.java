@@ -69,9 +69,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
-import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
-import static org.glassfish.jersey.server.ServerProperties.WADL_FEATURE_DISABLE;
-
 class JaxRsService implements HttpService {
     /**
      * If set to {@code "true"}, Jersey will ignore responses in exceptions.
@@ -98,8 +95,6 @@ class JaxRsService implements HttpService {
     }
 
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
-        resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
-        resourceConfig.property(WADL_FEATURE_DISABLE, "true");
 
         InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
@@ -121,7 +116,7 @@ class JaxRsService implements HttpService {
         return new JaxRsService(resourceConfig, appHandler, container);
     }
 
-    static String basePath(UriPath path) {
+    private static String basePath(UriPath path) {
         String reqPath = path.path();
         String absPath = path.absolute().path();
         String basePath = absPath.substring(0, absPath.length() - reqPath.length() + 1);
@@ -179,14 +174,6 @@ class JaxRsService implements HttpService {
         return application;
     }
 
-    private static URI baseUri(ServerRequest req) {
-        String uri = (req.isSecure() ? "https" : "http")
-                + "://" + req.authority()
-                + basePath(req.path());
-
-        return URI.create(uri);
-    }
-
     private void handle(ServerRequest req, ServerResponse res) {
         Context context = req.context();
 
@@ -199,19 +186,9 @@ class JaxRsService implements HttpService {
     }
 
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
-        URI baseUri = baseUri(req);
-        URI requestUri;
-
-        String rawPath = req.path().rawPath();
-        rawPath = rawPath.startsWith("/") ? rawPath.substring(1) : rawPath;
-        if (req.query().isEmpty()) {
-            requestUri = baseUri.resolve(rawPath);
-        } else {
-            requestUri = baseUri.resolve(rawPath + "?" + req.query().rawValue());
-        }
-
-        ContainerRequest requestContext = new ContainerRequest(baseUri,
-                                                               requestUri,
+        BaseUriRequestUri uris = BaseUriRequestUri.resolve(req);
+        ContainerRequest requestContext = new ContainerRequest(uris.baseUri,
+                                                               uris.requestUri,
                                                                req.prologue().method().text(),
                                                                new HelidonMpSecurityContext(), new MapPropertiesDelegate(),
                                                                resourceConfig);
@@ -357,7 +334,7 @@ class JaxRsService implements HttpService {
             if (contentLength > 0) {
                 res.header(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
-            this.outputStream = new NoFlushOutputStream(res.outputStream());
+            this.outputStream = res.outputStream();
             return outputStream;
         }
 
@@ -414,36 +391,25 @@ class JaxRsService implements HttpService {
         }
     }
 
-    private static class NoFlushOutputStream extends OutputStream {
-        private final OutputStream delegate;
+    private static class BaseUriRequestUri {
+        private final URI baseUri;
+        private final URI requestUri;
 
-        private NoFlushOutputStream(OutputStream delegate) {
-            this.delegate = delegate;
+        private BaseUriRequestUri(URI baseUri, URI requestUri) {
+            this.baseUri = baseUri;
+            this.requestUri = requestUri;
         }
 
-        @Override
-        public void write(byte[] b) throws IOException {
-            delegate.write(b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            delegate.write(b, off, len);
-        }
-
-        @Override
-        public void flush() {
-            // intentional no-op, flush did not work nicely with Jersey
-        }
-
-        @Override
-        public void close() throws IOException {
-            delegate.close();
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            delegate.write(b);
+        private static BaseUriRequestUri resolve(ServerRequest req) {
+            String processedBasePath = basePath(req.path());
+            String rawPath = req.path().absolute().rawPath();
+            String prefix = (req.isSecure() ? "https" : "http") + "://" + req.authority();
+            String serverBasePath = prefix + processedBasePath;
+            String requestPath = prefix + rawPath;
+            if (!req.query().isEmpty()) {
+                requestPath = requestPath + "?" + req.query().rawValue();
+            }
+            return new BaseUriRequestUri(URI.create(serverBasePath), URI.create(requestPath));
         }
     }
 }

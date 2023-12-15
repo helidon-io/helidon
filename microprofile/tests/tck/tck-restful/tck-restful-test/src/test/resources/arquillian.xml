@@ -30,6 +30,10 @@
         <configuration>
             <property name="useRelativePath">false</property>
             <property name="inWebContainer">true</property>
+            <!-- https://github.com/jakartaee/rest/issues/1190 -->
+            <property name="includeWarContextPath">true</property>
+            <property name="skipContextPaths">jaxrs_contextprovider_jsonb_web,jaxrs_client_exceptions</property>
+            <property name="multipleDeployments">false</property>
         </configuration>
     </container>
 </arquillian>

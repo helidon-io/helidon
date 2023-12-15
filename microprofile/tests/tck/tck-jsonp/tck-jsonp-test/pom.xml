@@ -36,6 +36,10 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.netbeans.tools</groupId>
+            <artifactId>sigtest-maven-plugin</artifactId>
+        </dependency>
         <!-- Dependencies coming from below maven-antrun-plugin -->
         <dependency>
             <groupId>jakarta.json</groupId>
@@ -59,6 +63,20 @@
                 </configuration>
             </plugin>
             <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -66,8 +84,12 @@
                         <dependency>jakarta.json:jakarta.json-tck-tests</dependency>
                     </dependenciesToScan>
                     <includes>
-                        <include>*Tests.java</include>
+                        <include>*Test*.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <jimage.dir>${project.build.directory}/jdk11-bundle</jimage.dir>
+                        <signature.sigTestClasspath>${project.build.directory}/lib/jakarta.json-api-${version.lib.jakarta.jsonp-api}.jar:${project.build.directory}/jdk11-bundle/java.base:${project.build.directory}/jdk11-bundle/java.rmi:${project.build.directory}/jdk11-bundle/java.sql:${project.build.directory}/jdk11-bundle/java.naming</signature.sigTestClasspath>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

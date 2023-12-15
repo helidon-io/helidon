@@ -43,6 +43,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse</groupId>
             <artifactId>yasson</artifactId>
             <!-- FIXME update it in dependencies/pom.xml. Currently this version makes opentracing tcks to fail  -->
@@ -59,6 +63,20 @@
                 </configuration>
             </plugin>
             <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -68,11 +86,11 @@
                     <includes>
                         <include>*Test.java</include>
                     </includes>
-                    <excludes>
-                        <exclude>*CDITest.java</exclude>
-                        <exclude>*JSONBSigTest.java</exclude>
-                        <exclude>NumberFormatCustomizationTest.java</exclude>
-                    </excludes>
+                    <systemPropertyVariables>
+                        <java.locale.providers>COMPAT,CLDR</java.locale.providers>
+                        <jimage.dir>${project.build.directory}/jdk11-bundle</jimage.dir>
+                        <signature.sigTestClasspath>${project.build.directory}/lib/jakarta.json.bind-api-${version.lib.jakarta.jsonb-api}.jar:${project.build.directory}/jdk11-bundle/java.base:${project.build.directory}/jdk11-bundle/java.rmi:${project.build.directory}/jdk11-bundle/java.sql:${project.build.directory}/jdk11-bundle/java.naming</signature.sigTestClasspath>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

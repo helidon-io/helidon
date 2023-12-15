@@ -27,7 +27,7 @@
     </engine>
     <container qualifier="helidon-embedded" default="true">
         <configuration>
-            <property name="useWebInfBeans">true</property>
+            <property name="inWebContainer">true</property>
         </configuration>
     </container>
 </arquillian>
