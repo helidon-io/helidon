@@ -58,14 +58,14 @@ interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * health could be enabled by setting {@code tracing.paths.0.path=/observe/health} and
      * {@code tracing.paths.0.enabled=true}.
      *
-     * We disable both the SE-style paths ({@code /observe/health}) and the MP-style paths ({@code /health}).
+     * By default we disable both the SE-style paths ({@code /observe/health}) and the MP-style paths ({@code /health}).
      */
     /**
      * Path specific configuration of tracing.
      *
      * @return configuration of tracing for specific paths
      */
-    @Option.Configured
+    @Option.Configured("paths")
     @Option.Singular
     @Option.DefaultCode("new @java.util.ArrayList@(@java.util.List@.of(PathTracingConfig.builder()\n"
             + "                                  .path(\"/metrics/*\")\n"
@@ -91,7 +91,7 @@ interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
             + "                                  .path(\"/observe/openapi/*\")\n"
             + "                                  .tracingConfig(TracingConfig.DISABLED)\n"
             + "                                  .build()))")
-    List<PathTracingConfig> paths();
+    List<PathTracingConfig> pathConfigs();
 
     /**
      * Tracer to use to extract inbound span context.

@@ -604,7 +604,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
         public void setup(HttpRouting.Builder routing) {
             routing.addFilter(new TracingFilter(config.tracer(),
                                                 config.envConfig(),
-                                                config.paths(),
+                                                config.pathConfigs(),
                                                 socketTag));
         }
     }
