@@ -93,6 +93,7 @@ public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Wei
      * to the integration).
      */
     public static final String CONTEXT_ADD_HEADERS = "security.addHeaders";
+    public static final String CONTEXT_RESPONSE_HEADERS = "security.responseHeaders";
 
     private static final Logger LOGGER = Logger.getLogger(SecurityHttpFeature.class.getName());
 

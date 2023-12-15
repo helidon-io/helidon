@@ -35,6 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @AddConfig(key = "security.providers.1.oidc.cookie-use", value = "false")
 @AddConfig(key = "security.providers.1.oidc.query-param-use", value = "true")
+@AddConfig(key = "server.protocols.http_1_1.max-prologue-length", value = "4096")
 class QueryBasedLoginIT extends CommonLoginBase {
 
     @Test

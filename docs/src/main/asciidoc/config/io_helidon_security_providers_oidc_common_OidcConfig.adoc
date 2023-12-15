@@ -60,6 +60,21 @@ Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc.common/io/helid
 |`client-timeout-millis` |Duration |`30000` |Timeout of calls using web client.
 |`cookie-domain` |string |{nbsp} |Domain the cookie is valid for.
  Not used by default.
+|`cookie-encryption-enabled` |boolean |`false` |Whether to encrypt token cookie created by this microservice.
+ Defaults to `false`.
+|`cookie-encryption-enabled-id-token` |boolean |`true` |Whether to encrypt id token cookie created by this microservice.
+ Defaults to `true`.
+|`cookie-encryption-enabled-refresh-token` |boolean |`true` |Whether to encrypt refresh token cookie created by this microservice.
+ Defaults to `true`.
+|`cookie-encryption-enabled-tenant-name` |boolean |`true` |Whether to encrypt tenant name cookie created by this microservice.
+ Defaults to `true`.
+|`cookie-encryption-name` |string |{nbsp} |Name of the encryption configuration available through Security#encrypt(String, byte[]) and
+ Security#decrypt(String, String).
+ If configured and encryption is enabled for any cookie,
+ Security MUST be configured in global or current `io.helidon.common.context.Context` (this
+ is done automatically in Helidon MP).
+|`cookie-encryption-password` |char[] |{nbsp} |Master password for encryption/decryption of cookies. This must be configured to the same value on each microservice
+ using the cookie.
 |`cookie-http-only` |boolean |`true` |When using cookie, if set to true, the HttpOnly attribute will be configured.
  Defaults to `OidcCookieHandler.Builder#DEFAULT_HTTP_ONLY`.
 |`cookie-max-age-seconds` |long |{nbsp} |When using cookie, used to set MaxAge attribute of the cookie, defining how long
@@ -67,6 +82,13 @@ Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc.common/io/helid
  Not used by default.
 |`cookie-name` |string |`JSESSIONID` |Name of the cookie to use.
  Defaults to `DEFAULT_COOKIE_NAME`.
+|`cookie-name-id-token` |string |`JSESSIONID_2` |Name of the cookie to use for id token.
+ Defaults to `DEFAULT_COOKIE_NAME`_2.
+
+ This cookie is only used when logout is enabled, as otherwise it is not needed.
+ Content of this cookie is encrypted.
+|`cookie-name-refresh-token` |string |`JSESSIONID_3` |The name of the cookie to use for the refresh token.
+ Defaults to `DEFAULT_REFRESH_COOKIE_NAME`.
 |`cookie-name-tenant` |string |`HELIDON_TENANT` |The name of the cookie to use for the tenant name.
  Defaults to `DEFAULT_TENANT_COOKIE_NAME`.
 |`cookie-path` |string |`/` |Path the cookie is valid for.
@@ -86,6 +108,9 @@ Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc.common/io/helid
  process header containing a JWT.
  Default is "Authorization" header with a prefix "bearer ".
 |`header-use` |boolean |`true` |Whether to expect JWT in a header field.
+|`id-token-signature-validation` |boolean |`true` |Whether id token signature check should be enabled.
+ Signature check is enabled by default, and it is highly recommended to not change that.
+ Change this setting only when you really know what you are doing, otherwise it could case security issues.
 |`identity-uri` |URI |{nbsp} |URI of the identity server, base used to retrieve OIDC metadata.
 |`introspect-endpoint-uri` |URI |{nbsp} |Endpoint to use to validate JWT.
  Either use this or set #signJwk(JwkKeys) or #signJwk(Resource).
@@ -107,7 +132,8 @@ Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc.common/io/helid
  Defaults to `DEFAULT_PROXY_PORT`
 |`proxy-protocol` |string |`http` |Proxy protocol to use when proxy is used.
  Defaults to `DEFAULT_PROXY_PROTOCOL`.
-|`query-param-name` |string |`accessToken` |Name of a query parameter that contains the JWT token when parameter is used.
+|`query-id-token-param-name` |string |`id_token` |Name of a query parameter that contains the JWT id token when parameter is used.
+|`query-param-name` |string |`accessToken` |Name of a query parameter that contains the JWT access token when parameter is used.
 |`query-param-tenant-name` |string |`h_tenant` |Name of a query parameter that contains the tenant name when the parameter is used.
  Defaults to #DEFAULT_TENANT_PARAM_NAME.
 |`query-param-use` |boolean |`false` |Whether to use a query parameter to send JWT token from application to this
@@ -151,6 +177,9 @@ Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc.common/io/helid
  code.
  If not defined, it is obtained from #oidcMetadata(Resource), if that is not defined
  an attempt is made to use #identityUri(URI)/oauth2/v1/token.
+|`token-signature-validation` |boolean |`true` |Whether access token signature check should be enabled.
+ Signature check is enabled by default, and it is highly recommended to not change that.
+ Change this setting only when you really know what you are doing, otherwise it could case security issues.
 |`validate-jwt-with-jwk` |boolean |`true` |Use JWK (a set of keys to validate signatures of JWT) to validate tokens.
  Use this method when you want to use default values for JWK or introspection endpoint URI.
 

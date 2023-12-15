@@ -151,6 +151,7 @@ public final class OidcFeature implements HttpFeature {
     private final OidcConfig oidcConfig;
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
+    private final OidcCookieHandler refreshTokenCookieHandler;
     private final OidcCookieHandler tenantCookieHandler;
     private final boolean enabled;
     private final CorsSupport corsSupport;
@@ -160,6 +161,7 @@ public final class OidcFeature implements HttpFeature {
         this.enabled = builder.enabled;
         this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
         this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+        this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
         this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
         this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
         this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
@@ -321,6 +323,7 @@ public final class OidcFeature implements HttpFeature {
             headers.addCookie(tokenCookieHandler.removeCookie().build());
             headers.addCookie(idTokenCookieHandler.removeCookie().build());
             headers.addCookie(tenantCookieHandler.removeCookie().build());
+            headers.addCookie(refreshTokenCookieHandler.removeCookie().build());
 
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, sb.toString())
@@ -450,14 +453,18 @@ public final class OidcFeature implements HttpFeature {
                                        ServerResponse res,
                                        JsonObject json,
                                        String tenantName) {
-        String tokenValue = json.getString("access_token");
+        String accessToken = json.getString("access_token");
         String idToken = json.getString("id_token", null);
+        String refreshToken = json.getString("refresh_token", null);
 
         //redirect to "state"
         String state = req.query().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
         res.status(Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
-            state += (state.contains("?") ? "&" : "?") + oidcConfig.paramName() + "=" + tokenValue;
+            state += (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
+            if (idToken != null) {
+                state += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken;
+            }
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
                 state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
             }
@@ -473,9 +480,10 @@ public final class OidcFeature implements HttpFeature {
                 OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
 
                 headers.addCookie(tenantCookieHandler.createCookie(tenantName).build()); //Add tenant name cookie
-                headers.addCookie(tokenCookieHandler.createCookie(tokenValue).build());  //Add token cookie
+                headers.addCookie(tokenCookieHandler.createCookie(accessToken).build());  //Add token cookie
+                headers.addCookie(refreshTokenCookieHandler.createCookie(refreshToken).build());  //Add refresh token cookie
 
-                if (idToken != null && oidcConfig.logoutEnabled()) {
+                if (idToken != null) {
                     headers.addCookie(idTokenCookieHandler.createCookie(idToken).build());  //Add token id cookie
                 }
                 res.send();
