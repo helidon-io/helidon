@@ -35,8 +35,8 @@
     <source src="observability.xml"/>
     <exec src="database-outputs.xml" if="${db}"/>
     <source src="security-outputs.xml" if="${security}"/>
-    <exec src="/common/logging-outputs.xml"/>
     <source src="logging-outputs.xml" if="${logging}"/>
+    <exec src="/common/logging-outputs.xml"/>
     <output>
         <templates engine="mustache" transformations="mustache" if="${application-yaml}">
             <directory>files</directory>

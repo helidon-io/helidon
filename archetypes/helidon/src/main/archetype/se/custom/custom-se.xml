@@ -32,8 +32,8 @@
     <exec src="/common/packaging.xml"/>
     <exec src="database-output.xml" if="${db}"/>
     <source src="security-outputs.xml" if="${security}"/>
-    <exec src="/common/logging-outputs.xml"/>
     <source src="logging-outputs.xml" if="${logging}"/>
+    <exec src="/common/logging-outputs.xml"/>
 
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
