@@ -169,6 +169,10 @@ public final class TypeNames {
      * Helidon access modifier (enum).
      */
     public static final TypeName ACCESS_MODIFIER = TypeName.create(AccessModifier.class);
+    /**
+     * Helidon Generated annotation type.
+     */
+    public static final TypeName GENERATED = TypeName.create("io.helidon.common.Generated");
 
     private TypeNames() {
     }

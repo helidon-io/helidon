@@ -28,6 +28,7 @@ import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.inject.codegen.spi.InjectCodegenExtensionProvider;
 import io.helidon.inject.codegen.spi.InjectCodegenObserverProvider;
 
@@ -53,8 +54,10 @@ public class InjectCodegenProvider implements CodegenExtensionProvider {
                             .flatMap(it -> it.supportedOptions().stream()))
             .collect(Collectors.toUnmodifiableSet());
 
-    private static final Set<TypeName> SUPPORTED_ANNOTATIONS = EXTENSIONS.stream()
-            .flatMap(it -> it.supportedAnnotations().stream())
+    private static final Set<TypeName> SUPPORTED_ANNOTATIONS = Stream.concat(EXTENSIONS.stream()
+                                                                                     .flatMap(it -> it.supportedAnnotations()
+                                                                                             .stream()),
+                                                                             Stream.of(TypeNames.GENERATED))
             .collect(Collectors.toUnmodifiableSet());
 
     private static final Set<String> SUPPORTED_ANNOTATION_PACKAGES =
