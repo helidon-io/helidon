@@ -102,8 +102,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Ainject.debug=${inject.debug}</arg>
-                        <arg>-Ainject.application.pre.create=true</arg>
                         <arg>-Ainject.mapApplicationToSingletonScope=true</arg>
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
@@ -188,11 +186,9 @@
                 </executions>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Ainject.debug=${inject.debug}</arg>
                         <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
-                        <arg>-Ainject.application.pre.create=true</arg>
                     </compilerArgs>
-                    <permittedProviderTypes>NAMED</permittedProviderTypes>
+                    <permittedProviderType>NAMED</permittedProviderType>
                 </configuration>
             </plugin>
         </plugins>

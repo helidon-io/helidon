@@ -62,8 +62,6 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-Ainject.autoAddNonContractInterfaces=false</arg> <!-- this setting can be used to avoid the need for @Contract -->
-                        <arg>-Ainject.debug=false</arg>
-                        <arg>-Ainject.acceptPreview=true</arg>
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>

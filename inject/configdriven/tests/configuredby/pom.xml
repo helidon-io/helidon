@@ -95,7 +95,6 @@
                     <compilerArgs>
                         <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
                     </compilerArgs>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.inject.configdriven</groupId>

@@ -141,8 +141,9 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
                                                                      mavenLogger,
                                                                      myModuleInfo.orElse(null));
 
+        InjectionServices injectionServices = null;
         try {
-            InjectionServices injectionServices = MavenPluginUtils.injectionServices(false);
+            injectionServices = MavenPluginUtils.injectionServices(false);
             if (injectionServices.config().useApplication()) {
                 throw new IllegalStateException("Maven plugin service registry must not be using 'application' bindings");
             }
@@ -192,6 +193,13 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         } catch (Exception e) {
             throw new CodegenException("An error occurred creating the Application in " + getClass().getName(), e);
         } finally {
+            if (injectionServices != null) {
+                try {
+                    injectionServices.shutdown();
+                } catch (Exception e) {
+                    getLog().warn("Failed to shutdown services created to generate application", e);
+                }
+            }
             Thread.currentThread().setContextClassLoader(prev);
         }
     }

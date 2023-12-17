@@ -21,10 +21,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.LazyValue;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.ResettableHandler;
 import io.helidon.inject.ServiceProvider;
 
 final class MavenPluginUtils {
@@ -37,15 +35,7 @@ final class MavenPluginUtils {
      * @return injection services
      */
     static InjectionServices injectionServices(boolean wantApps) {
-        resetAll();
-        return lazyCreate(basicConfig(wantApps)).get();
-    }
-
-    /**
-     * Resets all internal Injection configuration instances, JVM global singletons, service registries, etc.
-     */
-    static void resetAll() {
-        Internal.reset();
+        return InjectionServices.create(basicConfig(wantApps));
     }
 
     /**
@@ -75,28 +65,10 @@ final class MavenPluginUtils {
         return coll.stream().map(MavenPluginUtils::toDescription).collect(Collectors.toList());
     }
 
-    static boolean hasValue(String val) {
-        return (val != null && !val.isBlank());
-    }
-
-    static LazyValue<InjectionServices> lazyCreate(InjectionConfig config) {
-        return LazyValue.create(() -> {
-            InjectionServices.configure(config);
-            return InjectionServices.instance();
-        });
-    }
-
     static InjectionConfig basicConfig(boolean apps) {
         return InjectionConfig.builder()
                 .useApplication(apps)
                 .permitsDynamic(true)
                 .build();
     }
-
-    private static class Internal extends ResettableHandler {
-        public static void reset() {
-            ResettableHandler.reset();
-        }
-    }
-
 }

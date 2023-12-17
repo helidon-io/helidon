@@ -52,6 +52,10 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
         this.config = config;
     }
 
+    static InjectionServices create(InjectionConfig injectionConfig) {
+        return new InjectionServicesImpl(injectionConfig);
+    }
+
     static InjectionServices instance() {
         Lock lock = INSTANCE_LOCK.readLock();
         try {

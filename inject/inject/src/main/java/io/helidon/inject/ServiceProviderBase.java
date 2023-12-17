@@ -394,6 +394,7 @@ public abstract class ServiceProviderBase<T>
             return ActivationResult.builder()
                     .serviceProvider(this)
                     .targetActivationPhase(Phase.DESTROYED)
+                    .finishingActivationPhase(currentPhase)
                     .finishingStatus(ActivationStatus.SUCCESS)
                     .build();
         }
