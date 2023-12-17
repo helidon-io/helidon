@@ -31,6 +31,7 @@ import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenFiler;
+import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.ModuleInfo;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
@@ -139,7 +140,8 @@ class InjectCodegen implements CodegenExtension {
 
         // generate module
         String moduleName = this.module == null ? currentModule.map(ModuleInfo::name).orElse(null) : module;
-        String packageName = topLevelPackage(generatedServiceDescriptors);
+        String packageName = CodegenOptions.CODEGEN_PACKAGE.findValue(ctx.options())
+                .orElseGet(() -> topLevelPackage(generatedServiceDescriptors));
         boolean hasModule = moduleName != null && !"unnamed module".equals(moduleName);
         if (!hasModule) {
             moduleName = "unnamed/" + packageName + (ctx.scope().isProduction() ? "" : "/" + ctx.scope().name());

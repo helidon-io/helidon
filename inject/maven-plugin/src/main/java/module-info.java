@@ -36,6 +36,4 @@ module io.helidon.inject.maven.plugin {
     requires io.github.classgraph;
 
     exports io.helidon.inject.maven.plugin;
-
-    uses io.helidon.inject.codegen.spi.InjectCodegenExtensionProvider;
 }

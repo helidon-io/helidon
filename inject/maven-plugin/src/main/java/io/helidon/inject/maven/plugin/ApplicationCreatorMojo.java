@@ -17,6 +17,7 @@
 package io.helidon.inject.maven.plugin;
 
 import java.io.File;
+import java.nio.file.Path;
 
 import io.helidon.codegen.CodegenScope;
 
@@ -32,14 +33,14 @@ import static io.helidon.inject.codegen.InjectionCodegenContext.APPLICATION_NAME
  */
 @Mojo(name = "application-create", defaultPhase = LifecyclePhase.COMPILE, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)
-@SuppressWarnings("unused")
 public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     /**
      * The classname to use for the {@link io.helidon.inject.Application} class.
      * If not found the classname will be inferred.
      */
-    @Parameter(property = "inject.application.class.name", readonly = true)
+    @Parameter(property = "inject.application.class.name",
+               defaultValue = APPLICATION_NAME)
     private String className;
 
     /**
@@ -61,18 +62,18 @@ public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
     }
 
     @Override
-    String getGeneratedClassName() {
-        return (className == null) ? APPLICATION_NAME : className;
+    protected String getGeneratedClassName() {
+        return className;
     }
 
     @Override
-    File getGeneratedSourceDirectory() {
-        return generatedSourcesDirectory;
+    protected Path generatedSourceDirectory() {
+        return generatedSourcesDirectory.toPath();
     }
 
     @Override
-    File getOutputDirectory() {
-        return outputDirectory;
+    protected Path outputDirectory() {
+        return outputDirectory.toPath();
     }
 
     @Override

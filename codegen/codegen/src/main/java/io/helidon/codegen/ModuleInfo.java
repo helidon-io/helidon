@@ -39,7 +39,7 @@ public interface ModuleInfo {
      */
     String DEFAULT_MODULE_NAME = "unnamed";
     /**
-     * The file name.
+     * The file name in sources ({@value}).
      */
     String FILE_NAME = "module-info.java";
 

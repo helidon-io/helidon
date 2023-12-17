@@ -47,7 +47,7 @@ class MavenCodegenContext extends CodegenContextBase implements CodegenContext {
         this.filer = filer;
     }
 
-    public static MavenCodegenContext create(CodegenOptions options,
+    static MavenCodegenContext create(CodegenOptions options,
                                              CodegenScope scope,
                                              Path generatedSourceDir,
                                              Path outputDirectory,

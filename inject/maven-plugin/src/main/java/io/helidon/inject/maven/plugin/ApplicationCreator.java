@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
-import io.helidon.codegen.CodegenScope;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
@@ -61,7 +60,7 @@ import io.helidon.inject.service.Qualifier;
 /**
  * The default implementation for {@link io.helidon.inject.maven.plugin.ApplicationCreator}.
  */
-public class ApplicationCreator {
+class ApplicationCreator {
     private static final TypeName MODULE_COMPONENT = TypeName.create(ModuleComponent.class);
     private static final TypeName APPLICATION = TypeName.create(ModuleComponent.class);
     private static final TypeName CREATOR = TypeName.create(ApplicationCreator.class);
@@ -80,14 +79,12 @@ public class ApplicationCreator {
     private final PermittedProviderType permittedProviderType;
     private final Set<TypeName> permittedProviderTypes;
     private final Set<TypeName> permittedProviderQualifierTypes;
-    private final String moduleName;
 
     ApplicationCreator(MavenCodegenContext scanContext, boolean failOnError) {
         this.ctx = scanContext;
         this.failOnError = failOnError;
 
         CodegenOptions options = scanContext.options();
-        this.moduleName = scanContext.moduleName().orElse(null);
         this.permittedProviderType = options.option(ApplicationOptions.PERMITTED_PROVIDER_TYPE,
                                                     PermittedProviderType.NAMED,
                                                     PermittedProviderType.class);
@@ -108,11 +105,13 @@ public class ApplicationCreator {
      * @param injectionServices injection services to use
      * @param serviceTypes      types to process
      * @param typeName          generated application type name
+     * @param moduleName        name of the module of this maven module
      * @param compilerOptions   compilation options
      */
     public void createApplication(InjectionServices injectionServices,
                                   Set<TypeName> serviceTypes,
                                   TypeName typeName,
+                                  String moduleName,
                                   CompilerOptions compilerOptions) {
         Objects.requireNonNull(injectionServices);
         Objects.requireNonNull(serviceTypes);
@@ -125,7 +124,7 @@ public class ApplicationCreator {
         }
 
         try {
-            codegen(injectionServices, serviceTypes, typeName, compilerOptions);
+            codegen(injectionServices, serviceTypes, typeName, moduleName, compilerOptions);
         } catch (CodegenException ce) {
             handleError(ce);
         } catch (Throwable te) {
@@ -136,6 +135,7 @@ public class ApplicationCreator {
     void codegen(InjectionServices injectionServices,
                  Set<TypeName> serviceTypes,
                  TypeName typeName,
+                 String moduleName,
                  CompilerOptions compilerOptions) {
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(CREATOR,
@@ -159,14 +159,12 @@ public class ApplicationCreator {
                                                              .build())
                 .addAnnotation(Annotations.DEPRECATED));
 
-        String applicationName = applicationName(moduleName, ctx.scope(), typeName);
-
         // public String name()
         classModel.addMethod(nameMethod -> nameMethod
                 .addAnnotation(Annotations.OVERRIDE)
                 .returnType(io.helidon.common.types.TypeNames.STRING)
                 .name("name")
-                .addContentLine("return \"" + applicationName + "\";"));
+                .addContentLine("return \"" + moduleName + "\";"));
 
         // public void configure(ServiceInjectionPlanBinder binder)
         classModel.addMethod(configureMethod -> configureMethod
@@ -273,16 +271,6 @@ public class ApplicationCreator {
                 !contractsImplemented.isEmpty()
                         && !contractsImplemented.contains(MODULE_COMPONENT)
                         && !contractsImplemented.contains(APPLICATION));
-    }
-
-    private String applicationName(String moduleName, CodegenScope scope, TypeName typeName) {
-        String applicationName = moduleName == null
-                ? "unnamed/" + typeName.packageName()
-                : moduleName;
-        if (!scope.isProduction()) {
-            applicationName = applicationName + "/" + scope.name();
-        }
-        return applicationName;
     }
 
     private boolean isAllowListedProviderQualifierTypeName(TypeName typeName,

@@ -16,46 +16,23 @@
 
 package io.helidon.inject.maven.plugin;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collection;
-import java.util.LinkedHashSet;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.codegen.CodegenException;
-import io.helidon.codegen.ModuleInfo;
-import io.helidon.common.types.TypeName;
-import io.helidon.inject.ServiceProvider;
-import io.helidon.inject.service.ModuleComponent;
+import io.helidon.codegen.CodegenOptions;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.inject.maven.plugin.MavenUtil.toSuggestedGeneratedPackageName;
-
 /**
  * Abstract base for all creator mojo's.
  */
-@SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
-public abstract class AbstractCreatorMojo extends AbstractMojo {
-    /**
-     * The file name written to ./target/inject/ to track the last package name generated for this application.
-     * This application package name is what we fall back to for the application name and the module name if not otherwise
-     * specified directly.
-     */
-    protected static final String APPLICATION_PACKAGE_FILE_NAME = "app-package-name.txt";
-
+abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * Tag controlling whether we fail on error.
      */
@@ -66,67 +43,34 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      */
     static final String TAG_FAIL_ON_WARNING = "inject.failOnWarning";
 
-    static final String TAG_PACKAGE_NAME = "inject.package.name";
-    private final System.Logger logger = System.getLogger(getClass().getName());
-
     // ----------------------------------------------------------------------
     // Configurables
     // ----------------------------------------------------------------------
     /**
-     * The module name to apply. If not found the module name will be inferred.
+     * The module name to apply. If not found the module name will be inferred
+     * from {@code module-info.java} if present, or defined as {@code unnamed/package name}.
+     *
+     * @see io.helidon.codegen.CodegenOptions#TAG_CODEGEN_MODULE
      */
-    @Parameter(property = "helidon.codegen.module-name", readonly = true)
+    @Parameter(property = CodegenOptions.TAG_CODEGEN_MODULE)
     private String moduleName;
-
-    // ----------------------------------------------------------------------
-    // Generic Configurables
-    // ----------------------------------------------------------------------
-
     /**
-     * The current project instance. This is used for propagating generated-sources paths as
-     * compile/testCompile source roots.
+     * The package name to apply. If not found the package name will be inferred.
+     *
+     * @see io.helidon.codegen.CodegenOptions#TAG_CODEGEN_PACKAGE
      */
-    @Parameter(defaultValue = "${project}", readonly = true, required = true)
-    private MavenProject project;
-
+    @Parameter(property = CodegenOptions.TAG_CODEGEN_PACKAGE)
+    private String packageName;
     /**
      * Indicates whether the build will continue even if there are compilation errors.
      */
     @Parameter(property = TAG_FAIL_ON_ERROR, defaultValue = "true")
-    private boolean failOnError = true;
-
+    private boolean failOnError;
     /**
      * Indicates whether the build will continue even if there are any warnings.
      */
     @Parameter(property = TAG_FAIL_ON_WARNING)
     private boolean failOnWarning;
-
-    /**
-     * The -source argument for the Java compiler.
-     * Note: using the same as maven-compiler for convenience and least astonishment.
-     */
-    @Parameter(property = "maven.compiler.source", defaultValue = "21")
-    private String source;
-
-    /**
-     * The -target argument for the Java compiler.
-     * Note: using the same as maven-compiler for convenience and least astonishment.
-     */
-    @Parameter(property = "maven.compiler.target", defaultValue = "21")
-    private String target;
-
-    /**
-     * The target directory where to place output.
-     */
-    @Parameter(defaultValue = "${project.build.directory}", readonly = true)
-    private String targetDir;
-
-    /**
-     * The package name to apply. If not found the package name will be inferred.
-     */
-    @Parameter(property = TAG_PACKAGE_NAME, readonly = true)
-    private String packageName;
-
     /**
      * Sets the arguments to be passed to the compiler.
      * <p>
@@ -143,6 +87,23 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     @Parameter
     private List<String> compilerArgs;
 
+    // ----------------------------------------------------------------------
+    // Generic Configurables
+    // ----------------------------------------------------------------------
+
+    /**
+     * The current project instance. This is used for propagating generated-sources paths as
+     * compile/testCompile source roots.
+     */
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
+    private MavenProject project;
+
+    /**
+     * The target directory where to place output.
+     */
+    @Parameter(defaultValue = "${project.build.directory}", readonly = true)
+    private String targetDir;
+
     /**
      * Default constructor.
      */
@@ -150,27 +111,39 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     }
 
     @Override
-    public void execute() throws MojoExecutionException {
+    public final void execute() throws MojoExecutionException, MojoFailureException {
         try {
-            getLog().info("Started " + getClass().getName() + " for " + getProject());
+            getLog().info("Started " + getClass().getSimpleName());
             innerExecute();
-            getLog().info("Finishing " + getClass().getName() + " for " + getProject());
+        } catch (MojoFailureException | MojoExecutionException e) {
+            if (failOnError) {
+                throw e;
+            }
+            getLog().warn("Failed to process " + getClass().getSimpleName(), e);
         } catch (Throwable t) {
-            MojoExecutionException me = new MojoExecutionException("Injection maven-plugin execution failed", t);
-            getLog().error(me.getMessage(), t);
-            throw me;
-        } finally {
-            getLog().info("Finished " + getClass().getName() + " for " + getProject());
+            if (failOnError) {
+                throw new MojoExecutionException(t);
+            }
+            getLog().warn("Failed to process " + getClass().getSimpleName(), t);
         }
     }
+
+    /**
+     * Handle execution of this plugin. The {@link #execute()} method handles exceptions according to
+     * {@code failOnError} configuration.
+     *
+     * @throws org.apache.maven.plugin.MojoExecutionException as needed
+     * @throws org.apache.maven.plugin.MojoFailureException   as needed
+     */
+    protected abstract void innerExecute() throws MojoExecutionException, MojoFailureException;
 
     /**
      * The project build directory.
      *
      * @return the project build directory
      */
-    protected File getProjectBuildTargetDir() {
-        return new File(targetDir);
+    protected Path projectBuildTargetDir() {
+        return Paths.get(targetDir);
     }
 
     /**
@@ -178,217 +151,62 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @return the scratch directory
      */
-    protected File getInjectScratchDir() {
-        return new File(getProjectBuildTargetDir(), "inject");
+    protected Path injectScratchDir() {
+        return projectBuildTargetDir().resolve("inject");
     }
 
     /**
      * The target package name.
      *
-     * @return the target package name
+     * @return the target package name, if configured
      */
-    protected String getPackageName() {
-        return packageName;
+    protected Optional<String> packageNameFromMavenConfig() {
+        return Optional.ofNullable(packageName);
     }
 
-    System.Logger getLogger() {
-        return logger;
+    /**
+     * The module name of current module.
+     *
+     * @return the module name, if configured
+     */
+    protected Optional<String> moduleNameFromMavenConfig() {
+        return Optional.ofNullable(moduleName);
     }
 
-    String moduleName() {
-        return moduleName;
-    }
-
-    MavenProject getProject() {
+    /**
+     * The Maven project.
+     *
+     * @return maven project
+     */
+    protected MavenProject mavenProject() {
         return project;
     }
 
-    boolean isFailOnError() {
+    /**
+     * Whether to fail on error.
+     * Handled in {@link #execute()} by default.
+     *
+     * @return if processing should fail on error
+     */
+    protected boolean failOnError() {
         return failOnError;
     }
 
-    boolean isFailOnWarning() {
+    /**
+     * Whether to fail on warning.
+     *
+     * @return if processing should fail on warning
+     */
+    protected boolean failOnWarning() {
         return failOnWarning;
     }
 
-    String getSource() {
-        return source;
-    }
-
-    String getTarget() {
-        return target;
-    }
-
-    List<String> getCompilerArgs() {
+    /**
+     * List of compiler arguments (expected to start with {@code -A}).
+     *
+     * @return compiler arguments
+     */
+    protected List<String> getCompilerArgs() {
         return compilerArgs == null ? List.of() : compilerArgs;
-    }
-
-    /**
-     * Determines the primary package name (which also typically doubles as the application name).
-     *
-     * @param optModuleSp the module service provider
-     * @param typeNames   the type names
-     * @param descriptor  the descriptor
-     * @param sourceRoots source roots that contain current sources
-     * @param persistIt   pass true to write it to scratch, so that we can use it in the future for this module
-     * @return the package name (which also typically doubles as the application name)
-     */
-    protected String determinePackageName(Optional<ServiceProvider<ModuleComponent>> optModuleSp,
-                                          Collection<TypeName> typeNames,
-                                          ModuleInfo descriptor,
-                                          List<Path> sourceRoots,
-                                          boolean persistIt) {
-        String packageName = getPackageName();
-        if (packageName == null) {
-            // check for the existence of the file
-            packageName = loadAppPackageName().orElse(null);
-            if (packageName != null) {
-                return packageName;
-            }
-
-            ServiceProvider<ModuleComponent> moduleSp = optModuleSp.orElse(null);
-            if (moduleSp != null) {
-                packageName = moduleSp.serviceType().packageName();
-            } else {
-                if (descriptor == null) {
-                    if (!sourceRoots.isEmpty()) {
-                        packageName = packageFromSourceRoots(sourceRoots);
-                    }
-                    if (packageName == null) {
-                        packageName = toSuggestedGeneratedPackageName(typeNames, "inject");
-                    }
-                } else {
-                    if (!(sourceRoots.isEmpty() && descriptor.name().equals(ModuleInfo.DEFAULT_MODULE_NAME))) {
-                        packageName = packageFromSourceRoots(sourceRoots);
-                    }
-                    if (packageName == null) {
-                        packageName = toSuggestedGeneratedPackageName(typeNames, "inject", descriptor);
-                    }
-                }
-            }
-        }
-
-        if (packageName == null || packageName.isBlank()) {
-            throw new CodegenException("Unable to determine the package name. The package name can be set using "
-                                               + TAG_PACKAGE_NAME);
-        }
-
-        if (persistIt) {
-            // record it to scratch file for later consumption (during test build for example)
-            saveAppPackageName(packageName);
-        }
-
-        return packageName;
-    }
-
-    /**
-     * Attempts to load the app package name from what was previously recorded.
-     *
-     * @return the app package name that was loaded
-     */
-    protected Optional<String> loadAppPackageName() {
-        return MavenUtil.loadAppPackageName(getInjectScratchDir().toPath());
-    }
-
-    /**
-     * Persist the package name into scratch for later usage.
-     *
-     * @param packageName the package name
-     */
-    protected void saveAppPackageName(String packageName) {
-        MavenUtil.saveAppPackageName(getInjectScratchDir().toPath(), packageName);
-    }
-
-    /**
-     *
-     *
-     * @throws MojoExecutionException if any mojo problems occur
-     */
-    protected abstract void innerExecute() throws MojoExecutionException, MojoFailureException;
-
-    LinkedHashSet<Path> getDependencies(String optionalScopeFilter) {
-        MavenProject project = getProject();
-        LinkedHashSet<Path> result = new LinkedHashSet<>();
-        for (Object a : project.getCompileArtifacts()) {
-            Artifact artifact = (Artifact) a;
-            if (optionalScopeFilter == null || optionalScopeFilter.equals(artifact.getScope())) {
-                result.add(artifact.getFile().toPath());
-            }
-        }
-        return result;
-    }
-
-    LinkedHashSet<Path> getSourceClasspathElements() {
-        MavenProject project = getProject();
-        LinkedHashSet<Path> result = new LinkedHashSet<>(project.getCompileArtifacts().size());
-        result.add(new File(project.getBuild().getOutputDirectory()).toPath());
-        for (Object a : project.getCompileArtifacts()) {
-            result.add(((Artifact) a).getFile().toPath());
-        }
-        return result;
-    }
-
-    /**
-     * Provides a convenient way to handle test scope. Returns the classpath for source files (or test sources) only.
-     */
-    LinkedHashSet<Path> getClasspathElements() {
-        return getSourceClasspathElements();
-    }
-
-    abstract File getGeneratedSourceDirectory();
-
-    private String packageFromSourceRoots(List<Path> sourceRoots) {
-        // we are interested in the shortest path that contains a java file other than module-info.java
-        AtomicReference<String> foundPackage = new AtomicReference<>();
-
-        for (Path sourceRoot : sourceRoots) {
-            try {
-                if (!Files.exists(sourceRoot)) {
-                    continue;
-                }
-                Files.walkFileTree(sourceRoot, new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                        if (foundPackage.get() == null) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        String packageName = toPackageName(sourceRoot, dir);
-                        if (packageName.isBlank()) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (packageName.length() > foundPackage.get().length()) {
-                            return FileVisitResult.SKIP_SUBTREE;
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        String fileName = String.valueOf(file.getFileName());
-                        if (fileName.equals("module-info.java")) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (fileName.endsWith(".java")) {
-                            String packageName = toPackageName(sourceRoot, file.getParent());
-                            String current = foundPackage.get();
-                            if (current == null || current.length() > packageName.length()) {
-                                foundPackage.set(packageName);
-                            }
-                            return FileVisitResult.SKIP_SIBLINGS;
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        return foundPackage.get();
-    }
-
-    private String toPackageName(Path root, Path resolved) {
-        Path relativize = root.relativize(resolved);
-        return relativize.toString().replace('\\', '/').replace('/', '.');
     }
 }

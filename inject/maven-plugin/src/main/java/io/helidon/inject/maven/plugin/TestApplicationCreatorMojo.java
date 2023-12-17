@@ -31,7 +31,6 @@ import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.Services;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.model.Build;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -40,8 +39,6 @@ import org.apache.maven.project.MavenProject;
 
 import static io.helidon.inject.codegen.InjectionCodegenContext.APPLICATION_NAME;
 import static io.helidon.inject.maven.plugin.MavenPluginUtils.injectionServices;
-import static io.helidon.inject.maven.plugin.MavenUtil.toBasePath;
-import static io.helidon.inject.maven.plugin.MavenUtil.toSuggestedModuleName;
 
 /**
  * A mojo wrapper to {@link ApplicationCreator} for test specific types.
@@ -55,10 +52,8 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
      * The classname to use for the {@link io.helidon.inject.Application} test class.
      * If not found the classname will be inferred.
      */
-    @Parameter(property = "io.helidon.inject.application.class.name", readonly = true
-               // note: the default value handling doesn't work here for "$$"!!
-               //               defaultValue = DefaultApplicationCreator.APPLICATION_NAME
-               )
+    @Parameter(property = "io.helidon.inject.application.class.name",
+               defaultValue = "Test" + APPLICATION_NAME)
     private String className;
 
     /**
@@ -81,23 +76,23 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
     }
 
     @Override
-    File getGeneratedSourceDirectory() {
-        return generatedTestSourcesDirectory;
+    protected Path generatedSourceDirectory() {
+        return generatedTestSourcesDirectory.toPath();
     }
 
     @Override
-    File getOutputDirectory() {
-        return testOutputDirectory;
+    protected Path outputDirectory() {
+        return testOutputDirectory.toPath();
     }
 
     @Override
-    List<Path> getSourceRootPaths() {
-        return getTestSourceRootPaths();
+    protected List<Path> sourceRootPaths() {
+        return testSourceRootPaths();
     }
 
     @Override
-    LinkedHashSet<Path> getClasspathElements() {
-        MavenProject project = getProject();
+    protected LinkedHashSet<Path> getClasspathElements() {
+        MavenProject project = mavenProject();
         LinkedHashSet<Path> result = new LinkedHashSet<>(project.getTestArtifacts().size());
         result.add(new File(project.getBuild().getTestOutputDirectory()).toPath());
         for (Object a : project.getTestArtifacts()) {
@@ -113,27 +108,19 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
     }
 
     @Override
-    String getThisModuleName() {
-        Build build = getProject().getBuild();
-        Path basePath = toBasePath(build.getTestSourceDirectory());
-        String moduleName = toSuggestedModuleName(basePath, Path.of(build.getTestOutputDirectory()), true).orElseThrow();
-        return moduleName;
-    }
-
-    @Override
-    String getGeneratedClassName() {
-        return (className == null) ? "Test" + APPLICATION_NAME : className;
+    protected String getGeneratedClassName() {
+        return className;
     }
 
     /**
      * Excludes everything from source main scope.
      */
     @Override
-    Set<TypeName> getServiceTypeNamesForExclusion() {
+    protected Set<TypeName> serviceTypeNamesForExclusion() {
         Set<Path> classPath = getSourceClasspathElements();
 
         ClassLoader prev = Thread.currentThread().getContextClassLoader();
-        URLClassLoader loader = MavenUtil.createClassLoader(classPath, prev);
+        URLClassLoader loader = createClassLoader(classPath, prev);
 
         try {
             Thread.currentThread().setContextClassLoader(loader);

@@ -29,6 +29,15 @@ import io.helidon.common.GenericType;
  */
 public interface CodegenOptions {
     /**
+     * Tag to define custom module name.
+     */
+    String TAG_CODEGEN_MODULE = "helidon.codegen.module-name";
+    /**
+     * Tag to define custom package name.
+     */
+    String TAG_CODEGEN_PACKAGE = "helidon.codegen.module-name";
+
+    /**
      * Codegen option to configure codegen scope.
      */
     Option<CodegenScope> CODEGEN_SCOPE = Option.create("helidon.codegen.scope",
@@ -41,9 +50,16 @@ public interface CodegenOptions {
     /**
      * Codegen option to configure module name of the module being processed.
      */
-    Option<String> CODEGEN_MODULE = Option.create("helidon.codegen.module-name",
+    Option<String> CODEGEN_MODULE = Option.create(TAG_CODEGEN_MODULE,
                                                   "Override name of the module that is being processed, or provide it"
                                                           + " if this module does not have a module-info.java",
+                                                  "");
+
+    /**
+     * Codegen option to configure module name of the module being processed.
+     */
+    Option<String> CODEGEN_PACKAGE = Option.create(TAG_CODEGEN_PACKAGE,
+                                                  "Define package to use for generated types.",
                                                   "");
     /**
      * Codegen option to configure which indent type to use (a space character, or a tab character).
@@ -54,7 +70,7 @@ public interface CodegenOptions {
                                                    IndentType::valueOf,
                                                    GenericType.create(IndentType.class));
     /**
-     * Codegen option to configure how many time to repeat the {@link #INDENT_TYPE} for indentation.
+     * Codegen option to configure how many times to repeat the {@link #INDENT_TYPE} for indentation.
      */
     Option<Integer> INDENT_COUNT = Option.create("helidon.codegen.indent.count",
                                                  "Number of indents to use (such as 4, if combined with SPACE will indent by 4 "
