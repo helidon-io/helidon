@@ -29,7 +29,6 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 class ModuleComponentHandler {
-    private static final String MODULE_NAME = "HelidonInjection__ModuleComponent";
     private static final TypeName GENERATOR = TypeName.create(ModuleComponentHandler.class);
 
     private ModuleComponentHandler() {
@@ -41,7 +40,7 @@ class ModuleComponentHandler {
                                       String packageName) {
         TypeName newType = TypeName.builder()
                 .packageName(packageName)
-                .className(scope.prefix() + MODULE_NAME)
+                .className(scope.prefix() + InjectionCodegenContext.MODULE_NAME)
                 .build();
 
         ClassModel.Builder builder = ClassModel.builder()

@@ -18,33 +18,21 @@ package io.helidon.inject.maven.plugin;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.InjectionServicesHolder;
-import io.helidon.inject.api.Phase;
-import io.helidon.inject.api.Resettable;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.configdriven.runtime.ConfigBeanRegistry;
-import io.helidon.inject.tools.spi.ActivatorCreator;
-import io.helidon.inject.tools.spi.ApplicationCreator;
-import io.helidon.inject.tools.spi.ExternalModuleCreator;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ResettableHandler;
+import io.helidon.inject.ServiceProvider;
 
 final class MavenPluginUtils {
     private MavenPluginUtils() {
     }
 
     /**
-     * Returns a {@link Services} registry that forces application loading to be disabled.
+     * Returns a {@link io.helidon.inject.Services} registry that forces application loading to be disabled.
      *
      * @return injection services
      */
@@ -60,18 +48,6 @@ final class MavenPluginUtils {
         Internal.reset();
     }
 
-    static ApplicationCreator applicationCreator() {
-        return HelidonServiceLoader.create(ServiceLoader.load(ApplicationCreator.class)).iterator().next();
-    }
-
-    static ExternalModuleCreator externalModuleCreator() {
-        return HelidonServiceLoader.create(ServiceLoader.load(ExternalModuleCreator.class)).iterator().next();
-    }
-
-    static ActivatorCreator activatorCreator() {
-        return HelidonServiceLoader.create(ServiceLoader.load(ActivatorCreator.class)).iterator().next();
-    }
-
     /**
      * Describe the provided instance or provider.
      *
@@ -79,12 +55,12 @@ final class MavenPluginUtils {
      * @return the description of the instance
      */
     static String toDescription(Object providerOrInstance) {
-        if (providerOrInstance instanceof Optional) {
-            providerOrInstance = ((Optional<?>) providerOrInstance).orElse(null);
+        if (providerOrInstance instanceof Optional<?> opt) {
+            providerOrInstance = opt.orElse(null);
         }
 
-        if (providerOrInstance instanceof ServiceProvider) {
-            return ((ServiceProvider<?>) providerOrInstance).description();
+        if (providerOrInstance instanceof ServiceProvider<?> sp) {
+            return sp.description();
         }
         return String.valueOf(providerOrInstance);
     }
@@ -103,33 +79,23 @@ final class MavenPluginUtils {
         return (val != null && !val.isBlank());
     }
 
-    static LazyValue<InjectionServices> lazyCreate(Config config) {
+    static LazyValue<InjectionServices> lazyCreate(InjectionConfig config) {
         return LazyValue.create(() -> {
-            InjectionServices.globalBootstrap(Bootstrap.builder()
-                                                 .config(config)
-                                                 .limitRuntimePhase(Phase.GATHERING_DEPENDENCIES)
-                                                 .build());
-            return InjectionServices.injectionServices().orElseThrow();
+            InjectionServices.configure(config);
+            return InjectionServices.instance();
         });
     }
 
-    static Config basicConfig(boolean apps) {
-        return Config.builder(ConfigSources.create(
-                        Map.of("inject.permits-dynamic", "true",
-                               "inject.uses-compile-time-applications", String.valueOf(apps)),
-                        "config-1"))
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
+    static InjectionConfig basicConfig(boolean apps) {
+        return InjectionConfig.builder()
+                .useApplication(apps)
+                .permitsDynamic(true)
                 .build();
     }
 
-    private static class Internal extends InjectionServicesHolder {
+    private static class Internal extends ResettableHandler {
         public static void reset() {
-            InjectionServicesHolder.reset();
-            ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
-            if (cbr instanceof Resettable resettable) {
-                resettable.reset(true);
-            }
+            ResettableHandler.reset();
         }
     }
 

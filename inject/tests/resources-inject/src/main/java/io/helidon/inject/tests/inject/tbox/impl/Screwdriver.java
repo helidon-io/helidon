@@ -17,19 +17,17 @@
 package io.helidon.inject.tests.inject.tbox.impl;
 
 import java.io.Serializable;
-import java.util.Optional;
 
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.SomeOtherLocalNonContractInterface1;
 import io.helidon.inject.tests.inject.tbox.Tool;
 
-import jakarta.inject.Singleton;
-
-@Singleton
+@Injection.Singleton
 public class Screwdriver implements Tool, SomeOtherLocalNonContractInterface1, Serializable {
 
     @Override
-    public Optional<String> named() {
-        return Optional.of("screwdriver");
+    public String name() {
+        return "screwdriver";
     }
 
 }

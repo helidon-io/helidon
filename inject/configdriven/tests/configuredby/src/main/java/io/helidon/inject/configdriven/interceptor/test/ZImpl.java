@@ -19,14 +19,11 @@ package io.helidon.inject.configdriven.interceptor.test;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.inject.api.InterceptedTrigger;
 import io.helidon.inject.configdriven.tests.config.FakeWebServer;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
+import io.helidon.inject.service.Injection;
 
 /**
- * This test case is applying {@link io.helidon.inject.api.InterceptorBasedAnno} (an {@link InterceptedTrigger})
+ * This test case is applying {@link io.helidon.inject.service.Interception.Trigger} (an {@link io.helidon.inject.service.Interception.Trigger})
  * on this class directly. Since it is a config-driven service it is forced to used the interface based approach to interceptors.
  */
 // TODO: https://github.com/helidon-io/helidon/issues/6542
@@ -34,6 +31,7 @@ import jakarta.inject.Inject;
 //@ConfiguredBy(ZImplConfig.class)
 @SuppressWarnings("ALL")
 public class ZImpl implements IZ {
+    public static final String HELIDON_INJECT__METHOD_0_ELEMENT = "";
     private final AtomicInteger postConstructCallCount = new AtomicInteger();
 
 //    @Inject
@@ -43,7 +41,7 @@ public class ZImpl implements IZ {
 ////        assert (singletons.size() == 1) : singletons.toString();
 //    }
 
-    @Inject
+    @Injection.Inject
     ZImpl(Optional<FakeWebServer> fakeWebServer) {
         assert (fakeWebServer.isPresent());
     }
@@ -53,7 +51,7 @@ public class ZImpl implements IZ {
         return "methodIZ1:" + val;
     }
 
-    @PostConstruct
+    @Injection.PostConstruct
     void postConstruct() {
         postConstructCallCount.incrementAndGet();
     }

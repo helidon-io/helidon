@@ -18,12 +18,9 @@
  * Plain Test Resources.
  */
 module io.helidon.inject.tests.plain {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
-
+    requires io.helidon.inject.service;
     requires io.helidon.common.types;
     requires io.helidon.common;
-    requires io.helidon.inject.api;
 
     exports io.helidon.inject.tests.plain.hello;
     exports io.helidon.inject.tests.plain.interceptor;

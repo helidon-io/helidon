@@ -16,9 +16,9 @@
 
 package io.helidon.inject.configdriven.interceptor.test;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
-@Contract
+@Injection.Contract
 public interface IZ {
 
     String methodIZ1(String arg1);

@@ -22,7 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import jakarta.inject.Qualifier;
+import io.helidon.inject.service.Injection;
 
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.METHOD;
@@ -34,7 +34,7 @@ import static java.lang.annotation.ElementType.TYPE;
  */
 @Documented
 @Inherited
-@Qualifier
+@Injection.Qualifier
 @Retention(RetentionPolicy.CLASS)
 @Target({TYPE, METHOD, PARAMETER, CONSTRUCTOR})
 public @interface MyTestQualifier {

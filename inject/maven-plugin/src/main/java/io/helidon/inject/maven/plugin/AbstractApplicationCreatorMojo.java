@@ -21,6 +21,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,51 +32,42 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.CodegenOptions;
+import io.helidon.codegen.CodegenScope;
+import io.helidon.codegen.ModuleInfo;
+import io.helidon.codegen.ModuleInfoSourceParser;
+import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.Application;
-import io.helidon.inject.api.CallingContext;
-import io.helidon.inject.api.CallingContextFactory;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ModuleComponent;
-import io.helidon.inject.api.ServiceInfoCriteria;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.ServiceProviderProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.runtime.ServiceBinderDefault;
-import io.helidon.inject.tools.AbstractFilerMessager;
-import io.helidon.inject.tools.ActivatorCreatorCodeGen;
-import io.helidon.inject.tools.ApplicationCreatorCodeGen;
-import io.helidon.inject.tools.ApplicationCreatorConfigOptions;
-import io.helidon.inject.tools.ApplicationCreatorRequest;
-import io.helidon.inject.tools.ApplicationCreatorResponse;
-import io.helidon.inject.tools.CodeGenFiler;
-import io.helidon.inject.tools.CodeGenPaths;
-import io.helidon.inject.tools.CompilerOptions;
-import io.helidon.inject.tools.ModuleInfoDescriptor;
-import io.helidon.inject.tools.PermittedProviderType;
-import io.helidon.inject.tools.ToolsException;
-import io.helidon.inject.tools.spi.ApplicationCreator;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Lookup;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.ServiceProviderBindable;
+import io.helidon.inject.ServiceProviderProvider;
+import io.helidon.inject.Services;
+import io.helidon.inject.service.ModuleComponent;
+import io.helidon.inject.service.Qualifier;
 
 import org.apache.maven.model.Build;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.inject.api.CallingContextFactory.globalCallingContext;
-import static io.helidon.inject.runtime.InjectionExceptions.toErrorMessage;
-import static io.helidon.inject.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
-import static io.helidon.inject.tools.ModuleUtils.isUnnamedModuleName;
-import static io.helidon.inject.tools.ModuleUtils.toBasePath;
-import static io.helidon.inject.tools.ModuleUtils.toSuggestedModuleName;
-import static java.util.Optional.ofNullable;
+import static io.helidon.inject.maven.plugin.MavenUtil.toBasePath;
+import static io.helidon.inject.maven.plugin.MavenUtil.toSuggestedModuleName;
 
 /**
- * Abstract base for the Injection {@code maven-plugin} responsible for creating {@code Application} and Test {@code Application}'s.
+ * Abstract base for the Injection {@code maven-plugin} responsible for creating {@code Application} and Test
+ * {@code Application}'s.
  *
- * @see Application
- * @see ApplicationCreatorConfigOptions
+ * @see io.helidon.inject.Application
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal"})
 public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
+    /**
+     * The default permitted provider type.
+     */
+    private static final PermittedProviderType DEFAULT_PERMITTED_PROVIDER_TYPE = PermittedProviderType.ALL;
+    private static final String MODULE_INFO_FILE = "module-info.java";
 
     /**
      * The approach for handling providers.
@@ -105,14 +97,16 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     protected AbstractApplicationCreatorMojo() {
     }
 
-    static ToolsException noModuleFoundError() {
-        return new ToolsException("Unable to determine the name of the current module - "
-                                          + "was APT run and do you have a module-info?");
-    }
-
-    static ToolsException noModuleFoundError(String moduleName) {
-        return new ToolsException("No Injection module named '" + moduleName
-                                          + "' was found in the current module - was APT run?");
+    /**
+     * Returns true if the given module name is unnamed.
+     *
+     * @param moduleName the module name to check
+     * @return true if the provided module name is unnamed
+     */
+    public static boolean isUnnamedModuleName(String moduleName) {
+        return !moduleName.isBlank()
+                || moduleName.equals(ModuleInfo.DEFAULT_MODULE_NAME)
+                || moduleName.equals(ModuleInfo.DEFAULT_MODULE_NAME + "/test");
     }
 
     String getThisModuleName() {
@@ -123,7 +117,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             // try to recover it from a previous tooling step
             String appPackageName = loadAppPackageName().orElse(null);
             if (appPackageName == null) {
-                getLog().info(noModuleFoundError().getMessage());
+                getLog().info("Unable to determine the name of the current module - "
+                                      + "was APT run and do you have a module-info?");
             } else {
                 moduleName = appPackageName;
             }
@@ -132,17 +127,12 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     Optional<ServiceProvider<ModuleComponent>> lookupThisModule(String name,
-                                                                Services services,
-                                                                boolean expected) {
-        Optional<ServiceProvider<ModuleComponent>> result = services.lookupFirst(ModuleComponent.class, name, false);
-        if (result.isEmpty() && expected) {
-            throw noModuleFoundError(name);
-        }
-        return result;
-    }
-
-    String getClassPrefixName() {
-        return ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME;
+                                                                Services services) {
+        return services.firstProvider(
+                Lookup.builder()
+                        .addContract(ModuleComponent.class)
+                        .addQualifier(Qualifier.createNamed(name))
+                        .build());
     }
 
     abstract String getGeneratedClassName();
@@ -177,7 +167,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
     boolean hasModuleInfo() {
         return getSourceRootPaths().stream()
-                .anyMatch(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME).exists());
+                .anyMatch(p -> new File(p.toFile(), MODULE_INFO_FILE).exists());
     }
 
     /**
@@ -186,16 +176,16 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
      * @param location the location for the located module-info
      * @return the module-info descriptor to return or null if none is available
      */
-    ModuleInfoDescriptor getAnyModuleInfo(AtomicReference<File> location) {
+    ModuleInfo getAnyModuleInfo(AtomicReference<File> location) {
         File file = getNonTestSourceRootPaths().stream()
-                .map(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME))
+                .map(p -> new File(p.toFile(), MODULE_INFO_FILE))
                 .filter(File::exists)
                 .findFirst()
                 .orElse(null);
 
         if (file == null) {
             file = getTestSourceRootPaths().stream()
-                    .map(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME))
+                    .map(p -> new File(p.toFile(), MODULE_INFO_FILE))
                     .filter(File::exists)
                     .findFirst()
                     .orElse(null);
@@ -203,7 +193,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
         if (file != null && location != null) {
             location.set(file);
-            return ModuleInfoDescriptor.create(file.toPath());
+            return ModuleInfoSourceParser.parse(file.toPath());
         }
 
         return null;
@@ -221,18 +211,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     protected void innerExecute() {
         this.permittedProviderType =
                 (permittedProviderTypes == null || permittedProviderTypes.isBlank())
-                        ? ApplicationCreatorConfigOptions.DEFAULT_PERMITTED_PROVIDER_TYPE
+                        ? DEFAULT_PERMITTED_PROVIDER_TYPE
                         : PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
-
-        CallingContext callCtx = null;
-        Optional<CallingContext.Builder> callingContextBuilder =
-                CallingContextFactory.createBuilder(false);
-        if (callingContextBuilder.isPresent()) {
-            callingContextBuilder.get()
-                    .update(it -> Optional.ofNullable(getThisModuleName()).ifPresent(it::moduleName));
-            callCtx = callingContextBuilder.get().build();
-            globalCallingContext(callCtx, true);
-        }
 
         // we MUST get the exclusion list prior to building the next loader, since it will reset the service registry
         Set<TypeName> serviceNamesForExclusion = getServiceTypeNamesForExclusion();
@@ -240,68 +220,60 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         Set<Path> modulepath = (hasModuleInfo) ? getModulepathElements() : Collections.emptySet();
         Set<Path> classpath = getClasspathElements();
         ClassLoader prev = Thread.currentThread().getContextClassLoader();
-        URLClassLoader loader = ExecutableClassLoader.create(classpath, prev);
+        URLClassLoader loader = MavenUtil.createClassLoader(classpath, prev);
+        AtomicReference<File> moduleInfoPathRef = new AtomicReference<>();
+        String moduleInfoPath = (moduleInfoPathRef.get() != null)
+                ? moduleInfoPathRef.get().getPath()
+                : null;
+        ModuleInfo moduleInfo = getAnyModuleInfo(moduleInfoPathRef);
 
         try {
             Thread.currentThread().setContextClassLoader(loader);
 
             InjectionServices injectionServices = MavenPluginUtils.injectionServices(false);
-            if (injectionServices.config().usesCompileTimeApplications()) {
-                String desc = "Should not be using 'application' bindings";
-                String msg = (callCtx == null) ? toErrorMessage(desc) : toErrorMessage(callCtx, desc);
-                throw new IllegalStateException(msg);
+            if (injectionServices.config().useApplication()) {
+                throw new IllegalStateException("Maven plugin service registry must not be using 'application' bindings");
             }
             Services services = injectionServices.services();
 
-            // get the application creator only after services are initialized (we need to ignore any existing apps)
-            ApplicationCreator creator = MavenPluginUtils.applicationCreator();
+            MavenLogger mavenLogger = MavenLogger.create(getLog(), isFailOnWarning());
+            MavenCodegenContext scanContext = MavenCodegenContext.create(MavenOptions.create(toOptions()),
+                                                                         scope(),
+                                                                         getGeneratedSourceDirectory().toPath(),
+                                                                         getOutputDirectory().toPath(),
+                                                                         mavenLogger,
+                                                                         moduleInfo);
 
-            List<ServiceProvider<?>> allModules = services
-                    .lookupAll(ServiceInfoCriteria.builder()
-                                       .addContractImplemented(ModuleComponent.class)
-                                       .build());
-            if (InjectionServices.isDebugEnabled()) {
-                getLog().info("processing modules: " + MavenPluginUtils.toDescriptions(allModules));
-            } else {
-                getLog().debug("processing modules: " + MavenPluginUtils.toDescriptions(allModules));
-            }
+            List<ServiceProvider<Object>> allModules = services
+                    .allProviders(Lookup.builder()
+                                              .addContract(ModuleComponent.class)
+                                              .build());
+            getLog().debug("Processing modules: " + MavenPluginUtils.toDescriptions(allModules));
+
             if (allModules.isEmpty()) {
-                warn("No modules to process");
+                warn("Application creator found no modules to process");
             }
 
             // retrieves all the services in the registry
-            List<ServiceProvider<?>> allServices = services
-                    .lookupAll(ServiceInfoCriteria.builder()
-                                       .includeIntercepted(true)
-                                       .build(), false);
+            List<ServiceProvider<Object>> allServices = services
+                    .allProviders(Lookup.EMPTY);
             if (allServices.isEmpty()) {
-                warn("no services to process");
+                warn("Application creator found no services to process");
                 return;
             }
 
             Set<TypeName> serviceTypeNames = toNames(allServices);
             serviceTypeNames.removeAll(serviceNamesForExclusion);
 
-            String classPrefixName = getClassPrefixName();
-            AtomicReference<File> moduleInfoPathRef = new AtomicReference<>();
-            ModuleInfoDescriptor descriptor = getAnyModuleInfo(moduleInfoPathRef);
-            String moduleInfoPath = (moduleInfoPathRef.get() != null)
-                    ? moduleInfoPathRef.get().getPath()
-                    : null;
             String moduleInfoModuleName = getThisModuleName();
-            Optional<ServiceProvider<ModuleComponent>> moduleSp = lookupThisModule(moduleInfoModuleName, services, false);
-            String packageName = determinePackageName(moduleSp, serviceTypeNames, descriptor, true);
+            Optional<ServiceProvider<ModuleComponent>> moduleSp = lookupThisModule(moduleInfoModuleName, services);
 
-            CodeGenPaths codeGenPaths = CodeGenPaths.builder()
-                    .generatedSourcesPath(getGeneratedSourceDirectory().getPath())
-                    .outputPath(getOutputDirectory().getPath())
-                    .update(it -> ofNullable(moduleInfoPath).ifPresent(it::moduleInfoPath))
-                    .build();
-            ApplicationCreatorCodeGen applicationCodeGen = ApplicationCreatorCodeGen.builder()
-                    .packageName(packageName)
-                    .className(getGeneratedClassName())
-                    .classPrefixName(classPrefixName)
-                    .build();
+            String packageName = determinePackageName(moduleSp, serviceTypeNames, moduleInfo, getNonTestSourceRootPaths(), true);
+            String className = getGeneratedClassName();
+
+            // get the application creator only after services are initialized (we need to ignore any existing apps)
+            ApplicationCreator creator = new ApplicationCreator(scanContext, isFailOnError());
+
             List<String> compilerArgs = getCompilerArgs();
             CompilerOptions compilerOptions = CompilerOptions.builder()
                     .classpath(List.copyOf(classpath))
@@ -310,44 +282,18 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .source(getSource())
                     .target(getTarget())
                     .commandLineArguments((compilerArgs != null) ? compilerArgs : List.of())
+                    .outputDirectory(getOutputDirectory().toPath())
                     .build();
-            ApplicationCreatorConfigOptions configOptions = ApplicationCreatorConfigOptions.builder()
-                    .permittedProviderTypes(permittedProviderType)
-                    .permittedProviderNames(Set.copyOf(permittedProviderTypeNames))
-                    .permittedProviderQualifierTypeNames(Set.copyOf(toTypeNames(permittedProviderQualifierTypeNames)))
-                    .build();
-            String moduleName = getModuleName();
-            AbstractFilerMessager directFiler = AbstractFilerMessager.createDirectFiler(codeGenPaths, getLogger());
-            CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
-            ApplicationCreatorRequest.Builder reqBuilder = ApplicationCreatorRequest.builder()
-                    .codeGen(applicationCodeGen)
-                    .messager(new Messager2LogAdapter())
-                    .filer(codeGenFiler)
-                    .configOptions(configOptions)
-                    .serviceTypeNames(List.copyOf(serviceTypeNames))
-                    .generatedServiceTypeNames(List.copyOf(serviceTypeNames))
-                    .codeGenPaths(codeGenPaths)
-                    .compilerOptions(compilerOptions)
-                    .throwIfError(isFailOnError())
-                    .generator(getClass().getName())
-                    .templateName(getTemplateName());
-            if (MavenPluginUtils.hasValue(moduleName)) {
-                reqBuilder.moduleName(moduleName);
-            } else if (!isUnnamedModuleName(moduleInfoModuleName)) {
-                reqBuilder.moduleName(moduleInfoModuleName);
-            }
-            ApplicationCreatorRequest req = reqBuilder.build();
-            ApplicationCreatorResponse res = creator.createApplication(req);
-            if (res.success()) {
-                getLog().debug("processed service type names: " + res.serviceTypeNames());
-                if (getLog().isDebugEnabled()) {
-                    getLog().debug("response: " + res);
-                }
-            } else {
-                getLog().error("failed to process", res.error().orElse(null));
-            }
+
+            creator.createApplication(injectionServices,
+                                      serviceTypeNames,
+                                      TypeName.create(packageName + "." + className),
+                                      compilerOptions);
+
+        } catch (CodegenException e) {
+            throw e;
         } catch (Exception e) {
-            throw new ToolsException("An error occurred creating the Application in " + getClass().getName(), e);
+            throw new CodegenException("An error occurred creating the Application in " + getClass().getName(), e);
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
         }
@@ -363,15 +309,15 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                 .collect(Collectors.toList());
     }
 
-    Set<TypeName> toNames(List<ServiceProvider<?>> services) {
+    Set<TypeName> toNames(List<ServiceProvider<Object>> services) {
         Map<TypeName, ServiceProvider<?>> result = new LinkedHashMap<>();
         services.forEach(sp -> {
-            sp = ServiceBinderDefault.toRootProvider(sp);
-            TypeName serviceType = sp.serviceInfo().serviceTypeName();
-            ServiceProvider<?> prev = result.put(serviceType, sp);
+            ServiceProvider<?> rootProvider = toRootProvider(sp);
+            TypeName serviceType = rootProvider.serviceType();
+            ServiceProvider<?> prev = result.put(serviceType, rootProvider);
             if (prev != null) {
                 if (!(prev instanceof ServiceProviderProvider)) {
-                    throw new ToolsException("There are two registrations for the same service type: " + prev + " and " + sp);
+                    throw new CodegenException("There are two registrations for the same service type: " + prev + " and " + sp);
                 }
                 getLog().debug("There are two registrations for the same service type: " + prev + " and " + sp);
             }
@@ -380,22 +326,51 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     void warn(String msg) {
-        Optional<CallingContext.Builder> optBuilder = CallingContextFactory.createBuilder(false);
-        CallingContext callCtx = optBuilder.map(builder -> builder
-                .update(it -> Optional.ofNullable(getThisModuleName()).ifPresent(it::moduleName)))
-                .map(CallingContext.Builder::build)
-                .orElse(null);
-        String desc = "no modules to process";
-        String ctxMsg = (callCtx == null) ? toErrorMessage(desc) : toErrorMessage(callCtx, desc);
-        ToolsException e = new ToolsException(ctxMsg);
-        if (InjectionServices.isDebugEnabled()) {
-            getLog().warn(e.getMessage(), e);
-        } else {
-            getLog().warn(e.getMessage());
-        }
+        getLog().warn(msg);
+
         if (isFailOnWarning()) {
-            throw e;
+            throw new CodegenException(msg);
         }
     }
 
+    protected abstract CodegenScope scope();
+
+    /**
+     * Returns the root provider of the service provider passed.
+     *
+     * @param sp the service provider
+     * @return the root provider of the service provider, falling back to the service provider passed
+     */
+    private static ServiceProvider<?> toRootProvider(ServiceProvider<?> sp) {
+        Optional<? extends ServiceProviderBindable<?>> bindable = sp.serviceProviderBindable();
+        if (bindable.isPresent()) {
+            sp = bindable.get().rootProvider().orElse(sp);
+        }
+        if (sp instanceof ServiceProviderBindable<?> spb) {
+            return spb.rootProvider().orElse(sp);
+        }
+        return sp;
+    }
+
+    private Set<String> toOptions() {
+
+        Set<String> options = new HashSet<>(getCompilerArgs());
+
+        String moduleName = moduleName();
+        if (moduleName != null) {
+            options.add("-A" + CodegenOptions.CODEGEN_MODULE.name() + "=" + moduleName);
+        }
+
+        options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_TYPE + "=" + permittedProviderType);
+        if (!permittedProviderTypeNames.isEmpty()) {
+            options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_TYPE_NAMES
+                                + "=" + String.join(",", permittedProviderTypeNames));
+        }
+        if (!permittedProviderQualifierTypeNames.isEmpty()) {
+            options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPE_NAMES
+                                + "=" + String.join(",", permittedProviderQualifierTypeNames));
+        }
+
+        return options;
+    }
 }

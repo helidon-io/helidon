@@ -23,7 +23,7 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.config.NamedService;
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
  * Implementors of this contract are responsible for managing the {@link javax.net.ssl.SSLContext} instance lifecycle, as well
@@ -32,7 +32,7 @@ import io.helidon.inject.api.Contract;
  * <p>
  * How context changes are observed is based upon the implementation of the manager.
  */
-@Contract
+@Injection.Contract
 public interface TlsManager extends NamedService {
 
     /**

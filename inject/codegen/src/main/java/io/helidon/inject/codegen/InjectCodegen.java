@@ -34,9 +34,12 @@ import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.ModuleInfo;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.inject.codegen.spi.InjectCodegenExtension;
 import io.helidon.inject.codegen.spi.InjectCodegenExtensionProvider;
@@ -177,12 +180,51 @@ class InjectCodegen implements CodegenExtension {
                         .anyMatch(moduleComponentType::equals);
             }
 
+            // now check if we provide an application from module info - if so, we need to generate a stub for it
+            // as we create it too late (in a Maven plugin)
+            List<TypeName> apps = moduleInfo.provides()
+                    .get(InjectCodegenTypes.APPLICATION);
+            if (apps != null && apps.size() == 1) {
+                // only expect one, ignore other cases, probably some user specific approach
+                TypeName appType = apps.getFirst();
+                if (ctx.typeInfo(appType).isEmpty()) {
+                    // application is declared in module-info.java, but not present on current classpath
+                    generateApplicationStub(appType);
+                }
+            }
+
+
             if (!found) {
                 throw new CodegenException("Please add \"provides " + InjectCodegenTypes.MODULE_COMPONENT.fqName()
                                                    + " with " + moduleComponent.newType().fqName() + ";\" "
                                                    + "to your module-info.java");
             }
         }
+    }
+
+    private void generateApplicationStub(TypeName appType) {
+        ClassModel application = ClassModel.builder()
+                .accessModifier(AccessModifier.PUBLIC)
+                .type(appType)
+                .addInterface(InjectCodegenTypes.APPLICATION)
+                .addMethod(configure -> configure
+                        .addAnnotation(Annotations.OVERRIDE)
+                        .accessModifier(AccessModifier.PUBLIC)
+                        .name("configure")
+                        .addParameter(binder -> binder
+                                .type(InjectCodegenTypes.SERVICE_INJECTION_PLAN_BINDER)
+                                .name("binder")))
+                .addMethod(name -> name
+                        .addAnnotation(Annotations.OVERRIDE)
+                        .accessModifier(AccessModifier.PUBLIC)
+                        .returnType(TypeNames.STRING)
+                        .name("name")
+                        .addContentLine("return \"empty stub to be overwritten by Maven plugin\";"))
+                .build();
+
+        ctx.filer()
+                .writeSourceFile(application);
+
     }
 
     private void writeNewTypes() {

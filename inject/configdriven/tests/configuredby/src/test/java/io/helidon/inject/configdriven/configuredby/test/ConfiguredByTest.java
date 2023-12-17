@@ -19,14 +19,18 @@ package io.helidon.inject.configdriven.configuredby.test;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.configdriven.api.NamedInstance;
+import io.helidon.inject.Lookup;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.configdriven.ConfigBeanRegistry;
 import io.helidon.inject.configdriven.configuredby.yaml.test.Async;
-import io.helidon.inject.configdriven.runtime.ConfigBeanRegistry;
+import io.helidon.inject.configdriven.service.NamedInstance;
+import io.helidon.inject.service.Qualifier;
 
 import org.junit.jupiter.api.Test;
 
@@ -42,29 +46,47 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
  */
 class ConfiguredByTest extends AbstractConfiguredByTest {
     @Test
+    void testInjectCbr() {
+        resetWith(Config.create());
+
+        ServiceProvider<ServiceUsingRegistry> lookup = services.serviceProvider(ServiceUsingRegistry__ServiceDescriptor.INSTANCE);
+        ServiceUsingRegistry service = lookup.get();
+
+        assertThat(service.registry(), notNullValue());
+        assertThat(service.registry().ready(), is(true));
+    }
+
+    @Test
     void testRepeatableConfigBean() {
         resetWith(Config.create());
 
-        List<Async> serviceProviders = services.lookupAll(Async.class)
+        List<Async> serviceProviders = services.all(Async.class)
                 .stream()
-                .map(ServiceProvider::get)
+                .map(Supplier::get)
                 .toList();
 
         assertThat(serviceProviders, hasSize(2));
 
-        Async async = services.lookup(Async.class, "first").get();
+        Async async = services.<Async>get(Lookup.builder()
+                                                    .addContract(Async.class)
+                                                    .addQualifier(Qualifier.createNamed("first"))
+                                                    .build())
+                .get();
         assertThat(async.config(), notNullValue());
         assertThat(async.config().executor(), is("exec"));
 
-        async = services.lookup(Async.class, "second").get();
+        async = services.<Async>get(Lookup.builder()
+                                              .addContract(Async.class)
+                                              .addQualifier(Qualifier.createNamed("second"))
+                                              .build())
+                .get();
         assertThat(async.config(), notNullValue());
         assertThat(async.config().executor(), is("service"));
     }
 
     @Test
     void onlyRootConfigBeansAreCreated() {
-        resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(),
-                                                   createRootDefault8080TestingConfigSource(),
+        resetWith(io.helidon.config.Config.builder(createRootDefault8080TestingConfigSource(),
                                                    createNested8080TestingConfigSource())
                           .disableEnvironmentVariablesSource()
                           .disableSystemPropertiesSource()
@@ -74,12 +96,21 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
         assertThat(cbr.ready(),
                    is(true));
 
-        Map<Class<?>, List<NamedInstance<?>>> beans = cbr.allConfigBeans();
-        assertThat(beans, hasKey(SomeServiceConfig.class));
-        assertThat(beans, hasKey(ASingletonConfigBean.class));
+        Map<TypeName, List<NamedInstance<?>>> beans = cbr.allConfigBeans();
+        assertThat(beans, hasKey(TypeName.create(SomeServiceConfig.class)));
+        assertThat(beans, hasKey(TypeName.create(ASingletonConfigBean.class)));
 
-        assertHasNamed(beans.get(SomeServiceConfig.class), "@default");
-        assertHasNamed(beans.get(ASingletonConfigBean.class), "@default");
+        assertHasNamed(beans.get(TypeName.create(SomeServiceConfig.class)), "@default");
+        assertHasNamed(beans.get(TypeName.create(ASingletonConfigBean.class)), "@default");
+    }
+
+    protected MapConfigSource.Builder createNested8080TestingConfigSource() {
+        return ConfigSources.create(
+                Map.of(
+                        "nested." + FAKE_SERVER_CONFIG + ".0.name", "nested",
+                        "nested." + FAKE_SERVER_CONFIG + ".0.port", "8080",
+                        "nested." + FAKE_SERVER_CONFIG + ".0.worker-count", "1"
+                ), "config-nested-default-8080");
     }
 
     private void assertHasNamed(List<NamedInstance<?>> namedInstances, String... expectedNames) {
@@ -90,15 +121,6 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
 
         assertThat("Names should be unique.", nameList, is(List.copyOf(nameSet)));
         assertThat(nameSet, contains(expectedNames));
-    }
-
-    protected MapConfigSource.Builder createNested8080TestingConfigSource() {
-        return ConfigSources.create(
-                Map.of(
-                        "nested." + FAKE_SERVER_CONFIG + ".0.name", "nested",
-                        "nested." + FAKE_SERVER_CONFIG + ".0.port", "8080",
-                        "nested." + FAKE_SERVER_CONFIG + ".0.worker-count", "1"
-                ), "config-nested-default-8080");
     }
 
 }

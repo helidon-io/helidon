@@ -21,20 +21,21 @@ module io.helidon.inject.maven.plugin {
 
     requires io.helidon.builder.api;
     requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.inject.configdriven.runtime;
+    requires io.helidon.common.config;
+    requires io.helidon.inject.configdriven;
+    requires io.helidon.codegen;
+    requires io.helidon.codegen.scan;
+    requires io.helidon.codegen.compiler;
+    requires io.helidon.inject.codegen;
+
     requires maven.artifact;
     requires maven.model;
     requires maven.plugin.annotations;
     requires maven.plugin.api;
     requires maven.project;
-
-    requires transitive io.helidon.inject.tools;
+    requires io.github.classgraph;
 
     exports io.helidon.inject.maven.plugin;
 
-    uses io.helidon.inject.tools.spi.ActivatorCreator;
-    uses io.helidon.inject.tools.spi.ApplicationCreator;
-    uses io.helidon.inject.tools.spi.ExternalModuleCreator;
-
+    uses io.helidon.inject.codegen.spi.InjectCodegenExtensionProvider;
 }

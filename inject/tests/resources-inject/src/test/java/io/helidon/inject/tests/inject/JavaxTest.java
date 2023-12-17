@@ -16,13 +16,15 @@
 
 package io.helidon.inject.tests.inject;
 
-import io.helidon.config.Config;
-import io.helidon.inject.api.Qualifier;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.tools.Options;
-import io.helidon.inject.tools.TypeNames;
+import io.helidon.common.types.TypeName;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.Lookup;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.Services;
+import io.helidon.inject.codegen.InjectCodegenTypes;
+import io.helidon.inject.service.Qualifier;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +42,7 @@ import static org.hamcrest.Matchers.equalTo;
  * Javax to Jakarta related tests.
  */
 class JavaxTest {
-    private static final Config CONFIG = basicTestableConfig();
+    private static final InjectionConfig CONFIG = basicTestableConfig();
 
     private Services services;
 
@@ -55,18 +57,20 @@ class JavaxTest {
     }
 
     /**
-     * Uses {@link Options#TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE}.
+     * Uses {@code inject.mapApplicationToSingletonScope}.
      * This also verifies that the qualifiers were mapped over properly from javax as well.
      */
     @Test
     void applicationScopeToSingletonScopeTranslation() {
-        ServiceProvider<AnApplicationScopedService> sp = services.lookupFirst(AnApplicationScopedService.class);
+        ServiceProvider<AnApplicationScopedService> sp = services.getProvider(
+                Lookup.create(AnApplicationScopedService.class));
         assertThat(sp.toString(),
                    equalTo("AnApplicationScopedService:INIT"));
-        assertThat(sp.serviceInfo().qualifiers(),
+        assertThat(sp.qualifiers(),
                    contains(Qualifier.create(Default.class)));
-        assertThat(sp.serviceInfo().scopeTypeNames(),
-                   containsInAnyOrder(TypeNames.JAKARTA_SINGLETON_TYPE, TypeNames.JAKARTA_APPLICATION_SCOPED_TYPE));
+        assertThat(sp.scopes(),
+                   containsInAnyOrder(InjectCodegenTypes.INJECTION_SINGLETON,
+                                      TypeName.create(ApplicationScoped.class)));
     }
 
 }

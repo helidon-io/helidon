@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.inject.api.Interceptor;
-import io.helidon.inject.api.InvocationContext;
+import io.helidon.inject.service.Interception;
+import io.helidon.inject.service.InvocationContext;
 
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -30,7 +30,7 @@ import jakarta.inject.Singleton;
 @Named("io.helidon.inject.tests.interception.Modify")
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 50)
-class ModifyingInterceptor implements Interceptor {
+class ModifyingInterceptor implements Interception.Interceptor {
     private static final AtomicReference<Invocation> LAST_CALL = new AtomicReference<>();
 
     static Invocation lastCall() {
@@ -38,7 +38,7 @@ class ModifyingInterceptor implements Interceptor {
     }
 
     @Override
-    public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) {
+    public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) throws Exception {
         LAST_CALL.set(new Invocation(ctx.elementInfo().elementName(), Arrays.copyOf(args, args.length)));
         if (args.length < 2) {
             // safeguard

@@ -16,10 +16,11 @@
 
 package io.helidon.inject.tests.inject.provider;
 
-import io.helidon.config.Config;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Lookup;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,16 +34,16 @@ import static org.hamcrest.Matchers.equalTo;
 
 class PerRequestProviderTest {
 
-    Config config = InjectionTestingSupport.basicTestableConfig();
-    InjectionServices injectionServices;
-    Services services;
+    private final InjectionConfig config = InjectionTestingSupport.basicTestableConfig();
+    private InjectionServices injectionServices;
+    private Services services;
 
     @BeforeEach
     void setUp() {
         setUp(config);
     }
 
-    void setUp(Config config) {
+    void setUp(InjectionConfig config) {
         this.injectionServices = testableServices(config);
         this.services = injectionServices.services();
     }
@@ -54,9 +55,12 @@ class PerRequestProviderTest {
 
     @Test
     void myConcreteClassContractTest() {
-        ServiceProvider<MyConcreteClassContract> sp = services.lookupFirst(MyConcreteClassContract.class);
+        ServiceProvider<MyConcreteClassContract> sp = services.getProvider(
+                Lookup.builder()
+                        .addContract(MyConcreteClassContract.class)
+                        .build());
         assertThat(sp.description(),
-                   equalTo("MyServices$MyConcreteClassContractPerRequestIPProvider:INIT"));
+                   equalTo("MyServices.MyConcreteClassContractPerRequestIPProvider:INIT"));
         MyConcreteClassContract instance0 = sp.get();
         assertThat(instance0.toString(),
                    equalTo("MyConcreteClassContractPerRequestIPProvider:instance_0, "

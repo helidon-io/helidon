@@ -16,15 +16,14 @@
 
 package io.helidon.inject.configdriven.configuredby.test;
 
-import io.helidon.inject.configdriven.api.ConfigDriven;
-
-import jakarta.inject.Inject;
+import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.Injection;
 
 @ConfigDriven(SomeServiceConfigBlueprint.class)
 public class SomeConfiguredServiceWithAnAbstractBase extends AbstractServiceBase {
     final SomeServiceConfig cfg;
 
-    @Inject
+    @Injection.Inject
     SomeConfiguredServiceWithAnAbstractBase(SomeServiceConfig cfg) {
         assert (cfg != null);
         assert (!cfg.name().isBlank());

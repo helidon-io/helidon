@@ -23,13 +23,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.codegen.CodegenScope;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.Application;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ServiceInfoCriteria;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.tools.spi.ApplicationCreator;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Lookup;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.Services;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Build;
@@ -39,12 +38,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
+import static io.helidon.inject.codegen.InjectionCodegenContext.APPLICATION_NAME;
 import static io.helidon.inject.maven.plugin.MavenPluginUtils.injectionServices;
-import static io.helidon.inject.tools.ApplicationCreatorDefault.APPLICATION_NAME_SUFFIX;
-import static io.helidon.inject.tools.ApplicationCreatorDefault.NAME_PREFIX;
-import static io.helidon.inject.tools.ApplicationCreatorDefault.upperFirstChar;
-import static io.helidon.inject.tools.ModuleUtils.toBasePath;
-import static io.helidon.inject.tools.ModuleUtils.toSuggestedModuleName;
+import static io.helidon.inject.maven.plugin.MavenUtil.toBasePath;
+import static io.helidon.inject.maven.plugin.MavenUtil.toSuggestedModuleName;
 
 /**
  * A mojo wrapper to {@link ApplicationCreator} for test specific types.
@@ -55,7 +52,7 @@ import static io.helidon.inject.tools.ModuleUtils.toSuggestedModuleName;
 public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     /**
-     * The classname to use for the {@link Application} test class.
+     * The classname to use for the {@link io.helidon.inject.Application} test class.
      * If not found the classname will be inferred.
      */
     @Parameter(property = "io.helidon.inject.application.class.name", readonly = true
@@ -125,12 +122,7 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     @Override
     String getGeneratedClassName() {
-        return (className == null) ? NAME_PREFIX + "Test" + APPLICATION_NAME_SUFFIX : className;
-    }
-
-    @Override
-    String getClassPrefixName() {
-        return upperFirstChar("test");
+        return (className == null) ? "Test" + APPLICATION_NAME : className;
     }
 
     /**
@@ -141,18 +133,18 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
         Set<Path> classPath = getSourceClasspathElements();
 
         ClassLoader prev = Thread.currentThread().getContextClassLoader();
-        URLClassLoader loader = ExecutableClassLoader.create(classPath, prev);
+        URLClassLoader loader = MavenUtil.createClassLoader(classPath, prev);
 
         try {
             Thread.currentThread().setContextClassLoader(loader);
 
             InjectionServices injectionServices = injectionServices(false);
-            assert (!injectionServices.config().usesCompileTimeApplications());
+            assert (!injectionServices.config().useApplication());
             Services services = injectionServices.services();
 
             // retrieves all the services in the registry
-            List<ServiceProvider<?>> allServices = services
-                    .lookupAll(ServiceInfoCriteria.builder().build(), false);
+            List<ServiceProvider<Object>> allServices = services
+                    .allProviders(Lookup.EMPTY);
             Set<TypeName> serviceTypeNames = toNames(allServices);
             getLog().debug("excluding service type names: " + serviceTypeNames);
             return serviceTypeNames;
@@ -161,4 +153,8 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
         }
     }
 
+    @Override
+    protected CodegenScope scope() {
+        return new CodegenScope("test");
+    }
 }

@@ -22,14 +22,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.helidon.inject.api.InterceptedTrigger;
+import io.helidon.inject.service.Interception;
 
 /**
  * Modify call.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@InterceptedTrigger
+@Interception.Trigger
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @interface Modify {
 }

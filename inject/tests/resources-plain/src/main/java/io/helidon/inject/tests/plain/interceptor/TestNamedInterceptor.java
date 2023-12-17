@@ -16,36 +16,56 @@
 
 package io.helidon.inject.tests.plain.interceptor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
+import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.api.Interceptor;
-import io.helidon.inject.api.InvocationContext;
+import io.helidon.inject.service.Interception;
+import io.helidon.inject.service.InvocationContext;
 
 import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
 import static io.helidon.common.types.TypeNames.STRING;
 
 @SuppressWarnings({"ALL", "unchecked"})
-public class TestNamedInterceptor implements Interceptor {
-    public static final AtomicInteger ctorCount = new AtomicInteger();
+public class TestNamedInterceptor implements Interception.Interceptor {
+    public static final AtomicInteger CONSTRUCTOR_COUNTER = new AtomicInteger();
+    public static final List<Invocation> INVOCATIONS = new ArrayList<>();
+
+    private static final TypeName INTERCEPTED_ANNO = TypeName.create(InterceptorBasedAnno.class);
 
     public TestNamedInterceptor() {
-        ctorCount.incrementAndGet();
+        CONSTRUCTOR_COUNTER.incrementAndGet();
     }
 
     @Override
     public <V> V proceed(InvocationContext ctx,
                          Chain<V> chain,
-                         Object... args) {
+                         Object... args) throws Exception {
         assert (ctx != null);
 
-        TypedElementInfo methodInfo = ctx.elementInfo();
-        if (methodInfo != null && methodInfo.typeName().equals(PRIMITIVE_LONG)) {
+        TypedElementInfo elementInfo = ctx.elementInfo();
+        Annotation annotation = elementInfo.findAnnotation(INTERCEPTED_ANNO)
+                .or(() -> Annotations.findFirst(INTERCEPTED_ANNO, ctx.typeAnnotations()))
+                .orElse(null);
+
+        if (annotation == null) {
+            // this is an error
+            throw new IllegalStateException("Invoked an interceptor without annotation being present on element: " + elementInfo);
+        }
+
+        INVOCATIONS.add(new Invocation(elementInfo.kind(), elementInfo.elementName(), annotation.value().orElse("")));
+
+        if (elementInfo.typeName().equals(PRIMITIVE_LONG)) {
             V result = chain.proceed(args);
             long longResult = (Long) result;
             Object interceptedResult = (longResult * 2);
             return (V) interceptedResult;
-        } else if (methodInfo != null && methodInfo.typeName().equals(STRING)) {
+        } else if (elementInfo.typeName().equals(STRING)) {
             V result = chain.proceed(args);
             return (V) ("intercepted:" + result);
         } else {
@@ -53,4 +73,6 @@ public class TestNamedInterceptor implements Interceptor {
         }
     }
 
+    public record Invocation(ElementKind kind, String name, String value) {
+    }
 }

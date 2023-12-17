@@ -18,14 +18,14 @@ package io.helidon.inject.maven.plugin;
 
 import java.io.File;
 
-import io.helidon.inject.api.Application;
-import io.helidon.inject.tools.ApplicationCreatorDefault;
-import io.helidon.inject.tools.spi.ApplicationCreator;
+import io.helidon.codegen.CodegenScope;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+
+import static io.helidon.inject.codegen.InjectionCodegenContext.APPLICATION_NAME;
 
 /**
  * A mojo wrapper to {@link ApplicationCreator}.
@@ -36,7 +36,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     /**
-     * The classname to use for the {@link Application} class.
+     * The classname to use for the {@link io.helidon.inject.Application} class.
      * If not found the classname will be inferred.
      */
     @Parameter(property = "inject.application.class.name", readonly = true)
@@ -62,7 +62,7 @@ public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     @Override
     String getGeneratedClassName() {
-        return (className == null) ? ApplicationCreatorDefault.APPLICATION_NAME : className;
+        return (className == null) ? APPLICATION_NAME : className;
     }
 
     @Override
@@ -75,4 +75,8 @@ public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
         return outputDirectory;
     }
 
+    @Override
+    protected CodegenScope scope() {
+        return CodegenScope.PRODUCTION;
+    }
 }

@@ -18,7 +18,7 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.Optional;
 
-import io.helidon.inject.configdriven.api.ConfigDriven;
+import io.helidon.inject.configdriven.service.ConfigDriven;
 
 import jakarta.inject.Inject;
 

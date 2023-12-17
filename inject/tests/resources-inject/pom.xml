@@ -34,6 +34,7 @@
 
     <properties>
         <checkstyle.skip>true</checkstyle.skip>
+        <helidon.services.skip>false</helidon.services.skip>
     </properties>
 
     <dependencies>
@@ -42,15 +43,9 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-maven-plugin</artifactId>
-            <scope>provided</scope> <!-- reactor dependency ordering only -->
-            <optional>true</optional>
+            <optional>true</optional>  <!-- reactor dependency ordering only -->
         </dependency>
         <dependency>
             <groupId>io.helidon.inject.tests</groupId>
@@ -58,18 +53,28 @@
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
+            <artifactId>helidon-inject</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
@@ -92,47 +97,51 @@
                     <compilerArgs>
                         <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
                         <arg>-Ainject.allowListedInterceptorAnnotations=io.helidon.inject.tests.inject.interceptor.TestNamed</arg>
-                        <arg>-Ainject.application.pre.create=false</arg> <!-- keeping this set to false will allow the IDE to run tests directly -->
                         <arg>-Ainject.mapApplicationToSingletonScope=true</arg>
-                        <arg>-Ainject.debug=${inject.debug}</arg>
-<!--                        <arg>-XprintProcessorInfo</arg>-->
-<!--                        <arg>-XprintRounds</arg>-->
-<!--                        <arg>-verbose</arg>-->
-                        <arg>-Ainject.acceptPreview=true</arg>
+                        <arg>-Ainject.scopeMetaAnnotations=jakarta.enterprise.context.NormalScope</arg>
                     </compilerArgs>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-processor</artifactId>
+                            <artifactId>helidon-inject-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>jakarta.enterprise</groupId>
-                            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-                            <version>${version.lib.jakarta.cdi-api}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.inject.tests</groupId>
-                            <artifactId>helidon-inject-tests-resources-plain</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.common.processor</groupId>
-                            <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                            <groupId>io.helidon.inject</groupId>
+                            <artifactId>helidon-inject-codegen-jakarta</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-processor</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.common.processor</groupId>
-                        <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen-jakarta</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
@@ -158,15 +167,10 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-Ainject.debug=${inject.debug}</arg>
-                        <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
-                        <arg>-Ainject.application.pre.create=false</arg>
-                    </compilerArgs>
                     <permittedProviderTypes>NAMED</permittedProviderTypes>
                     <permittedProviderTypeNames>
-                        <permittedProviderTypeName>io.helidon.inject.tests.inject.provider.MyServices$MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.inject.tests.inject.provider.MyServices$MyConcreteClassContractPerRequestProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.inject.tests.inject.provider.MyServices.MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.inject.tests.inject.provider.MyServices.MyConcreteClassContractPerRequestProvider</permittedProviderTypeName>
                         <permittedProviderTypeName>io.helidon.inject.tests.inject.ASerialProviderImpl</permittedProviderTypeName>
                         <permittedProviderTypeName>io.helidon.inject.tests.inject.tbox.impl.BladeProvider</permittedProviderTypeName>
                     </permittedProviderTypeNames>
