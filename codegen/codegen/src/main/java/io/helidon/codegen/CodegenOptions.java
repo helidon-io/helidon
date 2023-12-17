@@ -59,8 +59,8 @@ public interface CodegenOptions {
      * Codegen option to configure module name of the module being processed.
      */
     Option<String> CODEGEN_PACKAGE = Option.create(TAG_CODEGEN_PACKAGE,
-                                                  "Define package to use for generated types.",
-                                                  "");
+                                                   "Define package to use for generated types.",
+                                                   "");
     /**
      * Codegen option to configure which indent type to use (a space character, or a tab character).
      */
@@ -76,6 +76,15 @@ public interface CodegenOptions {
                                                  "Number of indents to use (such as 4, if combined with SPACE will indent by 4 "
                                                          + "spaces",
                                                  4);
+
+    /**
+     * Codegen option to configure creation of META-INF services when module-info.java is present.
+     * Defaults to {@code true}, so the file is generated.
+     */
+    Option<Boolean> CREATE_META_INF_SERVICES = Option.create("helidon.codegen.meta-inf.services",
+                                                             "Whether to create META-INF/services for generated services even "
+                                                                     + "if module-info.java is present",
+                                                             true);
 
     /**
      * Find an option.

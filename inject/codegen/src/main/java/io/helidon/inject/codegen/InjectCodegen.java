@@ -29,6 +29,7 @@ import java.util.function.Predicate;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.CodegenOptions;
@@ -157,7 +158,7 @@ class InjectCodegen implements CodegenExtension {
         ClassModel classModel = moduleComponent.classModel().build();
         filer.writeSourceFile(classModel, moduleComponent.originatingElements());
 
-        if (!hasModule) {
+        if (!hasModule || CodegenOptions.CREATE_META_INF_SERVICES.value(ctx.options())) {
             // only create meta-inf/services if we are not a JPMS module
 
             try {
@@ -167,6 +168,12 @@ class InjectCodegen implements CodegenExtension {
                                moduleComponent.originatingElements());
             } catch (Exception e) {
                 // ignore this exception, as the resource probably exists and was done by the user
+                ctx.logger()
+                        .log(CodegenEvent.builder()
+                                     .level(System.Logger.Level.DEBUG)
+                                     .message("Failed to create services, probably already exists")
+                                     .throwable(e)
+                                     .build());
             }
         }
 

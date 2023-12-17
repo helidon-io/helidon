@@ -32,6 +32,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenUtil;
@@ -108,19 +109,19 @@ class ApplicationCreator {
      * @param moduleName        name of the module of this maven module
      * @param compilerOptions   compilation options
      */
-    public void createApplication(InjectionServices injectionServices,
-                                  Set<TypeName> serviceTypes,
-                                  TypeName typeName,
-                                  String moduleName,
-                                  CompilerOptions compilerOptions) {
+    void createApplication(InjectionServices injectionServices,
+                           Set<TypeName> serviceTypes,
+                           TypeName typeName,
+                           String moduleName,
+                           CompilerOptions compilerOptions) {
         Objects.requireNonNull(injectionServices);
         Objects.requireNonNull(serviceTypes);
 
         List<TypeName> providersInUseThatAreNotAllowed = providersNotAllowed(injectionServices, serviceTypes);
         if (!providersInUseThatAreNotAllowed.isEmpty()) {
             handleError(new CodegenException("There are dynamic Providers being used that are not allow-listed: "
-                    + providersInUseThatAreNotAllowed
-                    + "; see the documentation for examples of allow-listing."));
+                                                     + providersInUseThatAreNotAllowed
+                                                     + "; see the documentation for examples of allow-listing."));
         }
 
         try {
@@ -180,13 +181,37 @@ class ApplicationCreator {
         Path generated = ctx.filer()
                 .writeSourceFile(classModel.build());
 
-        // now we have the source generated, we add the META-INF/service, and compile the class
-        ctx.filer()
-                .services(CREATOR,
-                          InjectCodegenTypes.APPLICATION,
-                          List.of(typeName));
-
         Compiler.compile(compilerOptions, generated);
+
+        if (ctx.module().isPresent()) {
+            List<TypeName> provided = ctx.module().get()
+                    .provides()
+                    .get(InjectCodegenTypes.APPLICATION);
+            if (!provided.contains(typeName)) {
+                throw new CodegenException("Please add \"provides " + InjectCodegenTypes.APPLICATION.fqName()
+                                         + " with " + typeName.fqName() + ";\" to your module-info.java, as otherwise the "
+                                         + "application would not be discovered when running on module path.");
+            }
+        }
+        // now we have the source generated, we add the META-INF/service, and compile the class
+        if (ctx.module().isEmpty() || CodegenOptions.CREATE_META_INF_SERVICES.value(ctx.options())) {
+            // only create meta-inf/services if we are not a JPMS module
+
+            try {
+                ctx.filer()
+                        .services(CREATOR,
+                                  InjectCodegenTypes.APPLICATION,
+                                  List.of(typeName));
+            } catch (Exception e) {
+                // ignore this exception, as the resource probably exists and was done by the user
+                ctx.logger()
+                        .log(CodegenEvent.builder()
+                                     .level(System.Logger.Level.DEBUG)
+                                     .message("Failed to create services, probably already exists")
+                                     .throwable(e)
+                                     .build());
+            }
+        }
     }
 
     BindingPlan bindingPlan(InjectionServices services,
@@ -310,8 +335,8 @@ class ApplicationCreator {
         Services services = injectionServices.services();
 
         List<ServiceProvider<Supplier>> providers = services.allProviders(Lookup.builder()
-                                                                                      .addContract(Supplier.class)
-                                                                                      .build());
+                                                                                  .addContract(Supplier.class)
+                                                                                  .build());
         if (providers.isEmpty()) {
             return List.of();
         }
@@ -431,9 +456,9 @@ class ApplicationCreator {
         // find all interceptors and bind them
         List<ServiceProvider<Interception.Interceptor>> interceptors = services.services()
                 .allProviders(Lookup.builder()
-                                          .addContract(Interception.Interceptor.class)
-                                          .addQualifier(Qualifier.WILDCARD_NAMED)
-                                          .build());
+                                      .addContract(Interception.Interceptor.class)
+                                      .addQualifier(Qualifier.WILDCARD_NAMED)
+                                      .build());
         method.addContent("binder.interceptors(");
         boolean multiline = interceptors.size() > 2;
         if (multiline) {
