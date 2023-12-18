@@ -129,7 +129,7 @@ class InjectionTest {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     void testProvider() {
         ServiceProvider<ProviderReceiver> provider = services.serviceProvider(ProviderReceiver__ServiceDescriptor.INSTANCE);
 

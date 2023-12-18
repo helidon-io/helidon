@@ -35,7 +35,7 @@ public interface CodegenOptions {
     /**
      * Tag to define custom package name.
      */
-    String TAG_CODEGEN_PACKAGE = "helidon.codegen.module-name";
+    String TAG_CODEGEN_PACKAGE = "helidon.codegen.package-name";
 
     /**
      * Codegen option to configure codegen scope.

@@ -130,7 +130,7 @@ class InjectionTest {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     void testProvider() {
         Supplier<ProviderReceiver> provider = services.get(ProviderReceiver.class);
 

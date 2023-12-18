@@ -34,7 +34,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
@@ -394,6 +396,13 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
                 .orElseThrow(() -> new CodegenException("Unable to determine package for application class."));
     }
 
+    // to dot separated path
+    private static String toDotSeparated(Path relativePath) {
+        return StreamSupport.stream(relativePath.spliterator(), false)
+                .map(Path::toString)
+                .collect(Collectors.joining("."));
+    }
+
     private Optional<String> firstUsedPackage() {
         // we expect at least some source code. If none found, try test source, if none found, must be configured
         return firstUsedPackage(nonTestSourceRootPaths())
@@ -462,10 +471,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         if (parent == null) {
             return "";
         }
-        Path relative = rootPath.relativize(parent);
-        return relative.toString()
-                .replace('/', '.')
-                .replace('\\', '.');
+        return toDotSeparated(rootPath.relativize(parent));
     }
 
     private Optional<String> moduleFromModuleComponent() {
@@ -474,11 +480,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
                     .filter(it -> it.endsWith(InjectionCodegenContext.MODULE_NAME))
                     .map(it -> {
                         // instantiate the class, call name() on it
-                        String fqn = outputDirectory()
-                                .relativize(it)
-                                .toString()
-                                .replace('/', '.')
-                                .replace('\\', '.');
+                        String fqn = toDotSeparated(outputDirectory().relativize(it));
                         try {
                             Class<?> moduleComponentClass = Class.forName(fqn);
                             ModuleComponent moduleComponent = (ModuleComponent) moduleComponentClass.getConstructor()
