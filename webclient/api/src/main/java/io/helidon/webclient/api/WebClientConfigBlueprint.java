@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.configdriven.api.ConfigBean;
+import io.helidon.inject.configdriven.service.ConfigBean;
 import io.helidon.webclient.spi.ProtocolConfig;
 import io.helidon.webclient.spi.ProtocolConfigProvider;
 

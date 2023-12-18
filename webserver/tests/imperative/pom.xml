@@ -85,8 +85,8 @@
                                         as long as we do not use integrations that require service registry,
                                         we should not bring in the runtime modules of injection and config driven
                                         -->
-                                        <exclude>io.helidon.inject:helidon-inject-runtime</exclude>
-                                        <exclude>io.helidon.inject.configdriven:helidon-configdriven-runtime</exclude>
+                                        <exclude>io.helidon.inject:helidon-inject</exclude>
+                                        <exclude>io.helidon.inject.configdriven:helidon-configdriven</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>

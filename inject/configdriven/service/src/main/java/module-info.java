@@ -19,8 +19,9 @@
  */
 module io.helidon.inject.configdriven.service {
 
-    requires io.helidon.common.config;
-    requires io.helidon.inject.service;
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.inject.service;
+    requires transitive io.helidon.common.types;
 
     exports io.helidon.inject.configdriven.service;
 }

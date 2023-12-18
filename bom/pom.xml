@@ -1359,32 +1359,12 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-tools</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
                 <artifactId>helidon-inject-maven-plugin</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.inject</groupId>
                 <artifactId>helidon-inject-testing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-runtime</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -1401,31 +1381,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-runtime</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
                 <artifactId>helidon-inject-configdriven-codegen</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
             <!-- Injection Integrations related -->
-            <dependency>
-                <groupId>io.helidon.integrations.oci.sdk</groupId>
-                <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.oci.sdk</groupId>
                 <artifactId>helidon-integrations-oci-sdk-codegen</artifactId>
