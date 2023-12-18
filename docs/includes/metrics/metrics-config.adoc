@@ -60,15 +60,11 @@ endif::[]
 ifdef::se-flavor[]
 [source,yaml]
 ----
-server:
-  features:
-    observe:
-      observers:
-        metrics:
-          enabled: false
+metrics:
+  enabled: false
 ----
 endif::[]
-Helidon does not update metrics, and the `{metrics-endpoint}` endpoints respond with `404`..
+Helidon does not update metrics, and the `{metrics-endpoint}` endpoint responds with `404` and a message indicating metrics are disabled.
 
 [#config-kpi]
 ==== Collecting Basic and Extended Key Performance Indicator (KPI) {metrics_uc}
@@ -95,15 +91,11 @@ endif::[]
 ifdef::se-flavor[]
 [source,yaml]
 ----
-server:
-  features:
-    observe:
-      observers:
-        metrics:
-          key-performance-indicators:
-            extended: true
-            long-running:
-              threshold-ms: 2000
+metrics:
+  key-performance-indicators:
+    extended: true
+    long-running:
+      threshold-ms: 2000
 ----
 endif::[]
 
