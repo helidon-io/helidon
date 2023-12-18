@@ -9,6 +9,19 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.5]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Dependencies: Upgrade gRPC version to 1.60.0 [8113](https://github.com/helidon-io/helidon/pull/8113)
+- Dependencies: Upgrade slf4j to 2.0.9 and logback to 1.4.14 [8119](https://github.com/helidon-io/helidon/pull/8119)
+- Examples: Archetype - fix SE zipkin configuration [8141](https://github.com/helidon-io/helidon/pull/8141)
+- Examples: archetype - update MP database template to use custom username/password [7961](https://github.com/helidon-io/helidon/pull/7961)
+- Examples: Workaround for Java 21 support with older jandex [8151](https://github.com/helidon-io/helidon/pull/8151)
+- Test: Slightly relax a unit test to avoid test ordering issues [8139](https://github.com/helidon-io/helidon/pull/8139)
+
 ## [3.2.4]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -832,6 +845,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.5]: https://github.com/helidon-io/helidon/compare/3.2.4...3.2.5
 [3.2.4]: https://github.com/helidon-io/helidon/compare/3.2.3...3.2.4
 [3.2.3]: https://github.com/helidon-io/helidon/compare/3.2.2...3.2.3
 [3.2.2]: https://github.com/helidon-io/helidon/compare/3.2.1...3.2.2
