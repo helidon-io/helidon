@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tests-project</artifactId>
-        <version>3.2.5-SNAPSHOT</version>
+        <version>3.2.5</version>
     </parent>
 
     <artifactId>helidon-microprofile-tests-testng-tests</artifactId>
