@@ -104,19 +104,21 @@ Helidon provides built-in support for health and metrics endpoints.
 [source,bash]
 .Health
 ----
-curl -s -X GET http://localhost:8080/health
+curl -sv -X GET http://localhost:8080/observe/health
 ----
+
+Notice we use the `-v` option to curl so that you can see that the health endpoint returns 204 (No Content) by default.
 
 [source,bash]
 .Metrics in Prometheus Format
 ----
-curl -s -X GET http://localhost:8080/metrics
+curl -s -X GET http://localhost:8080/observe/metrics
 ----
 
 [source,bash]
 .Metrics in JSON Format
 ----
-curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 ----
 
 == Build a Docker Image
