@@ -127,6 +127,10 @@ public final class InjectCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InvocationException}.
      */
     public static final TypeName INVOCATION_EXCEPTION = TypeName.create("io.helidon.inject.InvocationException");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.ServiceInjectionPlanBinder}.
+     */
+    public static final TypeName SERVICE_INJECTION_PLAN_BINDER = TypeName.create("io.helidon.inject.ServiceInjectionPlanBinder");
 
     private InjectCodegenTypes() {
     }

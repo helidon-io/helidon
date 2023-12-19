@@ -44,18 +44,17 @@
         <dependency>
             <!--
             must be in compile & runtime dependencies
-            as we provide services that are in API
+            as we provide service from this module
             -->
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-api</artifactId>
+            <artifactId>helidon-inject-service</artifactId>
         </dependency>
         <dependency>
             <!--
-            must be in compile dependencies, as it is used by generated classes
-            optional for runtime - if injection is used, it will be loaded
+            we only use inject API when injecting, so it would be on the module path anyway
             -->
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
+            <artifactId>helidon-inject</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -78,16 +77,7 @@
             Marks singletons driven by configuration
             -->
             <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
-            must be in compile dependencies, as it is used by generated classes
-            optional for runtime - if injection is used, it will be loaded
-            -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
+            <artifactId>helidon-inject-configdriven-service</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -131,7 +121,7 @@
                         </path>
                         <path>
                             <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-processor</artifactId>
+                            <artifactId>helidon-inject-configdriven-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -159,7 +149,7 @@
                     </dependency>
                     <dependency>
                         <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-processor</artifactId>
+                        <artifactId>helidon-inject-configdriven-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

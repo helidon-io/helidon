@@ -33,12 +33,6 @@
 
     <packaging>pom</packaging>
 
-    <properties>
-        <!-- Helidon Injection supports a universal debug flag -->
-        <inject.debug>true</inject.debug>
-    </properties>
-
-    <!-- this will show the progression of what has come over, and what is left to come over -->
     <modules>
         <module>service</module>
         <module>inject</module>

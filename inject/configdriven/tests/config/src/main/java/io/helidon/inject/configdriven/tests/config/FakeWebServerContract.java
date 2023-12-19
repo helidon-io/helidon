@@ -16,12 +16,12 @@
 
 package io.helidon.inject.configdriven.tests.config;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
  * For Testing.
  */
-@Contract
+@Injection.Contract
 public interface FakeWebServerContract {
 
     /**

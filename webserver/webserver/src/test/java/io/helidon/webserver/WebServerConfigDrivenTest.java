@@ -16,12 +16,11 @@
 
 package io.helidon.webserver;
 
-import io.helidon.config.Config;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Phase;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Phase;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
@@ -46,23 +45,25 @@ class WebServerConfigDrivenTest {
     @Test
     void testConfigDriven() {
         // This will pick up application.yaml from the classpath as default configuration file
-        Config config = Config.create();
+        InjectionConfig injectionConfig = InjectionConfig.builder()
+                .permitsDynamic(true)
+                .build();
 
         if (NORMAL_PRODUCTION_PATH) {
-            // bootstrap Injection with our config tree when it initializes
-            InjectionServices.globalBootstrap(Bootstrap.builder().config(config).build());
+            // bootstrap Injection with our config
+            InjectionServices.configure(injectionConfig);
         }
 
         // initialize Injection, and drive all activations based upon what has been configured
         Services services;
         if (NORMAL_PRODUCTION_PATH) {
-            services = InjectionServices.realizedServices();
+            services = InjectionServices.instance().services();
         } else {
-            InjectionServices injectionServices = InjectionTestingSupport.testableServices(config);
+            InjectionServices injectionServices = InjectionTestingSupport.testableServices(injectionConfig);
             services = injectionServices.services();
         }
 
-        ServiceProvider<WebServer> webServerSp = services.lookupFirst(WebServer.class);
+        ServiceProvider<WebServer> webServerSp = services.serviceProviders().get(WebServer.class);
         assertThat(webServerSp.currentActivationPhase(), is(Phase.ACTIVE));
     }
 

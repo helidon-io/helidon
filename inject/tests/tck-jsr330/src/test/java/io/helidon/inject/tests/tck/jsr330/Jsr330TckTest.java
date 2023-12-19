@@ -18,11 +18,10 @@ package io.helidon.inject.tests.tck.jsr330;
 
 import java.util.Enumeration;
 import java.util.Objects;
+import java.util.function.Supplier;
 
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.InjectionServicesConfig;
+import io.helidon.inject.InjectionServices;
 
-import jakarta.inject.Provider;
 import junit.framework.TestFailure;
 import junit.framework.TestResult;
 import org.atinject.tck.Tck;
@@ -38,21 +37,20 @@ import static org.hamcrest.Matchers.greaterThan;
  * Jsr-330 TCK Testing.
  * This test requires the annotation processing and the maven-plugin to run - see pom.xml.
  */
-class Jsr330TckTest {
+public class Jsr330TckTest {
 
     /**
      * Run's the TCK tests.
      */
     @Test
-    void testItAll() {
-        InjectionServices injectionServices = InjectionServices.injectionServices().orElseThrow();
-        InjectionServicesConfig cfg = injectionServices.config();
-        Provider<Car> carProvider = injectionServices.services().lookupFirst(Car.class);
+    public void testItAll() {
+        InjectionServices injectionServices = InjectionServices.instance();
+        Supplier<Car> carProvider = injectionServices.services().get(Car.class);
         Objects.requireNonNull(carProvider.get());
         assertThat("sanity", carProvider.get(), not(carProvider.get()));
         junit.framework.Test jsrTest = Tck.testsFor(carProvider.get(),
-                                                    cfg.supportsJsr330Statics(),
-                                                    cfg.supportsJsr330Privates());
+                                                    false,
+                                                    false);
         TestResult result = new TestResult();
         jsrTest.run(result);
         assertThat(result.runCount(), greaterThan(0));

@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.helidon.inject.tools.ToolsException;
+import io.helidon.codegen.CodegenException;
 
 /**
  * Testing utilities.
@@ -42,19 +42,24 @@ public final class TestUtils {
     public static String loadStringFromResource(String resourceNamePath) {
         try {
             try (InputStream in = TestUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
+                if (in == null) {
+                    throw new CodegenException("Could not find resource: " + resourceNamePath);
+                }
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
             }
+        } catch (CodegenException e) {
+            throw e;
         } catch (Exception e) {
-            throw new ToolsException("Failed to load: " + resourceNamePath, e);
+            throw new CodegenException("Failed to load: " + resourceNamePath, e);
         }
     }
 
     /**
-     * Loads a String from a file, wrapping any exception encountered to a {@link ToolsException}.
+     * Loads a String from a file, wrapping any exception encountered.
      *
      * @param fileName the file name to load
      * @return the contents of the file
-     * @throws ToolsException if there were any exceptions encountered
+     * @throws io.helidon.codegen.CodegenException if there were any exceptions encountered
      */
      // same as from CommonUtils.
      public static String loadStringFromFile(String fileName) {
@@ -63,7 +68,7 @@ public final class TestUtils {
             String content = Files.readString(filePath);
             return content.trim();
         } catch (IOException e) {
-            throw new ToolsException("Unable to load from file: " + fileName, e);
+            throw new CodegenException("Unable to load from file: " + fileName, e);
         }
     }
 

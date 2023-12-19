@@ -32,7 +32,6 @@ import io.helidon.inject.service.Invoker;
 import io.helidon.inject.service.ServiceInfo;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -177,21 +176,21 @@ class InvocationTest {
     }
 
     @Test
-    @Disabled
     void exceptionThrownInInterceptorPriorToReachingTarget() throws Exception {
-        first.control.timesToCatchException(1).timesToCallProceed(2);
+        // catch exception once, call proceed once - the result should be success
+        first.control.timesToCatchException(1).timesToCallProceed(1);
         second.control.exceptionBeforeProceed(new RuntimeException("before"));
         Object[] args = new Object[] {};
         Invoker<Boolean> fnc = (arguments) -> calls.add(arguments);
         Boolean result = Invocation.createInvokeAndSupply(dummyCtx, interceptors, fnc, args, Set.of());
-        assertThat(result, is(true));
+        assertThat(result, nullValue());
         assertThat(first.callCount.get(), equalTo(1));
-        assertThat(first.proceedCount.get(), equalTo(2));
+        assertThat(first.proceedCount.get(), equalTo(1));
         assertThat(first.downstreamExceptionCount.get(), equalTo(1));
-        assertThat(second.callCount.get(), equalTo(2));
-        assertThat(second.proceedCount.get(), equalTo(1));
+        assertThat(second.callCount.get(), equalTo(1));
+        assertThat(second.proceedCount.get(), equalTo(0));
         assertThat(second.downstreamExceptionCount.get(), equalTo(0));
-        assertThat(calls.size(), equalTo(1));
+        assertThat(calls.size(), equalTo(0));
     }
 
     @Test
@@ -215,7 +214,6 @@ class InvocationTest {
     }
 
     @Test
-    @Disabled
     void exceptionThrownMultipleTimesInSecond() throws Exception {
         first.control.timesToCatchException(3).timesToCallProceed(3);
         second.control.exceptionBeforeProceed(new RuntimeException("before"));
@@ -227,10 +225,10 @@ class InvocationTest {
         assertThat(first.callCount.get(), equalTo(1));
         assertThat(first.proceedCount.get(), equalTo(3));
         assertThat(first.downstreamExceptionCount.get(), equalTo(3));
-        assertThat(second.callCount.get(), equalTo(2));
-        assertThat(second.proceedCount.get(), equalTo(1));
+        assertThat(second.callCount.get(), equalTo(3));
+        assertThat(second.proceedCount.get(), equalTo(0));
         assertThat(second.downstreamExceptionCount.get(), equalTo(0));
-        assertThat(calls.size(), equalTo(1));
+        assertThat(calls.size(), equalTo(0));
     }
 
     @Test

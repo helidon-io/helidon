@@ -16,7 +16,7 @@
 
 package io.helidon.inject.runtime;
 
-import io.helidon.inject.api.InjectionServicesHolder;
+import io.helidon.inject.ResettableHandler;
 
 /**
  * Supporting helper utilities unit-testing services.
@@ -30,11 +30,9 @@ class SimpleInjectionTestingSupport {
         Holder.reset();
     }
 
-
-    @SuppressWarnings("deprecation")
-    private static class Holder extends InjectionServicesHolder {
+    private static class Holder extends ResettableHandler {
         public static void reset() {
-            InjectionServicesHolder.reset();
+            ResettableHandler.reset();
         }
     }
 

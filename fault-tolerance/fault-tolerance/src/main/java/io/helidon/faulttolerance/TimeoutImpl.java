@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import jakarta.inject.Inject;
+import io.helidon.inject.service.Injection;
 
 class TimeoutImpl implements Timeout {
     private static final System.Logger LOGGER = System.getLogger(TimeoutImpl.class.getName());
@@ -34,7 +34,7 @@ class TimeoutImpl implements Timeout {
     private final String name;
     private final TimeoutConfig config;
 
-    @Inject
+    @Injection.Inject
     TimeoutImpl(TimeoutConfig config) {
         this.timeoutMillis = config.timeout().toMillis();
         this.executor = config.executor().orElseGet(FaultTolerance.executor());

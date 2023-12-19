@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
+            <artifactId>helidon-inject</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
@@ -60,12 +60,10 @@
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
@@ -92,27 +90,39 @@
                 <version>${helidon.version}</version>
                 <executions>
                     <execution>
+                        <id>create-module</id>
                         <goals>
                             <goal>external-module-create</goal>
+                        </goals>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-Ahelidon.inject.autoAddNonContractInterfaces=true</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-application</id>
+                        <goals>
+                            <goal>application-create</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-Ainject.debug=${inject.debug}</arg>
-                        <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
-                    </compilerArgs>
                     <packageNames>
                         <packageName>org.atinject.tck.auto</packageName>
                         <packageName>org.atinject.tck.auto.accessories</packageName>
                     </packageNames>
                     <supportsJsr330Strict>true</supportsJsr330Strict>
                     <serviceTypeQualifiers>
+                        <!--
+                        This is working around TCK of JSR-330, as we want to be deterministic, and
+                        guessing qualifiers based of class names does not resonate with our approach
+                         -->
                         <serviceTypeQualifier>
                             <serviceTypeName>org.atinject.tck.auto.accessories.SpareTire</serviceTypeName>
                             <qualifiers>
                                 <qualifier>
-                                    <qualifierTypeName>jakarta.inject.Named</qualifierTypeName>
+                                    <qualifierTypeName>io.helidon.inject.service.Injection.Named</qualifierTypeName>
                                     <value>spare</value>
                                 </qualifier>
                             </qualifiers>
@@ -127,6 +137,18 @@
                         </serviceTypeQualifier>
                     </serviceTypeQualifiers>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen-jakarta</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

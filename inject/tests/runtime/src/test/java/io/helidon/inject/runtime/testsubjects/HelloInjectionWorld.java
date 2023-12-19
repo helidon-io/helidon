@@ -16,12 +16,12 @@
 
 package io.helidon.inject.runtime.testsubjects;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
  * For testing.
  */
-@Contract
+@Injection.Contract
 public interface HelloInjectionWorld {
 
     /**

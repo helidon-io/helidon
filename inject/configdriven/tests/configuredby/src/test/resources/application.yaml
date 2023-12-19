@@ -14,9 +14,6 @@
 # limitations under the License.
 #
 
-inject:
-  permits-dynamic: true
-
 server:
   port: 8080
 ft:

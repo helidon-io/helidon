@@ -16,37 +16,38 @@
 
 package io.helidon.inject.tests.inject.interceptor;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.InjectionException;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Interceptor;
-import io.helidon.inject.api.ServiceInfo;
-import io.helidon.inject.api.ServiceInfoCriteria;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.testing.ReflectionBasedSingletonServiceProvider;
+import io.helidon.inject.InjectTypes;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Lookup;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.ServiceProviderRegistry;
+import io.helidon.inject.Services;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Interception;
+import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.testing.ReflectionBasedSingletonServiceDescriptor;
 import io.helidon.inject.tests.inject.ClassNamedY;
 import io.helidon.inject.tests.plain.interceptor.IB;
 import io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno;
 import io.helidon.inject.tests.plain.interceptor.TestNamedInterceptor;
 
-import jakarta.inject.Named;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.api.Qualifier.create;
-import static io.helidon.inject.api.Qualifier.createNamed;
 import static io.helidon.inject.testing.InjectionTestingSupport.basicTestableConfig;
 import static io.helidon.inject.testing.InjectionTestingSupport.bind;
 import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
@@ -54,28 +55,25 @@ import static io.helidon.inject.testing.InjectionTestingSupport.testableServices
 import static io.helidon.inject.testing.InjectionTestingSupport.toDescription;
 import static io.helidon.inject.testing.InjectionTestingSupport.toDescriptions;
 import static io.helidon.inject.tests.inject.TestUtils.loadStringFromResource;
-import static io.helidon.inject.tools.TypeTools.toFilePath;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class InterceptorRuntimeTest {
 
-    Config config = basicTestableConfig();
-    InjectionServices injectionServices;
-    Services services;
+    private final InjectionConfig config = basicTestableConfig();
+    private InjectionServices injectionServices;
 
     @BeforeEach
     void setUp() {
         setUp(config);
     }
 
-    void setUp(Config config) {
+    void setUp(InjectionConfig config) {
         this.injectionServices = testableServices(config);
-        this.services = injectionServices.services();
     }
 
     @AfterEach
@@ -85,55 +83,46 @@ class InterceptorRuntimeTest {
 
     @Test
     void createNoArgBasedInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = TypeName.create(XImpl$$Injection$$Interceptor.class);
+        TypeName interceptorTypeName = TypeName.create(XImpl__Intercepted.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
-        String java = Files.readString(file.toPath());
-        String expected = loadStringFromResource("expected/ximpl-interceptor._java_");
-        assertEquals(
-                expected.replaceFirst("#DATE#", Integer.toString(Calendar.getInstance().get(Calendar.YEAR))),
-                java);
+        List<String> java = Files.readAllLines(file.toPath());
+        String year = String.valueOf(Calendar.getInstance().get(Calendar.YEAR));
+        String expected = loadStringFromResource("expected/ximpl-intercepted._java_")
+                .replace("{{year}}", year);
+
+        compareContentByLines("XImpl__Intercepted.java", java, expected);
     }
 
     @Test
     void createInterfaceBasedInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = TypeName.create(YImpl$$Injection$$Interceptor.class);
+        TypeName interceptorTypeName = TypeName.create(YImpl__Intercepted.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
-        String java = Files.readString(file.toPath());
-        assertEquals(loadStringFromResource("expected/yimpl-interceptor._java_"),
-                     java);
+        List<String> java = Files.readAllLines(file.toPath());
+        String year = String.valueOf(Calendar.getInstance().get(Calendar.YEAR));
+        String expected = loadStringFromResource("expected/yimpl-intercepted._java_")
+                .replace("{{year}}", year);
+        compareContentByLines("YImpl__Intercepted.java", java, expected);
     }
 
     @Test
     void runtimeWithNoInterception() throws Exception {
-        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
-                .addContractImplemented(Closeable.class)
-                .includeIntercepted(true)
-                .build();
-        List<ServiceProvider<?>> closeableProviders = services.lookupAll(criteria);
-        assertThat("the interceptors should always be weighted higher than the non-interceptors",
-                   toDescriptions(closeableProviders),
-                   contains("XImpl$$Injection$$Interceptor:INIT", "YImpl$$Injection$$Interceptor:INIT",
-                            "XImpl:INIT", "YImpl:INIT"));
+        Services serviceRegistry = injectionServices.services();
+        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
 
-        criteria = ServiceInfoCriteria.builder()
-                .addContractImplemented(Closeable.class)
-                .includeIntercepted(false)
-                .build();
-        closeableProviders = services.lookupAll(criteria);
-        assertThat("the interceptors should always be weighted higher than the non-interceptors",
-                   toDescriptions(closeableProviders),
-                   contains("XImpl$$Injection$$Interceptor:INIT", "YImpl$$Injection$$Interceptor:INIT"));
+        List<ServiceProvider<Closeable>> closeableProviders = services.all(Closeable.class);
+        assertThat(toDescriptions(closeableProviders),
+                   contains("XImpl:INIT", "YImpl:INIT"));
 
-        List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
+        List<ServiceProvider<IB>> ibProviders = services.all(IB.class);
         assertThat(closeableProviders,
                    equalTo(ibProviders));
 
-        ServiceProvider<XImpl> ximplProvider = services.lookupFirst(XImpl.class);
-        assertThat(closeableProviders.get(0),
+        ServiceProvider<XImpl> ximplProvider = services.get(XImpl.class);
+        assertThat(closeableProviders.getFirst(),
                    is(ximplProvider));
 
         XImpl x = ximplProvider.get();
@@ -150,24 +139,23 @@ class InterceptorRuntimeTest {
                    equalTo("methodY"));
         assertThat(x.methodZ(),
                    equalTo("methodZ"));
-        InjectionException pe = assertThrows(InjectionException.class, x::close);
+        IOException pe = assertThrows(IOException.class, x::close);
         assertThat("the error handling should be the same if there are interceptors or not",
                    pe.getMessage(),
-                   equalTo("Error in interceptor chain processing: service provider: XImpl:ACTIVE"));
+                   equalTo("forced"));
         RuntimeException re = assertThrows(RuntimeException.class, x::throwRuntimeException);
         assertThat("the error handling should be the same if there are interceptors or not",
                    re.getMessage(),
-                   equalTo("Error in interceptor chain processing: service provider: XImpl:ACTIVE"));
+                   equalTo("forced"));
 
-        // we cannot look up by service type here - we need to instead lookup by one of the interfaces
-        ServiceProvider<?> yimplProvider = services
-                .lookupFirst(
-                        ServiceInfoCriteria.builder()
-                                .addContractImplemented(Closeable.class)
-                                .qualifiers(Set.of(create(Named.class, ClassNamedY.class.getName())))
-                                .build());
+        // There is only one service (regardless of interception status)
+        ServiceProvider<Closeable> yimplProvider = services.get(
+                Lookup.builder()
+                        .addContract(Closeable.class)
+                        .qualifiers(Set.of(Qualifier.create(Injection.Named.class, ClassNamedY.class.getName())))
+                        .build());
         assertThat(toDescription(yimplProvider),
-                   equalTo("YImpl$$Injection$$Interceptor:INIT"));
+                   equalTo("YImpl:INIT"));
         IB ibOnYInterceptor = (IB) yimplProvider.get();
         sval = ibOnYInterceptor.methodIB2("test");
         assertThat(sval,
@@ -176,46 +164,33 @@ class InterceptorRuntimeTest {
 
     @Test
     void runtimeWithInterception() throws Exception {
-        // disable application and modules to effectively start with an empty registry
-        Config config = Config.builder(
-                        ConfigSources.create(
-                                Map.of("inject.permits-dynamic", "true",
-                                       "inject.uses-compile-time-applications", "false",
-                                       "inject.uses-compile-time-modules", "true"),
-                                "config-1"))
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .build();
+        // disable application
         tearDown();
-        setUp(config);
-        bind(injectionServices, ReflectionBasedSingletonServiceProvider
-                .create(TestNamedInterceptor.class,
-                        ServiceInfo.builder()
-                                .serviceTypeName(TestNamedInterceptor.class)
-                                .addQualifier(createNamed(TestNamed.class.getName()))
-                                .addQualifier(createNamed(InterceptorBasedAnno.class.getName()))
-                                .addExternalContractImplemented(Interceptor.class)
-                                .build()));
-        assertThat(TestNamedInterceptor.ctorCount.get(),
+        setUp(InjectionConfig.builder()
+                      .permitsDynamic(true)
+                      .useApplication(false)
+                      .build());
+        Services serviceRegistry = injectionServices.services();
+        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
+        bind(serviceRegistry, ReflectionBasedSingletonServiceDescriptor
+                .create(TestNamedInterceptor.class, new TestNamedInterceptorServiceInfo()));
+        assertThat(TestNamedInterceptor.CONSTRUCTOR_COUNTER.get(),
                    equalTo(0));
 
-        List<ServiceProvider<Closeable>> closeableProviders = injectionServices.services().lookupAll(Closeable.class);
-        assertThat("the interceptors should always be weighted higher than the non-interceptors",
-                   toDescriptions(closeableProviders),
-                   contains("XImpl$$Injection$$Interceptor:INIT", "YImpl$$Injection$$Interceptor:INIT"));
+        List<ServiceProvider<Closeable>> closeableProviders = services.all(Closeable.class);
 
-        List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
+        List<ServiceProvider<IB>> ibProviders = services.all(IB.class);
         assertThat(closeableProviders,
                    equalTo(ibProviders));
 
-        ServiceProvider<XImpl> ximplProvider = services.lookupFirst(XImpl.class);
-        assertThat(closeableProviders.get(0),
+        ServiceProvider<XImpl> ximplProvider = services.get(XImpl.class);
+        assertThat(closeableProviders.getFirst(),
                    is(ximplProvider));
 
-        assertThat(TestNamedInterceptor.ctorCount.get(),
+        assertThat(TestNamedInterceptor.CONSTRUCTOR_COUNTER.get(),
                    equalTo(0));
         XImpl xIntercepted = ximplProvider.get();
-        assertThat(TestNamedInterceptor.ctorCount.get(),
+        assertThat(TestNamedInterceptor.CONSTRUCTOR_COUNTER.get(),
                    equalTo(1));
 
         xIntercepted.methodIA1();
@@ -231,29 +206,98 @@ class InterceptorRuntimeTest {
                    equalTo("intercepted:methodY"));
         assertThat(xIntercepted.methodZ(),
                    equalTo("intercepted:methodZ"));
-        InjectionException pe = assertThrows(InjectionException.class, xIntercepted::close);
+        IOException pe = assertThrows(IOException.class, xIntercepted::close);
+        // as this is a declared checked exception, it is re-thrown as is
         assertThat(pe.getMessage(),
-                   equalTo("forced: service provider: XImpl:ACTIVE"));
+                   equalTo("forced"));
         RuntimeException re = assertThrows(RuntimeException.class, xIntercepted::throwRuntimeException);
+        // as this is a runtime exception, it is re-thrown as is
         assertThat(re.getMessage(),
-                   equalTo("forced: service provider: XImpl:ACTIVE"));
+                   equalTo("forced"));
 
-        assertThat(TestNamedInterceptor.ctorCount.get(),
+        assertThat(TestNamedInterceptor.CONSTRUCTOR_COUNTER.get(),
                    equalTo(1));
 
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
-        ServiceProvider<?> yimplProvider = services
-                .lookupFirst(
-                        ServiceInfoCriteria.builder()
-                                .addContractImplemented(Closeable.class)
-                                .qualifiers(Set.of(create(Named.class, ClassNamedY.class.getName())))
-                                .build());
+        ServiceProvider<IB> yimplProvider = services.get(Lookup.builder()
+                                                                 .addContract(IB.class)
+                                                                 .addQualifier(Qualifier.createNamed(ClassNamedY.class))
+                                                                 .build());
         assertThat(toDescription(yimplProvider),
-                   equalTo("YImpl$$Injection$$Interceptor:INIT"));
-        IB ibOnYInterceptor = (IB) yimplProvider.get();
-        sval = ibOnYInterceptor.methodIB2("test");
+                   equalTo("YImpl:INIT"));
+        IB ibInstance = yimplProvider.get();
+        sval = ibInstance.methodIB2("test");
         assertThat(sval,
                    equalTo("intercepted:test"));
     }
 
+    private static String toFilePath(TypeName typeName) {
+        return toFilePath(typeName, ".java");
+    }
+
+    private static String toFilePath(TypeName typeName,
+                                     String fileType) {
+        String className = typeName.className();
+        String packageName = typeName.packageName().replace('.', File.separatorChar);
+
+        String suffix;
+        if (fileType.startsWith(".")) {
+            suffix = fileType;
+        } else {
+            suffix = "." + fileType;
+        }
+
+        return packageName + File.separatorChar + className + suffix;
+    }
+
+    private void compareContentByLines(String description, List<String> generatedSource, String expectedSource)
+            throws IOException {
+        BufferedReader br = new BufferedReader(new StringReader(expectedSource));
+
+        int sourceLineNumber = 0;
+
+        for (int i = 0; i < generatedSource.size(); i++) {
+            sourceLineNumber++;
+            String sourceLine = generatedSource.get(i).trim();
+            if (sourceLine.isEmpty()) {
+                continue;
+            }
+            String expectedLine;
+            while ((expectedLine = br.readLine()) != null) {
+                expectedLine = expectedLine.trim();
+                if (!expectedLine.isEmpty()) {
+                    break;
+                }
+            }
+            if (expectedLine == null) {
+                fail("Source file: " + description + " contains line [" + sourceLineNumber + "] \"" + sourceLine + "\", "
+                             + "where nothing is expected.");
+            }
+            assertThat("Source file: " + description + ", lineNumber: " + (i + 1)
+                               + ", line " + sourceLine, sourceLine, is(expectedLine));
+        }
+    }
+
+    private static class TestNamedInterceptorServiceInfo implements ServiceInfo {
+        @Override
+        public TypeName serviceType() {
+            return TypeName.create(TestNamedInterceptor.class);
+        }
+
+        @Override
+        public Set<TypeName> scopes() {
+            return Set.of(InjectTypes.SINGLETON);
+        }
+
+        @Override
+        public Set<Qualifier> qualifiers() {
+            return Set.of(Qualifier.createNamed(TestNamed.class),
+                          Qualifier.createNamed(InterceptorBasedAnno.class));
+        }
+
+        @Override
+        public Set<TypeName> contracts() {
+            return Set.of(TypeName.create(Interception.Interceptor.class));
+        }
+    }
 }

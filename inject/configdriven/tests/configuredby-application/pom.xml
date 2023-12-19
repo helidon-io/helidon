@@ -43,7 +43,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
+            <artifactId>helidon-inject-configdriven</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject.configdriven.tests</groupId>
@@ -59,6 +59,11 @@
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
@@ -97,15 +102,13 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Ainject.debug=${inject.debug}</arg>
-                        <arg>-Ainject.application.pre.create=true</arg>
-                        <arg>-Ainject.mapApplicationToSingletonScope=true</arg>
+                        <arg>-Ahelidon.inject.mapApplicationToSingletonScope=true</arg>
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-processor</artifactId>
+                            <artifactId>helidon-inject-configdriven-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -119,6 +122,16 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.inject</groupId>
+                            <artifactId>helidon-inject-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.inject</groupId>
+                            <artifactId>helidon-inject-codegen-jakarta</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -128,7 +141,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-processor</artifactId>
+                        <artifactId>helidon-inject-configdriven-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
@@ -139,6 +152,16 @@
                     <dependency>
                         <groupId>io.helidon.builder</groupId>
                         <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen-jakarta</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
@@ -160,24 +183,9 @@
                             <goal>application-create</goal>
                         </goals>
                     </execution>
-                    <!-- leave here for ease of use in the future -->
-<!--                    <execution>-->
-<!--                        <id>testCompile</id>-->
-<!--                        <phase>test-compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>test-application-create</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
                 </executions>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-Ainject.debug=${inject.debug}</arg>
-                        <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
-                        <arg>-Ainject.application.pre.create=true</arg>
-                    </compilerArgs>
-                    <permittedProviderTypes>NAMED</permittedProviderTypes>
-                    <permittedProviderTypeNames>
-                    </permittedProviderTypeNames>
+                    <permittedProviderType>NAMED</permittedProviderType>
                 </configuration>
             </plugin>
         </plugins>

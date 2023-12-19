@@ -22,20 +22,17 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.ContextualServiceQuery;
-import io.helidon.inject.api.InjectionPointProvider;
-import io.helidon.inject.api.Qualifier;
-import io.helidon.inject.api.ServiceInfoCriteria;
+import io.helidon.inject.ContextualServiceQuery;
+import io.helidon.inject.InjectionPointProvider;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
-
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
 
 /**
  * Provides contextual injection for blades.
  */
-@Singleton
-@Named("*")
+@Injection.Singleton
+@Injection.Named("*")
 public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
 
     static final Qualifier all = Qualifier.createNamed("*");
@@ -45,17 +42,17 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     @Override
     public Optional<AbstractBlade> first(ContextualServiceQuery query) {
         Objects.requireNonNull(query);
-        ServiceInfoCriteria criteria = query.serviceInfoCriteria();
-        assert (criteria.contractsImplemented().size() == 1) : criteria;
-        assert (criteria.contractsImplemented().contains(TypeName.create(AbstractBlade.class))) : criteria;
+
+        assert (query.contracts().size() == 1) : query;
+        assert (query.contracts().contains(TypeName.create(AbstractBlade.class))) : query;
 
         AbstractBlade blade;
-        if (criteria.qualifiers().contains(all) || criteria.qualifiers().contains(coarse)) {
+        if (query.qualifiers().contains(all) || query.qualifiers().contains(coarse)) {
             blade = new CoarseBlade();
-        } else if (criteria.qualifiers().contains(fine)) {
+        } else if (query.qualifiers().contains(fine)) {
             blade = new FineBlade();
         } else {
-            assert (criteria.qualifiers().isEmpty());
+            assert (query.qualifiers().isEmpty());
             blade = new DullBlade();
         }
 
@@ -65,24 +62,22 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     @Override
     public List<AbstractBlade> list(ContextualServiceQuery query) {
         Objects.requireNonNull(query);
-        assert (query.injectionPointInfo().orElseThrow().listWrapped()) : query;
-        ServiceInfoCriteria criteria = query.serviceInfoCriteria();
 
         List<AbstractBlade> result = new ArrayList<>();
-        if (criteria.qualifiers().contains(all) || criteria.qualifiers().contains(coarse)) {
+        if (query.qualifiers().contains(all) || query.qualifiers().contains(coarse)) {
             result.add(new CoarseBlade());
         }
 
-        if (criteria.qualifiers().contains(all) || criteria.qualifiers().contains(fine)) {
+        if (query.qualifiers().contains(all) || query.qualifiers().contains(fine)) {
             result.add(new FineBlade());
         }
 
-        if (criteria.qualifiers().contains(all) || criteria.qualifiers().isEmpty()) {
+        if (query.qualifiers().contains(all) || query.qualifiers().isEmpty()) {
             result.add(new DullBlade());
         }
 
         if (query.expected() && result.isEmpty()) {
-            throw new AssertionError("expected to match: " + criteria);
+            throw new AssertionError("expected to match: " + query);
         }
 
         return result;

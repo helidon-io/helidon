@@ -25,33 +25,43 @@ import io.helidon.inject.Phase;
 import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.ServiceProviderBase;
 import io.helidon.inject.Services;
-import io.helidon.inject.service.ServiceDescriptor;
 
+/*
+Config bean registry has a single instance per service registry.
+ */
 class CbrProvider extends ServiceProviderBase<ConfigBeanRegistryImpl>
         implements ServiceProvider<ConfigBeanRegistryImpl>,
                    ActivationPhaseReceiver {
     private final Services services;
+    private final ConfigBeanRegistryImpl instance;
 
-    protected CbrProvider(Services services,
-                          ServiceDescriptor<ConfigBeanRegistryImpl> serviceSource) {
+    CbrProvider(Services services,
+                CbrServiceDescriptor serviceSource) {
         super(services, serviceSource);
         this.services = services;
+        instance = new ConfigBeanRegistryImpl();
+        super.state(Phase.ACTIVATION_FINISHING, instance);
     }
 
     @Override
     public void onPhaseEvent(Phase phase) {
 
         if (phase == Phase.POST_BIND_ALL_MODULES) {
-            ConfigBeanRegistryImpl cbr = ConfigBeanRegistryImpl.CONFIG_BEAN_REGISTRY.get();
             if (services.limitRuntimePhase() == Phase.ACTIVE) {
                 // we can lookup from the registry, as services can be activated
-                cbr.initialize(services.first(Config.class)
+                instance.initialize(services.first(Config.class)
                                        .map(Supplier::get)
                                        .orElseGet(GlobalConfig::config));
+                super.state(Phase.ACTIVE, instance);
             } else {
                 // we cannot use registry
-                cbr.initialize(GlobalConfig.config());
+                instance.initialize(GlobalConfig.config());
             }
         }
+    }
+
+    @Override
+    public ConfigBeanRegistryImpl get() {
+        return instance;
     }
 }

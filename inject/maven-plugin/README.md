@@ -48,7 +48,7 @@ example usage:
            <packageNames>
                <packageName>io.helidon.inject.examples.logger.common</packageName>
            </packageNames>
-           <permittedProviderTypes>ALL</permittedProviderTypes>
+           <permittedProviderType>ALL</permittedProviderType>
        </configuration>
    </plugin>
 ```
@@ -66,8 +66,7 @@ The example from above cover the basics for generation. There are one more advan
 ```pom.xml
     <configuration>
         <compilerArgs>
-            <arg>-Ainject.debug=true</arg>
-            <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
+            <arg>-Ahelidon.inject.autoAddNonContractInterfaces=true</arg>
         </compilerArgs>
         <packageNames>
             <packageName>org.atinject.tck.auto</packageName>

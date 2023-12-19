@@ -18,21 +18,16 @@ package io.helidon.inject.testing;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.InjectionServicesConfig;
-import io.helidon.inject.api.InjectionServicesHolder;
-import io.helidon.inject.api.ServiceBinder;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
-import io.helidon.inject.runtime.ServiceBinderDefault;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ResettableHandler;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.Services;
+import io.helidon.inject.service.ServiceDescriptor;
 
 /**
  * Supporting helper utilities unit-testing Injection Services.
@@ -51,16 +46,15 @@ public class InjectionTestingSupport {
     }
 
     /**
-     * Provides a means to bind a service provider into the {@link Services} registry.
+     * Provides a means to bind a service provider into the {@link io.helidon.inject.Services} registry.
      *
-     * @param injectionServices the services instance to bind into
-     * @param serviceProvider   the service provider to bind
-     * @see ServiceBinder
+     * @param services        the services instance to bind into
+     * @param serviceProvider the service provider to bind
+     * @see io.helidon.inject.service.ServiceBinder
      */
-    public static void bind(InjectionServices injectionServices,
-                            ServiceProvider<?> serviceProvider) {
-        ServiceBinderDefault binder = ServiceBinderDefault.create(injectionServices, InjectionTestingSupport.class.getSimpleName(), true);
-        binder.bind(serviceProvider);
+    public static void bind(Services services,
+                            ServiceDescriptor<?> serviceProvider) {
+        services.binder().bind(serviceProvider);
     }
 
     /**
@@ -68,8 +62,8 @@ public class InjectionTestingSupport {
      *
      * @return testable services instance
      */
-    public static InjectionServices testableServices() {
-        return instance.get();
+    public static Services testableServices() {
+        return instance.get().services();
     }
 
     /**
@@ -77,9 +71,9 @@ public class InjectionTestingSupport {
      *
      * @param config the config to use
      * @return testable services instance
-     * @see InjectionServicesConfig
+     * @see io.helidon.inject.InjectionConfig
      */
-    public static InjectionServices testableServices(Config config) {
+    public static InjectionServices testableServices(InjectionConfig config) {
         return lazyCreate(config).get();
     }
 
@@ -88,14 +82,10 @@ public class InjectionTestingSupport {
      *
      * @return testable config
      */
-    public static Config basicTestableConfig() {
-        return Config.builder(
-                        ConfigSources.create(
-                                Map.of("inject.permits-dynamic", "true",
-                                        "inject.service-lookup-caching", "true"),
-                                "config-1"))
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
+    public static InjectionConfig basicTestableConfig() {
+        return InjectionConfig.builder()
+                .permitsDynamic(true)
+                .serviceLookupCaching(true)
                 .build();
     }
 
@@ -106,12 +96,12 @@ public class InjectionTestingSupport {
      * @return the description of the instance
      */
     public static String toDescription(Object providerOrInstance) {
-        if (providerOrInstance instanceof Optional) {
-            providerOrInstance = ((Optional<?>) providerOrInstance).orElse(null);
+        if (providerOrInstance instanceof Optional<?> optional) {
+            providerOrInstance = optional.orElse(null);
         }
 
-        if (providerOrInstance instanceof ServiceProvider) {
-            return ((ServiceProvider<?>) providerOrInstance).description();
+        if (providerOrInstance instanceof ServiceProvider<?> sp) {
+            return sp.description();
         }
         return String.valueOf(providerOrInstance);
     }
@@ -126,17 +116,16 @@ public class InjectionTestingSupport {
         return coll.stream().map(InjectionTestingSupport::toDescription).collect(Collectors.toList());
     }
 
-    private static LazyValue<InjectionServices> lazyCreate(Config config) {
+    private static LazyValue<InjectionServices> lazyCreate(InjectionConfig config) {
         return LazyValue.create(() -> {
-            InjectionServices.globalBootstrap(Bootstrap.builder().config(config).build());
-            return InjectionServices.injectionServices().orElseThrow();
+            InjectionServices.configure(config);
+            return InjectionServices.instance();
         });
     }
 
-    @SuppressWarnings("deprecation")
-    private static class Internal extends InjectionServicesHolder {
+    private static class Internal extends ResettableHandler {
         public static void reset() {
-            InjectionServicesHolder.reset();
+            ResettableHandler.reset();
             instance = lazyCreate(basicTestableConfig());
         }
     }

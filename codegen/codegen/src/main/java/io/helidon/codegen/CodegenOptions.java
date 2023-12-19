@@ -29,6 +29,15 @@ import io.helidon.common.GenericType;
  */
 public interface CodegenOptions {
     /**
+     * Tag to define custom module name.
+     */
+    String TAG_CODEGEN_MODULE = "helidon.codegen.module-name";
+    /**
+     * Tag to define custom package name.
+     */
+    String TAG_CODEGEN_PACKAGE = "helidon.codegen.package-name";
+
+    /**
      * Codegen option to configure codegen scope.
      */
     Option<CodegenScope> CODEGEN_SCOPE = Option.create("helidon.codegen.scope",
@@ -41,10 +50,17 @@ public interface CodegenOptions {
     /**
      * Codegen option to configure module name of the module being processed.
      */
-    Option<String> CODEGEN_MODULE = Option.create("helidon.codegen.module-name",
+    Option<String> CODEGEN_MODULE = Option.create(TAG_CODEGEN_MODULE,
                                                   "Override name of the module that is being processed, or provide it"
                                                           + " if this module does not have a module-info.java",
                                                   "");
+
+    /**
+     * Codegen option to configure module name of the module being processed.
+     */
+    Option<String> CODEGEN_PACKAGE = Option.create(TAG_CODEGEN_PACKAGE,
+                                                   "Define package to use for generated types.",
+                                                   "");
     /**
      * Codegen option to configure which indent type to use (a space character, or a tab character).
      */
@@ -54,12 +70,23 @@ public interface CodegenOptions {
                                                    IndentType::valueOf,
                                                    GenericType.create(IndentType.class));
     /**
-     * Codegen option to configure how many time to repeat the {@link #INDENT_TYPE} for indentation.
+     * Codegen option to configure how many times to repeat the {@link #INDENT_TYPE} for indentation.
+     * <p>
+     * Defaults to {@code 4}.
      */
     Option<Integer> INDENT_COUNT = Option.create("helidon.codegen.indent.count",
                                                  "Number of indents to use (such as 4, if combined with SPACE will indent by 4 "
                                                          + "spaces",
                                                  4);
+
+    /**
+     * Codegen option to configure creation of META-INF services when module-info.java is present.
+     * Defaults to {@code true}, so the file is generated.
+     */
+    Option<Boolean> CREATE_META_INF_SERVICES = Option.create("helidon.codegen.meta-inf.services",
+                                                             "Whether to create META-INF/services for generated services even "
+                                                                     + "if module-info.java is present",
+                                                             true);
 
     /**
      * Find an option.
@@ -118,5 +145,14 @@ public interface CodegenOptions {
      */
     default Set<String> asSet(String option) {
         return Set.copyOf(asList(option));
+    }
+
+    /**
+     * Validate options against the permitted options. The implementations in Helidon only validate
+     * {@code helidon.} prefixed options.
+     *
+     * @param permittedOptions options permitted by the codegen in progress
+     */
+    default void validate(Set<Option<?>> permittedOptions) {
     }
 }

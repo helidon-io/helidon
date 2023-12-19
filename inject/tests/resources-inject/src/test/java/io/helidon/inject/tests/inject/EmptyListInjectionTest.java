@@ -16,9 +16,10 @@
 
 package io.helidon.inject.tests.inject;
 
-import io.helidon.config.Config;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import java.util.function.Supplier;
+
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.Services;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +32,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class EmptyListInjectionTest {
-    private static final Config CONFIG = basicTestableConfig();
+    private static final InjectionConfig CONFIG = basicTestableConfig();
 
     private Services services;
 
@@ -47,8 +48,8 @@ class EmptyListInjectionTest {
 
     @Test
     void acceptEmptyListInjectables() {
-        ServiceProvider<AServiceUsingAContractWithNoServiceImplementations> sp =
-                services.lookupFirst(AServiceUsingAContractWithNoServiceImplementations.class);
+        Supplier<AServiceUsingAContractWithNoServiceImplementations> sp =
+                services.get(AServiceUsingAContractWithNoServiceImplementations.class);
         assertThat(sp.get(), notNullValue());
     }
 

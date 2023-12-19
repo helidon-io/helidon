@@ -22,6 +22,7 @@ import io.helidon.codegen.spi.GeneratedAnnotationProvider;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 /**
  * Support for generated annotation.
@@ -57,8 +58,6 @@ final class GeneratedAnnotationHandler {
 
     // @Generated(value = "io.helidon.inject.tools.ActivatorCreatorDefault", comments = "version=1")
     private static class DefaultProvider implements GeneratedAnnotationProvider {
-        private static final TypeName GENERATED = TypeName.create("io.helidon.common.Generated");
-
         @Override
         public Annotation create(TypeName generator,
                                  TypeName trigger,
@@ -66,7 +65,7 @@ final class GeneratedAnnotationHandler {
                                  String versionId,
                                  String comments) {
             return Annotation.builder()
-                    .typeName(GENERATED)
+                    .typeName(TypeNames.GENERATED)
                     .putValue("value", generator.resolvedName())
                     .putValue("trigger", trigger.resolvedName())
                     .update(it -> {
