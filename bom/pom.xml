@@ -531,16 +531,19 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor-helidon-copyright</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor-class-model</artifactId>
                 <version>${helidon.version}</version>

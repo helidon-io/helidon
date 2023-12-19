@@ -58,12 +58,7 @@ Helidon Injection's minimalist, compile-time generated dependency injection (DI)
 ----
 <dependency>
     <groupId>io.helidon.inject</groupId>
-    <artifactId>helidon-inject-api</artifactId>
-    <version>${helidon.version}</version>
-</dependency>
-<dependency>
-    <groupId>io.helidon.inject</groupId>
-    <artifactId>helidon-inject-types</artifactId>
+    <artifactId>helidon-inject</artifactId>
     <version>${helidon.version}</version>
 </dependency>
 ----
