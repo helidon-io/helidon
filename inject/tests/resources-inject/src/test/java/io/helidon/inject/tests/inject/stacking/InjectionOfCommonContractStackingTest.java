@@ -18,10 +18,10 @@ package io.helidon.inject.tests.inject.stacking;
 
 import java.util.List;
 
-import io.helidon.config.Config;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
@@ -39,16 +39,17 @@ import static org.hamcrest.Matchers.contains;
  */
 class InjectionOfCommonContractStackingTest {
 
-    Config config = InjectionTestingSupport.basicTestableConfig();
-    InjectionServices injectionServices;
-    Services services;
+    private final InjectionConfig config = InjectionTestingSupport.basicTestableConfig();
+
+    private InjectionServices injectionServices;
+    private Services services;
 
     @BeforeEach
     void setUp() {
         setUp(config);
     }
 
-    void setUp(Config config) {
+    void setUp(InjectionConfig config) {
         this.injectionServices = testableServices(config);
         this.services = injectionServices.services();
     }
@@ -60,7 +61,7 @@ class InjectionOfCommonContractStackingTest {
 
     @Test
     void injectionStacking() {
-        List<ServiceProvider<CommonContract>> allIntercepted = services.lookupAll(CommonContract.class);
+        List<ServiceProvider<CommonContract>> allIntercepted = services.serviceProviders().all(CommonContract.class);
         List<String> desc = allIntercepted.stream().map(ServiceProvider::description).toList();
         // order matters here
         assertThat(desc, contains(
@@ -72,7 +73,7 @@ class InjectionOfCommonContractStackingTest {
         List<String> injections = allIntercepted.stream()
                 .map(sp -> {
                     CommonContract inner = sp.get().getInner();
-                    return sp.serviceInfo().serviceTypeName().classNameWithEnclosingNames() + " injected with "
+                    return sp.serviceType().classNameWithEnclosingNames() + " injected with "
                             + (inner == null ? null : inner.getClass().getSimpleName());
                 })
                 .toList();
@@ -82,7 +83,7 @@ class InjectionOfCommonContractStackingTest {
                             "CommonContractImpl injected with null",
                             "TestingSingleton injected with MostOuterCommonContractImpl"));
 
-        assertThat(services.lookup(CommonContract.class).get().sayHello("arg"),
+        assertThat(services.get(CommonContract.class).get().sayHello("arg"),
                    equalTo("MostOuterCommonContractImpl:OuterCommonContractImpl:CommonContractImpl:arg"));
     }
 

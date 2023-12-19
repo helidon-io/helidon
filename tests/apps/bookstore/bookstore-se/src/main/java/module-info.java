@@ -22,7 +22,6 @@ module io.helidon.tests.apps.bookstore.se {
     requires io.helidon.common.pki;
     requires io.helidon.config.yaml;
     requires io.helidon.config;
-    requires io.helidon.inject.api;
     requires io.helidon.health.checks;
     requires io.helidon.health;
     requires io.helidon.http.media.jackson;

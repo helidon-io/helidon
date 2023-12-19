@@ -16,14 +16,11 @@
 
 package io.helidon.inject.configdriven.configuredby.test;
 
-import io.helidon.inject.configdriven.api.ConfigDriven;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Named;
+import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.Injection;
 
 @ConfigDriven(value = ASingletonConfigBeanBlueprint.class, activateByDefault = true)
-@Named("jane")
+@Injection.Named("jane")
 class ASingletonService implements ASingletonServiceContract {
     private boolean running;
 
@@ -32,7 +29,7 @@ class ASingletonService implements ASingletonServiceContract {
     /**
      * For Testing.
      */
-    @PostConstruct
+    @Injection.PostConstruct
     public void initialize() {
         assert (!running);
         running = true;
@@ -41,7 +38,7 @@ class ASingletonService implements ASingletonServiceContract {
     /**
      * For Testing.
      */
-    @PreDestroy
+    @Injection.PreDestroy
     public void shutdown() {
         running = false;
     }

@@ -23,7 +23,7 @@ module io.helidon.inject.testing {
     requires io.helidon.common.types;
     requires io.helidon.config;
 
-    requires transitive io.helidon.inject.runtime;
+    requires transitive io.helidon.inject;
 
     exports io.helidon.inject.testing;
 

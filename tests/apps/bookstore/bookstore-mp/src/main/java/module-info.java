@@ -25,7 +25,6 @@ module io.helidon.tests.apps.bookstore.mp {
     requires io.helidon.microprofile.health;
     requires io.helidon.microprofile.metrics;
     requires io.helidon.tests.apps.bookstore.common;
-    requires io.helidon.inject.api;
     requires jakarta.json.bind;
     requires jakarta.json;
     requires java.logging;

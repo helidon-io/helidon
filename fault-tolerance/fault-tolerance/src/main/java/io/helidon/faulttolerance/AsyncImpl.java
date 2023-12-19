@@ -23,12 +23,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Qualifier;
-import io.helidon.inject.api.ServiceInfoCriteria;
-import io.helidon.inject.api.ServiceProvider;
-
-import jakarta.inject.Inject;
+import io.helidon.inject.Lookup;
+import io.helidon.inject.Services;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Qualifier;
 
 /**
  * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
@@ -40,11 +38,11 @@ class AsyncImpl implements Async {
     private final CompletableFuture<Async> onStart;
     private final AsyncConfig config;
 
-    // this must only be invoked when within Pico, so we can use pico services
-    @Inject
-    AsyncImpl(AsyncConfig config) {
+    // this must only be invoked when within Inject, so we can use inject services
+    @Injection.Inject
+    AsyncImpl(Services services, AsyncConfig config) {
         this.executor = config.executor()
-                .or(() -> config.executorName().flatMap(AsyncImpl::executorService))
+                .or(() -> config.executorName().flatMap(it -> executorService(services, it)))
                 .orElseGet(() -> FaultTolerance.executor().get());
         this.onStart = config.onStart().orElseGet(CompletableFuture::new);
         this.config = config;
@@ -97,13 +95,11 @@ class AsyncImpl implements Async {
         return result;
     }
 
-    private static Optional<ExecutorService> executorService(String name) {
-        var qualifier = Qualifier.createNamed(name);
-        return InjectionServices.realizedServices().lookupFirst(ExecutorService.class,
-                                                                ServiceInfoCriteria.builder()
-                                                                   .addQualifier(qualifier)
-                                                                   .build(),
-                                                                false)
-                .map(ServiceProvider::get);
+    private static Optional<ExecutorService> executorService(Services services, String name) {
+        return services.<ExecutorService>first(Lookup.builder()
+                                                      .addContract(ExecutorService.class)
+                                                      .addQualifier(Qualifier.createNamed(name))
+                                                      .build())
+                .map(Supplier::get);
     }
 }

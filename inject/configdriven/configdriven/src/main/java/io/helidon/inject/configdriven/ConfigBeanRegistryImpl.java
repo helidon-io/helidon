@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
 import io.helidon.common.types.TypeName;
@@ -44,8 +43,6 @@ import io.helidon.inject.service.Qualifier;
  */
 @SuppressWarnings("unchecked")
 class ConfigBeanRegistryImpl implements ConfigBeanRegistry, Resettable {
-    static final LazyValue<ConfigBeanRegistryImpl> CONFIG_BEAN_REGISTRY = LazyValue.create(ConfigBeanRegistryImpl::new);
-
     private static final System.Logger LOGGER = System.getLogger(ConfigBeanRegistryImpl.class.getName());
 
     private final AtomicBoolean registeredForReset = new AtomicBoolean();

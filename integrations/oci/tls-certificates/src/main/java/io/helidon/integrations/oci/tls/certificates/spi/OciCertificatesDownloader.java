@@ -19,12 +19,12 @@ package io.helidon.integrations.oci.tls.certificates.spi;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
  * The contract used for downloading certificates from OCI.
  */
-@Contract
+@Injection.Contract
 public interface OciCertificatesDownloader {
 
     /**

@@ -69,9 +69,7 @@
                 <configuration>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <compilerArgs>
-                        <arg>-Ainject.autoAddNonContractInterfaces=true</arg> <!-- this setting can be used to avoid the need for @Contract -->
-                        <arg>-Ainject.debug=false</arg>
-                        <arg>-Ainject.acceptPreview=true</arg>
+                        <arg>-Ahelidon.inject.autoAddNonContractInterfaces=true</arg> <!-- this setting can be used to avoid the need for @Contract -->
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

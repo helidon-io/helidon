@@ -61,6 +61,10 @@
             <artifactId>helidon-common-tls</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media</artifactId>
         </dependency>

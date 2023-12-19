@@ -16,22 +16,18 @@
 
 package io.helidon.inject.tests.inject.tbox.impl;
 
-import java.util.Optional;
-
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.tbox.Hammer;
 
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
-
-@Singleton
-@Named(LittleHammer.NAME)
+@Injection.Singleton
+@Injection.Named(LittleHammer.NAME)
 public class LittleHammer implements Hammer {
 
     public static final String NAME = "little";
 
     @Override
-    public Optional<String> named() {
-        return Optional.of(NAME + " hammer");
+    public String name() {
+        return NAME + " hammer";
     }
 
 }

@@ -30,14 +30,14 @@ public final class InjectOptions {
      * Treat all super types as a contract for a given service type being added.
      */
     public static final Option<Boolean> AUTO_ADD_NON_CONTRACT_INTERFACES =
-            Option.create("inject.autoAddNonContractInterfaces",
+            Option.create("helidon.inject.autoAddNonContractInterfaces",
                           "Treat all super types as a contract for a given service type being added.",
                           false);
     /**
      * Which {@code io.helidon.inject.InterceptionStrategy} to use.
      */
     public static final Option<InterceptionStrategy> INTERCEPTION_STRATEGY =
-            Option.create("inject.interceptionStrategy",
+            Option.create("helidon.inject.interceptionStrategy",
                           "Which interception strategy to use (NONE, EXPLICIT, ALL_RUNTIME, ALL_RETAINED)",
                           InterceptionStrategy.EXPLICIT,
                           InterceptionStrategy::valueOf,
@@ -48,7 +48,7 @@ public final class InjectOptions {
      * jakarta.enterprise.context.NormalScope annotated types as scopes.
      */
     public static final Option<Set<TypeName>> SCOPE_META_ANNOTATIONS =
-            Option.createSet("inject.scopeMetaAnnotations",
+            Option.createSet("helidon.inject.scopeMetaAnnotations",
                              "Additional meta annotations that mark scope annotations. This can be used to include"
                                      + "jakarta.enterprise.context.NormalScope annotated types as scopes.",
                              Set.of(),
@@ -59,7 +59,7 @@ public final class InjectOptions {
      * Identify whether any unsupported types should trigger annotation processing to keep going.
      */
     public static final Option<Boolean> IGNORE_UNSUPPORTED_ANNOTATIONS = Option.create(
-            "inject.ignoreUnsupportedAnnotations",
+            "helidon.inject.ignoreUnsupportedAnnotations",
             "Identify whether any unsupported types should trigger annotation processing to keep going.",
             false);
 
@@ -67,7 +67,7 @@ public final class InjectOptions {
      * Use JSR-330 strict analysis of types (such as adding POJO if used for injection).
      */
     public static final Option<Boolean> JSR_330_STRICT = Option.create(
-            "inject.supports-jsr330.strict",
+            "helidon.inject.supports-jsr330.strict",
             "Use JSR-330 strict analysis of types (such as adding POJO if used for injection)",
             false);
 

@@ -61,9 +61,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Ainject.autoAddNonContractInterfaces=false</arg> <!-- this setting can be used to avoid the need for @Contract -->
-                        <arg>-Ainject.debug=false</arg>
-                        <arg>-Ainject.acceptPreview=true</arg>
+                        <arg>-Ahelidon.inject.autoAddNonContractInterfaces=false</arg> <!-- this setting can be used to avoid the need for @Contract -->
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>

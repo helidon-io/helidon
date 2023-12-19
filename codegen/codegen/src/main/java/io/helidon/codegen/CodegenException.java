@@ -96,4 +96,19 @@ public class CodegenException extends RuntimeException {
                 .update(it -> originatingElement().ifPresent(it::addObject))
                 .build();
     }
+
+    /**
+     * Create a codegen event to log with {@link io.helidon.codegen.CodegenLogger#log(CodegenEvent)}.
+     *
+     * @param level log level to use
+     * @return a new codegen event that can be directly logged
+     */
+    public CodegenEvent toEvent(System.Logger.Level level) {
+        return CodegenEvent.builder()
+                .level(level)
+                .message(getMessage())
+                .throwable(this)
+                .update(it -> originatingElement().ifPresent(it::addObject))
+                .build();
+    }
 }

@@ -25,7 +25,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class QualifierTest {
 
-    @Injection.Named("io.helidon.inject.api.DefaultQualifierTest")
+    @Injection.Named("io.helidon.inject.service.DefaultQualifierTest")
     @Injection.ClassNamed(QualifierTest.class)
     @Test
     public void createClassNamed() throws Exception {

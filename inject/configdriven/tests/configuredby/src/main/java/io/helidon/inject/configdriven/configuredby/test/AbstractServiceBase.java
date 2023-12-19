@@ -18,14 +18,13 @@ package io.helidon.inject.configdriven.configuredby.test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import io.helidon.inject.service.Injection;
 
 public abstract class AbstractServiceBase implements SomeServiceInterface {
     private final AtomicInteger postConstructCallCount = new AtomicInteger();
     private final AtomicInteger preDestroyCallCount = new AtomicInteger();
 
-    @PostConstruct
+    @Injection.PostConstruct
     void postConstruct() {
         postConstructCallCount.incrementAndGet();
     }
@@ -34,7 +33,7 @@ public abstract class AbstractServiceBase implements SomeServiceInterface {
         return postConstructCallCount.get();
     }
 
-    @PreDestroy
+    @Injection.PreDestroy
     void preDestroy() {
         preDestroyCallCount.incrementAndGet();
     }

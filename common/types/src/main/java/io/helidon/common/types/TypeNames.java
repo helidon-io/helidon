@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.Generated;
+
 /**
  * Commonly used type names.
  */
@@ -169,6 +171,10 @@ public final class TypeNames {
      * Helidon access modifier (enum).
      */
     public static final TypeName ACCESS_MODIFIER = TypeName.create(AccessModifier.class);
+    /**
+     * Helidon Generated annotation type.
+     */
+    public static final TypeName GENERATED = TypeName.create(Generated.class);
 
     private TypeNames() {
     }

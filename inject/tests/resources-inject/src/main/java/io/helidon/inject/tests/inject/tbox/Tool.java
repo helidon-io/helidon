@@ -16,22 +16,18 @@
 
 package io.helidon.inject.tests.inject.tbox;
 
-import io.helidon.inject.api.Contract;
-import io.helidon.inject.api.OptionallyNamed;
+import io.helidon.inject.service.Injection;
 
 /**
  * Testing.
  */
-@Contract
-public interface Tool extends OptionallyNamed {
+@Injection.Contract
+public interface Tool {
 
     /**
      * Testing.
      *
      * @return for testing
      */
-    default String name() {
-        return named().orElseThrow();
-    }
-
+    String name();
 }

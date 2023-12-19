@@ -118,7 +118,11 @@ public class Codegen {
      * @return a new codegen instance
      */
     public static Codegen create(CodegenContext ctx, TypeName generator) {
-        return new Codegen(ctx, generator);
+        Codegen codegen = new Codegen(ctx, generator);
+        Set<Option<?>> allOptions = new HashSet<>(SUPPORTED_APT_OPTIONS);
+        allOptions.addAll(ctx.supportedOptions());
+        ctx.options().validate(allOptions);
+        return codegen;
     }
 
     /**

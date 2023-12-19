@@ -36,17 +36,7 @@
         <!-- note: this module should not have more than inject dependency - to just pick up annotations and types -->
         <dependency>
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
+            <artifactId>helidon-inject-service</artifactId>
         </dependency>
     </dependencies>
 

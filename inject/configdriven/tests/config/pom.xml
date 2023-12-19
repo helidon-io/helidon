@@ -49,19 +49,14 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-api</artifactId>
-        </dependency>
-        <dependency>
             <!-- required for compilation of generated types -->
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
-            <optional>true</optional>
+            <artifactId>helidon-inject-service</artifactId>
         </dependency>
         <dependency>
             <!-- required for compilation of generated types -->
             <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
+            <artifactId>helidon-inject-configdriven-service</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -95,7 +90,7 @@
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-processor</artifactId>
+                            <artifactId>helidon-inject-configdriven-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -109,6 +104,16 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.inject</groupId>
+                            <artifactId>helidon-inject-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.inject</groupId>
+                            <artifactId>helidon-inject-codegen-jakarta</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -118,7 +123,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-processor</artifactId>
+                        <artifactId>helidon-inject-configdriven-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
@@ -129,6 +134,16 @@
                     <dependency>
                         <groupId>io.helidon.builder</groupId>
                         <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen-jakarta</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
