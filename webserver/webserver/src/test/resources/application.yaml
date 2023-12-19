@@ -57,6 +57,3 @@ server3:
   sockets:
     - name: "grace"
       shutdown-grace-period: PT2S
-
-inject:
-  permits-dynamic: true

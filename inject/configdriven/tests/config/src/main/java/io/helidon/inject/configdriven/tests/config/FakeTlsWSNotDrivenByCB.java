@@ -18,14 +18,14 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.Objects;
 
-import io.helidon.inject.configdriven.api.ConfigDriven;
+import io.helidon.inject.configdriven.service.ConfigDriven;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
-@ConfigDriven(value = FakeWebServerTlsConfigBlueprint.class, activateByDefault = true)
+@ConfigDriven(value = FakeWebServerTlsConfigBlueprint.class)
 @Named("jimmy")
 public class FakeTlsWSNotDrivenByCB {
 

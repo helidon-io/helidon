@@ -57,15 +57,22 @@ The best way to learn Helidon Injection is by looking at [the examples](../examp
 1. Put these in your pom.xml or gradle.build file:
    Annotation processor dependency / path:
 ```
-    <groupId>io.helidon.inject</groupId>
-    <artifactId>helidon-inject-processor</artifactId>
-    <version>${helidon.version}</version>
+<path>
+	<groupId>io.helidon.codegen</groupId>
+	<artifactId>helidon-codegen-apt</artifactId>
+	<version>${helidon.version}</version>
+</path>
+<path>
+	<groupId>io.helidon.inject</groupId>
+	<artifactId>helidon-inject-codegen</artifactId>
+	<version>${helidon.version}</version>
+</path>
 ```
 Compile-time dependency:
 ```
   <dependency>
     <groupId>io.helidon.inject</groupId>
-    <artifactId>helidon-inject-runtime</artifactId>
+    <artifactId>helidon-inject</artifactId>
     <version>${helidon.version}</version>
   </dependency>
 ```

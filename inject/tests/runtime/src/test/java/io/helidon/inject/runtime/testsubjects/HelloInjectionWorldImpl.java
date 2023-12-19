@@ -18,34 +18,28 @@ package io.helidon.inject.runtime.testsubjects;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
-import io.helidon.inject.api.RunLevel;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import io.helidon.inject.service.Injection;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-@Singleton
-@RunLevel(0)
+@Injection.Singleton
+@Injection.RunLevel(0)
 public class HelloInjectionWorldImpl implements HelloInjectionWorld {
 
-    @Inject
+    @Injection.Inject
     InjectionWorld world;
 
-    @Inject
-    Provider<InjectionWorld> worldRef;
+    @Injection.Inject
+    Supplier<InjectionWorld> worldRef;
 
-    @Inject
-    List<Provider<InjectionWorld>> listOfWorldRefs;
+    @Injection.Inject
+    List<Supplier<InjectionWorld>> listOfWorldRefs;
 
-    @Inject
+    @Injection.Inject
     List<InjectionWorld> listOfWorlds;
 
-    @Inject @Named("red")
+    @Injection.Inject @Injection.Named("red")
     Optional<InjectionWorld> redWorld;
 
     private InjectionWorld setWorld;
@@ -64,17 +58,17 @@ public class HelloInjectionWorldImpl implements HelloInjectionWorld {
         return "Hello " + world.name();
     }
 
-    @Inject
+    @Injection.Inject
     void world(InjectionWorld world) {
         this.setWorld = world;
     }
 
-    @PostConstruct
+    @Injection.PostConstruct
     public void postConstruct() {
         postConstructCallCount++;
     }
 
-    @PreDestroy
+    @Injection.PreDestroy
     public void preDestroy() {
         preDestroyCallCount++;
     }

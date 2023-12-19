@@ -69,7 +69,7 @@
                 <configuration>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <compilerArgs>
-                        <arg>-Ainject.acceptPreview=true</arg>
+                        <arg>-Ahelidon.inject.acceptPreview=true</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

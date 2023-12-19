@@ -19,13 +19,9 @@ package io.helidon.inject.tests.inject.interceptor;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import io.helidon.inject.api.InterceptedTrigger;
-
 /**
- * Used as an {@link InterceptedTrigger} from the maven-plugin call (see pom.xml).
+ * Used as an {@link io.helidon.inject.service.Interception.Trigger} from the maven-plugin call (see pom.xml).
  */
-//@InterceptedTrigger - intentional decision not to add this in order to avoid standard annotation processing.
-//  it will instead be handled by the maven-plugin
 @Retention(RetentionPolicy.CLASS)
 public @interface TestNamed {
 

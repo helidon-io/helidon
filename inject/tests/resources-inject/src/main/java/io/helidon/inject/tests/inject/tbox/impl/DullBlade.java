@@ -16,18 +16,13 @@
 
 package io.helidon.inject.tests.inject.tbox.impl;
 
-import java.util.Optional;
-
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
 
 /**
  * When a particular blade name is not "asked for" explicitly then we give out a dull blade.
  */
+@Injection.Named("dull blade")
 public class DullBlade extends AbstractBlade {
-
-    @Override
-    public Optional<String> named() {
-        return Optional.of("dull blade");
-    }
 
 }

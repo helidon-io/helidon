@@ -22,14 +22,14 @@ module io.helidon.builder.config.tests.test.config {
     requires io.helidon.builder.api;
     requires io.helidon.common.config;
     requires io.helidon.common;
-    requires io.helidon.inject.api;
-    requires io.helidon.inject.configdriven.api;
+    requires io.helidon.inject.service;
 
-    requires static io.helidon.inject.configdriven.runtime;
-    requires static io.helidon.inject.runtime;
+    requires static io.helidon.inject.configdriven.service;
     requires static jakarta.annotation;
     requires static jakarta.inject;
 
     exports io.helidon.inject.configdriven.tests.config;
 
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.inject.configdriven.tests.config.Injection__Module;
 }

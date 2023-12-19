@@ -19,7 +19,7 @@ package io.helidon.faulttolerance;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
  * CircuitBreaker protects a potentially failing endpoint from overloading and the application
@@ -31,7 +31,7 @@ import io.helidon.inject.api.Contract;
  * and requests can process as usual again.
  */
 @RuntimeType.PrototypedBy(CircuitBreakerConfig.class)
-@Contract
+@Injection.Contract
 public interface CircuitBreaker extends FtHandler, RuntimeType.Api<CircuitBreakerConfig> {
     /**
      * Create a new circuit builder based on its configuration.

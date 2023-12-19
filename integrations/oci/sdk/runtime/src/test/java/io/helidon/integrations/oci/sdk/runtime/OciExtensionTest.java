@@ -24,9 +24,9 @@ import java.util.function.Supplier;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServiceProviderException;
-import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServiceProviderException;
+import io.helidon.inject.InjectionServices;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
@@ -55,7 +55,9 @@ class OciExtensionTest {
 
     @BeforeEach
     void setUp() {
-        InjectionServices.globalBootstrap(Bootstrap.builder().config(Config.create()).build());
+        InjectionServices.configure(InjectionConfig.builder()
+                                            .permitsDynamic(true)
+                                            .build());
     }
 
     @AfterEach
@@ -270,7 +272,7 @@ class OciExtensionTest {
         } catch (InjectionServiceProviderException ispe) {
             assertThat(ispe.getMessage(),
                        equalTo("Unable to activate: io.helidon.integrations.oci.sdk.runtime"
-                                       + ".OciAuthenticationDetailsProvider$$Injection$$Activator: service provider: "
+                                       + ".OciAuthenticationDetailsProvider__ServiceDescriptor: service provider: "
                                        + "OciAuthenticationDetailsProvider:ACTIVE"));
             assertThat(ispe.getCause().getMessage(),
                        equalTo("No instances of com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider available for use. "
@@ -311,13 +313,6 @@ class OciExtensionTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-    }
-
-    static MapConfigSource.Builder basicTestingConfigSource() {
-        return ConfigSources.create(
-                Map.of("inject.permits-dynamic", "true",
-                       "inject.activation-logs", "true"
-                ), "config-basic");
     }
 
     static MapConfigSource.Builder ociAuthConfigStrategies(String strategy,

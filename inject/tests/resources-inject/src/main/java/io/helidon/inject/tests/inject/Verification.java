@@ -19,8 +19,7 @@ package io.helidon.inject.tests.inject;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import jakarta.inject.Provider;
+import java.util.function.Supplier;
 
 /**
  * Testing.
@@ -66,7 +65,7 @@ public abstract class Verification {
      * @param expectedSingleton expectedSingleton
      * @param expectedType expectedType
      */
-    public static void verifyInjected(Provider<?> injectee,
+    public static void verifyInjected(Supplier<?> injectee,
                                       String tag,
                                       Integer injectedCount,
                                       boolean expectedSingleton,

@@ -24,17 +24,12 @@
 
     <Match>
         <!-- Path comes from config or code -->
-        <Class name="io.helidon.inject.maven.plugin.AbstractApplicationCreatorMojo"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
-    </Match>
-    <Match>
-        <!-- Path comes from config or code -->
         <Class name="io.helidon.inject.maven.plugin.AbstractCreatorMojo"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
         <!-- Path comes from config or code -->
-        <Class name="io.helidon.inject.maven.plugin.ExecutableClassLoader"/>
+        <Class name="io.helidon.inject.maven.plugin.AbstractApplicationCreatorMojo"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
@@ -49,15 +44,9 @@
     </Match>
 
     <Match>
-        <!-- Path comes from config or code -->
-        <Class name="io.helidon.inject.maven.plugin.ExecutableClassLoader"/>
-        <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED"/>
-    </Match>
-
-    <Match>
-        <!-- debug variables -->
+        <!-- Classpath is constructed from maven classpath -->
         <Class name="io.helidon.inject.maven.plugin.AbstractApplicationCreatorMojo"/>
-        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+        <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED"/>
     </Match>
 
 </FindBugsFilter>

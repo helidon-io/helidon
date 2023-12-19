@@ -16,14 +16,12 @@
 
 package io.helidon.inject.tests.inject.tbox;
 
-import io.helidon.inject.api.OptionallyNamed;
+import io.helidon.inject.service.Injection;
 
-import jakarta.inject.Inject;
-
-public abstract class AbstractBlade implements OptionallyNamed {
+public abstract class AbstractBlade {
 
     // intended to be a void injection point
-    @Inject
+    @Injection.Inject
     protected AbstractBlade() {
     }
 

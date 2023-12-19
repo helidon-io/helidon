@@ -18,75 +18,70 @@ package io.helidon.inject.tests.inject.tbox.impl;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.tbox.Hammer;
 import io.helidon.inject.tests.inject.tbox.Preferred;
 import io.helidon.inject.tests.inject.tbox.Tool;
 import io.helidon.inject.tests.inject.tbox.ToolBox;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
-
 @SuppressWarnings("unused")
-@Singleton
+@Injection.Singleton
 public class MainToolBox implements ToolBox {
 
-    private final List<Provider<Tool>> allTools;
-    private final List<Provider<Hammer>> allHammers;
-    private final Provider<Hammer> bigHammer;
+    private final List<Supplier<Tool>> allTools;
+    private final List<Supplier<Hammer>> allHammers;
+    private final Supplier<Hammer> bigHammer;
     private final Screwdriver screwdriver;
 
-    private Provider<Hammer> setPreferredHammer;
+    private Supplier<Hammer> setPreferredHammer;
 
-    @Inject
+    @Injection.Inject
     @Preferred
-    Provider<Hammer> preferredHammer;
+    Supplier<Hammer> preferredHammer;
 
     public int postConstructCallCount;
     public int preDestroyCallCount;
     public int setterCallCount;
 
-    @Inject
-    MainToolBox(List<Provider<Tool>> allTools,
+    @Injection.Inject
+    MainToolBox(List<Supplier<Tool>> allTools,
                 Screwdriver screwdriver,
-                @Named("big") Provider<Hammer> bigHammer,
-                List<Provider<Hammer>> allHammers) {
+                @Injection.Named("big") Supplier<Hammer> bigHammer,
+                List<Supplier<Hammer>> allHammers) {
         this.allTools = Objects.requireNonNull(allTools);
         this.screwdriver = Objects.requireNonNull(screwdriver);
         this.bigHammer = bigHammer;
         this.allHammers = allHammers;
     }
 
-    @Inject
+    @Injection.Inject
     void setScrewdriver(Screwdriver screwdriver) {
         assert(this.screwdriver == screwdriver);
         setterCallCount++;
     }
 
-    @Inject
-    void setPreferredHammer(@Preferred Provider<Hammer> hammer) {
+    @Injection.Inject
+    void setPreferredHammer(@Preferred Supplier<Hammer> hammer) {
         this.setPreferredHammer = hammer;
     }
 
     @Override
-    public List<Provider<Tool>> toolsInBox() {
+    public List<Supplier<Tool>> toolsInBox() {
         return allTools;
     }
 
     @Override
-    public Provider<Hammer> preferredHammer() {
+    public Supplier<Hammer> preferredHammer() {
         return preferredHammer;
     }
 
-    public List<Provider<Hammer>> allHammers() {
+    public List<Supplier<Hammer>> allHammers() {
         return allHammers;
     }
 
-    public Provider<Hammer> bigHammer() {
+    public Supplier<Hammer> bigHammer() {
         return bigHammer;
     }
 
@@ -94,13 +89,13 @@ public class MainToolBox implements ToolBox {
         return screwdriver;
     }
 
-    @PostConstruct
+    @Injection.PostConstruct
     void postConstruct() {
         postConstructCallCount++;
         assert (preferredHammer == setPreferredHammer) : preferredHammer + " and " + setPreferredHammer;
     }
 
-    @PreDestroy
+    @Injection.PreDestroy
     void preDestroy() {
         preDestroyCallCount++;
     }

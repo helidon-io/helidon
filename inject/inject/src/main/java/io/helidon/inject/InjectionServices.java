@@ -46,6 +46,16 @@ public interface InjectionServices {
     }
 
     /**
+     * Create injection services for a specific configuration.
+     * The instance obtained will not interact with {@link #instance()} and will provide a stand-alone service registry.
+     * @param injectionConfig configuration of the services
+     * @return a new injection services instance
+     */
+    static InjectionServices create(InjectionConfig injectionConfig) {
+        return InjectionServicesImpl.create(injectionConfig);
+    }
+
+    /**
      * The service registry.
      *
      * @return the services registry

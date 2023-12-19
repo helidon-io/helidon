@@ -29,15 +29,6 @@ import io.helidon.inject.configdriven.service.NamedInstance;
  */
 public interface ConfigBeanRegistry {
     /**
-     * Config bean registry instance for the current VM.
-     *
-     * @return config bean registry
-     */
-    static ConfigBeanRegistry instance() {
-        return ConfigBeanRegistryImpl.CONFIG_BEAN_REGISTRY.get();
-    }
-
-    /**
      * The config bean registry is initialized as part of Helidon Injection's initialization, which happens when the service
      * registry is initialized and bound.
      *

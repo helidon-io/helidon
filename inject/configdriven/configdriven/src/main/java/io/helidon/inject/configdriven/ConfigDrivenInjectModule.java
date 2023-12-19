@@ -16,12 +16,17 @@
 
 package io.helidon.inject.configdriven;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.ServiceBinder;
 
 /**
  * An explicit and manually implemented module component, as we are doing a bit of unusual work with config bean registry.
  */
+// we must make the config bean registry available before any other config driven instance gets registered
+// as config driven require it to be available in registry
+@Weight(Weighted.DEFAULT_WEIGHT + 100)
 public class ConfigDrivenInjectModule implements ModuleComponent {
     /**
      * Constructor for ServiceLoader.

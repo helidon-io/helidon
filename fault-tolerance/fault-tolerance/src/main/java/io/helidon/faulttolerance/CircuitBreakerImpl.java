@@ -23,9 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.helidon.inject.configdriven.api.ConfigDriven;
-
-import jakarta.inject.Inject;
+import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.Injection;
 
 @ConfigDriven(CircuitBreakerConfigBlueprint.class)
 class CircuitBreakerImpl implements CircuitBreaker {
@@ -52,7 +51,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final String name;
     private final CircuitBreakerConfig config;
 
-    @Inject
+    @Injection.Inject
     CircuitBreakerImpl(CircuitBreakerConfig config) {
         this.delayMillis = config.delay().toMillis();
         this.successThreshold = config.successThreshold();

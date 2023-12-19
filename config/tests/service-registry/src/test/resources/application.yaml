@@ -15,8 +15,3 @@
 #
 
 app.value: "file"
-
-# needed to reset state of service registry in test
-inject:
-  permits-dynamic: true
-  service-lookup-caching: true

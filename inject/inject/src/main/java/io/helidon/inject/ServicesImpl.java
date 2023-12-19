@@ -73,6 +73,7 @@ class ServicesImpl implements Services, ServiceBinder {
     private final Counter cacheHitCounter;
     private final InjectionServicesImpl injectionServices;
     private final State state;
+    private final ServiceProviderRegistry spRegistry;
 
     private volatile List<ServiceProvider<Interception.Interceptor>> interceptors;
 
@@ -101,6 +102,8 @@ class ServicesImpl implements Services, ServiceBinder {
 
         this.servicesByTypeName = new ConcurrentHashMap<>();
         this.servicesByContract = new ConcurrentHashMap<>();
+
+        this.spRegistry = new ServiceProviderRegistryImpl(this);
     }
 
     @Override
@@ -117,12 +120,6 @@ class ServicesImpl implements Services, ServiceBinder {
         return this.lookup(criteria, Integer.MAX_VALUE);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> List<ServiceProvider<T>> allProviders(Lookup criteria) {
-        return this.lookup(criteria, Integer.MAX_VALUE);
-    }
-
     @Override
     public void bind(ServiceDescriptor<?> serviceDescriptor) {
         ActivatorProvider activatorProvider = ACTIVATOR_PROVIDERS.get(serviceDescriptor.runtimeId());
@@ -133,17 +130,6 @@ class ServicesImpl implements Services, ServiceBinder {
         bind(activatorProvider.activator(this, serviceDescriptor));
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> ServiceProvider<T> serviceProvider(ServiceInfo serviceInfo) {
-        ServiceProvider<?> serviceProvider = servicesByTypeName.get(serviceInfo.serviceType());
-        if (serviceProvider == null) {
-            throw new NoSuchElementException("Requested service is not managed by this registry: "
-                                                     + serviceInfo.serviceType().fqName());
-        }
-        return (ServiceProvider<T>) serviceProvider;
-    }
-
     @Override
     public InjectionServicesImpl injectionServices() {
         return injectionServices;
@@ -152,6 +138,26 @@ class ServicesImpl implements Services, ServiceBinder {
     @Override
     public ServiceBinder binder() {
         return this;
+    }
+
+    @Override
+    public ServiceProviderRegistry serviceProviders() {
+        return spRegistry;
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> List<ServiceProvider<T>> allProviders(Lookup criteria) {
+        return this.lookup(criteria, Integer.MAX_VALUE);
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> ServiceProvider<T> serviceProvider(ServiceInfo serviceInfo) {
+        ServiceProvider<?> serviceProvider = servicesByTypeName.get(serviceInfo.serviceType());
+        if (serviceProvider == null) {
+            throw new NoSuchElementException("Requested service is not managed by this registry: "
+                                                     + serviceInfo.serviceType().fqName());
+        }
+        return (ServiceProvider<T>) serviceProvider;
     }
 
     void bindSelf() {
@@ -171,9 +177,9 @@ class ServicesImpl implements Services, ServiceBinder {
     List<ServiceProvider<Interception.Interceptor>> interceptors() {
         if (interceptors == null) {
             interceptors = allProviders(Lookup.builder()
-                                                    .addContract(Interception.Interceptor.class)
-                                                    .addQualifier(Qualifier.WILDCARD_NAMED)
-                                                    .build());
+                                                .addContract(Interception.Interceptor.class)
+                                                .addQualifier(Qualifier.WILDCARD_NAMED)
+                                                .build());
         }
         return interceptors;
     }
@@ -191,7 +197,6 @@ class ServicesImpl implements Services, ServiceBinder {
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Finished module binding: " + moduleName);
-
         }
     }
 

@@ -20,8 +20,6 @@ import java.util.Set;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectTypes;
-import io.helidon.inject.service.InjectionContext;
-import io.helidon.inject.service.InterceptionMetadata;
 import io.helidon.inject.service.ServiceDescriptor;
 
 /**
@@ -58,11 +56,6 @@ public class CbrServiceDescriptor implements ServiceDescriptor<ConfigBeanRegistr
     @Override
     public Set<TypeName> contracts() {
         return CONTRACTS;
-    }
-
-    @Override
-    public Object instantiate(InjectionContext ctx, InterceptionMetadata interceptionMetadata) {
-        return ConfigBeanRegistry.instance();
     }
 
     @Override

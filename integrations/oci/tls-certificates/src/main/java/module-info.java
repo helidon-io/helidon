@@ -18,9 +18,6 @@
  * Helidon Integrations of OCI Certificates Service.
  */
 module io.helidon.integrations.oci.tls.certificates {
-    requires static jakarta.annotation;
-    requires static jakarta.inject;
-
     requires io.helidon.builder.api;
     requires io.helidon.common;
     requires io.helidon.common.config;
@@ -29,8 +26,8 @@ module io.helidon.integrations.oci.tls.certificates {
     requires io.helidon.config;
     requires io.helidon.faulttolerance;
     requires io.helidon.integrations.oci.sdk.runtime;
-    requires io.helidon.inject.api;
-    requires io.helidon.inject.runtime;
+    requires io.helidon.inject.service;
+    requires io.helidon.inject;
     requires io.helidon.scheduling;
 
     requires oci.java.sdk.common;
@@ -46,6 +43,6 @@ module io.helidon.integrations.oci.tls.certificates {
 
     provides io.helidon.common.tls.spi.TlsManagerProvider
             with io.helidon.integrations.oci.tls.certificates.DefaultOciCertificatesTlsManagerProvider;
-    provides io.helidon.inject.api.ModuleComponent
-            with io.helidon.integrations.oci.tls.certificates.Injection$$Module;
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.integrations.oci.tls.certificates.Injection__Module;
 }

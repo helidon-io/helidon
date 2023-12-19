@@ -17,29 +17,30 @@
 package io.helidon.inject.maven.plugin;
 
 import java.io.File;
+import java.nio.file.Path;
 
-import io.helidon.inject.api.Application;
-import io.helidon.inject.tools.ApplicationCreatorDefault;
-import io.helidon.inject.tools.spi.ApplicationCreator;
+import io.helidon.codegen.CodegenScope;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
+import static io.helidon.inject.codegen.InjectionCodegenContext.APPLICATION_NAME;
+
 /**
  * A mojo wrapper to {@link ApplicationCreator}.
  */
 @Mojo(name = "application-create", defaultPhase = LifecyclePhase.COMPILE, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)
-@SuppressWarnings("unused")
 public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     /**
-     * The classname to use for the {@link Application} class.
+     * The classname to use for the {@link io.helidon.inject.Application} class.
      * If not found the classname will be inferred.
      */
-    @Parameter(property = "inject.application.class.name", readonly = true)
+    @Parameter(property = "inject.application.class.name",
+               defaultValue = APPLICATION_NAME)
     private String className;
 
     /**
@@ -61,18 +62,22 @@ public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
     }
 
     @Override
-    String getGeneratedClassName() {
-        return (className == null) ? ApplicationCreatorDefault.APPLICATION_NAME : className;
+    protected String getGeneratedClassName() {
+        return className;
     }
 
     @Override
-    File getGeneratedSourceDirectory() {
-        return generatedSourcesDirectory;
+    protected Path generatedSourceDirectory() {
+        return generatedSourcesDirectory.toPath();
     }
 
     @Override
-    File getOutputDirectory() {
-        return outputDirectory;
+    protected Path outputDirectory() {
+        return outputDirectory.toPath();
     }
 
+    @Override
+    protected CodegenScope scope() {
+        return CodegenScope.PRODUCTION;
+    }
 }

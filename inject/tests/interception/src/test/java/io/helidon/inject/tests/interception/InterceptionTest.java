@@ -16,9 +16,9 @@
 
 package io.helidon.inject.tests.interception;
 
-import io.helidon.inject.api.InvocationException;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.InvocationException;
+import io.helidon.inject.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +28,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,9 +46,9 @@ class InterceptionTest {
 
     @BeforeAll
     static void init() {
-        injectionServices = InjectionServices.injectionServices().orElseThrow();
+        injectionServices = InjectionServices.instance();
         services = injectionServices.services();
-        service = services.lookup(TheService.class).get();
+        service = services.get(TheService.class).get();
 
         assertAll(
                 () -> assertThat("Interceptors should not be called for constructor - returning",
@@ -194,7 +195,7 @@ class InterceptionTest {
     void testRepeatWithNoExceptionThrownFromTarget() {
         InvocationException e = assertThrows(InvocationException.class,
                                          () -> service.intercepted("hello", false, true, false));
-        assertThat(e.getMessage(), equalTo("Duplicate invocation, or unknown call type: java.lang.String intercepted"));
+        assertThat(e.getMessage(), startsWith("Duplicate invocation, or unknown call type: java.lang.String intercepted"));
         assertThat(e.targetWasCalled(), is(true));
     }
 

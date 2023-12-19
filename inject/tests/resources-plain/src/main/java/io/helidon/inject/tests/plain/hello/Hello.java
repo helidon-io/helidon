@@ -16,9 +16,9 @@
 
 package io.helidon.inject.tests.plain.hello;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
-@Contract
+@Injection.Contract
 public interface Hello {
 
     void sayHello();

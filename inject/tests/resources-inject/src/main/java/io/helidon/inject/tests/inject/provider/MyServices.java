@@ -18,21 +18,18 @@ package io.helidon.inject.tests.inject.provider;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.inject.api.ContextualServiceQuery;
-import io.helidon.inject.api.InjectionPointProvider;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import io.helidon.inject.ContextualServiceQuery;
+import io.helidon.inject.InjectionPointProvider;
+import io.helidon.inject.service.Injection;
 
 public class MyServices {
 
-    @Singleton
-    public static class MyConcreteClassContractPerRequestProvider implements Provider<MyConcreteClassContract> {
+    @Injection.Singleton
+    public static class MyConcreteClassContractPerRequestProvider implements Supplier<MyConcreteClassContract> {
         private volatile int counter;
 
         @Override
@@ -42,7 +39,7 @@ public class MyServices {
         }
     }
 
-    @Singleton
+    @Injection.Singleton
     @Weight(Weighted.DEFAULT_WEIGHT + 1)
     public static class MyConcreteClassContractPerRequestIPProvider implements InjectionPointProvider<MyConcreteClassContract> {
         private volatile int counter;
@@ -50,7 +47,7 @@ public class MyServices {
         private boolean postConstructed;
         private MyConcreteClassContract injected;
 
-        @PostConstruct
+        @Injection.PostConstruct
         public void postConstruct() {
             assert (injected != null);
             postConstructed = true;
@@ -65,7 +62,7 @@ public class MyServices {
             return Optional.of(new MyConcreteClassContract(id));
         }
 
-        @Inject
+        @Injection.Inject
         void setMyConcreteClassContract(MyConcreteClassContract injected) {
             assert (this.injected == null);
             this.injected = Objects.requireNonNull(injected);

@@ -17,7 +17,7 @@
 package io.helidon.inject.configdriven.configuredby.test;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.configdriven.api.ConfigBean;
+import io.helidon.inject.configdriven.service.ConfigBean;
 
 @ConfigBean(wantDefault = true, atLeastOne = true)
 @Prototype.Configured

@@ -16,12 +16,13 @@
 
 package io.helidon.inject.tests.inject.stacking;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
- * All implementors will implement this {@link Contract}, but using varying {@link io.helidon.common.Weight}'s.
+ * All implementors will implement this {@link io.helidon.inject.service.Injection.Contract},
+ * but using varying {@link io.helidon.common.Weight}'s.
  */
-@Contract
+@Injection.Contract
 public interface CommonContract {
 
     CommonContract getInner();

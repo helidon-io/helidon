@@ -41,7 +41,7 @@ public class MapApplicationScopedProvider implements AnnotationMapperProvider {
      * Identify whether any application scopes (from ee) is translated to {@code io.helidon.inject.service.Injection.Singleton}.
      */
     static final Option<Boolean> MAP_APPLICATION_TO_SINGLETON_SCOPE
-            = Option.create("inject.mapApplicationToSingletonScope",
+            = Option.create("helidon.inject.mapApplicationToSingletonScope",
                             "Should we map application scoped beans from javax CDI to Singleton services?",
                             false);
     private static final Annotation SINGLETON = Annotation.create(InjectCodegenTypes.INJECTION_SINGLETON);

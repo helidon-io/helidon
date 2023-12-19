@@ -18,13 +18,10 @@
  * Injection Test Resources.
  */
 module io.helidon.inject.tests.inject {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
-
     requires io.helidon.common.types;
     requires io.helidon.common;
-    requires io.helidon.inject.api;
-    requires io.helidon.inject.runtime;
+    requires io.helidon.inject.service;
+    requires io.helidon.inject;
     requires io.helidon.inject.tests.plain;
     requires io.helidon.config;
 
@@ -33,6 +30,10 @@ module io.helidon.inject.tests.inject {
     exports io.helidon.inject.tests.inject.stacking;
     exports io.helidon.inject.tests.inject.tbox;
 
-    provides io.helidon.inject.api.ModuleComponent with io.helidon.inject.tests.inject.Injection$$Module;
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.inject.tests.inject.Injection__Module;
+
+    provides io.helidon.inject.Application
+            with io.helidon.inject.tests.inject.Injection__Application;
 	
 }

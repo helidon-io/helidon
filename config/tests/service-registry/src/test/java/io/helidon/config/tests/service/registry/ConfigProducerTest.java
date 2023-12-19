@@ -20,8 +20,8 @@ import java.util.Optional;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
@@ -43,13 +43,15 @@ class ConfigProducerTest {
     @Test
     @Order(0) // this must be first, as once we set global config, this method will always fail
     void testConfig() {
-        InjectionServices.globalBootstrap(Bootstrap.builder()
-                                             .config(GlobalConfig.config())
-                                             .build());
+        InjectionServices.configure(InjectionConfig.builder()
+                                            .permitsDynamic(true)
+                                            .serviceLookupCaching(true)
+                                            .build());
 
         // value should be overridden using our custom config source
-        Config config = InjectionServices.realizedServices()
-                .lookup(Config.class)
+        Config config = InjectionServices.instance()
+                .services()
+                .get(Config.class)
                 .get();
 
         assertThat(config.get("app.value").asString().asOptional(), is(Optional.of("source")));
@@ -61,12 +63,15 @@ class ConfigProducerTest {
         // value should use the config as we provided it
         GlobalConfig.config(io.helidon.config.Config::create, true);
 
-        InjectionServices.globalBootstrap(Bootstrap.builder()
-                                             .config(GlobalConfig.config())
-                                             .build());
+        InjectionServices.configure(InjectionConfig.builder()
+                                            .permitsDynamic(true)
+                                            .serviceLookupCaching(true)
+                                            .build());
 
-        Config config = InjectionServices.realizedServices()
-                .lookup(Config.class)
+
+        Config config = InjectionServices.instance()
+                .services()
+                .get(Config.class)
                 .get();
 
         assertThat(config.get("app.value").asString().asOptional(), is(Optional.of("file")));

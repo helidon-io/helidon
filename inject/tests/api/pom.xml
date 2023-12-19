@@ -37,7 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-api</artifactId>
+            <artifactId>helidon-inject</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

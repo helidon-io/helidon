@@ -25,11 +25,10 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.inject.service.Injection;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 
-import jakarta.inject.Singleton;
-
-@Singleton
+@Injection.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
 class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
     static String version = "1";

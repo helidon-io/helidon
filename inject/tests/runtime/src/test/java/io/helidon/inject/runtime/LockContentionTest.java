@@ -25,12 +25,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.ActivationResult;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.ActivationResult;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,17 +41,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 class LockContentionTest {
     final int COUNT = 100;
 
-    final ExecutorService es = Executors.newFixedThreadPool(16);
-    final Config config = Config.builder(
-                    ConfigSources.create(
-                            Map.of("inject.permits-dynamic", "true"), "config-1"))
-            .disableEnvironmentVariablesSource()
-            .disableSystemPropertiesSource()
+    private final ExecutorService es = Executors.newFixedThreadPool(16);
+    private final InjectionConfig config = InjectionConfig.builder()
+            .permitsDynamic(true)
             .build();
 
     @BeforeEach
     void init() {
-        InjectionServices.globalBootstrap(Bootstrap.builder().config(config).build());
+        InjectionServices.configure(config);
     }
 
     @AfterEach
@@ -62,8 +57,8 @@ class LockContentionTest {
     }
 
     @Test
-    // we cannot interlace shutdown with startups here - so instead we are checking to ensure N threads can call startup
-    // and then N threads can call shutdown in parallel, but in phases
+        // we cannot interlace shutdown with startups here - so instead we are checking to ensure N threads can call startup
+        // and then N threads can call shutdown in parallel, but in phases
     void lockContention() {
         Map<String, Future<?>> result = new ConcurrentHashMap<>();
         for (int i = 1; i <= COUNT; i++) {
@@ -91,15 +86,15 @@ class LockContentionTest {
     }
 
     Services start() {
-        return Objects.requireNonNull(InjectionServices.realizedServices());
+        return Objects.requireNonNull(InjectionServices.instance().services());
     }
 
     Map<TypeName, ActivationResult> shutdown() {
-        InjectionServices injectionServices = InjectionServices.injectionServices().orElseThrow();
+        InjectionServices injectionServices = InjectionServices.instance();
         Map<TypeName, ActivationResult> result = new LinkedHashMap<>();
         Map<TypeName, ActivationResult> round;
         do {
-            round = injectionServices.shutdown().orElseThrow();
+            round = injectionServices.shutdown();
             result.putAll(round);
         } while (!round.isEmpty());
         return result;

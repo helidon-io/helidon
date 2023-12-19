@@ -19,9 +19,9 @@ package io.helidon.inject.tests.plain.interceptor;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import io.helidon.inject.api.InterceptedTrigger;
+import io.helidon.inject.service.Interception;
 
-@InterceptedTrigger
+@Interception.Trigger
 @Retention(RetentionPolicy.CLASS)
 public @interface InterceptorBasedAnno {
 

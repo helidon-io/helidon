@@ -16,27 +16,23 @@
 
 package io.helidon.inject.tests.inject.tbox.impl;
 
-import java.util.Optional;
-
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.tbox.Hammer;
 import io.helidon.inject.tests.inject.tbox.Preferred;
 
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
-
-@Singleton
+@Injection.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
-@Named(BigHammer.NAME)
+@Injection.Named(BigHammer.NAME)
 @Preferred
 public class BigHammer implements Hammer {
 
     public static final String NAME = "big";
 
     @Override
-    public Optional<String> named() {
-        return Optional.of(NAME + " hammer");
+    public String name() {
+        return NAME + " hammer";
     }
 
 }

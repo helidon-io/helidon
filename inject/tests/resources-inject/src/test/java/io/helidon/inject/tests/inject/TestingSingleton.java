@@ -19,8 +19,8 @@ package io.helidon.inject.tests.inject;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.inject.api.Resettable;
-import io.helidon.inject.api.RunLevel;
+import io.helidon.inject.Resettable;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.stacking.CommonContract;
 import io.helidon.inject.tests.inject.tbox.Awl;
 
@@ -31,7 +31,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-@RunLevel(RunLevel.STARTUP)
+@Injection.RunLevel(Injection.RunLevel.STARTUP)
 @Singleton
 @Named("testing")
 public class TestingSingleton implements Resettable, CommonContract {
@@ -65,10 +65,9 @@ public class TestingSingleton implements Resettable, CommonContract {
     }
 
     @Override
-    public boolean reset(boolean deep) {
+    public void reset(boolean deep) {
         postConstructCount.set(0);
         preDestroyCount.set(0);
-        return true;
     }
 
     @Override

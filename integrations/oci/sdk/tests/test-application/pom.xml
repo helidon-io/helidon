@@ -107,11 +107,48 @@
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.integrations.oci.sdk</groupId>
-                            <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
+                            <artifactId>helidon-integrations-oci-sdk-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.inject</groupId>
+                            <artifactId>helidon-inject-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.inject</groupId>
+                            <artifactId>helidon-inject-codegen-jakarta</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.integrations.oci.sdk</groupId>
+                        <artifactId>helidon-integrations-oci-sdk-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen-jakarta</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>io.helidon.inject</groupId>
@@ -135,7 +172,7 @@
                 </executions>
                 <!-- this would only be needed if we/someone turns on PermittedProviderTypes -->
 <!--                <configuration>-->
-<!--                    <permittedProviderTypes>NAMED</permittedProviderTypes>-->
+<!--                    <permittedProviderType>NAMED</permittedProviderType>-->
 <!--                    <permittedProviderTypeNames>-->
 <!--                        <permittedProviderTypeName>io.helidon.integrations.oci.sdk.runtime.*</permittedProviderTypeName>-->
 <!--                        <permittedProviderTypeName>generated.com.oracle.bmc.*</permittedProviderTypeName>-->

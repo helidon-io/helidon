@@ -16,12 +16,12 @@
 
 package io.helidon.inject.tests.inject.tbox;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
 /**
  * Testing.
  */
-@Contract
+@Injection.Contract
 public interface Awl extends Tool {
 
 }

@@ -33,7 +33,6 @@ public enum InterceptionStrategy {
      * This is the default strategy.
      */
     EXPLICIT,
-
     /**
      * All annotations marked as {@link java.lang.annotation.RetentionPolicy#RUNTIME} will qualify.
      * Also includes all usages of {@link #EXPLICIT}.

@@ -19,32 +19,29 @@ package io.helidon.config;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
 import io.helidon.common.config.ConfigValue;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.inject.api.ExternalContracts;
+import io.helidon.inject.service.Injection;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
-
-@Singleton
-@ExternalContracts(Config.class)
+@Injection.Singleton
+@Injection.ExternalContracts(Config.class)
 class ConfigProducer implements Config {
     private final Config config;
 
-    @Inject
-    ConfigProducer(List<Provider<ConfigSource>> serviceProviders) {
+    @Injection.Inject
+    ConfigProducer(List<Supplier<ConfigSource>> serviceProviders) {
         if (GlobalConfig.configured()) {
             config = GlobalConfig.config();
         } else {
             config = io.helidon.config.Config.builder()
                     .metaConfig()
                     .update(it -> serviceProviders.stream()
-                            .map(Provider::get)
+                            .map(Supplier::get)
                             .map(ConfigSource.class::cast)
                             .forEach(it::addSource))
                     .build();

@@ -17,16 +17,15 @@
 package io.helidon.inject.tests.inject;
 
 import java.util.List;
+import java.util.function.Supplier;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import io.helidon.inject.service.Injection;
 
-@Singleton
+@Injection.Singleton
 class AServiceUsingAContractWithNoServiceImplementations {
 
-    @Inject
-    AServiceUsingAContractWithNoServiceImplementations(List<Provider<AContractWithNoServiceImplementations>> list) {
+    @Injection.Inject
+    AServiceUsingAContractWithNoServiceImplementations(List<Supplier<AContractWithNoServiceImplementations>> list) {
         if (!list.isEmpty()) {
             throw new AssertionError("Should be empty: " + list);
         }

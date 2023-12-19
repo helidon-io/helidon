@@ -22,7 +22,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Weighted;
 import io.helidon.inject.service.ServiceBinder;
-import io.helidon.inject.service.ServiceInfo;
 
 /**
  * The service registry. The service registry generally has knowledge about all the services that are available within your
@@ -134,53 +133,6 @@ public interface Services {
     <T> List<Supplier<T>> all(Lookup lookup);
 
     /**
-     * Find the first service provider matching the lookup with the expectation that there may not be a match available.
-     *
-     * @param lookup lookup to use
-     * @param <T>    type of the expected service providers, use {@code Object} if not known
-     * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
-     *         if the result may contain an unknown provider type
-     */
-    default <T> Optional<ServiceProvider<T>> firstProvider(Lookup lookup) {
-        return this.<T>allProviders(lookup)
-                .stream()
-                .findFirst();
-    }
-
-    /**
-     * Find the first service provider matching the lookup with the expectation that there must be a match available.
-     *
-     * @param lookup lookup to use
-     * @param <T>    type of the expected service providers, use {@code Object} if not known
-     * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
-     *         if the result may contain an unknown provider type
-     */
-    default <T> ServiceProvider<T> getProvider(Lookup lookup) {
-        return this.<T>firstProvider(lookup)
-                .orElseThrow(() -> new InjectionException("There are no services matching " + lookup));
-    }
-
-    /**
-     * Get all service providers matching the lookup. This is an advanced use case method, use
-     * {@link #all(Lookup)} to lookup services in registry.
-     *
-     * @param lookup lookup to use
-     * @param <T>    type of the expected service providers, use {@code Object} if not known, or may contain a mix of types
-     * @return list of service providers
-     */
-    <T> List<ServiceProvider<T>> allProviders(Lookup lookup);
-
-    /**
-     * Get a service provider for a descriptor.
-     *
-     * @param serviceInfo service information (metadata of the service)
-     * @param <T>         type of the expected service providers, use {@code Object} if not known, or may contain a mix of types
-     * @return service provider created for the descriptor
-     * @throws java.util.NoSuchElementException in case the descriptor is not part of this registry
-     */
-    <T> ServiceProvider<T> serviceProvider(ServiceInfo serviceInfo);
-
-    /**
      * Injection services this instance is managed by.
      *
      * @return injection services
@@ -198,6 +150,15 @@ public interface Services {
      * @return service binder that allows binding into this service registry
      */
     ServiceBinder binder();
+
+    /**
+     * A registry that gives access to service providers.
+     * <p>
+     * This is for advanced use cases, where access to {@link java.util.function.Supplier} is not sufficient.
+     *
+     * @return service provider service registry
+     */
+    ServiceProviderRegistry serviceProviders();
 
     /**
      * Limit runtime phase.
