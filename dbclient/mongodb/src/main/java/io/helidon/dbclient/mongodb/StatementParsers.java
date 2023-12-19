@@ -223,6 +223,8 @@ final class StatementParsers {
                 },
                 // Transitions from STRING state
                 {
+                        //LETTER: regular part of the JSON string, keep processing it
+                        State.STRING,
                         // NUMBER: regular part of the JSON string, keep processing it
                         State.STRING,
                         // QUOTE: end of JSON string processing, go back to STATEMENT state

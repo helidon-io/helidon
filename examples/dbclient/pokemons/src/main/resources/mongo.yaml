@@ -26,11 +26,14 @@ db:
   connection:
     url: "mongodb://127.0.0.1:27017/pokemon"
   init-schema: false
+  # Transactions are not supported
+  init-data: false
   services:
     tracing:
       - enabled: true
-    metrics:
-      - type: METER
+  health-check:
+    type: "query"
+    statementName: "health-check"
   statements:
     # Health check statement. HealthCheck statement type must be a query.
     health-check: '{

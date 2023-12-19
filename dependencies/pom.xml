@@ -146,6 +146,7 @@
         <version.lib.slf4j>2.0.9</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
+        <version.lib.testcontainers>1.19.3</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.4</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
@@ -1264,6 +1265,16 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>${version.lib.hamcrest}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${version.lib.testcontainers}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>mongodb</artifactId>
+                <version>${version.lib.testcontainers}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.activemq</groupId>

@@ -23,6 +23,7 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthObserver;
@@ -73,6 +74,14 @@ public final class Main {
         Config config = mongo ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
         Config.global(config);
 
+        WebServer server = setupServer(WebServer.builder());
+
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
+    }
+
+    static WebServer setupServer(WebServerConfig.Builder builder) {
+
+        Config config = Config.global();
         // Client services are added through a service loader - see mongoDB example for explicit services
         DbClient dbClient = DbClient.create(config.get("db"));
         Contexts.globalContext().register(dbClient);
@@ -80,18 +89,14 @@ public final class Main {
         ObserveFeature observe = ObserveFeature.builder()
                 .config(config.get("server.features.observe"))
                 .addObserver(HealthObserver.builder()
-                                     .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
-                                     .build())
+                        .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
+                        .build())
                 .build();
-
-        WebServer server = WebServer.builder()
-                .config(config.get("server"))
+        return builder.config(config.get("server"))
                 .addFeature(observe)
                 .routing(Main::routing)
                 .build()
                 .start();
-
-        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
     }
 
     /**
