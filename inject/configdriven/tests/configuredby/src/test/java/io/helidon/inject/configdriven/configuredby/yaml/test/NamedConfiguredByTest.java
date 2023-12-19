@@ -26,29 +26,22 @@ import io.helidon.config.ConfigSources;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
+import io.helidon.inject.configdriven.CbrServiceDescriptor;
 import io.helidon.inject.configdriven.ConfigBeanRegistry;
 import io.helidon.inject.configdriven.service.NamedInstance;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
 import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 
 class NamedConfiguredByTest {
     InjectionServices injectionServices;
     Services services;
-
-    @BeforeAll
-    static void initialStateChecks() {
-        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
-        assertThat(cbr.ready(), is(false));
-    }
 
     @AfterAll
     static void tearDown() {
@@ -76,7 +69,8 @@ class NamedConfiguredByTest {
 
     @Test
     void namedConfiguredServices() {
-        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
+        ConfigBeanRegistry cbr = services.serviceProviders()
+                .<ConfigBeanRegistry>get(CbrServiceDescriptor.INSTANCE).get();
         Map<TypeName, List<NamedInstance<?>>> allConfigBeans = cbr.allConfigBeans();
 
         List<NamedInstance<?>> namedInstances = allConfigBeans.get(TypeName.create(AsyncConfig.class));

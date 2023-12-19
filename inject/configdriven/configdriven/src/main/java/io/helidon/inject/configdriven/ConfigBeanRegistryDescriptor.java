@@ -32,6 +32,7 @@ public final class ConfigBeanRegistryDescriptor implements ServiceInfo {
     public static final ConfigBeanRegistryDescriptor INSTANCE = new ConfigBeanRegistryDescriptor();
 
     private static final TypeName TYPE = TypeName.create(ConfigBeanRegistryDescriptor.class);
+    private static final TypeName CBR_IMPL_TYPE = TypeName.create(ConfigBeanRegistryImpl.class);
     private static final TypeName CBR_TYPE = TypeName.create(ConfigBeanRegistry.class);
     private static final Set<TypeName> CONTRACTS = Set.of(CBR_TYPE);
 
@@ -40,7 +41,7 @@ public final class ConfigBeanRegistryDescriptor implements ServiceInfo {
 
     @Override
     public TypeName serviceType() {
-        return CBR_TYPE;
+        return CBR_IMPL_TYPE;
     }
 
     @Override

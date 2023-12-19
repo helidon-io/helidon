@@ -197,7 +197,6 @@ class ServicesImpl implements Services, ServiceBinder {
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Finished module binding: " + moduleName);
-
         }
     }
 

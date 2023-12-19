@@ -80,7 +80,7 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
 
     private volatile ConfigDrivenBinderImpl cdInjectionContext;
 
-    ConfigDrivenServiceProvider(Services services, ServiceDescriptor<T> descriptor) {
+    private ConfigDrivenServiceProvider(Services services, ServiceDescriptor<T> descriptor) {
         super(services, descriptor);
 
         this.descriptor = descriptor;
@@ -386,8 +386,12 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
     @Override
     protected void init(ActivationRequest req, ActivationResult.Builder res) {
         super.init(req, res);
+
         if (registeredWithCbr.compareAndSet(false, true)) {
-            ConfigBeanRegistryImpl cbr = ConfigBeanRegistryImpl.CONFIG_BEAN_REGISTRY.get();
+            ConfigBeanRegistryImpl cbr = services().serviceProviders()
+                    .<ConfigBeanRegistryImpl>get(ConfigBeanRegistryDescriptor.INSTANCE)
+                    .get();
+
             if (cbr != null) {
                 Optional<Qualifier> configuredByQualifier = serviceInfo().qualifiers().stream()
                         .filter(q -> q.typeName().name().equals(ConfigDriven.class.getName()))

@@ -33,6 +33,7 @@ import io.helidon.inject.Phase;
 import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
+import io.helidon.inject.configdriven.CbrServiceDescriptor;
 import io.helidon.inject.configdriven.ConfigBeanRegistry;
 import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.configdriven.service.NamedInstance;
@@ -45,7 +46,6 @@ import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
@@ -69,18 +69,12 @@ public abstract class AbstractConfiguredByTest {
     protected Services serviceRegistry;
     protected ServiceProviderRegistry services;
 
-    @BeforeAll
-    static void initialStateChecks() {
-        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
-        assertThat(cbr.ready(), is(false));
-    }
-
     @AfterAll
     static void tearDown() {
         InjectionTestingSupport.resetAll();
     }
 
-    public MapConfigSource.Builder createRootDefault8080TestingConfigSource() {
+    MapConfigSource.Builder createRootDefault8080TestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
                         "server.name", "fake-server",
@@ -207,7 +201,7 @@ public abstract class AbstractConfiguredByTest {
 
     //    @Test
     void testBeanRegistry() {
-        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
+        ConfigBeanRegistry cbr = services.<ConfigBeanRegistry>get(CbrServiceDescriptor.INSTANCE).get();
         assertThat(cbr.ready(), is(true));
 
         Map<TypeName, List<NamedInstance<?>>> beansByType = cbr.allConfigBeans();

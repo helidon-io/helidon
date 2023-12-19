@@ -27,6 +27,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
 import io.helidon.inject.Lookup;
 import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.configdriven.CbrServiceDescriptor;
 import io.helidon.inject.configdriven.ConfigBeanRegistry;
 import io.helidon.inject.configdriven.configuredby.yaml.test.Async;
 import io.helidon.inject.configdriven.service.NamedInstance;
@@ -92,7 +93,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                           .disableSystemPropertiesSource()
                           .build());
 
-        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
+        ConfigBeanRegistry cbr = services.<ConfigBeanRegistry>get(CbrServiceDescriptor.INSTANCE).get();
         assertThat(cbr.ready(),
                    is(true));
 

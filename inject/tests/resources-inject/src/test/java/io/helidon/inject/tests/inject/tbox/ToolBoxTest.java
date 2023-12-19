@@ -308,26 +308,48 @@ class ToolBoxTest {
                                           e -> e.getValue().startingActivationPhase().toString()
                                                   + "->" + e.getValue().finishingActivationPhase()));
 
-        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.Injection__Application"), "ACTIVE->DESTROYED"));
+        int expected = 0;
+        assertThat(report,
+                   hasEntry(create("io.helidon.inject.tests.inject.Injection__Application"), "ACTIVE->DESTROYED"));
+        expected++;
         assertThat(report,
                    hasEntry(create("io.helidon.inject.tests.inject.Injection__Module"), "ACTIVE->DESTROYED"));
+        expected++;
         assertThat(report,
                    hasEntry(create("io.helidon.inject.tests.inject.TestInjection__Application"), "ACTIVE->DESTROYED"));
+        expected++;
         assertThat(report,
                    hasEntry(create("io.helidon.inject.tests.inject.TestInjection__Module"), "ACTIVE->DESTROYED"));
+        expected++;
         assertThat(report,
                    hasEntry(create("io.helidon.inject.tests.inject.stacking.MostOuterCommonContractImpl"), "ACTIVE->DESTROYED"));
+        expected++;
         assertThat(report,
                    hasEntry(create("io.helidon.inject.tests.inject.stacking.OuterCommonContractImpl"), "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.CommonContractImpl"), "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.TestingSingleton"), "ACTIVE->DESTROYED"));
+        expected++;
+        assertThat(report,
+                   hasEntry(create("io.helidon.inject.tests.inject.stacking.CommonContractImpl"), "ACTIVE->DESTROYED"));
+        expected++;
+        assertThat(report,
+                   hasEntry(create("io.helidon.inject.tests.inject.TestingSingleton"), "ACTIVE->DESTROYED"));
+        expected++;
         assertThat(report,
                    hasEntry(create("io.helidon.inject.configdriven.ConfigDrivenInjectModule"), "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry(create("io.helidon.config.Injection__Module"), "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry(create("io.helidon.config.ConfigProducer"), "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry(create("io.helidon.inject.Services"), "ACTIVE->DESTROYED"));
+        expected++;
+        assertThat(report,
+                   hasEntry(create("io.helidon.config.Injection__Module"), "ACTIVE->DESTROYED"));
+        expected++;
+        assertThat(report,
+                   hasEntry(create("io.helidon.config.ConfigProducer"), "ACTIVE->DESTROYED"));
+        expected++;
+        assertThat(report,
+                   hasEntry(create("io.helidon.inject.Services"), "ACTIVE->DESTROYED"));
+        expected++;
+        assertThat(report,
+                   hasEntry(create("io.helidon.inject.configdriven.ConfigBeanRegistryImpl"), "ACTIVE->DESTROYED"));
+        expected++;
 
-        assertThat(report + " : expected 10 services to be present", report.size(), equalTo(12));
+        assertThat(report + " : expected " +  expected + " services to be present", report.size(), equalTo(expected));
 
         assertThat(TestingSingleton.postConstructCount(), equalTo(1));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(1));
@@ -343,7 +365,7 @@ class ToolBoxTest {
                                           e2 -> e2.getValue().startingActivationPhase().toString()
                                                   + "->" + e2.getValue().finishingActivationPhase()));
         // now contains config as well
-        assertThat(report.toString(), report.size(), is(12));
+        assertThat(report.toString(), report.size(), is(expected));
 
         tearDown();
         map = injectionServices.shutdown();
