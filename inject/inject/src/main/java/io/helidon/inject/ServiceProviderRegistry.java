@@ -24,6 +24,11 @@ import io.helidon.inject.service.ServiceInfo;
 /**
  * This is an advanced service registry providing access to service providers, rather than just
  * {@link java.util.function.Supplier}.
+ * To obtain a service registry, see {@link io.helidon.inject.InjectionServices#services()} for regular
+ * service registry,
+ * and {@link io.helidon.inject.Services#serviceProviders()} for an instance of this type.
+ *
+ * @see io.helidon.inject.Services
  */
 public interface ServiceProviderRegistry {
     /**

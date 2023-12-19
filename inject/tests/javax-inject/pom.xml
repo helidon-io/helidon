@@ -131,6 +131,33 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-build-maven-enforcer-rules</artifactId>
+                        <version>${version.plugin.helidon-build-tools}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>enforce-helidon-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <helidonDependenciesRule>
+                                    <namespace>JAVAX</namespace>
+                                    <excludedGavRegExs/>
+                                </helidonDependenciesRule>4
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
