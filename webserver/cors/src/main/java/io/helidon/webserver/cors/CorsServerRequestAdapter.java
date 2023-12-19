@@ -74,6 +74,11 @@ class CorsServerRequestAdapter implements CorsRequestAdapter<ServerRequest> {
     }
 
     @Override
+    public boolean isSecure() {
+        return request.isSecure();
+    }
+
+    @Override
     public void next() {
         response.next();
     }

@@ -56,3 +56,20 @@ order-check:
       allow-origins: [ "http://backend-base-uri}", "http://frontend-base-uri}", "http://test-origin}", "null" ]
       allow-methods: [ "DELETE", "PATCH", "HEAD" ]
       allow-credentials: true
+
+secure-check:
+  paths:
+    - path-pattern: "/greet"
+      allow-origins: [ "http://here.com" ]
+      allow-methods: [ "PUT", "POST"]
+      allow-credentials: true
+    - path-pattern: "/secure-greet"
+      allow-origins: [ "https://secure.com" ]
+      allow-methods: [ "PUT", "POST"]
+
+same-host-diff-ports:
+  paths:
+    - path-pattern: "/greet-8080"
+      allow-origins: [ "http://here.com:8080"]
+    - path-pattern: "/greet"
+      allow-origins: [ "http://here.com"]

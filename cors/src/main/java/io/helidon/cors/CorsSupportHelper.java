@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.cors.LogHelper.Headers;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -369,14 +370,68 @@ public class CorsSupportHelper<Q, R> {
         return aggregator;
     }
 
-    private boolean isRequestTypeNormal(CorsRequestAdapter<Q> requestAdapter, boolean silent) {
+    // For testing
+    static RequestTypeInfo isRequestTypeNormal(String originHeader, UriInfo requestedHostUri, boolean isRequestSecure) {
+        return RequestTypeInfo.create(originHeader, requestedHostUri, isRequestSecure);
+    }
+
+    /**
+     * Captures intermediate data and the final result in deciding whether a request is a normal (non-CORS) request or not.
+     * <p>
+     *     We want to use the intermediate results for clearer logging if that's turned on without having to recompute it.
+     * </p>
+     * @param originLocation full origin (including port)
+     * @param hostLocation   full host (including scheme and port)
+     * @param isNormal       whether the origin and host information represent a normal (non-CORS) request
+     */
+    record RequestTypeInfo(String originLocation, String hostLocation, boolean isNormal) {
+
+        static RequestTypeInfo create(String originHeader, UriInfo requestedHostUri, boolean isRequestSecure) {
+            String originLocation = CorsSupportHelper.originLocation(originHeader);
+            String hostLocation = CorsSupportHelper.hostLocation(requestedHostUri);
+
+            return new RequestTypeInfo(CorsSupportHelper.originLocation(originHeader),
+                                       CorsSupportHelper.hostLocation(requestedHostUri),
+                                       originLocation.equals(hostLocation));
+        }
+    }
+
+    private static boolean isRequestTypeNormal(CorsRequestAdapter<?> requestAdapter, boolean silent) {
+
         // If no origin header or same as host, then just normal
         Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
-        String host = requestAdapter.requestedUri().host();
+        // Fast decision if there is no Origin header.
+        if (originOpt.isEmpty()) {
+            LogHelper.logIsRequestTypeNormalNoOrigin(silent, requestAdapter);
+            return true;
+        }
 
-        boolean result = originOpt.isEmpty() || originOpt.get().contains("://" + host);
-        LogHelper.logIsRequestTypeNormal(result, silent, requestAdapter, originOpt, host);
-        return result;
+        RequestTypeInfo result = isRequestTypeNormal(originOpt.get(), requestAdapter.requestedUri(), requestAdapter.isSecure());
+        LogHelper.logIsRequestTypeNormal(result.isNormal,
+                                         silent,
+                                         requestAdapter,
+                                         originOpt,
+                                         result.originLocation,
+                                         result.hostLocation);
+        return result.isNormal;
+    }
+
+    private static String originLocation(String origin) {
+        int originEndOfScheme = origin.indexOf(':');
+        int originLastColon = origin.lastIndexOf(':');
+
+        return origin + (
+                (originEndOfScheme == originLastColon)
+                        ? ":" + portForScheme(origin.substring(0, originEndOfScheme))
+                        : "");
+    }
+
+    private static String hostLocation(UriInfo requestedUri) {
+        return requestedUri.scheme() + "://" + requestedUri.host() + ":" + requestedUri.port();
+    }
+
+    private static String portForScheme(String origin) {
+        return origin.startsWith("https") ? "443" : "80";
     }
 
     private RequestType inferCORSRequestType(CorsRequestAdapter<Q> requestAdapter, boolean silent) {

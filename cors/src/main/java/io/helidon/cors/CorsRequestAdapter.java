@@ -75,6 +75,13 @@ public interface CorsRequestAdapter<T> {
     String method();
 
     /**
+     * Reports whether the request arrived securely (i.e., over https).
+     *
+     * @return true if secure
+     */
+    boolean isSecure();
+
+    /**
      * Processes the next handler/filter/request processor in the chain.
      */
     void next();

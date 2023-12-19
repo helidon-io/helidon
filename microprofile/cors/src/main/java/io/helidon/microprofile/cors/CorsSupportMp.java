@@ -149,6 +149,11 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
 
         @Override
+        public boolean isSecure() {
+            return requestContext.getSecurityContext().isSecure();
+        }
+
+        @Override
         public void next() {
         }
 
