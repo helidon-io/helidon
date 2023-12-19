@@ -53,6 +53,7 @@
         <module>interception</module>
         <module>api</module>
         <module>runtime</module>
+        <module>codegen</module>
     </modules>
 
 </project>

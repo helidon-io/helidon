@@ -18,7 +18,6 @@ package io.helidon.inject.tests.inject.provider;
 
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Lookup;
 import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
@@ -55,10 +54,7 @@ class PerRequestProviderTest {
 
     @Test
     void myConcreteClassContractTest() {
-        ServiceProvider<MyConcreteClassContract> sp = services.getProvider(
-                Lookup.builder()
-                        .addContract(MyConcreteClassContract.class)
-                        .build());
+        ServiceProvider<MyConcreteClassContract> sp = services.serviceProviders().get(MyConcreteClassContract.class);
         assertThat(sp.description(),
                    equalTo("MyServices.MyConcreteClassContractPerRequestIPProvider:INIT"));
         MyConcreteClassContract instance0 = sp.get();

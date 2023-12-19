@@ -84,7 +84,7 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
         Lookup criteria = Lookup.builder()
                 .runLevel(Injection.RunLevel.STARTUP)
                 .build();
-        List<ServiceProvider<Object>> startups = services.allProviders(criteria);
+        List<ServiceProvider<Object>> startups = services.all(criteria);
         List<String> desc = startups.stream().map(ServiceProvider::description).collect(Collectors.toList());
 
         assertThat(desc,

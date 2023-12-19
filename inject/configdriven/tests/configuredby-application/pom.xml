@@ -102,7 +102,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Ainject.mapApplicationToSingletonScope=true</arg>
+                        <arg>-Ahelidon.inject.mapApplicationToSingletonScope=true</arg>
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
@@ -185,9 +185,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
-                    </compilerArgs>
                     <permittedProviderType>NAMED</permittedProviderType>
                 </configuration>
             </plugin>

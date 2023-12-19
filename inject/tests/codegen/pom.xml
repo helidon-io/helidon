@@ -18,8 +18,8 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.inject.tests</groupId>
         <artifactId>helidon-inject-tests-project</artifactId>
@@ -28,40 +28,31 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-inject-tests-runtime</artifactId>
-    <name>Helidon Injection Tests Runtime</name>
-    <description>
-        Test Injection runtime to remove dependency on Helidon Config, which did not allow us to have services in config.
-    </description>
+    <artifactId>helidon-inject-tests-codegen</artifactId>
+    <name>Helidon Injection Tests Codegen</name>
+    <description>Tests for inject codegen</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject-service</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject-codegen-jakarta</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-junit5</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

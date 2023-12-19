@@ -50,7 +50,7 @@ import io.helidon.inject.Lookup;
 import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.ServiceProviderBindable;
 import io.helidon.inject.ServiceProviderProvider;
-import io.helidon.inject.Services;
+import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.codegen.InjectionCodegenContext;
 import io.helidon.inject.service.ModuleComponent;
 
@@ -70,7 +70,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      * The approach for handling providers.
      * See {@code ApplicationCreatorConfigOptions#permittedProviderTypes()}.
      */
-    @Parameter(property = "inject.permitted.provider.types", defaultValue = "ALL")
+    @Parameter(property = "helidon.inject.permitted.provider.types", defaultValue = "ALL")
     private PermittedProviderType permittedProviderType;
 
     /**
@@ -91,14 +91,14 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      * Sets the named types permitted for providers, assuming use of
      * {@link PermittedProviderType#NAMED}.
      */
-    @Parameter(property = "inject.permitted.provider.type.names")
+    @Parameter(property = "helidon.inject.permitted.provider.type.names")
     private List<String> permittedProviderTypeNames;
 
     /**
      * Sets the named qualifier types permitted for providers, assuming use of
      * {@link PermittedProviderType#NAMED}.
      */
-    @Parameter(property = "inject.permitted.provider.qualifier.type.names", readonly = true)
+    @Parameter(property = "helidon.inject.permitted.provider.qualifier.type.names", readonly = true)
     private List<String> permittedProviderQualifierTypeNames;
 
     /**
@@ -127,6 +127,9 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
                 .map(ModuleInfoSourceParser::parse);
 
         CodegenOptions codegenOptions = MavenOptions.create(toOptions());
+        codegenOptions.validate(Set.of(ApplicationOptions.PERMITTED_PROVIDER_TYPE,
+                                       ApplicationOptions.PERMITTED_PROVIDER_TYPES,
+                                       ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPES));
         CodegenScope scope = scope();
         // package name to use (should be the same as ModuleComponent package)
         String packageName = packageName(codegenOptions, myModuleInfo, nonTestModuleInfo);
@@ -149,9 +152,10 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
             if (injectionServices.config().useApplication()) {
                 throw new IllegalStateException("Maven plugin service registry must not be using 'application' bindings");
             }
-            Services services = injectionServices.services();
+            ServiceProviderRegistry services = injectionServices.services().serviceProviders();
 
-            List<ServiceProvider<ModuleComponent>> allModules = services.allProviders(Lookup.create(ModuleComponent.class));
+
+            List<ServiceProvider<ModuleComponent>> allModules = services.all(ModuleComponent.class);
             getLog().debug("Processing modules: " + MavenPluginUtils.toDescriptions(allModules));
 
             if (allModules.isEmpty()) {
@@ -159,7 +163,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
             }
 
             // retrieves all the services in the registry
-            List<ServiceProvider<Object>> allServices = services.allProviders(Lookup.EMPTY);
+            List<ServiceProvider<Object>> allServices = services.all(Lookup.EMPTY);
             if (allServices.isEmpty()) {
                 warn("Application creator found no services to process");
                 return;
@@ -505,13 +509,13 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         moduleNameFromMavenConfig().ifPresent(it -> options.add("-A" + CodegenOptions.TAG_CODEGEN_MODULE + "=" + it));
         packageNameFromMavenConfig().ifPresent(it -> options.add("-A" + CodegenOptions.TAG_CODEGEN_PACKAGE + "=" + it));
 
-        options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_TYPE + "=" + permittedProviderType);
+        options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_TYPE.name() + "=" + permittedProviderType);
         if (!permittedProviderTypeNames.isEmpty()) {
-            options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_TYPE_NAMES
+            options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_TYPES.name()
                                 + "=" + String.join(",", permittedProviderTypeNames));
         }
         if (!permittedProviderQualifierTypeNames.isEmpty()) {
-            options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPE_NAMES
+            options.add("-A" + ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPES.name()
                                 + "=" + String.join(",", permittedProviderQualifierTypeNames));
         }
 

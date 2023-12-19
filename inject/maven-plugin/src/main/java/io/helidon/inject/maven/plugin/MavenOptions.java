@@ -20,8 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
+import io.helidon.codegen.Option;
 
 class MavenOptions implements CodegenOptions {
     private final Map<String, String> options;
@@ -30,7 +33,7 @@ class MavenOptions implements CodegenOptions {
         this.options = options;
     }
 
-    public static CodegenOptions create(Set<String> compilerArgs) {
+    static CodegenOptions create(Set<String> compilerArgs) {
         Map<String, String> options = new HashMap<>();
 
         compilerArgs.forEach(it -> addInjectOption(options, it));
@@ -41,6 +44,31 @@ class MavenOptions implements CodegenOptions {
     @Override
     public Optional<String> option(String option) {
         return Optional.ofNullable(options.get(option)).map(String::trim);
+    }
+
+    @Override
+    public void validate(Set<Option<?>> permittedOptions) {
+        Set<String> helidonOptions = options
+                .keySet()
+                .stream()
+                .filter(it -> it.startsWith("helidon."))
+                .collect(Collectors.toSet());
+
+        // now remove all expected
+        permittedOptions.stream()
+                .map(Option::name)
+                .forEach(helidonOptions::remove);
+
+        helidonOptions.remove(CODEGEN_SCOPE.name());
+        helidonOptions.remove(CODEGEN_MODULE.name());
+        helidonOptions.remove(CODEGEN_PACKAGE.name());
+        helidonOptions.remove(INDENT_TYPE.name());
+        helidonOptions.remove(INDENT_COUNT.name());
+        helidonOptions.remove(CREATE_META_INF_SERVICES.name());
+
+        if (!helidonOptions.isEmpty()) {
+            throw new CodegenException("Unrecognized/unsupported Helidon option configured: " + helidonOptions);
+        }
     }
 
     private static void addInjectOption(Map<String, String> options, String option) {

@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import io.helidon.inject.ServiceProvider;
 
-public class ProviderUtil {
+class ProviderUtil {
     /**
      * Provides a {@link io.helidon.inject.ServiceProvider#description()}, falling back to {@link #toString()} on the passed
      * provider argument.

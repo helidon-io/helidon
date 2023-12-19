@@ -51,6 +51,7 @@ import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Lookup;
 import io.helidon.inject.ServiceInjectionPlanBinder;
 import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.codegen.InjectCodegenTypes;
 import io.helidon.inject.service.Interception;
@@ -86,18 +87,9 @@ class ApplicationCreator {
         this.failOnError = failOnError;
 
         CodegenOptions options = scanContext.options();
-        this.permittedProviderType = options.option(ApplicationOptions.PERMITTED_PROVIDER_TYPE,
-                                                    PermittedProviderType.NAMED,
-                                                    PermittedProviderType.class);
-        this.permittedProviderTypes = options.asList(ApplicationOptions.PERMITTED_PROVIDER_TYPE_NAMES)
-                .stream()
-                .map(TypeName::create)
-                .collect(Collectors.toSet());
-
-        this.permittedProviderQualifierTypes = options.asList(ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPE_NAMES)
-                .stream()
-                .map(TypeName::create)
-                .collect(Collectors.toSet());
+        this.permittedProviderType = ApplicationOptions.PERMITTED_PROVIDER_TYPE.value(options);
+        this.permittedProviderTypes = ApplicationOptions.PERMITTED_PROVIDER_TYPES.value(options);
+        this.permittedProviderQualifierTypes = ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPES.value(options);
     }
 
     /**
@@ -189,8 +181,9 @@ class ApplicationCreator {
                     .get(InjectCodegenTypes.APPLICATION);
             if (!provided.contains(typeName)) {
                 throw new CodegenException("Please add \"provides " + InjectCodegenTypes.APPLICATION.fqName()
-                                         + " with " + typeName.fqName() + ";\" to your module-info.java, as otherwise the "
-                                         + "application would not be discovered when running on module path.");
+                                                   + " with " + typeName.fqName() + ";\" to your module-info.java, as otherwise"
+                                                   + " the "
+                                                   + "application would not be discovered when running on module path.");
             }
         }
         // now we have the source generated, we add the META-INF/service, and compile the class
@@ -214,11 +207,12 @@ class ApplicationCreator {
         }
     }
 
-    BindingPlan bindingPlan(InjectionServices services,
+    BindingPlan bindingPlan(Services serviceRegistry,
+                            ServiceProviderRegistry services,
                             TypeName serviceTypeName) {
 
         Lookup si = toServiceInfoCriteria(serviceTypeName);
-        ServiceProvider<?> sp = services.services().getProvider(si);
+        ServiceProvider<?> sp = services.get(si);
         TypeName serviceDescriptorType = sp.infoType();
 
         if (!isQualifiedInjectionTarget(sp)) {
@@ -235,7 +229,7 @@ class ApplicationCreator {
             // type of the result that satisfies the injection point (full generic type)
             TypeName ipType = dependency.typeName();
 
-            InjectionPlan iPlan = injectionPlan(services, sp, dependency);
+            InjectionPlan iPlan = injectionPlan(serviceRegistry, sp, dependency);
             List<ServiceProvider<Object>> qualified = iPlan.qualifiedProviders();
             List<?> unqualified = iPlan.unqualifiedProviders();
 
@@ -278,7 +272,7 @@ class ApplicationCreator {
 
     private static ServiceProvider<?> toServiceProvider(TypeName typeName,
                                                         Services services) {
-        return services.getProvider(toServiceInfoCriteria(typeName));
+        return services.serviceProviders().get(toServiceInfoCriteria(typeName));
     }
 
     /**
@@ -334,9 +328,9 @@ class ApplicationCreator {
                                                Set<TypeName> serviceTypes) {
         Services services = injectionServices.services();
 
-        List<ServiceProvider<Supplier>> providers = services.allProviders(Lookup.builder()
-                                                                                  .addContract(Supplier.class)
-                                                                                  .build());
+        List<ServiceProvider<Supplier>> providers = services.serviceProviders().all(Lookup.builder()
+                                                                                            .addContract(Supplier.class)
+                                                                                            .build());
         if (providers.isEmpty()) {
             return List.of();
         }
@@ -372,7 +366,7 @@ class ApplicationCreator {
         return BindingType.SINGLE;
     }
 
-    private InjectionPlan injectionPlan(InjectionServices injectionServices,
+    private InjectionPlan injectionPlan(Services services,
                                         ServiceProvider<?> self,
                                         Ip dependency) {
         Lookup dependencyTo = Lookup.create(dependency);
@@ -387,15 +381,14 @@ class ApplicationCreator {
         }
 
         if (self instanceof InjectionResolver ir) {
-            Optional<Object> resolved = ir.resolve(dependency, injectionServices.services(), self, false);
+            Optional<Object> resolved = ir.resolve(dependency, services, self, false);
             Object target = resolved.orElse(null);
             if (target != null) {
                 return new InjectionPlan(toUnqualified(target).toList(), toQualified(target).toList());
             }
         }
 
-        Services services = injectionServices.services();
-        List<ServiceProvider<Object>> qualifiedProviders = services.allProviders(dependencyTo);
+        List<ServiceProvider<Object>> qualifiedProviders = services.serviceProviders().all(dependencyTo);
         List<ServiceProvider<Object>> unqualifiedProviders = List.of();
 
         if (qualifiedProviders.isEmpty()) {
@@ -448,17 +441,20 @@ class ApplicationCreator {
                 .qualifiers(Set.of())
                 .addContract(InjectCodegenTypes.INJECTION_POINT_PROVIDER)
                 .build();
-        return services.allProviders(criteria);
+        return services.serviceProviders().all(criteria);
     }
 
-    private void createConfigureMethodBody(InjectionServices services, Set<TypeName> serviceTypes, Method.Builder method) {
-
+    private void createConfigureMethodBody(InjectionServices injectionServices,
+                                           Set<TypeName> serviceTypes,
+                                           Method.Builder method) {
+        Services serviceRegistry = injectionServices.services();
+        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
         // find all interceptors and bind them
-        List<ServiceProvider<Interception.Interceptor>> interceptors = services.services()
-                .allProviders(Lookup.builder()
-                                      .addContract(Interception.Interceptor.class)
-                                      .addQualifier(Qualifier.WILDCARD_NAMED)
-                                      .build());
+        List<ServiceProvider<Interception.Interceptor>> interceptors =
+                services.all(Lookup.builder()
+                                     .addContract(Interception.Interceptor.class)
+                                     .addQualifier(Qualifier.WILDCARD_NAMED)
+                                     .build());
         method.addContent("binder.interceptors(");
         boolean multiline = interceptors.size() > 2;
         if (multiline) {
@@ -484,7 +480,7 @@ class ApplicationCreator {
         // first collect required dependencies by descriptor
         Map<TypeName, Set<Binding>> injectionPlan = new LinkedHashMap<>();
         for (TypeName serviceType : serviceTypes) {
-            BindingPlan plan = bindingPlan(services, serviceType);
+            BindingPlan plan = bindingPlan(serviceRegistry, services, serviceType);
             if (!plan.bindings.isEmpty()) {
                 injectionPlan.put(plan.descriptorType(), plan.bindings());
             }

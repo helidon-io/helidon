@@ -16,10 +16,34 @@
 
 package io.helidon.inject.maven.plugin;
 
+import java.util.Arrays;
+import java.util.Set;
+
+import io.helidon.codegen.Option;
+import io.helidon.common.GenericType;
+import io.helidon.common.types.TypeName;
+
 final class ApplicationOptions {
-    static final String PERMITTED_PROVIDER_TYPE = "inject.app.permittedProviderType";
-    static final String PERMITTED_PROVIDER_TYPE_NAMES = "inject.app.permittedProviderTypeNames";
-    static final String PERMITTED_PROVIDER_QUALIFIER_TYPE_NAMES = "inject.app.permittedProviderQualifierTypeNames";
+    static final Option<PermittedProviderType> PERMITTED_PROVIDER_TYPE =
+            Option.create("helidon.inject.app.permittedProviderType",
+                          "Allowed level of non-deterministic providers, either of: "
+                                  + Arrays.toString(PermittedProviderType.values()),
+                          PermittedProviderType.NONE,
+                          PermittedProviderType::valueOf,
+                          GenericType.create(PermittedProviderType.class));
+    static final Option<Set<TypeName>> PERMITTED_PROVIDER_TYPES =
+            Option.createSet("helidon.inject.app.permittedProviderTypeNames",
+                             "Fully qualified class names of providers that are permitted.",
+                             Set.of(),
+                             TypeName::create,
+                             new GenericType<Set<TypeName>>() { });
+
+    static final Option<Set<TypeName>> PERMITTED_PROVIDER_QUALIFIER_TYPES =
+            Option.createSet("helidon.inject.app.permittedProviderQualifierTypeNames",
+                             "Fully qualified class names of qualifiers of providers that are permitted.",
+                             Set.of(),
+                             TypeName::create,
+                             new GenericType<Set<TypeName>>() { });
 
     private ApplicationOptions() {
     }

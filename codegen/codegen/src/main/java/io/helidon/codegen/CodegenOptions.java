@@ -71,6 +71,8 @@ public interface CodegenOptions {
                                                    GenericType.create(IndentType.class));
     /**
      * Codegen option to configure how many times to repeat the {@link #INDENT_TYPE} for indentation.
+     * <p>
+     * Defaults to {@code 4}.
      */
     Option<Integer> INDENT_COUNT = Option.create("helidon.codegen.indent.count",
                                                  "Number of indents to use (such as 4, if combined with SPACE will indent by 4 "
@@ -143,5 +145,14 @@ public interface CodegenOptions {
      */
     default Set<String> asSet(String option) {
         return Set.copyOf(asList(option));
+    }
+
+    /**
+     * Validate options against the permitted options. The implementations in Helidon only validate
+     * {@code helidon.} prefixed options.
+     *
+     * @param permittedOptions options permitted by the codegen in progress
+     */
+    default void validate(Set<Option<?>> permittedOptions) {
     }
 }

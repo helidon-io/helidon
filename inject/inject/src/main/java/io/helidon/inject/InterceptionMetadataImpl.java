@@ -74,10 +74,10 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         if (services instanceof ServicesImpl si) {
             allInterceptors = si.interceptors();
         } else {
-            allInterceptors = services.allProviders(Lookup.builder()
-                                                                .addContract(Interception.Interceptor.class)
-                                                                .addQualifier(Qualifier.WILDCARD_NAMED)
-                                                                .build());
+            allInterceptors = services.serviceProviders().all(Lookup.builder()
+                                                                      .addContract(Interception.Interceptor.class)
+                                                                      .addQualifier(Qualifier.WILDCARD_NAMED)
+                                                                      .build());
         }
 
         List<Supplier<Interception.Interceptor>> result = new ArrayList<>();

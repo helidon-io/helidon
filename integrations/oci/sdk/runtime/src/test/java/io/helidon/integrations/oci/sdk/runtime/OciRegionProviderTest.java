@@ -25,7 +25,6 @@ import io.helidon.inject.ContextualServiceQuery;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServiceProviderException;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Lookup;
 import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Ip;
@@ -67,8 +66,10 @@ class OciRegionProviderTest {
                 .permitsDynamic(true)
                 .build());
 
-        ServiceProvider<Region> regionProvider = InjectionServices.instance().services()
-                .getProvider(Lookup.create(Region.class));
+        ServiceProvider<Region> regionProvider = InjectionServices.instance()
+                .services()
+                .serviceProviders()
+                .get(Region.class);
         assertThrows(InjectionServiceProviderException.class,
                      regionProvider::get);
 

@@ -29,8 +29,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-inject-tests-javax-inject</artifactId>
-    <name>Helidon Injection Test Javax Inject</name>
-    <description>Test for services using Javax annotations</description>
+    <name>Helidon Injection Tests Javax Inject</name>
+    <description>Tests for services using Javax annotations</description>
 
     <properties>
         <helidon.services.skip>false</helidon.services.skip>

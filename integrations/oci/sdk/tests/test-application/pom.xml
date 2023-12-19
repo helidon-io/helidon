@@ -172,7 +172,7 @@
                 </executions>
                 <!-- this would only be needed if we/someone turns on PermittedProviderTypes -->
 <!--                <configuration>-->
-<!--                    <permittedProviderTypes>NAMED</permittedProviderTypes>-->
+<!--                    <permittedProviderType>NAMED</permittedProviderType>-->
 <!--                    <permittedProviderTypeNames>-->
 <!--                        <permittedProviderTypeName>io.helidon.integrations.oci.sdk.runtime.*</permittedProviderTypeName>-->
 <!--                        <permittedProviderTypeName>generated.com.oracle.bmc.*</permittedProviderTypeName>-->

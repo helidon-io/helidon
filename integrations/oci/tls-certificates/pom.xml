@@ -140,10 +140,6 @@
                             <goal>testCompile</goal>
                         </goals>
                         <configuration>
-                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <compilerArgs>
-                                <arg>-Ainject.ignoreUnsupportedAnnotations=true</arg>
-                            </compilerArgs>
                             <annotationProcessorPaths>
                                 <path>
                                     <groupId>io.helidon.inject.configdriven</groupId>

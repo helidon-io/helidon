@@ -49,7 +49,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
     void testInjectCbr() {
         resetWith(Config.create());
 
-        ServiceProvider<ServiceUsingRegistry> lookup = services.serviceProvider(ServiceUsingRegistry__ServiceDescriptor.INSTANCE);
+        ServiceProvider<ServiceUsingRegistry> lookup = services.get(ServiceUsingRegistry__ServiceDescriptor.INSTANCE);
         ServiceUsingRegistry service = lookup.get();
 
         assertThat(service.registry(), notNullValue());
@@ -60,7 +60,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
     void testRepeatableConfigBean() {
         resetWith(Config.create());
 
-        List<Async> serviceProviders = services.all(Async.class)
+        List<Async> serviceProviders = serviceRegistry.all(Async.class)
                 .stream()
                 .map(Supplier::get)
                 .toList();
@@ -68,17 +68,17 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
         assertThat(serviceProviders, hasSize(2));
 
         Async async = services.<Async>get(Lookup.builder()
-                                                    .addContract(Async.class)
-                                                    .addQualifier(Qualifier.createNamed("first"))
-                                                    .build())
+                                                  .addContract(Async.class)
+                                                  .addQualifier(Qualifier.createNamed("first"))
+                                                  .build())
                 .get();
         assertThat(async.config(), notNullValue());
         assertThat(async.config().executor(), is("exec"));
 
         async = services.<Async>get(Lookup.builder()
-                                              .addContract(Async.class)
-                                              .addQualifier(Qualifier.createNamed("second"))
-                                              .build())
+                                            .addContract(Async.class)
+                                            .addQualifier(Qualifier.createNamed("second"))
+                                            .build())
                 .get();
         assertThat(async.config(), notNullValue());
         assertThat(async.config().executor(), is("service"));

@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.inject.providers;
+package io.helidon.inject;
 
-import io.helidon.inject.api.Contract;
-import io.helidon.inject.api.Services;
+import java.util.List;
 
-/**
- * Normally, one would need to place {@link Contract} on interfaces. Here, however, we used
- * {@code -Ahelidon.inject.autoAddNonContractInterfaces=true} in the {@code pom.xml} thereby making all interfaces into contracts that
- * can be found via {@link Services#lookup}.
- */
-//@Contract
-public interface Blade {
+import io.helidon.inject.service.ServiceInfo;
 
-    String name();
+class ServiceProviderRegistryImpl implements ServiceProviderRegistry {
+    private final ServicesImpl services;
 
+    ServiceProviderRegistryImpl(ServicesImpl services) {
+        this.services = services;
+    }
+
+    @Override
+    public <T> List<ServiceProvider<T>> all(Lookup lookup) {
+        return services.allProviders(lookup);
+    }
+
+    @Override
+    public <T> ServiceProvider<T> get(ServiceInfo serviceInfo) {
+        return services.serviceProvider(serviceInfo);
+    }
 }

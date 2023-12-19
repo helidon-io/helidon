@@ -17,18 +17,22 @@
 package io.helidon.inject.maven.plugin;
 
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.CodegenLogger;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenScope;
 import io.helidon.codegen.ModuleInfo;
+import io.helidon.codegen.Option;
 import io.helidon.codegen.scan.ScanContext;
 import io.helidon.codegen.scan.ScanTypeInfoFactory;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.inject.codegen.InjectOptions;
 
 import io.github.classgraph.ScanResult;
 
@@ -76,5 +80,13 @@ class MavenScanContext extends MavenCodegenContext implements ScanContext {
     @Override
     public ScanResult scanResult() {
         return scanResult;
+    }
+
+    @Override
+    public Set<Option<?>> supportedOptions() {
+        Set<Option<?>> supported = new HashSet<>(super.supportedOptions());
+        supported.add(InjectOptions.JSR_330_STRICT);
+
+        return supported;
     }
 }

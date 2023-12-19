@@ -94,6 +94,11 @@
                         <goals>
                             <goal>external-module-create</goal>
                         </goals>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-Ahelidon.inject.autoAddNonContractInterfaces=true</arg>
+                            </compilerArgs>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>create-application</id>
@@ -103,9 +108,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
-                    </compilerArgs>
                     <packageNames>
                         <packageName>org.atinject.tck.auto</packageName>
                         <packageName>org.atinject.tck.auto.accessories</packageName>

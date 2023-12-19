@@ -465,7 +465,7 @@ public abstract class ServiceProviderBase<T>
      */
     protected void prepareDependency(Services services, Map<Ip, Supplier<?>> injectionPlan, Ip dependency) {
         Lookup criteria = Lookup.create(dependency);
-        List<ServiceProvider<Object>> discovered = services.allProviders(criteria)
+        List<ServiceProvider<Object>> discovered = services.serviceProviders().all(criteria)
                 .stream()
                 .filter(it -> it != this)
                 .toList();
@@ -689,7 +689,7 @@ public abstract class ServiceProviderBase<T>
 
         @Override
         public ServiceInjectionPlanBinder.Binder bind(Ip injectionPoint, boolean useProvider, ServiceInfo serviceInfo) {
-            ServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProvider(serviceInfo),
+            ServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders().get(serviceInfo),
                                                                              injectionPoint);
             if (useProvider) {
                 injectionPlan.put(injectionPoint, () -> serviceProvider);
@@ -712,7 +712,7 @@ public abstract class ServiceProviderBase<T>
             if (serviceInfos.length == 0) {
                 injectionPlan.put(injectionPoint, Optional::empty);
             } else {
-                ServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProvider(serviceInfos[0]),
+                ServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders().get(serviceInfos[0]),
                                                                                  injectionPoint);
                 if (useProvider) {
                     injectionPlan.put(injectionPoint, () -> Optional.of(serviceProvider));
@@ -734,7 +734,7 @@ public abstract class ServiceProviderBase<T>
                                                           ServiceInfo... serviceInfos) {
 
             List<? extends ServiceProvider<?>> providers = Stream.of(serviceInfos)
-                    .map(services::serviceProvider)
+                    .map(services.serviceProviders()::get)
                     .map(it -> BoundServiceProvider.create(it, injectionPoint))
                     .toList();
 

@@ -29,8 +29,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-inject-tests-jakarta-inject</artifactId>
-    <name>Helidon Injection Test Jakarta Inject</name>
-    <description>Test for services using Jakarta annotations</description>
+    <name>Helidon Injection Tests Jakarta Inject</name>
+    <description>Tests for services using Jakarta annotations</description>
 
     <properties>
         <helidon.services.skip>false</helidon.services.skip>

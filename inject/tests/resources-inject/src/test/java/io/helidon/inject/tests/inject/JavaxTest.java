@@ -18,7 +18,6 @@ package io.helidon.inject.tests.inject;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.Lookup;
 import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.codegen.InjectCodegenTypes;
@@ -62,8 +61,7 @@ class JavaxTest {
      */
     @Test
     void applicationScopeToSingletonScopeTranslation() {
-        ServiceProvider<AnApplicationScopedService> sp = services.getProvider(
-                Lookup.create(AnApplicationScopedService.class));
+        ServiceProvider<AnApplicationScopedService> sp = services.serviceProviders().get(AnApplicationScopedService.class);
         assertThat(sp.toString(),
                    equalTo("AnApplicationScopedService:INIT"));
         assertThat(sp.qualifiers(),

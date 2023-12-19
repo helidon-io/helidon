@@ -17,6 +17,7 @@
 package io.helidon.inject.tests.jakarta.inject;
 
 import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -40,17 +41,19 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class InjectionTest {
-    private static Services services;
+    private static Services serviceRegistry;
+    private static ServiceProviderRegistry services;
     private static LifecycleReceiver lifecycleReceiver;
 
     @BeforeAll
     static void initRegistry() {
-        services = InjectionTestingSupport.testableServices();
+        serviceRegistry = InjectionTestingSupport.testableServices();
+        services = serviceRegistry.serviceProviders();
     }
 
     @AfterAll
     static void tearDownRegistry() {
-        services.injectionServices().shutdown();
+        serviceRegistry.injectionServices().shutdown();
         if (lifecycleReceiver != null) {
             assertThat("Pre destroy of a singleton should have been called", lifecycleReceiver.preDestroyCalled(), is(true));
         }
@@ -61,7 +64,7 @@ class InjectionTest {
     @Test
     @Order(0)
     void testSingleton() {
-        ServiceProvider<SingletonService> provider = services.serviceProvider(SingletonService__ServiceDescriptor.INSTANCE);
+        ServiceProvider<SingletonService> provider = services.get(SingletonService__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -76,7 +79,7 @@ class InjectionTest {
     @Test
     @Order(1)
     void testLifecycle() {
-        ServiceProvider<LifecycleReceiver> provider = services.serviceProvider(LifecycleReceiver__ServiceDescriptor.INSTANCE);
+        ServiceProvider<LifecycleReceiver> provider = services.get(LifecycleReceiver__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -87,7 +90,7 @@ class InjectionTest {
     @Test
     @Order(2)
     void testNonSingleton() {
-        ServiceProvider<NonSingletonService> provider = services.serviceProvider(NonSingletonService__ServiceDescriptor.INSTANCE);
+        ServiceProvider<NonSingletonService> provider = services.get(NonSingletonService__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -107,7 +110,7 @@ class InjectionTest {
     @Test
     @Order(3)
     void testNamed() {
-        ServiceProvider<NamedReceiver> provider = services.serviceProvider(NamedReceiver__ServiceDescriptor.INSTANCE);
+        ServiceProvider<NamedReceiver> provider = services.get(NamedReceiver__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -119,7 +122,7 @@ class InjectionTest {
     @Test
     @Order(4)
     void testQualified() {
-        ServiceProvider<QualifiedReceiver> provider = services.serviceProvider(QualifiedReceiver__ServiceDescriptor.INSTANCE);
+        ServiceProvider<QualifiedReceiver> provider = services.get(QualifiedReceiver__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -131,7 +134,7 @@ class InjectionTest {
     @Test
     @Order(5)
     void testProvider() {
-        ServiceProvider<ProviderReceiver> provider = services.serviceProvider(ProviderReceiver__ServiceDescriptor.INSTANCE);
+        ServiceProvider<ProviderReceiver> provider = services.get(ProviderReceiver__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 

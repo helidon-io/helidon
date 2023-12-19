@@ -31,6 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.ServiceInfo;
@@ -71,7 +72,7 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
             lock.lock();
             InjectionConfig config = CONFIG.get();
             if (config == null) {
-                config = InjectionConfig.create();
+                config = InjectionConfig.create(GlobalConfig.config().get("inject"));
             }
             InjectionServicesImpl newInstance = new InjectionServicesImpl(config);
             ResettableHandler.addResettable(new ResetInjectionServices(newInstance));
@@ -89,7 +90,7 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
     }
 
     @Override
-    public Services services() {
+    public ServicesImpl services() {
         Lock readLock = lifecycleLock.readLock();
         try {
             readLock.lock();
@@ -269,7 +270,7 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
 
                 if (!instance.config.permitsDynamic()) {
                     throw new IllegalStateException(
-                            "Attempting to rest InjectionServices that do not support dynamic updates. Set option "
+                            "Attempting to reset InjectionServices that do not support dynamic updates. Set option "
                                     + "permitsDynamic, "
                                     + "or configuration option 'inject.permits-dynamic=true' to enable");
                 }

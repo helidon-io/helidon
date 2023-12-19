@@ -28,7 +28,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Lookup;
 import io.helidon.inject.ServiceProvider;
-import io.helidon.inject.Services;
+import io.helidon.inject.ServiceProviderRegistry;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -127,11 +127,11 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
             InjectionServices injectionServices = injectionServices(false);
             assert (!injectionServices.config().useApplication());
-            Services services = injectionServices.services();
+            ServiceProviderRegistry services = injectionServices.services().serviceProviders();
 
             // retrieves all the services in the registry
             List<ServiceProvider<Object>> allServices = services
-                    .allProviders(Lookup.EMPTY);
+                    .all(Lookup.EMPTY);
             Set<TypeName> serviceTypeNames = toNames(allServices);
             getLog().debug("excluding service type names: " + serviceTypeNames);
             return serviceTypeNames;

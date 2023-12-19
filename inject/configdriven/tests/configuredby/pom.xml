@@ -93,7 +93,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Ainject.autoAddNonContractInterfaces=true</arg>
+                        <arg>-Ahelidon.inject.autoAddNonContractInterfaces=true</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

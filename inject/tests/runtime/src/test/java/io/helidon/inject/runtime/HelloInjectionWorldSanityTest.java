@@ -26,9 +26,9 @@ import io.helidon.inject.DeActivationRequest;
 import io.helidon.inject.InjectTypes;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Lookup;
 import io.helidon.inject.Phase;
 import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.runtime.testsubjects.HelloInjectionWorld;
 import io.helidon.inject.runtime.testsubjects.HelloInjectionWorldImpl;
@@ -73,9 +73,10 @@ class HelloInjectionWorldSanityTest {
 
     @Test
     void sanity() {
-        Services services = InjectionServices.instance().services();
+        Services serviceRegistry = InjectionServices.instance().services();
+        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
 
-        List<ServiceProvider<ModuleComponent>> moduleProviders = services.allProviders(Lookup.create(ModuleComponent.class));
+        List<ServiceProvider<ModuleComponent>> moduleProviders = services.all(ModuleComponent.class);
         assertThat(moduleProviders.size(),
                    equalTo(EXPECTED_MODULES));
         List<String> descriptions = ProviderUtil.toDescriptions(moduleProviders);
@@ -85,7 +86,7 @@ class HelloInjectionWorldSanityTest {
                                       "EmptyModule:ACTIVE",
                                       "HelloInjection__Module:ACTIVE"));
 
-        List<ServiceProvider<Application>> applications = services.allProviders(Lookup.create(Application.class));
+        List<ServiceProvider<Application>> applications = services.all(Application.class);
         assertThat(applications.size(),
                    equalTo(1));
         assertThat(ProviderUtil.toDescriptions(applications),
@@ -111,15 +112,15 @@ class HelloInjectionWorldSanityTest {
     }
 
     void standardActivation() {
-        Services services = InjectionServices.instance().services();
+        Services serviceRegistry = InjectionServices.instance().services();
+        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
 
         ServiceProvider<HelloInjectionWorld> helloProvider1 =
-                services.getProvider(Lookup.create(HelloInjectionWorld.class));
+                services.get(HelloInjectionWorld.class);
         assertThat(helloProvider1,
                    notNullValue());
 
-        ServiceProvider<HelloInjectionWorldImpl> helloProvider2 = services.getProvider(Lookup.create(
-                HelloInjectionWorldImpl.class));
+        ServiceProvider<HelloInjectionWorldImpl> helloProvider2 = services.get(HelloInjectionWorldImpl.class);
         assertThat(helloProvider1,
                    sameInstance(helloProvider2));
         assertThat(helloProvider1.id(),
@@ -142,7 +143,7 @@ class HelloInjectionWorldSanityTest {
         assertThat(helloProvider1.weight(),
                    equalTo(Services.INJECT_WEIGHT));
 
-        ServiceProvider<InjectionWorld> worldProvider1 = services.getProvider(Lookup.create(InjectionWorld.class));
+        ServiceProvider<InjectionWorld> worldProvider1 = services.get(InjectionWorld.class);
         assertThat(worldProvider1, notNullValue());
         assertThat(worldProvider1.description(),
                    equalTo("InjectionWorldImpl:INIT"));
@@ -167,7 +168,7 @@ class HelloInjectionWorldSanityTest {
                    equalTo(0));
 
         // deactivate just the Hello service
-        ActivationResult result = ((Activator) helloProvider1).deactivate(DeActivationRequest.create());
+        ActivationResult result = ((Activator<?>) helloProvider1).deactivate(DeActivationRequest.create());
         assertThat(result.success(),
                    is(true));
         assertThat(result.serviceProvider(),
