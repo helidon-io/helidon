@@ -11,6 +11,45 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.2]
+
+This release contains bugfixes and ehancements and is recommended for all users of Helidon 4.
+
+Java 21 is required to use Helidon 4.0.1.
+
+### CHANGES
+
+- Builders: required fixes to builders and other tooling [8076](https://github.com/helidon-io/helidon/pull/8076)
+- Metrics: Fix premature access to RegistryFactory [8118](https://github.com/helidon-io/helidon/pull/8118)
+- Metrics: jvm uptime units [8065](https://github.com/helidon-io/helidon/pull/8065)
+- Native image: key-utils are missing native image prop [8146](https://github.com/helidon-io/helidon/pull/8146)
+- Scheduling: 8059 Delayed fixed rate scheduling [8075](https://github.com/helidon-io/helidon/pull/8075)
+- Tracing: Add proper handling of `content-read` and `content-write` logs within `HTTP Request` tracing span [8105](https://github.com/helidon-io/helidon/pull/8105)
+- Tracing: MP OpenTelemetry and Helidon Tracing API [8073](https://github.com/helidon-io/helidon/pull/8073)
+- Tracing: Several fixes to tracing config [8155](https://github.com/helidon-io/helidon/pull/8155)
+- WebClient: #8077 Client keep alive fix [8101](https://github.com/helidon-io/helidon/pull/8101)
+- WebServer: Update server's internal state if a listener fails to start [8111](https://github.com/helidon-io/helidon/pull/8111)
+- WebSocket: Handle WebSocket frames of longer payload [8134](https://github.com/helidon-io/helidon/pull/8134)
+- WebSocket: Make sure a WsListener supplier is called exactly once per connection [8116](https://github.com/helidon-io/helidon/pull/8116)
+- Build: Aggregated javadoc and docs URLs updates [8171](https://github.com/helidon-io/helidon/pull/8171)
+- Build: Incorporate release branch name in artifact bundle name [8081](https://github.com/helidon-io/helidon/pull/8081)
+- Dependencies: 4.x: Upgrade grpc to 1.60.0 [8098](https://github.com/helidon-io/helidon/pull/8098)
+- Dependencies: Upgrade slf4j to 2.0.9 and logback to 1.4.14 [8120](https://github.com/helidon-io/helidon/pull/8120)
+- Docs: Change doc in the wake of OpenAPI UI service reorg in 4.0 to add the `services` level to the config structure [8100](https://github.com/helidon-io/helidon/pull/8100)
+- Docs: Fix health and metrics URLs. Mention health returns 204 [8160](https://github.com/helidon-io/helidon/pull/8160)
+- Docs: Remove doc for tags on `content-read` and `content-write` spans; the tags are no longer added by the code in 4.x [8112](https://github.com/helidon-io/helidon/pull/8112)
+- Docs: Significant changes and corrections to the SE health doc [8125](https://github.com/helidon-io/helidon/pull/8125)
+- Docs: tuning guide update [8140](https://github.com/helidon-io/helidon/pull/8140)
+- Examples: Add missing metrics to Pokemons example [8129](https://github.com/helidon-io/helidon/pull/8129)
+- Examples: Correct typo in MP health example [8131](https://github.com/helidon-io/helidon/pull/8131)
+- Examples: Fix Mongo Dbclient + related example [8130](https://github.com/helidon-io/helidon/pull/8130)
+- Examples: Fix and add test to database SE example [8097](https://github.com/helidon-io/helidon/pull/8097)
+- Tests: Add @RequestScoped support for testing [7916](https://github.com/helidon-io/helidon/pull/7916)
+- Tests: Add Hierarchy tests to MP Telemetry [8089](https://github.com/helidon-io/helidon/pull/8089)
+- Tests: Avoid possible test ordering problem [8145](https://github.com/helidon-io/helidon/pull/8145)
+- Tests: Disable failing `testNonTransactionalEntityManager` JPA test. [8124](https://github.com/helidon-io/helidon/pull/8124)
+- Tests: Enable disabled TCKs [7781](https://github.com/helidon-io/helidon/pull/7781)
+
 ## [4.0.1]
 
 This release contains bugfixes and ehancements and is recommended for all users of Helidon 4.
@@ -911,6 +950,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.2]: https://github.com/oracle/helidon/compare/4.0.1...4.0.2
 [4.0.1]: https://github.com/oracle/helidon/compare/4.0.0...4.0.1
 [4.0.0]: https://github.com/oracle/helidon/compare/4.0.0-RC2...4.0.0
 [4.0.0-RC2]: https://github.com/oracle/helidon/compare/4.0.0-RC1...4.0.0-RC2
