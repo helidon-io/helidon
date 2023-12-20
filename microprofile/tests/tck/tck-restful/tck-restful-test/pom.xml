@@ -128,8 +128,6 @@
                         <include>*IT.java</include>
                     </includes>
                     <excludes>
-                        <!-- Requires this in Jersey https://github.com/eclipse-ee4j/jersey/pull/5490 -->
-                        <exclude>ee/jakarta/tck/ws/rs/jaxrs21/ee/sse/sseeventsource/JAXRSClientIT.java</exclude>
                         <!-- TCK Challenge: https://github.com/jakartaee/rest/issues/1199 -->
                         <exclude>ee/jakarta/tck/ws/rs/ee/rs/container/responsecontext/JAXRSClientIT.java</exclude>
                     </excludes>
