@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.jep290</groupId>
         <artifactId>helidon-tests-integration-jep290-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tests-integration-jep290-set_c_f_c</artifactId>

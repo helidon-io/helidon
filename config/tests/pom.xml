@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.2-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.config.tests</groupId>
     <artifactId>helidon-config-tests-project</artifactId>
