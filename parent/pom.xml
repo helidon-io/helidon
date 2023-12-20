@@ -32,7 +32,7 @@
 
     <organization>
         <name>Oracle Corporation</name>
-        <url>http://www.oracle.com/</url>
+        <url>https://www.oracle.com/</url>
     </organization>
 
     <inceptionYear>2018</inceptionYear>
@@ -148,7 +148,6 @@
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.install>3.1.1</version.plugin.install>
         <version.plugin.nexus-staging>1.6.13</version.plugin.nexus-staging>
-        <version.plugin.site>3.8.2</version.plugin.site>
         <version.plugin.versions>2.7</version.plugin.versions>
     </properties>
 
@@ -176,28 +175,6 @@
                     <version>${version.plugin.gpg}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>${version.plugin.site}</version>
-                    <configuration>
-                        <skip>true</skip>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>site-jar</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                            <phase>site</phase>
-                            <configuration>
-                                <archiveExcludes>
-                                    <exclude>.asciidoctor/**</exclude>
-                                </archiveExcludes>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>org.sonatype.plugins</groupId>
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>${version.plugin.nexus-staging}</version>
@@ -206,6 +183,7 @@
                         <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                         <autoReleaseAfterClose>false</autoReleaseAfterClose>
                         <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                        <!--suppress MavenModelInspection -->
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                     </configuration>
                 </plugin>
@@ -217,10 +195,6 @@
             </plugins>
         </pluginManagement>
     </build>
-
-    <reporting>
-        <excludeDefaults>true</excludeDefaults>
-    </reporting>
 
     <profiles>
         <profile>

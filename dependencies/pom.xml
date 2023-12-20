@@ -40,6 +40,7 @@
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
+        <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
@@ -538,10 +539,10 @@
                 <artifactId>google-api-client</artifactId>
                 <version>${version.lib.google-api-client}</version>
                 <exclusions>
-                    <!-- For depenedency convergence. Defer to newer version from google-http-client -->
+                    <!-- For dependency convergence. Defer to newer version from google-http-client -->
                     <exclusion>
                         <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient</artifactId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <!-- should be optional -->
@@ -550,7 +551,7 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- For dependency convergence and force uppgrade of oauth-client -->
+            <!-- For dependency convergence and force upgrade of oauth-client -->
             <dependency>
                 <groupId>com.google.oauth-client</groupId>
                 <artifactId>google-oauth-client</artifactId>
@@ -1198,6 +1199,11 @@
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>${version.lib.commons-logging}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${version.lib.commons-codec}</version>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>

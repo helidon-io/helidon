@@ -1,0 +1,169 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= JWT Authentication
+:toc:
+:toc-placement: preamble
+:spec-name: MicroProfile JWT Auth
+:description: {spec-name} support in Helidon MP
+:keywords: helidon, mp, microprofile, security, jwt
+:feature-name: JWT Authentication
+:microprofile-bundle: true
+:rootdir: {docdir}/..
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
+
+JSON Web Tokens (JWT) are an open, industry standard https://datatracker.ietf.org/doc/html/rfc7519[(RFC 7519)] method for representing claims securely between two parties.
+
+JSON Web Token defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.
+
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.jwt</groupId>
+    <artifactId>helidon-microprofile-jwt-auth</artifactId>
+</dependency>
+----
+
+== Usage
+
+The main configuration point for JWT Auth is a JAX-RS Application class.
+As this class is discovered using CDI, it must have a bean defining annotation.
+
+Minimal required setup is done using `@LoginConfig(authMethod = "MP-JWT")`:
+
+[source,java]
+----
+@LoginConfig(authMethod = "MP-JWT")
+@ApplicationScoped
+public class ProtectedApplication extends Application{
+}
+----
+
+== API
+
+The following interfaces and annotations are used to work with JWT in Helidon MP:
+
+* `JsonWebToken` - an interface used in CDI beans _(@RequestScoped)_ dependency injection to obtain the JWT of the currently executing caller.
+* `@Claim` - an annotation used by CDI bean _(@RequestScoped)_  dependency injection to obtain individual claims from the caller’s JWT.
+* `ClaimValue` - a proxy interface used with `@Claim` annotation to оbtain the value of a claim by calling `getValue()`.
+
+== Configuration
+
+include::{rootdir}/config/io_helidon_microprofile_jwt.adoc[leveloffset=+1,tag=config]
+
+A configuration example in `microprofile-config.properties`:
+[source, properties]
+----
+mp.jwt.verify.issuer=https://{PublicIssuerDomain}/oauth2/default
+mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
+----
+
+== Examples
+
+[source, java]
+----
+@Path("/hello")
+public class HelloResource {
+
+    @GET
+    @Produces(TEXT_PLAIN)
+    public String hello(@Context SecurityContext context) {
+        Optional<Principal> userPrincipal = context.userPrincipal();
+        return "Hello, " + userPrincipal.get().getName() + "!";
+    }
+}
+----
+
+Do not forget to annotate the `HelloApplication` class to enable JWT:
+
+[source, java]
+----
+@LoginConfig(authMethod = "MP-JWT")
+@ApplicationScoped
+public class HelloApplication extends Application {
+
+    @Override
+    public Set<Class<?>> getClasses() {
+        return Set.of(HelloResource.class);
+    }
+}
+----
+
+Add the following configuration in `microprofile-config.properties`:
+
+[source, properties]
+----
+mp.jwt.verify.issuer=https://{IssuerPublicDomain}/oauth2/default
+mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
+----
+
+Obtain the Security Token from external issuer:
+
+[source, bash]
+----
+TOKEN=sdf4dDSWFcswdsffDSasEgv...
+----
+
+Run the application and execute an http request against it:
+
+[source, bash]
+----
+curl -X GET -I -H "Authorization: Bearer $TOKEN" http://localhost:8080/hello
+
+----
+
+The result should be:
+
+[source, bash]
+----
+HTTP/1.1 200 OK
+Date: 08.06.2022 10:33:47 EEST
+connection: keep-alive
+content-length: 28
+
+Hello, secure@helidon.io!
+----
+
+which means that the request successfully passed authentication.
+
+== Additional Information
+
+Learn more about JWT authentication at: +
+link:{microprofile-jwt-base-url}#_introduction[Eclipse MicroProfile Interoperable JWT RBAC]
+
+== Reference
+
+* {microprofile-jwt-spec-url}[MicroProfile JWT Auth Spec]
+* https://github.com/eclipse/microprofile-jwt-auth[MicroProfile JWT Auth GitHub Repository]
+

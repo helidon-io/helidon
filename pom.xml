@@ -109,12 +109,12 @@
         <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>4.0.0</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>4.0.2</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
         <version.plugin.jar>3.3.0</version.plugin.jar>
-        <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
+        <version.plugin.javadoc>3.6.2</version.plugin.javadoc>
         <version.plugin.jaxb>2.5.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
@@ -161,7 +161,7 @@
 
         <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
         <javadoc.link.weld>https://javadoc.io/doc/org.jboss.weld/weld-spi/${version.lib.weld-api}</javadoc.link.weld>
-        <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
+        <javadoc.link.narayana>https://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
         <javadoc.link.hibernate>https://docs.jboss.org/hibernate/orm/${version.lib.hibernate.family}/javadocs/</javadoc.link.hibernate>
 
@@ -169,19 +169,18 @@
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
-        <javadoc.link.reactive-streams>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
+        <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
 
         <!--suppress UnresolvedMavenProperty -->
-        <javadoc.packagelist.dir>${top.parent.basedir}/etc/javadoc</javadoc.packagelist.dir>
-        <site.output.dir>${project.build.directory}/docs</site.output.dir>
+        <javadoc.pkg.dir>${top.parent.basedir}/etc/javadoc</javadoc.pkg.dir>
     </properties>
 
     <modules>
-        <module>inject</module>
+        <module>all</module>
         <module>applications</module>
         <module>bom</module>
         <module>builder</module>
@@ -196,6 +195,7 @@
         <module>health</module>
         <module>helidon</module>
         <module>http</module>
+        <module>inject</module>
         <module>integrations</module>
         <module>jersey</module>
         <module>licensing</module>
@@ -260,142 +260,142 @@
                         <failOnError>true</failOnError>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
-                        <isOffline>true</isOffline>
+                        <offline>true</offline>
                         <offlineLinks>
                             <offlineLink>
                                 <url>${javadoc.link.jackson-annotations}</url>
-                                <location>${javadoc.packagelist.dir}/jackson-annotations</location>
+                                <location>${javadoc.pkg.dir}/jackson-annotations</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jackson-core}</url>
-                                <location>${javadoc.packagelist.dir}/jackson-core</location>
+                                <location>${javadoc.pkg.dir}/jackson-core</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jackson-databind}</url>
-                                <location>${javadoc.packagelist.dir}/jackson-databind</location>
+                                <location>${javadoc.pkg.dir}/jackson-databind</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-jaxrs}</url>
-                                <location>${javadoc.packagelist.dir}/jakarta-jaxrs</location>
+                                <location>${javadoc.pkg.dir}/jakarta-jaxrs</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-cdi}</url>
-                                <location>${javadoc.packagelist.dir}/jakarta-cdi</location>
+                                <location>${javadoc.pkg.dir}/jakarta-cdi</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-inject}</url>
-                                <location>${javadoc.packagelist.dir}/jakarta-inject</location>
+                                <location>${javadoc.pkg.dir}/jakarta-inject</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.reactive-streams}</url>
-                                <location>${javadoc.packagelist.dir}/reactive-streams</location>
+                                <location>${javadoc.pkg.dir}/reactive-streams</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jersey}</url>
-                                <location>${javadoc.packagelist.dir}/jersey</location>
+                                <location>${javadoc.pkg.dir}/jersey</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.typesafe-config}</url>
-                                <location>${javadoc.packagelist.dir}/typesafe-config</location>
+                                <location>${javadoc.pkg.dir}/typesafe-config</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.opentracing}</url>
-                                <location>${javadoc.packagelist.dir}/opentracing</location>
+                                <location>${javadoc.pkg.dir}/opentracing</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.prometheus}</url>
-                                <location>${javadoc.packagelist.dir}/prometheus</location>
+                                <location>${javadoc.pkg.dir}/prometheus</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.zipkin}</url>
-                                <location>${javadoc.packagelist.dir}/zipkin</location>
+                                <location>${javadoc.pkg.dir}/zipkin</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-jsonb}</url>
-                                <location>${javadoc.packagelist.dir}/jakarta-jsonb</location>
+                                <location>${javadoc.pkg.dir}/jakarta-jsonb</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-persistence}</url>
-                                <location>${javadoc.packagelist.dir}/jakarta-persistence</location>
+                                <location>${javadoc.pkg.dir}/jakarta-persistence</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-jsonp}</url>
-                                <location>${javadoc.packagelist.dir}/jakarta-jsonp</location>
+                                <location>${javadoc.pkg.dir}/jakarta-jsonp</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-jaxb}</url>
-                                <location>${javadoc.packagelist.dir}/jakarta-jaxb</location>
+                                <location>${javadoc.pkg.dir}/jakarta-jaxb</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-transaction}</url>
-                                <location>${javadoc.packagelist.dir}/jakarta-transaction</location>
+                                <location>${javadoc.pkg.dir}/jakarta-transaction</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-config}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-config</location>
+                                <location>${javadoc.pkg.dir}/microprofile-config</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-health}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-health</location>
+                                <location>${javadoc.pkg.dir}/microprofile-health</location>
                             </offlineLink>
 
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-metrics}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-metrics</location>
+                                <location>${javadoc.pkg.dir}/microprofile-metrics</location>
                             </offlineLink>
 
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-fault-tolerance-api}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-fault-tolerance-api</location>
+                                <location>${javadoc.pkg.dir}/microprofile-fault-tolerance-api</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-graphql}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-graphql</location>
+                                <location>${javadoc.pkg.dir}/microprofile-graphql</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-jwt}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-jwt</location>
+                                <location>${javadoc.pkg.dir}/microprofile-jwt</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-lra-api}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-lra-api</location>
+                                <location>${javadoc.pkg.dir}/microprofile-lra-api</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-openapi-api}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-openapi-api</location>
+                                <location>${javadoc.pkg.dir}/microprofile-openapi-api</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-reactive-messaging-api}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-reactive-messaging-api</location>
+                                <location>${javadoc.pkg.dir}/microprofile-reactive-messaging-api</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-reactive-streams-operators-api}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-reactive-streams-operators-api</location>
+                                <location>${javadoc.pkg.dir}/microprofile-reactive-streams-operators-api</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-rest-client}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-rest-client</location>
+                                <location>${javadoc.pkg.dir}/microprofile-rest-client</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-tracing}</url>
-                                <location>${javadoc.packagelist.dir}/microprofile-tracing</location>
+                                <location>${javadoc.pkg.dir}/microprofile-tracing</location>
                             </offlineLink>
 
                             <offlineLink>
                                 <url>${javadoc.link.weld}</url>
-                                <location>${javadoc.packagelist.dir}/weld</location>
+                                <location>${javadoc.pkg.dir}/weld</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.narayana}</url>
-                                <location>${javadoc.packagelist.dir}/narayana</location>
+                                <location>${javadoc.pkg.dir}/narayana</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.eclipselink}</url>
-                                <location>${javadoc.packagelist.dir}/eclipselink</location>
+                                <location>${javadoc.pkg.dir}/eclipselink</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.hibernate}</url>
-                                <location>${javadoc.packagelist.dir}/hibernate</location>
+                                <location>${javadoc.pkg.dir}/hibernate</location>
                             </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
@@ -405,7 +405,7 @@
                             <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
                             <sourceFileExclude>**/*_.java</sourceFileExclude>
                         </sourceFileExcludes>
-                        <dependencySourceExcludes></dependencySourceExcludes>
+                        <dependencySourceExcludes/>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -718,10 +718,11 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>sitegen-maven-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
-                    <configuration>
-                        <siteSourceDirectory>docs</siteSourceDirectory>
-                        <siteConfigFile>docs/sitegen.yaml</siteConfigFile>
-                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-javadoc-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
@@ -763,6 +764,7 @@
                                 <typo>vuilder</typo>
                                 <typo>bidler</typo>
                                 <typo>microrpofile</typo>
+                                <typo>depenedency</typo>
                             </typos>
                         </typosConfig>
                     </configuration>
@@ -815,16 +817,6 @@
                             <property>top.parent.basedir</property>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>generate-top-parent-basedir-site</id>
-                        <goals>
-                            <goal>highest-basedir</goal>
-                        </goals>
-                        <phase>pre-site</phase>
-                        <configuration>
-                            <property>top.parent.basedir</property>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -866,26 +858,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
-                <inherited>false</inherited>
-                <configuration>
-                    <skip>false</skip>
-                    <siteDirectory>docs</siteDirectory>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.build-tools</groupId>
-                        <artifactId>sitegen-maven-plugin</artifactId>
-                        <version>${version.plugin.helidon-build-tools}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>sitegen-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
@@ -1268,50 +1240,6 @@
         </dependencies>
     </dependencyManagement>
 
-    <reporting>
-        <excludeDefaults>true</excludeDefaults>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${version.plugin.javadoc}</version>
-                <configuration>
-                    <!-- Default configuration for all reports -->
-                </configuration>
-                <reportSets>
-                    <reportSet>
-                        <id>default</id>
-                        <inherited>false</inherited>
-                        <configuration>
-                            <skip>false</skip>
-                            <skippedModules>
-helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension
-                            </skippedModules>
-                            <excludePackageNames>io.grpc</excludePackageNames>
-                            <sourceFileExcludes>
-                                <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
-                                <sourceFileExclude>**/internal/**/*.java</sourceFileExclude>
-                                <sourceFileExclude>**/test/**/*.java</sourceFileExclude>
-                                <sourceFileExclude>**/*_.java</sourceFileExclude>
-                                <sourceFileExclude>**/io/grpc/stub/**/*.java</sourceFileExclude>
-                            </sourceFileExcludes>
-                            <additionalDependencies>
-                                <additionalDependency>
-                                    <groupId>org.jboss.logging</groupId>
-                                    <artifactId>jboss-logging-annotations</artifactId>
-                                    <version>${version.lib.jboss-logging-annotations}</version>
-                                </additionalDependency>
-                            </additionalDependencies>
-                        </configuration>
-                        <reports>
-                            <report>aggregate-no-fork</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-        </plugins>
-    </reporting>
-
     <profiles>
         <profile>
             <id>tests</id>
@@ -1329,6 +1257,12 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
             <id>archetypes</id>
             <modules>
                 <module>archetypes</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>docs</id>
+            <modules>
+                <module>docs</module>
             </modules>
         </profile>
         <profile>

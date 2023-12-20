@@ -38,6 +38,12 @@
         <dependencies>
             <dependency>
                 <groupId>io.helidon</groupId>
+                <artifactId>helidon-all</artifactId>
+                <type>pom</type>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon</groupId>
                 <artifactId>helidon</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1276,11 +1282,6 @@
             <dependency>
                 <groupId>io.helidon.fault-tolerance</groupId>
                 <artifactId>helidon-fault-tolerance</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.fault-tolerance</groupId>
-                <artifactId>helidon-fault-tolerance-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
