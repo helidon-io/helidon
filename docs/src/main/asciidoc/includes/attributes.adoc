@@ -23,7 +23,7 @@ ifndef::attributes-included[]
 // functional attributes
 :imagesdir: {rootdir}/images
 
-:helidon-version: 4.0.2-SNAPSHOT
+:helidon-version: 4.0.2
 :helidon-version-is-release: true
 
 ifeval::["{helidon-version-is-release}" != "true"]

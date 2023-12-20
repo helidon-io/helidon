@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.inject</groupId>
         <artifactId>helidon-inject-project</artifactId>
-        <version>4.0.2-SNAPSHOT</version>
+        <version>4.0.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
