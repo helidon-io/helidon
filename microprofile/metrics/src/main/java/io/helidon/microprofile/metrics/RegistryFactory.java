@@ -35,6 +35,7 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -52,7 +53,7 @@ import org.eclipse.microprofile.metrics.Timer;
  * method creates a new instance but does not record it internally.
  * </p>
  */
-class RegistryFactory {
+public class RegistryFactory {
 
     static final Collection<Class<? extends Metric>> METRIC_TYPES = Set.of(Counter.class,
                                                                            Gauge.class,
@@ -86,7 +87,7 @@ class RegistryFactory {
      *
      * @return registry factory singleton
      */
-    static RegistryFactory getInstance() {
+    public static RegistryFactory getInstance() {
         RegistryFactory result = REGISTRY_FACTORY.get();
         if (result == null) {
             LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
@@ -115,7 +116,11 @@ class RegistryFactory {
      * @param scope scope of registry
      * @return Registry for the scope requested
      */
-    Registry getRegistry(String scope) {
+    public MetricRegistry getRegistry(String scope) {
+        return registry(scope);
+    }
+
+    Registry registry(String scope) {
         return accessMetricsSettings(() -> registries.computeIfAbsent(scope, s ->
                 Registry.create(s, meterRegistry)));
     }
@@ -150,7 +155,7 @@ class RegistryFactory {
         if (scope == null) {
             LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + delegate);
         }
-        getRegistry(scope).onMeterAdded(delegate);
+        registry(scope).onMeterAdded(delegate);
     }
 
     private void removeMetricForMeter(Meter meter) {
@@ -158,7 +163,7 @@ class RegistryFactory {
         if (scope == null) {
             LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + meter);
         }
-        getRegistry(scope).onMeterRemoved(meter);
+        registry(scope).onMeterRemoved(meter);
     }
 
 }
