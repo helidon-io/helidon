@@ -26,7 +26,13 @@ error_trap_setup
 
 mvn ${MAVEN_ARGS} --version
 
+# Temporary workaround until job stages will share maven repository
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
-    -Pdocs,javadoc \
-    -DskipTests
+    -Dmaven.test.skip=true \
+    -DskipTests \
+    -Ppipeline
+
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/docs/pom.xml \
+    install -e \
+    -Pjavadoc

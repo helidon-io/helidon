@@ -59,7 +59,7 @@ jobs:
       - name: Spotbugs
         run: etc/scripts/spotbugs.sh
   docs:
-    timeout-minutes: 10
+    timeout-minutes: 30
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
