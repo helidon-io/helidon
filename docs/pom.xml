@@ -95,7 +95,7 @@
                         <artifactId>helidon-javadoc-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <phase>package</phase>
+                                <phase>generate-resources</phase>
                                 <goals>
                                     <goal>javadoc</goal>
                                 </goals>
