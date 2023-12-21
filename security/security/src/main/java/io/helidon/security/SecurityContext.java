@@ -19,6 +19,7 @@ package io.helidon.security;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.inject.service.Injection;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 
@@ -26,6 +27,7 @@ import io.helidon.tracing.Tracer;
  * Security context to retrieve security information about current user, either injected or obtained from {@link
  * Security#contextBuilder(String)} and to handle programmatic security.
  */
+@Injection.Contract
 public interface SecurityContext extends io.helidon.common.security.SecurityContext<Principal> {
     /**
      * Anonymous user principal.
