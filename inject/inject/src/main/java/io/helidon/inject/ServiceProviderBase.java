@@ -128,6 +128,11 @@ public abstract class ServiceProviderBase<T>
         return this;
     }
 
+    @Override
+    public ServiceDescriptor<T> descriptor() {
+        return descriptor;
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public List<T> list(ContextualLookup query) {

@@ -145,6 +145,31 @@ public final class Injection {
     }
 
     /**
+     * A service with an instance per request.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Service
+    @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.METHOD})
+    public @interface Requeston {
+        /*
+        Implementation note: we currently do not support custom scopes, so there is no Scope meta annotation.
+        If we decide to support scopes, we may want to introduce such an annotation.
+        */
+
+        /**
+         * Interfaces (or types) that must work in request scope.
+         * If not defined, the annotated type (service implementation) is expected to be in this scope, and as
+         * such MUST provide a non-private no-arg constructor, so we can generate a proxy for it, and all of its methods
+         * MUST not be {@code final}.
+         * If the value only lists interfaces, there are no restrictions on the implementation type.
+         *
+         * @return interfaces provided by this type in request scope (all of these will be proxied)
+         */
+        Class<?>[] value() default {};
+    }
+
+    /**
      * Placed on the implementation of a service as an alternative to using a {@link Injection.Contract}.
      * <p>
      * Use this annotation when it is impossible to place an annotation on the interface itself - for instance of the interface
