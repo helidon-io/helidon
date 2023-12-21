@@ -22,12 +22,6 @@
     <test name="microprofile-config TCK">
         <packages>
             <package name="org.eclipse.microprofile.config.tck.*">
-                <!-- 
-                    Currently failing because requires this PR:
-                    https://github.com/eclipse/microprofile-config/pull/743
-                    Ignoring meanwhile microprofile-config 3.1 is not released
-                -->
-                <exclude name="org.eclipse.microprofile.config.tck.broken"></exclude>
             </package>
         </packages>
     </test>
