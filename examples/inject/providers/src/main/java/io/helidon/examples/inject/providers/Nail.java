@@ -16,13 +16,10 @@
 
 package io.helidon.examples.inject.providers;
 
-import io.helidon.inject.api.Contract;
-import io.helidon.inject.api.Services;
-
 /**
- * Normally, one would need to place {@link Contract} on interfaces. Here, however, we used
+ * Normally, one would need to place {@link io.helidon.inject.service.Injection.Contract} on interfaces. Here, however, we used
  * {@code -Ahelidon.inject.autoAddNonContractInterfaces=true} in the {@code pom.xml} thereby making all interfaces into contracts that
- * can be found via {@link Services#lookup}.
+ * can be found via {@link io.helidon.inject.Services#first}.
  */
 //@Contract
 public interface Nail {

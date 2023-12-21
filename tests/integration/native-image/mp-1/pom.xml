@@ -54,11 +54,6 @@
             <artifactId>helidon-security-providers-oidc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
             <artifactId>helidon-tracing-providers-jaeger</artifactId>
             <scope>runtime</scope>
