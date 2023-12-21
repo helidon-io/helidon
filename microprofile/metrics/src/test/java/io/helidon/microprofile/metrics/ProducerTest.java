@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -45,6 +46,9 @@ public class ProducerTest extends MetricsBaseTest {
 
     @Inject
     private MetricRegistry appRegistry;
+
+    @Inject
+    private RegistryFactory registryFactory;
 
     private final MetricID counter1 = new MetricID("counter1");
     private final MetricID counter2 = new MetricID("counter2");
@@ -78,5 +82,11 @@ public class ProducerTest extends MetricsBaseTest {
         assertThat("Counters are different", appCounter, is(not(sameInstance(specialCounter))));
         assertThat("App registry counter", appCounter.getCount(), is(appCounterIncr));
         assertThat("Special registry counter", specialCounter.getCount(), is(specialCounterIncr));
+    }
+
+    @Test
+    void testRegistryFactoryProducer() {
+        MetricRegistry customRegistry = registryFactory.getRegistry("myCustomScope");
+        assertThat("Custom scoped MetricRegistry", customRegistry, notNullValue());
     }
 }

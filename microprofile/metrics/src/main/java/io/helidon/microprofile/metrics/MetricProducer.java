@@ -206,7 +206,7 @@ class MetricProducer {
             final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
             final Tag[] tags = tags(metricAnno);
             final String scope = metricAnno == null ? MetricRegistry.APPLICATION_SCOPE : metricAnno.scope();
-            Registry registry = RegistryFactory.getInstance().getRegistry(scope);
+            Registry registry = RegistryFactory.getInstance().registry(scope);
             final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
             return new MetricLocator(metricAnno, registry, metricID);
         }

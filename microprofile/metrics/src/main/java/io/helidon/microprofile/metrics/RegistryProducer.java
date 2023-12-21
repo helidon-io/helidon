@@ -71,6 +71,11 @@ final class RegistryProducer {
         return RegistryFactory.getInstance().getRegistry(MetricRegistry.VENDOR_SCOPE);
     }
 
+    @Produces
+    public static RegistryFactory getRegistryFactory() {
+        return RegistryFactory.getInstance();
+    }
+
     /**
      * Clears Application registry. This is required for the Metric TCKs as they
      * all run on the same VM and must not interfere with each other.
