@@ -40,6 +40,7 @@ import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.inject.service.Injection;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
@@ -68,6 +69,7 @@ import io.helidon.tracing.Tracer;
  * @see #builder()
  * @see #create(Config)
  */
+@Injection.Contract
 public interface Security {
     /**
      * Integration should add a special header to each request. The value will contain the original

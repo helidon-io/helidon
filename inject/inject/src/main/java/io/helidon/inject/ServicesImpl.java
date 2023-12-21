@@ -75,6 +75,7 @@ class ServicesImpl implements Services, ServiceBinder {
     private final InjectionServicesImpl injectionServices;
     private final State state;
     private final ServiceProviderRegistry spRegistry;
+    private final Map<TypeName, List<Activator<?>>> activatorsByScope;
 
     private volatile List<RegistryServiceProvider<Interception.Interceptor>> interceptors;
 
@@ -108,6 +109,7 @@ class ServicesImpl implements Services, ServiceBinder {
          */
         this.servicesByTypeName = new ConcurrentHashMap<>();
         this.servicesByContract = new ConcurrentHashMap<>();
+        this.activatorsByScope = new ConcurrentHashMap<>();
 
         this.spRegistry = new ServiceProviderRegistryImpl(this);
     }
@@ -152,6 +154,10 @@ class ServicesImpl implements Services, ServiceBinder {
     @Override
     public ServiceProviderRegistry serviceProviders() {
         return spRegistry;
+    }
+
+    ScopeServices createForScope(TypeName scopeType) {
+        return new ScopeServicesImpl(this, Optional.ofNullable(activatorsByScope.get(scopeType)).orElseGet(List::of));
     }
 
     @SuppressWarnings("unchecked")
@@ -243,7 +249,7 @@ class ServicesImpl implements Services, ServiceBinder {
                 .anyMatch(it -> it.typeName().equals(Injection.Named.TYPE_NAME));
     }
 
-    private void bind(Activator<?> activator) {
+    void bind(Activator<?> activator) {
         if (state.currentPhase().ordinal() > Phase.GATHERING_DEPENDENCIES.ordinal()) {
             if (!cfg.permitsDynamic()) {
                 throw new IllegalStateException(
@@ -252,34 +258,45 @@ class ServicesImpl implements Services, ServiceBinder {
             }
         }
 
-        // make sure the activator has a chance to do something, such as create the initial service provider instance
-        activator.activate(ActivationRequest.builder()
-                                   .targetPhase(Phase.INIT)
-                                   .throwIfError(false)
-                                   .build());
-        RegistryServiceProvider<?> serviceProvider = activator.serviceProvider();
-        this.providersToActivators.put(serviceProvider, activator);
+        /*
+        We cannot start activation for providers that are not singleton (or no-scope)
+         */
+        Set<TypeName> scopes = activator.descriptor().scopes();
+        if (scopes.isEmpty() || scopes.contains(InjectTypes.SINGLETON)) {
+            // make sure the activator has a chance to do something, such as create the initial service provider instance
+            activator.activate(ActivationRequest.builder()
+                                       .targetPhase(Phase.INIT)
+                                       .throwIfError(false)
+                                       .build());
+            RegistryServiceProvider<?> serviceProvider = activator.serviceProvider();
+            this.providersToActivators.put(serviceProvider, activator);
 
-        TypeName serviceType = serviceProvider.serviceType();
+            TypeName serviceType = serviceProvider.serviceType();
 
-        // only put if absent, as this may be a lower weight provider for the same type
-        RegistryServiceProvider<?> previousValue = servicesByTypeName.putIfAbsent(serviceType, serviceProvider);
-        if (previousValue != null) {
-            // a value was already registered for this service type, ignore this registration
-            if (LOGGER.isLoggable(Level.TRACE)) {
-                LOGGER.log(Level.TRACE, "Attempt to register another service provider for the same service type."
-                        + " Service type: " + serviceType.fqName()
-                        + ", existing provider: " + previousValue
-                        + ", new provider: " + serviceProvider);
+            // only put if absent, as this may be a lower weight provider for the same type
+            RegistryServiceProvider<?> previousValue = servicesByTypeName.putIfAbsent(serviceType, serviceProvider);
+            if (previousValue != null) {
+                // a value was already registered for this service type, ignore this registration
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, "Attempt to register another service provider for the same service type."
+                            + " Service type: " + serviceType.fqName()
+                            + ", existing provider: " + previousValue
+                            + ", new provider: " + serviceProvider);
+                }
+                return;
             }
-            return;
-        }
-        servicesByContract.computeIfAbsent(serviceType, it -> new TreeSet<>(ServiceProviderComparator.instance()))
-                .add(serviceProvider);
-
-        for (TypeName contract : serviceProvider.contracts()) {
-            servicesByContract.computeIfAbsent(contract, it -> new TreeSet<>(ServiceProviderComparator.instance()))
+            servicesByContract.computeIfAbsent(serviceType, it -> new TreeSet<>(ServiceProviderComparator.instance()))
                     .add(serviceProvider);
+
+            for (TypeName contract : serviceProvider.contracts()) {
+                servicesByContract.computeIfAbsent(contract, it -> new TreeSet<>(ServiceProviderComparator.instance()))
+                        .add(serviceProvider);
+            }
+        } else {
+            for (TypeName scope : scopes) {
+                activatorsByScope.computeIfAbsent(scope, it -> new ArrayList<>())
+                        .add(activator);
+            }
         }
     }
 

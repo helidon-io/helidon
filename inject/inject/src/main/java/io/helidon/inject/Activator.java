@@ -16,6 +16,8 @@
 
 package io.helidon.inject;
 
+import io.helidon.inject.service.ServiceDescriptor;
+
 /**
  * Activators are responsible for lifecycle creation and lazy activation of service providers.
  * They are responsible for taking the
@@ -65,9 +67,19 @@ public interface Activator<T> {
     ActivationResult deactivate(DeActivationRequest request);
 
     /**
+     * Service descriptor this activator activates.
+     * A service cannot live without a descriptor.
+     *
+     * @return service descriptor
+     */
+    ServiceDescriptor<T> descriptor();
+
+    /**
      * Service provider managed by this activator.
+     * This instance may not be available before activation starts.
      *
      * @return service provider
+     * @throws java.lang.IllegalStateException in case the activator is not yet in a state where this is available
      */
     RegistryServiceProvider<T> serviceProvider();
 }

@@ -32,6 +32,9 @@ interface ServiceInstance<T> extends Supplier<T> {
         if (source.scopes().contains(Injection.Singleton.TYPE_NAME)) {
             return new SingletonInstance<>(ctx, interceptionMetadata, source);
         }
+        if (source.scopes().contains(InjectTypes.REQUESTON)) {
+            return new RequestonInstance(ctx, interceptionMetadata, source);
+        }
         return new OnDemandInstance<>(ctx, interceptionMetadata, source);
     }
 

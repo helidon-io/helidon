@@ -36,6 +36,8 @@ module io.helidon.security {
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
+    requires io.helidon.inject.service;
+
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.security;
     requires transitive io.helidon.common;
