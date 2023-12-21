@@ -39,10 +39,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.jwt</groupId>
             <artifactId>helidon-microprofile-jwt-auth</artifactId>
         </dependency>

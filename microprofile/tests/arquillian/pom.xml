@@ -53,13 +53,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.helidon.health</groupId>
-                    <artifactId>helidon-health-checks</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>helidon-microprofile-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
