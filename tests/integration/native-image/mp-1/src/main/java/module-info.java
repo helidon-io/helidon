@@ -41,7 +41,7 @@ module helidon.tests.nimage.mp {
     requires io.helidon.health.checks;
 
     // needed to compile injection generated classes
-    requires static io.helidon.inject.runtime;
+    requires io.helidon.inject.service;
 
     exports io.helidon.tests.integration.nativeimage.mp1;
     exports io.helidon.tests.integration.nativeimage.mp1.other;

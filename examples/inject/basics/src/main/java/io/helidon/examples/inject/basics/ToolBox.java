@@ -19,42 +19,39 @@ package io.helidon.examples.inject.basics;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.inject.api.RunLevel;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import io.helidon.inject.service.Injection;
 
 /**
- * By adding the {@link Singleton} annotation results in ToolBox becoming a service. Services can be looked up
- * programmatically or declaratively injected via {@link jakarta.inject.Inject}.
+ * By adding the {@link io.helidon.inject.service.Injection.Singleton}
+ * annotation results in ToolBox becoming a service. Services can be looked up
+ * programmatically or declaratively injected via {@link io.helidon.inject.service.Injection.Inject}.
  * <p>
  * Here {@link Weight} is used that is higher than the default, making it more preferred in weighted rankings.
  */
-@Singleton
-@RunLevel(RunLevel.STARTUP)
+@Injection.Singleton
+@Injection.RunLevel(Injection.RunLevel.STARTUP)
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
 public class ToolBox {
 
-    private final List<Provider<Tool>> allToolProviders;
+    private final List<Supplier<Tool>> allToolProviders;
     private Tool preferredBigTool;
 
-    // Field injection is supported for non-static, non-private methods (but not recommended)
+    // Field injection is supported for non-static, non-private fields (but not recommended)
     // Here we are using it to also showcase for Optional usages.
-    @Inject Optional<LittleHammer> optionalLittleHammer;
+    @Injection.Inject Optional<LittleHammer> optionalLittleHammer;
 
     /**
-     * Here the constructor injects all {@link Tool} provider instances available. {@link Provider} is used to allow lazy
-     * activation of services until {@link Provider#get()} is called.
+     * Here the constructor injects all {@link Tool} provider instances available. {@link java.util.function.Supplier} is used to allow lazy
+     * activation of services until {@link java.util.function.Supplier#get()} is called.
      *
      * @param allToolProviders all tool providers
      */
-    @Inject
-    ToolBox(List<Provider<Tool>> allToolProviders) {
+    @Injection.Inject
+    ToolBox(List<Supplier<Tool>> allToolProviders) {
         this.allToolProviders = Objects.requireNonNull(allToolProviders);
     }
 
@@ -68,17 +65,18 @@ public class ToolBox {
      *
      * @param preferredBigTool the preferred big tool
      */
-    @Inject
+    @Injection.Inject
     @SuppressWarnings("unused")
     void setPreferredBigTool(@Big Tool preferredBigTool) {
         this.preferredBigTool = Objects.requireNonNull(preferredBigTool);
     }
 
     /**
-     * This method will be called by Pico after this instance is lazily initialized (because this is the {@link PostConstruct}
+     * This method will be called by Pico after this instance is lazily initialized (because this is the
+     * {@link io.helidon.inject.service.Injection.PostConstruct}
      * method).
      */
-    @PostConstruct
+    @Injection.PostConstruct
     @SuppressWarnings("unused")
     void init() {
         System.out.println("Preferred (highest weighted) 'Big' Tool: " + preferredBigTool);
@@ -89,7 +87,7 @@ public class ToolBox {
 
     public void printToolBoxContents() {
         System.out.println("Tools in the virtual ToolBox:");
-        for (Provider<Tool> tool : allToolProviders) {
+        for (Supplier<Tool> tool : allToolProviders) {
             System.out.println(" tool: " + tool);
         }
     }

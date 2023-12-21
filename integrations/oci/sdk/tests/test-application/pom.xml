@@ -120,11 +120,6 @@
                             <artifactId>helidon-inject-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
-                        <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-codegen-jakarta</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
@@ -141,11 +136,6 @@
                     <dependency>
                         <groupId>io.helidon.inject</groupId>
                         <artifactId>helidon-inject-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-codegen-jakarta</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

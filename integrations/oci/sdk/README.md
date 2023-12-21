@@ -26,7 +26,7 @@ The **Helidon Injection Framework** offers two modules for integrating with the 
 
 ### Usage
 
-In your pom.xml, add this plugin to be run as part of the compilation phase:
+In your pom.xml, add the Helidon maven plugin, and the OCI code generation extension to be run as part of the compilation phase:
 ```pom.xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
@@ -35,8 +35,13 @@ In your pom.xml, add this plugin to be run as part of the compilation phase:
         <forceJavacCompilerUse>true</forceJavacCompilerUse>
             <annotationProcessorPaths>
                 <path>
+                    <groupId>io.helidon.codegen</groupId>
+                    <artifactId>helidon-codegen-apt</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+                <path>
                     <groupId>io.helidon.integrations.oci.sdk</groupId>
-                    <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
+                    <artifactId>helidon-integrations-oci-sdk-codegen</artifactId>
                     <version>${helidon.version}</version>
                 </path>
             </annotationProcessorPaths>

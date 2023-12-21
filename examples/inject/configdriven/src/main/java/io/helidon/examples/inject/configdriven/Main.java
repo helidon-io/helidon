@@ -16,12 +16,9 @@
 
 package io.helidon.examples.inject.configdriven;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.examples.inject.basics.ToolBox;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Services;
+import io.helidon.inject.InjectionServices;
+import io.helidon.inject.Services;
 
 /**
  * Config-driven example.
@@ -34,22 +31,14 @@ public class Main {
      * @param args arguments
      */
     public static void main(String... args) {
-        // we need to first initialize Injection - informing the framework where to find the application's Config
-        Config config = Config.builder()
-                .addSource(ConfigSources.classpath("application.yaml"))
-                .disableSystemPropertiesSource()
-                .disableEnvironmentVariablesSource()
-                .build();
-        Bootstrap bootstrap = Bootstrap.builder()
-                .config(config)
-                .build();
-        InjectionServices.globalBootstrap(bootstrap);
+        // the config driven registry will use GlobalConfig by default, which in turn uses application.yaml
+
 
         // this drives config-driven service activations (see the contents of the toolbox being output)
-        Services services = InjectionServices.realizedServices();
+        Services services = InjectionServices.instance().services();
 
         // this will trigger the PostConstruct method to display the contents of the toolbox
-        services.lookupFirst(ToolBox.class).get();
+        services.get(ToolBox.class).get();
     }
 
 }

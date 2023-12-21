@@ -39,13 +39,9 @@
         <module>codegen</module>
         <module>codegen-jakarta</module>
         <module>codegen-javax</module>
-        <module>api</module>
         <module>configdriven</module>
-        <module>tools</module>
-        <module>processor</module>
         <module>maven-plugin</module>
         <module>testing</module>
-        <module>runtime</module>
         <module>tests</module>
     </modules>
 

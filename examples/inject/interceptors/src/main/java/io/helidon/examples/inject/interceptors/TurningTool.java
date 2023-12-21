@@ -17,9 +17,9 @@
 package io.helidon.examples.inject.interceptors;
 
 import io.helidon.examples.inject.basics.Tool;
-import io.helidon.inject.api.Contract;
+import io.helidon.inject.service.Injection;
 
-@Contract
+@Injection.Contract
 public interface TurningTool extends Tool {
 
     void turn(String direction);

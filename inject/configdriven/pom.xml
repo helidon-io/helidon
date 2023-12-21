@@ -36,10 +36,7 @@
     <modules>
         <module>service</module>
         <module>configdriven</module>
-        <module>api</module>
         <module>codegen</module>
-        <module>processor</module>
-        <module>runtime</module>
         <module>tests</module>
     </modules>
 

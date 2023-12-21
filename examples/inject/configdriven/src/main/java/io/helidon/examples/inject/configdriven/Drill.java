@@ -19,17 +19,16 @@ package io.helidon.examples.inject.configdriven;
 import java.util.Objects;
 
 import io.helidon.examples.inject.basics.Tool;
-import io.helidon.inject.configdriven.api.ConfigDriven;
+import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.Injection;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
 
 @ConfigDriven(DrillConfigBlueprint.class)
 class Drill implements Tool {
 
     private final DrillConfig cfg;
 
-    @Inject
+    @Injection.Inject
     Drill(DrillConfig cfg) {
         this.cfg = Objects.requireNonNull(cfg);
     }
@@ -39,7 +38,7 @@ class Drill implements Tool {
         return cfg.name();
     }
 
-    @PostConstruct
+    @Injection.PostConstruct
     @SuppressWarnings("unused")
     void init() {
         System.out.println(name() + "; initialized");

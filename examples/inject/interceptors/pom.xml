@@ -45,11 +45,6 @@
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
@@ -68,17 +63,31 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                    <compilerArgs>
-                        <arg>-Ahelidon.inject.acceptPreview=true</arg>
-                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-processor</artifactId>
+                            <artifactId>helidon-inject-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.inject</groupId>
+                        <artifactId>helidon-inject-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
