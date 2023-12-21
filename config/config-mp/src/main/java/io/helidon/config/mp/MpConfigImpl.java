@@ -107,12 +107,15 @@ class MpConfigImpl implements Config {
 
     @Override
     public ConfigValue getConfigValue(String key) {
+        String profiledKey = null;
+        if (configProfile != null) {
+            profiledKey = "%" + configProfile + "." + key;
+        }
         if (configProfile == null) {
-            return findConfigValue(key)
+            return findConfigValue(key, Optional.empty())
                     .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
         }
-        return findConfigValue("%" + configProfile + "." + key)
-                .or(() -> findConfigValue(key))
+        return findConfigValue(key, Optional.of(profiledKey))
                 .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
     }
 
@@ -126,70 +129,88 @@ class MpConfigImpl implements Config {
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
+        String profiledPropertyName = null;
+        if (configProfile != null) {
+            profiledPropertyName = "%" + configProfile + "." + propertyName;
+        }
         if (configProfile == null) {
-            return optionalValue(propertyName, propertyType);
+            return optionalValue(propertyName, propertyType, Optional.empty());
         }
 
-        return optionalValue("%" + configProfile + "." + propertyName, propertyType)
-                .or(() -> optionalValue(propertyName, propertyType));
+        return optionalValue(propertyName, propertyType, Optional.of(profiledPropertyName));
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Optional<T> optionalValue(String propertyName, Class<T> propertyType) {
-        // let's resolve arrays
-        if (propertyType.isArray()) {
-            Class<?> componentType = propertyType.getComponentType();
-            // first try to see if we have a direct value
-            Optional<String> optionalValue = getOptionalValue(propertyName, String.class);
-            if (optionalValue.isPresent()) {
-                try {
-                    return Optional.of((T) toArray(propertyName, optionalValue.get(), componentType));
-                } catch (NoSuchElementException e) {
-                    return Optional.empty();
-                }
-            }
-
-            /*
-             we also support indexed value
-             e.g. for key "my.list" you can have both:
-             my.list=12,13,14
-             or (not and):
-             my.list.0=12
-             my.list.1=13
-             */
-
-            String indexedConfigKey = propertyName + ".0";
-            optionalValue = getOptionalValue(indexedConfigKey, String.class);
-            if (optionalValue.isPresent()) {
-                List<Object> result = new LinkedList<>();
-
-                // first element is already in
-                result.add(convert(indexedConfigKey, componentType, optionalValue.get()));
-
-                // hardcoded limit to lists of 1000 elements
-                for (int i = 1; i < 1000; i++) {
-                    indexedConfigKey = propertyName + "." + i;
-                    optionalValue = getOptionalValue(indexedConfigKey, String.class);
-                    if (optionalValue.isPresent()) {
-                        result.add(convert(indexedConfigKey, componentType, optionalValue.get()));
-                    } else {
-                        // finish the iteration on first missing index
-                        break;
-                    }
-                }
-                Object array = Array.newInstance(componentType, result.size());
-                for (int i = 0; i < result.size(); i++) {
-                    Object component = result.get(i);
-                    Array.set(array, i, component);
-                }
-                return Optional.of((T) array);
-            } else {
+    private <T> Optional<T> arrayValue(String propertyName, Class<T> propertyType) {
+        Class<?> componentType = propertyType.getComponentType();
+        // first try to see if we have a direct value
+        Optional<String> optionalValue = getOptionalValue(propertyName, String.class);
+        if (optionalValue.isPresent()) {
+            try {
+                return Optional.of((T) toArray(propertyName, optionalValue.get(), componentType));
+            } catch (NoSuchElementException e) {
                 return Optional.empty();
             }
+        }
+
+        /*
+         we also support indexed value
+         e.g. for key "my.list" you can have both:
+         my.list=12,13,14
+         or (not and):
+         my.list.0=12
+         my.list.1=13
+         */
+
+        String indexedConfigKey = propertyName + ".0";
+        optionalValue = getOptionalValue(indexedConfigKey, String.class);
+        if (optionalValue.isPresent()) {
+            List<Object> result = new LinkedList<>();
+
+            // first element is already in
+            result.add(convert(indexedConfigKey, componentType, optionalValue.get()));
+
+            // hardcoded limit to lists of 1000 elements
+            for (int i = 1; i < 1000; i++) {
+                indexedConfigKey = propertyName + "." + i;
+                optionalValue = getOptionalValue(indexedConfigKey, String.class);
+                if (optionalValue.isPresent()) {
+                    result.add(convert(indexedConfigKey, componentType, optionalValue.get()));
+                } else {
+                    // finish the iteration on first missing index
+                    break;
+                }
+            }
+            Object array = Array.newInstance(componentType, result.size());
+            for (int i = 0; i < result.size(); i++) {
+                Object component = result.get(i);
+                Array.set(array, i, component);
+            }
+            return Optional.of((T) array);
         } else {
-            return findConfigValue(propertyName)
+            return Optional.empty();
+        }
+    }
+
+    private <T> Optional<T> optionalValue(String propertyName, Class<T> propertyType, Optional<String> profiledPropertyName) {
+        // let's resolve arrays
+        if (propertyType.isArray()) {
+            Optional<T> array = Optional.empty();
+            if (profiledPropertyName.isPresent()) {
+                // Try first with profiled property
+                array = arrayValue(profiledPropertyName.get(), propertyType);
+            }
+            if (array.isEmpty()) {
+                array = arrayValue(propertyName, propertyType);
+            }
+            return array;
+        } else {
+            Optional<ConfigValue> configVal = findConfigValue(propertyName, profiledPropertyName);
+            String name = configVal.isPresent() ? configVal.get().getName() : null;
+            return configVal
                     .map(ConfigValue::getValue)
-                    .map(it -> convert(propertyName, propertyType, it));
+                    .map(it -> convert(name, propertyType, it));
+
         }
     }
 
@@ -313,35 +334,47 @@ class MpConfigImpl implements Config {
         }
     }
 
-    private Optional<ConfigValue> findConfigValue(String propertyName) {
+    private Optional<ConfigValue> findConfigValue(String propertyName, Optional<String> profiledPropertyName) {
         for (ConfigSource source : sources) {
-            String value = source.getValue(propertyName);
+            String selectedProperty = null;
+            String value = null;
+            if (profiledPropertyName.isPresent()) {
+                // Try profiled property first
+                selectedProperty = profiledPropertyName.get();
+                value = source.getValue(profiledPropertyName.get());
+            }
+            if (value == null) {
+                selectedProperty = propertyName;
+                value = source.getValue(propertyName);
+            }
 
             if (null == value) {
                 // not in this one
                 continue;
             }
-
+            String rawValue = value;
+            String name = source.getName();
+            int ordinal = source.getOrdinal();
+            final String propName = selectedProperty;
             if (value.isEmpty()) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE, "Found property " + propertyName
+                    LOGGER.log(Level.TRACE, "Found property " + propName
                                           + " in source " + source.getName()
                                           + " and it is empty (removed)");
                 }
-                return Optional.empty();
+                return Optional.of(new ConfigValueImpl(propName, null, rawValue, name, ordinal));
             }
 
             if (LOGGER.isLoggable(Level.TRACE)) {
-                LOGGER.log(Level.TRACE, "Found property " + propertyName + " in source " + source.getName());
+                LOGGER.log(Level.TRACE, "Found property " + propName + " in source " + source.getName());
             }
-            String rawValue = value;
+
             try {
-                return applyFilters(propertyName, value)
-                        .map(it -> resolveReferences(propertyName, it))
-                        .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
+                return applyFilters(propName, value)
+                        .map(it -> resolveReferences(propName, it))
+                        .map(it -> new ConfigValueImpl(propName, it, rawValue, name, ordinal));
             } catch (NoSuchElementException e) {
-                // Property expression does not resolve
-                return Optional.empty();
+                return Optional.of(new ConfigValueImpl(propName, null, rawValue, name, ordinal));
             }
         }
 
