@@ -238,11 +238,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-webserver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.security</groupId>
                 <artifactId>helidon-security-annotations</artifactId>
                 <version>${helidon.version}</version>

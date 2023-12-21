@@ -30,10 +30,7 @@
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
-- <<API, API>>
-- <<Configuration, Configuration>>
-- <<Examples, Examples>>
-- <<Additional Information, Additional Information>>
+- <<Creating Services, Creating Services>>
 
 == Overview
 
@@ -65,7 +62,7 @@ Helidon Injection's minimalist, compile-time generated dependency injection (DI)
 
 Once you have planned how each of your resources should support Injection, you specify the behavior in one of two ways:
 
-== Creating services
+== Creating Services
 
 When creating a module that may provide services (or just contracts) that could be used by the service registry at runtime, you need to declare a dependency, annotation processor, and update your sources.
 
