@@ -39,18 +39,6 @@
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <!-- TCK requires Jackson, not JSON-B -->
-                    <groupId>org.glassfish.jersey.media</groupId>
-                    <artifactId>jersey-media-json-binding</artifactId>
-                </exclusion>
-                <exclusion>
-                    <!-- we must remove security tracing -->
-                    <groupId>io.helidon.security.integration</groupId>
-                    <artifactId>helidon-security-integration-jersey-client</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <!-- The TCK depends on unmarshalling using Jackson -->
@@ -61,6 +49,28 @@
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tracing</groupId>
+            <artifactId>helidon-microprofile-tracing</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <!-- we must remove security tracing -->
+                    <groupId>io.helidon.security.integration</groupId>
+                    <artifactId>helidon-security-integration-jersey-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.rest-client</groupId>
+            <artifactId>helidon-microprofile-rest-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+       <dependency>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
