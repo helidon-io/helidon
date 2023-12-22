@@ -2,11 +2,12 @@ package io.helidon.inject;
 
 import java.util.Optional;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.ServiceDescriptor;
 
 @Injection.Singleton
-class RequestonControlImpl implements RequestonControl {
+class RequestonControlImpl implements RequestonControl, ScopeHandler {
     private static final ThreadLocal<Scope> REQUEST_SCOPES = new ThreadLocal<>();
 
     private final ServicesImpl services;
@@ -16,7 +17,13 @@ class RequestonControlImpl implements RequestonControl {
         this.services = services;
     }
 
-    static Optional<Scope> currentScope() {
+    @Override
+    public TypeName supportedScope() {
+        return InjectTypes.REQUESTON;
+    }
+
+    @Override
+    public Optional<Scope> currentScope() {
         return Optional.ofNullable(REQUEST_SCOPES.get());
     }
 
@@ -59,6 +66,11 @@ class RequestonControlImpl implements RequestonControl {
                                                         + ", thread scope: " + scope);
             }
             REQUEST_SCOPES.remove();
+        }
+
+        @Override
+        public Services services() {
+            return thisScopeServices;
         }
 
         @Override
