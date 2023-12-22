@@ -75,7 +75,7 @@ class ServicesImpl implements Services, ServiceBinder {
     private final InjectionServicesImpl injectionServices;
     private final State state;
     private final ServiceProviderRegistry spRegistry;
-    private final Map<TypeName, List<Activator<?>>> activatorsByScope;
+    private final Map<TypeName, Map<ServiceDescriptor<?>, Supplier<Activator<?>>>> activatorsByScope;
 
     private volatile List<RegistryServiceProvider<Interception.Interceptor>> interceptors;
 
@@ -138,7 +138,18 @@ class ServicesImpl implements Services, ServiceBinder {
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Binding service descriptor: " + serviceDescriptor.infoType().fqName());
         }
-        bind(activatorProvider.activator(this, serviceDescriptor));
+        Set<TypeName> scopes = serviceDescriptor.scopes();
+        if (scopes.isEmpty() || scopes.contains(InjectTypes.SINGLETON)) {
+            bind(activatorProvider.activator(this, serviceDescriptor));
+        }
+
+        for (TypeName scope : scopes) {
+            if (!InjectTypes.SINGLETON.equals(scope)) {
+                // singleton is never handled by custom scopes
+                activatorsByScope.computeIfAbsent(scope, it -> new HashMap<>())
+                        .put(serviceDescriptor, () -> activatorProvider.activator(this, serviceDescriptor));
+            }
+        }
     }
 
     @Override
@@ -157,7 +168,7 @@ class ServicesImpl implements Services, ServiceBinder {
     }
 
     ScopeServices createForScope(TypeName scopeType) {
-        return new ScopeServicesImpl(this, Optional.ofNullable(activatorsByScope.get(scopeType)).orElseGet(List::of));
+        return new ScopeServicesImpl(this, scopeType, Optional.ofNullable(activatorsByScope.get(scopeType)).orElseGet(Map::of));
     }
 
     @SuppressWarnings("unchecked")
@@ -298,6 +309,11 @@ class ServicesImpl implements Services, ServiceBinder {
                         .add(activator);
             }
         }
+    }
+
+    private static boolean hasNamed(Set<Qualifier> qualifiers) {
+        return qualifiers.stream()
+                .anyMatch(it -> it.typeName().equals(InjectTypes.NAMED));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
