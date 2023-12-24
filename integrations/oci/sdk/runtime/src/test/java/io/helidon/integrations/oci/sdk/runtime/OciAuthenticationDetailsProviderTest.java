@@ -194,7 +194,6 @@ class OciAuthenticationDetailsProviderTest {
                 services.get(AbstractAuthenticationDetailsProvider.class);
 
         InjectionServiceProviderException e = assertThrows(InjectionServiceProviderException.class, authServiceProvider::get);
-        e.printStackTrace();
         assertThat(e.getCause().getClass(),
                    equalTo(UncheckedIOException.class));
     }
