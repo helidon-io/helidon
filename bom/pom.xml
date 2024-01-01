@@ -293,6 +293,11 @@
                 <artifactId>helidon-bundles-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.bundles</groupId>
+                <artifactId>helidon-bundles-apt</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- microprofile -->
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>
