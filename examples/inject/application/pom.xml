@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,23 +26,33 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
+
     <groupId>io.helidon.examples.inject</groupId>
-    <artifactId>helidon-examples-inject-providers</artifactId>
-    <name>Helidon Examples Injection Providers</name>
+    <artifactId>helidon-examples-inject-application</artifactId>
+    <name>Helidon Examples Injection Application</name>
 
     <description>
-        Example usages of Injection Providers.
+        Example usages of an Injection Application.
     </description>
 
     <properties>
-        <mainClass>io.helidon.examples.inject.providers.Main</mainClass>
+        <mainClass>io.helidon.examples.inject.application.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.examples.inject</groupId>
-            <artifactId>helidon-examples-inject-basics</artifactId>
+            <artifactId>helidon-examples-inject-providers</artifactId>
             <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.examples.inject</groupId>
+            <artifactId>helidon-examples-inject-configdriven</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -54,43 +64,43 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <groupId>io.helidon.inject</groupId>
+                <artifactId>helidon-inject-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>application-create</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>testCompile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-application-create</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                    <compilerArgs>
-                        <arg>-Ahelidon.inject.autoAddNonContractInterfaces=true</arg> <!-- this setting can be used to avoid the need for @Contract -->
-                    </compilerArgs>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
+                    <!-- choice of NAMED, NONE, ALL - see PermittedProviderType -->
+                    <permittedProviderType>NAMED</permittedProviderType>
+                    <permittedProviderTypeNames>
+                        <permittedProviderTypeName>io.helidon.examples.inject.providers.BladeProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.examples.inject.providers.NailProvider</permittedProviderTypeName>
+                    </permittedProviderTypeNames>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
