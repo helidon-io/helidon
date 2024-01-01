@@ -41,6 +41,10 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject</artifactId>
         </dependency>
     </dependencies>
@@ -54,7 +58,6 @@
                     <compilerArgs>
                         <arg>-Ahelidon.inject.autoAddNonContractInterfaces=false</arg> <!-- this setting can be used to avoid the need for @Contract -->
                     </compilerArgs>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.codegen</groupId>

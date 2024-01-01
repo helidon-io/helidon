@@ -14,31 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.inject.providers;
-
-import java.util.Optional;
-
-import io.helidon.inject.service.Injection;
-
-@Injection.Singleton
-class HandSaw implements Saw {
-
-    private final Blade blade;
-
-    @Injection.Inject
-    HandSaw(@Injection.Named("replacement-blade-that-does-not-exist") Optional<Blade> blade) {
-        this.blade = blade.orElse(null);
-    }
-
-    @Override
-    public String name() {
-        return "Hand Saw: (blade=" + blade + ")";
-    }
-
-    @Injection.PostConstruct
-    @SuppressWarnings("unused")
-    void init() {
-        System.out.println(name() + "; initialized");
-    }
-
-}
+/**
+ * Examples of multi-module Application generation in Injection.
+ */
+package io.helidon.examples.inject.application;

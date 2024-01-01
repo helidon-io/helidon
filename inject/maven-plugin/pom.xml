@@ -32,7 +32,6 @@
     <packaging>maven-plugin</packaging>
 
     <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
         <version.plexus.classworlds>2.7.0</version.plexus.classworlds>
         <version.plexus.utils>3.3.0</version.plexus.utils>
         <version.plugin.api>3.9.3</version.plugin.api>
