@@ -16,10 +16,9 @@
 
 package io.helidon.examples.inject.providers;
 
-import jakarta.inject.Singleton;
+import io.helidon.inject.service.Injection;
 
-@Singleton
-@SuppressWarnings("unused")
+@Injection.Singleton
 public class AllenWrench implements Wrench {
 
     @Override
