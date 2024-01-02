@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static io.helidon.inject.codegen.InjectionCodegenContext.APPLICATION_NAME
 public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     /**
-     * The classname to use for the {@link io.helidon.inject.Application} class.
+     * The classname to use for the {@code io.helidon.inject.Application} class.
      * If not found the classname will be inferred.
      */
     @Parameter(property = "inject.application.class.name",

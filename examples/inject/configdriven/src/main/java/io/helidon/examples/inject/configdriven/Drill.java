@@ -35,7 +35,7 @@ class Drill implements Tool {
 
     @Override
     public String name() {
-        return cfg.name();
+        return cfg.name() + " Drill";
     }
 
     @Injection.PostConstruct

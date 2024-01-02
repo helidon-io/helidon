@@ -40,7 +40,10 @@ class InjectionApplicationTest {
 
     protected void resetWith(Config config) {
         InjectionTestingSupport.resetAll();
-        this.injectionServices = testableServices(InjectionConfig.create(config.get("inject")));
+        this.injectionServices = testableServices(InjectionConfig.builder()
+                                                          .serviceConfig(config)
+                                                          .permitsDynamic(true)
+                                                          .build());
         this.services = injectionServices.services();
     }
 

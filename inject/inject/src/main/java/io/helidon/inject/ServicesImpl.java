@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,6 +132,9 @@ class ServicesImpl implements Services, ServiceBinder {
         if (activatorProvider == null) {
             throw new IllegalStateException("Expected an activator provider for runtime id: " + serviceDescriptor.runtimeId()
                                                     + ", available activator providers: " + ACTIVATOR_PROVIDERS.keySet());
+        }
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Binding service descriptor: " + serviceDescriptor.infoType().fqName());
         }
         bind(activatorProvider.activator(this, serviceDescriptor));
     }
@@ -444,12 +447,13 @@ class ServicesImpl implements Services, ServiceBinder {
                            "service provider is not capable of being bound to injection points: " + serviceProvider);
                 return new NoOpBinder(serviceProvider);
             }
+            Binder result = binder.get();
 
             if (LOGGER.isLoggable(Level.DEBUG)) {
-                LOGGER.log(Level.DEBUG, "binding injection plan to " + binder.get());
+                LOGGER.log(Level.DEBUG, "binding injection plan to " + result);
             }
 
-            return binder.get();
+            return result;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,36 +45,23 @@ import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionResolver;
-import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RegistryServiceProvider;
-import io.helidon.inject.ServiceInjectionPlanBinder;
-import io.helidon.inject.ServiceProviderRegistry;
-import io.helidon.inject.Services;
 import io.helidon.inject.codegen.InjectCodegenTypes;
-import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Interception;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.Qualifier;
+
+import static io.helidon.inject.codegen.InjectCodegenTypes.APPLICATION;
+import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_POINT_PROVIDER;
+import static io.helidon.inject.codegen.InjectCodegenTypes.MODULE_COMPONENT;
+import static io.helidon.inject.codegen.InjectCodegenTypes.SERVICE_INJECTION_PLAN_BINDER;
+import static io.helidon.inject.codegen.InjectCodegenTypes.SERVICE_PROVIDER;
 
 /**
  * The default implementation for {@link io.helidon.inject.maven.plugin.ApplicationCreator}.
  */
 class ApplicationCreator {
-    private static final TypeName MODULE_COMPONENT = TypeName.create(ModuleComponent.class);
-    private static final TypeName APPLICATION = TypeName.create(ModuleComponent.class);
     private static final TypeName CREATOR = TypeName.create(ApplicationCreator.class);
-    /**
-     * Helidon {link io.helidon.inject.service.InjectionPointProvider}.
-     */
-    private static final TypeName INJECTION_POINT_PROVIDER = TypeName.create(InjectionPointProvider.class);
-    /**
-     * Helidon {@link io.helidon.inject.RegistryServiceProvider}.
-     */
-    private static final TypeName SERVICE_PROVIDER = TypeName.create(RegistryServiceProvider.class);
-    private static final TypeName BINDER_TYPE = TypeName.create(ServiceInjectionPlanBinder.class);
 
     private final MavenCodegenContext ctx;
     private final boolean failOnError;
@@ -93,7 +80,7 @@ class ApplicationCreator {
     }
 
     /**
-     * Generates the source and class file for {@link io.helidon.inject.Application} using the current classpath.
+     * Generates the source and class file for {@code io.helidon.inject.Application} using the current classpath.
      *
      * @param injectionServices injection services to use
      * @param serviceTypes      types to process
@@ -101,7 +88,7 @@ class ApplicationCreator {
      * @param moduleName        name of the module of this maven module
      * @param compilerOptions   compilation options
      */
-    void createApplication(InjectionServices injectionServices,
+    void createApplication(WrappedServices injectionServices,
                            Set<TypeName> serviceTypes,
                            TypeName typeName,
                            String moduleName,
@@ -125,7 +112,7 @@ class ApplicationCreator {
         }
     }
 
-    void codegen(InjectionServices injectionServices,
+    void codegen(WrappedServices injectionServices,
                  Set<TypeName> serviceTypes,
                  TypeName typeName,
                  String moduleName,
@@ -141,7 +128,7 @@ class ApplicationCreator {
                                                                typeName,
                                                                "1",
                                                                ""))
-                .addInterface(InjectCodegenTypes.APPLICATION);
+                .addInterface(APPLICATION);
 
         // deprecated default constructor - application should always be service loaded
         classModel.addConstructor(ctr -> ctr.javadoc(Javadoc.builder()
@@ -165,7 +152,7 @@ class ApplicationCreator {
                 .name("configure")
                 .addParameter(binderParam -> binderParam
                         .name("binder")
-                        .type(BINDER_TYPE))
+                        .type(SERVICE_INJECTION_PLAN_BINDER))
                 .update(it -> createConfigureMethodBody(injectionServices,
                                                         serviceTypes,
                                                         it)));
@@ -178,9 +165,9 @@ class ApplicationCreator {
         if (ctx.module().isPresent()) {
             List<TypeName> provided = ctx.module().get()
                     .provides()
-                    .get(InjectCodegenTypes.APPLICATION);
+                    .get(APPLICATION);
             if (!provided.contains(typeName)) {
-                throw new CodegenException("Please add \"provides " + InjectCodegenTypes.APPLICATION.fqName()
+                throw new CodegenException("Please add \"provides " + APPLICATION.fqName()
                                                    + " with " + typeName.fqName() + ";\" to your module-info.java, as otherwise"
                                                    + " the "
                                                    + "application would not be discovered when running on module path.");
@@ -193,7 +180,7 @@ class ApplicationCreator {
             try {
                 ctx.filer()
                         .services(CREATOR,
-                                  InjectCodegenTypes.APPLICATION,
+                                  APPLICATION,
                                   List.of(typeName));
             } catch (Exception e) {
                 // ignore this exception, as the resource probably exists and was done by the user
@@ -207,12 +194,11 @@ class ApplicationCreator {
         }
     }
 
-    BindingPlan bindingPlan(Services serviceRegistry,
-                            ServiceProviderRegistry services,
+    BindingPlan bindingPlan(WrappedServices services,
                             TypeName serviceTypeName) {
 
-        Lookup si = toServiceInfoCriteria(serviceTypeName);
-        RegistryServiceProvider<?> sp = services.get(si);
+        Lookup lookup = toLookup(serviceTypeName);
+        WrappedProvider sp = services.get(lookup);
         TypeName serviceDescriptorType = sp.infoType();
 
         if (!isQualifiedInjectionTarget(sp)) {
@@ -229,14 +215,14 @@ class ApplicationCreator {
             // type of the result that satisfies the injection point (full generic type)
             TypeName ipType = dependency.typeName();
 
-            InjectionPlan iPlan = injectionPlan(serviceRegistry, sp, dependency);
-            List<RegistryServiceProvider<?>> qualified = iPlan.qualifiedProviders();
-            List<RegistryServiceProvider<?>> unqualified = iPlan.unqualifiedProviders();
+            InjectionPlan iPlan = injectionPlan(services, sp, dependency);
+            List<WrappedProvider> qualified = iPlan.qualifiedProviders();
+            List<WrappedProvider> unqualified = iPlan.unqualifiedProviders();
 
             BindingType type = bindingType(ipType);
             boolean isProvider = isProvider(ipType);
             BindingTime time;
-            List<RegistryServiceProvider<?>> usedList;
+            List<WrappedProvider> usedList;
 
             if (qualified.isEmpty() && !unqualified.isEmpty()) {
                 time = BindingTime.RUNTIME;
@@ -251,28 +237,28 @@ class ApplicationCreator {
                                      dependency,
                                      isProvider,
                                      usedList.stream()
-                                             .map(RegistryServiceProvider::infoType)
+                                             .map(WrappedProvider::infoType)
                                              .toList()));
         }
 
         return new BindingPlan(serviceDescriptorType, bindings);
     }
 
-    private static boolean isProvider(TypeName typeName,
-                                      Services services) {
-        RegistryServiceProvider<?> sp = toServiceProvider(typeName, services);
-        return sp.isProvider();
+    private static boolean isProvider(WrappedServices services,
+                                      TypeName typeName) {
+        return toServiceProvider(services, typeName)
+                .isProvider();
     }
 
-    private static Lookup toServiceInfoCriteria(TypeName typeName) {
+    private static Lookup toLookup(TypeName typeName) {
         return Lookup.builder()
                 .serviceType(typeName)
                 .build();
     }
 
-    private static RegistryServiceProvider<?> toServiceProvider(TypeName typeName,
-                                                                Services services) {
-        return services.serviceProviders().get(toServiceInfoCriteria(typeName));
+    private static WrappedProvider toServiceProvider(WrappedServices services,
+                                                     TypeName typeName) {
+        return services.get(toLookup(typeName));
     }
 
     /**
@@ -281,7 +267,7 @@ class ApplicationCreator {
      * @param sp the service provider
      * @return true if the service provider can receive injection
      */
-    private static boolean isQualifiedInjectionTarget(RegistryServiceProvider<?> sp) {
+    private static boolean isQualifiedInjectionTarget(WrappedProvider sp) {
         Set<TypeName> contractsImplemented = sp.contracts();
         List<Ip> dependencies = sp.dependencies();
 
@@ -292,14 +278,14 @@ class ApplicationCreator {
                         && !contractsImplemented.contains(APPLICATION));
     }
 
-    private boolean isAllowListedProviderQualifierTypeName(TypeName typeName,
-                                                           Services services) {
+    private boolean isAllowListedProviderQualifierTypeName(WrappedServices services,
+                                                           TypeName typeName) {
 
         if (permittedProviderQualifierTypes.isEmpty()) {
             return false;
         }
 
-        RegistryServiceProvider<?> sp = toServiceProvider(typeName, services);
+        WrappedProvider sp = toServiceProvider(services, typeName);
         Set<TypeName> spQualifierTypeNames = sp.qualifiers().stream()
                 .map(Annotation::typeName)
                 .collect(Collectors.toSet());
@@ -323,14 +309,10 @@ class ApplicationCreator {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private List<TypeName> providersNotAllowed(InjectionServices injectionServices,
+    private List<TypeName> providersNotAllowed(WrappedServices services,
                                                Set<TypeName> serviceTypes) {
-        Services services = injectionServices.services();
 
-        List<RegistryServiceProvider<Supplier>> providers = services.serviceProviders().all(Lookup.builder()
-                                                                                                    .addContract(Supplier.class)
-                                                                                                    .build());
+        List<WrappedProvider> providers = services.all(Lookup.create(Supplier.class));
         if (providers.isEmpty()) {
             return List.of();
         }
@@ -338,8 +320,8 @@ class ApplicationCreator {
         List<TypeName> providersInUseThatAreNotAllowed = new ArrayList<>();
         for (TypeName typeName : serviceTypes) {
             if (!isAllowListedProviderName(typeName)
-                    && isProvider(typeName, services)
-                    && !isAllowListedProviderQualifierTypeName(typeName, services)) {
+                    && isProvider(services, typeName)
+                    && !isAllowListedProviderQualifierTypeName(services, typeName)) {
                 providersInUseThatAreNotAllowed.add(typeName);
             }
         }
@@ -366,8 +348,8 @@ class ApplicationCreator {
         return BindingType.SINGLE;
     }
 
-    private InjectionPlan injectionPlan(Services services,
-                                        RegistryServiceProvider<?> self,
+    private InjectionPlan injectionPlan(WrappedServices services,
+                                        WrappedProvider self,
                                         Ip dependency) {
         Lookup dependencyTo = Lookup.create(dependency);
         Set<Qualifier> qualifiers = dependencyTo.qualifiers();
@@ -380,11 +362,11 @@ class ApplicationCreator {
                     .build();
         }
 
-        if (self instanceof InjectionResolver ir) {
-            Optional<Object> resolved = ir.resolve(dependency, services, self, false);
+        if (self.isInjectionResolver()) {
+            Optional<Object> resolved = self.resolve(dependency);
             Object target = resolved.orElse(null);
             if (target != null) {
-                return new InjectionPlan(List.of(self), toQualified(target).toList());
+                return new InjectionPlan(List.of(self), toQualified(self, target).toList());
             }
         }
 
@@ -396,8 +378,8 @@ class ApplicationCreator {
         4. an InjectionResolver, where the method resolve returns an information if this type can be resolved (config driven)
         */
 
-        List<RegistryServiceProvider<?>> qualifiedProviders = new ArrayList<>(services.serviceProviders().all(dependencyTo));
-        List<RegistryServiceProvider<?>> unqualifiedProviders = List.of();
+        List<WrappedProvider> qualifiedProviders = new ArrayList<>(services.all(dependencyTo));
+        List<WrappedProvider> unqualifiedProviders = List.of();
 
         if (qualifiedProviders.isEmpty()) {
             unqualifiedProviders = injectionPointProvidersFor(services, dependency);
@@ -416,18 +398,16 @@ class ApplicationCreator {
         return new InjectionPlan(unqualifiedProviders, qualifiedProviders);
     }
 
-    @SuppressWarnings("unchecked")
-    private Stream<RegistryServiceProvider<?>> toQualified(Object target) {
+    private Stream<WrappedProvider> toQualified(WrappedProvider self, Object target) {
         if (target instanceof Collection<?> collection) {
             return collection.stream()
-                    .flatMap(this::toQualified);
+                    .flatMap(target1 -> toQualified(self, target1));
         }
-        return (target instanceof RegistryServiceProvider<?> sp)
-                ? Stream.of((RegistryServiceProvider<Object>) sp)
-                : Stream.of();
+        return self.asProvider(target)
+                .stream();
     }
 
-    private List<RegistryServiceProvider<?>> injectionPointProvidersFor(Services services, Ip ipoint) {
+    private List<WrappedProvider> injectionPointProvidersFor(WrappedServices services, Ip ipoint) {
         if (ipoint.qualifiers().isEmpty()) {
             return List.of();
         }
@@ -435,16 +415,14 @@ class ApplicationCreator {
                 .qualifiers(Set.of())
                 .addContract(InjectCodegenTypes.INJECTION_POINT_PROVIDER)
                 .build();
-        return new ArrayList<>(services.serviceProviders().all(criteria));
+        return new ArrayList<>(services.all(criteria));
     }
 
-    private void createConfigureMethodBody(InjectionServices injectionServices,
+    private void createConfigureMethodBody(WrappedServices services,
                                            Set<TypeName> serviceTypes,
                                            Method.Builder method) {
-        Services serviceRegistry = injectionServices.services();
-        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
         // find all interceptors and bind them
-        List<RegistryServiceProvider<Interception.Interceptor>> interceptors =
+        List<WrappedProvider> interceptors =
                 services.all(Lookup.builder()
                                      .addContract(Interception.Interceptor.class)
                                      .addQualifier(Qualifier.WILDCARD_NAMED)
@@ -455,7 +433,7 @@ class ApplicationCreator {
             method.addContentLine("");
         }
 
-        Iterator<RegistryServiceProvider<Interception.Interceptor>> interceptorIterator = interceptors.iterator();
+        Iterator<WrappedProvider> interceptorIterator = interceptors.iterator();
         while (interceptorIterator.hasNext()) {
             method.addContent(interceptorIterator.next().infoType().genericTypeName())
                     .addContent(".INSTANCE");
@@ -469,12 +447,14 @@ class ApplicationCreator {
             }
         }
 
-        method.addContentLine(");");
+        method.addContentLine(");")
+                .addContentLine("");
+
 
         // first collect required dependencies by descriptor
         Map<TypeName, Set<Binding>> injectionPlan = new LinkedHashMap<>();
         for (TypeName serviceType : serviceTypes) {
-            BindingPlan plan = bindingPlan(serviceRegistry, services, serviceType);
+            BindingPlan plan = bindingPlan(services, serviceType);
             if (!plan.bindings.isEmpty()) {
                 injectionPlan.put(plan.descriptorType(), plan.bindings());
             }
@@ -523,8 +503,7 @@ class ApplicationCreator {
                             .addContentLine(")");
                 } else {
                     throw new CodegenException("Injection point requires a value, but no provider discovered: "
-                                                       + binding.ipInfo() + " for "
-                                                       + binding.ipInfo().service().fqName());
+                                                       + binding.ipInfo());
                 }
             } else {
                 method.addContent(".bind")
@@ -637,8 +616,8 @@ class ApplicationCreator {
         RUNTIME
     }
 
-    record InjectionPlan(List<RegistryServiceProvider<?>> unqualifiedProviders,
-                         List<RegistryServiceProvider<?>> qualifiedProviders) {
+    record InjectionPlan(List<WrappedProvider> unqualifiedProviders,
+                         List<WrappedProvider> qualifiedProviders) {
     }
 
     record BindingPlan(TypeName descriptorType,
