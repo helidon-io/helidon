@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +14,26 @@
  * limitations under the License.
  */
 
-package io.helidon.inject;
+package io.helidon.inject.service;
 
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.service.Ip;
 
 /**
  * Combines the {@link Lookup} criteria along with
  * the {@link io.helidon.inject.service.Ip} context
  * that the query applies to.
  *
- * @see io.helidon.inject.InjectionPointProvider
+ * @see InjectionPointProvider
  */
 @Prototype.Blueprint
-@Prototype.CustomMethods(ContextualServiceQuerySupport.CustomMethods.class)
-interface ContextualServiceQueryBlueprint extends LookupBlueprint {
+@Prototype.CustomMethods(ContextualLookupSupport.CustomMethods.class)
+interface ContextualLookupBlueprint extends LookupBlueprint {
     /**
      * Optionally, the injection point context this search applies to.
      *
      * @return the optional injection point context info
      */
     Optional<Ip> injectionPoint();
-
-    /**
-     * Set to true if there is an expectation that there is at least one match result from the search.
-     *
-     * @return true if it is expected there is at least a single match result
-     */
-    boolean expected();
 }

@@ -172,7 +172,7 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
         state.currentPhase(Phase.DESTROYED);
 
         // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
-        List<ServiceProvider<?>> serviceProviders = services.allProviders();
+        List<RegistryServiceProvider<?>> serviceProviders = services.allProviders();
         serviceProviders = serviceProviders.stream()
                 .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
                 .collect(Collectors.toList()); // must be a mutable list, as we sort it in next step
@@ -182,15 +182,15 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
         return result;
     }
 
-    private static Comparator<? super ServiceProvider<?>> shutdownComparator() {
+    private static Comparator<? super RegistryServiceProvider<?>> shutdownComparator() {
         return Comparator.comparingInt(ServiceInfo::runLevel)
                 .thenComparing(ServiceInfo::weight);
     }
 
     private static void doFinalShutdown(ServicesImpl services,
-                                        Collection<ServiceProvider<?>> serviceProviders,
+                                        Collection<RegistryServiceProvider<?>> serviceProviders,
                                         Map<TypeName, ActivationResult> map) {
-        for (ServiceProvider<?> csp : serviceProviders) {
+        for (RegistryServiceProvider<?> csp : serviceProviders) {
             Phase startingActivationPhase = csp.currentActivationPhase();
             try {
                 Activator<?> activator;

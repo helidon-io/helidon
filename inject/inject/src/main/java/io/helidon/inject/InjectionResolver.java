@@ -22,7 +22,7 @@ import io.helidon.inject.service.Ip;
 
 /**
  * Implementors of this contract can assist with resolving injection points.
- * A {@link io.helidon.inject.ServiceProvider} is expected to implement this interface.
+ * A {@link RegistryServiceProvider} is expected to implement this interface.
  */
 public interface InjectionResolver {
 
@@ -31,7 +31,7 @@ public interface InjectionResolver {
      * <p>
      * There are two modes that injection resolvers run through.
      * Phase 1 (resolveIps=false) is during the time when the injection plan is being formulated. This is the time we need
-     * to identify which {@link ServiceProvider} instances qualify.
+     * to identify which {@link RegistryServiceProvider} instances qualify.
      * Phase 2 (resolveIps=true) is during actual resolution, and typically comes during the service activation lifecycle.
      *
      * @param ipInfo            the injection point being resolved
@@ -42,7 +42,7 @@ public interface InjectionResolver {
      */
     Optional<Object> resolve(Ip ipInfo,
                              Services injectionServices,
-                             ServiceProvider<?> serviceProvider,
+                             RegistryServiceProvider<?> serviceProvider,
                              boolean resolveIps);
 
 }

@@ -19,14 +19,14 @@ package io.helidon.inject;
 /**
  * Activators are responsible for lifecycle creation and lazy activation of service providers.
  * They are responsible for taking the
- * {@link io.helidon.inject.ServiceProvider}'s managed service instance from {@link io.helidon.inject.Phase#PENDING}
+ * {@link RegistryServiceProvider}'s managed service instance from {@link io.helidon.inject.Phase#PENDING}
  * through {@link io.helidon.inject.Phase#POST_CONSTRUCTING} (i.e., including any
  * {@link io.helidon.inject.service.Injection.PostConstruct} invocations, etc.), and finally into the
  * {@link io.helidon.inject.Phase#ACTIVE} phase.
  * <p>
  * Assumption:
  * <ol>
- *  <li>Each {@link io.helidon.inject.ServiceProvider} managing its backing service will have an activator strategy conforming
+ *  <li>Each {@link RegistryServiceProvider} managing its backing service will have an activator strategy conforming
  *  to the DI
  *  specification.</li>
  * </ol>
@@ -69,5 +69,5 @@ public interface Activator<T> {
      *
      * @return service provider
      */
-    ServiceProvider<T> serviceProvider();
+    RegistryServiceProvider<T> serviceProvider();
 }

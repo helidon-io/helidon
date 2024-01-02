@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.inject.Lookup;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.configdriven.configuredby.application.test.ASimpleRunLevelService;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Lookup;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -84,12 +84,12 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
         Lookup criteria = Lookup.builder()
                 .runLevel(Injection.RunLevel.STARTUP)
                 .build();
-        List<ServiceProvider<Object>> startups = services.all(criteria);
-        List<String> desc = startups.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        List<RegistryServiceProvider<Object>> startups = services.all(criteria);
+        List<String> desc = startups.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
 
         assertThat(desc,
                    contains(ASimpleRunLevelService.class.getSimpleName() + ":INIT"));
-        startups.forEach(ServiceProvider::get);
+        startups.forEach(RegistryServiceProvider::get);
 
         long endingLookupCount = lookupCounter.count() - initialCount;
 

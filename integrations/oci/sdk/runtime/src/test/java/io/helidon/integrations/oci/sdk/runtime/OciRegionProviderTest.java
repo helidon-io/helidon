@@ -21,12 +21,12 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
-import io.helidon.inject.ContextualServiceQuery;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServiceProviderException;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.Services;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Qualifier;
 
@@ -66,7 +66,7 @@ class OciRegionProviderTest {
                 .permitsDynamic(true)
                 .build());
 
-        ServiceProvider<Region> regionProvider = InjectionServices.instance()
+        RegistryServiceProvider<Region> regionProvider = InjectionServices.instance()
                 .services()
                 .serviceProviders()
                 .get(Region.class);
@@ -75,7 +75,7 @@ class OciRegionProviderTest {
 
         TypeName regionType = TypeName.create(Region.class);
 
-        ContextualServiceQuery query = ContextualServiceQuery.create(
+        ContextualLookup query = ContextualLookup.create(
                 Ip.builder()
                         .contract(regionType)
                         .field("TEST_ONLY")
@@ -86,8 +86,7 @@ class OciRegionProviderTest {
                         .elementKind(ElementKind.METHOD)
                         .access(AccessModifier.PUBLIC)
                         .addQualifier(Qualifier.createNamed("us-phoenix-1"))
-                        .build(),
-                false);
+                        .build());
         assertThat(regionProvider.first(query),
                    optionalValue(equalTo(Region.US_PHOENIX_1)));
     }

@@ -35,8 +35,9 @@ import java.util.stream.Stream;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Interception;
-import io.helidon.inject.service.Ip;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceBinder;
@@ -54,7 +55,7 @@ class ServicesImpl implements Services, ServiceBinder {
     static {
         Map<String, ActivatorProvider> activators = new HashMap<>();
 
-        HelidonServiceLoader.builder(ServiceLoader.load(ActivatorProvider.class))
+        HelidonServiceLoader.builder(ServiceLoader.load(ActivatorProvider.class, Thread.currentThread().getContextClassLoader()))
                 .addService(new InjectActivatorProvider())
                 .build()
                 .asList()
@@ -62,20 +63,20 @@ class ServicesImpl implements Services, ServiceBinder {
         ACTIVATOR_PROVIDERS = Map.copyOf(activators);
     }
 
-    private final Map<Lookup, List<ServiceProvider<?>>> cache = new ConcurrentHashMap<>();
+    private final Map<Lookup, List<RegistryServiceProvider<?>>> cache = new ConcurrentHashMap<>();
     // a map of service provider instances to their activators, so we can correctly handle activation requests
-    private final Map<ServiceProvider<?>, Activator<?>> providersToActivators = new IdentityHashMap<>();
+    private final Map<RegistryServiceProvider<?>, Activator<?>> providersToActivators = new IdentityHashMap<>();
     private final Counter lookupCounter;
     private final InjectionConfig cfg;
-    private final Map<TypeName, ServiceProvider<?>> servicesByTypeName;
-    private final Map<TypeName, Set<ServiceProvider<?>>> servicesByContract;
+    private final Map<TypeName, RegistryServiceProvider<?>> servicesByTypeName;
+    private final Map<TypeName, Set<RegistryServiceProvider<?>>> servicesByContract;
     private final Counter cacheLookupCounter;
     private final Counter cacheHitCounter;
     private final InjectionServicesImpl injectionServices;
     private final State state;
     private final ServiceProviderRegistry spRegistry;
 
-    private volatile List<ServiceProvider<Interception.Interceptor>> interceptors;
+    private volatile List<RegistryServiceProvider<Interception.Interceptor>> interceptors;
 
     ServicesImpl(InjectionServicesImpl injectionServices, State state) {
         this.injectionServices = injectionServices;
@@ -100,6 +101,11 @@ class ServicesImpl implements Services, ServiceBinder {
             this.cacheHitCounter = null;
         }
 
+        /*
+        note for future:
+        we can optimize this if needed - we can protect parallel operations on binding, and once binding
+        is done (and dynamic updates are not permitted), these maps are immutable
+         */
         this.servicesByTypeName = new ConcurrentHashMap<>();
         this.servicesByContract = new ConcurrentHashMap<>();
 
@@ -146,18 +152,18 @@ class ServicesImpl implements Services, ServiceBinder {
     }
 
     @SuppressWarnings("unchecked")
-    <T> List<ServiceProvider<T>> allProviders(Lookup criteria) {
+    <T> List<RegistryServiceProvider<T>> allProviders(Lookup criteria) {
         return this.lookup(criteria, Integer.MAX_VALUE);
     }
 
     @SuppressWarnings("unchecked")
-    <T> ServiceProvider<T> serviceProvider(ServiceInfo serviceInfo) {
-        ServiceProvider<?> serviceProvider = servicesByTypeName.get(serviceInfo.serviceType());
+    <T> RegistryServiceProvider<T> serviceProvider(ServiceInfo serviceInfo) {
+        RegistryServiceProvider<?> serviceProvider = servicesByTypeName.get(serviceInfo.serviceType());
         if (serviceProvider == null) {
             throw new NoSuchElementException("Requested service is not managed by this registry: "
                                                      + serviceInfo.serviceType().fqName());
         }
-        return (ServiceProvider<T>) serviceProvider;
+        return (RegistryServiceProvider<T>) serviceProvider;
     }
 
     void bindSelf() {
@@ -174,7 +180,7 @@ class ServicesImpl implements Services, ServiceBinder {
         }
     }
 
-    List<ServiceProvider<Interception.Interceptor>> interceptors() {
+    List<RegistryServiceProvider<Interception.Interceptor>> interceptors() {
         if (interceptors == null) {
             interceptors = allProviders(Lookup.builder()
                                                 .addContract(Interception.Interceptor.class)
@@ -217,12 +223,12 @@ class ServicesImpl implements Services, ServiceBinder {
         }
     }
 
-    Optional<Activator<?>> activator(ServiceProvider<?> instance) {
+    Optional<Activator<?>> activator(RegistryServiceProvider<?> instance) {
         return Optional.ofNullable(providersToActivators.get(instance));
     }
 
-    List<ServiceProvider<?>> allProviders() {
-        Set<ServiceProvider<?>> result = new HashSet<>(servicesByTypeName.values());
+    List<RegistryServiceProvider<?>> allProviders() {
+        Set<RegistryServiceProvider<?>> result = new HashSet<>(servicesByTypeName.values());
         servicesByContract.values()
                 .forEach(result::addAll);
 
@@ -231,7 +237,7 @@ class ServicesImpl implements Services, ServiceBinder {
 
     private static boolean hasNamed(Set<Qualifier> qualifiers) {
         return qualifiers.stream()
-                .anyMatch(it -> it.typeName().equals(InjectTypes.NAMED));
+                .anyMatch(it -> it.typeName().equals(Injection.Named.TYPE_NAME));
     }
 
     private void bind(Activator<?> activator) {
@@ -248,13 +254,13 @@ class ServicesImpl implements Services, ServiceBinder {
                                    .targetPhase(Phase.INIT)
                                    .throwIfError(false)
                                    .build());
-        ServiceProvider<?> serviceProvider = activator.serviceProvider();
+        RegistryServiceProvider<?> serviceProvider = activator.serviceProvider();
         this.providersToActivators.put(serviceProvider, activator);
 
         TypeName serviceType = serviceProvider.serviceType();
 
         // only put if absent, as this may be a lower weight provider for the same type
-        ServiceProvider<?> previousValue = servicesByTypeName.putIfAbsent(serviceType, serviceProvider);
+        RegistryServiceProvider<?> previousValue = servicesByTypeName.putIfAbsent(serviceType, serviceProvider);
         if (previousValue != null) {
             // a value was already registered for this service type, ignore this registration
             if (LOGGER.isLoggable(Level.TRACE)) {
@@ -278,9 +284,13 @@ class ServicesImpl implements Services, ServiceBinder {
     private <T> List lookup(Lookup criteria, int limit) {
         lookupCounter.increment();
 
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Lookup: " + criteria + ", limit: " + limit);
+        }
+
         if (criteria.serviceType().isPresent()) {
             // when a specific service type is requested, we go for it
-            ServiceProvider<?> exact = servicesByTypeName.get(criteria.serviceType().get());
+            RegistryServiceProvider<?> exact = servicesByTypeName.get(criteria.serviceType().get());
             if (exact != null) {
                 return explodeFilterAndSort(List.of(exact), criteria);
             }
@@ -288,10 +298,10 @@ class ServicesImpl implements Services, ServiceBinder {
 
         if (1 == criteria.contracts().size()) {
             TypeName theOnlyContractRequested = criteria.contracts().iterator().next();
-            Set<ServiceProvider<?>> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
+            Set<RegistryServiceProvider<?>> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
             if (subsetOfMatches != null) {
                 // the subset is ordered, cannot use parallel
-                List<ServiceProvider<?>> result = subsetOfMatches.stream()
+                List<RegistryServiceProvider<?>> result = subsetOfMatches.stream()
                         .filter(criteria::matches)
                         .limit(limit)
                         .toList();
@@ -301,7 +311,7 @@ class ServicesImpl implements Services, ServiceBinder {
             }
             if (criteria.serviceType().isEmpty()) {
                 // we may have a request for service type and not a contract
-                ServiceProvider<?> exact = servicesByTypeName.get(theOnlyContractRequested);
+                RegistryServiceProvider<?> exact = servicesByTypeName.get(theOnlyContractRequested);
                 if (exact != null) {
                     return explodeFilterAndSort(List.of(exact), criteria);
                 }
@@ -320,8 +330,8 @@ class ServicesImpl implements Services, ServiceBinder {
         // table scan :-(
         List result = servicesByTypeName.values()
                 .stream()
-                .parallel()
                 .filter(criteria::matches)
+                .sorted(ServiceProviderComparator.instance())
                 .limit(limit)
                 .toList();
 
@@ -337,15 +347,15 @@ class ServicesImpl implements Services, ServiceBinder {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private <T> List<Supplier<T>> explodeFilterAndSort(List<ServiceProvider<?>> coll, Lookup criteria) {
-        List<ServiceProvider<?>> exploded;
+    private <T> List<Supplier<T>> explodeFilterAndSort(List<RegistryServiceProvider<?>> coll, Lookup criteria) {
+        List<RegistryServiceProvider<?>> exploded;
         if ((coll.size() > 1)
                 || coll.stream().anyMatch(sp -> sp instanceof ServiceProviderProvider)) {
             exploded = new ArrayList<>();
 
             coll.forEach(s -> {
                 if (s instanceof ServiceProviderProvider spp) {
-                    List<? extends ServiceProvider<?>> subList = spp.serviceProviders(criteria, true, true);
+                    List<? extends RegistryServiceProvider<?>> subList = spp.serviceProviders(criteria, true, true);
                     if (subList != null && !subList.isEmpty()) {
                         subList.stream().filter(Objects::nonNull).forEach(exploded::add);
                     }
@@ -367,8 +377,8 @@ class ServicesImpl implements Services, ServiceBinder {
         if (criteria.qualifiers().isEmpty()) {
             // unqualified first, unnamed before named, but keep the existing order otherwise
             List unqualified = new ArrayList<>();
-            List<ServiceProvider<?>> qualified = new ArrayList<>();
-            for (ServiceProvider<?> serviceProvider : exploded) {
+            List<RegistryServiceProvider<?>> qualified = new ArrayList<>();
+            for (RegistryServiceProvider<?> serviceProvider : exploded) {
                 if (serviceProvider.qualifiers().isEmpty()) {
                     unqualified.add(serviceProvider);
                 } else {
@@ -380,8 +390,8 @@ class ServicesImpl implements Services, ServiceBinder {
         } else if (!hasNamed(criteria.qualifiers())) {
             // unnamed first
             List unnamed = new ArrayList<>();
-            List<ServiceProvider<?>> named = new ArrayList<>();
-            for (ServiceProvider serviceProvider : exploded) {
+            List<RegistryServiceProvider<?>> named = new ArrayList<>();
+            for (RegistryServiceProvider serviceProvider : exploded) {
                 if (hasNamed(serviceProvider.qualifiers())) {
                     named.add(serviceProvider);
                 } else {
@@ -394,63 +404,6 @@ class ServicesImpl implements Services, ServiceBinder {
 
         // need to coerce the compiler into the correct type here...
         return (List) exploded;
-    }
-
-    private static class NoOpBinder implements ServiceInjectionPlanBinder.Binder {
-        private final ServiceProvider<?> serviceProvider;
-
-        NoOpBinder(ServiceProvider<?> serviceProvider) {
-            this.serviceProvider = serviceProvider;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder bind(Ip id, boolean useProvider, ServiceInfo serviceInfo) {
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder bindOptional(Ip id, boolean useProvider, ServiceInfo... serviceInfos) {
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder bindMany(Ip id, boolean useProvider, ServiceInfo... serviceInfos) {
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder bindNull(Ip id) {
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBind(Ip id, boolean useProvider, Class<?> serviceType) {
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindOptional(Ip id, boolean useProvider, Class<?> serviceType) {
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindMany(Ip id, boolean useProvider, Class<?> serviceType) {
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindNullable(Ip id, boolean useProvider, Class<?> serviceType) {
-            return this;
-        }
-
-        @Override
-        public void commit() {
-        }
-
-        @Override
-        public String toString() {
-            return "No-op binder for " + serviceProvider.description();
-        }
     }
 
     private class ServiceBinderImpl implements ServiceBinder {
@@ -480,7 +433,7 @@ class ServicesImpl implements Services, ServiceBinder {
 
         @Override
         public Binder bindTo(ServiceInfo serviceInfo) {
-            ServiceProvider<?> serviceProvider = ServicesImpl.this.serviceProvider(serviceInfo);
+            RegistryServiceProvider<?> serviceProvider = ServicesImpl.this.serviceProvider(serviceInfo);
 
             Optional<Binder> binder = serviceProvider.serviceProviderBindable()
                     .flatMap(ServiceProviderBindable::injectionPlanBinder);

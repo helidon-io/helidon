@@ -18,9 +18,9 @@ package io.helidon.inject.tests.inject;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.Services;
-import io.helidon.inject.codegen.InjectCodegenTypes;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Qualifier;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -61,13 +61,13 @@ class JavaxTest {
      */
     @Test
     void applicationScopeToSingletonScopeTranslation() {
-        ServiceProvider<AnApplicationScopedService> sp = services.serviceProviders().get(AnApplicationScopedService.class);
+        RegistryServiceProvider<AnApplicationScopedService> sp = services.serviceProviders().get(AnApplicationScopedService.class);
         assertThat(sp.toString(),
                    equalTo("AnApplicationScopedService:INIT"));
         assertThat(sp.qualifiers(),
                    contains(Qualifier.create(Default.class)));
         assertThat(sp.scopes(),
-                   containsInAnyOrder(InjectCodegenTypes.INJECTION_SINGLETON,
+                   containsInAnyOrder(Injection.Singleton.TYPE_NAME,
                                       TypeName.create(ApplicationScoped.class)));
     }
 

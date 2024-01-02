@@ -19,7 +19,7 @@ package io.helidon.inject;
 /**
  * A receiver of events from the {@link io.helidon.inject.Services} registry and providers held by the service registry.
  * <p>
- * Note that only {@link io.helidon.inject.ServiceProvider}'s implement this contract that are also bound to the global
+ * Note that only {@link RegistryServiceProvider}'s implement this contract that are also bound to the global
  * {@link io.helidon.inject.Services} registry are currently capable of receiving events.
  *
  * @see io.helidon.inject.ServiceProviderBindable

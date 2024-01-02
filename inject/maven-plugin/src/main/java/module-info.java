@@ -22,11 +22,12 @@ module io.helidon.inject.maven.plugin {
     requires io.helidon.builder.api;
     requires io.helidon.common;
     requires io.helidon.common.config;
-    requires io.helidon.inject.configdriven;
     requires io.helidon.codegen;
     requires io.helidon.codegen.scan;
     requires io.helidon.codegen.compiler;
     requires io.helidon.inject.codegen;
+    requires io.helidon.inject.service;
+    requires io.helidon.inject;
 
     requires maven.artifact;
     requires maven.model;

@@ -19,7 +19,7 @@ package io.helidon.webserver;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Phase;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -63,7 +63,7 @@ class WebServerConfigDrivenTest {
             services = injectionServices.services();
         }
 
-        ServiceProvider<WebServer> webServerSp = services.serviceProviders().get(WebServer.class);
+        RegistryServiceProvider<WebServer> webServerSp = services.serviceProviders().get(WebServer.class);
         assertThat(webServerSp.currentActivationPhase(), is(Phase.ACTIVE));
     }
 

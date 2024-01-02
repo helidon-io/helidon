@@ -43,11 +43,6 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-maven-plugin</artifactId>
-            <optional>true</optional>  <!-- reactor dependency ordering only -->
-        </dependency>
-        <dependency>
             <groupId>io.helidon.inject.tests</groupId>
             <artifactId>helidon-inject-tests-resources-plain</artifactId>
             <version>${helidon.version}</version>

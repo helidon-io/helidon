@@ -22,6 +22,9 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.ServiceBinder;
 import io.helidon.inject.service.ServiceDescriptor;
@@ -67,7 +70,7 @@ class DefaultInjectionPlansTest {
         List<String> result = services.allProviders(criteria)
                 .stream()
                 .filter(it -> it.contracts().contains(IP_PROVIDER))
-                .map(ServiceProvider::description)
+                .map(RegistryServiceProvider::description)
                 .toList();
 
         assertThat(result, IsCollectionWithSize.hasSize(1));
@@ -91,7 +94,7 @@ class DefaultInjectionPlansTest {
     static class FakeInjectionPointDescriptor implements ServiceDescriptor<FakeInjectionPointDescriptor> {
         @Override
         public Set<TypeName> scopes() {
-            return Set.of(InjectTypes.SINGLETON);
+            return Set.of(Injection.Singleton.TYPE_NAME);
         }
 
         @Override
@@ -110,7 +113,7 @@ class DefaultInjectionPlansTest {
     static class FakeRegularDescriptor implements ServiceDescriptor<FakeRegularDescriptor> {
         @Override
         public Set<TypeName> scopes() {
-            return Set.of(InjectTypes.SINGLETON);
+            return Set.of(Injection.Singleton.TYPE_NAME);
         }
 
         @Override

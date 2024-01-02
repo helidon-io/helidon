@@ -22,9 +22,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.ContextualServiceQuery;
-import io.helidon.inject.InjectionPointProvider;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
 
@@ -40,7 +40,7 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     static final Qualifier fine = Qualifier.createNamed("fine");
 
     @Override
-    public Optional<AbstractBlade> first(ContextualServiceQuery query) {
+    public Optional<AbstractBlade> first(ContextualLookup query) {
         Objects.requireNonNull(query);
 
         assert (query.contracts().size() == 1) : query;
@@ -60,7 +60,7 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     }
 
     @Override
-    public List<AbstractBlade> list(ContextualServiceQuery query) {
+    public List<AbstractBlade> list(ContextualLookup query) {
         Objects.requireNonNull(query);
 
         List<AbstractBlade> result = new ArrayList<>();
@@ -74,10 +74,6 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
 
         if (query.qualifiers().contains(all) || query.qualifiers().isEmpty()) {
             result.add(new DullBlade());
-        }
-
-        if (query.expected() && result.isEmpty()) {
-            throw new AssertionError("expected to match: " + query);
         }
 
         return result;

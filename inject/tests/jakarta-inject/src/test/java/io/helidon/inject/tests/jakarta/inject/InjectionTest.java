@@ -16,7 +16,7 @@
 
 package io.helidon.inject.tests.jakarta.inject;
 
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
@@ -64,7 +64,7 @@ class InjectionTest {
     @Test
     @Order(0)
     void testSingleton() {
-        ServiceProvider<SingletonService> provider = services.get(SingletonService__ServiceDescriptor.INSTANCE);
+        RegistryServiceProvider<SingletonService> provider = services.get(SingletonService__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -79,7 +79,7 @@ class InjectionTest {
     @Test
     @Order(1)
     void testLifecycle() {
-        ServiceProvider<LifecycleReceiver> provider = services.get(LifecycleReceiver__ServiceDescriptor.INSTANCE);
+        RegistryServiceProvider<LifecycleReceiver> provider = services.get(LifecycleReceiver__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -90,7 +90,7 @@ class InjectionTest {
     @Test
     @Order(2)
     void testNonSingleton() {
-        ServiceProvider<NonSingletonService> provider = services.get(NonSingletonService__ServiceDescriptor.INSTANCE);
+        RegistryServiceProvider<NonSingletonService> provider = services.get(NonSingletonService__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -110,7 +110,7 @@ class InjectionTest {
     @Test
     @Order(3)
     void testNamed() {
-        ServiceProvider<NamedReceiver> provider = services.get(NamedReceiver__ServiceDescriptor.INSTANCE);
+        RegistryServiceProvider<NamedReceiver> provider = services.get(NamedReceiver__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -122,7 +122,7 @@ class InjectionTest {
     @Test
     @Order(4)
     void testQualified() {
-        ServiceProvider<QualifiedReceiver> provider = services.get(QualifiedReceiver__ServiceDescriptor.INSTANCE);
+        RegistryServiceProvider<QualifiedReceiver> provider = services.get(QualifiedReceiver__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 
@@ -134,7 +134,7 @@ class InjectionTest {
     @Test
     @Order(5)
     void testProvider() {
-        ServiceProvider<ProviderReceiver> provider = services.get(ProviderReceiver__ServiceDescriptor.INSTANCE);
+        RegistryServiceProvider<ProviderReceiver> provider = services.get(ProviderReceiver__ServiceDescriptor.INSTANCE);
 
         assertThat(provider, notNullValue());
 

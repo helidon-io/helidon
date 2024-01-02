@@ -17,14 +17,13 @@
 package io.helidon.inject.tests.codegen;
 
 import io.helidon.inject.Application;
-import io.helidon.inject.ContextualServiceQuery;
-import io.helidon.inject.InjectionPointProvider;
 import io.helidon.inject.InvocationException;
 import io.helidon.inject.ServiceInjectionPlanBinder;
-import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.codegen.InjectCodegenTypes;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionContext;
+import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Interception;
 import io.helidon.inject.service.InterceptionMetadata;
 import io.helidon.inject.service.Invoker;
@@ -33,6 +32,7 @@ import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.ServiceBinder;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.service.ServiceProvider;
 
 import org.junit.jupiter.api.Test;
 
@@ -89,7 +89,7 @@ class InjectCodegenTypesTest {
         assertThat(InjectCodegenTypes.APPLICATION.fqName(),
                    is(Application.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.CONTEXT_QUERY.fqName(),
-                   is(ContextualServiceQuery.class.getCanonicalName()));
+                   is(ContextualLookup.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.SERVICE_BINDER.fqName(),
                    is(ServiceBinder.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.INVOCATION_EXCEPTION.fqName(),

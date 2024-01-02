@@ -23,15 +23,16 @@ import java.util.Optional;
 import io.helidon.common.LazyValue;
 import io.helidon.examples.inject.basics.Big;
 import io.helidon.examples.inject.basics.Little;
-import io.helidon.inject.ContextualServiceQuery;
-import io.helidon.inject.InjectionPointProvider;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Qualifier;
 
 import static io.helidon.common.LazyValue.create;
 
 @Injection.Singleton
+@Injection.Named("*")
 public class BladeProvider implements InjectionPointProvider<Blade> {
 
     static final LazyValue<Optional<Blade>> LARGE_BLADE = create(() -> Optional.of(new SizedBlade(SizedBlade.Size.LARGE)));
@@ -48,7 +49,7 @@ public class BladeProvider implements InjectionPointProvider<Blade> {
      * @see NailProvider
      */
     @Override
-    public Optional<Blade> first(ContextualServiceQuery query) {
+    public Optional<Blade> first(ContextualLookup query) {
         if (contains(query.qualifiers(), Big.class)) {
             return logAndReturn(LARGE_BLADE.get(), query);
         } else if (contains(query.qualifiers(), Little.class)) {
@@ -58,7 +59,7 @@ public class BladeProvider implements InjectionPointProvider<Blade> {
     }
 
     static Optional<Blade> logAndReturn(Optional<Blade> result,
-                                        ContextualServiceQuery query) {
+                                        ContextualLookup query) {
         Ip ip = query.injectionPoint().orElse(null);
         // note: a "regular" service lookup via Injection will not have an injection point associated with it
         if (ip != null) {

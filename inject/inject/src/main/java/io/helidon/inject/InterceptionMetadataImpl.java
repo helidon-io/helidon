@@ -27,6 +27,7 @@ import io.helidon.inject.service.Interception;
 import io.helidon.inject.service.InterceptionMetadata;
 import io.helidon.inject.service.InvocationContext;
 import io.helidon.inject.service.Invoker;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceInfo;
 
@@ -69,7 +70,7 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         }
 
         // need to find all interceptors for the providers (ordered by weight)
-        List<ServiceProvider<Interception.Interceptor>> allInterceptors;
+        List<RegistryServiceProvider<Interception.Interceptor>> allInterceptors;
 
         if (services instanceof ServicesImpl si) {
             allInterceptors = si.interceptors();
@@ -82,7 +83,7 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
 
         List<Supplier<Interception.Interceptor>> result = new ArrayList<>();
 
-        for (ServiceProvider<Interception.Interceptor> interceptor : allInterceptors) {
+        for (RegistryServiceProvider<Interception.Interceptor> interceptor : allInterceptors) {
             if (applicable(typeAnnotations, interceptor)) {
                 result.add(interceptor);
                 continue;
@@ -95,7 +96,7 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         return result;
     }
 
-    private boolean applicable(List<Annotation> typeAnnotations, ServiceProvider<Interception.Interceptor> interceptor) {
+    private boolean applicable(List<Annotation> typeAnnotations, RegistryServiceProvider<Interception.Interceptor> interceptor) {
         for (Annotation typeAnnotation : typeAnnotations) {
             if (interceptor.qualifiers().contains(Qualifier.createNamed(typeAnnotation.typeName().fqName()))) {
                 return true;

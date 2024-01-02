@@ -39,10 +39,10 @@
         <module>codegen</module>
         <module>codegen-jakarta</module>
         <module>codegen-javax</module>
-        <module>configdriven</module>
-        <module>maven-plugin</module>
         <module>testing</module>
         <module>tests</module>
+        <module>configdriven</module>
+        <module>maven-plugin</module>
     </modules>
 
 </project>

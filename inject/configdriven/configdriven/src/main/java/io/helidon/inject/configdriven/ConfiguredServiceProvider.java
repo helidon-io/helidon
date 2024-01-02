@@ -16,17 +16,17 @@
 
 package io.helidon.inject.configdriven;
 
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.configdriven.service.ConfigBeanFactory;
 import io.helidon.inject.configdriven.service.NamedInstance;
 
 /**
- * An extension to {@link ServiceProvider} that represents a config-driven service.
+ * An extension to {@link io.helidon.inject.RegistryServiceProvider} that represents a config-driven service.
  *
  * @param <T>  the type of this service provider manages
  * @param <CB> the type of config beans that this service is configured by
  */
-public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, ConfigBeanFactory<CB> {
+public interface ConfiguredServiceProvider<T, CB> extends RegistryServiceProvider<T>, ConfigBeanFactory<CB> {
 
     /**
      * Returns the config bean associated with this managed service provider.

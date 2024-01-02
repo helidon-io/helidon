@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.Weighted;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ServiceBinder;
 
 /**

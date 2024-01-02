@@ -40,12 +40,12 @@ public class HelloInjection__Application implements Application {
         }
 
         binder.bindTo(HelloInjectionImpl__ServiceDescriptor.INSTANCE)
-                .bind(HelloInjectionImpl__ServiceDescriptor.IP_0, false, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
-                .bind(HelloInjectionImpl__ServiceDescriptor.IP_1, true, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
-                .bindMany(HelloInjectionImpl__ServiceDescriptor.IP_2, true, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
-                .bindMany(HelloInjectionImpl__ServiceDescriptor.IP_3, false, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
-                .bindOptional(HelloInjectionImpl__ServiceDescriptor.IP_4, false)
-                .bind(HelloInjectionImpl__ServiceDescriptor.IP_5, false, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
+                .bind(HelloInjectionImpl__ServiceDescriptor.IP_0, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
+                .bindProvider(HelloInjectionImpl__ServiceDescriptor.IP_1, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
+                .bindProviderList(HelloInjectionImpl__ServiceDescriptor.IP_2, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
+                .bindList(HelloInjectionImpl__ServiceDescriptor.IP_3, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
+                .bindOptional(HelloInjectionImpl__ServiceDescriptor.IP_4)
+                .bind(HelloInjectionImpl__ServiceDescriptor.IP_5, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
                 .commit();
 
         binder.bindTo(InjectionWorldImpl__ServiceDescriptor.INSTANCE)

@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.inject.ContextualServiceQuery;
-import io.helidon.inject.InjectionPointProvider;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.tests.inject.Verification;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
 import io.helidon.inject.tests.inject.tbox.AbstractSaw;
@@ -93,9 +93,8 @@ public class HandSaw extends AbstractSaw {
     }
 
     @Injection.Inject
-    @SuppressWarnings("unchecked")
-    void setAllBlades(@Injection.Named("*") List<Supplier<AbstractBlade>> blades) {
-        setterInjectedAllProviderListInSubClass = (List) blades;
+    void setAllBlades(@Injection.Named("*") List<InjectionPointProvider<AbstractBlade>> blades) {
+        setterInjectedAllProviderListInSubClass = blades;
         setterInjectedAllProviderListInSubClassInjectedCount++;
     }
 
@@ -120,10 +119,11 @@ public class HandSaw extends AbstractSaw {
         Verification.verifyInjected(setterInjectedPkgPrivateListInSubClass, getClass() +
                 ".setBladeList(List<AbstractBlade> blades)", setterInjectedPkgPrivateListInSubClassInjectedCount, 1, AbstractBlade.class);
         Verification.verifyInjected(setterInjectedAllProviderListInSubClass, getClass() +
-                 ".setAllBlades(List<AbstractBlade> blades)", setterInjectedAllProviderListInSubClassInjectedCount, 1, ServiceProvider.class);
-        List<AbstractBlade> blades = setterInjectedAllProviderListInSubClass.get(0)
-                .list(ContextualServiceQuery.builder()
+                 ".setAllBlades(List<AbstractBlade> blades)", setterInjectedAllProviderListInSubClassInjectedCount, 1, InjectionPointProvider.class);
+        List<AbstractBlade> blades = setterInjectedAllProviderListInSubClass.getFirst()
+                .list(ContextualLookup.builder()
                               .addContract(AbstractBlade.class)
+                              .addQualifier(Qualifier.WILDCARD_NAMED)
                               .build());
         Verification.verifyInjected(blades, getClass() +
                 "<all blades>", null, 3, AbstractBlade.class);

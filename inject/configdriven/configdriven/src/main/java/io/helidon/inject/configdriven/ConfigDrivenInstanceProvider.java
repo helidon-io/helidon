@@ -25,12 +25,12 @@ import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationRequest;
 import io.helidon.inject.InjectionResolver;
 import io.helidon.inject.InjectionServiceProviderException;
-import io.helidon.inject.Lookup;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ServiceProviderBase;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.InjectionContext;
 import io.helidon.inject.service.Ip;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceDescriptor;
 
@@ -59,12 +59,7 @@ class ConfigDrivenInstanceProvider<T, CB>
     }
 
     @Override
-    public boolean isRootProvider() {
-        return false;
-    }
-
-    @Override
-    public Optional<ServiceProvider<?>> rootProvider() {
+    public Optional<RegistryServiceProvider<?>> rootProvider() {
         return Optional.of(root);
     }
 
@@ -72,7 +67,7 @@ class ConfigDrivenInstanceProvider<T, CB>
     @Override
     public Optional<Object> resolve(Ip ipInfo,
                                     Services services,
-                                    ServiceProvider<?> serviceProvider,
+                                    RegistryServiceProvider<?> serviceProvider,
                                     boolean resolveIps) {
 
         Lookup dep = Lookup.create(ipInfo);
@@ -108,17 +103,17 @@ class ConfigDrivenInstanceProvider<T, CB>
     }
 
     @Override
-    protected void prepareDependency(Services services, Map<Ip, Supplier<?>> injectionPlan, Ip dependency) {
+    protected void prepareDependency(Services services, Map<Ip, Supplier<?>> injectionPlan, Ip injectionPoint) {
         // it the type is this bean's type and it does not have any additional qualifier,
         // inject instance
 
-        if (dependency.contract().equals(configBeanType) && dependency.qualifiers().isEmpty()) {
+        if (injectionPoint.contract().equals(configBeanType) && injectionPoint.qualifiers().isEmpty()) {
             // we are injecting the config bean that drives this instance
-            injectionPlan.put(dependency, () -> beanInstance);
+            injectionPlan.put(injectionPoint, () -> beanInstance);
             return;
         }
 
-        super.prepareDependency(services, injectionPlan, dependency);
+        super.prepareDependency(services, injectionPlan, injectionPoint);
     }
 
     @Override

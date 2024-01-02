@@ -16,10 +16,13 @@
 
 package io.helidon.inject.configdriven;
 
+import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectTypes;
+import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.ServiceDescriptor;
 
 /**
@@ -37,6 +40,20 @@ public class CbrServiceDescriptor implements ServiceDescriptor<ConfigBeanRegistr
     private static final TypeName CBR_TYPE = TypeName.create(ConfigBeanRegistry.class);
     private static final TypeName INFO_TYPE = TypeName.create(CbrServiceDescriptor.class);
     private static final Set<TypeName> CONTRACTS = Set.of(CBR_TYPE);
+    private static final TypeName CONFIG_TYPE = TypeName.create(Config.class);
+
+    /**
+     * Injection point describing required {@link io.helidon.common.config.Config} instance.
+     */
+    public static final Ip CONFIG_IP = Ip.builder()
+            .typeName(CONFIG_TYPE)
+            .name("config")
+            .service(TYPE)
+            .descriptor(INFO_TYPE)
+            .field("CONFIG_IP")
+            .contract(CONFIG_TYPE)
+            .build();
+    private static final List<Ip> DEPENDENCIES = List.of(CONFIG_IP);
 
     @Override
     public String runtimeId() {
@@ -60,6 +77,11 @@ public class CbrServiceDescriptor implements ServiceDescriptor<ConfigBeanRegistr
 
     @Override
     public Set<TypeName> scopes() {
-        return Set.of(InjectTypes.SINGLETON);
+        return Set.of(Injection.Singleton.TYPE_NAME);
+    }
+
+    @Override
+    public List<Ip> dependencies() {
+        return DEPENDENCIES;
     }
 }

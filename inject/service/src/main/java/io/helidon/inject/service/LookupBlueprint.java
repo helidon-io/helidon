@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.inject;
+package io.helidon.inject.service;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -23,16 +23,12 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.ServiceInfo;
 
 /**
- * Criteria to discover services.
- *
- * @see io.helidon.inject.Services
+ * Lookup criteria to discover services, mostly used when interacting with a service registry.
  */
 @Prototype.Blueprint
-@Prototype.CustomMethods(ServiceInfoCriteriaSupport.CustomMethods.class)
+@Prototype.CustomMethods(LookupSupport.CustomMethods.class)
 interface LookupBlueprint {
 
     /**
@@ -115,7 +111,7 @@ interface LookupBlueprint {
      * @return true if this criteria matches the service descriptor
      */
     default boolean matches(ServiceInfo serviceInfo) {
-        if (this == ServiceInfoCriteriaSupport.CustomMethods.EMPTY) {
+        if (this == LookupSupport.CustomMethods.EMPTY) {
             return !serviceInfo.isAbstract();
         }
 
@@ -140,7 +136,7 @@ interface LookupBlueprint {
      * @return true if the criteria provided matches this instance from only the contracts point of view
      */
     default boolean matchesContracts(Lookup criteria) {
-        if (criteria == ServiceInfoCriteriaSupport.CustomMethods.EMPTY) {
+        if (criteria == LookupSupport.CustomMethods.EMPTY) {
             return true;
         }
 

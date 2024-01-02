@@ -39,25 +39,26 @@ import io.helidon.inject.ActivationRequest;
 import io.helidon.inject.ActivationResult;
 import io.helidon.inject.ActivationStatus;
 import io.helidon.inject.Activator;
-import io.helidon.inject.ContextualServiceQuery;
 import io.helidon.inject.DeActivationRequest;
 import io.helidon.inject.HelidonInjectionContext;
 import io.helidon.inject.InjectionResolver;
 import io.helidon.inject.InjectionServiceProviderException;
-import io.helidon.inject.Lookup;
 import io.helidon.inject.Phase;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ServiceInjectionPlanBinder;
-import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.ServiceProviderBase;
 import io.helidon.inject.ServiceProviderProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.configdriven.service.ConfigBeanFactory;
 import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.configdriven.service.NamedInstance;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.InjectionContext;
 import io.helidon.inject.service.Ip;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceDescriptor;
+import io.helidon.inject.service.ServiceInfo;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -103,7 +104,7 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
     @Override
     public Optional<Object> resolve(Ip ipInfo,
                                     Services services,
-                                    ServiceProvider<?> serviceProvider,
+                                    RegistryServiceProvider<?> serviceProvider,
                                     boolean resolveIps) {
         if (resolveIps) {
             // too early to resolve...
@@ -157,9 +158,9 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
     }
 
     @Override
-    public List<ServiceProvider<?>> serviceProviders(Lookup criteria,
-                                                     boolean wantThis,
-                                                     boolean thisAlreadyMatches) {
+    public List<RegistryServiceProvider<?>> serviceProviders(Lookup criteria,
+                                                             boolean wantThis,
+                                                             boolean thisAlreadyMatches) {
         /*
         the request may be for either:
         - Root service provider (the config driven type)
@@ -190,7 +191,7 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
 
         boolean serviceTypeMatch = criteria.matches(this);
         if (managedQualify) {
-            List<ServiceProvider<?>> result = new ArrayList<>();
+            List<RegistryServiceProvider<?>> result = new ArrayList<>();
 
             if (criteria.contracts().contains(configBeanType())) {
                 for (ConfigBeanServiceProvider<CB> managedConfigBean : managedConfigBeans) {
@@ -243,7 +244,7 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
 
     @Override
     @SuppressWarnings("unchecked")
-    public Optional<T> first(ContextualServiceQuery query) {
+    public Optional<T> first(ContextualLookup query) {
         // we are root provider
         if (currentActivationPhase() != Phase.ACTIVE) {
             // we know the activator is present, as we send it through constructor...
@@ -251,15 +252,12 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
                                                           .targetPhase(services().limitRuntimePhase())
                                                           .build());
             if (res.failure()) {
-                if (query.expected()) {
-                    throw new InjectionServiceProviderException("Activation failed: " + res, this);
-                }
                 return Optional.empty();
             }
         }
 
-        List<ServiceProvider<?>> qualifiedProviders = serviceProviders(query, false, true);
-        for (ServiceProvider<?> qualifiedProvider : qualifiedProviders) {
+        List<RegistryServiceProvider<?>> qualifiedProviders = serviceProviders(query, false, true);
+        for (RegistryServiceProvider<?> qualifiedProvider : qualifiedProviders) {
             assert (this != qualifiedProvider);
             Optional<?> serviceOrProvider = qualifiedProvider.first(query);
             if (serviceOrProvider.isPresent()) {
@@ -267,16 +265,12 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
             }
         }
 
-        if (query.expected()) {
-            throw new InjectionServiceProviderException("Expected to find a match", this);
-        }
-
         return Optional.empty();
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<T> list(ContextualServiceQuery query) {
+    public List<T> list(ContextualLookup query) {
         // we are root
         Map<String, ConfigDrivenInstanceProvider<?, CB>> matching = managedServiceProviders(query);
         if (!matching.isEmpty()) {
@@ -289,13 +283,7 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
             }
         }
 
-        if (!query.expected()) {
-            return List.of();
-        }
-
-        throw new InjectionServiceProviderException("Expected to return a non-null instance for: "
-                                                            + query.injectionPoint()
-                                                            + "; with criteria matching: " + query, this);
+        return List.of();
     }
 
     @Override
@@ -367,7 +355,7 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
     }
 
     @Override
-    protected void prepareDependency(Services services, Map<Ip, Supplier<?>> injectionPlan, Ip dependency) {
+    protected void prepareDependency(Services services, Map<Ip, Supplier<?>> injectionPlan, Ip injectionPoint) {
         // do nothing, config driven root service CANNOT be instantiated, as it does not have
         // a config bean to inject
     }
@@ -462,25 +450,41 @@ class ConfigDrivenServiceProvider<T, CB> extends ServiceProviderBase<T>
         }
 
         @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBind(Ip id, boolean useProvider, Class<?> serviceType) {
-
-            if (id.contract().equals(self.configBeanType()) && id.qualifiers().isEmpty()) {
-                beanInstanceBindings.add(new RuntimeBind(id, useProvider, false));
+        public ServiceInjectionPlanBinder.Binder runtimeBind(Ip injectionPoint, ServiceInfo serviceInfo) {
+            if (injectionPoint.contract().equals(self.configBeanType()) && injectionPoint.qualifiers().isEmpty()) {
+                beanInstanceBindings.add(new RuntimeBind(injectionPoint, false, false));
                 return this;
             }
-
-            return super.runtimeBind(id, useProvider, serviceType);
+            return super.runtimeBind(injectionPoint, serviceInfo);
         }
 
         @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindOptional(Ip id, boolean useProvider, Class<?> serviceType) {
+        public ServiceInjectionPlanBinder.Binder runtimeBindProvider(Ip injectionPoint, ServiceInfo serviceInfo) {
+            if (injectionPoint.contract().equals(self.configBeanType()) && injectionPoint.qualifiers().isEmpty()) {
+                beanInstanceBindings.add(new RuntimeBind(injectionPoint, true, false));
+                return this;
+            }
+            return super.runtimeBindProvider(injectionPoint, serviceInfo);
+        }
 
-            if (id.contract().equals(self.configBeanType()) && id.qualifiers().isEmpty()) {
-                beanInstanceBindings.add(new RuntimeBind(id, useProvider, false));
+        @Override
+        public ServiceInjectionPlanBinder.Binder runtimeBindOptional(Ip injectionPoint, ServiceInfo serviceInfo) {
+            if (injectionPoint.contract().equals(self.configBeanType()) && injectionPoint.qualifiers().isEmpty()) {
+                beanInstanceBindings.add(new RuntimeBind(injectionPoint, false, true));
                 return this;
             }
 
-            return super.runtimeBindOptional(id, useProvider, serviceType);
+            return super.runtimeBindOptional(injectionPoint, serviceInfo);
+        }
+
+        @Override
+        public ServiceInjectionPlanBinder.Binder runtimeBindProviderOptional(Ip injectionPoint, ServiceInfo serviceInfo) {
+            if (injectionPoint.contract().equals(self.configBeanType()) && injectionPoint.qualifiers().isEmpty()) {
+                beanInstanceBindings.add(new RuntimeBind(injectionPoint, true, true));
+                return this;
+            }
+
+            return super.runtimeBindProviderOptional(injectionPoint, serviceInfo);
         }
 
         @Override

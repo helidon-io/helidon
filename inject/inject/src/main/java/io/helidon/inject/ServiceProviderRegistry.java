@@ -19,6 +19,7 @@ package io.helidon.inject;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ServiceInfo;
 
 /**
@@ -39,7 +40,7 @@ public interface ServiceProviderRegistry {
      * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      */
-    default <T> Optional<ServiceProvider<T>> first(Lookup lookup) {
+    default <T> Optional<RegistryServiceProvider<T>> first(Lookup lookup) {
         return this.<T>all(lookup)
                 .stream()
                 .findFirst();
@@ -52,7 +53,7 @@ public interface ServiceProviderRegistry {
      * @param <T>  service type or service contract
      * @return the best service provider matching the lookup
      */
-    default <T> Optional<ServiceProvider<T>> first(Class<T> type) {
+    default <T> Optional<RegistryServiceProvider<T>> first(Class<T> type) {
         return first(Lookup.builder()
                              .addContract(type)
                              .build());
@@ -66,7 +67,7 @@ public interface ServiceProviderRegistry {
      * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      */
-    default <T> ServiceProvider<T> get(Lookup lookup) {
+    default <T> RegistryServiceProvider<T> get(Lookup lookup) {
         return this.<T>first(lookup)
                 .orElseThrow(() -> new InjectionException("There are no services matching " + lookup));
     }
@@ -78,7 +79,7 @@ public interface ServiceProviderRegistry {
      * @param <T>  service type or service contract
      * @return the best service provider matching the lookup
      */
-    default <T> ServiceProvider<T> get(Class<T> type) {
+    default <T> RegistryServiceProvider<T> get(Class<T> type) {
         return get(Lookup.create(type));
     }
 
@@ -89,7 +90,7 @@ public interface ServiceProviderRegistry {
      * @param <T>    type of the expected service providers, use {@code Object} if not known, or may contain a mix of types
      * @return list of service providers
      */
-    <T> List<ServiceProvider<T>> all(Lookup lookup);
+    <T> List<RegistryServiceProvider<T>> all(Lookup lookup);
 
     /**
      * Get all service providers matching the lookup with the expectation that there may not be a match available.
@@ -98,7 +99,7 @@ public interface ServiceProviderRegistry {
      * @param <T>  type of the expected service providers
      * @return list of service providers ordered, may be empty if there is no match
      */
-    default <T> List<ServiceProvider<T>> all(Class<T> type) {
+    default <T> List<RegistryServiceProvider<T>> all(Class<T> type) {
         return all(Lookup.builder()
                            .addContract(type)
                            .build());
@@ -112,5 +113,5 @@ public interface ServiceProviderRegistry {
      * @return service provider created for the descriptor
      * @throws java.util.NoSuchElementException in case the descriptor is not part of this registry
      */
-    <T> ServiceProvider<T> get(ServiceInfo serviceInfo);
+    <T> RegistryServiceProvider<T> get(ServiceInfo serviceInfo);
 }

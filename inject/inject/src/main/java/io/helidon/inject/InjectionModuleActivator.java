@@ -19,6 +19,7 @@ package io.helidon.inject;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceDescriptor;
@@ -79,7 +80,7 @@ class InjectionModuleActivator extends ServiceProviderBase<ModuleComponent> {
 
         @Override
         public Set<TypeName> scopes() {
-            return Set.of(InjectTypes.SINGLETON);
+            return Set.of(Injection.Singleton.TYPE_NAME);
         }
     }
 }

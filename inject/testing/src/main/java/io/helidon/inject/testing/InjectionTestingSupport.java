@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
 import io.helidon.common.LazyValue;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ResettableHandler;
-import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.ServiceDescriptor;
 
@@ -100,7 +100,7 @@ public class InjectionTestingSupport {
             providerOrInstance = optional.orElse(null);
         }
 
-        if (providerOrInstance instanceof ServiceProvider<?> sp) {
+        if (providerOrInstance instanceof RegistryServiceProvider<?> sp) {
             return sp.description();
         }
         return String.valueOf(providerOrInstance);

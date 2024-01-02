@@ -46,12 +46,12 @@ import io.helidon.codegen.ModuleInfoSourceParser;
 import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Lookup;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ServiceProviderBindable;
 import io.helidon.inject.ServiceProviderProvider;
 import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.codegen.InjectionCodegenContext;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
 
 import org.apache.maven.artifact.Artifact;
@@ -136,8 +136,6 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         // module name to use to define application name (should be the same as ModuleComponent uses for this module)
         String moduleName = moduleName(codegenOptions, myModuleInfo, packageName, scope);
 
-        Thread.currentThread().setContextClassLoader(loader);
-
         MavenLogger mavenLogger = MavenLogger.create(getLog(), failOnWarning());
         MavenCodegenContext scanContext = MavenCodegenContext.create(codegenOptions,
                                                                      scope,
@@ -148,6 +146,8 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
 
         InjectionServices injectionServices = null;
         try {
+            Thread.currentThread().setContextClassLoader(loader);
+
             injectionServices = MavenPluginUtils.injectionServices(false);
             if (injectionServices.config().useApplication()) {
                 throw new IllegalStateException("Maven plugin service registry must not be using 'application' bindings");
@@ -155,7 +155,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
             ServiceProviderRegistry services = injectionServices.services().serviceProviders();
 
 
-            List<ServiceProvider<ModuleComponent>> allModules = services.all(ModuleComponent.class);
+            List<RegistryServiceProvider<ModuleComponent>> allModules = services.all(ModuleComponent.class);
             getLog().debug("Processing modules: " + MavenPluginUtils.toDescriptions(allModules));
 
             if (allModules.isEmpty()) {
@@ -163,7 +163,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
             }
 
             // retrieves all the services in the registry
-            List<ServiceProvider<Object>> allServices = services.all(Lookup.EMPTY);
+            List<RegistryServiceProvider<Object>> allServices = services.all(Lookup.EMPTY);
             if (allServices.isEmpty()) {
                 warn("Application creator found no services to process");
                 return;
@@ -294,12 +294,12 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         return Set.of();
     }
 
-    Set<TypeName> toNames(List<ServiceProvider<Object>> services) {
-        Map<TypeName, ServiceProvider<?>> result = new LinkedHashMap<>();
+    Set<TypeName> toNames(List<RegistryServiceProvider<Object>> services) {
+        Map<TypeName, RegistryServiceProvider<?>> result = new LinkedHashMap<>();
         services.forEach(sp -> {
-            ServiceProvider<?> rootProvider = toRootProvider(sp);
+            RegistryServiceProvider<?> rootProvider = toRootProvider(sp);
             TypeName serviceType = rootProvider.serviceType();
-            ServiceProvider<?> prev = result.put(serviceType, rootProvider);
+            RegistryServiceProvider<?> prev = result.put(serviceType, rootProvider);
             if (prev != null) {
                 if (!(prev instanceof ServiceProviderProvider)) {
                     throw new CodegenException("There are two registrations for the same service type: " + prev + " and " + sp);
@@ -377,7 +377,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      * @param sp the service provider
      * @return the root provider of the service provider, falling back to the service provider passed
      */
-    private static ServiceProvider<?> toRootProvider(ServiceProvider<?> sp) {
+    private static RegistryServiceProvider<?> toRootProvider(RegistryServiceProvider<?> sp) {
         Optional<? extends ServiceProviderBindable<?>> bindable = sp.serviceProviderBindable();
         if (bindable.isPresent()) {
             sp = bindable.get().rootProvider().orElse(sp);
