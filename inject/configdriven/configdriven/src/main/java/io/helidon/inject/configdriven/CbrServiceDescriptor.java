@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.inject.configdriven;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.config.Config;
@@ -46,7 +47,7 @@ public class CbrServiceDescriptor implements ServiceDescriptor<ConfigBeanRegistr
      * Injection point describing required {@link io.helidon.common.config.Config} instance.
      */
     public static final Ip CONFIG_IP = Ip.builder()
-            .typeName(CONFIG_TYPE)
+            .typeName(TypeName.create(Optional.class.getName() + "<" + CONFIG_TYPE.fqName() + ">"))
             .name("config")
             .service(TYPE)
             .descriptor(INFO_TYPE)

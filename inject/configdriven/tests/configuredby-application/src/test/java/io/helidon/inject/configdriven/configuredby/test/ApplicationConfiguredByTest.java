@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,13 +57,11 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
         long lookupCount = counter.count() - initialCount;
 
 
-        // everything is handled by Application class
-        // except for config beans, and these are handled by  ConfigDrivenInstanceProvider itself
-        // there is always a lookup for Config from config bean registry
-        // nothing else should be done
-        assertThat("There should only be a single lookup - from ConfigBeanRegistry to get Config",
+        // everything is handled by Application class, now even config beans
+        // the CbrProvider itself uses an announced dependency that is fulfilled by the app if present.
+        assertThat("There should only be no lookups",
                    lookupCount,
-                   is(1L));
+                   is(0L));
     }
 
     @Test

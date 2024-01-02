@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +96,10 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName SERVICE_PROVIDER = TypeName.create("io.helidon.inject.service.ServiceProvider");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.RegistryServiceProvider}.
+     */
+    public static final TypeName REGISTRY_SERVICE_PROVIDER = TypeName.create("io.helidon.inject.RegistryServiceProvider");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.InjectionPointProvider}.
      */
     public static final TypeName INJECTION_POINT_PROVIDER = TypeName.create("io.helidon.inject.service.InjectionPointProvider");
@@ -131,6 +135,38 @@ public final class InjectCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.ServiceInjectionPlanBinder}.
      */
     public static final TypeName SERVICE_INJECTION_PLAN_BINDER = TypeName.create("io.helidon.inject.ServiceInjectionPlanBinder");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InjectionConfig}.
+     */
+    public static final TypeName INJECTION_CONFIG = TypeName.create("io.helidon.inject.InjectionConfig");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.Phase}.
+     */
+    public static final TypeName INJECT_PHASE = TypeName.create("io.helidon.inject.Phase");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InjectionServices}.
+     */
+    public static final TypeName INJECT_INJECTION_SERVICES = TypeName.create("io.helidon.inject.InjectionServices");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.Services}.
+     */
+    public static final TypeName INJECT_SERVICES = TypeName.create("io.helidon.inject.Services");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.ServiceProviderRegistry}.
+     */
+    public static final TypeName INJECT_PROVIDER_SERVICES = TypeName.create("io.helidon.inject.ServiceProviderRegistry");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.RegistryServiceProvider}.
+     */
+    public static final TypeName INJECT_REGISTRY_SERVICE_PROVIDER = TypeName.create("io.helidon.inject.RegistryServiceProvider");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.ServiceProviderBindable}.
+     */
+    public static final TypeName INJECT_SERVICE_PROVIDER_BINDABLE = TypeName.create("io.helidon.inject.ServiceProviderBindable");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InjectionResolver}.
+     */
+    public static final TypeName INJECT_INJECTION_RESOLVER = TypeName.create("io.helidon.inject.InjectionResolver");
 
     private InjectCodegenTypes() {
     }

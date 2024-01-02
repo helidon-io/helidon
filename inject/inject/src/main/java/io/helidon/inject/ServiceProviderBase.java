@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,11 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.InjectionContext;
 import io.helidon.inject.service.InjectionPointProvider;
@@ -704,7 +702,8 @@ public abstract class ServiceProviderBase<T>
         public ServiceInjectBinderImpl bindProvider(Ip injectionPoint, ServiceInfo serviceInfo) {
             RegistryServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders().get(serviceInfo),
                                                                                      injectionPoint);
-            resolveProviders(injectionPoint, serviceProvider, sp -> sp);
+            ServiceProvider<?> usedProvider = resolveProvider(injectionPoint, serviceProvider);
+            injectionPlan.put(injectionPoint, () -> usedProvider);
 
             return this;
         }
@@ -736,7 +735,8 @@ public abstract class ServiceProviderBase<T>
                                                                                                  .get(serviceInfos[0]),
                                                                                          injectionPoint);
 
-                resolveProviders(injectionPoint, serviceProvider, Optional::of);
+                ServiceProvider<?> usedProvider = resolveProvider(injectionPoint, serviceProvider);
+                injectionPlan.put(injectionPoint, () -> Optional.of(usedProvider));
             }
 
             return this;
@@ -773,6 +773,7 @@ public abstract class ServiceProviderBase<T>
                     .toList();
 
             injectionPlan.put(injectionPoint, () -> providers.stream()
+                    .flatMap(it -> handleProvidersProvider(injectionPoint, it))
                     .map(it -> resolveProvider(injectionPoint, it))
                     .toList());
 
@@ -942,8 +943,15 @@ public abstract class ServiceProviderBase<T>
                                                                                              .get(serviceInfo),
                                                                                      injectionPoint);
 
-            resolveProviders(injectionPoint, serviceProvider, sp -> sp);
+            ServiceProvider<?> usedProvider = resolveProvider(injectionPoint, serviceProvider);
+            injectionPlan.put(injectionPoint, () -> usedProvider);
+
             return this;
+        }
+
+        @Override
+        public String toString() {
+            return self.description();
         }
 
         /**
@@ -955,51 +963,32 @@ public abstract class ServiceProviderBase<T>
             return injectionPlan;
         }
 
-        private Object resolveProvider(Ip injectionPoint,
-                                       RegistryServiceProvider<?> serviceProvider) {
-            Set<TypeName> contracts = serviceProvider.contracts();
-            if (contracts.contains(ServiceProvider.TYPE)) {
-                // the service implementation actually implements a service provider
-                return serviceProvider;
-            } else if (contracts.contains(TypeNames.SUPPLIER)) {
-                // the service implementation is a Supplier, so we treat it as a service provider (the simplistic version)
-                return ServiceProviderFactory.create((Supplier<?>) serviceProvider.get());
-            } else if (contracts.contains(InjectionPointProvider.TYPE)
-                    && !injectionPoint.contract().equals(InjectionPointProvider.TYPE)) {
-                // the service implementation is an injection point provider, user injects Provider - we are OK to inject
-                // the correctly contextualized instance (if user wants to inject InjectionPointProvider, they should let us know)
-                return new BoundIpProvider<>(injectionPoint, serviceProvider);
-            } else {
-                // the registry provider does not provide a provider like contract, use it instead
-                return serviceProvider;
+        private Stream<? extends RegistryServiceProvider<?>> handleProvidersProvider(Ip injectionPoint,
+                                                                                     RegistryServiceProvider<?> sp) {
+            if (sp instanceof ServiceProviderProvider spp) {
+                List<? extends RegistryServiceProvider<?>> managed = spp.serviceProviders(Lookup.create(
+                        injectionPoint), false, false);
+                if (!managed.isEmpty()) {
+                    return managed.stream();
+                }
             }
+            return Stream.of(sp);
         }
 
-        private void resolveProviders(Ip injectionPoint,
-                                      RegistryServiceProvider<?> serviceProvider,
-                                      Function<ServiceProvider<?>, Object> providerConversion) {
+        private ServiceProvider<?> resolveProvider(Ip injectionPoint,
+                                                   RegistryServiceProvider<?> serviceProvider) {
 
             Set<TypeName> contracts = serviceProvider.contracts();
-            if (contracts.contains(ServiceProvider.TYPE)) {
-                // the service implementation actually implements a service provider
-                injectionPlan.put(injectionPoint, new IpValue<>(injectionPoint, serviceProvider));
-            } else if (contracts.contains(TypeNames.SUPPLIER)) {
-                // the service implementation is a Supplier, so we treat it as a service provider (the simplistic version)
-                injectionPlan.put(injectionPoint, new IpValue<>(injectionPoint,
-                                                                providerConversion.apply(ServiceProviderFactory.create(
-                                                                        () -> ((Supplier<?>) serviceProvider.get()).get())
-                                                                )));
-            } else if (contracts.contains(InjectionPointProvider.TYPE)
+            if (contracts.contains(InjectionPointProvider.TYPE)
                     && !injectionPoint.contract().equals(InjectionPointProvider.TYPE)) {
                 // the service implementation is an injection point provider, user injects Provider - we are OK to inject
                 // the correctly contextualized instance (if user wants to inject InjectionPointProvider, they should let us know)
                 // this is a special case - the provider should always return the same value in this case, as it is bound to
                 // a single injection point
-                injectionPlan.put(injectionPoint,
-                                  () -> new BoundIpProvider<>(injectionPoint, serviceProvider));
+                return new BoundIpProvider<>(injectionPoint, serviceProvider);
             } else {
                 // the registry provider does not provide a provider like contract, use it instead
-                injectionPlan.put(injectionPoint, new IpValue<>(injectionPoint, providerConversion.apply(serviceProvider)));
+                return serviceProvider;
             }
         }
 

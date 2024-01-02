@@ -25,27 +25,30 @@ Optional 'Little' Hammer: Optional[Little Hammer]
 --------------------------------
 - Initializing all tools       -
 --------------------------------
-Angle Grinder Saw: (blade=null); initialized
+io.helidon.examples.inject.providers.AngleGrinderSaw::blade will be injected with Optional[SMALL Blade]
+Angle Grinder Saw: (blade=SMALL Blade); initialized
 io.helidon.examples.inject.providers.CircularSaw::blade will be injected with Optional.empty
 Circular Saw: (blade=null); initialized
+io.helidon.examples.inject.providers.HandSaw::blade will be injected with Optional.empty
 Hand Saw: (blade=null); initialized
-Table Saw: (blade=null); initialized
+io.helidon.examples.inject.providers.TableSaw::blade will be injected with Optional[LARGE Blade]
+Table Saw: (blade=LARGE Blade); initialized
 Hand; initialized
 --------------------------------
 - Tools in the virtual ToolBox -
 --------------------------------
  tool: Nail Gun: (nail provider=NailProvider:INIT)
  tool: Hammer
- tool: Angle Grinder Saw: (blade=null)
+ tool: Angle Grinder Saw: (blade=SMALL Blade)
  tool: Circular Saw: (blade=null)
  tool: Hand Saw: (blade=null)
- tool: Table Saw: (blade=null)
+ tool: Table Saw: (blade=LARGE Blade)
  tool: Big Hammer
  tool: Little Hammer
- tool: Hand
- tool: Hand
+ tool: Hand Drill
+ tool: Impact Drill
 All service providers (after all activations): [NailGun:ACTIVE, ToolBox:ACTIVE, CircularSaw:ACTIVE, TableSaw:ACTIVE]
-Service lookup count: 3
+Service lookup count: 2
 ```
 
 While the output of this example may look similar to the previous [providers](../providers) example, the implementation is different since this example builds (at compile time) [Application.java](target/generated-sources/annotations/io/helidon/examples/inject/application/Injection$$Application.java). This establishes direct bindings to each and every injection point in your application avoiding runtime resolution with the exception for truly dynamic runtime providers (i.e., anything that is config-driven services or _Provider_ type implementations).

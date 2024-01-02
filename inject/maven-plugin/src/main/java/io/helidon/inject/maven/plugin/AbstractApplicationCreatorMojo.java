@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -39,20 +37,14 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.CodegenLogger;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenScope;
 import io.helidon.codegen.ModuleInfo;
 import io.helidon.codegen.ModuleInfoSourceParser;
 import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RegistryServiceProvider;
-import io.helidon.inject.ServiceProviderBindable;
-import io.helidon.inject.ServiceProviderProvider;
-import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.codegen.InjectionCodegenContext;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.ModuleComponent;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -61,8 +53,6 @@ import org.apache.maven.project.MavenProject;
 /**
  * Abstract base for the Injection {@code maven-plugin} responsible for creating {@code Application} and Test
  * {@code Application}'s.
- *
- * @see io.helidon.inject.Application
  */
 abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
     private static final String MODULE_COMPONENT_CLASS_FILE_NAME = InjectionCodegenContext.MODULE_NAME + ".class";
@@ -109,8 +99,11 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
 
     @Override
     protected void innerExecute() {
+
+        MavenLogger mavenLogger = MavenLogger.create(getLog(), failOnWarning());
+
         // we MUST get the exclusion list prior to building the next loader, since it will reset the service registry
-        Set<TypeName> serviceNamesForExclusion = serviceTypeNamesForExclusion();
+        Set<TypeName> serviceNamesForExclusion = serviceTypeNamesForExclusion(mavenLogger);
         getLog().debug("Type names for exclusion: " + serviceNamesForExclusion);
 
         boolean hasModuleInfo = hasModuleInfo();
@@ -118,25 +111,26 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         Set<Path> classpath = getClasspathElements();
         ClassLoader prev = Thread.currentThread().getContextClassLoader();
         URLClassLoader loader = createClassLoader(classpath, prev);
+
+        Optional<ModuleInfo> nonTestModuleInfo = findModuleInfo(nonTestSourceRootPaths())
+                .map(ModuleInfoSourceParser::parse);
+
         /*
         We may have module info both in sources and in tests
          */
         Optional<ModuleInfo> myModuleInfo = findModuleInfo(sourceRootPaths())
                 .map(ModuleInfoSourceParser::parse);
-        Optional<ModuleInfo> nonTestModuleInfo = findModuleInfo(nonTestSourceRootPaths())
-                .map(ModuleInfoSourceParser::parse);
-
         CodegenOptions codegenOptions = MavenOptions.create(toOptions());
+        CodegenScope scope = scope();
         codegenOptions.validate(Set.of(ApplicationOptions.PERMITTED_PROVIDER_TYPE,
                                        ApplicationOptions.PERMITTED_PROVIDER_TYPES,
                                        ApplicationOptions.PERMITTED_PROVIDER_QUALIFIER_TYPES));
-        CodegenScope scope = scope();
+
         // package name to use (should be the same as ModuleComponent package)
         String packageName = packageName(codegenOptions, myModuleInfo, nonTestModuleInfo);
         // module name to use to define application name (should be the same as ModuleComponent uses for this module)
-        String moduleName = moduleName(codegenOptions, myModuleInfo, packageName, scope);
+        String moduleName = moduleName(loader, codegenOptions, myModuleInfo, packageName, scope);
 
-        MavenLogger mavenLogger = MavenLogger.create(getLog(), failOnWarning());
         MavenCodegenContext scanContext = MavenCodegenContext.create(codegenOptions,
                                                                      scope,
                                                                      generatedSourceDirectory(),
@@ -144,70 +138,71 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
                                                                      mavenLogger,
                                                                      myModuleInfo.orElse(null));
 
-        InjectionServices injectionServices = null;
         try {
             Thread.currentThread().setContextClassLoader(loader);
 
-            injectionServices = MavenPluginUtils.injectionServices(false);
-            if (injectionServices.config().useApplication()) {
-                throw new IllegalStateException("Maven plugin service registry must not be using 'application' bindings");
+            try (WrappedServices services = WrappedServices.create(loader, mavenLogger, false)) {
+                CompilerOptions compilerOptions = CompilerOptions.builder()
+                        .classpath(List.copyOf(classpath))
+                        .modulepath(List.copyOf(modulepath))
+                        .sourcepath(sourceRootPaths())
+                        .source(getSource())
+                        .target(getTarget())
+                        .commandLineArguments(getCompilerArgs())
+                        .outputDirectory(outputDirectory())
+                        .build();
+
+                createApplication(scanContext,
+                                  services,
+                                  compilerOptions,
+                                  serviceNamesForExclusion,
+                                  moduleName,
+                                  packageName);
+            } catch (CodegenException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new CodegenException("An error occurred creating the Application in " + getClass().getName(), e);
             }
-            ServiceProviderRegistry services = injectionServices.services().serviceProviders();
-
-
-            List<RegistryServiceProvider<ModuleComponent>> allModules = services.all(ModuleComponent.class);
-            getLog().debug("Processing modules: " + MavenPluginUtils.toDescriptions(allModules));
-
-            if (allModules.isEmpty()) {
-                warn("Application creator found no modules to process");
-            }
-
-            // retrieves all the services in the registry
-            List<RegistryServiceProvider<Object>> allServices = services.all(Lookup.EMPTY);
-            if (allServices.isEmpty()) {
-                warn("Application creator found no services to process");
-                return;
-            }
-
-            Set<TypeName> serviceTypeNames = toNames(allServices);
-            serviceTypeNames.removeAll(serviceNamesForExclusion);
-
-            String className = getGeneratedClassName();
-
-            // get the application creator only after services are initialized (we need to ignore any existing apps)
-            ApplicationCreator creator = new ApplicationCreator(scanContext, failOnError());
-
-            List<String> compilerArgs = getCompilerArgs();
-            CompilerOptions compilerOptions = CompilerOptions.builder()
-                    .classpath(List.copyOf(classpath))
-                    .modulepath(List.copyOf(modulepath))
-                    .sourcepath(sourceRootPaths())
-                    .source(getSource())
-                    .target(getTarget())
-                    .commandLineArguments((compilerArgs != null) ? compilerArgs : List.of())
-                    .outputDirectory(outputDirectory())
-                    .build();
-
-            creator.createApplication(injectionServices,
-                                      serviceTypeNames,
-                                      TypeName.create(packageName + "." + className),
-                                      moduleName,
-                                      compilerOptions);
-
-        } catch (CodegenException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodegenException("An error occurred creating the Application in " + getClass().getName(), e);
         } finally {
-            if (injectionServices != null) {
-                try {
-                    injectionServices.shutdown();
-                } catch (Exception e) {
-                    getLog().warn("Failed to shutdown services created to generate application", e);
-                }
-            }
             Thread.currentThread().setContextClassLoader(prev);
         }
+    }
+
+    protected void createApplication(MavenCodegenContext scanContext,
+                                     WrappedServices services,
+                                     CompilerOptions compilerOptions,
+                                     Set<TypeName> serviceNamesForExclusion,
+                                     String moduleName,
+                                     String packageName) {
+
+        // retrieves all the services in the registry
+        Set<TypeName> allServices = services.all()
+                .stream()
+                .map(WrappedProvider::toRootProvider)
+                .map(WrappedProvider::serviceType)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        if (allServices.isEmpty()) {
+            warn("Application creator found no services to process");
+            return;
+        } else {
+            getLog().debug("All services to be processed (no exclusions applied): " + allServices);
+        }
+
+        allServices.removeAll(serviceNamesForExclusion);
+
+        getLog().debug("All services to be processed (exclusions applied): " + allServices);
+
+        String className = getGeneratedClassName();
+
+        // get the application creator only after services are initialized (we need to ignore any existing apps)
+        ApplicationCreator creator = new ApplicationCreator(scanContext, failOnError());
+
+        creator.createApplication(services,
+                                  allServices,
+                                  TypeName.create(packageName + "." + className),
+                                  moduleName,
+                                  compilerOptions);
     }
 
     /**
@@ -290,24 +285,8 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
     /**
      * @return This represents the set of services that we already code-gen'ed
      */
-    protected Set<TypeName> serviceTypeNamesForExclusion() {
+    protected Set<TypeName> serviceTypeNamesForExclusion(CodegenLogger logger) {
         return Set.of();
-    }
-
-    Set<TypeName> toNames(List<RegistryServiceProvider<Object>> services) {
-        Map<TypeName, RegistryServiceProvider<?>> result = new LinkedHashMap<>();
-        services.forEach(sp -> {
-            RegistryServiceProvider<?> rootProvider = toRootProvider(sp);
-            TypeName serviceType = rootProvider.serviceType();
-            RegistryServiceProvider<?> prev = result.put(serviceType, rootProvider);
-            if (prev != null) {
-                if (!(prev instanceof ServiceProviderProvider)) {
-                    throw new CodegenException("There are two registrations for the same service type: " + prev + " and " + sp);
-                }
-                getLog().debug("There are two registrations for the same service type: " + prev + " and " + sp);
-            }
-        });
-        return new TreeSet<>(result.keySet());
     }
 
     void warn(String msg) {
@@ -371,21 +350,11 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         return getSourceClasspathElements();
     }
 
-    /**
-     * Returns the root provider of the service provider passed.
-     *
-     * @param sp the service provider
-     * @return the root provider of the service provider, falling back to the service provider passed
-     */
-    private static RegistryServiceProvider<?> toRootProvider(RegistryServiceProvider<?> sp) {
-        Optional<? extends ServiceProviderBindable<?>> bindable = sp.serviceProviderBindable();
-        if (bindable.isPresent()) {
-            sp = bindable.get().rootProvider().orElse(sp);
-        }
-        if (sp instanceof ServiceProviderBindable<?> spb) {
-            return spb.rootProvider().orElse(sp);
-        }
-        return sp;
+    // to dot separated path
+    private static String toDotSeparated(Path relativePath) {
+        return StreamSupport.stream(relativePath.spliterator(), false)
+                .map(Path::toString)
+                .collect(Collectors.joining("."));
     }
 
     private String packageName(CodegenOptions codegenOptions,
@@ -398,13 +367,6 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
                 .or(() -> srcModuleInfo.flatMap(this::exportedPackage))
                 .or(this::firstUsedPackage)
                 .orElseThrow(() -> new CodegenException("Unable to determine package for application class."));
-    }
-
-    // to dot separated path
-    private static String toDotSeparated(Path relativePath) {
-        return StreamSupport.stream(relativePath.spliterator(), false)
-                .map(Path::toString)
-                .collect(Collectors.joining("."));
     }
 
     private Optional<String> firstUsedPackage() {
@@ -444,14 +406,15 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         return unqualifiedExports.stream().findFirst();
     }
 
-    private String moduleName(CodegenOptions codegenOptions,
+    private String moduleName(ClassLoader loader,
+                              CodegenOptions codegenOptions,
                               Optional<ModuleInfo> myModuleInfo,
                               String packageName,
                               CodegenScope scope) {
         return CodegenOptions.CODEGEN_MODULE
                 .findValue(codegenOptions)
                 .or(() -> myModuleInfo.map(ModuleInfo::name))
-                .or(this::moduleFromModuleComponent)
+                .or(() -> this.moduleFromModuleComponent(loader))
                 .orElseGet(() -> "unnamed/"
                         + packageName
                         + (scope.isProduction() ? "" : "/" + scope.name()));
@@ -478,18 +441,21 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         return toDotSeparated(rootPath.relativize(parent));
     }
 
-    private Optional<String> moduleFromModuleComponent() {
+    private Optional<String> moduleFromModuleComponent(ClassLoader loader) {
         try (Stream<Path> stream = Files.walk(outputDirectory())) {
             return stream
-                    .filter(it -> it.endsWith(InjectionCodegenContext.MODULE_NAME))
+                    .filter(it -> it.endsWith(InjectionCodegenContext.MODULE_NAME + ".class"))
                     .map(it -> {
                         // instantiate the class, call name() on it
                         String fqn = toDotSeparated(outputDirectory().relativize(it));
+                        fqn = fqn.substring(0, fqn.length() - 6); // remove .class suffix
                         try {
-                            Class<?> moduleComponentClass = Class.forName(fqn);
-                            ModuleComponent moduleComponent = (ModuleComponent) moduleComponentClass.getConstructor()
+                            Class<?> moduleComponentClass = loader.loadClass(fqn);
+                            Object moduleComponent = moduleComponentClass.getConstructor()
                                     .newInstance();
-                            return moduleComponent.name();
+                            // there should be a method `String name()`
+                            return (String) moduleComponent.getClass().getMethod("name")
+                                    .invoke(moduleComponent);
                         } catch (ReflectiveOperationException e) {
                             throw new CodegenException("Failed to instantiate " + fqn + ", needed to get module name", e);
                         }
