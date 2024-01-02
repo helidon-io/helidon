@@ -118,10 +118,10 @@ class IdTokenIT extends CommonLoginBase {
                 .request()
                 .property(ClientProperties.FOLLOW_REDIRECTS, false);
         for (String setCookie : setCookies) {
-            if (!setCookie.startsWith(DEFAULT_ID_COOKIE_NAME + "=")) {
-                request.header(HttpHeaders.COOKIE, setCookie);
-            } else {
+            if (setCookie.startsWith(DEFAULT_ID_COOKIE_NAME + "=")) {
                 request.header(HttpHeaders.COOKIE, DEFAULT_ID_COOKIE_NAME + "=" + signedJwt.tokenContent());
+            } else {
+                request.header(HttpHeaders.COOKIE, setCookie);
             }
         }
 
