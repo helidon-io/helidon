@@ -83,6 +83,14 @@
             <artifactId>helidon-inject-codegen</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen</artifactId>
         </dependency>
@@ -93,11 +101,6 @@
         <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen-compiler</artifactId>
-        </dependency>
-        <!-- for ConfigBeanRegistry (reset) -->
-        <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven</artifactId>
         </dependency>
         <dependency>
             <groupId>io.github.classgraph</groupId>

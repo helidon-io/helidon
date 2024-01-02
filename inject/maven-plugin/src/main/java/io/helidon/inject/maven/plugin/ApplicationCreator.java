@@ -45,17 +45,17 @@ import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionPointProvider;
 import io.helidon.inject.InjectionResolver;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Lookup;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ServiceInjectionPlanBinder;
-import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.codegen.InjectCodegenTypes;
+import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Interception;
 import io.helidon.inject.service.Ip;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.Qualifier;
 
@@ -67,13 +67,13 @@ class ApplicationCreator {
     private static final TypeName APPLICATION = TypeName.create(ModuleComponent.class);
     private static final TypeName CREATOR = TypeName.create(ApplicationCreator.class);
     /**
-     * Helidon {link io.helidon.inject.InjectionPointProvider}.
+     * Helidon {link io.helidon.inject.service.InjectionPointProvider}.
      */
     private static final TypeName INJECTION_POINT_PROVIDER = TypeName.create(InjectionPointProvider.class);
     /**
-     * Helidon {@link io.helidon.inject.ServiceProvider}.
+     * Helidon {@link io.helidon.inject.RegistryServiceProvider}.
      */
-    private static final TypeName SERVICE_PROVIDER = TypeName.create(ServiceProvider.class);
+    private static final TypeName SERVICE_PROVIDER = TypeName.create(RegistryServiceProvider.class);
     private static final TypeName BINDER_TYPE = TypeName.create(ServiceInjectionPlanBinder.class);
 
     private final MavenCodegenContext ctx;
@@ -212,7 +212,7 @@ class ApplicationCreator {
                             TypeName serviceTypeName) {
 
         Lookup si = toServiceInfoCriteria(serviceTypeName);
-        ServiceProvider<?> sp = services.get(si);
+        RegistryServiceProvider<?> sp = services.get(si);
         TypeName serviceDescriptorType = sp.infoType();
 
         if (!isQualifiedInjectionTarget(sp)) {
@@ -230,29 +230,29 @@ class ApplicationCreator {
             TypeName ipType = dependency.typeName();
 
             InjectionPlan iPlan = injectionPlan(serviceRegistry, sp, dependency);
-            List<ServiceProvider<Object>> qualified = iPlan.qualifiedProviders();
-            List<?> unqualified = iPlan.unqualifiedProviders();
+            List<RegistryServiceProvider<?>> qualified = iPlan.qualifiedProviders();
+            List<RegistryServiceProvider<?>> unqualified = iPlan.unqualifiedProviders();
 
             BindingType type = bindingType(ipType);
             boolean isProvider = isProvider(ipType);
+            BindingTime time;
+            List<RegistryServiceProvider<?>> usedList;
 
             if (qualified.isEmpty() && !unqualified.isEmpty()) {
-                Object target = unqualified.getFirst();
-                TypeName targetType;
-                if (target instanceof Class<?> aClass) {
-                    targetType = TypeName.create(aClass);
-                } else if (target instanceof TypeName tn) {
-                    targetType = tn;
-                } else {
-                    // the actual class name may be some generated type, we are interested in the contract required
-                    targetType = dependency.contract();
-                }
-                bindings.add(new Binding(BindingTime.RUNTIME, type, dependency, isProvider, List.of(targetType)));
+                time = BindingTime.RUNTIME;
+                usedList = unqualified;
             } else {
-                bindings.add(new Binding(BindingTime.BUILD, type, dependency, isProvider, qualified.stream()
-                        .map(ServiceProvider::infoType)
-                        .toList()));
+                time = BindingTime.BUILD;
+                usedList = qualified;
             }
+
+            bindings.add(new Binding(time,
+                                     type,
+                                     dependency,
+                                     isProvider,
+                                     usedList.stream()
+                                             .map(RegistryServiceProvider::infoType)
+                                             .toList()));
         }
 
         return new BindingPlan(serviceDescriptorType, bindings);
@@ -260,7 +260,7 @@ class ApplicationCreator {
 
     private static boolean isProvider(TypeName typeName,
                                       Services services) {
-        ServiceProvider<?> sp = toServiceProvider(typeName, services);
+        RegistryServiceProvider<?> sp = toServiceProvider(typeName, services);
         return sp.isProvider();
     }
 
@@ -270,8 +270,8 @@ class ApplicationCreator {
                 .build();
     }
 
-    private static ServiceProvider<?> toServiceProvider(TypeName typeName,
-                                                        Services services) {
+    private static RegistryServiceProvider<?> toServiceProvider(TypeName typeName,
+                                                                Services services) {
         return services.serviceProviders().get(toServiceInfoCriteria(typeName));
     }
 
@@ -281,7 +281,7 @@ class ApplicationCreator {
      * @param sp the service provider
      * @return true if the service provider can receive injection
      */
-    private static boolean isQualifiedInjectionTarget(ServiceProvider<?> sp) {
+    private static boolean isQualifiedInjectionTarget(RegistryServiceProvider<?> sp) {
         Set<TypeName> contractsImplemented = sp.contracts();
         List<Ip> dependencies = sp.dependencies();
 
@@ -299,7 +299,7 @@ class ApplicationCreator {
             return false;
         }
 
-        ServiceProvider<?> sp = toServiceProvider(typeName, services);
+        RegistryServiceProvider<?> sp = toServiceProvider(typeName, services);
         Set<TypeName> spQualifierTypeNames = sp.qualifiers().stream()
                 .map(Annotation::typeName)
                 .collect(Collectors.toSet());
@@ -328,9 +328,9 @@ class ApplicationCreator {
                                                Set<TypeName> serviceTypes) {
         Services services = injectionServices.services();
 
-        List<ServiceProvider<Supplier>> providers = services.serviceProviders().all(Lookup.builder()
-                                                                                            .addContract(Supplier.class)
-                                                                                            .build());
+        List<RegistryServiceProvider<Supplier>> providers = services.serviceProviders().all(Lookup.builder()
+                                                                                                    .addContract(Supplier.class)
+                                                                                                    .build());
         if (providers.isEmpty()) {
             return List.of();
         }
@@ -367,7 +367,7 @@ class ApplicationCreator {
     }
 
     private InjectionPlan injectionPlan(Services services,
-                                        ServiceProvider<?> self,
+                                        RegistryServiceProvider<?> self,
                                         Ip dependency) {
         Lookup dependencyTo = Lookup.create(dependency);
         Set<Qualifier> qualifiers = dependencyTo.qualifiers();
@@ -384,19 +384,23 @@ class ApplicationCreator {
             Optional<Object> resolved = ir.resolve(dependency, services, self, false);
             Object target = resolved.orElse(null);
             if (target != null) {
-                return new InjectionPlan(toUnqualified(target).toList(), toQualified(target).toList());
+                return new InjectionPlan(List.of(self), toQualified(target).toList());
             }
         }
 
-        List<ServiceProvider<Object>> qualifiedProviders = services.serviceProviders().all(dependencyTo);
-        List<ServiceProvider<Object>> unqualifiedProviders = List.of();
+        /*
+        An injection point can be satisfied by:
+        1. a service that matches the type or contract, and qualifiers match
+        2. a Supplier<T> service, where T matches service type or contract, and qualifiers match
+        3. an InjectionPointProvider<T>, where T matches service type or contract, regardless of qualifiers
+        4. an InjectionResolver, where the method resolve returns an information if this type can be resolved (config driven)
+        */
+
+        List<RegistryServiceProvider<?>> qualifiedProviders = new ArrayList<>(services.serviceProviders().all(dependencyTo));
+        List<RegistryServiceProvider<?>> unqualifiedProviders = List.of();
 
         if (qualifiedProviders.isEmpty()) {
-            if (dependency.typeName().isOptional()) {
-                return new InjectionPlan(List.of(), List.of());
-            } else {
-                unqualifiedProviders = injectionPointProvidersFor(services, dependency);
-            }
+            unqualifiedProviders = injectionPointProvidersFor(services, dependency);
         }
 
         // remove current service provider from matches
@@ -413,27 +417,17 @@ class ApplicationCreator {
     }
 
     @SuppressWarnings("unchecked")
-    private Stream<ServiceProvider<Object>> toQualified(Object target) {
+    private Stream<RegistryServiceProvider<?>> toQualified(Object target) {
         if (target instanceof Collection<?> collection) {
             return collection.stream()
                     .flatMap(this::toQualified);
         }
-        return (target instanceof ServiceProvider<?> sp)
-                ? Stream.of((ServiceProvider<Object>) sp)
+        return (target instanceof RegistryServiceProvider<?> sp)
+                ? Stream.of((RegistryServiceProvider<Object>) sp)
                 : Stream.of();
     }
 
-    private Stream<?> toUnqualified(Object target) {
-        if (target instanceof Collection<?> collection) {
-            return collection.stream()
-                    .flatMap(this::toUnqualified);
-        }
-        return (target instanceof ServiceProvider<?>)
-                ? Stream.of()
-                : Stream.of(target);
-    }
-
-    private List<ServiceProvider<Object>> injectionPointProvidersFor(Services services, Ip ipoint) {
+    private List<RegistryServiceProvider<?>> injectionPointProvidersFor(Services services, Ip ipoint) {
         if (ipoint.qualifiers().isEmpty()) {
             return List.of();
         }
@@ -441,7 +435,7 @@ class ApplicationCreator {
                 .qualifiers(Set.of())
                 .addContract(InjectCodegenTypes.INJECTION_POINT_PROVIDER)
                 .build();
-        return services.serviceProviders().all(criteria);
+        return new ArrayList<>(services.serviceProviders().all(criteria));
     }
 
     private void createConfigureMethodBody(InjectionServices injectionServices,
@@ -450,7 +444,7 @@ class ApplicationCreator {
         Services serviceRegistry = injectionServices.services();
         ServiceProviderRegistry services = serviceRegistry.serviceProviders();
         // find all interceptors and bind them
-        List<ServiceProvider<Interception.Interceptor>> interceptors =
+        List<RegistryServiceProvider<Interception.Interceptor>> interceptors =
                 services.all(Lookup.builder()
                                      .addContract(Interception.Interceptor.class)
                                      .addQualifier(Qualifier.WILDCARD_NAMED)
@@ -461,7 +455,7 @@ class ApplicationCreator {
             method.addContentLine("");
         }
 
-        Iterator<ServiceProvider<Interception.Interceptor>> interceptorIterator = interceptors.iterator();
+        Iterator<RegistryServiceProvider<Interception.Interceptor>> interceptorIterator = interceptors.iterator();
         while (interceptorIterator.hasNext()) {
             method.addContent(interceptorIterator.next().infoType().genericTypeName())
                     .addContent(".INSTANCE");
@@ -533,38 +527,39 @@ class ApplicationCreator {
                                                        + binding.ipInfo().service().fqName());
                 }
             } else {
-                method.addContent(".bind(")
+                method.addContent(".bind")
+                        .addContent(binding.useProvider() ? "Provider" : "")
+                        .addContent("(")
                         .update(ipId::accept)
-                        .addContent(",")
-                        .addContent(binding.useProvider() + ", ")
-                        .addContent(binding.typeNames.getFirst().genericTypeName())
+                        .addContent(", ")
+                        .addContent(binding.typeNames().getFirst().genericTypeName())
                         .addContentLine(".INSTANCE)");
             }
         }
         case OPTIONAL -> {
-            method.addContent(".bindOptional(")
-                    .update(ipId::accept)
-                    .addContent(", ")
-                    .addContent(String.valueOf(binding.useProvider()));
-            if (binding.typeNames.isEmpty()) {
+            method.addContent(".bind")
+                    .addContent(binding.useProvider() ? "Provider" : "")
+                    .addContent("Optional(")
+                    .update(ipId::accept);
+            if (binding.typeNames().isEmpty()) {
                 method.addContentLine(")");
             } else {
                 method.addContent(", ")
-                        .addContent(binding.typeNames.getFirst().genericTypeName())
+                        .addContent(binding.typeNames().getFirst().genericTypeName())
                         .addContentLine(".INSTANCE)");
             }
         }
         case MANY -> {
-            method.addContent(".bindMany(")
-                    .update(ipId::accept)
-                    .addContent(", ")
-                    .addContent(String.valueOf(binding.useProvider()));
-            if (binding.typeNames.isEmpty()) {
+            method.addContent(".bind")
+                    .addContent(binding.useProvider() ? "Provider" : "")
+                    .addContent("List(")
+                    .update(ipId::accept);
+            if (binding.typeNames().isEmpty()) {
                 method.addContentLine(")");
             } else {
                 method.addContent(", ")
                         .update(it -> {
-                            Iterator<TypeName> iterator = binding.typeNames.iterator();
+                            Iterator<TypeName> iterator = binding.typeNames().iterator();
                             while (iterator.hasNext()) {
                                 it.addContent(iterator.next())
                                         .addContent(".INSTANCE");
@@ -581,25 +576,54 @@ class ApplicationCreator {
     }
 
     private void runtimeBinding(Method.Builder method, Binding binding, Consumer<ContentBuilder<?>> ipId, boolean supportNulls) {
+        method.addContent(".runtimeBind")
+                .addContent(binding.useProvider() ? "Provider" : "");
+
         switch (binding.type()) {
-        case SINGLE -> {
-            if (supportNulls) {
-                method.addContent(".runtimeBindNullable");
-            } else {
-                method.addContent(".runtimeBind");
-            }
-        }
-        case OPTIONAL -> method.addContent(".runtimeBindOptional");
-        case MANY -> method.addContent(".runtimeBindMany");
+        case SINGLE -> method.addContent(supportNulls ? "Nullable" : "");
+        case OPTIONAL -> method.addContent("Optional");
+        case MANY -> method.addContent("List");
         default -> throw new IllegalArgumentException("Unsupported binding type: " + binding.type());
         }
-        // such as .runtimeBind(MyDescriptor.IP_ID_0, false, ConfigBean.class)
+
+        // such as .runtimeBind(MyDescriptor.IP_ID_0, ConfigBean__ServiceDescriptor.INSTANCE)
         method.addContent("(")
-                .update(ipId::accept)
+                .update(ipId::accept);
+
+        switch (binding.type()) {
+        case SINGLE -> method
                 .addContent(", ")
-                .addContent(binding.useProvider + ", ")
-                .addContent(binding.typeNames.getFirst().genericTypeName())
-                .addContentLine(".class)");
+                .addContent(binding.typeNames().getFirst().genericTypeName())
+                .addContentLine(".INSTANCE)");
+        case OPTIONAL -> {
+            if (binding.typeNames().isEmpty()) {
+                method.addContentLine(")");
+            } else {
+                method.addContent(", ")
+                        .addContent(binding.typeNames().getFirst().genericTypeName())
+                        .addContentLine(".INSTANCE)");
+            }
+        }
+        case MANY -> {
+            if (binding.typeNames().isEmpty()) {
+                method.addContentLine(")");
+            } else {
+                method.addContent(", ")
+                        .update(it -> {
+                            Iterator<TypeName> iterator = binding.typeNames().iterator();
+                            while (iterator.hasNext()) {
+                                it.addContent(iterator.next())
+                                        .addContent(".INSTANCE");
+                                if (iterator.hasNext()) {
+                                    it.addContent(", ");
+                                }
+                            }
+                        })
+                        .addContentLine(")");
+            }
+        }
+        default -> throw new IllegalArgumentException("Unsupported binding type: " + binding.type());
+        }
     }
 
     enum BindingType {
@@ -613,8 +637,8 @@ class ApplicationCreator {
         RUNTIME
     }
 
-    record InjectionPlan(List<?> unqualifiedProviders,
-                         List<ServiceProvider<Object>> qualifiedProviders) {
+    record InjectionPlan(List<RegistryServiceProvider<?>> unqualifiedProviders,
+                         List<RegistryServiceProvider<?>> qualifiedProviders) {
     }
 
     record BindingPlan(TypeName descriptorType,

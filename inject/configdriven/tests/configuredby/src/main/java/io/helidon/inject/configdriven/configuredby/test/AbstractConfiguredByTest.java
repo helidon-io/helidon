@@ -28,9 +28,8 @@ import io.helidon.config.MapConfigSource;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServiceProviderException;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Lookup;
 import io.helidon.inject.Phase;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.configdriven.CbrServiceDescriptor;
@@ -42,6 +41,7 @@ import io.helidon.inject.configdriven.tests.config.FakeTlsWSNotDrivenByCB;
 import io.helidon.inject.configdriven.tests.config.FakeWebServer;
 import io.helidon.inject.configdriven.tests.config.FakeWebServerContract;
 import io.helidon.inject.configdriven.tests.config.FakeWebServer__ServiceDescriptor;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -105,11 +105,11 @@ public abstract class AbstractConfiguredByTest {
         // verify the services registry
         testRegistry();
 
-        ServiceProvider<FakeWebServer> fakeWebServer = services.get(FakeWebServer__ServiceDescriptor.INSTANCE);
+        RegistryServiceProvider<FakeWebServer> fakeWebServer = services.get(FakeWebServer__ServiceDescriptor.INSTANCE);
         assertThat(fakeWebServer.currentActivationPhase(), is(Phase.ACTIVE));
         assertThat(fakeWebServer.get().isRunning(), is(true));
 
-        ServiceProvider<ASingletonService> singletonService =
+        RegistryServiceProvider<ASingletonService> singletonService =
                 services.get(ASingletonService__ServiceDescriptor.INSTANCE);
         assertThat(singletonService.currentActivationPhase(), is(Phase.ACTIVE));
         assertThat(singletonService.get().isRunning(), is(true));
@@ -126,10 +126,10 @@ public abstract class AbstractConfiguredByTest {
         Lookup criteria = Lookup.builder()
                 .addQualifier(Qualifier.create(ConfigDriven.class))
                 .build();
-        List<ServiceProvider<Object>> list = services.all(criteria);
+        List<RegistryServiceProvider<Object>> list = services.all(criteria);
         List<String> desc = list.stream()
                 .filter(it -> !it.serviceType().resolvedName().contains(".yaml."))
-                .map(ServiceProvider::description)
+                .map(RegistryServiceProvider::description)
                 .toList();
         // order matters here since it should be based upon weight
         assertThat("root providers are config-driven, auto-started services unless overridden to not be driven",
@@ -145,7 +145,7 @@ public abstract class AbstractConfiguredByTest {
                 .addContract(FakeWebServerContract.class)
                 .build();
         list = services.all(criteria);
-        desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
         assertThat("no root providers expected in result, but all are auto-started unless overridden", desc,
                    contains("FakeWebServer{@default}:ACTIVE",
                             "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{@default}:INIT"));
@@ -154,7 +154,7 @@ public abstract class AbstractConfiguredByTest {
                 .serviceType(TypeName.create(FakeTlsWSNotDrivenByCB.class))
                 .build();
         list = services.all(criteria);
-        desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
         assertThat("root providers expected here since we looked up by service type name", desc,
                    contains("FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
@@ -163,11 +163,11 @@ public abstract class AbstractConfiguredByTest {
                 .addQualifier(Qualifier.createNamed("*"))
                 .build();
         list = services.all(criteria);
-        desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
         assertThat("root providers expected here since no configuration for this service", desc,
                    contains("FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
-        ServiceProvider<?> fakeTlsProvider = list.get(0);
+        RegistryServiceProvider<?> fakeTlsProvider = list.getFirst();
         InjectionServiceProviderException e = assertThrows(InjectionServiceProviderException.class, fakeTlsProvider::get);
         assertThat("There is no configuration, so cannot activate this service",
                    e.getMessage(),
@@ -178,14 +178,14 @@ public abstract class AbstractConfiguredByTest {
                 .addQualifier(Qualifier.createNamed("jane"))
                 .build();
         list = services.all(criteria);
-        desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
         assertThat("Even though there is a @default, it cannot match named", list, empty());
 
         criteria = Lookup.builder()
                 .addContract(ASingletonService.class)
                 .build();
         list = services.all(criteria);
-        desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
         assertThat("Managed providers expected here since we have default configuration for this service", desc,
                    contains("ASingletonService{@default}:ACTIVE"));
     }

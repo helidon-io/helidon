@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Lookup;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Lookup;
 
 /**
  * Basics example.
@@ -41,14 +41,14 @@ public class Main {
         // 0. Demonstrates programmatic lookup from the Services registry.
         // 1. when a service is being managed by a DI provider (like Helidon Injection) it should be "looked up" or injected instead of new'ed
         // 2. Notice we get a ServiceProvider - service providers allow for lazy initialization
-        Lookup criteria = Lookup.builder()
+        Lookup lookup = Lookup.builder()
                 .runLevel(Injection.RunLevel.STARTUP)
                 .build();
 
-        List<Supplier<Object>> startupServiceProviders = services.all(criteria);
+        List<Supplier<Object>> startupServiceProviders = services.all(lookup);
         System.out.println("Startup service providers (ranked according to weight, pre-activated): " + startupServiceProviders);
 
-        Supplier<Object> highestWeightedServiceProvider = services.get(criteria);
+        Supplier<Object> highestWeightedServiceProvider = services.get(lookup);
         System.out.println("Highest weighted service provider: " + highestWeightedServiceProvider);
 
         // trigger lazy activations for the highest weighted service provider

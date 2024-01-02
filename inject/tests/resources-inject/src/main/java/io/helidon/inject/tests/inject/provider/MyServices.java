@@ -22,9 +22,9 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.inject.ContextualServiceQuery;
-import io.helidon.inject.InjectionPointProvider;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
 
 public class MyServices {
 
@@ -54,7 +54,7 @@ public class MyServices {
         }
 
         @Override
-        public Optional<MyConcreteClassContract> first(ContextualServiceQuery query) {
+        public Optional<MyConcreteClassContract> first(ContextualLookup query) {
             assert (injected != null);
             assert (postConstructed);
             int num = counter++;

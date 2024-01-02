@@ -77,6 +77,11 @@ class TypeHandler {
         return TypeName.builder(typeName).wildcard(true).build();
     }
 
+    static boolean isConfigProperty(TypeHandler handler) {
+        return "config".equals(handler.name())
+                && handler.actualType().equals(Types.COMMON_CONFIG);
+    }
+
     protected static TypeName collectionImplType(TypeName typeName) {
         TypeName genericTypeName = typeName.genericTypeName();
         if (genericTypeName.equals(TypeNames.MAP)) {

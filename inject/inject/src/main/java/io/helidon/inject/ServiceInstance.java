@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionContext;
 import io.helidon.inject.service.InterceptionMetadata;
 import io.helidon.inject.service.ServiceDescriptor;
@@ -28,7 +29,7 @@ interface ServiceInstance<T> extends Supplier<T> {
     static <T> ServiceInstance<T> create(InterceptionMetadata interceptionMetadata,
                                          InjectionContext ctx,
                                          ServiceDescriptor<T> source) {
-        if (source.scopes().contains(InjectTypes.SINGLETON)) {
+        if (source.scopes().contains(Injection.Singleton.TYPE_NAME)) {
             return new SingletonInstance<>(ctx, interceptionMetadata, source);
         }
         return new OnDemandInstance<>(ctx, interceptionMetadata, source);

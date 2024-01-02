@@ -29,10 +29,10 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
-import io.helidon.inject.ContextualServiceQuery;
-import io.helidon.inject.InjectionPointProvider;
 import io.helidon.inject.Services;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
 
 import com.oracle.bmc.ConfigFileReader;
@@ -80,7 +80,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> first(ContextualServiceQuery query) {
+    public Optional<AbstractAuthenticationDetailsProvider> first(ContextualLookup query) {
         OciConfig ociConfig = OciExtension.ociConfig();
 
         String requestedNamedProfile = toNamedProfile(query.injectionPoint().orElse(null));

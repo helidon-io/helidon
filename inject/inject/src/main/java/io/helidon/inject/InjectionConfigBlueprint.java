@@ -16,8 +16,11 @@
 
 package io.helidon.inject;
 
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
 
 /**
  * Helidon Inject configuration options.
@@ -40,7 +43,7 @@ interface InjectionConfigBlueprint {
 
     /**
      * Flag indicating whether service lookups
-     * (i.e., via {@link io.helidon.inject.Services#first(Lookup)}) are cached.
+     * (i.e., via {@link io.helidon.inject.Services#first(io.helidon.inject.service.Lookup)}) are cached.
      *
      * @return the flag indicating whether service lookups are cached, defaults to {@code false}
      */
@@ -92,4 +95,12 @@ interface InjectionConfigBlueprint {
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean interceptionEnabled();
+
+    /**
+     * Configuration to use to set up business application services.
+     * When configured here, the registry should not use {@link io.helidon.common.config.GlobalConfig}.
+     *
+     * @return configuration (root) to use
+     */
+    Optional<Config> serviceConfig();
 }

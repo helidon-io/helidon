@@ -63,7 +63,7 @@ public class InvocationException extends InjectionServiceProviderException {
      */
     public InvocationException(String msg,
                                Throwable cause,
-                               ServiceProvider<?> serviceProvider,
+                               RegistryServiceProvider<?> serviceProvider,
                                boolean targetWasCalled) {
         super(msg, cause, serviceProvider);
         this.targetWasCalled = targetWasCalled;

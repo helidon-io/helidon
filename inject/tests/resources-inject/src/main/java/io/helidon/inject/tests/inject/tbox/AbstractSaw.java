@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.inject.ServiceProvider;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.tests.inject.Verification;
 import io.helidon.inject.tests.inject.tbox.impl.DullBlade;
@@ -78,7 +77,7 @@ public abstract class AbstractSaw extends Verification implements Tool {
         verifyInjected(fieldInjectedProtectedListInAbstractBase, getClass()
                 + ".fieldInjectedProtectedListInAbstractBase", null, 1, AbstractBlade.class);
         verifyInjected(setterInjectedPkgPrivateProviderListInAbstractBase, getClass()
-                + ".setterInjectedPkgPrivateProviderListInAbstractBase", null, 1, ServiceProvider.class);
+                + ".setterInjectedPkgPrivateProviderListInAbstractBase", null, 1, Supplier.class);
 
         verifyInjected(fieldInjectedPkgPrivateProviderInAbstractBase, getClass()
                 + ".fieldInjectedPkgPrivateProviderInAbstractBase", null, true, DullBlade.class);
@@ -87,7 +86,7 @@ public abstract class AbstractSaw extends Verification implements Tool {
         verifyInjected(fieldInjectedPkgPrivateListInAbstractBase, getClass()
                 + ".fieldInjectedPkgPrivateListInAbstractBase", null, 1, DullBlade.class);
         verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase, getClass()
-                + ".fieldInjectedPkgPrivateProviderListInAbstractBase", null, 1,  ServiceProvider.class);
+                + ".fieldInjectedPkgPrivateProviderListInAbstractBase", null, 1,  Supplier.class);
 
         verifyInjected(setterInjectedPkgPrivateProviderInAbstractBase, getClass()
                 + ".setBladeProvider(Provider<AbstractBlade> blade)",
@@ -99,7 +98,7 @@ public abstract class AbstractSaw extends Verification implements Tool {
                 + ".setBladeList(List<AbstractBlade> blades)",
                        setterInjectedPkgPrivateListInAbstractBaseInjectedCount, 1, DullBlade.class);
         verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase, getClass()
-                + ".fieldInjectedPkgPrivateProviderListInAbstractBase", null, 1, ServiceProvider.class);
+                + ".fieldInjectedPkgPrivateProviderListInAbstractBase", null, 1, Supplier.class);
     }
 
 }

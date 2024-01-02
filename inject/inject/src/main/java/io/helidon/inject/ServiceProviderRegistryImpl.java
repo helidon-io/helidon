@@ -18,6 +18,7 @@ package io.helidon.inject;
 
 import java.util.List;
 
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ServiceInfo;
 
 class ServiceProviderRegistryImpl implements ServiceProviderRegistry {
@@ -28,12 +29,12 @@ class ServiceProviderRegistryImpl implements ServiceProviderRegistry {
     }
 
     @Override
-    public <T> List<ServiceProvider<T>> all(Lookup lookup) {
+    public <T> List<RegistryServiceProvider<T>> all(Lookup lookup) {
         return services.allProviders(lookup);
     }
 
     @Override
-    public <T> ServiceProvider<T> get(ServiceInfo serviceInfo) {
+    public <T> RegistryServiceProvider<T> get(ServiceInfo serviceInfo) {
         return services.serviceProvider(serviceInfo);
     }
 }

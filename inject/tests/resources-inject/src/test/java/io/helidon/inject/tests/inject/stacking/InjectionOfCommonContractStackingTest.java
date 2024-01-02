@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -61,8 +61,8 @@ class InjectionOfCommonContractStackingTest {
 
     @Test
     void injectionStacking() {
-        List<ServiceProvider<CommonContract>> allIntercepted = services.serviceProviders().all(CommonContract.class);
-        List<String> desc = allIntercepted.stream().map(ServiceProvider::description).toList();
+        List<RegistryServiceProvider<CommonContract>> allIntercepted = services.serviceProviders().all(CommonContract.class);
+        List<String> desc = allIntercepted.stream().map(RegistryServiceProvider::description).toList();
         // order matters here
         assertThat(desc, contains(
                 "MostOuterCommonContractImpl:INIT",

@@ -22,8 +22,8 @@ import java.util.Set;
 
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectTypes;
 import io.helidon.inject.Services;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionContext;
 import io.helidon.inject.service.InterceptionMetadata;
 import io.helidon.inject.service.Ip;
@@ -165,6 +165,6 @@ public class HelloInjectionImpl__ServiceDescriptor implements ServiceDescriptor<
 
     @Override
     public Set<TypeName> scopes() {
-        return Set.of(InjectTypes.SINGLETON);
+        return Set.of(Injection.Singleton.TYPE_NAME);
     }
 }

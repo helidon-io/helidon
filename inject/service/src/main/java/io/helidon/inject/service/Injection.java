@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,6 +134,10 @@ public final class Injection {
     @Service
     @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
     public @interface Singleton {
+        /**
+         * Type name of this annotation.
+         */
+        TypeName TYPE_NAME = TypeName.create(Singleton.class);
         /*
         Implementation note: we currently do not support custom scopes, so there is no Scope meta annotation.
         If we decide to support scopes, we may want to introduce such an annotation.

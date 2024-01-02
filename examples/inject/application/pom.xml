@@ -55,6 +55,10 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
@@ -99,6 +103,7 @@
                     <permittedProviderTypeNames>
                         <permittedProviderTypeName>io.helidon.examples.inject.providers.BladeProvider</permittedProviderTypeName>
                         <permittedProviderTypeName>io.helidon.examples.inject.providers.NailProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.examples.inject.configdriven.Drill</permittedProviderTypeName>
                     </permittedProviderTypeNames>
                 </configuration>
             </plugin>

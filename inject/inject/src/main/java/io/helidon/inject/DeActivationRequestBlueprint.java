@@ -20,7 +20,7 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Request to deactivate a {@link ServiceProvider}.
+ * Request to deactivate a {@link RegistryServiceProvider}.
  */
 @Prototype.Blueprint
 interface DeActivationRequestBlueprint {

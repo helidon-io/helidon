@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.inject;
+package io.helidon.inject.service;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.Annotation;
-import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.Qualifier;
 
 /**
  * Utility methods for qualifiers.
@@ -59,7 +57,7 @@ final class Qualifiers {
         if (src.contains(Qualifier.WILDCARD_NAMED)) {
             // if provider has any name, and criteria ONLY asks for named, we match
             if (criteria.stream()
-                    .allMatch(it -> it.typeName().equals(InjectTypes.NAMED))) {
+                    .allMatch(it -> it.typeName().equals(Injection.Named.TYPE_NAME))) {
                 return true;
             }
         }
@@ -67,7 +65,6 @@ final class Qualifiers {
         for (Qualifier criteriaQualifier : criteria) {
             if (src.contains(criteriaQualifier)) {
                 // NOP;
-                continue;
             } else if (criteriaQualifier.typeName().equals(Injection.Named.TYPE_NAME)) {
                 if (criteriaQualifier.equals(Qualifier.WILDCARD_NAMED)
                         || criteriaQualifier.value().isEmpty()) {
