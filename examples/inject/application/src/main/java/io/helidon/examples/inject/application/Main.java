@@ -19,6 +19,7 @@ package io.helidon.examples.inject.application;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Metrics;
 
@@ -33,6 +34,8 @@ public class Main {
      * @param args arguments
      */
     public static void main(String... args) {
+        LogConfig.configureRuntime();
+
         io.helidon.examples.inject.basics.Main.main(args);
 
         Optional<Counter> counter = Metrics.globalRegistry()

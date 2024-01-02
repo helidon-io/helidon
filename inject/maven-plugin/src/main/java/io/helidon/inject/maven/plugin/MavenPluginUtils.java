@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.helidon.common.config.Config;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.Phase;
+import io.helidon.inject.RegistryServiceProvider;
 
 final class MavenPluginUtils {
     private MavenPluginUtils() {
@@ -49,7 +51,7 @@ final class MavenPluginUtils {
             providerOrInstance = opt.orElse(null);
         }
 
-        if (providerOrInstance instanceof ServiceProvider<?> sp) {
+        if (providerOrInstance instanceof RegistryServiceProvider<?> sp) {
             return sp.description();
         }
         return String.valueOf(providerOrInstance);
@@ -69,6 +71,8 @@ final class MavenPluginUtils {
         return InjectionConfig.builder()
                 .useApplication(apps)
                 .permitsDynamic(true)
+                .limitRuntimePhase(Phase.GATHERING_DEPENDENCIES) // we must not create any instance (may have side effects)
+                .serviceConfig(Config.empty()) // we must not use actual application config!
                 .build();
     }
 }

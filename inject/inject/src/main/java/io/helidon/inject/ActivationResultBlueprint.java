@@ -34,7 +34,7 @@ interface ActivationResultBlueprint {
      *
      * @return the service provider generating the result
      */
-    ServiceProvider<?> serviceProvider();
+    RegistryServiceProvider<?> serviceProvider();
 
     /**
      * The activation phase that was found at onset of the phase transition.

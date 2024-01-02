@@ -20,11 +20,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 
 class ProviderUtil {
     /**
-     * Provides a {@link io.helidon.inject.ServiceProvider#description()}, falling back to {@link #toString()} on the passed
+     * Provides a {@link io.helidon.inject.RegistryServiceProvider#description()}, falling back to {@link #toString()} on the passed
      * provider argument.
      *
      * @param provider the provider
@@ -35,14 +35,14 @@ class ProviderUtil {
             provider = ((Optional<?>) provider).orElse(null);
         }
 
-        if (provider instanceof ServiceProvider) {
-            return ((ServiceProvider<?>) provider).description();
+        if (provider instanceof RegistryServiceProvider) {
+            return ((RegistryServiceProvider<?>) provider).description();
         }
         return String.valueOf(provider);
     }
 
     /**
-     * Provides a {@link ServiceProvider#description()}, falling back to {@link #toString()} on the passed
+     * Provides a {@link io.helidon.inject.RegistryServiceProvider#description()}, falling back to {@link #toString()} on the passed
      * provider argument.
      *
      * @param coll the collection of providers

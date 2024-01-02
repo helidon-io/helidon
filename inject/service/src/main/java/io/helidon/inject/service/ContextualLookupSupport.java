@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,58 +14,43 @@
  * limitations under the License.
  */
 
-package io.helidon.inject;
+package io.helidon.inject.service;
 
 import java.util.Objects;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.service.Ip;
 
-final class ContextualServiceQuerySupport {
-    private ContextualServiceQuerySupport() {
+final class ContextualLookupSupport {
+    private ContextualLookupSupport() {
     }
 
     static final class CustomMethods {
         /**
-         * Denotes a match to any (default) service, but required to be matched to at least one.
-         */
-        @Prototype.Constant
-        static final ContextualServiceQuery REQUIRED = createRequired();
-        /**
          * Denotes a match to any (default) service.
          */
         @Prototype.Constant
-        static final ContextualServiceQuery EMPTY = createEmpty();
+        static final ContextualLookup EMPTY = createEmpty();
+
         private CustomMethods() {
         }
 
         /**
-         * Creates a contextual service query given the injection point info.
+         * Creates a contextual service query given the injection point.
          *
          * @param injectionPoint the injection point info
-         * @param expected       true if the query is expected to at least have a single match
          * @return the query
          */
         @Prototype.FactoryMethod
-        static ContextualServiceQuery create(Ip injectionPoint,
-                                             boolean expected) {
+        static ContextualLookup create(Ip injectionPoint) {
             Objects.requireNonNull(injectionPoint);
-            return ContextualServiceQuery.builder()
+            return ContextualLookup.builder()
                     .from(Lookup.create(injectionPoint))
-                    .expected(expected)
                     .injectionPoint(injectionPoint)
                     .build();
         }
 
-        private static ContextualServiceQuery createRequired() {
-            return ContextualServiceQuery.builder()
-                    .from(Lookup.EMPTY)
-                    .expected(true)
-                    .build();
-        }
-
-        private static ContextualServiceQuery createEmpty() {
-            return ContextualServiceQuery.builder()
+        private static ContextualLookup createEmpty() {
+            return ContextualLookup.builder()
                     .from(Lookup.EMPTY)
                     .build();
         }

@@ -41,106 +41,196 @@ public interface ServiceInjectionPlanBinder {
 
     /**
      * The binder builder for the service plan.
+     * The caller must be aware of cardinality and type (whether to inject {@link java.util.function.Supplier} or instance)
+     * of injections.
      *
      * @see io.helidon.inject.service.Ip
      */
     interface Binder {
 
         /**
-         * Binds a single service provider to the injection point identified by the id.
-         * It is assumed that the caller of this is aware of the proper cardinality for each injection point.
+         * Binds a single service to the injection point identified by the id.
          *
-         * @param id          the injection point identity
-         * @param useProvider whether we inject a provider or provided
-         * @param serviceInfo the service provider to bind to this identity.
+         * @param injectionPoint the injection point identity
+         * @param serviceInfo    the service provider to bind to this identity.
          * @return the binder builder
          */
-        Binder bind(Ip id,
-                    boolean useProvider,
+        Binder bind(Ip injectionPoint,
                     ServiceInfo serviceInfo);
 
         /**
-         * Bind to an optional field, with zero or one descriptors.
+         * Binds a single service supplier to the injection point identified by the id.
          *
-         * @param id           injection point identity
-         * @param useProvider  whether we inject a provider or provided
-         * @param serviceInfos the descriptor to bind (zero or one)
+         * @param injectionPoint the injection point identity
+         * @param serviceInfo    the service provider to bind to this identity.
          * @return the binder builder
          */
-        Binder bindOptional(Ip id,
-                            boolean useProvider,
+        Binder bindProvider(Ip injectionPoint,
+                            ServiceInfo serviceInfo);
+
+        /**
+         * Bind to an optional field, with zero or one services.
+         *
+         * @param injectionPoint injection point identity
+         * @param serviceInfos   the service info to bind (zero or one)
+         * @return the binder builder
+         */
+        Binder bindOptional(Ip injectionPoint,
                             ServiceInfo... serviceInfos);
 
         /**
-         * Binds a list of service providers to the injection point identified by the id.
-         * It is assumed that the caller of this is aware of the proper cardinality for each injection point.
+         * Bind to an optional field that expects a {@link io.helidon.inject.service.ServiceProvider} or
+         * {@link java.util.function.Supplier}, with zero or one services.
          *
-         * @param id           the injection point identity
-         * @param useProvider  whether we inject a provider or provided
-         * @param serviceInfos service descriptors to bind to this identity (zero or more)
+         * @param injectionPoint injection point identity
+         * @param serviceInfos   the service info to bind (zero or one)
          * @return the binder builder
          */
-        Binder bindMany(Ip id,
-                        boolean useProvider,
+        Binder bindProviderOptional(Ip injectionPoint,
+                                    ServiceInfo... serviceInfos);
+
+        /**
+         * Binds a list of services to the injection point identified by the id.
+         *
+         * @param injectionPoint the injection point identity
+         * @param serviceInfos   service infos to bind to this identity (zero or more)
+         * @return the binder builder
+         */
+        Binder bindList(Ip injectionPoint,
                         ServiceInfo... serviceInfos);
 
         /**
-         * Represents a null bind.
-         * Binding of null values must be allowed in the registry, by default this is not an option.
+         * Binds a list of service suppliers to the injection point identified by the id.
          *
-         * @param id the injection point identity
+         * @param injectionPoint the injection point identity
+         * @param serviceInfos   service infos to bind to this identity (zero or more)
          * @return the binder builder
          */
-        Binder bindNull(Ip id);
+        Binder bindProviderList(Ip injectionPoint,
+                                ServiceInfo... serviceInfos);
+
+        /**
+         * Represents a null bind.
+         *
+         * @param injectionPoint the injection point identity
+         * @return the binder builder
+         */
+        Binder bindNull(Ip injectionPoint);
 
         /**
          * Represents injection points that cannot be bound at startup, and instead must rely on a
          * deferred resolver based binding. Typically, this represents some form of dynamic or configurable instance.
          *
-         * @param id          the injection point identity
-         * @param useProvider whether to inject provider or service instance
-         * @param serviceType the service type needing to be resolved
+         * @param injectionPoint the injection point identity
+         * @param serviceInfo    the service info that is represented at runtime by a service provider with the runtime binding
+         *                       capability (e.g. an
+         *                       {@link io.helidon.inject.service.InjectionPointProvider} or
+         *                       {@link io.helidon.inject.InjectionResolver})
          * @return the binder builder
          */
-        Binder runtimeBind(Ip id,
-                           boolean useProvider,
-                           Class<?> serviceType);
+        Binder runtimeBind(Ip injectionPoint,
+                           ServiceInfo serviceInfo);
+
+        /**
+         * Represents injection points that cannot be bound at startup, and instead must rely on a
+         * deferred resolver based binding. Typically, this represents some form of dynamic or configurable instance.
+         * This method represents a {@link io.helidon.inject.service.ServiceProvider} or {@link java.util.function.Supplier}
+         * injection
+         * point.
+         *
+         * @param injectionPoint the injection point identity
+         * @param serviceInfo    the service info that is represented at runtime by a service provider with the runtime binding
+         *                       capability (e.g. an
+         *                       {@link io.helidon.inject.service.InjectionPointProvider} or
+         *                       {@link io.helidon.inject.InjectionResolver})
+         * @return the binder builder
+         */
+        Binder runtimeBindProvider(Ip injectionPoint,
+                                   ServiceInfo serviceInfo);
 
         /**
          * Bind an {@link java.util.Optional} injection point at runtime.
          *
-         * @param id          injection point id
-         * @param useProvider whether to inject provider or service instance
-         * @param serviceType type of service to be discovered at runtime
+         * @param injectionPoint injection point id
+         * @param serviceInfo    the service info that is represented at runtime by a service provider with the runtime binding
+         *                       capability (e.g. an
+         *                       {@link io.helidon.inject.service.InjectionPointProvider} or
+         *                       {@link io.helidon.inject.InjectionResolver})
          * @return the binder builder
          */
-        Binder runtimeBindOptional(Ip id,
-                                   boolean useProvider,
-                                   Class<?> serviceType);
+        Binder runtimeBindOptional(Ip injectionPoint,
+                                   ServiceInfo serviceInfo);
+
+        /**
+         * Bind an {@link java.util.Optional} {@link io.helidon.inject.service.ServiceProvider} or
+         * {@link java.util.function.Supplier}
+         * injection point at runtime.
+         *
+         * @param injectionPoint injection point id
+         * @param serviceInfo    the service info that is represented at runtime by a service provider with the runtime binding
+         *                       capability (e.g. an
+         *                       {@link io.helidon.inject.service.InjectionPointProvider} or
+         *                       {@link io.helidon.inject.InjectionResolver})
+         * @return the binder builder
+         */
+        Binder runtimeBindProviderOptional(Ip injectionPoint,
+                                           ServiceInfo serviceInfo);
 
         /**
          * Bind a {@link java.util.List} injection point at runtime.
          *
-         * @param id          injection point id
-         * @param useProvider whether to inject provider or service instance
-         * @param serviceType type of service to be discovered at runtime
+         * @param injectionPoint injection point id
+         * @param serviceInfos   the service infos that are represented at runtime by a service provider with the runtime binding
+         *                       capability (e.g. an
+         *                       {@link io.helidon.inject.service.InjectionPointProvider} or
+         *                       {@link io.helidon.inject.InjectionResolver})
          * @return the binder builder
          */
-        Binder runtimeBindMany(Ip id,
-                               boolean useProvider,
-                               Class<?> serviceType);
+        Binder runtimeBindList(Ip injectionPoint,
+                               ServiceInfo... serviceInfos);
+
+        /**
+         * Bind a {@link java.util.List} of {@link io.helidon.inject.service.ServiceProvider} or
+         * {@link java.util.function.Supplier}
+         * injection point at runtime.
+         *
+         * @param injectionPoint injection point id
+         * @param serviceInfos   the service infos that are represented at runtime by a service provider with the runtime binding
+         *                       capability (e.g. an
+         *                       {@link io.helidon.inject.service.InjectionPointProvider} or
+         *                       {@link io.helidon.inject.InjectionResolver})
+         * @return the binder builder
+         */
+        Binder runtimeBindProviderList(Ip injectionPoint,
+                                       ServiceInfo... serviceInfos);
 
         /**
          * Bind a nullable injection point at runtime.
          *
-         * @param id          injection point id
-         * @param useProvider whether to inject provider or service instance
-         * @param serviceType type of service to be discovered at runtime
+         * @param injectionPoint injection point id
+         * @param serviceInfo    the service info that is represented at runtime by a service provider with the runtime binding
+         *                       capability (e.g. an
+         *                       {@link io.helidon.inject.service.InjectionPointProvider} or
+         *                       {@link io.helidon.inject.InjectionResolver})
          * @return the binder builder
          */
-        Binder runtimeBindNullable(Ip id,
-                                   boolean useProvider,
-                                   Class<?> serviceType);
+        Binder runtimeBindNullable(Ip injectionPoint,
+                                   ServiceInfo serviceInfo);
+
+        /**
+         * Bind a nullable {@link io.helidon.inject.service.ServiceProvider} or {@link java.util.function.Supplier} injection
+         * point at
+         * runtime.
+         *
+         * @param injectionPoint injection point id
+         * @param serviceInfo    the service info that is represented at runtime by a service provider with the runtime binding
+         *                       capability (e.g. an
+         *                       {@link io.helidon.inject.service.InjectionPointProvider} or
+         *                       {@link io.helidon.inject.InjectionResolver})
+         * @return the binder builder
+         */
+        Binder runtimeBindProviderNullable(Ip injectionPoint,
+                                           ServiceInfo serviceInfo);
 
         /**
          * Commits the bindings for this service provider.

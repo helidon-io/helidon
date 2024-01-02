@@ -21,16 +21,22 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.service.ServiceProvider;
 
 /**
  * Provides management lifecycle around services.
+ * <p>
+ * This should never be implemented by user code. The only exception is extensibility of the service registry itself.
+ * Use {@link io.helidon.inject.service.ServiceProvider} or {@link io.helidon.inject.service.InjectionPointProvider} in
+ * service code.
  *
  * @param <T> the type that this service provider manages
  */
-public interface ServiceProvider<T> extends ServiceInfo, InjectionPointProvider<T> {
+public interface RegistryServiceProvider<T> extends ServiceInfo, ServiceProvider<T>, InjectionPointProvider<T> {
 
     /**
      * Identifies the service provider physically and uniquely.
@@ -53,14 +59,14 @@ public interface ServiceProvider<T> extends ServiceInfo, InjectionPointProvider<
     /**
      * Does the service provide singletons, does it always produce the same result for every call to {@link #get()}.
      * I.e., if the managed service implements Provider or
-     * {@link io.helidon.inject.InjectionPointProvider} then this typically is considered not a singleton provider.
+     * {@link io.helidon.inject.service.InjectionPointProvider} then this typically is considered not a singleton provider.
      * I.e., If the managed services is NOT {@link io.helidon.inject.service.Injection.Singleton},
      * then it will be treated as per request / dependent
      * scope.
      * Note that this is similar in nature to RequestScope, except the "official" request scope is bound to the
      * web request. Here, we are speaking about contextually any caller asking for a new instance of the service in
      * question. The requester in question will ideally be able to identify itself to this provider via
-     * {@link io.helidon.inject.InjectionPointProvider#first(ContextualServiceQuery)} so that this
+     * {@link io.helidon.inject.service.InjectionPointProvider#first(io.helidon.inject.service.ContextualLookup)} so that this
      * provider can properly service the "provide" request.
      *
      * @return true if the service provider provides per-request instances for each caller

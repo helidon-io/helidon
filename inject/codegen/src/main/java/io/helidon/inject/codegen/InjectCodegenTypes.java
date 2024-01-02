@@ -92,13 +92,13 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName IP_ID = TypeName.create("io.helidon.inject.service.Ip");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.ServiceProvider}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.ServiceProvider}.
      */
-    public static final TypeName SERVICE_PROVIDER = TypeName.create("io.helidon.inject.ServiceProvider");
+    public static final TypeName SERVICE_PROVIDER = TypeName.create("io.helidon.inject.service.ServiceProvider");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InjectionPointProvider}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.InjectionPointProvider}.
      */
-    public static final TypeName INJECTION_POINT_PROVIDER = TypeName.create("io.helidon.inject.InjectionPointProvider");
+    public static final TypeName INJECTION_POINT_PROVIDER = TypeName.create("io.helidon.inject.service.InjectionPointProvider");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.InjectionContext}.
      */
@@ -116,9 +116,9 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName APPLICATION = TypeName.create("io.helidon.inject.Application");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.ContextualServiceQuery}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.ContextualLookup}.
      */
-    public static final TypeName CONTEXT_QUERY = TypeName.create("io.helidon.inject.ContextualServiceQuery");
+    public static final TypeName CONTEXT_QUERY = TypeName.create("io.helidon.inject.service.ContextualLookup");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.ServiceBinder}.
      */

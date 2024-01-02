@@ -19,7 +19,7 @@ package io.helidon.inject;
 import java.util.Optional;
 
 /**
- * An extension to {@link io.helidon.inject.ServiceProvider} that allows for startup binding from a
+ * An extension to {@link RegistryServiceProvider} that allows for startup binding from a
  * {@code Injection$$Application},
  * and thereby works in conjunction with the {@link io.helidon.inject.service.ServiceBinder} during injection service registry
  * initialization.
@@ -32,9 +32,9 @@ import java.util.Optional;
  *
  * @param <T> the type that this service provider manages
  * @see io.helidon.inject.Application
- * @see io.helidon.inject.ServiceProvider#serviceProviderBindable()
+ * @see RegistryServiceProvider#serviceProviderBindable()
  */
-public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
+public interface ServiceProviderBindable<T> extends RegistryServiceProvider<T> {
     /**
      * Returns true if this service provider instance is an {@link io.helidon.inject.service.Interception.Interceptor}.
      *
@@ -58,14 +58,14 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      *
      * @return the service provider that intercepts this provider
      */
-    Optional<ServiceProvider<?>> interceptor();
+    Optional<RegistryServiceProvider<?>> interceptor();
 
     /**
      * Sets the interceptor for this service provider.
      *
      * @param interceptor the interceptor for this provider
      */
-    default void interceptor(ServiceProvider<?> interceptor) {
+    default void interceptor(RegistryServiceProvider<?> interceptor) {
         // NOP; intended to be overridden if applicable
         throw new UnsupportedOperationException();
     }
@@ -73,21 +73,12 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
     /**
      * Gets the root/parent provider for this service. A root/parent provider is intended to manage it's underlying
      * providers. Note that "root" and "parent" are interchangeable here since there is at most one level of depth that occurs
-     * when {@link io.helidon.inject.ServiceProvider}'s are wrapped by other providers.
+     * when {@link RegistryServiceProvider}'s are wrapped by other providers.
      *
      * @return the root/parent provider or empty if this instance is the root provider
      */
-    default Optional<ServiceProvider<?>> rootProvider() {
+    default Optional<RegistryServiceProvider<?>> rootProvider() {
         return Optional.empty();
-    }
-
-    /**
-     * Returns true if this provider is the root provider.
-     *
-     * @return indicates whether this provider is a root provider - the default is true
-     */
-    default boolean isRootProvider() {
-        return rootProvider().isEmpty();
     }
 
     /**
@@ -95,7 +86,7 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      *
      * @param rootProvider sets the root provider
      */
-    default void rootProvider(ServiceProvider<T> rootProvider) {
+    default void rootProvider(RegistryServiceProvider<T> rootProvider) {
         // NOP; intended to be overridden if applicable
         throw new UnsupportedOperationException();
     }

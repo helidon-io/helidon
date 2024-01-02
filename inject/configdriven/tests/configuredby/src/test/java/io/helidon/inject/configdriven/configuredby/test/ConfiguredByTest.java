@@ -25,12 +25,12 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.inject.Lookup;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.configdriven.CbrServiceDescriptor;
 import io.helidon.inject.configdriven.ConfigBeanRegistry;
 import io.helidon.inject.configdriven.configuredby.yaml.test.Async;
 import io.helidon.inject.configdriven.service.NamedInstance;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
     void testInjectCbr() {
         resetWith(Config.create());
 
-        ServiceProvider<ServiceUsingRegistry> lookup = services.get(ServiceUsingRegistry__ServiceDescriptor.INSTANCE);
+        RegistryServiceProvider<ServiceUsingRegistry> lookup = services.get(ServiceUsingRegistry__ServiceDescriptor.INSTANCE);
         ServiceUsingRegistry service = lookup.get();
 
         assertThat(service.registry(), notNullValue());

@@ -20,26 +20,27 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.LazyValue;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Ip;
+import io.helidon.inject.service.Lookup;
 
 /**
  * A service provider bound to another service provider for an injection point.
  *
  * @param <T> type of the provided service
  */
-class BoundServiceProvider<T> extends DescribedServiceProvider<T> implements ServiceProvider<T> {
-    private final ServiceProvider<T> binding;
+class BoundServiceProvider<T> extends DescribedServiceProvider<T> implements RegistryServiceProvider<T> {
+    private final RegistryServiceProvider<T> binding;
     private final LazyValue<T> instance;
     private final LazyValue<List<T>> instances;
 
-    private BoundServiceProvider(ServiceProvider<T> binding, Ip injectionPoint) {
+    private BoundServiceProvider(RegistryServiceProvider<T> binding, Ip injectionPoint) {
         super(binding.serviceInfo());
 
         this.binding = binding;
-        ContextualServiceQuery query = ContextualServiceQuery.builder()
+        ContextualLookup query = ContextualLookup.builder()
                 .from(Lookup.create(injectionPoint))
                 .injectionPoint(injectionPoint)
-                .expected(false)
                 .build();
         this.instance = LazyValue.create(() -> binding.first(query).orElse(null));
         this.instances = LazyValue.create(() -> binding.list(query));
@@ -52,8 +53,8 @@ class BoundServiceProvider<T> extends DescribedServiceProvider<T> implements Ser
      * @param ipId    the binding context
      * @return the service provider created, wrapping the binding delegate provider
      */
-    static <V> ServiceProvider<V> create(ServiceProvider<V> binding,
-                                         Ip ipId) {
+    static <V> RegistryServiceProvider<V> create(RegistryServiceProvider<V> binding,
+                                                 Ip ipId) {
 
         if (binding instanceof ServiceProviderBase<V> base) {
             if (!base.isProvider()) {
@@ -75,17 +76,22 @@ class BoundServiceProvider<T> extends DescribedServiceProvider<T> implements Ser
 
     @Override
     public boolean equals(Object another) {
-        return (another instanceof ServiceProvider && binding.equals(another));
+        return (another instanceof RegistryServiceProvider && binding.equals(another));
     }
 
     @Override
-    public Optional<T> first(ContextualServiceQuery query) {
+    public Optional<T> first(ContextualLookup query) {
         return Optional.ofNullable(instance.get());
     }
 
     @Override
-    public List<T> list(ContextualServiceQuery query) {
+    public List<T> list(ContextualLookup query) {
         return instances.get();
+    }
+
+    @Override
+    public T get() {
+        return instance.get();
     }
 
     @Override

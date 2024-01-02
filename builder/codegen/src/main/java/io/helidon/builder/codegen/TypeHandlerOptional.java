@@ -30,7 +30,6 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
 import static io.helidon.common.types.TypeNames.BOXED_BYTE;
@@ -119,7 +118,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
         // and add the setter with the actual type
         // config is special - handled directly when configuration is handled, as it also must be used when this type
         // is @Configured
-        if (!actualType().equals(COMMON_CONFIG)) {
+        if (!isConfigProperty(this)) {
             // declared setter - optional is package local, field is never optional in builder
             Method.Builder method = Method.builder()
                     .name(setterName())

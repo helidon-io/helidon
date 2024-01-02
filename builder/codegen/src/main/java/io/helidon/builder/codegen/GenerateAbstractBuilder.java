@@ -165,8 +165,7 @@ final class GenerateAbstractBuilder {
 
     static boolean hasConfig(List<PrototypeProperty> properties) {
         return properties.stream()
-                .filter(it -> "config".equals(it.name()))
-                .anyMatch(it -> Types.COMMON_CONFIG.equals(it.typeHandler().actualType()));
+                .anyMatch(GenerateAbstractBuilder::isConfigProperty);
     }
 
     private static void addCustomBuilderMethods(TypeContext typeContext, InnerClass.Builder builder) {
@@ -221,8 +220,9 @@ final class GenerateAbstractBuilder {
         TypeName returnType = TypeName.createFromGenericDeclaration("BUILDER");
         // first setters
         for (PrototypeProperty child : properties) {
-            if (child.typeHandler().actualType().equals(Types.COMMON_CONFIG)) {
+            if (isConfigProperty(child)) {
                 // this is never done here, config must be defined as a standalone method
+                // for methods not named config, we consider this to be "just another" property
                 continue;
             }
             child.setters(classBuilder, returnType, child.configuredOption().javadoc());
@@ -361,7 +361,7 @@ final class GenerateAbstractBuilder {
                 /*
                 Special handling from config - we have to assign it to field, we cannot go through (config(Config))
                 */
-                if ("config".equals(property.name()) && property.typeHandler().actualType().equals(Types.COMMON_CONFIG)) {
+                if (isConfigProperty(property)) {
                     methodBuilder.addContent("this.config = prototype.config()");
                     if (declaredType.isOptional()) {
                         methodBuilder.addContent(".orElse(null)");
@@ -443,7 +443,7 @@ final class GenerateAbstractBuilder {
                         .addContent(allowedValues)
                         .addContent(")"));
             }
-            if (!isBuilder || !child.typeHandler().actualType().equals(Types.COMMON_CONFIG)) {
+            if (!isBuilder || !isConfigProperty(child)) {
                 classBuilder.addField(child.fieldDeclaration(isBuilder));
             }
             if (isBuilder && child.configuredOption().provider()) {
@@ -452,6 +452,10 @@ final class GenerateAbstractBuilder {
                         .defaultValue(String.valueOf(child.configuredOption().providerDiscoverServices())));
             }
         }
+    }
+
+    private static boolean isConfigProperty(PrototypeProperty property) {
+        return TypeHandler.isConfigProperty(property.typeHandler());
     }
 
     private static void preBuildPrototypeMethod(InnerClass.Builder classBuilder,

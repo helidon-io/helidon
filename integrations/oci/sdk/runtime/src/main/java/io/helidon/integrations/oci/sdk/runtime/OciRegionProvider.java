@@ -19,10 +19,10 @@ package io.helidon.integrations.oci.sdk.runtime;
 import java.util.Optional;
 
 import io.helidon.common.Weight;
-import io.helidon.inject.ContextualServiceQuery;
-import io.helidon.inject.InjectionPointProvider;
 import io.helidon.inject.Services;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.InjectionPointProvider;
 
 import com.oracle.bmc.Region;
 
@@ -37,13 +37,7 @@ class OciRegionProvider implements InjectionPointProvider<Region> {
     }
 
     @Override
-    public Region get() {
-        return first(ContextualServiceQuery.EMPTY)
-                .orElseThrow();
-    }
-
-    @Override
-    public Optional<Region> first(ContextualServiceQuery query) {
+    public Optional<Region> first(ContextualLookup query) {
         String requestedNamedProfile = query.injectionPoint()
                 .map(OciAuthenticationDetailsProvider::toNamedProfile)
                 .orElse(null);

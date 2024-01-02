@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Interception.Interceptor;
 import io.helidon.inject.service.InvocationContext;
 import io.helidon.inject.service.Invoker;
@@ -370,7 +371,7 @@ class InvocationTest {
 
         @Override
         public Set<TypeName> scopes() {
-            return Set.of(InjectTypes.SINGLETON);
+            return Set.of(Injection.Singleton.TYPE_NAME);
         }
     }
 }

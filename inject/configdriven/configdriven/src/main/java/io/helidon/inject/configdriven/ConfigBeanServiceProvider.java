@@ -19,12 +19,12 @@ package io.helidon.inject.configdriven;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.ContextualServiceQuery;
 import io.helidon.inject.Phase;
-import io.helidon.inject.ServiceProvider;
+import io.helidon.inject.RegistryServiceProvider;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.ServiceInfo;
 
-class ConfigBeanServiceProvider<CB> implements ServiceProvider<CB> {
+class ConfigBeanServiceProvider<CB> implements RegistryServiceProvider<CB> {
     private final ConfigBeanServiceInfo serviceInfo;
     private final CB instance;
     private final String id;
@@ -36,13 +36,18 @@ class ConfigBeanServiceProvider<CB> implements ServiceProvider<CB> {
     }
 
     @Override
-    public Optional<CB> first(ContextualServiceQuery query) {
+    public Optional<CB> first(ContextualLookup query) {
         return Optional.of(instance);
     }
 
     @Override
+    public CB get() {
+        return instance;
+    }
+
+    @Override
     public String id() {
-        return ServiceProvider.super.id() + "{" + id + "}";
+        return RegistryServiceProvider.super.id() + "{" + id + "}";
     }
 
     @Override

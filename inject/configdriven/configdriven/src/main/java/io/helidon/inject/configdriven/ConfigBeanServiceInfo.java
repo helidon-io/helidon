@@ -19,7 +19,7 @@ package io.helidon.inject.configdriven;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectTypes;
+import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceInfo;
 
@@ -44,6 +44,6 @@ class ConfigBeanServiceInfo implements ServiceInfo {
 
     @Override
     public Set<TypeName> scopes() {
-        return Set.of(InjectTypes.SINGLETON);
+        return Set.of(Injection.Singleton.TYPE_NAME);
     }
 }

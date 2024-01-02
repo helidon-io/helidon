@@ -24,7 +24,7 @@ import io.helidon.inject.service.ServiceInfo;
  *
  * @param <T> type of the provided service
  */
-public abstract class DescribedServiceProvider<T> implements ServiceProvider<T> {
+public abstract class DescribedServiceProvider<T> implements RegistryServiceProvider<T> {
     private final ServiceInfo serviceInfo;
 
     /**

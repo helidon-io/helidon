@@ -19,8 +19,10 @@ package io.helidon.inject;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.inject.service.Lookup;
+
 /**
- * Instances of these provide lists and maps of {@link io.helidon.inject.ServiceProvider}s.
+ * Instances of these provide lists and maps of {@link RegistryServiceProvider}s.
  */
 public interface ServiceProviderProvider {
 
@@ -33,9 +35,9 @@ public interface ServiceProviderProvider {
      *                           matched using the standard service info matching checks
      * @return the list of service providers matching
      */
-    List<? extends ServiceProvider<?>> serviceProviders(Lookup criteria,
-                                                        boolean wantThis,
-                                                        boolean thisAlreadyMatches);
+    List<? extends RegistryServiceProvider<?>> serviceProviders(Lookup criteria,
+                                                                boolean wantThis,
+                                                                boolean thisAlreadyMatches);
 
     /**
      * This method will only apply to the managed instances being provided, not to itself as in the case for
@@ -44,6 +46,6 @@ public interface ServiceProviderProvider {
      * @param criteria the injection point criteria that must match
      * @return the map of managed service providers matching the criteria, identified by its key/context
      */
-    Map<String, ? extends ServiceProvider<?>> managedServiceProviders(Lookup criteria);
+    Map<String, ? extends RegistryServiceProvider<?>> managedServiceProviders(Lookup criteria);
 
 }

@@ -19,12 +19,15 @@ package io.helidon.examples.inject.providers;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.examples.inject.basics.Tool;
 import io.helidon.inject.service.Injection;
 
 
 @Injection.Singleton
 @Injection.RunLevel(Injection.RunLevel.STARTUP)
+@Weight(Weighted.DEFAULT_WEIGHT + 10)
 class NailGun implements Tool {
 
     private final Supplier<Nail> nailProvider;
@@ -49,4 +52,8 @@ class NailGun implements Tool {
         System.out.println(name() + "; initialized");
     }
 
+    @Override
+    public String toString() {
+        return getClass().getName();
+    }
 }

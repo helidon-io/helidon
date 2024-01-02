@@ -16,6 +16,7 @@
 
 package io.helidon.examples.inject.basics;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -87,9 +88,18 @@ public class ToolBox {
     }
 
     public void printToolBoxContents() {
-        System.out.println("Tools in the virtual ToolBox:");
+        System.out.println("--------------------------------");
+        System.out.println("- Initializing all tools       -");
+        System.out.println("--------------------------------");
+        List<Tool> tools = new ArrayList<>();
         for (Supplier<Tool> tool : allToolProviders) {
-            System.out.println(" tool: " + tool);
+            tools.add(tool.get());
+        }
+        System.out.println("--------------------------------");
+        System.out.println("- Tools in the virtual ToolBox -");
+        System.out.println("--------------------------------");
+        for (Tool tool : tools) {
+            System.out.println(" tool: " + tool.name());
         }
     }
 

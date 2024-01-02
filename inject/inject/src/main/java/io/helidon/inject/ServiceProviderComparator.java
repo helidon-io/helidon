@@ -49,10 +49,10 @@ class ServiceProviderComparator implements Comparator<Supplier<?>>, Serializable
             return 0;
         }
 
-        if (p1 instanceof ServiceProvider
-                && p2 instanceof ServiceProvider) {
-            ServiceProvider<?> sp1 = (ServiceProvider<?>) p1;
-            ServiceProvider<?> sp2 = (ServiceProvider<?>) p2;
+        if (p1 instanceof RegistryServiceProvider
+                && p2 instanceof RegistryServiceProvider) {
+            RegistryServiceProvider<?> sp1 = (RegistryServiceProvider<?>) p1;
+            RegistryServiceProvider<?> sp2 = (RegistryServiceProvider<?>) p2;
 
             double w1 = sp1.weight();
             double w2 = sp2.weight();
