@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,12 @@ import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
+import io.helidon.codegen.CodegenLogger;
 import io.helidon.codegen.CodegenScope;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RegistryServiceProvider;
-import io.helidon.inject.ServiceProviderRegistry;
-import io.helidon.inject.service.Lookup;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -38,7 +37,6 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 import static io.helidon.inject.codegen.InjectionCodegenContext.APPLICATION_NAME;
-import static io.helidon.inject.maven.plugin.MavenPluginUtils.injectionServices;
 
 /**
  * A mojo wrapper to {@link ApplicationCreator} for test specific types.
@@ -49,7 +47,7 @@ import static io.helidon.inject.maven.plugin.MavenPluginUtils.injectionServices;
 public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     /**
-     * The classname to use for the {@link io.helidon.inject.Application} test class.
+     * The classname to use for the {@code io.helidon.inject.Application} test class.
      * If not found the classname will be inferred.
      */
     @Parameter(property = "io.helidon.inject.application.class.name",
@@ -116,25 +114,20 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
      * Excludes everything from source main scope.
      */
     @Override
-    protected Set<TypeName> serviceTypeNamesForExclusion() {
+    protected Set<TypeName> serviceTypeNamesForExclusion(CodegenLogger logger) {
         Set<Path> classPath = getSourceClasspathElements();
 
         ClassLoader prev = Thread.currentThread().getContextClassLoader();
         URLClassLoader loader = createClassLoader(classPath, prev);
-
         try {
             Thread.currentThread().setContextClassLoader(loader);
-
-            InjectionServices injectionServices = injectionServices(false);
-            assert (!injectionServices.config().useApplication());
-            ServiceProviderRegistry services = injectionServices.services().serviceProviders();
-
-            // retrieves all the services in the registry
-            List<RegistryServiceProvider<Object>> allServices = services
-                    .all(Lookup.EMPTY);
-            Set<TypeName> serviceTypeNames = toNames(allServices);
-            getLog().debug("excluding service type names: " + serviceTypeNames);
-            return serviceTypeNames;
+            try (WrappedServices services = WrappedServices.create(loader, logger, false)) {
+                return services.all()
+                        .stream()
+                        .map(WrappedProvider::toRootProvider)
+                        .map(WrappedProvider::serviceType)
+                        .collect(Collectors.toCollection(TreeSet::new));
+            }
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
         }

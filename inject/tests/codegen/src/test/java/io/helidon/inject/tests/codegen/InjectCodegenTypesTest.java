@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,13 @@
 package io.helidon.inject.tests.codegen;
 
 import io.helidon.inject.Application;
+import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
 import io.helidon.inject.InvocationException;
+import io.helidon.inject.Phase;
+import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ServiceInjectionPlanBinder;
+import io.helidon.inject.Services;
 import io.helidon.inject.codegen.InjectCodegenTypes;
 import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
@@ -96,5 +101,15 @@ class InjectCodegenTypesTest {
                    is(InvocationException.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.SERVICE_INJECTION_PLAN_BINDER.fqName(),
                    is(ServiceInjectionPlanBinder.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.INJECTION_CONFIG.fqName(),
+                   is(InjectionConfig.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.INJECT_PHASE.fqName(),
+                   is(Phase.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.INJECT_INJECTION_SERVICES.fqName(),
+                   is(InjectionServices.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.INJECT_SERVICES.fqName(),
+                   is(Services.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.INJECT_REGISTRY_SERVICE_PROVIDER.fqName(),
+                   is(RegistryServiceProvider.class.getCanonicalName()));
     }
 }

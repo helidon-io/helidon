@@ -83,12 +83,13 @@
             <artifactId>helidon-inject-codegen</artifactId>
         </dependency>
         <dependency>
+            <!--
+            we cannot use helidon-inject as the SPI is required on classpath of application,
+            and this introduces conflicts; helidon-inject-service is small and does not introduce SPI
+            that is used from within it, so we can share it
+            -->
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-service</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.codegen</groupId>
