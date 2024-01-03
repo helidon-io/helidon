@@ -1,10 +1,11 @@
 package io.helidon.inject;
 
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.ServiceDescriptor;
+import io.helidon.inject.service.ServiceInfo;
 
 @Injection.Singleton
 class RequestonControlImpl implements RequestonControl, ScopeHandler {
@@ -28,13 +29,13 @@ class RequestonControlImpl implements RequestonControl, ScopeHandler {
     }
 
     @Override
-    public Scope startRequestScope() {
+    public Scope startRequestScope(Map<ServiceInfo, Object> initialBindings) {
         // no need to synchronize, this is per-thread
         Scope scope = REQUEST_SCOPES.get();
         if (scope != null) {
             throw new IllegalStateException("Attempt to re-create request scope. Already exists for this request: " + scope);
         }
-        scope = new RequestScope(services, services.createForScope(InjectTypes.REQUESTON));
+        scope = new RequestScope(services, services.createForScope(InjectTypes.REQUESTON, initialBindings));
         REQUEST_SCOPES.set(scope);
         return scope;
     }
@@ -48,12 +49,6 @@ class RequestonControlImpl implements RequestonControl, ScopeHandler {
             this.rootServices = rootServices;
             this.thisScopeServices = scopeServices;
             this.thread = Thread.currentThread().toString();
-        }
-
-        @SuppressWarnings({"rawtypes", "unchecked"})
-        @Override
-        public void bind(ServiceDescriptor<?> serviceInfo, Object serviceInstance) {
-            thisScopeServices.bind(new RequestScopeServiceProvider(serviceInfo, serviceInstance));
         }
 
         @Override
@@ -78,11 +73,6 @@ class RequestonControlImpl implements RequestonControl, ScopeHandler {
             return "Request scope for thread: " + thread + ", id: " + hashCode();
         }
 
-        private class RequestScopeServiceProvider<T> extends ServiceProviderBase<T> {
-            RequestScopeServiceProvider(ServiceDescriptor<T> descriptor, T serviceInstance) {
-                super(rootServices, descriptor);
-                state(Phase.ACTIVE, serviceInstance);
-            }
-        }
+
     }
 }
