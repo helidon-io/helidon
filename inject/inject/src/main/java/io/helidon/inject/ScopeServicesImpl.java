@@ -22,8 +22,12 @@ class ScopeServicesImpl implements ScopeServices {
     private final TypeName scopeType;
     private final Map<ServiceDescriptor<?>, Supplier<Activator<?>>> activators;
     private final System.Logger logger;
+    private boolean initialized;
 
-    ScopeServicesImpl(ServicesImpl rootServices, TypeName scopeType, Map<ServiceDescriptor<?>, Supplier<Activator<?>>> activators) {
+    ScopeServicesImpl(ServicesImpl rootServices,
+                      TypeName scopeType, Map<ServiceDescriptor<?>,
+            Supplier<Activator<?>>> activators,
+                      Map<ServiceDescriptor<Object>, Object> initialBindings) {
         this.rootServices = rootServices;
         this.scopeType = scopeType;
         this.activators = activators;
@@ -33,10 +37,21 @@ class ScopeServicesImpl implements ScopeServices {
         activators.forEach((descriptor, activator) -> {
             LazyValue
         });
+
+        initialized = false;
+        initialBindings.forEach((descriptor, value) -> bind(new InitialScopeBindingProvider<>(descriptor, value)));
+        initialized = true;
     }
 
     @Override
     public void bind(Activator<?> activator) {
+        if (initialized) {
+            if (!rootServices.injectionServices().config().permitsDynamic()) {
+                throw new IllegalStateException(
+                        "Attempting to bind to " + scopeType.className() + " Services that do not support dynamic updates."
+                                + " Set option permitsDynamic, or configuration option 'inject.permits-dynamic=true' to enable");
+            }
+        }
         // make sure the activator has a chance to do something, such as create the initial service provider instance
         activator.activate(ActivationRequest.builder()
                                    .targetPhase(Phase.INIT)
@@ -68,15 +83,6 @@ class ScopeServicesImpl implements ScopeServices {
         }
     }
 
-    private void addContract(TypeName serviceType, LazyValue providerLazyValue) {
-        servicesByContract.computeIfAbsent(serviceType, it -> new TreeSet<>(ServiceProviderComparator.instance()))
-                .add(providerLazyValue);
-    }
-
-    private LazyValue<?> addByType(TypeName serviceType, LazyValue lazyValue) {
-        return servicesByTypeName.putIfAbsent(serviceType, lazyValue);
-    }
-
     @Override
     public void close() {
 
@@ -105,5 +111,21 @@ class ScopeServicesImpl implements ScopeServices {
     @Override
     public ServiceProviderRegistry serviceProviders() {
         return null;
+    }
+
+    private void addContract(TypeName serviceType, LazyValue providerLazyValue) {
+        servicesByContract.computeIfAbsent(serviceType, it -> new TreeSet<>(ServiceProviderComparator.instance()))
+                .add(providerLazyValue);
+    }
+
+    private LazyValue<?> addByType(TypeName serviceType, LazyValue lazyValue) {
+        return servicesByTypeName.putIfAbsent(serviceType, lazyValue);
+    }
+
+    private class InitialScopeBindingProvider<T> extends ServiceProviderBase<T> {
+        InitialScopeBindingProvider(ServiceDescriptor<T> descriptor, T serviceInstance) {
+            super(rootServices, descriptor);
+            state(Phase.ACTIVE, serviceInstance);
+        }
     }
 }

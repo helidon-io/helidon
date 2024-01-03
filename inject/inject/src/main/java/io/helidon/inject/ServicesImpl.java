@@ -167,8 +167,11 @@ class ServicesImpl implements Services, ServiceBinder {
         return spRegistry;
     }
 
-    ScopeServices createForScope(TypeName scopeType) {
-        return new ScopeServicesImpl(this, scopeType, Optional.ofNullable(activatorsByScope.get(scopeType)).orElseGet(Map::of));
+    ScopeServices createForScope(TypeName scopeType, Map<ServiceInfo, Object> initialBindings) {
+        return new ScopeServicesImpl(this,
+                                     scopeType,
+                                     Optional.ofNullable(activatorsByScope.get(scopeType)).orElseGet(Map::of),
+                                     initialBindings);
     }
 
     @SuppressWarnings("unchecked")
