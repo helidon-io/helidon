@@ -87,8 +87,8 @@ class InjectionApplicationActivator extends ServiceProviderBase<Application> {
         }
 
         @Override
-        public Set<TypeName> scopes() {
-            return Set.of(Injection.Singleton.TYPE_NAME);
+        public TypeName scope() {
+            return Injection.Singleton.TYPE_NAME;
         }
 
         @Override

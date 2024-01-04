@@ -52,11 +52,11 @@ public class HelidonInjectionContext implements InjectionContext {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T param(Ip paramId) {
-        Supplier<?> injectionSupplier = injectionPlans.get(paramId);
+    public <T> T param(Ip injectionPoint) {
+        Supplier<?> injectionSupplier = injectionPlans.get(injectionPoint);
         if (injectionSupplier == null) {
-            throw new NoSuchElementException("Cannot resolve injection id " + paramId + " for service "
-                                                     + paramId.service().fqName()
+            throw new NoSuchElementException("Cannot resolve injection id " + injectionPoint + " for service "
+                                                     + injectionPoint.service().fqName()
                                                      + ", this dependency was not declared in "
                                                      + "the service descriptor");
         }

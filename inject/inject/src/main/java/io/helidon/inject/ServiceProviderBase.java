@@ -17,18 +17,14 @@
 package io.helidon.inject;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.InjectionContext;
@@ -238,6 +234,11 @@ public abstract class ServiceProviderBase<T>
     @Override
     public boolean isProvider() {
         return contracts().contains(SUPPLIER_TYPE) || contracts().contains(InjectionPointProvider.TYPE);
+    }
+
+    @Override
+    public void injectionPlan(Map<Ip, Supplier<?>> injectionPlan) {
+        injectionContext(HelidonInjectionContext.create(injectionPlan));
     }
 
     /**
@@ -477,7 +478,8 @@ public abstract class ServiceProviderBase<T>
      */
     protected void prepareDependency(Services services, Map<Ip, Supplier<?>> injectionPlan, Ip injectionPoint) {
         Lookup criteria = Lookup.create(injectionPoint);
-        List<RegistryServiceProvider<Object>> discovered = services.serviceProviders().all(criteria)
+        List<RegistryServiceProvider<Object>> discovered = services.serviceProviders()
+                .all(criteria)
                 .stream()
                 .filter(it -> it != this)
                 .toList();
@@ -666,367 +668,6 @@ public abstract class ServiceProviderBase<T>
         }
 
         this.injectionContext = HelidonInjectionContext.create(injectionPlan);
-    }
-
-    /**
-     * An implementation of a service binder.
-     */
-    protected static class ServiceInjectBinderImpl implements ServiceInjectionPlanBinder.Binder {
-        private final ServiceProviderBase<?> self;
-        private final Map<Ip, Supplier<?>> injectionPlan = new LinkedHashMap<>();
-        private final Services services;
-
-        /**
-         * Create a new instance of a binder.
-         *
-         * @param services injection services we are bound to
-         * @param self     service provider responsible for this binding
-         */
-        protected ServiceInjectBinderImpl(Services services, ServiceProviderBase<?> self) {
-            this.self = self;
-            this.services = services;
-        }
-
-        @Override
-        public void commit() {
-            self.injectionContext(HelidonInjectionContext.create(injectionPlan));
-        }
-
-        @Override
-        public ServiceInjectBinderImpl bind(Ip injectionPoint, ServiceInfo serviceInfo) {
-            RegistryServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders().get(serviceInfo),
-                                                                                     injectionPoint);
-
-            ContextualLookup query = ContextualLookup.create(injectionPoint);
-            injectionPlan.put(injectionPoint, () -> mapFromProvider(query, serviceProvider, true));
-
-            return this;
-        }
-
-        @Override
-        public ServiceInjectBinderImpl bindProvider(Ip injectionPoint, ServiceInfo serviceInfo) {
-            RegistryServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders().get(serviceInfo),
-                                                                                     injectionPoint);
-            ServiceProvider<?> usedProvider = resolveProvider(injectionPoint, serviceProvider);
-            injectionPlan.put(injectionPoint, () -> usedProvider);
-
-            return this;
-        }
-
-        @Override
-        public ServiceInjectBinderImpl bindOptional(Ip injectionPoint,
-                                                    ServiceInfo... serviceInfos) {
-
-            if (serviceInfos.length == 0) {
-                injectionPlan.put(injectionPoint, Optional::empty);
-            } else {
-                RegistryServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders()
-                                                                                                 .get(serviceInfos[0]),
-                                                                                         injectionPoint);
-
-                ContextualLookup query = ContextualLookup.create(injectionPoint);
-                injectionPlan.put(injectionPoint, () -> Optional.ofNullable(mapFromProvider(query, serviceProvider, false)));
-            }
-
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder bindProviderOptional(Ip injectionPoint, ServiceInfo... serviceInfos) {
-            if (serviceInfos.length == 0) {
-                injectionPlan.put(injectionPoint, Optional::empty);
-            } else {
-                RegistryServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders()
-                                                                                                 .get(serviceInfos[0]),
-                                                                                         injectionPoint);
-
-                ServiceProvider<?> usedProvider = resolveProvider(injectionPoint, serviceProvider);
-                injectionPlan.put(injectionPoint, () -> Optional.of(usedProvider));
-            }
-
-            return this;
-        }
-
-        @Override
-        public ServiceInjectBinderImpl bindList(Ip injectionPoint,
-                                                ServiceInfo... serviceInfos) {
-
-            ServiceProviderRegistry serviceProviderRegistry = services.serviceProviders();
-
-            List<? extends RegistryServiceProvider<?>> providers = Stream.of(serviceInfos)
-                    .map(serviceProviderRegistry::get)
-                    .map(it -> BoundServiceProvider.create(it, injectionPoint))
-                    .toList();
-
-            ContextualLookup query = ContextualLookup.create(injectionPoint);
-            injectionPlan.put(injectionPoint, () -> providers.stream()
-                    .flatMap(it -> mapStreamFromProvider(query, it))
-                    .toList());
-
-            return this;
-        }
-
-        @Override
-        public ServiceInjectBinderImpl bindProviderList(Ip injectionPoint,
-                                                        ServiceInfo... serviceInfos) {
-
-            ServiceProviderRegistry serviceProviderRegistry = services.serviceProviders();
-
-            List<? extends RegistryServiceProvider<?>> providers = Stream.of(serviceInfos)
-                    .map(serviceProviderRegistry::get)
-                    .map(it -> BoundServiceProvider.create(it, injectionPoint))
-                    .toList();
-
-            injectionPlan.put(injectionPoint, () -> providers.stream()
-                    .flatMap(it -> handleProvidersProvider(injectionPoint, it))
-                    .map(it -> resolveProvider(injectionPoint, it))
-                    .toList());
-
-            return this;
-        }
-
-        @Override
-        public ServiceInjectBinderImpl bindNull(Ip injectionPoint) {
-            injectionPlan.put(injectionPoint, () -> null);
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBind(Ip injectionPoint, ServiceInfo serviceInfo) {
-            RegistryServiceProvider<?> serviceProvider = services.serviceProviders().get(serviceInfo);
-            if (serviceProvider instanceof InjectionResolver ir) {
-                Optional<Ip> foundIp = self.dependencies()
-                        .stream()
-                        .filter(it -> it == injectionPoint)
-                        .findFirst();
-
-                if (foundIp.isPresent()) {
-                    injectionPlan.put(injectionPoint, () -> ir.resolve(foundIp.get(), services, self, true).get());
-                    return this;
-                }
-            }
-            return bind(injectionPoint, serviceInfo);
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindOptional(Ip injectionPoint, ServiceInfo serviceInfo) {
-            if (self instanceof InjectionResolver ir) {
-                Optional<Ip> foundIp = self.dependencies()
-                        .stream()
-                        .filter(it -> it == injectionPoint)
-                        .findFirst();
-
-                if (foundIp.isPresent()) {
-                    injectionPlan.put(injectionPoint, () -> ir.resolve(foundIp.get(), services, self, true));
-                    return this;
-                }
-            }
-            return bindOptional(injectionPoint, serviceInfo);
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindProvider(Ip injectionPoint, ServiceInfo serviceInfo) {
-            RegistryServiceProvider<?> serviceProvider = services.serviceProviders().get(serviceInfo);
-            if (serviceProvider instanceof InjectionResolver ir) {
-                Optional<Ip> foundIp = self.dependencies()
-                        .stream()
-                        .filter(it -> it == injectionPoint)
-                        .findFirst();
-
-                if (foundIp.isPresent()) {
-                    injectionPlan.put(injectionPoint,
-                                      () -> ServiceProviderFactory.create(
-                                              () -> ir.resolve(foundIp.get(), services, self, true).get())
-                    );
-                    return this;
-                }
-            }
-            return bindProvider(injectionPoint, serviceInfo);
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindProviderOptional(Ip injectionPoint, ServiceInfo serviceInfo) {
-            RegistryServiceProvider<?> serviceProvider = services.serviceProviders().get(serviceInfo);
-            if (serviceProvider instanceof InjectionResolver ir) {
-                Optional<Ip> foundIp = self.dependencies()
-                        .stream()
-                        .filter(it -> it == injectionPoint)
-                        .findFirst();
-
-                if (foundIp.isPresent()) {
-                    injectionPlan.put(injectionPoint,
-                                      () -> ir.resolve(foundIp.get(), services, self, true)
-                                              .map(it -> ServiceProviderFactory.create(() -> it)));
-                    return this;
-                }
-            }
-            return bindProviderOptional(injectionPoint, serviceInfo);
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindList(Ip injectionPoint, ServiceInfo... serviceInfos) {
-            ServiceProviderRegistry serviceProviderRegistry = services.serviceProviders();
-            List<RegistryServiceProvider<Object>> providers = Stream.of(serviceInfos)
-                    .map(serviceProviderRegistry::get)
-                    .toList();
-
-            ContextualLookup ctxQuery = ContextualLookup.create(injectionPoint);
-            injectionPlan.put(injectionPoint, () -> providers.stream()
-                    .flatMap(provider -> {
-                        if (provider instanceof InjectionPointProvider<?> ipProvider) {
-                            return ipProvider.list(ctxQuery)
-                                    .stream();
-                        } else {
-                            return Stream.of(provider.get());
-                        }
-                    })
-                    .toList());
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindProviderList(Ip injectionPoint, ServiceInfo... serviceInfos) {
-            ServiceProviderRegistry serviceProviderRegistry = services.serviceProviders();
-            List<RegistryServiceProvider<Object>> providers = Stream.of(serviceInfos)
-                    .map(serviceProviderRegistry::get)
-                    .toList();
-            ContextualLookup ctxQuery = ContextualLookup.create(injectionPoint);
-            injectionPlan.put(injectionPoint, () -> providers.stream()
-                    .flatMap(provider -> {
-                        if (provider instanceof InjectionPointProvider<?> ipProvider) {
-                            // map to stream of suppliers of values
-                            return ipProvider.list(ctxQuery)
-                                    .stream()
-                                    .map(it -> ServiceProviderFactory.create(() -> it));
-                        } else {
-                            return Stream.of(provider);
-                        }
-                    })
-                    .toList());
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindNullable(Ip injectionPoint, ServiceInfo serviceInfo) {
-            if (self instanceof InjectionResolver ir) {
-                Optional<Ip> foundIp = self.dependencies()
-                        .stream()
-                        .filter(it -> it == injectionPoint)
-                        .findFirst();
-
-                if (foundIp.isPresent()) {
-                    injectionPlan.put(injectionPoint, () ->
-                            ir.resolve(foundIp.get(), services, self, true).orElse(null));
-                    return this;
-                }
-            }
-            RegistryServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders()
-                                                                                             .get(serviceInfo),
-                                                                                     injectionPoint);
-
-            ContextualLookup query = ContextualLookup.create(injectionPoint);
-            injectionPlan.put(injectionPoint, () -> mapFromProvider(query, serviceProvider, false));
-            return this;
-        }
-
-        @Override
-        public ServiceInjectionPlanBinder.Binder runtimeBindProviderNullable(Ip injectionPoint, ServiceInfo serviceInfo) {
-            if (self instanceof InjectionResolver ir) {
-                Optional<Ip> foundIp = self.dependencies()
-                        .stream()
-                        .filter(it -> it == injectionPoint)
-                        .findFirst();
-
-                if (foundIp.isPresent()) {
-                    injectionPlan.put(injectionPoint, ServiceProviderFactory.create(
-                            () -> ir.resolve(foundIp.get(), services, self, true).orElse(null))
-                    );
-                    return this;
-                }
-            }
-            RegistryServiceProvider<?> serviceProvider = BoundServiceProvider.create(services.serviceProviders()
-                                                                                             .get(serviceInfo),
-                                                                                     injectionPoint);
-
-            ServiceProvider<?> usedProvider = resolveProvider(injectionPoint, serviceProvider);
-            injectionPlan.put(injectionPoint, () -> usedProvider);
-
-            return this;
-        }
-
-        @Override
-        public String toString() {
-            return self.description();
-        }
-
-        /**
-         * Current injection plan.
-         *
-         * @return map of injection point ids to a supplier of their values
-         */
-        protected Map<Ip, Supplier<?>> injectionPlan() {
-            return injectionPlan;
-        }
-
-        private Stream<? extends RegistryServiceProvider<?>> handleProvidersProvider(Ip injectionPoint,
-                                                                                     RegistryServiceProvider<?> sp) {
-            if (sp instanceof ServiceProviderProvider spp) {
-                List<? extends RegistryServiceProvider<?>> managed = spp.serviceProviders(Lookup.create(
-                        injectionPoint), false, false);
-                if (!managed.isEmpty()) {
-                    return managed.stream();
-                }
-            }
-            return Stream.of(sp);
-        }
-
-        private ServiceProvider<?> resolveProvider(Ip injectionPoint,
-                                                   RegistryServiceProvider<?> serviceProvider) {
-
-            Set<TypeName> contracts = serviceProvider.contracts();
-            if (contracts.contains(InjectionPointProvider.TYPE)
-                    && !injectionPoint.contract().equals(InjectionPointProvider.TYPE)) {
-                // the service implementation is an injection point provider, user injects Provider - we are OK to inject
-                // the correctly contextualized instance (if user wants to inject InjectionPointProvider, they should let us know)
-                // this is a special case - the provider should always return the same value in this case, as it is bound to
-                // a single injection point
-                return new BoundIpProvider<>(injectionPoint, serviceProvider);
-            } else {
-                // the registry provider does not provide a provider like contract, use it instead
-                return serviceProvider;
-            }
-        }
-
-        private Object mapFromProvider(ContextualLookup query, RegistryServiceProvider<?> provider, boolean required) {
-            Object value = provider.first(query).orElse(null);
-
-            if (value == null && required) {
-                throw new InjectionServiceProviderException("Provider should have returned a value.", provider);
-            }
-
-            return value;
-        }
-
-        private Stream<?> mapStreamFromProvider(ContextualLookup query, RegistryServiceProvider<?> provider) {
-            return provider.list(query).stream();
-        }
-
-        private static class BoundIpProvider<T> implements ServiceProvider<T> {
-            private final LazyValue<T> valueHolder;
-
-            private BoundIpProvider(Ip injectionPoint, RegistryServiceProvider<T> serviceProvider) {
-                this.valueHolder = LazyValue.create(() -> serviceProvider.first(ContextualLookup.create(injectionPoint))
-                        .orElseThrow(
-                                () -> new InjectionServiceProviderException(
-                                        "Cannot resolve value from injection point provider for " + injectionPoint,
-                                        serviceProvider)));
-            }
-
-            @Override
-            public T get() {
-                return valueHolder.get();
-            }
-        }
     }
 
     private static class IpValue<T> implements Supplier<T> {

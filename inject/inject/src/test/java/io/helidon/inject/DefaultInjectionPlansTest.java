@@ -93,8 +93,8 @@ class DefaultInjectionPlansTest {
 
     static class FakeInjectionPointDescriptor implements ServiceDescriptor<FakeInjectionPointDescriptor> {
         @Override
-        public Set<TypeName> scopes() {
-            return Set.of(Injection.Singleton.TYPE_NAME);
+        public TypeName scope() {
+            return Injection.Singleton.TYPE_NAME;
         }
 
         @Override
@@ -112,8 +112,8 @@ class DefaultInjectionPlansTest {
 
     static class FakeRegularDescriptor implements ServiceDescriptor<FakeRegularDescriptor> {
         @Override
-        public Set<TypeName> scopes() {
-            return Set.of(Injection.Singleton.TYPE_NAME);
+        public TypeName scope() {
+            return Injection.Singleton.TYPE_NAME;
         }
 
         @Override

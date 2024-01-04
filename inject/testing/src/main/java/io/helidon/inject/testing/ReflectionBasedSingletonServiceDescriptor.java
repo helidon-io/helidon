@@ -112,8 +112,8 @@ public class ReflectionBasedSingletonServiceDescriptor<T> implements ServiceDesc
     }
 
     @Override
-    public Set<TypeName> scopes() {
-        return serviceInfo.scopes();
+    public TypeName scope() {
+        return serviceInfo.scope();
     }
 
     @Override

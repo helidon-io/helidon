@@ -17,8 +17,10 @@
 package io.helidon.inject;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.InjectionPointProvider;
@@ -139,8 +141,8 @@ public interface RegistryServiceProvider<T> extends ServiceInfo, ServiceProvider
     }
 
     @Override
-    default Set<TypeName> scopes() {
-        return serviceInfo().scopes();
+    default TypeName scope() {
+        return serviceInfo().scope();
     }
 
     @Override
@@ -152,4 +154,6 @@ public interface RegistryServiceProvider<T> extends ServiceInfo, ServiceProvider
     default boolean isAbstract() {
         return serviceInfo().isAbstract();
     }
+
+    void injectionPlan(Map<Ip, Supplier<?>> ipSupplierMap);
 }

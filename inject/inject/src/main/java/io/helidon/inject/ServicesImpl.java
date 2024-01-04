@@ -18,23 +18,25 @@ package io.helidon.inject;
 
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Interception;
 import io.helidon.inject.service.Lookup;
@@ -48,8 +50,16 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
 
+/**
+ * This is the root service registry that knows of all services.
+ */
 class ServicesImpl implements Services, ServiceBinder {
     private static final System.Logger LOGGER = System.getLogger(Services.class.getName());
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+    private static final Comparator<ServiceManager<?>> SERVICE_MANAGER_COMPARATOR = Comparator
+            .<ServiceManager<?>>comparingDouble(ServiceManager::weight)
+            .thenComparing(ServiceManager::serviceType)
+            .reversed();
     private static final Map<String, ActivatorProvider> ACTIVATOR_PROVIDERS;
 
     static {
@@ -63,21 +73,34 @@ class ServicesImpl implements Services, ServiceBinder {
         ACTIVATOR_PROVIDERS = Map.copyOf(activators);
     }
 
-    private final Map<Lookup, List<RegistryServiceProvider<?>>> cache = new ConcurrentHashMap<>();
-    // a map of service provider instances to their activators, so we can correctly handle activation requests
-    private final Map<RegistryServiceProvider<?>, Activator<?>> providersToActivators = new IdentityHashMap<>();
-    private final Counter lookupCounter;
+    private final String id = String.valueOf(COUNTER.incrementAndGet());
+    private final InjectionServicesImpl injectionServices;
     private final InjectionConfig cfg;
-    private final Map<TypeName, RegistryServiceProvider<?>> servicesByTypeName;
-    private final Map<TypeName, Set<RegistryServiceProvider<?>>> servicesByContract;
+    private final Counter lookupCounter;
+    private final Counter lookupScanCounter;
     private final Counter cacheLookupCounter;
     private final Counter cacheHitCounter;
-    private final InjectionServicesImpl injectionServices;
+    private final boolean cacheEnabled;
     private final State state;
-    private final ServiceProviderRegistry spRegistry;
-    private final Map<TypeName, Map<ServiceDescriptor<?>, Supplier<Activator<?>>>> activatorsByScope;
 
-    private volatile List<RegistryServiceProvider<Interception.Interceptor>> interceptors;
+    /*
+    The following section may be modified at runtime
+     */
+    private final ReadWriteLock stateLock = new ReentrantReadWriteLock();
+    private final Lock stateReadLock = stateLock.readLock();
+    private final Lock stateWriteLock = stateLock.writeLock();
+
+    // service descriptor to its manager
+    private final Map<ServiceInfo, ServiceManager<?>> servicesByDescriptor = new IdentityHashMap<>();
+    // implementation type to its manager
+    private final Map<TypeName, ServiceInfo> servicesByType = new HashMap<>();
+    // implemented contracts to their manager(s)
+    private final Map<TypeName, Set<ServiceInfo>> servicesByContract = new HashMap<>();
+    private final List<ServiceManager<?>> scopeHandlerManagers = new ArrayList<>();
+    private final Map<TypeName, ScopeHandler> scopeHandlers = new HashMap<>();
+    private final Map<Lookup, List<ServiceManager<?>>> cache = new HashMap<>();
+
+    private List<ServiceManager<Interception.Interceptor>> interceptors;
 
     ServicesImpl(InjectionServicesImpl injectionServices, State state) {
         this.injectionServices = injectionServices;
@@ -88,44 +111,31 @@ class ServicesImpl implements Services, ServiceBinder {
                 .getOrCreate(Counter.builder("io.helidon.inject.lookups")
                                      .description("Number of lookups in the service registry")
                                      .scope(Meter.Scope.VENDOR));
-        if (cfg.serviceLookupCaching()) {
-            this.cacheLookupCounter = Metrics.globalRegistry()
-                    .getOrCreate(Counter.builder("io.helidon.inject.cacheLookups")
-                                         .description("Number of lookups in cache in the service registry")
-                                         .scope(Meter.Scope.VENDOR));
-            this.cacheHitCounter = Metrics.globalRegistry()
-                    .getOrCreate(Counter.builder("io.helidon.inject.cacheHits")
-                                         .description("Number of cache hits in the service registry")
-                                         .scope(Meter.Scope.VENDOR));
-        } else {
-            this.cacheLookupCounter = null;
-            this.cacheHitCounter = null;
+        this.lookupScanCounter = Metrics.globalRegistry()
+                .getOrCreate(Counter.builder("io.helidon.inject.scanLookups")
+                                     .description("Number of lookups that require registry scan")
+                                     .scope(Meter.Scope.VENDOR));
+
+        this.cacheEnabled = cfg.serviceLookupCaching();
+        this.cacheLookupCounter = Metrics.globalRegistry()
+                .getOrCreate(Counter.builder("io.helidon.inject.cacheLookups")
+                                     .description("Number of lookups in cache in the service registry")
+                                     .scope(Meter.Scope.VENDOR));
+        this.cacheHitCounter = Metrics.globalRegistry()
+                .getOrCreate(Counter.builder("io.helidon.inject.cacheHits")
+                                     .description("Number of cache hits in the service registry")
+                                     .scope(Meter.Scope.VENDOR));
+
+        this.scopeHandlers.put(Injection.Singleton.TYPE_NAME, new SingletonScopeHandler(this));
+
+        if (!injectionServices.config().interceptionEnabled()) {
+            this.interceptors = List.of();
         }
-
-        /*
-        note for future:
-        we can optimize this if needed - we can protect parallel operations on binding, and once binding
-        is done (and dynamic updates are not permitted), these maps are immutable
-         */
-        this.servicesByTypeName = new ConcurrentHashMap<>();
-        this.servicesByContract = new ConcurrentHashMap<>();
-        this.activatorsByScope = new ConcurrentHashMap<>();
-
-        this.spRegistry = new ServiceProviderRegistryImpl(this);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> Optional<Supplier<T>> first(Lookup criteria) {
-        return this.<T>lookup(criteria, 1)
-                .stream()
-                .findFirst();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> List<Supplier<T>> all(Lookup criteria) {
-        return this.lookup(criteria, Integer.MAX_VALUE);
+    public InjectionServices injectionServices() {
+        return injectionServices;
     }
 
     @Override
@@ -138,23 +148,47 @@ class ServicesImpl implements Services, ServiceBinder {
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Binding service descriptor: " + serviceDescriptor.infoType().fqName());
         }
-        Set<TypeName> scopes = serviceDescriptor.scopes();
-        if (scopes.isEmpty() || scopes.contains(InjectTypes.SINGLETON)) {
-            bind(activatorProvider.activator(this, serviceDescriptor));
-        }
 
-        for (TypeName scope : scopes) {
-            if (!InjectTypes.SINGLETON.equals(scope)) {
-                // singleton is never handled by custom scopes
-                activatorsByScope.computeIfAbsent(scope, it -> new HashMap<>())
-                        .put(serviceDescriptor, () -> activatorProvider.activator(this, serviceDescriptor));
+        // scope handlers have a very specific meaning
+        if (serviceDescriptor.contracts().contains(ScopeHandler.TYPE_NAME)) {
+            if (!Injection.Singleton.TYPE_NAME.equals(serviceDescriptor.scope())) {
+                throw new InjectionException("Services that provide ScopeHandler contract MUST be in Singleton scope, but "
+                                                     + serviceDescriptor.serviceType().fqName() + " is in "
+                                                     + serviceDescriptor.scope().fqName() + " scope.");
             }
         }
+
+        bind(serviceDescriptor, () -> activatorProvider.activator(this, serviceDescriptor));
     }
 
     @Override
-    public InjectionServicesImpl injectionServices() {
-        return injectionServices;
+    public <T> Supplier<T> supply(Lookup lookup) {
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        if (managers.isEmpty()) {
+            throw new InjectionException("No services match: " + lookup);
+        }
+        return new ServiceSupply<>(ContextualLookup.builder().from(lookup).build(), managers);
+    }
+
+    @Override
+    public <T> Supplier<Optional<T>> supplyFirst(Lookup lookup) {
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        if (managers.isEmpty()) {
+            return Optional::empty;
+        }
+        return new ServiceSupplyOptional<>(ContextualLookup.builder().from(lookup).build(), managers);
+    }
+
+    @Override
+    public <T> Supplier<List<T>> supplyAll(Lookup lookup) {
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        if (managers.isEmpty()) {
+            return List::of;
+        }
+        return new ServiceSupplyList<>(ContextualLookup.builder().from(lookup).build(), managers);
     }
 
     @Override
@@ -162,53 +196,26 @@ class ServicesImpl implements Services, ServiceBinder {
         return this;
     }
 
-    @Override
-    public ServiceProviderRegistry serviceProviders() {
-        return spRegistry;
-    }
-
-    ScopeServices createForScope(TypeName scopeType, Map<ServiceInfo, Object> initialBindings) {
-        return new ScopeServicesImpl(this,
-                                     scopeType,
-                                     Optional.ofNullable(activatorsByScope.get(scopeType)).orElseGet(Map::of),
-                                     initialBindings);
-    }
-
-    @SuppressWarnings("unchecked")
-    <T> List<RegistryServiceProvider<T>> allProviders(Lookup criteria) {
-        return this.lookup(criteria, Integer.MAX_VALUE);
-    }
-
-    @SuppressWarnings("unchecked")
-    <T> RegistryServiceProvider<T> serviceProvider(ServiceInfo serviceInfo) {
-        RegistryServiceProvider<?> serviceProvider = servicesByTypeName.get(serviceInfo.serviceType());
-        if (serviceProvider == null) {
-            throw new NoSuchElementException("Requested service is not managed by this registry: "
-                                                     + serviceInfo.serviceType().fqName());
-        }
-        return (RegistryServiceProvider<T>) serviceProvider;
-    }
-
     void bindSelf() {
-        bind(ServicesActivator.create(this));
+        bind(Services__ServiceDescriptor.INSTANCE, () -> ServicesActivator.create(this));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     void interceptors(ServiceInfo... serviceInfos) {
         if (this.interceptors == null) {
             List list = Stream.of(serviceInfos)
-                    .map(this::serviceProvider)
+                    .map(this::serviceManager)
                     .toList();
             this.interceptors = List.copyOf(list);
         }
     }
 
-    List<RegistryServiceProvider<Interception.Interceptor>> interceptors() {
+    List<ServiceManager<Interception.Interceptor>> interceptors() {
         if (interceptors == null) {
-            interceptors = allProviders(Lookup.builder()
-                                                .addContract(Interception.Interceptor.class)
-                                                .addQualifier(Qualifier.WILDCARD_NAMED)
-                                                .build());
+            interceptors = lookupManagers(Lookup.builder()
+                                                  .addContract(Interception.Interceptor.class)
+                                                  .addQualifier(Qualifier.WILDCARD_NAMED)
+                                                  .build());
         }
         return interceptors;
     }
@@ -222,7 +229,8 @@ class ServicesImpl implements Services, ServiceBinder {
 
         ServiceBinder moduleBinder = new ServiceBinderImpl(moduleName);
         module.configure(moduleBinder);
-        bind(InjectionModuleActivator.create(this, module, moduleName));
+        InjectionModuleActivator activator = InjectionModuleActivator.create(this, module, moduleName);
+        bind(activator.descriptor(), () -> activator);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Finished module binding: " + moduleName);
@@ -238,7 +246,10 @@ class ServicesImpl implements Services, ServiceBinder {
 
         ServiceInjectionPlanBinder appBinder = new AppBinderImpl(appName);
         application.configure(appBinder);
-        bind(InjectionApplicationActivator.create(this, application, appName));
+        InjectionApplicationActivator activator = InjectionApplicationActivator.create(this,
+                                                                                       application,
+                                                                                       appName);
+        bind(activator.descriptor(), () -> activator);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Finished application binding: " + appName);
@@ -246,174 +257,45 @@ class ServicesImpl implements Services, ServiceBinder {
         }
     }
 
-    Optional<Activator<?>> activator(RegistryServiceProvider<?> instance) {
-        return Optional.ofNullable(providersToActivators.get(instance));
-    }
-
-    List<RegistryServiceProvider<?>> allProviders() {
-        Set<RegistryServiceProvider<?>> result = new HashSet<>(servicesByTypeName.values());
-        servicesByContract.values()
-                .forEach(result::addAll);
-
-        return List.copyOf(result);
-    }
-
-    private static boolean hasNamed(Set<Qualifier> qualifiers) {
-        return qualifiers.stream()
-                .anyMatch(it -> it.typeName().equals(Injection.Named.TYPE_NAME));
-    }
-
-    void bind(Activator<?> activator) {
-        if (state.currentPhase().ordinal() > Phase.GATHERING_DEPENDENCIES.ordinal()) {
-            if (!cfg.permitsDynamic()) {
-                throw new IllegalStateException(
-                        "Attempting to bind to Services that do not support dynamic updates. Set option permitsDynamic, "
-                                + "or configuration option 'inject.permits-dynamic=true' to enable");
-            }
-        }
-
-        /*
-        We cannot start activation for providers that are not singleton (or no-scope)
-         */
-        Set<TypeName> scopes = activator.descriptor().scopes();
-        if (scopes.isEmpty() || scopes.contains(InjectTypes.SINGLETON)) {
-            // make sure the activator has a chance to do something, such as create the initial service provider instance
-            activator.activate(ActivationRequest.builder()
-                                       .targetPhase(Phase.INIT)
-                                       .throwIfError(false)
-                                       .build());
-            RegistryServiceProvider<?> serviceProvider = activator.serviceProvider();
-            this.providersToActivators.put(serviceProvider, activator);
-
-            TypeName serviceType = serviceProvider.serviceType();
-
-            // only put if absent, as this may be a lower weight provider for the same type
-            RegistryServiceProvider<?> previousValue = servicesByTypeName.putIfAbsent(serviceType, serviceProvider);
-            if (previousValue != null) {
-                // a value was already registered for this service type, ignore this registration
-                if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE, "Attempt to register another service provider for the same service type."
-                            + " Service type: " + serviceType.fqName()
-                            + ", existing provider: " + previousValue
-                            + ", new provider: " + serviceProvider);
+    ScopeHandler scopeHandler(TypeName scope) {
+        return scopeHandlers.computeIfAbsent(scope, it -> {
+            for (ServiceManager<?> scopeHandlerManager : scopeHandlerManagers) {
+                ScopeHandler scopeHandler = (ScopeHandler) scopeHandlerManager.serviceProvider().get();
+                if (scopeHandler.supportedScope().equals(scope)) {
+                    return scopeHandler;
                 }
-                return;
             }
-            servicesByContract.computeIfAbsent(serviceType, it -> new TreeSet<>(ServiceProviderComparator.instance()))
-                    .add(serviceProvider);
-
-            for (TypeName contract : serviceProvider.contracts()) {
-                servicesByContract.computeIfAbsent(contract, it -> new TreeSet<>(ServiceProviderComparator.instance()))
-                        .add(serviceProvider);
-            }
-        } else {
-            for (TypeName scope : scopes) {
-                activatorsByScope.computeIfAbsent(scope, it -> new ArrayList<>())
-                        .add(activator);
-            }
-        }
-    }
-
-    private static boolean hasNamed(Set<Qualifier> qualifiers) {
-        return qualifiers.stream()
-                .anyMatch(it -> it.typeName().equals(InjectTypes.NAMED));
+            throw new InjectionException("A request for service in scope " + scope.fqName()
+                                                 + " has been received, yet there is no ScopeHandler available for this scope "
+                                                 + "in this registry");
+        });
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private <T> List lookup(Lookup criteria, int limit) {
-        lookupCounter.increment();
+    private static <T> List<Supplier<T>> explodeFilterAndSort(Lookup lookup,
+                                                              List<ServiceManager<T>> serviceManagers) {
+        // this method is called when we resolve instances, so we can safely assume any scope is active
 
-        if (LOGGER.isLoggable(Level.TRACE)) {
-            LOGGER.log(Level.TRACE, "Lookup: " + criteria + ", limit: " + limit);
-        }
-
-        if (criteria.serviceType().isPresent()) {
-            // when a specific service type is requested, we go for it
-            RegistryServiceProvider<?> exact = servicesByTypeName.get(criteria.serviceType().get());
-            if (exact != null) {
-                return explodeFilterAndSort(List.of(exact), criteria);
-            }
-        }
-
-        if (1 == criteria.contracts().size()) {
-            TypeName theOnlyContractRequested = criteria.contracts().iterator().next();
-            Set<RegistryServiceProvider<?>> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
-            if (subsetOfMatches != null) {
-                // the subset is ordered, cannot use parallel
-                List<RegistryServiceProvider<?>> result = subsetOfMatches.stream()
-                        .filter(criteria::matches)
-                        .limit(limit)
-                        .toList();
-                if (!result.isEmpty()) {
-                    return explodeFilterAndSort(result, criteria);
-                }
-            }
-            if (criteria.serviceType().isEmpty()) {
-                // we may have a request for service type and not a contract
-                RegistryServiceProvider<?> exact = servicesByTypeName.get(theOnlyContractRequested);
-                if (exact != null) {
-                    return explodeFilterAndSort(List.of(exact), criteria);
-                }
-            }
-        }
-
-        if (cfg.serviceLookupCaching()) {
-            List result = cache.get(criteria);
-            cacheLookupCounter.increment();
-            if (result != null) {
-                cacheHitCounter.increment();
-                return result;
-            }
-        }
-
-        // table scan :-(
-        List result = servicesByTypeName.values()
-                .stream()
-                .filter(criteria::matches)
-                .sorted(ServiceProviderComparator.instance())
-                .limit(limit)
+        List<RegistryServiceProvider<T>> providers = serviceManagers.stream()
+                .map(ServiceManager::serviceProvider)
                 .toList();
 
-        if (!result.isEmpty()) {
-            result = explodeFilterAndSort(result, criteria);
-        }
-
-        if (cfg.serviceLookupCaching()) {
-            cache.put(criteria, result);
-        }
-
-        return result;
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private <T> List<Supplier<T>> explodeFilterAndSort(List<RegistryServiceProvider<?>> coll, Lookup criteria) {
-        List<RegistryServiceProvider<?>> exploded;
-        if ((coll.size() > 1)
-                || coll.stream().anyMatch(sp -> sp instanceof ServiceProviderProvider)) {
-            exploded = new ArrayList<>();
-
-            coll.forEach(s -> {
-                if (s instanceof ServiceProviderProvider spp) {
-                    List<? extends RegistryServiceProvider<?>> subList = spp.serviceProviders(criteria, true, true);
-                    if (subList != null && !subList.isEmpty()) {
-                        subList.stream().filter(Objects::nonNull).forEach(exploded::add);
+        List<RegistryServiceProvider<?>> exploded = providers.stream()
+                .flatMap(it -> {
+                    if (it instanceof ServiceProviderProvider spp) {
+                        return spp.serviceProviders(lookup, true, true)
+                                .stream();
+                    } else {
+                        return Stream.of(it);
                     }
-                } else {
-                    exploded.add(s);
-                }
-            });
-        } else {
-            exploded = new ArrayList<>(coll);
-        }
-
-        if (exploded.size() > 1) {
-            exploded.sort(ServiceProviderComparator.instance());
-        }
+                })
+                .sorted(ServiceProviderComparator.instance())
+                .toList();
 
         // the providers are sorted by weight and other properties
         // we need to have unnamed providers before named ones (if criteria does not contain a Named qualifier)
         // in similar fashion, if criteria does not contain any qualifier, put unqualified instances first
-        if (criteria.qualifiers().isEmpty()) {
+        if (lookup.qualifiers().isEmpty()) {
             // unqualified first, unnamed before named, but keep the existing order otherwise
             List unqualified = new ArrayList<>();
             List<RegistryServiceProvider<?>> qualified = new ArrayList<>();
@@ -426,7 +308,7 @@ class ServicesImpl implements Services, ServiceBinder {
             }
             unqualified.addAll(qualified);
             return unqualified;
-        } else if (!hasNamed(criteria.qualifiers())) {
+        } else if (!hasNamed(lookup.qualifiers())) {
             // unnamed first
             List unnamed = new ArrayList<>();
             List<RegistryServiceProvider<?>> named = new ArrayList<>();
@@ -443,6 +325,233 @@ class ServicesImpl implements Services, ServiceBinder {
 
         // need to coerce the compiler into the correct type here...
         return (List) exploded;
+    }
+
+    private static boolean hasNamed(Set<Qualifier> qualifiers) {
+        return qualifiers.stream()
+                .anyMatch(it -> it.typeName().equals(Injection.Named.TYPE_NAME));
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> ServiceManager<T> serviceManager(ServiceInfo descriptor) {
+        ServiceManager<?> serviceManager = servicesByDescriptor.get(descriptor);
+        if (serviceManager == null) {
+            throw new InjectionException("A service descriptor was used that is not bound to this service registry: " + descriptor.serviceType());
+        }
+        return (ServiceManager<T>) serviceManager;
+    }
+
+    @SuppressWarnings("unchecked,rawtypes")
+    private void bind(ServiceDescriptor<?> descriptor, Supplier<Activator<?>> activatorSupplier) {
+        try {
+            stateWriteLock.lock();
+            if (state.currentPhase().ordinal() > Phase.GATHERING_DEPENDENCIES.ordinal()) {
+                if (!cfg.permitsDynamic()) {
+                    throw new IllegalStateException(
+                            "Attempting to bind to Services that do not support dynamic updates. Set option permitsDynamic, "
+                                    + "or configuration option 'inject.permits-dynamic=true' to enable");
+                }
+            }
+
+            ServiceManager serviceManager = new ServiceManager(this, descriptor, activatorSupplier);
+            servicesByDescriptor.put(descriptor, serviceManager);
+
+            if (descriptor.contracts().contains(ScopeHandler.TYPE_NAME)) {
+                scopeHandlerManagers.add(serviceManager);
+            }
+
+            TypeName serviceType = descriptor.serviceType();
+
+            // only put if absent, as this may be a lower weight provider for the same type
+            ServiceManager<?> previousValue = servicesByType.putIfAbsent(serviceType, serviceManager);
+            if (previousValue != null) {
+                // a value was already registered for this service type, ignore this registration
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, "Attempt to register another service provider for the same service type."
+                            + " Service type: " + serviceType.fqName()
+                            + ", existing provider: " + previousValue
+                            + ", new provider: " + serviceManager);
+                }
+                return;
+            }
+
+            servicesByContract.computeIfAbsent(serviceType, it -> new TreeSet<>(SERVICE_MANAGER_COMPARATOR))
+                    .add(serviceManager);
+
+            for (TypeName contract : descriptor.contracts()) {
+                servicesByContract.computeIfAbsent(contract, it -> new TreeSet<>(SERVICE_MANAGER_COMPARATOR))
+                        .add(serviceManager);
+            }
+        } finally {
+            stateWriteLock.unlock();
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    <T> List<ServiceInfo> lookupServices(Lookup lookup) {
+        Lock currentLock = stateReadLock;
+        try {
+            // most of our operations are within a read lock
+            currentLock.lock();
+
+            lookupCounter.increment();
+
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Lookup: " + lookup);
+            }
+
+            List<ServiceInfo> result = new ArrayList<>();
+
+            if (lookup.serviceType().isPresent()) {
+                // when a specific service type is requested, we go for it
+                ServiceInfo exact = servicesByType.get(lookup.serviceType().get());
+                if (exact != null) {
+                    result.add(exact);
+                    return result;
+                }
+            }
+
+            if (1 == lookup.contracts().size()) {
+                // a single contract is requested, we are ready for this ("indexed by contract")
+                TypeName theOnlyContractRequested = lookup.contracts().iterator().next();
+                Set<ServiceManager<?>> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
+                if (subsetOfMatches != null) {
+                    // the subset is ordered, cannot use parallel, also no need to re-order
+                    subsetOfMatches.stream()
+                            .filter(it -> lookup.matches(it.descriptor()))
+                            .forEach(it -> result.add((ServiceManager<T>) it));
+                    if (!result.isEmpty()) {
+                        return result;
+                    }
+                }
+            }
+
+            if (cacheEnabled) {
+                List cacheResult = cache.get(lookup);
+                cacheLookupCounter.increment();
+                if (cacheResult != null) {
+                    cacheHitCounter.increment();
+                    return cacheResult;
+                }
+            }
+
+            // table scan :-(
+            lookupScanCounter.increment();
+            servicesByType.values()
+                    .stream()
+                    .filter(it -> lookup.matches(it.descriptor()))
+                    .sorted(SERVICE_MANAGER_COMPARATOR)
+                    .forEach(it -> result.add((ServiceManager<T>) it));
+
+            if (cacheEnabled) {
+                // upgrade to write lock
+                currentLock.unlock();
+                currentLock = stateWriteLock;
+                currentLock.lock();
+                List cached = result;
+                cache.put(lookup, cached);
+            }
+
+            return result;
+        } finally {
+            currentLock.unlock();
+        }
+    }
+
+    static class ServiceSupply<T> implements Supplier<T> {
+        private final ContextualLookup lookup;
+        private final List<ServiceManager<T>> managers;
+
+        // supply a single instance at runtime based on the manager
+        ServiceSupply(ContextualLookup lookup, List<ServiceManager<T>> managers) {
+            this.lookup = lookup;
+            this.managers = managers;
+        }
+
+        @Override
+        public T get() {
+            return explodeFilterAndSort(lookup, managers)
+                    .stream()
+                    .findFirst()
+                    .map(Supplier::get)
+                    .orElseThrow(() -> new InjectionException(
+                            "Neither of matching services could provide a value. Descriptors: " + managers + ", "
+                                    + "lookup: " + lookup));
+        }
+    }
+
+    static class ServiceSupplyOptional<T> implements Supplier<Optional<T>> {
+        private final ContextualLookup lookup;
+        private final List<ServiceManager<T>> managers;
+
+        // supply a single instance at runtime based on the manager
+        ServiceSupplyOptional(ContextualLookup lookup, List<ServiceManager<T>> managers) {
+            this.lookup = lookup;
+            this.managers = managers;
+        }
+
+        @Override
+        public Optional<T> get() {
+            return explodeFilterAndSort(lookup, managers)
+                    .stream()
+                    .findFirst()
+                    .map(Supplier::get);
+        }
+    }
+
+    static class ServiceSupplyList<T> implements Supplier<List<T>> {
+        private final ContextualLookup lookup;
+        private final List<ServiceManager<T>> managers;
+
+        // supply a single instance at runtime based on the manager
+        ServiceSupplyList(ContextualLookup lookup, List<ServiceManager<T>> managers) {
+            this.lookup = lookup;
+            this.managers = managers;
+        }
+
+        @Override
+        public List<T> get() {
+            return explodeFilterAndSort(lookup, managers)
+                    .stream()
+                    .map(Supplier::get)
+                    .toList();
+        }
+    }
+
+    private static class SingletonScopeHandler implements ScopeHandler {
+        private final Scope scope;
+
+        SingletonScopeHandler(ServicesImpl serviceRegistry) {
+            this.scope = new SingletonScope(serviceRegistry);
+        }
+
+        @Override
+        public TypeName supportedScope() {
+            return Injection.Singleton.TYPE_NAME;
+        }
+
+        @Override
+        public Optional<Scope> currentScope() {
+            return Optional.of(scope);
+        }
+    }
+
+    private static class SingletonScope implements Scope {
+        private final ScopeServices services;
+
+        SingletonScope(ServicesImpl serviceRegistry) {
+            this.services = new ScopeServices(serviceRegistry, Injection.Singleton.TYPE_NAME, serviceRegistry.id, Map.of());
+        }
+
+        @Override
+        public void close() {
+            // no-op, singleton service registry is closed from InjectionServices
+        }
+
+        @Override
+        public ScopeServices services() {
+            return services;
+        }
     }
 
     private class ServiceBinderImpl implements ServiceBinder {
@@ -472,29 +581,18 @@ class ServicesImpl implements Services, ServiceBinder {
 
         @Override
         public Binder bindTo(ServiceInfo serviceInfo) {
-            RegistryServiceProvider<?> serviceProvider = ServicesImpl.this.serviceProvider(serviceInfo);
-
-            Optional<Binder> binder = serviceProvider.serviceProviderBindable()
-                    .flatMap(ServiceProviderBindable::injectionPlanBinder);
-
-            if (binder.isEmpty()) {
-                // basically this means this service will not support compile-time injection
-                LOGGER.log(Level.WARNING,
-                           "service provider is not capable of being bound to injection points: " + serviceProvider);
-                return new NoOpBinder(serviceProvider);
-            }
-            Binder result = binder.get();
+            ServiceManager<?> serviceManager = ServicesImpl.this.serviceManager(serviceInfo);
 
             if (LOGGER.isLoggable(Level.DEBUG)) {
-                LOGGER.log(Level.DEBUG, "binding injection plan to " + result);
+                LOGGER.log(Level.DEBUG, "binding injection plan to " + serviceManager);
             }
 
-            return result;
+            return serviceManager.servicePlanBinder();
         }
 
         @Override
-        public void interceptors(ServiceInfo... serviceInfos) {
-            ServicesImpl.this.interceptors(serviceInfos);
+        public void interceptors(ServiceInfo... descriptors) {
+            ServicesImpl.this.interceptors(descriptors);
         }
 
         @Override

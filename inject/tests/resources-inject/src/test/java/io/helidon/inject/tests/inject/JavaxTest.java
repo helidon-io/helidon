@@ -16,14 +16,12 @@
 
 package io.helidon.inject.tests.inject;
 
-import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Qualifier;
 
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,9 +30,9 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.inject.testing.InjectionTestingSupport.basicTestableConfig;
 import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
 import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
@@ -66,9 +64,7 @@ class JavaxTest {
                    equalTo("AnApplicationScopedService:INIT"));
         assertThat(sp.qualifiers(),
                    contains(Qualifier.create(Default.class)));
-        assertThat(sp.scopes(),
-                   containsInAnyOrder(Injection.Singleton.TYPE_NAME,
-                                      TypeName.create(ApplicationScoped.class)));
+        assertThat(sp.scope(), is(Injection.Singleton.TYPE_NAME));
     }
 
 }
