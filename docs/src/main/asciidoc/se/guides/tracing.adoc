@@ -58,7 +58,7 @@ Spans are automatically created by Helidon as needed during execution of the RES
 == Getting Started with Tracing
 
 The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace
-across multiple services, and how to integrate with tracing with Kubernetes. All examples use Jaeger and traces
+across multiple services, and how to integrate tracing with Kubernetes. All examples use Jaeger and traces
 will be viewed using the Jaeger UI.
 
 === Create a Sample Helidon SE Project
@@ -109,7 +109,7 @@ docker run -d --name jaeger \                  <1>
 
 === Enable Tracing in the Helidon Application
 
-Update the pom.xml file and add the following Jaeger dependency to the `<dependencies>`
+Update the `pom.xml` file and add the following Jaeger dependency to the `<dependencies>`
 section (*not* `<dependencyManagement>`). This will enable Helidon to use Jaeger at the
 default host and port, `localhost:14250`.
 
@@ -135,10 +135,10 @@ default host and port, `localhost:14250`.
 <2> Observability features for tracing.
 <3> Jaeger tracing provider.
 
-All spans sent by Helidon to Jaeger need to be associated with a service.  Specify the service name below.
+All spans sent by Helidon to Jaeger need to be associated with a service, assigned by the `tracing.service` setting in the example below.
 
 [source,bash]
-.Add the following lines to `resources/application.yaml`:
+.Add the following lines to `src/main/resources/application.yaml`:
 ----
 tracing:
   service: helidon-se-1
@@ -156,7 +156,7 @@ tracing:
 
 === View Automatic Tracing of REST Endpoints
 Tracing is part of Helidon's observability support. By default, Helidon discovers any observability feature on the classpath and activates it automatically. In particular for tracing, Helidon adds a trace each time a client accesses a service endpoint.
-You can see these traces using the Jaeger UI once you build, run, and access your application.
+You can see these traces using the Jaeger UI once you build, run, and access your application without changing your application's Java code.
 
 ==== Build and Access QuickStart
 
@@ -170,7 +170,7 @@ java -jar target/helidon-quickstart-se.jar
 [source,bash]
 .Access the application
 ----
-curl http://localhost:8080/simple-greet
+curl http://localhost:8080/greet
 ----
 
 === Viewing Traces Using the Jaeger UI
@@ -191,18 +191,18 @@ see the root span (`HTTP Request`) and the single child span (`content-write`) a
 .Trace detail page
 image::guides/tracing_se_first_trace.png[Trace Detail]
 
-You can examine span details by clicking on the span row.  Refer to the image below, which shows the span details, including timing information.
-You can see times for each space relative to the root span.  These rows are annotated with `Server Start` and `Server Finish`, as shown in the third column.
+You can examine span details by clicking on the span row.  Refer to the image below which shows the span details including timing information.
+You can see times for each space relative to the root span.
 
 .Span detail page
 image::guides/tracing_se_span_detail.png[Span Details]
 
 === Adding a Custom Span
 Your application can use the Helidon tracing API to create custom spans.
-The following code adds a custom span around the code which prepares the default greeting response. The new custom span's parent span is set to the one which Helidon automatically creates for the REST endpoint.
+The following code replaces the generated `getDefaultMessageHandler` method to add a custom span around the code which prepares the default greeting response. The new custom span's parent span is set to the one which Helidon automatically creates for the REST endpoint.
 
 [source,java]
-.Update the `GreetService` class: replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class, replacing the `getDefaultMessageHandler` method:
 ----
 private void getDefaultMessageHandler(ServerRequest request,
                                       ServerResponse response) {
@@ -253,7 +253,7 @@ Notice that the top trace has three spans, not two as with the earlier trace. Cl
 .Trace details with custom span
 image::guides/tracing_se_expanded_trace.png[Trace details with custom span]
 
-Note the row for `mychildSpan`, the custom span created by the added code.
+Note the row for `mychildSpan`--the custom span created by the added code.
 
 === Using Tracing Across Services
 
@@ -262,8 +262,8 @@ This means a single trace can include spans from multiple services and hosts.  H
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
 internally call OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
 
-To demonstrate distributed tracing, you will need to create a second project, where the server listens to on port 8081.
-Create a new root directory to hold this new project, then do the following steps, similar to
+To demonstrate distributed tracing, create a second project where the server listens to on port 8081.
+Create a new directory to hold this new project, then do the following steps, similar to
 what you did at the start of this guide:
 
 === Create the Second Service
@@ -281,7 +281,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 ----
 
 [source,bash]
-.The project will be built and run from the `helidon-quickstart-se-2` directory:
+.The project is in the `helidon-quickstart-se-2` directory:
 ----
 cd helidon-quickstart-se-2
 ----
@@ -309,7 +309,7 @@ cd helidon-quickstart-se-2
 <3> Jaeger tracing provider.
 
 [source,bash]
-.Replace `resources/application.yaml` with the following:
+.Replace `src/main/resources/application.yaml` with the following:
 ----
 app:
   greeting: "Hello From SE-2"
@@ -332,7 +332,7 @@ server:
   host: 0.0.0.0
 ----
 
-NOTE: The settings above are for development and experimental purposes only. For production environment, please see the link:../tracing.adoc[Tracing documentation].
+NOTE: The settings above are for development and experimental purposes only. For a production environment please see the xref:../tracing.adoc[Tracing documentation].
 
 [source,java]
 .Update the `GreetService` class. Replace the `getDefaultMessageHandler` method:
@@ -353,8 +353,9 @@ private void getDefaultMessageHandler(ServerRequest request,
 }
 ----
 
+Build the application, skipping unit tests; the unit tests check for the default greeting response which is now different in the updated config. Then run the application.
 [source,bash]
-.Build the application, skipping unit tests, then run it:
+.Build and run:
 ----
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-se-2.jar
@@ -376,30 +377,40 @@ Once you have validated that the second service is running correctly, you need t
 call it.
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
 <dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-jersey-client</artifactId>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
 </dependency>
 <dependency>
-    <groupId>org.glassfish.jersey.core</groupId>
-    <artifactId>jersey-client</artifactId>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-api</artifactId>
 </dependency>
 <dependency>
-    <groupId>org.glassfish.jersey.inject</groupId>
-    <artifactId>jersey-hk2</artifactId>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-tracing</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-http1</artifactId>
+    <scope>runtime</scope>
 </dependency>
 ----
+Make the following changes to the `GreetService` class.
 
+1. Add a `WebClient` field.
++
 [source,java]
 .Add a private instance field (before the constructors)
 ----
 private WebClient webClient;
 ----
 
+2. Add code to initialize the `WebClient` field.
++
 [source,java]
-.Add to the `GreetService(Config)` constructor
+.Add the following code to the `GreetService(Config)` constructor
 ----
 webClient = WebClient.builder()
         .baseUri("http://localhost:8081")
@@ -407,13 +418,15 @@ webClient = WebClient.builder()
         .build();
 
 ----
-
+3. Add a routing rule for the new endpoint `/outbound`.
++
 [source,java]
-.Add to the `routing` method as the first `.get` invocation
+.Add the following line in the `routing` method as the first `.get` invocation in the method
 ----
 .get("/outbound", this::outboundMessageHandler)
 ----
-
+4. Add a method to handle requests to `/outbound`.
++
 [source,java]
 .Add the following method
 ----
@@ -439,24 +452,34 @@ private void outboundMessageHandler(ServerRequest request,
 
 ----
 
+Stop the application if it is still running, rebuild and run it, then invoke the endpoint and check the response.
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build, run, and access the application
 ----
+mvn clean package
+java -jar target/helidon-quickstart-se.jar
 curl -i http://localhost:8080/greet/outbound // <1>
 ...
 {
   "message": "Hello From SE-2 World!" // <2>
 }
 ----
-<1> The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
+<1> The request goes to the service on `8080`, which then invokes the service at `8081` to get the greeting.
 <2> Notice the greeting came from the second service.
 
-Refresh the Jaeger UI trace listing page and notice that there is a trace across two services.
+Refresh the Jaeger UI trace listing page and notice that there is a trace across two services. Click on that trace to see its details.
 
 .Tracing across multiple services detail view
 image::guides/tracing_se_second_expanded_trace.png[Traces]
 
-In the image above, you can see that the trace includes spans from two services.
+Note several things about the display:
+
+1. The top-level span `helidon-se-1 HTTP Request` includes all the work across _both_ services.
+2. `helidon-se-1 outboundMessageHandler` is the custom span you added to the first service `/outbound` endpoint code.
+3. `helidon-se-1 GET-http://localhost:8080/greet` captures the work the `WebClient` is doing in sending a request to the second service. Helidon adds these spans automatically to each outbound `WebClient` request.
+4. `helidon-se-2 HTTP Request` represents the arrival of the request sent by the first service's `WebClient` at the second service's `/greet` endpoint.
+5. `helidon-se-2 getDefaultMessageHandler` is the custom span you added to the second service `/greet` endpoint code.
+
 
 You can now stop your second service, it is no longer used in this guide.
 
