@@ -77,8 +77,8 @@ public class CbrServiceDescriptor implements ServiceDescriptor<ConfigBeanRegistr
     }
 
     @Override
-    public Set<TypeName> scopes() {
-        return Set.of(Injection.Singleton.TYPE_NAME);
+    public TypeName scope() {
+        return Injection.Singleton.TYPE_NAME;
     }
 
     @Override

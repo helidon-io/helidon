@@ -16,6 +16,7 @@
 
 package io.helidon.inject.service;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -62,6 +63,46 @@ public final class Injection {
     }
 
     /**
+     * Customize lookup options that cannot be "guessed" from the injection point itself.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Documented
+    public @interface Lookup {
+        /**
+         * The scope of services to discover.
+         * This is useful when injecting a list of services, where we want to make sure we limit
+         * the result to services in a specific scope (or a set of scopes).
+         *
+         * @return scopes to lookup services in
+         */
+        Class<? extends Annotation>[] scopes() default {};
+
+        /**
+         * The contracts of services to discover.
+         * This is useful when injecting a list of services with different required contracts that cannot be
+         * declared using generics of the injected {@link java.util.List}.
+         *
+         * @return contracts of services to lookup
+         */
+        Class<?>[] contracts() default {};
+
+        /**
+         * Run level of services to lookup (finds this run level and lower).
+         *
+         * @return run level to use
+         */
+        int runLevel() default -1;
+
+        /**
+         * Weight of services to lookup (finds this weight and higher).
+         *
+         * @return weight to use
+         */
+        double weight() default -1;
+    }
+
+    /**
      * Marks annotations that act as qualifiers.
      * <p>
      * A qualifier annotation restricts the eligible service instances that can be injected into an injection point to those
@@ -103,10 +144,20 @@ public final class Injection {
     }
 
     /**
+     * Scope annotation.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.ANNOTATION_TYPE)
+    public @interface Scope {
+    }
+
+
+    /**
      * Annotation to force generation of a service descriptor, even if it otherwise would not be created.
      * <p>
      * Helidon generates service descriptors for types that have the type, field, constructor, method, or a parameter annotated
-     * with any of the supported annotations (such as {@link Injection}.
+     * with any of the supported annotations (such as {@link Injection.Inject}).
      * This annotation can be used if we want to use a POJO with an accessible no-args constructor and no other
      * annotations as a service, as otherwise no descriptor would be generated.
      */
@@ -114,6 +165,10 @@ public final class Injection {
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
     public @interface Service {
+        /**
+         * Type name of this interface.
+         */
+        TypeName TYPE_NAME = TypeName.create(Service.class);
     }
 
     /**
@@ -132,6 +187,7 @@ public final class Injection {
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Service
+    @Scope
     @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
     public @interface Singleton {
         /**
@@ -150,12 +206,13 @@ public final class Injection {
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Service
+    @Scope
     @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.METHOD})
     public @interface Requeston {
-        /*
-        Implementation note: we currently do not support custom scopes, so there is no Scope meta annotation.
-        If we decide to support scopes, we may want to introduce such an annotation.
-        */
+        /**
+         * This interface type.
+         */
+        TypeName TYPE_NAME = TypeName.create(Requeston.class);
 
         /**
          * Interfaces (or types) that must work in request scope.

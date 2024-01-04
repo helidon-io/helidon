@@ -5,22 +5,22 @@ import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.service.ServiceDescriptor;
 
 @Injection.Singleton
 class RequestonControlImpl implements RequestonControl, ScopeHandler {
     private static final ThreadLocal<Scope> REQUEST_SCOPES = new ThreadLocal<>();
 
-    private final ServicesImpl services;
+    private final ServicesSpi services;
 
     @Injection.Inject
-    RequestonControlImpl(ServicesImpl services) {
+    RequestonControlImpl(ServicesSpi services) {
         this.services = services;
     }
 
     @Override
     public TypeName supportedScope() {
-        return InjectTypes.REQUESTON;
+        return Injection.Requeston.TYPE_NAME;
     }
 
     @Override
@@ -29,24 +29,23 @@ class RequestonControlImpl implements RequestonControl, ScopeHandler {
     }
 
     @Override
-    public Scope startRequestScope(Map<ServiceInfo, Object> initialBindings) {
+    public Scope startRequestScope(String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
         // no need to synchronize, this is per-thread
         Scope scope = REQUEST_SCOPES.get();
         if (scope != null) {
             throw new IllegalStateException("Attempt to re-create request scope. Already exists for this request: " + scope);
         }
-        scope = new RequestScope(services, services.createForScope(InjectTypes.REQUESTON, initialBindings));
+
+        scope = new RequestScope(services.createForScope(Injection.Requeston.TYPE_NAME, initialBindings));
         REQUEST_SCOPES.set(scope);
         return scope;
     }
 
     private static class RequestScope implements Scope {
-        private final ServicesImpl rootServices;
         private final ScopeServices thisScopeServices;
         private final String thread;
 
-        RequestScope(ServicesImpl rootServices, ScopeServices scopeServices) {
-            this.rootServices = rootServices;
+        RequestScope(ScopeServices scopeServices) {
             this.thisScopeServices = scopeServices;
             this.thread = Thread.currentThread().toString();
         }
@@ -64,7 +63,7 @@ class RequestonControlImpl implements RequestonControl, ScopeHandler {
         }
 
         @Override
-        public Services services() {
+        public ScopeServices services() {
             return thisScopeServices;
         }
 

@@ -182,7 +182,7 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
         return result;
     }
 
-    private static Comparator<? super RegistryServiceProvider<?>> shutdownComparator() {
+    static Comparator<? super RegistryServiceProvider<?>> shutdownComparator() {
         return Comparator.comparingInt(ServiceInfo::runLevel)
                 .thenComparing(ServiceInfo::weight);
     }

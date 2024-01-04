@@ -3,10 +3,11 @@ package io.helidon.inject;
 /**
  * A scope.
  */
-public interface Scope {
+public interface Scope extends AutoCloseable {
     /**
      * Stop the scope, and destroy all service instances created within it.
      */
+    @Override
     void close();
 
     /**
@@ -14,5 +15,5 @@ public interface Scope {
      *
      * @return services
      */
-    Services services();
+    ScopeServices services();
 }

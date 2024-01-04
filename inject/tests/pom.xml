@@ -54,6 +54,7 @@
         <module>api</module>
         <module>runtime</module>
         <module>codegen</module>
+        <module>scopes</module>
     </modules>
 
 </project>

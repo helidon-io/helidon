@@ -166,7 +166,7 @@ class InjectionExtension implements InjectCodegenExtension {
                fieldInjectElements);
 
         Map<String, GenericTypeDeclaration> genericTypes = genericTypes(params, methods);
-        Set<TypeName> scopes = scopes(typeInfo);
+        Optional<TypeName> scope = scope(typeInfo);
         Set<Annotation> qualifiers = qualifiers(typeInfo, typeInfo);
         Set<TypeName> contracts = new HashSet<>();
         contracts(contracts, typeInfo, autoAddContracts);
@@ -204,7 +204,7 @@ class InjectionExtension implements InjectCodegenExtension {
         typeFields(classModel, genericTypes);
         contractsField(classModel, contracts);
         qualifiersField(classModel, qualifiers);
-        scopesField(classModel, scopes);
+        scopeField(classModel, scope.orElse(InjectCodegenTypes.INJECTION_SERVICE));
         methodFields(classModel, methods);
 
         // public fields are last, so they do not intersect with private fields (it is not as nice to read)
@@ -247,7 +247,7 @@ class InjectionExtension implements InjectCodegenExtension {
         postConstructMethod(typeInfo, classModel, serviceType);
         preDestroyMethod(typeInfo, classModel, serviceType);
         qualifiersMethod(classModel, qualifiers, superType);
-        scopesMethod(classModel, scopes, superType);
+        scopesMethod(classModel);
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
 
@@ -778,16 +778,15 @@ class InjectionExtension implements InjectCodegenExtension {
         return result;
     }
 
-    private Set<TypeName> scopes(TypeInfo service) {
+    private Optional<TypeName> scope(TypeInfo service) {
         Set<TypeName> result = new LinkedHashSet<>();
-
-        if (service.hasAnnotation(InjectCodegenTypes.INJECTION_SINGLETON)) {
-            // we do not use meta annotations
-            result.add(InjectCodegenTypes.INJECTION_SINGLETON);
-        }
 
         for (Annotation anno : service.annotations()) {
             TypeName annoType = anno.typeName();
+            if (service.hasMetaAnnotation(annoType, InjectCodegenTypes.INJECTION_SCOPE)) {
+                result.add(annoType);
+                continue;
+            }
             for (TypeName scopeMetaAnnotation : scopeMetaAnnotations) {
                 if (service.hasMetaAnnotation(annoType, scopeMetaAnnotation)) {
                     result.add(annoType);
@@ -795,7 +794,12 @@ class InjectionExtension implements InjectCodegenExtension {
             }
         }
 
-        return result;
+        if (result.size() > 1) {
+            throw new CodegenException("Type " + service.typeName().fqName() + " has more than one scope defined. "
+                                               + "This is not supported. Scopes. " + result);
+        }
+
+        return result.stream().findFirst();
     }
 
     private void contracts(Set<TypeName> collectedContracts, TypeInfo typeInfo, boolean contractEligible) {
@@ -1124,24 +1128,13 @@ class InjectionExtension implements InjectCodegenExtension {
                 .addContent(")");
     }
 
-    private void scopesField(ClassModel.Builder classModel, Set<TypeName> scopes) {
+    private void scopeField(ClassModel.Builder classModel, TypeName scope) {
         classModel.addField(scopesField -> scopesField
                 .isStatic(true)
                 .isFinal(true)
-                .name("SCOPES")
-                .type(SET_OF_TYPES)
-                .addContent(Set.class)
-                .addContent(".of(")
-                .update(it -> {
-                    Iterator<TypeName> scopeIterator = scopes.iterator();
-                    while (scopeIterator.hasNext()) {
-                        it.addContentCreate(scopeIterator.next());
-                        if (scopeIterator.hasNext()) {
-                            it.addContent(", ");
-                        }
-                    }
-                })
-                .addContent(")"));
+                .name("SCOPE")
+                .type(TypeNames.TYPE_NAME)
+                .addContentCreate(scope));
     }
 
     private void methodFields(ClassModel.Builder classModel, List<MethodDefinition> methods) {
@@ -1670,12 +1663,12 @@ class InjectionExtension implements InjectCodegenExtension {
                 .addContentLine("return QUALIFIERS;"));
     }
 
-    private void scopesMethod(ClassModel.Builder classModel, Set<TypeName> scopes, SuperType superType) {
-        // List<TypeName> scopes()
-        classModel.addMethod(scopesMethod -> scopesMethod.name("scopes")
+    private void scopesMethod(ClassModel.Builder classModel) {
+        // TypeName scope()
+        classModel.addMethod(scopeMethod -> scopeMethod.name("scope")
                 .addAnnotation(Annotations.OVERRIDE)
-                .returnType(SET_OF_TYPES)
-                .addContentLine("return SCOPES;"));
+                .returnType(TypeNames.TYPE_NAME)
+                .addContentLine("return SCOPE;"));
     }
 
     private void weightMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType) {

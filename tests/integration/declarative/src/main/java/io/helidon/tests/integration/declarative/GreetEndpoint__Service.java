@@ -29,7 +29,8 @@ class GreetEndpoint__Service implements HttpFeature {
     }
 
     private void method1(ServerRequest req, ServerResponse res) {
-        Scope scope = requestCtrl.startRequestScope(Map.of(ServerRequest__ServiceDescriptor.INSTANCE, req,
+        Scope scope = requestCtrl.startRequestScope(req.context().id(),
+                                                    Map.of(ServerRequest__ServiceDescriptor.INSTANCE, req,
                                                            ServerResponse__ServiceDescriptor.INSTANCE, res,
                                                            Context__ServiceDescriptor.INSTANCE, req.context()));
 

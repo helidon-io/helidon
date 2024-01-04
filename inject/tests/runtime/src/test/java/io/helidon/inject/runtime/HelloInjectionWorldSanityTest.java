@@ -133,8 +133,8 @@ class HelloInjectionWorldSanityTest {
                    equalTo(TypeName.create(HelloInjectionWorldImpl.class)));
         assertThat(helloProvider1.contracts(),
                    containsInAnyOrder(TypeName.create(HelloInjectionWorld.class)));
-        assertThat(helloProvider1.scopes(),
-                   containsInAnyOrder(Injection.Singleton.TYPE_NAME));
+        assertThat(helloProvider1.scope(),
+                   is(Injection.Singleton.TYPE_NAME));
         assertThat(helloProvider1.qualifiers().size(),
                    equalTo(0));
         assertThat(helloProvider1.runLevel(),

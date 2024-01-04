@@ -37,6 +37,7 @@ public class Services__ServiceDescriptor implements ServiceDescriptor<Services> 
 
     private static final TypeName SERVICES = TypeName.create(Services.class);
     private static final TypeName INFO_TYPE = TypeName.create(Services__ServiceDescriptor.class);
+    private static final Set<TypeName> CONTRACTS = Set.of(Services.TYPE_NAME, ServicesSpi.TYPE_NAME);
 
     private Services__ServiceDescriptor() {
     }
@@ -52,7 +53,12 @@ public class Services__ServiceDescriptor implements ServiceDescriptor<Services> 
     }
 
     @Override
-    public Set<TypeName> scopes() {
-        return Set.of(Injection.Singleton.TYPE_NAME);
+    public Set<TypeName> contracts() {
+        return CONTRACTS;
+    }
+
+    @Override
+    public TypeName scope() {
+        return Injection.Singleton.TYPE_NAME;
     }
 }

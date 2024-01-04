@@ -85,7 +85,7 @@ public class MapApplicationScopedProvider implements AnnotationMapperProvider {
 
         @Override
         public Collection<Annotation> mapAnnotation(CodegenContext ctx, Annotation original, ElementKind elementKind) {
-            return Set.of(original, SINGLETON);
+            return Set.of(SINGLETON);
         }
     }
 }
