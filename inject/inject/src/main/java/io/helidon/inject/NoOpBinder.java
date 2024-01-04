@@ -35,7 +35,7 @@ public class NoOpBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindProvider(Ip injectionPoint, ServiceInfo serviceInfo) {
+    public ServiceInjectionPlanBinder.Binder bindSupplier(Ip injectionPoint, ServiceInfo serviceInfo) {
         return this;
     }
 
@@ -45,7 +45,7 @@ public class NoOpBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindProviderOptional(Ip injectionPoint, ServiceInfo... serviceInfos) {
+    public ServiceInjectionPlanBinder.Binder bindOptionalSupplier(Ip injectionPoint, ServiceInfo... serviceInfos) {
         return this;
     }
 
@@ -55,7 +55,7 @@ public class NoOpBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindProviderList(Ip injectionPoint, ServiceInfo... serviceInfos) {
+    public ServiceInjectionPlanBinder.Binder bindListSupplier(Ip injectionPoint, ServiceInfo... serviceInfos) {
         return this;
     }
 

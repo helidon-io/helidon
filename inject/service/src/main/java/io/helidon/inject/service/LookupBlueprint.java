@@ -43,8 +43,7 @@ interface LookupBlueprint {
      *
      * @return the service scope type name
      */
-    @Option.Singular
-    Set<TypeName> scopes();
+    Optional<TypeName> scope();
 
     /**
      * The managed service assigned Qualifier's.
@@ -96,10 +95,9 @@ interface LookupBlueprint {
     default boolean matches(Lookup criteria) {
         return matchesContracts(criteria)
                 && matchesAbstract(includeAbstract(), criteria.includeAbstract())
-                && scopes().containsAll(criteria.scopes())
+                && matches(scope(), criteria.scope())
                 && Qualifiers.matchesQualifiers(qualifiers(), criteria.qualifiers())
                 && matches(runLevel(), criteria.runLevel());
-        //                && matchesWeight(this, criteria) -- intentionally not checking weight here!
     }
 
     /**
@@ -122,7 +120,7 @@ interface LookupBlueprint {
         }
         return matches
                 && matchesAbstract(includeAbstract(), serviceInfo.isAbstract())
-                && serviceInfo.scopes().containsAll(this.scopes())
+                && matches(serviceInfo.scope(), this.scope())
                 && Qualifiers.matchesQualifiers(serviceInfo.qualifiers(), this.qualifiers())
                 && matchesWeight(serviceInfo, this)
                 && matches(serviceInfo.runLevel(), this.runLevel());
@@ -159,9 +157,18 @@ interface LookupBlueprint {
 
     private static boolean matches(Object src,
                                    Optional<?> criteria) {
+        if (criteria.isEmpty()) {
+            return true;
+        }
+        return Objects.equals(src, criteria.get());
+    }
 
-        return criteria.map(o -> Objects.equals(src, o)).orElse(true);
-
+    private boolean matches(Optional<?> src, Optional<?> criteria) {
+        if (criteria.isEmpty()) {
+            return true;
+        }
+        return src.map(it -> Objects.equals(it, criteria.get()))
+                .orElse(false);
     }
 
     private boolean matchesAbstract(boolean criteriaAbstract, boolean isAbstract) {

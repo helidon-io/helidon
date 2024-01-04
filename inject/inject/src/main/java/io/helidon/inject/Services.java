@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.Weighted;
+import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ServiceBinder;
 
@@ -53,7 +54,7 @@ import io.helidon.inject.service.ServiceBinder;
  * to the type name (package and class canonical name).
  */
 public interface Services {
-
+    TypeName TYPE_NAME = TypeName.create(Services.class);
     /**
      * Default weight used by Helidon Injection components.
      * It is lower than the default, so it is easy to override service with custom providers.
@@ -61,30 +62,56 @@ public interface Services {
     double INJECT_WEIGHT = Weighted.DEFAULT_WEIGHT - 1;
 
     /**
+     * Get the first service instance matching the lookup with the expectation that there is a match available.
+     *
+     * @param lookup lookup to use
+     * @param <T>    type of the expected service, use {@code Object} if not known
+     * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown provider type
+     * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup, or the resolution to
+     *                                              instance failed
+     */
+    default <T> T get(Lookup lookup) {
+        return this.<T>supply(lookup).get();
+    }
+
+    default <T> T get(Class<T> type) {
+        return this.get(Lookup.create(type));
+    }
+
+    default <T> Optional<T> first(Lookup lookup) {
+        return this.<T>supplyFirst(lookup).get();
+    }
+
+    default <T> Optional<T> first(Class<T> type) {
+        return this.first(Lookup.create(type));
+    }
+
+    default <T> List<T> all(Lookup lookup) {
+        return this.<T>supplyAll(lookup).get();
+    }
+
+    default <T> List<T> all(Class<T> type) {
+        return this.all(Lookup.create(type));
+    }
+
+    /**
      * Get the first service provider matching the lookup with the expectation that there is a match available.
+     * The provided {@link java.util.function.Supplier#get()} may throw an
+     * {@link io.helidon.inject.InjectionException} in case the matching service cannot provide a value (either because
+     * of scope mismatch, or because there is no available instance, and we use a runtime resolution through
+     * {@link io.helidon.inject.ServiceProviderProvider}, {@link io.helidon.inject.service.InjectionPointProvider}, or similar).
      *
      * @param lookup lookup to use
      * @param <T>    type of the expected service providers, use {@code Object} if not known
      * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
-     * @throws io.helidon.inject.InjectionException if resolution fails to resolve a match
+     * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup
      */
-    default <T> Supplier<T> get(Lookup lookup) {
-        return this.<T>first(lookup)
-                .orElseThrow(() -> new InjectionException("There are no services matching " + lookup));
-    }
+    <T> Supplier<T> supply(Lookup lookup);
 
-    /**
-     * Get the first service provider matching the provided type.
-     *
-     * @param type type of the expected service provider
-     * @param <T>  service type or service contract
-     * @return the best service provider matching the lookup
-     * @throws io.helidon.inject.InjectionException if resolution fails to resolve a match
-     */
-    default <T> Supplier<T> get(Class<T> type) {
-        return this.first(type)
-                .orElseThrow(() -> new InjectionException("There are no services with type (or contract) of " + type.getName()));
+    default <T> Supplier<T> supply(Class<T> type) {
+        return this.supply(Lookup.create(type));
     }
 
     /**
@@ -95,43 +122,24 @@ public interface Services {
      * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      */
-    <T> Optional<Supplier<T>> first(Lookup lookup);
+    <T> Supplier<Optional<T>> supplyFirst(Lookup lookup);
 
-    /**
-     * Find the first service provider matching the provided type with the expectation that there may not be a match available.
-     *
-     * @param type type of the expected service provider
-     * @param <T>  service type or service contract
-     * @return the best service provider matching the lookup
-     */
-    default <T> Optional<Supplier<T>> first(Class<T> type) {
-        return first(Lookup.builder()
-                            .addContract(type)
-                            .build());
+    default <T> Supplier<Optional<T>> supplyFirst(Class<T> type) {
+        return this.supplyFirst(Lookup.create(type));
     }
 
     /**
-     * Get all service suppliers matching the lookup with the expectation that there may not be a match available.
-     *
-     * @param type type of the expected service provider
-     * @param <T>  type of the expected service suppliers
-     * @return list of service suppliers ordered, may be empty if there is no match
-     */
-    default <T> List<Supplier<T>> all(Class<T> type) {
-        return all(Lookup.builder()
-                           .addContract(type)
-                           .build());
-    }
-
-    /**
-     * Get all service suppliers matching the lookup with the expectation that there may not be a match available.
+     * Supply all services matching the lookup with the expectation that there may not be a match available.
      *
      * @param lookup lookup to use
-     * @param <T>    type of the expected service suppliers, use {@code Object} if not known, or may contain a mix of types
-     * @return list of service suppliers ordered, may be empty if there is no match, cast to the expected type; please use a
-     *         {@code Object} as the type if the result may contain unknown provider types (or a mixture of them)
+     * @param <T>    type of the expected service suppliers
+     * @return supplier of list of services ordered, may be empty if there is no match
      */
-    <T> List<Supplier<T>> all(Lookup lookup);
+    <T> Supplier<List<T>> supplyAll(Lookup lookup);
+
+    default <T> Supplier<List<T>> supplyAll(Class<T> type) {
+        return this.supplyAll(Lookup.create(type));
+    }
 
     /**
      * Injection services this instance is managed by.
@@ -151,15 +159,6 @@ public interface Services {
      * @return service binder that allows binding into this service registry
      */
     ServiceBinder binder();
-
-    /**
-     * A registry that gives access to service providers.
-     * <p>
-     * This is for advanced use cases, where access to {@link java.util.function.Supplier} is not sufficient.
-     *
-     * @return service provider service registry
-     */
-    ServiceProviderRegistry serviceProviders();
 
     /**
      * Limit runtime phase.

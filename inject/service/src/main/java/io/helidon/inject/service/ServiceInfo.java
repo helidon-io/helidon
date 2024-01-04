@@ -97,11 +97,11 @@ public interface ServiceInfo extends Weighted {
     }
 
     /**
-     * Set of scopes of this service.
+     * Scope of this service. Defaults to Singleton scope.
      *
-     * @return scopes
+     * @return scope of the service
      */
-    Set<TypeName> scopes();
+    TypeName scope();
 
     /**
      * Returns {@code true} for abstract classes and interfaces,

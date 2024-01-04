@@ -29,12 +29,13 @@ interface ServiceInstance<T> extends Supplier<T> {
     static <T> ServiceInstance<T> create(InterceptionMetadata interceptionMetadata,
                                          InjectionContext ctx,
                                          ServiceDescriptor<T> source) {
-        if (source.scopes().contains(Injection.Singleton.TYPE_NAME)) {
+        if (Injection.Singleton.TYPE_NAME.equals(source.scope())
+                || Injection.Requeston.TYPE_NAME.equals(source.scope())) {
+            // the same instance is returned for the lifetime of the service provider
+            // in request scope, there is a new provider for each request
             return new SingletonInstance<>(ctx, interceptionMetadata, source);
         }
-        if (source.scopes().contains(InjectTypes.REQUESTON)) {
-            return new RequestonInstance(ctx, interceptionMetadata, source);
-        }
+
         return new OnDemandInstance<>(ctx, interceptionMetadata, source);
     }
 
