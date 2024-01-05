@@ -28,6 +28,8 @@ import io.helidon.inject.api.ServiceInfoBasics;
 import com.oracle.bmc.Region;
 import jakarta.inject.Singleton;
 
+import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder.METADATA_SERVICE_BASE_URL;
+
 /**
  * This (overridable) implementation will check the {@link OciConfig} for {@code IMDS} availability. And if it is found to be
  * available, will also perform a secondary check on {@link Region#getRegionFromImds()} to ensure it returns a non-null value.
@@ -35,6 +37,7 @@ import jakarta.inject.Singleton;
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 class OciAvailabilityDefault implements OciAvailability {
+    static String OPC_PATH = getOpcPath();
 
     @Override
     public boolean isRunningOnOci(OciConfig ociConfig) {
@@ -46,7 +49,7 @@ class OciAvailabilityDefault implements OciAvailability {
             return false;
         }
 
-        return (Region.getRegionFromImds("http://" + ociConfig.imdsHostName() + "/opc/v2/") != null);
+        return (Region.getRegionFromImds("http://" + ociConfig.imdsHostName() + OPC_PATH) != null);
     }
 
     static boolean canReach(String address,
@@ -71,4 +74,15 @@ class OciAvailabilityDefault implements OciAvailability {
         }
     }
 
+    static String getOpcPath() {
+        String input = METADATA_SERVICE_BASE_URL;
+        int index = -1;
+        for (int nth = 3; nth > 0; nth--) {
+            index = input.indexOf("/", index + 1);
+            if (index == -1) {
+                return null;
+            }
+        }
+        return METADATA_SERVICE_BASE_URL.substring(index);
+    }
 }
