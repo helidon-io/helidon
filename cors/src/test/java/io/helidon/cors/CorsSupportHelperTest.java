@@ -66,24 +66,24 @@ class CorsSupportHelperTest {
     @Test
     void sameNodeDifferentPorts() {
         assertThat("Default different origin port",
-                   CorsSupportHelper.isRequestTypeNormal("http://ok.com",
-                                                         uriInfo("ok.com", 8010, false)).isNormal(),
+                   CorsSupportHelper.requestType("http://ok.com",
+                                                 uriInfo("ok.com", 8010, false)).isNormal(),
                    is(false));
         assertThat("Explicit different origin port",
-                   CorsSupportHelper.isRequestTypeNormal("http://ok.com:8080",
-                                                         uriInfo("ok.com", false)).isNormal(),
+                   CorsSupportHelper.requestType("http://ok.com:8080",
+                                                 uriInfo("ok.com", false)).isNormal(),
                    is(false));
     }
 
     @Test
     void sameNodeSamePort() {
         assertThat("Default origin port",
-                   CorsSupportHelper.isRequestTypeNormal("http://ok.com",
-                                                         uriInfo("ok.com", false)).isNormal(),
+                   CorsSupportHelper.requestType("http://ok.com",
+                                                 uriInfo("ok.com", false)).isNormal(),
                    is(true));
         assertThat("Explicit origin port",
-                   CorsSupportHelper.isRequestTypeNormal("http://ok.com:80",
-                                                         UriInfo.builder()
+                   CorsSupportHelper.requestType("http://ok.com:80",
+                                                 UriInfo.builder()
                                                                  .host("ok.com")
                                                                  .build()).isNormal(),
                    is(true));
@@ -92,40 +92,40 @@ class CorsSupportHelperTest {
     @Test
     void differentNode() {
         assertThat("Different node, same (default) port",
-                   CorsSupportHelper.isRequestTypeNormal("http://bad.com",
-                                                         uriInfo("ok.com", false)).isNormal(),
+                   CorsSupportHelper.requestType("http://bad.com",
+                                                 uriInfo("ok.com", false)).isNormal(),
                    is(false));
         assertThat("Different node, same explicit port",
-                   CorsSupportHelper.isRequestTypeNormal("http://bad.com:80",
-                                                         uriInfo("ok.com", false)).isNormal(),
+                   CorsSupportHelper.requestType("http://bad.com:80",
+                                                 uriInfo("ok.com", false)).isNormal(),
                    is(false));
 
         assertThat("Different node, different explicit port",
-                   CorsSupportHelper.isRequestTypeNormal("http://bad.com:8080",
-                                                         uriInfo("ok.com", false)).isNormal(),
+                   CorsSupportHelper.requestType("http://bad.com:8080",
+                                                 uriInfo("ok.com", false)).isNormal(),
                    is(false));
     }
 
     @Test
     void differentScheme() {
         assertThat("Same node, insecure origin, secure host",
-                   CorsSupportHelper.isRequestTypeNormal("http://foo.com",
-                                                         uriInfo("foo.com", true)).isNormal(),
+                   CorsSupportHelper.requestType("http://foo.com",
+                                                 uriInfo("foo.com", true)).isNormal(),
                    is(false));
 
         assertThat("Same node, secure origin, insecure host",
-                   CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("foo.com", false)).isNormal(),
+                   CorsSupportHelper.requestType("https://foo.com",
+                                                 uriInfo("foo.com", false)).isNormal(),
                    is(false));
 
         assertThat("Different nodes, insecure origin, secure host",
-                   CorsSupportHelper.isRequestTypeNormal("http://foo.com",
-                                                         uriInfo("other.com", true)).isNormal(),
+                   CorsSupportHelper.requestType("http://foo.com",
+                                                 uriInfo("other.com", true)).isNormal(),
                    is(false));
 
         assertThat("Different nodes, secure origin, insecure host",
-                   CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("other.com", false)).isNormal(),
+                   CorsSupportHelper.requestType("https://foo.com",
+                                                 uriInfo("other.com", false)).isNormal(),
                    is(false));
     }
 
@@ -134,28 +134,28 @@ class CorsSupportHelperTest {
         // Note that the real UriInfo instances from real requests will set the port according to whether the request is
         // secure or not.
         assertThat("Same node, secure origin, secure host",
-                   CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("foo.com", true)).isNormal(),
+                   CorsSupportHelper.requestType("https://foo.com",
+                                                 uriInfo("foo.com", true)).isNormal(),
                    is(true));
 
         assertThat("Different node, secure origin, secure host",
-                   CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("other.com", true)).isNormal(),
+                   CorsSupportHelper.requestType("https://foo.com",
+                                                 uriInfo("other.com", true)).isNormal(),
                    is(false));
 
         assertThat("Same nodes, different ports, secure origin, secure host",
-                   CorsSupportHelper.isRequestTypeNormal("https://foo.com:1234",
-                                                        uriInfo("foo.com",5678, true)).isNormal(),
+                   CorsSupportHelper.requestType("https://foo.com:1234",
+                                                 uriInfo("foo.com",5678, true)).isNormal(),
                    is(false));
 
         assertThat("Same nodes, explicit origin port, secure origin, secure host",
-                   CorsSupportHelper.isRequestTypeNormal("https://foo.com:443",
-                                                         uriInfo("foo.com", true)).isNormal(),
+                   CorsSupportHelper.requestType("https://foo.com:443",
+                                                 uriInfo("foo.com", true)).isNormal(),
                    is(true));
 
         assertThat("Same nodes, explicit host port, secure origin, secure host",
-                   CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("foo.com", 443, true)).isNormal(),
+                   CorsSupportHelper.requestType("https://foo.com",
+                                                 uriInfo("foo.com", 443, true)).isNormal(),
                    is(true));
     }
 

@@ -371,7 +371,7 @@ public class CorsSupportHelper<Q, R> {
     }
 
     // For testing
-    static RequestTypeInfo isRequestTypeNormal(String originHeader, UriInfo requestedHostUri) {
+    static RequestTypeInfo requestType(String originHeader, UriInfo requestedHostUri) {
         return RequestTypeInfo.create(originHeader, requestedHostUri);
     }
 
@@ -406,7 +406,7 @@ public class CorsSupportHelper<Q, R> {
             return true;
         }
 
-        RequestTypeInfo result = isRequestTypeNormal(originOpt.get(), requestAdapter.requestedUri());
+        RequestTypeInfo result = requestType(originOpt.get(), requestAdapter.requestedUri());
         LogHelper.logIsRequestTypeNormal(result.isNormal,
                                          silent,
                                          requestAdapter,
