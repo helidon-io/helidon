@@ -183,19 +183,19 @@ representation of the traces and spans within them.
 You will see a trace for each `curl` command you ran to access the application.
 
 .List of traces
-image::guides/tracing_se_trace_list.png[Trace List]
+image::guides/tracing_se_trace_list.png[Trace List,role="fit"]
 
 Click on a trace to see the trace detail page (shown below) which shows the spans within the trace. You can clearly
 see the root span (`HTTP Request`) and the single child span (`content-write`) along with the time over which each span was active.
 
 .Trace detail page
-image::guides/tracing_se_first_trace.png[Trace Detail]
+image::guides/tracing_se_first_trace.png[Trace Detail,role="fit"]
 
 You can examine span details by clicking on the span row.  Refer to the image below which shows the span details including timing information.
 You can see times for each space relative to the root span.
 
 .Span detail page
-image::guides/tracing_se_span_detail.png[Span Details]
+image::guides/tracing_se_span_detail.png[Span Details,role="fit"]
 
 === Adding a Custom Span
 Your application can use the Helidon tracing API to create custom spans.
@@ -246,12 +246,12 @@ curl http://localhost:8080/greet
 Return to the main Jaeger UI screen and click Find Traces again. The new display contains an additional trace, displayed first, for the most recent `curl` you ran.
 
 .Expanded trace list
-image::guides/tracing_se_second_trace_list.png[Expanded trace list]
+image::guides/tracing_se_second_trace_list.png[Expanded trace list,role="fit"]
 
 Notice that the top trace has three spans, not two as with the earlier trace. Click on the trace to see the trace details.
 
 .Trace details with custom span
-image::guides/tracing_se_expanded_trace.png[Trace details with custom span]
+image::guides/tracing_se_expanded_trace.png[Trace details with custom span,role="fit"]
 
 Note the row for `mychildSpan`--the custom span created by the added code.
 
@@ -470,7 +470,7 @@ curl -i http://localhost:8080/greet/outbound // <1>
 Refresh the Jaeger UI trace listing page and notice that there is a trace across two services. Click on that trace to see its details.
 
 .Tracing across multiple services detail view
-image::guides/tracing_se_second_expanded_trace.png[Traces]
+image::guides/tracing_se_second_expanded_trace.png[Traces,role="fit"]
 
 Note several things about the display:
 
