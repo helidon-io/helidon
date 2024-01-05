@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@
         <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
-        <version.lib.jakarta.jsonp-api>2.0.1</version.lib.jakarta.jsonp-api>
+        <version.lib.jakarta.jsonp-api>2.0.2</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.0.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
