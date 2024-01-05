@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,13 +67,11 @@ class CorsSupportHelperTest {
     void sameNodeDifferentPorts() {
         assertThat("Default different origin port",
                    CorsSupportHelper.isRequestTypeNormal("http://ok.com",
-                                                         uriInfo("ok.com", 8010, false),
-                                                         false).isNormal(),
+                                                         uriInfo("ok.com", 8010, false)).isNormal(),
                    is(false));
         assertThat("Explicit different origin port",
                    CorsSupportHelper.isRequestTypeNormal("http://ok.com:8080",
-                                                         uriInfo("ok.com", false),
-                                                         false).isNormal(),
+                                                         uriInfo("ok.com", false)).isNormal(),
                    is(false));
     }
 
@@ -81,15 +79,13 @@ class CorsSupportHelperTest {
     void sameNodeSamePort() {
         assertThat("Default origin port",
                    CorsSupportHelper.isRequestTypeNormal("http://ok.com",
-                                                         uriInfo("ok.com", false),
-                                                         false).isNormal(),
+                                                         uriInfo("ok.com", false)).isNormal(),
                    is(true));
         assertThat("Explicit origin port",
                    CorsSupportHelper.isRequestTypeNormal("http://ok.com:80",
                                                          UriInfo.builder()
                                                                  .host("ok.com")
-                                                                 .build(),
-                                                         false).isNormal(),
+                                                                 .build()).isNormal(),
                    is(true));
     }
 
@@ -97,19 +93,16 @@ class CorsSupportHelperTest {
     void differentNode() {
         assertThat("Different node, same (default) port",
                    CorsSupportHelper.isRequestTypeNormal("http://bad.com",
-                                                         uriInfo("ok.com", false),
-                                                         false).isNormal(),
+                                                         uriInfo("ok.com", false)).isNormal(),
                    is(false));
         assertThat("Different node, same explicit port",
                    CorsSupportHelper.isRequestTypeNormal("http://bad.com:80",
-                                                         uriInfo("ok.com", false),
-                                                         false).isNormal(),
+                                                         uriInfo("ok.com", false)).isNormal(),
                    is(false));
 
         assertThat("Different node, different explicit port",
                    CorsSupportHelper.isRequestTypeNormal("http://bad.com:8080",
-                                                         uriInfo("ok.com", false),
-                                                         false).isNormal(),
+                                                         uriInfo("ok.com", false)).isNormal(),
                    is(false));
     }
 
@@ -117,26 +110,22 @@ class CorsSupportHelperTest {
     void differentScheme() {
         assertThat("Same node, insecure origin, secure host",
                    CorsSupportHelper.isRequestTypeNormal("http://foo.com",
-                                                         uriInfo("foo.com", true),
-                                                         true).isNormal(),
+                                                         uriInfo("foo.com", true)).isNormal(),
                    is(false));
 
         assertThat("Same node, secure origin, insecure host",
                    CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("foo.com", false),
-                                                         false).isNormal(),
+                                                         uriInfo("foo.com", false)).isNormal(),
                    is(false));
 
         assertThat("Different nodes, insecure origin, secure host",
                    CorsSupportHelper.isRequestTypeNormal("http://foo.com",
-                                                         uriInfo("other.com", true),
-                                                         true).isNormal(),
+                                                         uriInfo("other.com", true)).isNormal(),
                    is(false));
 
         assertThat("Different nodes, secure origin, insecure host",
                    CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("other.com", false),
-                                                         false).isNormal(),
+                                                         uriInfo("other.com", false)).isNormal(),
                    is(false));
     }
 
@@ -146,32 +135,27 @@ class CorsSupportHelperTest {
         // secure or not.
         assertThat("Same node, secure origin, secure host",
                    CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("foo.com", true),
-                                                         true).isNormal(),
+                                                         uriInfo("foo.com", true)).isNormal(),
                    is(true));
 
         assertThat("Different node, secure origin, secure host",
                    CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("other.com", true),
-                                                         true).isNormal(),
+                                                         uriInfo("other.com", true)).isNormal(),
                    is(false));
 
         assertThat("Same nodes, different ports, secure origin, secure host",
                    CorsSupportHelper.isRequestTypeNormal("https://foo.com:1234",
-                                                        uriInfo("foo.com",5678, true),
-                                                         true).isNormal(),
+                                                        uriInfo("foo.com",5678, true)).isNormal(),
                    is(false));
 
         assertThat("Same nodes, explicit origin port, secure origin, secure host",
                    CorsSupportHelper.isRequestTypeNormal("https://foo.com:443",
-                                                         uriInfo("foo.com", true),
-                                                         true).isNormal(),
+                                                         uriInfo("foo.com", true)).isNormal(),
                    is(true));
 
         assertThat("Same nodes, explicit host port, secure origin, secure host",
                    CorsSupportHelper.isRequestTypeNormal("https://foo.com",
-                                                         uriInfo("foo.com", 443, true),
-                                                         true).isNormal(),
+                                                         uriInfo("foo.com", 443, true)).isNormal(),
                    is(true));
     }
 
@@ -199,7 +183,6 @@ class CorsSupportHelperTest {
         CorsRequestAdapter<TestCorsServerRequestAdapter> req = new TestCorsServerRequestAdapter("/greet",
                                                                                                 uriInfo,
                                                                                                 "OPTIONS",
-                                                                                                false,
                                                                                                 headers);
         CorsResponseAdapter<TestCorsServerResponseAdapter> resp = new TestCorsServerResponseAdapter();
 
@@ -224,7 +207,6 @@ class CorsSupportHelperTest {
         CorsRequestAdapter<TestCorsServerRequestAdapter> secureReq = new TestCorsServerRequestAdapter("/greet",
                                                                                                       uriInfo,
                                                                                                       "OPTIONS",
-                                                                                                      true,
                                                                                                       headers);
         CorsResponseAdapter<TestCorsServerResponseAdapter> secureResp = new TestCorsServerResponseAdapter();
 
@@ -252,7 +234,6 @@ class CorsSupportHelperTest {
         CorsRequestAdapter<TestCorsServerRequestAdapter> secureReq = new TestCorsServerRequestAdapter("/secure-greet",
                                                                                                       uriInfo,
                                                                                                       "OPTIONS",
-                                                                                                      false,
                                                                                                       headers);
         CorsResponseAdapter<TestCorsServerResponseAdapter> secureResp = new TestCorsServerResponseAdapter();
 
@@ -280,7 +261,6 @@ class CorsSupportHelperTest {
         CorsRequestAdapter<TestCorsServerRequestAdapter> secureReq = new TestCorsServerRequestAdapter("/secure-greet",
                                                                                                       uriInfo,
                                                                                                       "OPTIONS",
-                                                                                                      true,
                                                                                                       headers);
         CorsResponseAdapter<TestCorsServerResponseAdapter> secureResp = new TestCorsServerResponseAdapter();
 

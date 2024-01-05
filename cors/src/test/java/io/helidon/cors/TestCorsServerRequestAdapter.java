@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 
-record TestCorsServerRequestAdapter(String path, UriInfo requestedUri, String method, boolean isSecure, Headers headers) implements CorsRequestAdapter<TestCorsServerRequestAdapter> {
+record TestCorsServerRequestAdapter(String path, UriInfo requestedUri, String method, Headers headers) implements CorsRequestAdapter<TestCorsServerRequestAdapter> {
 
     @Override
     public Optional<String> firstHeader(HeaderName key) {

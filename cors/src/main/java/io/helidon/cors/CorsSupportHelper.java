@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -371,8 +371,8 @@ public class CorsSupportHelper<Q, R> {
     }
 
     // For testing
-    static RequestTypeInfo isRequestTypeNormal(String originHeader, UriInfo requestedHostUri, boolean isRequestSecure) {
-        return RequestTypeInfo.create(originHeader, requestedHostUri, isRequestSecure);
+    static RequestTypeInfo isRequestTypeNormal(String originHeader, UriInfo requestedHostUri) {
+        return RequestTypeInfo.create(originHeader, requestedHostUri);
     }
 
     /**
@@ -380,18 +380,18 @@ public class CorsSupportHelper<Q, R> {
      * <p>
      *     We want to use the intermediate results for clearer logging if that's turned on without having to recompute it.
      * </p>
-     * @param originLocation full origin (including port)
+     * @param originLocation full origin (including scheme and port)
      * @param hostLocation   full host (including scheme and port)
      * @param isNormal       whether the origin and host information represent a normal (non-CORS) request
      */
     record RequestTypeInfo(String originLocation, String hostLocation, boolean isNormal) {
 
-        static RequestTypeInfo create(String originHeader, UriInfo requestedHostUri, boolean isRequestSecure) {
+        static RequestTypeInfo create(String originHeader, UriInfo requestedHostUri) {
             String originLocation = CorsSupportHelper.originLocation(originHeader);
             String hostLocation = CorsSupportHelper.hostLocation(requestedHostUri);
 
-            return new RequestTypeInfo(CorsSupportHelper.originLocation(originHeader),
-                                       CorsSupportHelper.hostLocation(requestedHostUri),
+            return new RequestTypeInfo(originLocation,
+                                       hostLocation,
                                        originLocation.equals(hostLocation));
         }
     }
@@ -406,7 +406,7 @@ public class CorsSupportHelper<Q, R> {
             return true;
         }
 
-        RequestTypeInfo result = isRequestTypeNormal(originOpt.get(), requestAdapter.requestedUri(), requestAdapter.isSecure());
+        RequestTypeInfo result = isRequestTypeNormal(originOpt.get(), requestAdapter.requestedUri());
         LogHelper.logIsRequestTypeNormal(result.isNormal,
                                          silent,
                                          requestAdapter,
