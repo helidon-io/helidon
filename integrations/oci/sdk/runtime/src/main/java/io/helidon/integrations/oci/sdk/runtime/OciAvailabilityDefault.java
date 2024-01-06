@@ -37,7 +37,7 @@ import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsP
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 class OciAvailabilityDefault implements OciAvailability {
-    static String OPC_PATH = getOpcPath();
+    private static final String OPC_PATH = getOpcPath();
 
     @Override
     public boolean isRunningOnOci(OciConfig ociConfig) {
@@ -74,7 +74,7 @@ class OciAvailabilityDefault implements OciAvailability {
         }
     }
 
-    static String getOpcPath() {
+    private static String getOpcPath() {
         String input = METADATA_SERVICE_BASE_URL;
         int index = -1;
         for (int nth = 3; nth > 0; nth--) {
