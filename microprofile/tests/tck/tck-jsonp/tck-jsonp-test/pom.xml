@@ -44,7 +44,7 @@
         <dependency>
             <groupId>jakarta.json</groupId>
             <artifactId>jakarta.json-tck-tests</artifactId>
-            <version>${version.lib.jakarta.jsonp-api}</version>
+            <version>${version.lib.jsonp-tck}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
