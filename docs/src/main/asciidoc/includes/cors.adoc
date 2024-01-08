@@ -30,17 +30,21 @@ ifndef::h1-prefix[:h1-prefix: SE]
 = CORS Shared content
 
 // tag::cors-intro[]
+ifdef::se-flavor[:built-in-service-prefix: /observe]
+ifndef::se-flavor[:built-in-service-prefix: ]
+
 The link:https://www.w3.org/TR/cors[cross-origin resource sharing (CORS) protocol] helps developers control if and how REST resources served by their applications can be shared across origins.
 Helidon {flavor-uc} includes an implementation of CORS that you can use to add CORS behavior
-to the services you develop. You can define your application's CORS behavior programmatically using the Helidon CORS API alone, or
+to the services you develop. You can define your application's CORS behavior programmatically using the Helidon CORS API alone or
 together with configuration.
 
 Helidon also provides three built-in services that add their
-own endpoints to your application -- health, metrics, and OpenAPI -- that have integrated CORS support.
+own endpoints to your application--health, metrics, and OpenAPI--that have integrated CORS support.
 By adding very little code to your application, you control how all the resources in
-your application -- the ones you write and the ones provided by the Helidon built-in services -- can be shared across origins.
+your application--the ones you write and the ones provided by the Helidon built-in services--can be shared across origins.
 
 === Before You Begin
+ifdef::se-flavor[==== Planning Your Resource Sharing]
 Before you revise your application to add CORS support, you need to decide what type of cross-origin sharing you want
 to allow for each resource your application exposes.
 For example, suppose for a given resource you want to allow unrestricted sharing for GET, HEAD, and POST requests
@@ -49,8 +53,8 @@ origins `foo.com` and `there.com`.
 Your application would implement two types of CORS sharing: more relaxed for the
 simple requests and stricter for others.
 
-Once you know the type of sharing you want to allow for each of your resources -- including any from built-in
-services -- you can change your application accordingly.
+Once you know the type of sharing you want to allow for each of your resources--including any from built-in
+services--you can change your application accordingly.
 // end::cors-intro[]
 
 // The add-cors-dependency tag's contents is reused from other SE and MP pages.
@@ -70,9 +74,9 @@ the following dependency in your project:
 Support in Helidon for CORS configuration uses two closely-related cross-origin configuration formats: basic and mapped.
 Each format corresponds to a class
 in the Helidon CORS library.
-The basic format corresponds to the link:{webserver-cors-javadoc-base-url}/io/helidon/cors/CrossOriginConfig.html[`CrossOriginConfig`]
+The basic format corresponds to the link:{ws-cors-javadoc}/CrossOriginConfig.html[`CrossOriginConfig`]
 class, and the mapped format corresponds to the
-link:{webserver-cors-javadoc-base-url}/io/helidon/cors/MappedCrossOriginConfig.html[`MappedCrossOriginConfig`] class.
+link:{ws-cors-javadoc}/MappedCrossOriginConfig.html[`MappedCrossOriginConfig`] class.
 //end::cors-configuration-formats-intro[]
 
 //tag::basic-cross-origin-config[]
@@ -87,10 +91,10 @@ one or more key/value pairs. Each key-value pair assigns one characteristic of C
 {basic-table-intro}
 
 [[config-key-table]]
-include::{rootdir}/includes/cors.adoc[tag=cors-config-table]
+include::cors.adoc[tag=cors-config-table]
 
 The following example of basic cross-origin
-ifdef::se-flavor[configuration, when loaded and used by the application,]
+ifdef::se-flavor[configuration, when explicitly loaded and used by your application code,]
 ifndef::se-flavor[configuration]
 limits cross-origin resource sharing for `PUT` and
 `DELETE` operations to only `foo.com` and `there.com`:
@@ -185,8 +189,8 @@ If the cross-origin configuration is disabled (`enabled` = false), then the Heli
 
 // tag::mapped-config[]
 // tag::mapped-config-prefix[]
-Helidon represents mapped CORS information as a section, identified by a configuration
-key of your choosing, that contains:
+[[mapped-config-descr]]
+Helidon represents mapped CORS information as a config section that contains:
 
 * An optional `enabled` setting which defaults to `true` and applies to the whole mapped CORS config section, and
 
@@ -196,8 +200,7 @@ key of your choosing, that contains:
 
 ** a `path-pattern` path pattern that maps that basic CORS config section to the resource(s) it affects.
 
-You can use mapped configuration to your advantage if you want to allow your users to override the CORS behavior set up
-in the application code.
+You can use mapped configuration to your advantage if you want to specify all CORS behavior using configuration (with no explicit coding changes) or to allow your users to override the CORS behavior that your code explicitly sets up.
 
 The following example illustrates the mapped cross-origin configuration format.
 
@@ -239,7 +242,7 @@ the top-level resource in the app (the `path-pattern` key and value).
 <6> Begins the basic CORS config section for `/`; it permits sharing of resources at the top-level path with all origins
 for the indicated HTTP methods.
 
-Path patterns can be any expression accepted by the link:{webserver-javadoc-base-url}/io/helidon/webserver/PathMatcher.html[`PathMatcher`] class.
+Path patterns can be any expression accepted by the link:{http-javadoc-base-url}/io/helidon/http/PathMatcher.html[`PathMatcher`] class.
 
 NOTE: Be sure to arrange the entries in the order that you want Helidon to check them.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
@@ -285,7 +288,7 @@ This scenario is exactly the situation CORS addresses: an application in the bro
 Integrating CORS support into these built-in services allows such third-party web sites and their browser applications -- or
 more generally, apps from any other origin -- to work with your Helidon application.
 
-Because all three of these built-in Helidon services serve only `GET` endpoints, by default the
+Because all three of these built-in Helidon services serve primarily `GET` endpoints, by default the
 integrated CORS support in all three services permits
 any origin to share their resources using `GET`, `HEAD`, and `OPTIONS` HTTP requests. You can customize the CORS set-up
 for these built-in services independently from each other using
@@ -303,87 +306,46 @@ to your own endpoints.
 To use built-in services with CORS support and customize the
 CORS behavior:
 
-. Add the built-in service or services to your application. The health, metrics, and OpenAPI services automatically
-include default CORS support.
+. Add the built-in service or services to your application.
 . {blank}
 +
 --
-Add a dependency on the Helidon {flavor-uc} CORS artifact to your Maven `pom.xml` file.
+Add a dependency on the `io.helidon.webserver:helidon-webserver-cors` CORS artifact to your Maven `pom.xml` file.
 
 NOTE: If you want the built-in services to support CORS, then you need to add the CORS dependency even if your own endpoints do not use CORS.
 
 --
 . Use
-ifdef::se-flavor[the Helidon API or]
-configuration to customize the CORS behavior as needed.
+configuration to set up the CORS behavior by path as needed.
 
 The documentation for the individual built-in services describes how to add each
 service to your application, including
-adding a Maven
-ifdef::se-flavor[dependency and including the service in your application's routing rules.]
-ifndef::se-flavor[dependency.]
-In your
-application's configuration file, the configuration for each service appears under its own key.
-[%autowidth]
-|====
-| Helidon Service Documentation | Configuration Key
-| xref:{health-page}[health] | `health`
-| xref:{metrics-page}[metrics] | `metrics`
-| xref:{openapi-page}[OpenAPI] | `openapi`
-|====
+adding a Maven dependency for the built-in feature.
 
-The link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-{flavor-lc}[Helidon {flavor-uc} QuickStart example]
-uses these services, so you can use that as a template for your
-own application, or use the example project itself to experiment with customizing the CORS
-behavior in the built-in services.
 // end::builtin-getting-started[]
 
 // tag::configuring-cors-for-builtin-services[]
 ==== Configuring CORS for Built-in Services
-You can
-ifdef::se-flavor[also ]
-use configuration to control whether and how each of the built-in services works with CORS.
+Use configuration to control whether and how each of the built-in services works with CORS.
 
-ifdef::se-flavor[]
-Your application can pass configuration to the builder for each built-in service.
-endif::[]
-In the configuration for the health, metrics, and OpenAPI services, you can add a section for CORS.
-
+In the `cors` configuration section add a block for each built-in service using its path as described in the
+ifdef::se-flavor[xref:mapped-config-descr[mapped ]]
+CORS configuration section.
 // Tag the following example so we can exclude it from MP which supplies its own complete example.
 // tag::se-config-example[]
 The following example restricts sharing of the
-`/health` resource, provided by the health built-in service, to only the origin `\http://there.com`.
-[source,hocon]
+`{built-in-service-prefix}/health` resource, provided by the health built-in service, to only the origin `\http://there.com`.
+[source,hocon,subs="attributes+"]
 ----
-health:
-  cors:
-    allow-origins: [http://there.com]
+cors:
+  paths:
+    - path-pattern: "{built-in-service-prefix}/health"
+      allow-origins: [http://there.com]
+    - path-pattern: "{built-in-service-prefix}/metrics"
+      allow-origins: [http://foo.com]
 ----
 
 // end::se-config-example[]
-
-// tag::se-code-changes-for-builtin-services-config[]
-Modify your application to load the `health` config node and use it to construct the `HealthSupport` service.
-The following code shows this change in the the QuickStart SE example.
-[source,java]
-----
-HealthSupport health = HealthSupport.builder()
-        .config(config.get("health")) // <1>
-        .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
-        .build();
-----
-<1> Use the `health` config section (if present) to configure the health service.
-
-// end::se-code-changes-for-builtin-services-config[]
-
-You have full control over the CORS configuration for a built-in Helidon service. Use a  CORS config section
-as described in
-ifdef::se-flavor[]
-xref:#using-config-from-app[Using Configuration for CORS].
-endif::[]
-ifndef::se-flavor[]
-xref:#config-table[the configuration table].
-endif::[]
 
 // end::configuring-cors-for-builtin-services[]
 
@@ -401,9 +363,9 @@ Build and run the QuickStart application as usual.
 // tag::accessing-shared-resources-main[]
 ===== Retrieve Metrics
 The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-curl -i -H "Origin: http://other.com" http://localhost:8080/metrics
+curl -i -H "Origin: http://other.com" http://localhost:8080{built-in-service-prefix}/metrics
 ----
 
 [source, listing]
@@ -415,9 +377,9 @@ connection: keep-alive
 ----
 
 But accesses from `foo.com` succeed.
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-curl -i -H "Origin: http://foo.com" http://localhost:8080/metrics
+curl -i -H "Origin: http://foo.com" http://localhost:8080{built-in-service-prefix}/metrics
 ----
 
 [source, listing]
@@ -438,9 +400,9 @@ base_classloader_loadedClasses_count 3568
 ===== Retrieve Health
 The health service rejects requests from origins not specifically approved.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-curl -i -H "Origin: http://foo.com" http://localhost:8080/health
+curl -i -H "Origin: http://foo.com" http://localhost:8080{built-in-service-prefix}/health
 ----
 
 [source, listing]
@@ -453,9 +415,9 @@ connection: keep-alive
 
 And responds successfully only to cross-origin requests from `\http://there.com`.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-curl -i -H "Origin: http://there.com" http://localhost:8080/health
+curl -i -H "Origin: http://there.com" http://localhost:8080{built-in-service-prefix}/health
 ----
 
 [source, listing]

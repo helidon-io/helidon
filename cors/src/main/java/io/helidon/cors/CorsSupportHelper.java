@@ -472,7 +472,7 @@ public class CorsSupportHelper<Q, R> {
 
         CrossOriginConfig crossOriginConfig = crossOriginOpt.get();
 
-        // If enabled but not whitelisted, deny request
+        // If enabled but not allow-listed, deny request
         List<String> allowedOrigins = Arrays.asList(crossOriginConfig.allowOrigins());
         Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
         if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
@@ -555,7 +555,7 @@ public class CorsSupportHelper<Q, R> {
         }
         CrossOriginConfig crossOrigin = crossOriginOpt.get();
 
-        // If enabled but not whitelisted, deny request
+        // If enabled but not allow-listed, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
         if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
             return forbid(requestAdapter,
