@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,14 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      * The default protocol is set to {@value}.
      */
     String DEFAULT_PROTOCOL = "TLS";
+    /**
+     * The default session cache size as defined for unset value in {@link javax.net.ssl.SSLSessionContext#getSessionCacheSize()}.
+     */
+    int DEFAULT_SESSION_CACHE_SIZE = 20480;
+    /**
+     * The default session timeout as defined for unset value in {@link javax.net.ssl.SSLSessionContext#getSessionTimeout()}.
+     */
+    String DEFAULT_SESSION_TIMEOUT = "PT24H";
 
     @Prototype.FactoryMethod
     static Optional<PrivateKey> createPrivateKey(Keys config) {
@@ -248,17 +256,17 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     /**
      * SSL session cache size.
      *
-     * @return session cache size, defaults to 1024
+     * @return session cache size, defaults to {@value DEFAULT_SESSION_CACHE_SIZE}.
      */
-    @ConfiguredOption("1024")
+    @Option.DefaultInt(DEFAULT_SESSION_CACHE_SIZE)
     int sessionCacheSize();
 
     /**
      * SSL session timeout.
      *
-     * @return session timeout, defaults to 30 minutes
+     * @return session timeout, defaults to {@value DEFAULT_SESSION_TIMEOUT}.
      */
-    @ConfiguredOption("PT30M")
+    @Option.Default(DEFAULT_SESSION_TIMEOUT)
     Duration sessionTimeout();
 
     /**

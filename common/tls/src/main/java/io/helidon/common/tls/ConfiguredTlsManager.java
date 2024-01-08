@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@ public class ConfiguredTlsManager implements TlsManager {
     // secure random cannot be stored in native image, it must
     // be initialized at runtime
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
-
     private final String name;
     private final String type;
 
@@ -163,7 +162,11 @@ public class ConfiguredTlsManager implements TlsManager {
 
             SSLSessionContext serverSessionContext = sslContext.getServerSessionContext();
             if (serverSessionContext != null) {
-                serverSessionContext.setSessionCacheSize(tlsConfig.sessionCacheSize());
+                if (tlsConfig.sessionCacheSize() != TlsConfig.DEFAULT_SESSION_CACHE_SIZE) {
+                    // To allow javax.net.ssl.sessionCacheSize system property usage
+                    // see javax.net.ssl.SSLSessionContext.getSessionCacheSize doc
+                    serverSessionContext.setSessionCacheSize(tlsConfig.sessionCacheSize());
+                }
                 // seconds
                 serverSessionContext.setSessionTimeout((int) tlsConfig.sessionTimeout().toSeconds());
             }
