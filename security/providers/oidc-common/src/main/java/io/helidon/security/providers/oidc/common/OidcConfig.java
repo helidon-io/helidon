@@ -1015,7 +1015,7 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("cookie-name").asString().ifPresent(this::cookieName);
             config.get("cookie-name-id-token").asString().ifPresent(this::cookieNameIdToken);
             config.get("cookie-name-tenant").asString().ifPresent(this::cookieTenantName);
-            config.get("cookie-name-refresh-token").asString().ifPresent(this::cookieRefreshTokenName);
+            config.get("cookie-name-refresh-token").asString().ifPresent(this::cookieNameRefreshToken);
             config.get("cookie-domain").asString().ifPresent(this::cookieDomain);
             config.get("cookie-path").asString().ifPresent(this::cookiePath);
             config.get("cookie-max-age-seconds").asLong().ifPresent(this::cookieMaxAgeSeconds);
@@ -1580,7 +1580,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param cookieName name of a cookie
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "cookie-name-id-token", value = DEFAULT_ID_COOKIE_NAME)
+        @ConfiguredOption(DEFAULT_ID_COOKIE_NAME)
         public Builder cookieNameIdToken(String cookieName) {
             this.idTokenCookieBuilder.cookieName(cookieName);
             return this;
@@ -1606,8 +1606,8 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param cookieName name of a cookie
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "cookie-name-refresh-token", value = DEFAULT_REFRESH_COOKIE_NAME)
-        public Builder cookieRefreshTokenName(String cookieName) {
+        @ConfiguredOption(DEFAULT_REFRESH_COOKIE_NAME)
+        public Builder cookieNameRefreshToken(String cookieName) {
             this.refreshTokenCookieBuilder.cookieName(cookieName);
             return this;
         }
