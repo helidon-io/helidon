@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.metrics;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
@@ -40,7 +41,8 @@ final class RegistryProducer {
     @Produces
     @Default
     public static org.eclipse.microprofile.metrics.MetricRegistry getScopedRegistry(InjectionPoint injectionPoint) {
-        RegistryScope scope = injectionPoint.getAnnotated().getAnnotation(RegistryScope.class);
+        Annotated annotated = (injectionPoint == null) ? null : injectionPoint.getAnnotated();
+        RegistryScope scope = (annotated == null) ? null : annotated.getAnnotation(RegistryScope.class);
         return scope == null
                 ? getApplicationRegistry()
                 : RegistryFactory.getInstance().getRegistry(scope.scope());
