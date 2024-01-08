@@ -95,7 +95,5 @@ public class ProducerTest extends MetricsBaseTest {
     void testDirectMetricRegistryLookup() {
         MetricRegistry appRegistry = CDI.current().select(MetricRegistry.class).get();
         assertThat("Directly-looked-up app registry", appRegistry, notNullValue());
-
-        
     }
 }

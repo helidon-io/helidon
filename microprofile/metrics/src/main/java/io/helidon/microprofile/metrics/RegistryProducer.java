@@ -41,8 +41,8 @@ final class RegistryProducer {
     @Produces
     @Default
     public static org.eclipse.microprofile.metrics.MetricRegistry getScopedRegistry(InjectionPoint injectionPoint) {
-        Annotated annotated = injectionPoint == null ? null : injectionPoint.getAnnotated();
-        RegistryScope scope = annotated == null ? null : annotated.getAnnotation(RegistryScope.class);
+        Annotated annotated = (injectionPoint == null) ? null : injectionPoint.getAnnotated();
+        RegistryScope scope = (annotated == null) ? null : annotated.getAnnotation(RegistryScope.class);
         return scope == null
                 ? getApplicationRegistry()
                 : RegistryFactory.getInstance().getRegistry(scope.scope());
