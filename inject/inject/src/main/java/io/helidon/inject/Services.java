@@ -643,7 +643,7 @@ public final class Services {
                         .orElseThrow(() -> new InjectionException("There is not scope handler service for scope "
                                                                           + scope.fqName()))
                         .getFirst() // List.getFirst() - Qualified instance
-                        .instance();
+                        .get();
                 if (scopeHandler.supportedScope().equals(scope)) {
                     return scopeHandler;
                 }

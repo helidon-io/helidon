@@ -17,43 +17,58 @@
 package io.helidon.inject.service;
 
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * An instance with its qualifiers.
  * Some services are allowed to create more than one instance, and there may be a need
  * to use different qualifiers than the provider service uses.
  *
- * @see io.helidon.inject.service.ServicesProvider
- *
- * @param instance instance of a service
- * @param qualifiers qualifiers that qualify that instance
  * @param <T> type of instance, as provided by the service
+ * @see io.helidon.inject.service.ServicesProvider
  */
-public record QualifiedInstance<T>(T instance, Set<Qualifier> qualifiers) {
+public interface QualifiedInstance<T> extends Supplier<T> {
     /**
      * Create a new qualified instance.
      *
-     * @param instance the instance
+     * @param instance   the instance
      * @param qualifiers qualifiers to use
+     * @param <T>        type of the instance
      * @return a new qualified instance
-     * @param <T> type of the instance
      */
-    public static <T> QualifiedInstance<T> create(T instance, Qualifier... qualifiers) {
+    static <T> QualifiedInstance<T> create(T instance, Qualifier... qualifiers) {
         /*
             Developer note: this method is used from generated code of __ConfigBean
         */
-        return new QualifiedInstance<>(instance, Set.of(qualifiers));
+        return new QualifiedInstanceImpl<>(instance, Set.of(qualifiers));
     }
 
     /**
      * Create a new qualified instance.
      *
-     * @param instance the instance
+     * @param instance   the instance
      * @param qualifiers qualifiers to use
+     * @param <T>        type of the instance
      * @return a new qualified instance
-     * @param <T> type of the instance
      */
-    public static <T> QualifiedInstance<T> create(T instance, Set<Qualifier> qualifiers) {
-        return new QualifiedInstance<>(instance, Set.copyOf(qualifiers));
+    static <T> QualifiedInstance<T> create(T instance, Set<Qualifier> qualifiers) {
+        return new QualifiedInstanceImpl<>(instance, qualifiers);
     }
+
+    /**
+     * Get the instance that the registry manages (or an instance that is unmanaged, if the provider is not within a scope).
+     * The instance must be guaranteed to be constructed and if managed by the registry, and activation scope is not limited,
+     * then injected as well.
+     *
+     * @return instance
+     */
+    @Override
+    T get();
+
+    /**
+     * Qualifiers of the instance.
+     *
+     * @return qualifiers of the service instance
+     */
+    Set<Qualifier> qualifiers();
 }

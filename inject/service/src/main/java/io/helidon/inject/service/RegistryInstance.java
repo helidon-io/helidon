@@ -17,7 +17,6 @@
 package io.helidon.inject.service;
 
 import java.util.Set;
-import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 
@@ -27,27 +26,11 @@ import io.helidon.common.types.TypeName;
  *
  * @param <T> type of the instance
  */
-public interface RegistryInstance<T> extends Supplier<T> {
+public interface RegistryInstance<T> extends QualifiedInstance<T> {
     /**
      * Type name of this interface. {@link io.helidon.common.types.TypeName} is used in various APIs of service registry.
      */
     TypeName TYPE_NAME = TypeName.create(RegistryInstance.class);
-
-    /**
-     * Get the instance that the registry manages (or an instance that is unmanaged, if the provider is not within a scope).
-     * The instance is guaranteed to be constructed and injected.
-     *
-     * @return instance
-     */
-    @Override
-    T get();
-
-    /**
-     * Qualifiers of the instance.
-     *
-     * @return qualifiers of the service instance
-     */
-    Set<Qualifier> qualifiers();
 
     /**
      * Contracts of the service instance.
