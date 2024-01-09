@@ -229,11 +229,6 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-apt</artifactId>
                         <version>${helidon.version}</version>

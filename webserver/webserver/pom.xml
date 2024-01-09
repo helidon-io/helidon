@@ -81,11 +81,6 @@
             <artifactId>helidon-inject-service</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-service</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
             <scope>test</scope>
@@ -172,11 +167,6 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -202,11 +192,6 @@
                     <dependency>
                         <groupId>io.helidon.inject</groupId>
                         <artifactId>helidon-inject-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

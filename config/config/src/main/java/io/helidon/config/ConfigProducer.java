@@ -34,15 +34,14 @@ class ConfigProducer implements Config {
     private final Config config;
 
     @Injection.Inject
-    ConfigProducer(List<Supplier<ConfigSource>> serviceProviders) {
+    ConfigProducer(List<Supplier<ConfigSource>> configSources) {
         if (GlobalConfig.configured()) {
             config = GlobalConfig.config();
         } else {
             config = io.helidon.config.Config.builder()
                     .metaConfig()
-                    .update(it -> serviceProviders.stream()
+                    .update(it -> configSources.stream()
                             .map(Supplier::get)
-                            .map(ConfigSource.class::cast)
                             .forEach(it::addSource))
                     .build();
         }

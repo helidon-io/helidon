@@ -63,7 +63,7 @@
         <module>security</module>
         <module>vault</module>
         <module>zipkin-mp-2.2</module>
-        <module>declarative</module>
+<!--        <module>declarative</module>-->
     </modules>
 
     <dependencyManagement>

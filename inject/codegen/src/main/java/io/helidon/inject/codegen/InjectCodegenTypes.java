@@ -125,10 +125,6 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName QUALIFIED_INSTANCE = TypeName.create("io.helidon.inject.service.QualifiedInstance");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.RegistryServiceProvider}.
-     */
-    public static final TypeName REGISTRY_SERVICE_PROVIDER = TypeName.create("io.helidon.inject.RegistryServiceProvider");
-    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.InjectionPointProvider}.
      */
     public static final TypeName INJECTION_POINT_PROVIDER = TypeName.create("io.helidon.inject.service.InjectionPointProvider");
@@ -176,18 +172,6 @@ public final class InjectCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.Services}.
      */
     public static final TypeName INJECT_SERVICES = TypeName.create("io.helidon.inject.Services");
-    /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.ServiceProviderRegistry}.
-     */
-    public static final TypeName INJECT_PROVIDER_SERVICES = TypeName.create("io.helidon.inject.ServiceProviderRegistry");
-    /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.RegistryServiceProvider}.
-     */
-    public static final TypeName INJECT_REGISTRY_SERVICE_PROVIDER = TypeName.create("io.helidon.inject.RegistryServiceProvider");
-    /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.ServiceProviderBindable}.
-     */
-    public static final TypeName INJECT_SERVICE_PROVIDER_BINDABLE = TypeName.create("io.helidon.inject.ServiceProviderBindable");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InjectionResolver}.
      */

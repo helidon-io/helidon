@@ -72,15 +72,17 @@ public abstract class AbstractSaw extends Verification implements Tool {
     public void verifyState() {
         verifyInjected(fieldInjectedProtectedOptionalInAbstractBase, getClass()
                 + ".fieldInjectedProtectedOptionalInAbstractBase", null, true, DullBlade.class);
+        // we use cardinality of the InjectionPointProvider
         verifyInjected(fieldInjectedProtectedProviderInAbstractBase, getClass()
-                + ".fieldInjectedProtectedProviderInAbstractBase", null, true, DullBlade.class);
+                + ".fieldInjectedProtectedProviderInAbstractBase", null, false, DullBlade.class);
         verifyInjected(fieldInjectedProtectedListInAbstractBase, getClass()
                 + ".fieldInjectedProtectedListInAbstractBase", null, 1, AbstractBlade.class);
         verifyInjected(setterInjectedPkgPrivateProviderListInAbstractBase, getClass()
                 + ".setterInjectedPkgPrivateProviderListInAbstractBase", null, 1, Supplier.class);
 
+        // we use cardinality of the InjectionPointProvider
         verifyInjected(fieldInjectedPkgPrivateProviderInAbstractBase, getClass()
-                + ".fieldInjectedPkgPrivateProviderInAbstractBase", null, true, DullBlade.class);
+                + ".fieldInjectedPkgPrivateProviderInAbstractBase", null, false, DullBlade.class);
         verifyInjected(fieldInjectedPkgPrivateOptionalInAbstractBase, getClass()
                 + ".fieldInjectedPkgPrivateOptionalInAbstractBase", null, true, DullBlade.class);
         verifyInjected(fieldInjectedPkgPrivateListInAbstractBase, getClass()
@@ -88,9 +90,10 @@ public abstract class AbstractSaw extends Verification implements Tool {
         verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase, getClass()
                 + ".fieldInjectedPkgPrivateProviderListInAbstractBase", null, 1,  Supplier.class);
 
+        // we use cardinality of the InjectionPointProvider
         verifyInjected(setterInjectedPkgPrivateProviderInAbstractBase, getClass()
                 + ".setBladeProvider(Provider<AbstractBlade> blade)",
-                       setterInjectedPkgPrivateProviderInAbstractBaseInjectedCount, true, DullBlade.class);
+                       setterInjectedPkgPrivateProviderInAbstractBaseInjectedCount, false, DullBlade.class);
         verifyInjected(setterInjectedPkgPrivateOptionalInAbstractBase, getClass()
                 + ".setBladeOptional(Optional<AbstractBlade> blade)",
                        setterInjectedPkgPrivateOptionalInAbstractBaseInjectedCount, true, DullBlade.class);

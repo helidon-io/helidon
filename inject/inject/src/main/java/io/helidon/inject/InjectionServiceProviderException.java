@@ -20,9 +20,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * An exception relative to a {@link RegistryServiceProvider}.
+ * An exception relative to a {@link io.helidon.inject.ServiceProvider}.
  */
-@Deprecated
 public class InjectionServiceProviderException extends InjectionException {
 
     /**

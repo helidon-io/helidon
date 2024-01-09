@@ -56,8 +56,8 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-service</artifactId>
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject-service</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
@@ -94,11 +94,6 @@
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
                             <groupId>io.helidon.config</groupId>
                             <artifactId>helidon-config-metadata-processor</artifactId>
                             <version>${helidon.version}</version>
@@ -126,11 +121,6 @@
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
                     <dependency>
                         <groupId>io.helidon.config</groupId>
                         <artifactId>helidon-config-metadata-processor</artifactId>

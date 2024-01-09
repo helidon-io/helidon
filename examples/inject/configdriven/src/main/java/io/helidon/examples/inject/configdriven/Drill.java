@@ -19,11 +19,10 @@ package io.helidon.examples.inject.configdriven;
 import java.util.Objects;
 
 import io.helidon.examples.inject.basics.Tool;
-import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.service.Injection;
 
 
-@ConfigDriven(DrillConfigBlueprint.class)
+@Injection.DrivenBy(DrillConfigBlueprint.class)
 class Drill implements Tool {
 
     private final DrillConfig cfg;

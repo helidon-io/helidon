@@ -1039,14 +1039,6 @@
             <artifactId>helidon-inject-testing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-service</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-codegen</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-codegen</artifactId>
         </dependency>
