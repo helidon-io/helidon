@@ -24,7 +24,7 @@ import io.helidon.inject.service.Injection;
 /**
  * Extension point for the service registry.
  * To support additional scope, a service implementing this interface must be available in the registry.
- * It should be accompanied by a way to start and stop the scope (such as {@link io.helidon.inject.RequestonControl} for
+ * It should be accompanied by a way to start and stop the scope (such as {@link RequestScopeControl} for
  * request scope).
  */
 @Injection.Contract
