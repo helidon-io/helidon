@@ -60,9 +60,9 @@ import io.helidon.metrics.api.Metrics;
  * Services are described through a (code generated) {@link io.helidon.inject.service.ServiceDescriptor}, and this registry
  * will manage their lifecycle as required by their annotations (such as {@link io.helidon.inject.service.Injection.Singleton}).
  * <p>
- * This Services interface exposes a read-only set of methods providing access to these "managed service" providers, and
- * available
- * via one of the lookup methods provided. Once you resolve the service provider(s), the service provider can be activated by
+ * This Services interface exposes a read-only set of methods providing access to these "managed service" instances,
+ * suppliers, or service descriptors.
+ * Once you resolve the service its provider is activated by
  * calling one of its get() methods. This is equivalent to the declarative form just using
  * {@link io.helidon.inject.service.Injection.Inject} instead.
  * Note that activation of a service might result in activation chaining. For example, service A injects service B, etc. When
@@ -326,6 +326,10 @@ public final class Services {
     }
 
     /**
+     * Get a supplier for the provided service info. The service info must already be known by this registry,
+     * either through a code generated module, or registered through
+     * {@link io.helidon.inject.InjectionConfig.Builder#addServiceDescriptor(io.helidon.inject.service.ServiceDescriptor)}.
+     *
      * @param descriptor service descriptor to get a supplier for, please use the singleton instance (usually code generated
      *                   into a public {@code __ServiceDescriptor} class), we use instance equality to discover services
      * @param <T>        type of the service, if you use any other than {@link java.lang.Object}, make sure

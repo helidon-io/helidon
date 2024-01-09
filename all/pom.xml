@@ -406,6 +406,10 @@
             <artifactId>helidon-codegen-class-model</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-helidon-copyright</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.processor</groupId>
             <artifactId>helidon-common-processor</artifactId>
         </dependency>
