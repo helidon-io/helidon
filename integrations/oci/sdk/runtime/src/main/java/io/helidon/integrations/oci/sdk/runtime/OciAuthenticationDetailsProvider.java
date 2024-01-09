@@ -34,6 +34,8 @@ import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
+import io.helidon.inject.service.Qualifier;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
@@ -80,7 +82,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> first(Lookup query) {
+    public Optional<QualifiedInstance<AbstractAuthenticationDetailsProvider>> first(Lookup query) {
         OciConfig ociConfig = OciExtension.ociConfig();
 
         String requestedNamedProfile = toNamedProfile(query.injectionPoint().orElse(null));
@@ -90,7 +92,8 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
             ociConfig = OciConfig.builder(ociConfig).configProfile(requestedNamedProfile).build();
         }
 
-        return Optional.of(select(ociConfig, true).authStrategy().select(ociConfig));
+        AuthStrategy authStrategy = select(ociConfig, true).authStrategy();
+        return Optional.of(QualifiedInstance.create(authStrategy.select(ociConfig), Qualifier.createNamed(authStrategy.name())));
     }
 
     /**

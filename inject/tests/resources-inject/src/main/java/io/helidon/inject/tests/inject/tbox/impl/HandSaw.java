@@ -126,7 +126,10 @@ public class HandSaw extends AbstractSaw {
                 .list(Lookup.builder()
                               .addContract(AbstractBlade.class)
                               .addQualifier(Qualifier.WILDCARD_NAMED)
-                              .build());
+                              .build())
+                .stream()
+                .map(Supplier::get)
+                .toList();
         Verification.verifyInjected(blades, getClass() +
                 "<all blades>", null, 3, AbstractBlade.class);
 

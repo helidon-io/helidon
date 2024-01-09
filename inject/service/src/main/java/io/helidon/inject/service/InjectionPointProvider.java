@@ -28,6 +28,12 @@ import io.helidon.common.types.TypeName;
  * create)".
  * <p>
  * The ordering of services, and the preferred service itself, is determined by the service registry implementation.
+ * <p>
+ * The service registry does not make any assumptions about qualifiers of the instances being created, though they should
+ * be either the same as the injection point provider itself, or a subset of it, so the service can be discovered through
+ * one of the lookup methods (i.e. the injection point provider may be annotated with a
+ * {@link io.helidon.inject.service.Injection.Named} with {@link io.helidon.inject.service.Injection.Named#WILDCARD_NAME} value,
+ * and each instance provided may use a more specific name qualifier).
  *
  * @param <T> the type that the provider produces
  */
@@ -42,9 +48,9 @@ public interface InjectionPointProvider<T> {
      * as using the first element of the result from calling {@link #list(io.helidon.inject.service.Lookup)}.
      *
      * @param query the service query
-     * @return the best service provider matching the criteria, if any matched
+     * @return the best service provider matching the criteria, if any matched, with qualifiers (if any)
      */
-    Optional<T> first(Lookup query);
+    Optional<QualifiedInstance<T>> first(Lookup query);
 
     /**
      * Get (or create) a list of instances matching the criteria for the given injection point context.
@@ -52,7 +58,7 @@ public interface InjectionPointProvider<T> {
      * @param query the service query
      * @return the resolved services matching criteria for the injection point in order of weight, or empty if none matching
      */
-    default List<T> list(Lookup query) {
+    default List<QualifiedInstance<T>> list(Lookup query) {
         return first(query).map(List::of).orElseGet(List::of);
     }
 }

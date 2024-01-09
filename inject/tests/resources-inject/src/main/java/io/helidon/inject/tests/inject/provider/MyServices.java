@@ -26,6 +26,7 @@ import io.helidon.common.Weighted;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
 
 public class MyServices {
 
@@ -55,12 +56,12 @@ public class MyServices {
         }
 
         @Override
-        public Optional<MyConcreteClassContract> first(Lookup query) {
+        public Optional<QualifiedInstance<MyConcreteClassContract>> first(Lookup query) {
             assert (injected != null);
             assert (postConstructed);
             int num = counter++;
             String id = getClass().getSimpleName() + ":instance_" + num + ", " + injected;
-            return Optional.of(new MyConcreteClassContract(id));
+            return Optional.of(QualifiedInstance.create(new MyConcreteClassContract(id)));
         }
 
         @Injection.Inject

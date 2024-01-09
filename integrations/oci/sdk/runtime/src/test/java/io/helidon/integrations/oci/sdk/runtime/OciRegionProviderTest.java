@@ -16,6 +16,8 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.GlobalConfig;
@@ -30,6 +32,7 @@ import io.helidon.inject.Services;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -37,9 +40,10 @@ import com.oracle.bmc.Region;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static org.hamcrest.CoreMatchers.equalTo;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciRegionProviderTest {
@@ -95,7 +99,13 @@ class OciRegionProviderTest {
                              .addContract(Region.class)
                              .build());
 
-        assertThat(regionProvider.first(query),
-                   optionalValue(equalTo(Region.US_PHOENIX_1)));
+        Optional<QualifiedInstance<Region>> regionInstance = regionProvider.first(query);
+        assertThat(regionInstance, optionalPresent());
+        QualifiedInstance<Region> regionQualifiedInstance = regionInstance.get();
+        Region region = regionQualifiedInstance.get();
+        Set<Qualifier> qualifiers = regionQualifiedInstance.qualifiers();
+
+        assertThat(region, is(Region.US_PHOENIX_1));
+        assertThat(qualifiers, contains(Qualifier.createNamed(Region.US_PHOENIX_1.getRegionId())));
     }
 }

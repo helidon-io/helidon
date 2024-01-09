@@ -27,6 +27,7 @@ import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
 import io.helidon.inject.service.Qualifier;
 
 import static io.helidon.common.LazyValue.create;
@@ -49,7 +50,7 @@ public class BladeProvider implements InjectionPointProvider<Blade> {
      * @see NailProvider
      */
     @Override
-    public Optional<Blade> first(Lookup query) {
+    public Optional<QualifiedInstance<Blade>> first(Lookup query) {
         if (contains(query.qualifiers(), Big.class)) {
             return logAndReturn(LARGE_BLADE.get(), query, BIG_QUALIFIER);
         } else if (contains(query.qualifiers(), Little.class)) {
@@ -58,7 +59,7 @@ public class BladeProvider implements InjectionPointProvider<Blade> {
         return logAndReturn(Optional.empty(), query);
     }
 
-    private static Optional<Blade> logAndReturn(
+    private static Optional<QualifiedInstance<Blade>> logAndReturn(
             Optional<Blade> result,
             Lookup query,
             Qualifier... qualifiers) {
@@ -67,7 +68,7 @@ public class BladeProvider implements InjectionPointProvider<Blade> {
         if (ip != null) {
             System.out.println(ip.service() + "::" + ip.name() + " will be injected with " + result);
         }
-        return result;
+        return result.map(it -> QualifiedInstance.create(it, qualifiers));
     }
 
     private static boolean contains(Collection<Qualifier> qualifiers,

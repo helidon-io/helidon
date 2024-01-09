@@ -18,13 +18,13 @@ package io.helidon.inject.tests.inject.tbox.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
 
@@ -35,45 +35,46 @@ import io.helidon.inject.tests.inject.tbox.AbstractBlade;
 @Injection.Named("*")
 public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
 
-    static final Qualifier all = Qualifier.createNamed("*");
-    static final Qualifier coarse = Qualifier.createNamed("coarse");
-    static final Qualifier fine = Qualifier.createNamed("fine");
+    static final Qualifier QUALIFIER_ALL = Qualifier.WILDCARD_NAMED;
+    static final Qualifier QUALIFIER_COARSE = Qualifier.createNamed("coarse");
+    static final Qualifier QUALIFIER_FINE = Qualifier.createNamed("fine");
+    static final Qualifier QUALIFIER_DULL = Qualifier.createNamed("dull");
 
     @Override
-    public Optional<AbstractBlade> first(Lookup query) {
-        Objects.requireNonNull(query);
-
+    public Optional<QualifiedInstance<AbstractBlade>> first(Lookup query) {
         assert (query.contracts().size() == 1) : query;
         assert (query.contracts().contains(TypeName.create(AbstractBlade.class))) : query;
 
         AbstractBlade blade;
-        if (query.qualifiers().contains(all) || query.qualifiers().contains(coarse)) {
+        Qualifier qualifier;
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_COARSE)) {
+            qualifier = QUALIFIER_COARSE;
             blade = new CoarseBlade();
-        } else if (query.qualifiers().contains(fine)) {
+        } else if (query.qualifiers().contains(QUALIFIER_FINE)) {
+            qualifier = QUALIFIER_FINE;
             blade = new FineBlade();
         } else {
             assert (query.qualifiers().isEmpty());
+            qualifier = QUALIFIER_DULL;
             blade = new DullBlade();
         }
 
-        return Optional.of(blade);
+        return Optional.of(QualifiedInstance.create(blade, qualifier));
     }
 
     @Override
-    public List<AbstractBlade> list(Lookup query) {
-        Objects.requireNonNull(query);
-
-        List<AbstractBlade> result = new ArrayList<>();
-        if (query.qualifiers().contains(all) || query.qualifiers().contains(coarse)) {
-            result.add(new CoarseBlade());
+    public List<QualifiedInstance<AbstractBlade>> list(Lookup query) {
+        List<QualifiedInstance<AbstractBlade>> result = new ArrayList<>();
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_COARSE)) {
+            result.add(QualifiedInstance.create(new CoarseBlade(), QUALIFIER_COARSE));
         }
 
-        if (query.qualifiers().contains(all) || query.qualifiers().contains(fine)) {
-            result.add(new FineBlade());
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_FINE)) {
+            result.add(QualifiedInstance.create(new FineBlade(), QUALIFIER_FINE));
         }
 
-        if (query.qualifiers().contains(all) || query.qualifiers().isEmpty()) {
-            result.add(new DullBlade());
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().isEmpty()) {
+            result.add(QualifiedInstance.create(new DullBlade(), QUALIFIER_DULL));
         }
 
         return result;

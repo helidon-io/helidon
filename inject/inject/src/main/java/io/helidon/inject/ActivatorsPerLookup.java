@@ -311,10 +311,7 @@ final class ActivatorsPerLookup {
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get(currentPhase);
 
-            return Optional.of(ipProvider.list(lookup)
-                                       .stream()
-                                       .map(it -> QualifiedInstance.create(it, provider.descriptor().qualifiers()))
-                                       .toList());
+            return Optional.of(ipProvider.list(lookup));
         }
     }
 
