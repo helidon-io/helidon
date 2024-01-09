@@ -20,9 +20,9 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Request to deactivate a {@link RegistryServiceProvider}.
+ * Request to deactivate a {@link io.helidon.inject.ManagedService}.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(isPublic = false, builderPublic = false)
 interface DeActivationRequestBlueprint {
     /**
      * Whether to throw an exception on failure, or return it as part of the result.
