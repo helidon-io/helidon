@@ -4,7 +4,6 @@ This example implements demonstrates usage of MP Telemetry Tracing.
 
 ## Build and run
 
-With JDK17+
 ```bash
 mvn package
 java -jar greeting/target/helidon-examples-microprofile-telemetry-greeting.jar
@@ -36,7 +35,6 @@ jaeger-all-in-one --collector.zipkin.host-port=9411   --collector.otlp.enabled=t
 
 Run the Secondary service:
 
-With JDK17+
 ```bash
 mvn package
 java -jar secondary/target/helidon-examples-microprofile-telemetry-secondary.jar

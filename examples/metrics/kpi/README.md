@@ -11,7 +11,6 @@ You would typically write any given application to use only one of the approache
 
 ## Build and run
 
-With JDK11+
 ```bash
 mvn package
 ```
