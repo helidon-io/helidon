@@ -27,7 +27,6 @@ module io.helidon.inject.tests.inject {
 
     exports io.helidon.inject.tests.inject;
     exports io.helidon.inject.tests.inject.interceptor;
-    exports io.helidon.inject.tests.inject.stacking;
     exports io.helidon.inject.tests.inject.tbox;
 
     provides io.helidon.inject.service.ModuleComponent

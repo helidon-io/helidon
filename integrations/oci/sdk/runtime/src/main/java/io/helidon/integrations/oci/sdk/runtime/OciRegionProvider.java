@@ -20,9 +20,9 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.inject.Services;
-import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
 
 import com.oracle.bmc.Region;
 
@@ -37,7 +37,7 @@ class OciRegionProvider implements InjectionPointProvider<Region> {
     }
 
     @Override
-    public Optional<Region> first(ContextualLookup query) {
+    public Optional<Region> first(Lookup query) {
         String requestedNamedProfile = query.injectionPoint()
                 .map(OciAuthenticationDetailsProvider::toNamedProfile)
                 .orElse(null);

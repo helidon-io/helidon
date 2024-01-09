@@ -35,24 +35,25 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ConfigProducerTest {
+    private InjectionServices injectionServices;
+
     @AfterEach
-    void reset() {
-        InjectionTestingSupport.resetAll();
+    void shutdownServices() {
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
-    @Order(0) // this must be first, as once we set global config, this method will always fail
+    @Order(0)
+        // this must be first, as once we set global config, this method will always fail
     void testConfig() {
-        InjectionServices.configure(InjectionConfig.builder()
-                                            .permitsDynamic(true)
+        injectionServices = InjectionServices.create(InjectionConfig.builder()
                                             .serviceLookupCaching(true)
                                             .build());
 
         // value should be overridden using our custom config source
         Config config = InjectionServices.instance()
                 .services()
-                .get(Config.class)
-                .get();
+                .get(Config.class);
 
         assertThat(config.get("app.value").asString().asOptional(), is(Optional.of("source")));
     }
@@ -63,16 +64,13 @@ class ConfigProducerTest {
         // value should use the config as we provided it
         GlobalConfig.config(io.helidon.config.Config::create, true);
 
-        InjectionServices.configure(InjectionConfig.builder()
-                                            .permitsDynamic(true)
-                                            .serviceLookupCaching(true)
-                                            .build());
-
+        injectionServices = InjectionServices.create(InjectionConfig.builder()
+                                                             .serviceLookupCaching(true)
+                                                             .build());
 
         Config config = InjectionServices.instance()
                 .services()
-                .get(Config.class)
-                .get();
+                .get(Config.class);
 
         assertThat(config.get("app.value").asString().asOptional(), is(Optional.of("file")));
     }

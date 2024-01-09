@@ -16,9 +16,9 @@
 
 package io.helidon.inject.tests.inject.provider;
 
-import io.helidon.inject.InjectionConfig;
+import java.util.function.Supplier;
+
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -26,37 +26,31 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 class PerRequestProviderTest {
 
-    private final InjectionConfig config = InjectionTestingSupport.basicTestableConfig();
     private InjectionServices injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        setUp(config);
-    }
-
-    void setUp(InjectionConfig config) {
-        this.injectionServices = testableServices(config);
+        this.injectionServices = InjectionServices.create();
         this.services = injectionServices.services();
     }
 
     @AfterEach
     void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
-    void myConcreteClassContractTest() {
-        RegistryServiceProvider<MyConcreteClassContract> sp = services.serviceProviders().get(MyConcreteClassContract.class);
-        assertThat(sp.description(),
-                   equalTo("MyServices.MyConcreteClassContractPerRequestIPProvider:INIT"));
+    void myConcreteClassContractWithIpProviderTest() {
+        MyServices.MyConcreteClassContractPerRequestProvider.COUNTER.set(0);
+        // we cannot get an injection point provider here, as we use regular lookup
+        Supplier<MyConcreteClassContract> sp = services.supply(MyConcreteClassContract.class);
+
         MyConcreteClassContract instance0 = sp.get();
         assertThat(instance0.toString(),
                    equalTo("MyConcreteClassContractPerRequestIPProvider:instance_0, "

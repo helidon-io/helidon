@@ -25,42 +25,28 @@ import io.helidon.codegen.CodegenLogger;
 import io.helidon.common.config.Config;
 import io.helidon.inject.codegen.InjectCodegenTypes;
 import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.ServiceInfo;
 
 class WrappedServices implements AutoCloseable {
     private final ClassLoader classLoader;
     private final CodegenLogger logger;
     private final Class<?> injectionServicesType;
     private final Class<?> servicesType;
-    private final Class<?> providerServicesType;
-    private final Class<?> registryServiceProviderType;
-    private final Class<?> serviceProviderBindableType;
-    private final Class<?> injectionResolverType;
     private final Object injectionServices;
     private final Object services;
-    private final Object providerServices;
 
     private WrappedServices(ClassLoader classLoader,
                             CodegenLogger logger,
                             Class<?> injectionServicesType,
                             Class<?> servicesType,
-                            Class<?> providerServicesType,
-                            Class<?> registryServiceProviderType,
-                            Class<?> serviceProviderBindableType,
-                            Class<?> injectionResolverType,
                             Object injectionServices,
-                            Object services,
-                            Object providerServices) {
+                            Object services) {
         this.classLoader = classLoader;
         this.logger = logger;
         this.injectionServicesType = injectionServicesType;
         this.servicesType = servicesType;
-        this.providerServicesType = providerServicesType;
-        this.registryServiceProviderType = registryServiceProviderType;
-        this.serviceProviderBindableType = serviceProviderBindableType;
-        this.injectionResolverType = injectionResolverType;
         this.injectionServices = injectionServices;
         this.services = services;
-        this.providerServices = providerServices;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -82,8 +68,6 @@ class WrappedServices implements AutoCloseable {
 
             injectConfigBuilderType.getMethod("useApplication", boolean.class)
                     .invoke(injectConfigBuilder, useApplications);
-            injectConfigBuilderType.getMethod("permitsDynamic", boolean.class)
-                    .invoke(injectConfigBuilder, true);
             injectConfigBuilderType.getMethod("limitRuntimePhase", injectPhaseType)
                     .invoke(injectConfigBuilder, gatheringDependenciesPhase);
             injectConfigBuilderType.getMethod("serviceConfig", Config.class)
@@ -101,21 +85,13 @@ class WrappedServices implements AutoCloseable {
             Class<?> servicesType = classLoader.loadClass(InjectCodegenTypes.INJECT_SERVICES.fqName());
             Object services = injectionServicesType.getMethod("services")
                     .invoke(injectionServices);
-            Class<?> providerServicesType = classLoader.loadClass(InjectCodegenTypes.INJECT_PROVIDER_SERVICES.fqName());
-            Object providerServices = servicesType.getMethod("serviceProviders")
-                    .invoke(services);
 
             return new WrappedServices(classLoader,
                                        logger,
                                        injectionServicesType,
                                        servicesType,
-                                       providerServicesType,
-                                       classLoader.loadClass(InjectCodegenTypes.REGISTRY_SERVICE_PROVIDER.fqName()),
-                                       classLoader.loadClass(InjectCodegenTypes.INJECT_SERVICE_PROVIDER_BINDABLE.fqName()),
-                                       classLoader.loadClass(InjectCodegenTypes.INJECT_INJECTION_RESOLVER.fqName()),
                                        injectionServices,
-                                       services,
-                                       providerServices);
+                                       services);
         } catch (ReflectiveOperationException e) {
             throw new CodegenException(
                     "Failed to invoke Service registry related methods in user's application class loader using reflection",
@@ -137,46 +113,31 @@ class WrappedServices implements AutoCloseable {
         }
     }
 
-    List<WrappedProvider> all() {
+    List<ServiceInfo> all() {
         return all(Lookup.EMPTY);
     }
 
     @SuppressWarnings("unchecked")
-    List<WrappedProvider> all(Lookup lookup) {
+    List<ServiceInfo> all(Lookup lookup) {
         try {
             // retrieves all the services in the registry
-            List<Object> providers = (List<Object>) providerServicesType.getMethod("all", Lookup.class)
-                    .invoke(providerServices, lookup);
-
-            return providers.stream()
-                    .map(providerObject -> new WrappedProvider(classLoader,
-                                                               servicesType,
-                                                               registryServiceProviderType,
-                                                               serviceProviderBindableType,
-                                                               injectionResolverType,
-                                                               services,
-                                                               providerObject))
-                    .toList();
+            return (List<ServiceInfo>) servicesType.getMethod("lookupServices", Lookup.class)
+                    .invoke(services, lookup);
         } catch (ReflectiveOperationException e) {
             throw new CodegenException("Failed to get providers from service registry using reflection", e);
         }
     }
 
-    WrappedProvider get(Lookup lookup) {
-        try {
-            // retrieves all the services in the registry
-            Object provider = providerServicesType.getMethod("get", Lookup.class)
-                    .invoke(providerServices, lookup);
-
-            return new WrappedProvider(classLoader,
-                                       servicesType,
-                                       registryServiceProviderType,
-                                       serviceProviderBindableType,
-                                       injectionResolverType,
-                                       services,
-                                       provider);
-        } catch (ReflectiveOperationException e) {
-            throw new CodegenException("Failed to get providers from service registry using reflection", e);
+    ServiceInfo get(Lookup lookup) {
+        List<ServiceInfo> services = all(lookup);
+        if (services.size() == 1) {
+            return services.getFirst();
         }
+        if (services.isEmpty()) {
+            throw new CodegenException("Expected that service registry contains service: " + lookup + ", yet none was found");
+        }
+
+        throw new CodegenException("Expected that service registry contains service: " + lookup
+                                           + ", yet more than one was found: " + services);
     }
 }

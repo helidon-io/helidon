@@ -27,8 +27,12 @@ import io.helidon.inject.service.ServiceDescriptor;
  * Injection of services enables a possibility to have multiple Services instances within a single JVM,
  * as it allows a service to inject the instance it is managed by (for example to do programmatic lookups),
  * rather than depending on the singleton static instance.
+ * @deprecated this is an internal type of the service registry, equivalent to code generated descriptors; these
+ * types must be public, so we can generate {@link io.helidon.inject.Application}, yet should not be used directly
+ * from user code
  */
-@SuppressWarnings("checkstyle:TypeName") // matches pattern of generated descriptors
+@Deprecated
+@SuppressWarnings({"checkstyle:TypeName", "DeprecatedIsStillUsed"}) // matches pattern of generated descriptors
 public class Services__ServiceDescriptor implements ServiceDescriptor<Services> {
     /**
      * Singleton instance to be referenced when building applications.
@@ -37,7 +41,7 @@ public class Services__ServiceDescriptor implements ServiceDescriptor<Services> 
 
     private static final TypeName SERVICES = TypeName.create(Services.class);
     private static final TypeName INFO_TYPE = TypeName.create(Services__ServiceDescriptor.class);
-    private static final Set<TypeName> CONTRACTS = Set.of(Services.TYPE_NAME, ServicesSpi.TYPE_NAME);
+    private static final Set<TypeName> CONTRACTS = Set.of(Services.TYPE_NAME);
 
     private Services__ServiceDescriptor() {
     }

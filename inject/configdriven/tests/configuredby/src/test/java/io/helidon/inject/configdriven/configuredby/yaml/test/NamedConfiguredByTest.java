@@ -16,42 +16,27 @@
 
 package io.helidon.inject.configdriven.configuredby.yaml.test;
 
-import java.util.List;
-import java.util.Map;
-
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
-import io.helidon.inject.configdriven.CbrServiceDescriptor;
-import io.helidon.inject.configdriven.ConfigBeanRegistry;
-import io.helidon.inject.configdriven.service.NamedInstance;
+import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 
 class NamedConfiguredByTest {
     InjectionServices injectionServices;
     Services services;
 
-    @AfterAll
-    static void tearDown() {
-        resetAll();
-    }
-
-    void resetWith(InjectionConfig config) {
-        resetAll();
-        this.injectionServices = testableServices(config);
-        this.services = injectionServices.services();
+    @AfterEach
+    void tearDown() {
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @BeforeEach
@@ -62,21 +47,24 @@ class NamedConfiguredByTest {
                 .disableEnvironmentVariablesSource()
                 .build();
         GlobalConfig.config(() -> config, true);
-        resetWith(InjectionConfig.builder()
-                          .permitsDynamic(true)
-                          .build());
+
+        this.injectionServices = InjectionServices.create(InjectionConfig.builder()
+                                                                  .serviceConfig(config)
+                                                                  .build());
+        this.services = injectionServices.services();
     }
 
     @Test
     void namedConfiguredServices() {
-        ConfigBeanRegistry cbr = services.serviceProviders()
-                .<ConfigBeanRegistry>get(CbrServiceDescriptor.INSTANCE).get();
-        Map<TypeName, List<NamedInstance<?>>> allConfigBeans = cbr.allConfigBeans();
+        services.get(Lookup.builder()
+                             .addContract(AsyncConfig.class)
+                             .addQualifier(Qualifier.createNamed("first"))
+                             .build());
 
-        List<NamedInstance<?>> namedInstances = allConfigBeans.get(TypeName.create(AsyncConfig.class));
-
-        assertThat(namedInstances.stream().map(NamedInstance::name).toList(),
-                   containsInAnyOrder("first", "second"));
+        services.get(Lookup.builder()
+                             .addContract(AsyncConfig.class)
+                             .addQualifier(Qualifier.createNamed("second"))
+                             .build());
     }
 
 }

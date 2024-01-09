@@ -18,38 +18,36 @@ package io.helidon.inject.tests.inject;
 
 import java.util.function.Supplier;
 
-import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.basicTestableConfig;
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class EmptyListInjectionTest {
-    private static final InjectionConfig CONFIG = basicTestableConfig();
-
+    private InjectionServices injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        this.services = testableServices(CONFIG).services();
+        this.injectionServices = InjectionServices.create();
+        this.services = injectionServices.services();
     }
 
     @AfterEach
     void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
     void acceptEmptyListInjectables() {
         Supplier<AServiceUsingAContractWithNoServiceImplementations> sp =
-                services.get(AServiceUsingAContractWithNoServiceImplementations.class);
+                services.supply(AServiceUsingAContractWithNoServiceImplementations.class);
         assertThat(sp.get(), notNullValue());
     }
 

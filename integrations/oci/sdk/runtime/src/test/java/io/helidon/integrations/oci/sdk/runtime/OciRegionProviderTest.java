@@ -16,6 +16,8 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.util.function.Supplier;
+
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
@@ -24,36 +26,37 @@ import io.helidon.config.Config;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServiceProviderException;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.Services;
-import io.helidon.inject.service.ContextualLookup;
+import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import com.oracle.bmc.Region;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciRegionProviderTest {
-    InjectionServices injectionServices;
-    Services services;
+    static InjectionServices injectionServices;
+    static Services services;
 
     @AfterAll
     static void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
+        injectionServices = null;
+        services = null;
     }
 
     void resetWith(Config config, InjectionConfig injectionConfig) {
-        resetAll();
-        this.injectionServices = testableServices(injectionConfig);
-        this.services = injectionServices.services();
+        InjectionTestingSupport.shutdown(injectionServices);
+        injectionServices = InjectionServices.create(injectionConfig);
+        services = injectionServices.services();
         GlobalConfig.config(() -> config, true);
     }
 
@@ -62,20 +65,17 @@ class OciRegionProviderTest {
         Config config = OciExtensionTest.createTestConfig(
                 OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
                 OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
-        resetWith(config, InjectionConfig.builder()
-                .permitsDynamic(true)
-                .build());
+        resetWith(config, InjectionConfig.create());
 
-        RegistryServiceProvider<Region> regionProvider = InjectionServices.instance()
+        Supplier<Region> regionSupplier = InjectionServices.instance()
                 .services()
-                .serviceProviders()
-                .get(Region.class);
+                .supply(Lookup.builder().addContract(Region.class).build());
         assertThrows(InjectionServiceProviderException.class,
-                     regionProvider::get);
+                     regionSupplier::get);
 
         TypeName regionType = TypeName.create(Region.class);
 
-        ContextualLookup query = ContextualLookup.create(
+        Lookup query = Lookup.create(
                 Ip.builder()
                         .contract(regionType)
                         .field("TEST_ONLY")
@@ -87,8 +87,15 @@ class OciRegionProviderTest {
                         .access(AccessModifier.PUBLIC)
                         .addQualifier(Qualifier.createNamed("us-phoenix-1"))
                         .build());
+
+        InjectionPointProvider<Region> regionProvider = InjectionServices.instance()
+                .services()
+                .get(Lookup.builder()
+                             .addContract(InjectionPointProvider.class)
+                             .addContract(Region.class)
+                             .build());
+
         assertThat(regionProvider.first(query),
                    optionalValue(equalTo(Region.US_PHOENIX_1)));
     }
-
 }

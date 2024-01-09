@@ -18,9 +18,10 @@ package io.helidon.inject.configdriven.configuredby.yaml.test;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.configdriven.service.ConfigBean;
+import io.helidon.inject.configdriven.service.ConfigDriven;
 
-@ConfigBean(repeatable = true)
+@ConfigDriven.ConfigBean
+@ConfigDriven.Repeatable
 @Prototype.Configured("ft.asyncs")
 @Prototype.Blueprint
 interface AsyncConfigBlueprint {

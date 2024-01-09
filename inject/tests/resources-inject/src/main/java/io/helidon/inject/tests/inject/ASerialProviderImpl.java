@@ -28,18 +28,18 @@ import io.helidon.inject.service.Injection;
  * Testing.
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
-@Injection.Singleton
+@Injection.Service
 public class ASerialProviderImpl implements Supplier<Serializable> {
 
     static {
         System.getLogger(ASerialProviderImpl.class.getName()).log(System.Logger.Level.DEBUG, "in static init");
     }
 
-    private final AtomicInteger counter = new AtomicInteger();
+    private static final AtomicInteger COUNTER = new AtomicInteger();
 
     @Override
     public Serializable get() {
-        return String.valueOf(counter.incrementAndGet());
+        return String.valueOf(COUNTER.incrementAndGet());
     }
 
 }

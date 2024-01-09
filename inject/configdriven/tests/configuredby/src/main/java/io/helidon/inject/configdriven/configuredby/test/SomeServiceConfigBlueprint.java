@@ -18,9 +18,11 @@ package io.helidon.inject.configdriven.configuredby.test;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.inject.configdriven.service.ConfigDriven;
 
 @Prototype.Configured
 @Prototype.Blueprint
+@ConfigDriven.ConfigBean
 interface SomeServiceConfigBlueprint {
     @Option.Configured
     @Option.Default("")

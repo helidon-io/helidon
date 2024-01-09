@@ -70,35 +70,26 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         }
 
         // need to find all interceptors for the providers (ordered by weight)
-        List<RegistryServiceProvider<Interception.Interceptor>> allInterceptors;
-
-        if (services instanceof ServicesImpl si) {
-            allInterceptors = si.interceptors();
-        } else {
-            allInterceptors = services.serviceProviders().all(Lookup.builder()
-                                                                      .addContract(Interception.Interceptor.class)
-                                                                      .addQualifier(Qualifier.WILDCARD_NAMED)
-                                                                      .build());
-        }
+        List<ServiceManager<Interception.Interceptor>> allInterceptors = services.interceptors();
 
         List<Supplier<Interception.Interceptor>> result = new ArrayList<>();
 
-        for (RegistryServiceProvider<Interception.Interceptor> interceptor : allInterceptors) {
-            if (applicable(typeAnnotations, interceptor)) {
-                result.add(interceptor);
+        for (ServiceManager<Interception.Interceptor> interceptor : allInterceptors) {
+            if (applicable(typeAnnotations, interceptor.descriptor())) {
+                result.add(new Services.ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
                 continue;
             }
-            if (applicable(element.annotations(), interceptor)) {
-                result.add(interceptor);
+            if (applicable(element.annotations(), interceptor.descriptor())) {
+                result.add(new Services.ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
             }
         }
 
         return result;
     }
 
-    private boolean applicable(List<Annotation> typeAnnotations, RegistryServiceProvider<Interception.Interceptor> interceptor) {
+    private boolean applicable(List<Annotation> typeAnnotations, ServiceInfo serviceInfo) {
         for (Annotation typeAnnotation : typeAnnotations) {
-            if (interceptor.qualifiers().contains(Qualifier.createNamed(typeAnnotation.typeName().fqName()))) {
+            if (serviceInfo.qualifiers().contains(Qualifier.createNamed(typeAnnotation.typeName().fqName()))) {
                 return true;
             }
         }

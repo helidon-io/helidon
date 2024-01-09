@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import io.helidon.codegen.CodegenLogger;
 import io.helidon.codegen.CodegenScope;
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.service.ServiceInfo;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -124,8 +125,7 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
             try (WrappedServices services = WrappedServices.create(loader, logger, false)) {
                 return services.all()
                         .stream()
-                        .map(WrappedProvider::toRootProvider)
-                        .map(WrappedProvider::serviceType)
+                        .map(ServiceInfo::serviceType)
                         .collect(Collectors.toCollection(TreeSet::new));
             }
         } finally {

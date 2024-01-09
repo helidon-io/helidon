@@ -19,7 +19,7 @@ package io.helidon.inject;
 /**
  * The activation status.
  *
- * @see io.helidon.inject.Activator
+ * @see ManagedService
  */
 public enum ActivationStatus {
 
@@ -27,17 +27,6 @@ public enum ActivationStatus {
      * The service has been activated and is fully ready to receive requests.
      */
     SUCCESS,
-
-    /**
-     * The service has been activated but is still being started asynchronously, and is not fully ready yet to receive requests.
-     * Important note: This is NOT health related - Health is orthogonal to service bindings/activation and readiness.
-     */
-    WARNING_SUCCESS_BUT_NOT_READY,
-
-    /**
-     * A general warning during lifecycle.
-     */
-    WARNING_GENERAL,
 
     /**
      * Failed to activate to the given phase.

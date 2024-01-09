@@ -18,26 +18,20 @@ package io.helidon.inject.configdriven.configuredby.test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.inject.RegistryServiceProvider;
-import io.helidon.inject.configdriven.CbrServiceDescriptor;
-import io.helidon.inject.configdriven.ConfigBeanRegistry;
 import io.helidon.inject.configdriven.configuredby.yaml.test.Async;
-import io.helidon.inject.configdriven.service.NamedInstance;
+import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.RegistryInstance;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -47,40 +41,24 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
  */
 class ConfiguredByTest extends AbstractConfiguredByTest {
     @Test
-    void testInjectCbr() {
-        resetWith(Config.create());
-
-        RegistryServiceProvider<ServiceUsingRegistry> lookup = services.get(ServiceUsingRegistry__ServiceDescriptor.INSTANCE);
-        ServiceUsingRegistry service = lookup.get();
-
-        assertThat(service.registry(), notNullValue());
-        assertThat(service.registry().ready(), is(true));
-    }
-
-    @Test
     void testRepeatableConfigBean() {
         resetWith(Config.create());
 
-        List<Async> serviceProviders = serviceRegistry.all(Async.class)
-                .stream()
-                .map(Supplier::get)
-                .toList();
+        List<Async> serviceProviders = services.all(Async.class);
 
         assertThat(serviceProviders, hasSize(2));
 
-        Async async = services.<Async>get(Lookup.builder()
-                                                  .addContract(Async.class)
-                                                  .addQualifier(Qualifier.createNamed("first"))
-                                                  .build())
-                .get();
+        Async async = services.get(Lookup.builder()
+                                           .addContract(Async.class)
+                                           .addQualifier(Qualifier.createNamed("first"))
+                                           .build());
         assertThat(async.config(), notNullValue());
         assertThat(async.config().executor(), is("exec"));
 
-        async = services.<Async>get(Lookup.builder()
-                                            .addContract(Async.class)
-                                            .addQualifier(Qualifier.createNamed("second"))
-                                            .build())
-                .get();
+        async = services.get(Lookup.builder()
+                                     .addContract(Async.class)
+                                     .addQualifier(Qualifier.createNamed("second"))
+                                     .build());
         assertThat(async.config(), notNullValue());
         assertThat(async.config().executor(), is("service"));
     }
@@ -93,16 +71,13 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                           .disableSystemPropertiesSource()
                           .build());
 
-        ConfigBeanRegistry cbr = services.<ConfigBeanRegistry>get(CbrServiceDescriptor.INSTANCE).get();
-        assertThat(cbr.ready(),
-                   is(true));
+        List<RegistryInstance<Object>> configBeans = services.lookupInstances(Lookup.builder()
+                                                                                      .addQualifier(Qualifier.create(
+                                                                                              ConfigDriven.ConfigBean.class))
+                                                                                      .build());
 
-        Map<TypeName, List<NamedInstance<?>>> beans = cbr.allConfigBeans();
-        assertThat(beans, hasKey(TypeName.create(SomeServiceConfig.class)));
-        assertThat(beans, hasKey(TypeName.create(ASingletonConfigBean.class)));
-
-        assertHasNamed(beans.get(TypeName.create(SomeServiceConfig.class)), "@default");
-        assertHasNamed(beans.get(TypeName.create(ASingletonConfigBean.class)), "@default");
+        assertHasNamed(configBeans, SomeServiceConfig.class, "@default");
+        assertHasNamed(configBeans, ASingletonConfigBean.class, "@default");
     }
 
     protected MapConfigSource.Builder createNested8080TestingConfigSource() {
@@ -114,14 +89,21 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                 ), "config-nested-default-8080");
     }
 
-    private void assertHasNamed(List<NamedInstance<?>> namedInstances, String... expectedNames) {
-        List<String> nameList = namedInstances.stream()
-                .map(NamedInstance::name)
-                .toList();
-        Set<String> nameSet = Set.copyOf(nameList);
+    private void assertHasNamed(List<RegistryInstance<Object>> instances, Class<?> type, String name) {
+        boolean contains = false;
 
-        assertThat("Names should be unique.", nameList, is(List.copyOf(nameSet)));
-        assertThat(nameSet, contains(expectedNames));
+        for (RegistryInstance<Object> instance : instances) {
+            if (instance.contracts().contains(TypeName.create(type))) {
+                if (instance.qualifiers().contains(Qualifier.createNamed(name))) {
+                    contains = true;
+                }
+            }
+
+        }
+        assertThat("Instances should have contained a named (\"" + name + "\" instance of "
+                           + type.getName() + ", instances: " + instances,
+                   contains,
+                   is(true));
     }
 
 }

@@ -45,10 +45,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.function.Predicate.not;
 
 /**
- * This processor is an implementation of {@link InjectionAnnotationProcessorObserver}. When on the APT classpath, it will monitor
+ * This processor is an implementation of {@link io.helidon.inject.codegen.spi.InjectCodegenObserver}.
+ * When on the APT classpath, it will monitor
  * injection processor for all injection points that are
  * using the {@code OCI SDK Services} and translate those injection points into code-generated
- * {@link Activator}s, {@link ModuleComponent}, etc. for those services / components.
+ * {@code ServiceDescriptors}s, {@code ModuleComponent}, etc. for those services / components.
  * This process will therefore make the {@code OCI SDK} set of services injectable by your (non-MP-based) Helidon application, and
  * be tailored to exactly what is actually used by your application from the SDK.
  * <p>
@@ -85,7 +86,6 @@ class OciInjectionCodegenObserver implements InjectCodegenObserver {
     // all generated sources will have this class name suffix
     static final String GENERATED_CLIENT_SUFFIX = "__Oci_Client";
     static final String GENERATED_CLIENT_BUILDER_SUFFIX = GENERATED_CLIENT_SUFFIX + "Builder";
-    static final String GENERATED_OCI_ROOT_PACKAGE_NAME_PREFIX = GENERATED_PREFIX + OCI_ROOT_PACKAGE_NAME_PREFIX;
     private static final double DEFAULT_INJECT_WEIGHT = Weighted.DEFAULT_WEIGHT - 1;
     private static final TypeName PROCESSOR_TYPE = TypeName.create(OciInjectionCodegenObserver.class);
     private static final String TYPENAME_EXCEPTIONS_FILENAME = "codegen-exclusions.txt";
@@ -198,7 +198,7 @@ class OciInjectionCodegenObserver implements InjectCodegenObserver {
                 .addAnnotation(Annotation.create(Override.class))
                 .returnType(optional(ociServiceTypeName, builderSuffix))
                 .addParameter(query -> query.name("query")
-                        .type(InjectCodegenTypes.CONTEXT_QUERY))
+                        .type(InjectCodegenTypes.SERVICE_LOOKUP))
                 .update(it -> {
                     if (usesRegion) {
                         it.addContentLine("var builder = " + clientType + ".builder();")
@@ -270,7 +270,7 @@ class OciInjectionCodegenObserver implements InjectCodegenObserver {
                 .addAnnotation(Annotation.create(Override.class))
                 .returnType(optional(ociServiceTypeName, "Client"))
                 .addParameter(query -> query.name("query")
-                        .type(InjectCodegenTypes.CONTEXT_QUERY))
+                        .type(InjectCodegenTypes.SERVICE_LOOKUP))
                 .addContent("return ")
                 .addContent(Optional.class)
                 .addContentLine(".of(builderProvider.first(query).orElseThrow().build(authProvider.first"
@@ -291,7 +291,7 @@ class OciInjectionCodegenObserver implements InjectCodegenObserver {
     boolean shouldProcess(TypeName typeName) {
         if (!typeName.typeArguments().isEmpty()
                 && ctx.isProvider(typeName) || typeName.isOptional()) {
-            typeName = typeName.typeArguments().get(0);
+            typeName = typeName.typeArguments().getFirst();
         }
 
         String name = typeName.resolvedName();

@@ -45,6 +45,7 @@ import io.helidon.codegen.ModuleInfoSourceParser;
 import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.codegen.InjectionCodegenContext;
+import io.helidon.inject.service.ServiceInfo;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -178,8 +179,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         // retrieves all the services in the registry
         Set<TypeName> allServices = services.all()
                 .stream()
-                .map(WrappedProvider::toRootProvider)
-                .map(WrappedProvider::serviceType)
+                .map(ServiceInfo::serviceType)
                 .collect(Collectors.toCollection(TreeSet::new));
 
         if (allServices.isEmpty()) {

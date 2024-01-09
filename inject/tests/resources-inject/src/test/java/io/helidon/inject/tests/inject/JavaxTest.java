@@ -16,41 +16,44 @@
 
 package io.helidon.inject.tests.inject;
 
-import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.RegistryServiceProvider;
+import java.util.List;
+
+import io.helidon.common.types.TypeName;
+import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import jakarta.enterprise.inject.Default;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.basicTestableConfig;
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 /**
  * Javax to Jakarta related tests.
  */
 class JavaxTest {
-    private static final InjectionConfig CONFIG = basicTestableConfig();
-
+    private InjectionServices injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        this.services = testableServices(CONFIG).services();
+        this.injectionServices = InjectionServices.create();
+        this.services = injectionServices.services();
     }
 
     @AfterEach
     void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     /**
@@ -59,12 +62,16 @@ class JavaxTest {
      */
     @Test
     void applicationScopeToSingletonScopeTranslation() {
-        RegistryServiceProvider<AnApplicationScopedService> sp = services.serviceProviders().get(AnApplicationScopedService.class);
-        assertThat(sp.toString(),
-                   equalTo("AnApplicationScopedService:INIT"));
-        assertThat(sp.qualifiers(),
+        List<ServiceInfo> apScopedList = services.lookupServices(Lookup.create(AnApplicationScopedService.class));
+
+        assertThat(apScopedList, hasSize(1));
+
+        ServiceInfo apScoped = apScopedList.getFirst();
+        assertThat(apScoped.serviceType(),
+                   equalTo(TypeName.create(AnApplicationScopedService.class)));
+        assertThat(apScoped.qualifiers(),
                    contains(Qualifier.create(Default.class)));
-        assertThat(sp.scope(), is(Injection.Singleton.TYPE_NAME));
+        assertThat(apScoped.scope(), is(Injection.Singleton.TYPE_NAME));
     }
 
 }

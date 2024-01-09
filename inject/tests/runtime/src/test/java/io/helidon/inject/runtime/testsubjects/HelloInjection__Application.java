@@ -42,7 +42,7 @@ public class HelloInjection__Application implements Application {
         binder.bindTo(HelloInjectionImpl__ServiceDescriptor.INSTANCE)
                 .bind(HelloInjectionImpl__ServiceDescriptor.IP_0, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
                 .bindSupplier(HelloInjectionImpl__ServiceDescriptor.IP_1, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
-                .bindListSupplier(HelloInjectionImpl__ServiceDescriptor.IP_2, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
+                .bindListOfSuppliers(HelloInjectionImpl__ServiceDescriptor.IP_2, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
                 .bindList(HelloInjectionImpl__ServiceDescriptor.IP_3, InjectionWorldImpl__ServiceDescriptor.INSTANCE)
                 .bindOptional(HelloInjectionImpl__ServiceDescriptor.IP_4)
                 .bind(HelloInjectionImpl__ServiceDescriptor.IP_5, InjectionWorldImpl__ServiceDescriptor.INSTANCE)

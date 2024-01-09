@@ -43,10 +43,6 @@
             <artifactId>helidon-inject</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
         </dependency>

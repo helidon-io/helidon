@@ -42,23 +42,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.inject.configdriven.tests</groupId>
             <artifactId>helidon-inject-configdriven-tests-configuredby</artifactId>
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
@@ -101,10 +91,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-Ahelidon.inject.mapApplicationToSingletonScope=true</arg>
-                    </compilerArgs>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.inject.configdriven</groupId>
@@ -124,11 +110,6 @@
                         <path>
                             <groupId>io.helidon.inject</groupId>
                             <artifactId>helidon-inject-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-codegen-jakarta</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -159,12 +140,7 @@
                         <artifactId>helidon-inject-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
-                    <dependency>
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-codegen-jakarta</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
+                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>

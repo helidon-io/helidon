@@ -16,10 +16,9 @@
 
 package io.helidon.inject.configdriven.configuredby.test;
 
-import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.service.Injection;
 
-@ConfigDriven(SomeServiceConfigBlueprint.class)
+@Injection.DrivenBy(SomeServiceConfigBlueprint.class)
 public class SomeConfiguredServiceWithAnAbstractBase extends AbstractServiceBase {
     final SomeServiceConfig cfg;
 

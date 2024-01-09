@@ -195,7 +195,7 @@ public final class OciExtension {
         return () -> {
             Services services = InjectionServices.instance().services();
             Supplier<AbstractAuthenticationDetailsProvider> authProvider =
-                    services.get(AbstractAuthenticationDetailsProvider.class);
+                    services.supply(AbstractAuthenticationDetailsProvider.class);
             return authProvider.get();
         };
     }

@@ -16,10 +16,9 @@
 
 package io.helidon.inject.configdriven.configuredby.yaml.test;
 
-import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.service.Injection;
 
-@ConfigDriven(AsyncConfigBlueprint.class)
+@Injection.DrivenBy(AsyncConfigBlueprint.class)
 public class Async {
 
     final AsyncConfig cfg;

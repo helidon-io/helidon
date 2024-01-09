@@ -22,9 +22,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
 
@@ -40,7 +40,7 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     static final Qualifier fine = Qualifier.createNamed("fine");
 
     @Override
-    public Optional<AbstractBlade> first(ContextualLookup query) {
+    public Optional<AbstractBlade> first(Lookup query) {
         Objects.requireNonNull(query);
 
         assert (query.contracts().size() == 1) : query;
@@ -60,7 +60,7 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     }
 
     @Override
-    public List<AbstractBlade> list(ContextualLookup query) {
+    public List<AbstractBlade> list(Lookup query) {
         Objects.requireNonNull(query);
 
         List<AbstractBlade> result = new ArrayList<>();

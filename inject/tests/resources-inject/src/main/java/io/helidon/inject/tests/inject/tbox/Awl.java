@@ -23,5 +23,4 @@ import io.helidon.inject.service.Injection;
  */
 @Injection.Contract
 public interface Awl extends Tool {
-
 }

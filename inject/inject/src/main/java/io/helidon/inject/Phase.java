@@ -17,13 +17,9 @@
 package io.helidon.inject;
 
 /**
- * Forms a progression of full activation and deactivation.
+ * Forms a progression of full activation and deactivation of a single managed instance.
  */
 public enum Phase {
-    /**
-     * A new instance has been created, service registry is not yet aware.
-     */
-    CONSTRUCTED(false),
     /**
      * Starting state before anything happens activation-wise. Service registry is aware.
      * Initialization may be done here.
@@ -92,6 +88,7 @@ public enum Phase {
 
     /**
      * Destroyed (after calling any pre-destroy).
+     * This is a final state.
      */
     DESTROYED(false);
 

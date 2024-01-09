@@ -17,6 +17,7 @@
 package io.helidon.inject.service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.Weighted;
@@ -94,6 +95,32 @@ public interface ServiceInfo extends Weighted {
      */
     default int runLevel() {
         return Injection.RunLevel.NORMAL;
+    }
+
+    /**
+     * Services are activated lazily by default. This is to prevent huge load at startup even for services that may never
+     * be needed.
+     * <p>
+     * In addition, we provide the {@link #runLevel()} construct to control service initialization.
+     * <p>
+     * For the rare case, where we know a service should be initialized eagerly when its scope is activated, you can
+     * add {@link io.helidon.inject.service.Injection.Eager} annotation to the service.
+     * Please use with extreme care, as this will most likely have performance implications!
+     *
+     * @return whether this service should be eagerly initialized with its scope
+     */
+    default boolean isEager() {
+        return false;
+    }
+
+    /**
+     * A service may be driven by instances of another service.
+     * If a type is driven by another type, it inherits ALL qualifiers of the type that is driving it.
+     *
+     * @return driven by type
+     */
+    default Optional<TypeName> drivenBy() {
+        return Optional.empty();
     }
 
     /**

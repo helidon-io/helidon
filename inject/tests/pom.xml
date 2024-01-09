@@ -44,6 +44,8 @@
     </properties>
 
     <modules>
+        <module>service-lifecycle</module>
+        <module>stacking</module>
         <module>helidon-inject</module>
         <module>jakarta-inject</module>
         <module>javax-inject</module>

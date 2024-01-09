@@ -64,6 +64,11 @@ import io.helidon.inject.codegen.spi.InjectCodegenObserverProvider;
 
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.codegen.CodegenUtil.toConstantName;
+import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_DRIVEN_BY;
+import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_EAGER;
+import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
+import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
+import static io.helidon.inject.codegen.InjectCodegenTypes.PROTOTYPE_BLUEPRINT;
 import static java.util.function.Predicate.not;
 
 class InjectionExtension implements InjectCodegenExtension {
@@ -74,6 +79,10 @@ class InjectionExtension implements InjectCodegenExtension {
             .addTypeArgument(InjectCodegenTypes.QUALIFIER)
             .build();
     static final TypeName SET_OF_TYPES = TypeName.builder(TypeNames.SET)
+            .addTypeArgument(TypeNames.TYPE_NAME)
+            .build();
+
+    static final TypeName OPTIONAL_TYPE = TypeName.builder(TypeNames.OPTIONAL)
             .addTypeArgument(TypeNames.TYPE_NAME)
             .build();
 
@@ -96,6 +105,7 @@ class InjectionExtension implements InjectCodegenExtension {
             .kind(ElementKind.CONSTRUCTOR)
             .build();
     private static final TypeName GENERIC_T_TYPE = TypeName.createFromGenericDeclaration("T");
+    private static final Annotation WILDCARD_NAMED = Annotation.create(INJECTION_NAMED, "*");
 
     private final InjectionCodegenContext ctx;
     private final boolean autoAddContracts;
@@ -250,6 +260,8 @@ class InjectionExtension implements InjectCodegenExtension {
         scopesMethod(classModel);
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
+        isEagerMethod(typeInfo, classModel, superType);
+        drivenByMethod(typeInfo, classModel, superType);
 
         ctx.addDescriptor(serviceType,
                           descriptorType,
@@ -273,6 +285,88 @@ class InjectionExtension implements InjectCodegenExtension {
                         serviceType,
                         typeInfo.originatingElement().orElse(serviceType));
         }
+    }
+
+    private void drivenByMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType) {
+        Optional<Annotation> drivenBy = typeInfo.findAnnotation(INJECTION_DRIVEN_BY);
+        if (!superType.hasSupertype() && drivenBy.isEmpty()) {
+            // this is the default
+            return;
+        }
+        if (drivenBy.isEmpty()) {
+            classModel.addMethod(drivenByMethod -> drivenByMethod
+                    .accessModifier(AccessModifier.PUBLIC)
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .returnType(OPTIONAL_TYPE)
+                    .name("drivenBy")
+                    .addContent("return ")
+                    .addContent(Optional.class)
+                    .addContentLine(".empty();")
+            );
+        } else {
+            TypeName drivenByType = drivenBy.get()
+                    .typeValue()
+                    .orElseThrow(() -> new CodegenException(INJECTION_DRIVEN_BY.fqName() +
+                                                                    ".value() is required, yet not found on type: "
+                                                                    + typeInfo.typeName().fqName()));
+
+            String drivenByClassName = drivenByType.className();
+            if (drivenByClassName.endsWith("Blueprint")) {
+                // this may be a config blueprint, use the config instance
+                Optional<TypeInfo> drivenByTypeInfo = ctx.typeInfo(drivenByType);
+                if (drivenByTypeInfo.isPresent()) {
+                    if (drivenByTypeInfo.get().hasAnnotation(PROTOTYPE_BLUEPRINT)) {
+                        drivenByType = TypeName.builder(drivenByType)
+                                .className(drivenByClassName.substring(0, drivenByClassName.length() - "Blueprint".length()))
+                                .build();
+                    }
+                }
+            }
+
+            if (drivenByType.packageName().isBlank()) {
+                throw new CodegenException("Driven by type used on " + typeInfo.typeName().fqName() + " does not have a "
+                                                   + "package defined. Package is mandatory. If the type is a generated"
+                                                   + " prototype, please use the Blueprint type instead.");
+            }
+
+            // used from lambda
+            TypeName drivenByTypeFinal = drivenByType;
+            classModel.addField(drivenByField -> drivenByField
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isStatic(true)
+                    .isFinal(true)
+                    .name("DRIVEN_BY")
+                    .type(OPTIONAL_TYPE)
+                    .addContent(Optional.class)
+                    .addContent(".of(")
+                    .addContentCreate(drivenByTypeFinal)
+                    .addContentLine(")"));
+
+            classModel.addMethod(drivenByMethod -> drivenByMethod
+                    .accessModifier(AccessModifier.PUBLIC)
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .returnType(OPTIONAL_TYPE)
+                    .name("drivenBy")
+                    .addContentLine("return DRIVEN_BY;"));
+        }
+
+    }
+
+    private void isEagerMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType) {
+        boolean isEager = typeInfo.hasAnnotation(INJECTION_EAGER);
+        if (!superType.hasSupertype() && !isEager) {
+            // this is the default
+            return;
+        }
+        classModel.addMethod(isEagerMethod -> isEagerMethod
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                .name("isEager")
+                .addContent("return ")
+                .addContent(String.valueOf(isEager))
+                .addContentLine(";")
+        );
     }
 
     private SuperType superType(TypeInfo typeInfo, Collection<TypeInfo> services) {
@@ -704,6 +798,10 @@ class InjectionExtension implements InjectCodegenExtension {
             }
         }
 
+        if (service.hasAnnotation(INJECTION_DRIVEN_BY)) {
+            result.add(WILDCARD_NAMED);
+        }
+
         // note: should qualifiers be inheritable? Right now we assume not to support the jsr-330 spec (see note above).
         return result;
     }
@@ -740,13 +838,6 @@ class InjectionExtension implements InjectCodegenExtension {
             if (typeName.typeArguments().isEmpty()) {
                 throw new IllegalArgumentException("Injection point with Supplier type must have a declared type argument: "
                                                            + description);
-            }
-            return contract(description, typeName.typeArguments().getFirst());
-        }
-        if (typeName.equals(InjectCodegenTypes.SERVICE_PROVIDER)) {
-            if (typeName.typeArguments().isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Injection point with ServiceProvider type must have a declared type argument: " + description);
             }
             return contract(description, typeName.typeArguments().getFirst());
         }
@@ -799,6 +890,10 @@ class InjectionExtension implements InjectCodegenExtension {
                                                + "This is not supported. Scopes. " + result);
         }
 
+        if (result.isEmpty() && service.hasAnnotation(INJECTION_DRIVEN_BY)) {
+            result.add(INJECTION_SINGLETON);
+        }
+
         return result.stream().findFirst();
     }
 
@@ -811,7 +906,7 @@ class InjectionExtension implements InjectCodegenExtension {
 
         if (typeName.isSupplier()
                 || typeName.equals(InjectCodegenTypes.INJECTION_POINT_PROVIDER)
-                || typeName.equals(InjectCodegenTypes.SERVICE_PROVIDER)) {
+                || typeName.equals(InjectCodegenTypes.SERVICES_PROVIDER)) {
             // this may be the interface itself, and then it does not have a type argument
             if (!typeName.typeArguments().isEmpty()) {
                 // provider must have a type argument (and the type argument is an automatic contract

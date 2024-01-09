@@ -1,204 +1,110 @@
 package io.helidon.inject;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.service.ContextualLookup;
-import io.helidon.inject.service.InjectionPointProvider;
-import io.helidon.inject.service.Ip;
+import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
+import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.RegistryInstance;
 import io.helidon.inject.service.ServiceDescriptor;
-import io.helidon.inject.service.ServiceProvider;
 
-/**
- * Manager of a single service descriptor.
- * <p>
- * The manager takes care of all operations that must be handled in the singleton scope of the registry,
- * it also handles instance management in the correct scope.
- * <p>
- * Call to {@link #serviceProvider()} will return a provider instance in the scope it should be in, or throw
- * an exception if that scope is not available right now.
- *
- * @param <T> type of the provided service
- */
 class ServiceManager<T> {
-    private final ServicesImpl registry;
-    private final ServiceDescriptor<T> descriptor;
+    private final ServiceProvider<T> provider;
+    private final Supplier<ManagedService<T>> managedServiceSupplier;
     private final TypeName scope;
-    private final Supplier<Activator<T>> activator;
-    private volatile Map<Ip, Supplier<?>> injectionPlan = null;
 
-    public ServiceManager(ServicesImpl serviceRegistry,
-                          ServiceDescriptor<T> descriptor,
-                          Supplier<Activator<T>> activatorSupplier) {
-        this.registry = serviceRegistry;
-        this.descriptor = descriptor;
-        this.scope = descriptor.scope();
-        this.activator = activatorSupplier;
+    ServiceManager(ServiceProvider<T> provider, Supplier<ManagedService<T>> managedServiceSupplier) {
+        this.provider = provider;
+        this.managedServiceSupplier = managedServiceSupplier;
+        this.scope = provider.descriptor().scope();
     }
 
-    @Override
-    public String toString() {
-        return descriptor.serviceType().fqName();
+    public RegistryInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
+        return new RegistryInstanceHolder<>(provider.descriptor(),
+                                            provider.contracts(lookup),
+                                            instance);
     }
 
-    public Map<Ip, Supplier<?>> injectionPlan() {
-        Map<Ip, Supplier<?>> usedIp = injectionPlan;
-        if (usedIp == null) {
-            // no application, we have to create injection plan from current services
-            usedIp = createInjectionPlan();
-            this.injectionPlan = usedIp;
-        }
-        return usedIp;
+    public ServiceInjectionPlanBinder.Binder servicePlanBinder() {
+        return provider.servicePlanBinder();
     }
 
-    ServiceInjectionPlanBinder.Binder servicePlanBinder() {
-        return ServicePlanBinder.create(registry, descriptor, it -> this.injectionPlan = it);
+    void activate() {
+        managedServiceInScope()
+                .activate(provider.activationRequest());
+    }
+
+    // creates a new instance on each call!!!!
+    ManagedService<T> supplyManagedService() {
+        return managedServiceSupplier.get();
     }
 
     /*
       Get service provider for the scope it is in (always works for singleton, may fail for other)
     */
-    RegistryServiceProvider<T> serviceProvider() {
-        return registry.scopeHandler(scope)
+    ManagedService<T> managedServiceInScope() {
+        return provider.registry()
+                .scopeHandler(scope)
                 .currentScope()
-                .orElseThrow(() -> new InjectionException("Requested instance that is expected in " + scope.fqName()
-                                                                  + ", yet this scope is currently not active."))
+                .orElseThrow(() -> new ScopeNotActiveException("Scope not active fore service: "
+                                                                       + descriptor().serviceType().fqName(),
+                                                               scope))
                 .services()
                 .serviceProvider(this);
     }
 
     ServiceDescriptor<T> descriptor() {
-        return descriptor;
+        return provider.descriptor();
     }
 
-    Activator<T> activator() {
-        // this must return a new instance for each call
-        // for example each request scope has its own activation lifecycle
-        return activator.get();
+    @Override
+    public String toString() {
+        return descriptor().serviceType().classNameWithEnclosingNames();
     }
 
-    double weight() {
-        return descriptor.weight();
-    }
+    private static class RegistryInstanceHolder<T> implements RegistryInstance<T> {
+        private final ServiceDescriptor<T> descriptor;
+        private final QualifiedInstance<T> qualifiedInstance;
+        private final Set<TypeName> contracts;
 
-    TypeName serviceType() {
-        return descriptor.serviceType();
-    }
-
-    private Map<Ip, Supplier<?>> createInjectionPlan() {
-        List<Ip> dependencies = descriptor.dependencies();
-
-        if (dependencies.isEmpty()) {
-            return Map.of();
+        private RegistryInstanceHolder(ServiceDescriptor<T> descriptor,
+                                       Set<TypeName> contracts,
+                                       QualifiedInstance<T> qualifiedInstance) {
+            this.descriptor = descriptor;
+            this.contracts = contracts;
+            this.qualifiedInstance = qualifiedInstance;
         }
 
-        AtomicReference<Map<Ip, Supplier<?>>> injectionPlan = new AtomicReference<>();
-
-        ServiceInjectionPlanBinder.Binder binder = ServicePlanBinder.create(registry,
-                                                                            descriptor,
-                                                                            injectionPlan::set);
-        for (Ip injectionPoint : dependencies) {
-            planForIp(binder, injectionPoint);
+        @Override
+        public T get() {
+            return qualifiedInstance.instance();
         }
 
-        return injectionPlan.get();
-    }
-
-    private void planForIp(ServiceInjectionPlanBinder.Binder injectionPlan, Ip injectionPoint) {
-        ContextualLookup lookup = ContextualLookup.create(injectionPoint);
-
-        List<ServiceManager<Object>> discovered = registry.lookupManagers(lookup)
-                .stream()
-                .filter(it -> it != this)
-                .toList();
-
-        TypeName ipType = injectionPoint.typeName();
-
-        // now there are a few options - optional, list, and single instance
-        if (discovered.isEmpty()) {
-            if (ipType.isOptional()) {
-                injectionPlan.put(injectionPoint, Optional::empty);
-                return;
-            }
-            if (ipType.isList()) {
-                injectionPlan.put(injectionPoint, List::of);
-                return;
-            }
-            throw new InjectionServiceProviderException("Expected to resolve a service matching injection point "
-                                                                + injectionPoint);
+        @Override
+        public Set<Qualifier> qualifiers() {
+            return qualifiedInstance.qualifiers();
         }
 
-        if (ipType.isList()) {
-            // inject List<Contract>
-        } else if (ipType.isOptional()) {
-            // inject Optional<Contract>
-        } else if (ipType.isSupplier()) {
-            // one of the supplier options
-        } else {
-            // inject Contract
+        @Override
+        public Set<TypeName> contracts() {
+            return contracts;
         }
 
-
-
-        // we have a response
-        if (ipType.isList()) {
-            // is a list needed?
-            TypeName typeOfElements = ipType.typeArguments().getFirst();
-            if (typeOfElements.equals(SUPPLIER_TYPE) || typeOfElements.equals(ServiceProvider.TYPE)) {
-                injectionPlan.put(injectionPoint, new ServiceProviderBase.IpValue<>(injectionPoint, discovered));
-                return;
-            }
-
-            if (discovered.size() == 1) {
-                injectionPlan.put(injectionPoint, () -> {
-                    Object resolved = discovered.getFirst().get();
-                    if (resolved instanceof List<?>) {
-                        return resolved;
-                    }
-                    return List.of(resolved);
-                });
-                return;
-            }
-
-            injectionPlan.put(injectionPoint, () -> discovered.stream()
-                    .map(RegistryServiceProvider::get)
-                    .toList());
-            return;
-        }
-        if (ipType.isOptional()) {
-            // is an Optional needed?
-            TypeName typeOfElement = ipType.typeArguments().getFirst();
-            if (typeOfElement.equals(SUPPLIER_TYPE) || typeOfElement.equals(ServiceProvider.TYPE)) {
-                injectionPlan.put(injectionPoint, () -> Optional.of(discovered.getFirst()));
-                return;
-            }
-
-            injectionPlan.put(injectionPoint, () -> {
-                Optional<?> firstResult = discovered.getFirst().first(ContextualLookup.EMPTY);
-                if (firstResult.isEmpty()) {
-                    return Optional.empty();
-                }
-                Object resolved = firstResult.get();
-                if (resolved instanceof Optional<?>) {
-                    return resolved;
-                }
-                return Optional.ofNullable(resolved);
-            });
-            return;
+        @Override
+        public TypeName scope() {
+            return descriptor.scope();
         }
 
-        if (ipType.equals(SUPPLIER_TYPE)
-                || ipType.equals(ServiceProvider.TYPE)
-                || ipType.equals(InjectionPointProvider.TYPE)) {
-            // is a provider needed?
-            injectionPlan.put(injectionPoint, discovered::getFirst);
-            return;
+        @Override
+        public double weight() {
+            return descriptor.weight();
         }
-        // and finally just get the value of the first service
-        injectionPlan.put(injectionPoint, discovered.getFirst()::get);
+
+        @Override
+        public TypeName serviceType() {
+            return descriptor.serviceType();
+        }
     }
 }

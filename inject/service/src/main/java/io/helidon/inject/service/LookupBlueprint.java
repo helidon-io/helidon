@@ -39,11 +39,12 @@ interface LookupBlueprint {
     Optional<TypeName> serviceType();
 
     /**
-     * The managed service assigned Scope's.
+     * The managed service assigned Scope. If empty, any scope is matched.
+     * If more than one value, any service in one of these scopes is matched.
      *
      * @return the service scope type name
      */
-    Optional<TypeName> scope();
+    Set<TypeName> scopes();
 
     /**
      * The managed service assigned Qualifier's.
@@ -85,7 +86,20 @@ interface LookupBlueprint {
     boolean includeAbstract();
 
     /**
-     * Determines whether this service info matches the criteria for injection.
+     * Optionally, the injection point search applies to.
+     * There are some service providers (such as {@link io.helidon.inject.service.InjectionPointProvider}) that
+     * provide instances for a specific injection point.
+     * Such providers may require an injection point to be present, and may fail otherwise.
+     * <p>
+     * Injection points of each service are generated as public constants on their respective service descriptors.
+     *
+     * @return the optional injection point context info
+     */
+    @Option.Decorator(LookupSupport.IpDecorator.class)
+    Optional<Ip> injectionPoint();
+
+    /**
+     * Determines whether this lookup matches the criteria for injection.
      * Matches is a looser form of equality check than {@code equals()}. If a service matches criteria
      * it is generally assumed to be viable for assignability.
      *
@@ -95,7 +109,7 @@ interface LookupBlueprint {
     default boolean matches(Lookup criteria) {
         return matchesContracts(criteria)
                 && matchesAbstract(includeAbstract(), criteria.includeAbstract())
-                && matches(scope(), criteria.scope())
+                && matches(scopes(), criteria.scopes())
                 && Qualifiers.matchesQualifiers(qualifiers(), criteria.qualifiers())
                 && matches(runLevel(), criteria.runLevel());
     }
@@ -120,7 +134,7 @@ interface LookupBlueprint {
         }
         return matches
                 && matchesAbstract(includeAbstract(), serviceInfo.isAbstract())
-                && matches(serviceInfo.scope(), this.scope())
+                && (this.scopes().isEmpty() || this.scopes().contains(serviceInfo.scope()))
                 && Qualifiers.matchesQualifiers(serviceInfo.qualifiers(), this.qualifiers())
                 && matchesWeight(serviceInfo, this)
                 && matches(serviceInfo.runLevel(), this.runLevel());
@@ -145,6 +159,16 @@ interface LookupBlueprint {
         return matches;
     }
 
+    /**
+     * Determines whether the provided qualifiers are matched by this lookup criteria.
+     *
+     * @param qualifiers qualifiers of a service
+     * @return whether this lookup matches those qualifiers
+     */
+    default boolean matchesQualifiers(Set<Qualifier> qualifiers) {
+        return Qualifiers.matchesQualifiers(qualifiers, qualifiers());
+    }
+
     private static boolean matchesWeight(ServiceInfo src,
                                          LookupBlueprint criteria) {
         if (criteria.weight().isEmpty()) {
@@ -161,6 +185,18 @@ interface LookupBlueprint {
             return true;
         }
         return Objects.equals(src, criteria.get());
+    }
+
+    private boolean matches(Set<TypeName> scopes, Set<TypeName> criteria) {
+        if (criteria.isEmpty()) {
+            return true;
+        }
+        for (TypeName scope : scopes) {
+            if (criteria.contains(scope)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean matches(Optional<?> src, Optional<?> criteria) {

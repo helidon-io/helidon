@@ -27,9 +27,10 @@ module io.helidon.inject {
     requires io.helidon.metrics.api;
 
     exports io.helidon.inject;
-    exports io.helidon.inject.spi;
 
     uses io.helidon.inject.service.ModuleComponent;
     uses io.helidon.inject.Application;
-    uses io.helidon.inject.spi.ActivatorProvider;
+
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.inject.Injection__Module;
 }

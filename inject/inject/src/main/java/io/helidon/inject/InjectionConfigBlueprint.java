@@ -16,11 +16,13 @@
 
 package io.helidon.inject;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
+import io.helidon.inject.service.ServiceDescriptor;
 
 /**
  * Helidon Inject configuration options.
@@ -52,16 +54,6 @@ interface InjectionConfigBlueprint {
     boolean serviceLookupCaching();
 
     /**
-     * Flag indicating whether the services registry permits dynamic behavior.
-     *
-     * @return the flag indicating whether the services registry supports dynamic updates of the service registry,
-     *         defaults to {@code false}
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(false)
-    boolean permitsDynamic();
-
-    /**
      * Flag indicating whether compile-time generated {@link io.helidon.inject.Application}'s
      * should be used at Injection's startup initialization.
      * Even if set to {@code true}, this is effective only if an Application was generated using Helidon Inject Maven Plugin.
@@ -77,8 +69,7 @@ interface InjectionConfigBlueprint {
     /**
      * Flag indicating whether {@link io.helidon.inject.service.ModuleComponent} is discovered from the
      * classpath (expected to be code generated, uses {@link java.util.ServiceLoader}).
-     * Note that if this is disabled, the registry will be empty, and unless {@link #permitsDynamic()} is allowed,
-     * it will have no function.
+     * Note that if this is disabled, the registry will be empty, and unless you add service descriptors by hand.
      *
      * @return the flag indicating whether the provider should use modules to bind services
      */
@@ -95,6 +86,19 @@ interface InjectionConfigBlueprint {
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean interceptionEnabled();
+
+    /**
+     * Manually registered service descriptors to add to the registry.
+     * This is useful when {@link #useModules()} is set to {@code false}, to register only hand-picked services
+     * into the registry.
+     * <p>
+     * Even when modules are used, this can be used to add service descriptors that are not part of a module
+     * available through service loader.
+     *
+     * @return services to register
+     */
+    @Option.Singular
+    List<ServiceDescriptor<?>> serviceDescriptors();
 
     /**
      * Configuration to use to set up business application services.

@@ -1,6 +1,41 @@
 Injections
 ---
 
+# Notes and questions
+
+Do we need a service registry lookup method that gives access to service instances with additional details, such
+ as qualifiers?
+
+List<ServiceInstance> instances =  services.all(Lookup.builder()
+                     .addQualifier(Qualifier.create(ConfigDriven.ConfigBean.class))
+                     .build());
+see ConfiguredByTest - to validate the named qualifiers are present etc.
+
+# Types
+
+## User facing
+
+### `ServicesProvider`
+This service actually provides more than one instance, the instances may have different qualifiers.
+(ServiceProviderProvider)
+
+Scope of services: inherited from provider
+Mutability: immutable within the scope
+Registry: MUST store the result and re-use it
+
+### `InjectionPointProvider`
+This service provides instances based on lookup (usually based on injection point).
+
+Scope of services: inherited from provider
+Mutability: immutable for injection point, mutable for manual lookup (i.e. it would be too expensive to cache for lookup combinations)
+Registry: MUST store the result for injection points, re-invokes the provider for manual lookups
+
+6. `QualifiedProvider`
+4. `QualifiedProviderTyped`
+
+ 
+   
+
 # Injection points
 
 Each service may have zero or more injection points.
@@ -28,13 +63,9 @@ Then the injection point type can be either of:
 6. `Supplier<Optional<Contract>>`: a combination of the above - supplier is needed, yet the service is optional
 7. `Supplier<List<Contract>>`: same as above, but we either need to break cyclic dependency, or some of the services may be in a
    non-singleton scope
+8. `Optional<Supplier<Contract>>`: WITH RESTRICTIONS
+9. `List<Supplier<Contract>>`: WITH RESTRICTIONS
 
-The following is not supported (with explanation):
-
-1. `Optional<Supplier<Contract>>`: we may only be able to discover that the service is not available when calling the supplier,
-   not when injecting (see `IP Provider` or `Provider of providers` types below, and also when the supplier is in different scope)
-2. `List<Supplier<Contract>>`: for the same reasons as the previous case - we may not be able to compute the full list at time of
-   injection
 
 Relevant methods on Service registry (`Services` class) and their mapping to the injection points (ignoring shortcut methods),
 and behavior on "not found"
@@ -60,7 +91,6 @@ to be annotated with a scope, such as `@Injection.Singleton`):
 | Provider                 | `class Service implements Supplier<Contract>`               | Service provider (can use `ServiceProvider` instead of `Supplier` as well) |
 | IP provider              | `class Service implements InjectionPointProvider<Contract>` | Service that provides instance(s) based on injection point                 |
 | Provider of providers    | `class Service implements ServiceProviderProvider`          | Service that provides 0 to N other services                                |
-| Injection resolver       | `class Service implements InjectionResolver`                | Service that may resolve some injection points itself                      |
 | Qualified provider       | `class Service implements QualifiedProvider`                | Service provider for a qualifier that resolves at runtime                  |
 | Typed qualified provider | `class Service implements QualifiedProviderTyped<Contract>` | Service provider for a qualifier that resolves at runtime                  |
 
@@ -81,4 +111,39 @@ The following table lists appropriate use cases for each provider type (and how 
 | Qualified provider       | A qualifier on more than one type                                                                              | TBD: `HttpHeaderProvider`      |
 | Typed qualified provider | A qualified type for a specific contract, when we need to satisfy same contract differently based on qualifier | TBD: `HttpUriProvider`         |
 
+# Driven by
+Services may be annotated with `@DrivenBy(Contract.class)` - in such a case, a new service instance will be created for
+each `Contract` instance in the registry, named with the same name.
 
+The driven service MAY have an injection point with `Contract` that is unqualified, which will be satisfied by the driving
+instance. The driven service MAY have an injection point of type String, annotated with `@Name` qualifier, which will be 
+satisfied by the name of the driving instance. If the driving instance is not named, default name will be used (driven 
+instances are always named)
+
+# Config Beans
+
+Config beans are based on types that are discovered from configuration. 
+Each instance created for a specific path in configuration tree is called a `Config Bean`.
+Config beans may have zero or more instances, depending on `@ConfigBean` annotation on the config bean Blueprint.
+Each instance that is created is automatically `@Named`, with `@default` being the default name.
+Config beans are always created as `@Singleton`, and `@Eager`, so the instances are available in the registry immediately
+after the singleton scope is active.
+
+
+# Service registry startup sequence
+
+1. Create `Services` instance
+2. Apply all modules
+   1. Register ServiceManager for each ServiceDescriptor
+   2. 
+3. Apply all applications
+4. Initialize `@Service` scope (never creates any instances)
+5. Initialize `@Singleton` scope (may create instances of eager services, may need injections of suppliers from other scopes)
+
+`ServiceManager`
+   - 1:1 mapping to service descriptor
+   - 1:N mapping to `InstanceManager` 
+
+`InstanceManager`
+   - each service manager has an instance manager for the service it holds, and may have additional instance managers if the service is a `ServicesProvider`
+   - all of these instances are managed together (lifecycle), the "main" instance can receive injection points and have postconstruct and predestroy

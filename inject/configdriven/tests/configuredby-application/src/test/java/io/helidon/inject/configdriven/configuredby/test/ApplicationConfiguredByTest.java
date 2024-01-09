@@ -50,6 +50,7 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
         Counter counter = lookupCounter();
 
         long initialCount = counter.count();
+        ASimpleRunLevelService.reset();
         resetWith(io.helidon.config.Config.builder(createRootDefault8080TestingConfigSource())
                           .disableEnvironmentVariablesSource()
                           .disableSystemPropertiesSource()
@@ -66,6 +67,7 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
 
     @Test
     void startupAndShutdownRunLevelServices() {
+        ASimpleRunLevelService.reset();
         resetWith(io.helidon.config.Config.builder(createRootDefault8080TestingConfigSource())
                           .disableEnvironmentVariablesSource()
                           .disableSystemPropertiesSource()

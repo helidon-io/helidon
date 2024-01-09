@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.tests.inject.Verification;
 import io.helidon.inject.tests.inject.tbox.AbstractBlade;
@@ -121,7 +121,7 @@ public class HandSaw extends AbstractSaw {
         Verification.verifyInjected(setterInjectedAllProviderListInSubClass, getClass() +
                  ".setAllBlades(List<AbstractBlade> blades)", setterInjectedAllProviderListInSubClassInjectedCount, 1, InjectionPointProvider.class);
         List<AbstractBlade> blades = setterInjectedAllProviderListInSubClass.getFirst()
-                .list(ContextualLookup.builder()
+                .list(Lookup.builder()
                               .addContract(AbstractBlade.class)
                               .addQualifier(Qualifier.WILDCARD_NAMED)
                               .build());

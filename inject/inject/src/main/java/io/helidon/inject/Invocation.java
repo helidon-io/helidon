@@ -168,7 +168,7 @@ class Invocation<V> implements Interception.Interceptor.Chain<V> {
                 String message = "Error in interceptor chain processing";
                 boolean called = call == null;
 
-                if (interceptor instanceof RegistryServiceProvider<?> sp) {
+                if (interceptor instanceof ServiceProvider<?> sp) {
                     throw new InvocationException(message, t, sp, called);
                 } else {
                     throw new InvocationException(message, t, called);

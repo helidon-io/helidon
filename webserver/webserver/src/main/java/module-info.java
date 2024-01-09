@@ -45,6 +45,8 @@ module io.helidon.webserver {
     requires transitive io.helidon.http.media;
 
     requires io.helidon.inject.service;
+    // static, as we only use annotations from this module
+    requires static io.helidon.inject.configdriven.service;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use
@@ -67,5 +69,8 @@ module io.helidon.webserver {
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http1.Http1ProtocolConfigProvider;
     provides io.helidon.webserver.spi.ServerConnectionSelectorProvider with io.helidon.webserver.http1.Http1ConnectionProvider;
+
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.webserver.Injection__Module;
 
 }

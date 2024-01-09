@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.inject.tests.helidon.inject;
 
 import java.util.function.Supplier;
 
+import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -41,12 +42,14 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class InjectionTest {
+    private static InjectionServices injectionServices;
     private static Services services;
     private static LifecycleReceiver lifecycleReceiver;
 
     @BeforeAll
     static void initRegistry() {
-        services = InjectionTestingSupport.testableServices();
+        injectionServices = InjectionServices.create();
+        services = injectionServices.services();
     }
 
     @AfterAll
@@ -56,13 +59,13 @@ class InjectionTest {
             assertThat("Pre destroy of a singleton should have been called", lifecycleReceiver.preDestroyCalled(), is(true));
         }
 
-        InjectionTestingSupport.resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
     @Order(0)
     void testSingleton() {
-        Supplier<SingletonService> provider = services.get(SingletonService.class);
+        Supplier<SingletonService> provider = services.supply(SingletonService.class);
 
         assertThat(provider, notNullValue());
 
@@ -77,7 +80,7 @@ class InjectionTest {
     @Test
     @Order(1)
     void testLifecycle() {
-        Supplier<LifecycleReceiver> provider = services.get(LifecycleReceiver.class);
+        Supplier<LifecycleReceiver> provider = services.supply(LifecycleReceiver.class);
 
         assertThat(provider, notNullValue());
 
@@ -88,7 +91,7 @@ class InjectionTest {
     @Test
     @Order(2)
     void testNonSingleton() {
-        Supplier<NonSingletonService> provider = services.get(NonSingletonService.class);
+        Supplier<NonSingletonService> provider = services.supply(NonSingletonService.class);
 
         assertThat(provider, notNullValue());
 
@@ -108,7 +111,7 @@ class InjectionTest {
     @Test
     @Order(3)
     void testNamed() {
-        Supplier<NamedReceiver> provider = services.get(NamedReceiver.class);
+        Supplier<NamedReceiver> provider = services.supply(NamedReceiver.class);
 
         assertThat(provider, notNullValue());
 
@@ -120,7 +123,7 @@ class InjectionTest {
     @Test
     @Order(4)
     void testQualified() {
-        Supplier<QualifiedReceiver> provider = services.get(QualifiedReceiver.class);
+        Supplier<QualifiedReceiver> provider = services.supply(QualifiedReceiver.class);
 
         assertThat(provider, notNullValue());
 
@@ -132,7 +135,7 @@ class InjectionTest {
     @Test
     @Order(5)
     void testProvider() {
-        Supplier<ProviderReceiver> provider = services.get(ProviderReceiver.class);
+        Supplier<ProviderReceiver> provider = services.supply(ProviderReceiver.class);
 
         assertThat(provider, notNullValue());
 

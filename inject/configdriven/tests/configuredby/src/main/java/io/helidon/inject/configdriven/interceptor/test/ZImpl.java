@@ -16,6 +16,7 @@
 
 package io.helidon.inject.configdriven.interceptor.test;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,23 +24,22 @@ import io.helidon.inject.configdriven.tests.config.FakeWebServer;
 import io.helidon.inject.service.Injection;
 
 /**
- * This test case is applying {@link io.helidon.inject.service.Interception.Trigger} (an {@link io.helidon.inject.service.Interception.Trigger})
+ * This test case is applying {@link io.helidon.inject.service.Interception.Trigger} (an
+ * {@link io.helidon.inject.service.Interception.Trigger})
  * on this class directly. Since it is a config-driven service it is forced to used the interface based approach to interceptors.
  */
 // TODO: https://github.com/helidon-io/helidon/issues/6542
 @TestInterceptorTrigger
-//@ConfiguredBy(ZImplConfig.class)
+@Injection.DrivenBy(ZImplConfigBlueprint.class)
 @SuppressWarnings("ALL")
 public class ZImpl implements IZ {
     public static final String HELIDON_INJECT__METHOD_0_ELEMENT = "";
     private final AtomicInteger postConstructCallCount = new AtomicInteger();
 
-//    @Inject
-//    ZImpl(ZImplConfig config/*,
-//          List<Provider<ASingletonServiceContract>> singletons*/) {
-//        assert (config != null && !config.name().isEmpty()) : Objects.toString(config);
-////        assert (singletons.size() == 1) : singletons.toString();
-//    }
+    @Injection.Inject
+    ZImpl(ZImplConfig config) {
+        assert (config != null && !config.name().isEmpty()) : Objects.toString(config);
+    }
 
     @Injection.Inject
     ZImpl(Optional<FakeWebServer> fakeWebServer) {

@@ -20,7 +20,6 @@ import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Phase;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -30,17 +29,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 Test that configuration is used if not configured explicitly
  */
 class ConfigTest {
-    @BeforeEach
-    void reset() {
-        SimpleInjectionTestingSupport.resetAll();
-    }
-
     @Test
     void testConfigUsed() {
         InjectionConfig config = InjectionServices.instance()
                 .config();
 
-        assertThat(config.permitsDynamic(), is(true));
         assertThat(config.useModules(), is(false));
         assertThat(config.useApplication(), is(false));
         assertThat(config.limitRuntimePhase(), is(Phase.PENDING));

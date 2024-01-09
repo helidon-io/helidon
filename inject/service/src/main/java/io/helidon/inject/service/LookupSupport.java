@@ -16,6 +16,9 @@
 
 package io.helidon.inject.service;
 
+import java.util.Optional;
+import java.util.Set;
+
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 
@@ -36,14 +39,13 @@ final class LookupSupport {
         /**
          * Create service info criteria for lookup from this injection point information.
          *
-         * @param ipId injection point id to create criteria for
+         * @param injectionPoint injection point id to create criteria for
          * @return criteria to lookup matching services
          */
         @Prototype.FactoryMethod
-        static Lookup create(Ip ipId) {
+        static Lookup create(Ip injectionPoint) {
             return Lookup.builder()
-                    .qualifiers(ipId.qualifiers())
-                    .addContract(ipId.contract())
+                    .injectionPoint(injectionPoint)
                     .build();
         }
 
@@ -85,6 +87,35 @@ final class LookupSupport {
 
         private static Lookup createEmpty() {
             return Lookup.builder().build();
+        }
+    }
+
+    final static class IpDecorator implements Prototype.OptionDecorator<Lookup.BuilderBase<?, ?>, Optional<Ip>> {
+        @Override
+        public void decorate(Lookup.BuilderBase<?, ?> builder, Optional<Ip> injectionPoint) {
+            if (injectionPoint.isPresent()) {
+                Ip value = injectionPoint.get();
+                builder.qualifiers(value.qualifiers())
+                        .addContract(value.contract());
+            } else {
+                builder.injectionPoint().ifPresent(existing -> {
+                    // clear if contained only IP stuff
+                    boolean shouldClear = true;
+                    if (!builder.qualifiers().equals(existing.qualifiers())) {
+                        shouldClear = false;
+
+                    }
+                    if (!(builder.contracts().contains(existing.contract()) && builder.contracts().size() == 1)) {
+                        shouldClear = false;
+                    }
+
+                    if (shouldClear) {
+                        builder.qualifiers(Set.of());
+                        builder.contracts(Set.of());
+                    }
+                });
+            }
+
         }
     }
 }

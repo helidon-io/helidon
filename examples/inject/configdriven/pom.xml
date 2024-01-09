@@ -45,10 +45,6 @@
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>

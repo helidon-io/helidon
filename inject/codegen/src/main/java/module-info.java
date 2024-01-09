@@ -36,5 +36,6 @@ module io.helidon.inject.codegen {
             with io.helidon.inject.codegen.InjectionExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
-            with io.helidon.inject.codegen.MapClassNamedProvider;
+            with io.helidon.inject.codegen.MapClassNamedProvider,
+                    io.helidon.inject.codegen.MapDrivenBy;
 }

@@ -23,10 +23,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.service.Injection;
 
-@ConfigDriven(CircuitBreakerConfigBlueprint.class)
+@Injection.DrivenBy(CircuitBreakerConfigBlueprint.class)
 class CircuitBreakerImpl implements CircuitBreaker {
     /*
      Configuration options

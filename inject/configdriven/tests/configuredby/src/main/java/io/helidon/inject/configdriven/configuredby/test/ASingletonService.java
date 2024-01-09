@@ -16,10 +16,10 @@
 
 package io.helidon.inject.configdriven.configuredby.test;
 
-import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.service.Injection;
 
-@ConfigDriven(value = ASingletonConfigBeanBlueprint.class, activateByDefault = true)
+@Injection.DrivenBy(ASingletonConfigBeanBlueprint.class)
+@Injection.Eager
 @Injection.Named("jane")
 class ASingletonService implements ASingletonServiceContract {
     private boolean running;
