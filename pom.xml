@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.microprofile-core-profile>10.0.2</version.lib.microprofile-core-profile>
         <version.lib.sigtest>1.4</version.lib.sigtest>
+        <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.0.12</version.lib.microprofile-cdi-tck>
         <version.lib.microprofile-restful-tck>3.1.4</version.lib.microprofile-restful-tck>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
