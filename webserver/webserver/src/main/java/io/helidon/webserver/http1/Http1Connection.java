@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 
+import io.helidon.common.IntegerParser;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
@@ -64,6 +66,11 @@ import static java.lang.System.Logger.Level.WARNING;
  */
 public class Http1Connection implements ServerConnection, InterruptableTask<Void> {
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());
+    private static final Supplier<RequestException> INVALID_SIZE_SUPPLIER =
+            () -> RequestException.builder()
+                    .type(EventType.BAD_REQUEST)
+                    .message("Chunk size is invalid")
+                    .build();
 
     static final byte[] CONTINUE_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8);
 
@@ -264,7 +271,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private BufferData readNextChunk(HttpPrologue prologue, WritableHeaders<?> headers) {
         // chunk length processing
         String hex = reader.readLine();
-        int chunkLength = Integer.parseUnsignedInt(hex, 16);
+        int chunkLength = IntegerParser.parseNonNegative(hex, 16, INVALID_SIZE_SUPPLIER);
 
         currentEntitySizeRead += chunkLength;
         if (maxPayloadSize != -1 && currentEntitySizeRead > maxPayloadSize) {
