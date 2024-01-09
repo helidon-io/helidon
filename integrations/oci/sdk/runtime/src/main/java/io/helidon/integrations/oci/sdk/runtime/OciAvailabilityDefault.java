@@ -37,7 +37,7 @@ import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsP
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 class OciAvailabilityDefault implements OciAvailability {
-    private static final String OPC_PATH = getOpcPath();
+    private static final String OPC_PATH = getOpcPath(METADATA_SERVICE_BASE_URL);
 
     @Override
     public boolean isRunningOnOci(OciConfig ociConfig) {
@@ -74,15 +74,15 @@ class OciAvailabilityDefault implements OciAvailability {
         }
     }
 
-    private static String getOpcPath() {
-        String input = METADATA_SERVICE_BASE_URL;
+    static String getOpcPath(String metadataServiceBaseURL) {
+        String input = metadataServiceBaseURL;
         int index = -1;
         for (int nth = 3; nth > 0; nth--) {
             index = input.indexOf("/", index + 1);
             if (index == -1) {
-                return null;
+                throw new IllegalStateException("Unable to find opc path from '" + metadataServiceBaseURL + "'");
             }
         }
-        return METADATA_SERVICE_BASE_URL.substring(index);
+        return metadataServiceBaseURL.substring(index);
     }
 }
