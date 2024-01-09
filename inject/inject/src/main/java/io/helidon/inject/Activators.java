@@ -406,10 +406,7 @@ final class Activators {
             }
 
             try {
-                return Optional.of(ipProvider.list(lookup)
-                                           .stream()
-                                           .map(it -> QualifiedInstance.create(it, provider.descriptor().qualifiers()))
-                                           .toList());
+                return Optional.of(ipProvider.list(lookup));
             } catch (RuntimeException e) {
                 throw new InjectionServiceProviderException("Failed to list instances in InjectionPointProvider", e, provider);
             }

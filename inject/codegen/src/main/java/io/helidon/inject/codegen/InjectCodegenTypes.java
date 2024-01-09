@@ -84,11 +84,6 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName RUN_LEVEL = TypeName.create("io.helidon.inject.service.Injection.RunLevel");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.Injection.Criteria}.
-     */
-    public static final TypeName INJECTION_CRITERIA = TypeName.create("io.helidon.inject.service.Injection.Criteria");
-
-    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.ServiceInfo}.
      */
     public static final TypeName SERVICE_INFO = TypeName.create("io.helidon.inject.service.ServiceInfo");
