@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import io.helidon.inject.api.ServiceInfoBasics;
 import com.oracle.bmc.Region;
 import jakarta.inject.Singleton;
 
+import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder.METADATA_SERVICE_BASE_URL;
+
 /**
  * This (overridable) implementation will check the {@link OciConfig} for {@code IMDS} availability. And if it is found to be
  * available, will also perform a secondary check on {@link Region#getRegionFromImds()} to ensure it returns a non-null value.
@@ -35,6 +37,7 @@ import jakarta.inject.Singleton;
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 class OciAvailabilityDefault implements OciAvailability {
+    private static final String OPC_PATH = getOpcPath(METADATA_SERVICE_BASE_URL);
 
     @Override
     public boolean isRunningOnOci(OciConfig ociConfig) {
@@ -46,7 +49,7 @@ class OciAvailabilityDefault implements OciAvailability {
             return false;
         }
 
-        return (Region.getRegionFromImds() != null);
+        return (Region.getRegionFromImds("http://" + ociConfig.imdsHostName() + OPC_PATH) != null);
     }
 
     static boolean canReach(String address,
@@ -71,4 +74,15 @@ class OciAvailabilityDefault implements OciAvailability {
         }
     }
 
+    static String getOpcPath(String metadataServiceBaseURL) {
+        String input = metadataServiceBaseURL;
+        int index = -1;
+        for (int nth = 3; nth > 0; nth--) {
+            index = input.indexOf("/", index + 1);
+            if (index == -1) {
+                throw new IllegalStateException("Unable to find opc path from '" + metadataServiceBaseURL + "'");
+            }
+        }
+        return metadataServiceBaseURL.substring(index);
+    }
 }
