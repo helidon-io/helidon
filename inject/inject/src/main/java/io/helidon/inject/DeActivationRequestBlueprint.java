@@ -22,7 +22,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Request to deactivate a {@link Activator}.
  */
-@Prototype.Blueprint(isPublic = false, builderPublic = false)
+@Prototype.Blueprint(isPublic = false)
 interface DeActivationRequestBlueprint {
     /**
      * Whether to throw an exception on failure, or return it as part of the result.

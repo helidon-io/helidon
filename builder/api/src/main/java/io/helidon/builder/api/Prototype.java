@@ -209,7 +209,7 @@ public final class Prototype {
     public @interface Blueprint {
         /**
          * The generated interface is public by default. We can switch it to package local
-         * by setting this property to {@code false}-
+         * by setting this property to {@code false}.
          *
          * @return whether the generated interface should be public
          */
@@ -231,9 +231,10 @@ public final class Prototype {
         boolean createFromConfigPublic() default true;
 
         /**
-         * Method create() is public by default.
+         * Method create() is created whenever there are no fields required (or all have default values).
+         * This property can disable generation of the method.
          *
-         * @return whether factory method create() should be public on prototype
+         * @return whether factory method create() should be created on prototype
          */
         boolean createEmptyPublic() default true;
 
