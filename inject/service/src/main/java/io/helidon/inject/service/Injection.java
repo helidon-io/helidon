@@ -280,7 +280,10 @@ public final class Injection {
     @Documented
     @Retention(RetentionPolicy.CLASS)
     public @interface ClassNamed {
-
+        /**
+         * Type name of this interface.
+         * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
+         */
         TypeName TYPE_NAME = TypeName.create(ClassNamed.class);
 
         /**
@@ -406,6 +409,10 @@ public final class Injection {
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Qualifier
     public @interface DrivenByName {
+        /**
+         * Type name of this interface.
+         * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
+         */
         TypeName TYPE_NAME = TypeName.create(DrivenByName.class);
     }
 }

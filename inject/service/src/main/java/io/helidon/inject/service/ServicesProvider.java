@@ -23,6 +23,8 @@ import io.helidon.common.types.TypeName;
 /**
  * Provides an ability to create more than one service instance from a single service definition.
  * This is useful when the cardinality can only be determined at runtime.
+ *
+ * @param <T> type of the provided services
  */
 public interface ServicesProvider<T> {
     /**

@@ -90,7 +90,7 @@ final class LookupSupport {
         }
     }
 
-    final static class IpDecorator implements Prototype.OptionDecorator<Lookup.BuilderBase<?, ?>, Optional<Ip>> {
+    static final class IpDecorator implements Prototype.OptionDecorator<Lookup.BuilderBase<?, ?>, Optional<Ip>> {
         @Override
         public void decorate(Lookup.BuilderBase<?, ?> builder, Optional<Ip> injectionPoint) {
             if (injectionPoint.isPresent()) {
