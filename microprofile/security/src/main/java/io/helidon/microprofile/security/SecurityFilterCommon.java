@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.microprofile.security.spi.SecurityResponseMapper;
 import io.helidon.security.AuthenticationResponse;
@@ -37,6 +38,7 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.AtnTracing;
 import io.helidon.security.integration.common.AtzTracing;
 import io.helidon.security.integration.common.SecurityTracing;
+import io.helidon.webserver.security.SecurityHttpFeature;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -198,6 +200,9 @@ abstract class SecurityFilterCommon {
         switch (responseStatus) {
             case SUCCESS -> {
                 //everything is fine, we can continue with processing
+                io.helidon.common.context.Context helidonContext = Contexts.context()
+                        .orElseThrow(() -> new IllegalStateException("Context must be available in Jersey"));
+                helidonContext.register(SecurityHttpFeature.CONTEXT_RESPONSE_HEADERS, response.responseHeaders());
             }
             case FAILURE_FINISH -> {
                 if (methodSecurity.authenticationOptional()) {
