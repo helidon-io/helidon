@@ -23,6 +23,8 @@ import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Lookup;
+import io.helidon.inject.service.QualifiedInstance;
+import io.helidon.inject.service.Qualifier;
 
 import com.oracle.bmc.Region;
 
@@ -37,7 +39,7 @@ class OciRegionProvider implements InjectionPointProvider<Region> {
     }
 
     @Override
-    public Optional<Region> first(Lookup query) {
+    public Optional<QualifiedInstance<Region>> first(Lookup query) {
         String requestedNamedProfile = query.injectionPoint()
                 .map(OciAuthenticationDetailsProvider::toNamedProfile)
                 .orElse(null);
@@ -45,7 +47,8 @@ class OciRegionProvider implements InjectionPointProvider<Region> {
         if (region == null) {
             region = Region.getRegionFromImds();
         }
-        return Optional.ofNullable(region);
+        return Optional.ofNullable(region)
+                .map(it -> QualifiedInstance.create(it, Qualifier.createNamed(it.getRegionId())));
     }
 
     static Region toRegionFromNamedProfile(String requestedNamedProfile) {
