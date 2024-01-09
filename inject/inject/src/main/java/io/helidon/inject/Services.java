@@ -175,8 +175,9 @@ public final class Services {
     /**
      * Get the first service instance matching the lookup with the expectation that there is a match available.
      *
-     * @param lookup lookup to use
-     * @param <T>    type of the expected service, use {@code Object} if not known
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
      * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup, or the resolution to
@@ -186,39 +187,80 @@ public final class Services {
         return this.<T>supply(lookup).get();
     }
 
+    /**
+     * Get the first service instance matching the contract with the expectation that there is a match available.
+     *
+     * @param type contract to look-up
+     * @param <T>  type of the contract
+     * @return the best service instance matching the contract
+     * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup, or the resolution to
+     *                                              instance failed
+     */
     public <T> T get(Class<T> type) {
         return this.get(Lookup.create(type));
     }
 
+    /**
+     * Get the first service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown provider type
+     */
     public <T> Optional<T> first(Lookup lookup) {
         return this.<T>supplyFirst(lookup).get();
     }
 
+    /**
+     * Get the first service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param type contract to look-up
+     * @param <T>  type of the contract
+     * @return the best service instance matching the contract, or an empty {@link java.util.Optional} if none match
+     */
     public <T> Optional<T> first(Class<T> type) {
         return this.first(Lookup.create(type));
     }
 
-    public <T> Optional<Supplier<T>> firstSupplier(Lookup lookup) {
-        List<ServiceManager<T>> managers = lookupManagers(lookup);
-
-        if (managers.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(new ServiceSupply<>(lookup, managers));
-    }
-
-    public <T> Optional<Supplier<T>> firstSupplier(Class<T> type) {
-        return firstSupplier(Lookup.create(type));
-    }
-
+    /**
+     * Get all service instances matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return list of services matching the criteria, may be empty if none matched, or no instances were provided
+     */
     public <T> List<T> all(Lookup lookup) {
         return this.<T>supplyAll(lookup).get();
     }
 
+    /**
+     * Get all service instances matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param type contract to look-up
+     * @param <T>  type of the contract
+     * @return list of services matching the criteria, may be empty if none matched, or no instances were provided
+     */
     public <T> List<T> all(Class<T> type) {
         return this.all(Lookup.create(type));
     }
 
+    /**
+     * Get all service suppliers matching the lookup with the expectation that there may not be a match available.
+     * <p>
+     * This method is limited to services that are directly accessible in the registry, and may not provide all instances
+     * from {@link io.helidon.inject.service.ServicesProvider} (and possible other types that can produce an unknown number
+     * of instances).
+     * <p>
+     * Use {@link #supplyAll(io.helidon.inject.service.Lookup)} instead.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return list of service suppliers matching the criteria, may be empty if none matched, or no instances were provided
+     */
     public <T> List<Supplier<T>> allSuppliers(Lookup lookup) {
         List<ServiceManager<T>> managers = lookupManagers(lookup);
 
@@ -227,20 +269,34 @@ public final class Services {
                 .toList();
     }
 
+    /**
+     * Get all service suppliers matching the lookup with the expectation that there may not be a match available.
+     * <p>
+     * This method is limited to services that are directly accessible in the registry, and may not provide all instances
+     * from {@link io.helidon.inject.service.ServicesProvider} (and possible other types that can produce an unknown number
+     * of instances).
+     * <p>
+     * Use {@link #supplyAll(io.helidon.inject.service.Lookup)} instead.
+     *
+     * @param type contract to look-up
+     * @param <T>  type of the contract
+     * @return list of service suppliers matching the criteria, may be empty if none matched, or no instances were provided
+     */
     public <T> List<Supplier<T>> allSuppliers(Class<T> type) {
         return allSuppliers(Lookup.create(type));
     }
 
     /**
-     * Get the first service provider matching the lookup with the expectation that there is a match available.
+     * Get the first service supplier matching the lookup with the expectation that there is a match available.
      * The provided {@link java.util.function.Supplier#get()} may throw an
      * {@link io.helidon.inject.InjectionException} in case the matching service cannot provide a value (either because
      * of scope mismatch, or because there is no available instance, and we use a runtime resolution through
      * {@link io.helidon.inject.service.ServicesProvider}, {@link io.helidon.inject.service.InjectionPointProvider}, or similar).
      *
-     * @param lookup lookup to use
-     * @param <T>    type of the expected service providers, use {@code Object} if not known
-     * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service supplier matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup
      */
@@ -253,10 +309,29 @@ public final class Services {
         return new ServiceSupply<>(lookup, managers);
     }
 
+    /**
+     * Get the first service supplier matching the lookup with the expectation that there is a match available.
+     * The provided {@link java.util.function.Supplier#get()} may throw an
+     * {@link io.helidon.inject.InjectionException} in case the matching service cannot provide a value (either because
+     * of scope mismatch, or because there is no available instance, and we use a runtime resolution through
+     * {@link io.helidon.inject.service.ServicesProvider}, {@link io.helidon.inject.service.InjectionPointProvider}, or similar).
+     *
+     * @param type contract to find
+     * @param <T>  type of the contract
+     * @return the best service supplier matching the lookup
+     * @throws io.helidon.inject.InjectionException if there is no service that could satisfy the lookup
+     */
     public <T> Supplier<T> supply(Class<T> type) {
         return this.supply(Lookup.create(type));
     }
 
+    /**
+     * @param descriptor service descriptor to get a supplier for, please use the singleton instance (usually code generated
+     *                   into a public {@code __ServiceDescriptor} class), we use instance equality to discover services
+     * @param <T>        type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *                   you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return supplier of an instance for the descriptor provided
+     */
     public <T> Supplier<T> supply(ServiceInfo descriptor) {
         return new ServiceSupply<>(Lookup.builder()
                                            .serviceType(descriptor.serviceType())
@@ -267,8 +342,9 @@ public final class Services {
     /**
      * Find the first service provider matching the lookup with the expectation that there may not be a match available.
      *
-     * @param lookup lookup to use
-     * @param <T>    type of the expected service providers, use {@code Object} if not known
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
      * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
      *         if the result may contain an unknown provider type
      */
@@ -281,15 +357,23 @@ public final class Services {
         return new ServiceSupplyOptional<>(lookup, managers);
     }
 
+    /**
+     * Lookup a supplier of an optional service instance.
+     *
+     * @param type contract we look for
+     * @param <T>  type of the contract
+     * @return supplier of an optional instance
+     */
     public <T> Supplier<Optional<T>> supplyFirst(Class<T> type) {
         return this.supplyFirst(Lookup.create(type));
     }
 
     /**
-     * Supply all services matching the lookup with the expectation that there may not be a match available.
+     * Lookup a supplier of all services matching the lookup with the expectation that there may not be a match available.
      *
-     * @param lookup lookup to use
-     * @param <T>    type of the expected service suppliers
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
      * @return supplier of list of services ordered, may be empty if there is no match
      */
     public <T> Supplier<List<T>> supplyAll(Lookup lookup) {
@@ -301,6 +385,15 @@ public final class Services {
         return new ServiceSupplyList<>(lookup, managers);
     }
 
+    /**
+     * Lookup a supplier of a list of instances of the requested type.
+     * This is the preferred way of looking up instances, as the list may be computed at runtime, and may
+     * differ in time (as some services may be {@link io.helidon.inject.service.ServicesProvider}).
+     *
+     * @param type contract we look for
+     * @param <T>  type of the contract
+     * @return a supplier of list of contracts
+     */
     public <T> Supplier<List<T>> supplyAll(Class<T> type) {
         return this.supplyAll(Lookup.create(type));
     }
@@ -315,29 +408,15 @@ public final class Services {
     }
 
     /**
-     * Provides a binder for this service registry.
-     * Note that by public you can only bind services from {@link io.helidon.inject.service.ModuleComponent} instances that
-     * are code generated at build time.
-     * <p>
-     * This binder is only allowed if you enable dynamic binding. Although this may be tempting, you are breaking the
-     * deterministic behavior of the service registry, and may encounter runtime errors that are otherwise impossible.
+     * A lookup method that returns target instances with metadata.
+     * As this method resolves actual instances, scopes of all discovered services must be active
+     * (this would be always true if you only use singleton and "service" scopes).
      *
-     * @return service binder that allows binding into this service registry
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return list of registry instances (with metadata)
      */
-    public ServiceBinder binder() {
-        return this::bind;
-    }
-
-    /**
-     * Limit runtime phase.
-     *
-     * @return phase to activate to
-     * @see io.helidon.inject.InjectionConfig#limitRuntimePhase()
-     */
-    public Phase limitRuntimePhase() {
-        return injectionServices().config().limitRuntimePhase();
-    }
-
     public <T> List<RegistryInstance<T>> lookupInstances(Lookup lookup) {
         List<ServiceManager<T>> managers = lookupManagers(lookup);
 
@@ -557,7 +636,8 @@ public final class Services {
             for (ServiceManager<?> scopeHandlerManager : scopeHandlerManagers) {
                 ScopeHandler scopeHandler = (ScopeHandler) scopeHandlerManager.managedServiceInScope()
                         .instances(Lookup.EMPTY) // lookup instances
-                        .orElseThrow(() -> new InjectionException("There is not scope handler service for scope " + scope.fqName()))
+                        .orElseThrow(() -> new InjectionException("There is not scope handler service for scope "
+                                                                          + scope.fqName()))
                         .getFirst() // List.getFirst() - Qualified instance
                         .instance();
                 if (scopeHandler.supportedScope().equals(scope)) {
@@ -574,7 +654,8 @@ public final class Services {
     <T> ServiceManager<T> serviceManager(ServiceInfo descriptor) {
         ServiceManager<?> serviceManager = servicesByDescriptor.get(descriptor);
         if (serviceManager == null) {
-            throw new InjectionException("A service descriptor was used that is not bound to this service registry: " + descriptor.serviceType());
+            throw new InjectionException("A service descriptor was used that is not bound to this service registry: "
+                                                 + descriptor.serviceType());
         }
         return (ServiceManager<T>) serviceManager;
     }
