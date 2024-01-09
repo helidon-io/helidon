@@ -42,7 +42,8 @@ public class Main {
                 .counter("io.helidon.inject.lookups", List.of());
 
         if (counter.isPresent()) {
-            System.out.println("Service lookup count: " + counter.get().count());
+            System.out.println("Service lookup count: " + counter.get().count()
+                                       + " (expected to be 2, as we lookup twice in basics.Main");
         } else {
             System.out.println("Service lookup counter is not present");
         }

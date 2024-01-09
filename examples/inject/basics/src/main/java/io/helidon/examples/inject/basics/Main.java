@@ -45,10 +45,10 @@ public class Main {
                 .runLevel(Injection.RunLevel.STARTUP)
                 .build();
 
-        List<Supplier<Object>> startupServiceProviders = services.all(lookup);
+        List<Supplier<Object>> startupServiceProviders = services.allSuppliers(lookup);
         System.out.println("Startup service providers (ranked according to weight, pre-activated): " + startupServiceProviders);
 
-        Supplier<Object> highestWeightedServiceProvider = services.get(lookup);
+        Supplier<Object> highestWeightedServiceProvider = services.supply(lookup);
         System.out.println("Highest weighted service provider: " + highestWeightedServiceProvider);
 
         // trigger lazy activations for the highest weighted service provider

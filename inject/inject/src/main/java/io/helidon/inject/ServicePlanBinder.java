@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.inject.Services.ServiceSupply;
@@ -18,14 +17,14 @@ import io.helidon.inject.service.ServiceInfo;
 
 class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     private final ServiceDescriptor<?> self;
-    private final Consumer<Map<Ip, Supplier<?>>> injectionPlanConsumer;
+    private final Consumer<Map<Ip, IpPlan<?>>> injectionPlanConsumer;
 
     private final Services services;
-    private final Map<Ip, Supplier<?>> injectionPlan = new LinkedHashMap<>();
+    private final Map<Ip, IpPlan<?>> injectionPlan = new LinkedHashMap<>();
 
     private ServicePlanBinder(Services services,
                               ServiceDescriptor<?> self,
-                              Consumer<Map<Ip, Supplier<?>>> injectionPlanConsumer) {
+                              Consumer<Map<Ip, IpPlan<?>>> injectionPlanConsumer) {
         this.services = services;
         this.self = self;
         this.injectionPlanConsumer = injectionPlanConsumer;
@@ -33,7 +32,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
 
     static <T> ServiceInjectionPlanBinder.Binder create(Services registry,
                                                         ServiceDescriptor<T> descriptor,
-                                                        Consumer<Map<Ip, Supplier<?>>> planConsumer) {
+                                                        Consumer<Map<Ip, IpPlan<?>>> planConsumer) {
         return new ServicePlanBinder(registry, descriptor, planConsumer);
     }
 
@@ -42,7 +41,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         ServiceSupply<?> supply = new ServiceSupply<>(Lookup.create(injectionPoint),
                                                       List.of(services.serviceManager(descriptor)));
 
-        injectionPlan.put(injectionPoint, supply);
+        injectionPlan.put(injectionPoint, new IpPlan<>(supply, descriptor));
         return this;
     }
 
@@ -51,7 +50,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         ServiceSupplyOptional<?> supply = new ServiceSupplyOptional<>(Lookup.create(injectionPoint),
                                                                       toManagers(descriptors));
 
-        injectionPlan.put(injectionPoint, supply);
+        injectionPlan.put(injectionPoint, new IpPlan<>(supply, descriptors));
         return this;
     }
 
@@ -60,7 +59,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         ServiceSupplyList<?> supply = new ServiceSupplyList<>(Lookup.create(injectionPoint),
                                                               toManagers(descriptors));
 
-        injectionPlan.put(injectionPoint, supply);
+        injectionPlan.put(injectionPoint, new IpPlan<>(supply, descriptors));
         return this;
     }
 
@@ -69,7 +68,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         ServiceSupply<?> supply = new ServiceSupply<>(Lookup.create(injectionPoint),
                                                       toManagers(descriptor));
 
-        injectionPlan.put(injectionPoint, () -> supply);
+        injectionPlan.put(injectionPoint, new IpPlan<>(() -> supply, descriptor));
         return this;
     }
 
@@ -78,7 +77,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         ServiceSupplyOptional<?> supply = new ServiceSupplyOptional<>(Lookup.create(injectionPoint),
                                                                       toManagers(descriptors));
 
-        injectionPlan.put(injectionPoint, () -> supply);
+        injectionPlan.put(injectionPoint, new IpPlan<>(() -> supply, descriptors));
         return this;
     }
 
@@ -87,7 +86,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         ServiceSupplyList<?> supply = new ServiceSupplyList<>(Lookup.create(injectionPoint),
                                                               toManagers(descriptors));
 
-        injectionPlan.put(injectionPoint, () -> supply);
+        injectionPlan.put(injectionPoint, new IpPlan<>(() -> supply, descriptors));
         return this;
     }
 
@@ -97,7 +96,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         // this in a wrong scope
         ServiceSupply<?> supply = new ServiceSupply<>(Lookup.create(injectionPoint),
                                                       toManagers(descriptors[0]));
-        injectionPlan.put(injectionPoint, () -> Optional.of(supply));
+        injectionPlan.put(injectionPoint, new IpPlan<>(() -> Optional.of(supply), descriptors));
         return this;
     }
 
@@ -110,13 +109,13 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
                 .map(it -> new ServiceSupply<>(lookup, it))
                 .toList();
 
-        injectionPlan.put(injectionPoint, () -> supplies);
+        injectionPlan.put(injectionPoint, new IpPlan<>(() -> supplies, descriptors));
         return this;
     }
 
     @Override
     public ServiceInjectionPlanBinder.Binder bindNull(Ip injectionPoint) {
-        injectionPlan.put(injectionPoint, () -> null);
+        injectionPlan.put(injectionPoint, new IpPlan<>(() -> null));
         return this;
     }
 

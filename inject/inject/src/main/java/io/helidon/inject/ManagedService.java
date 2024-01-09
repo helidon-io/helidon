@@ -101,6 +101,7 @@ interface ManagedService<T> {
 
     /**
      * Get instances from this managed service.
+     * This method is called when we already know that this service matches the lookup, and we can safely instantiate everything.
      *
      * @param lookup lookup to help with narrowing down the instances
      * @return empty optional if an instance is not available, supplier of qualified instances otherwise

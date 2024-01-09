@@ -18,9 +18,10 @@ package io.helidon.examples.inject.configdriven;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.configdriven.service.ConfigBean;
+import io.helidon.inject.service.ConfigBeans;
 
-@ConfigBean(repeatable = true)
+@ConfigBeans.ConfigBean
+@ConfigBeans.Repeatable
 @Prototype.Blueprint
 @Prototype.Configured("drill")
 interface DrillConfigBlueprint {

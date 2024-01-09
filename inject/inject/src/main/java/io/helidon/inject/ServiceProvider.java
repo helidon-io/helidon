@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.InterceptionMetadata;
@@ -18,9 +17,6 @@ import io.helidon.inject.service.ServiceInfo;
  * <p>
  * The manager takes care of all operations that must be handled in the singleton scope of the registry,
  * it also handles instance management in the correct scope.
- * <p>
- * Call to {@link #managedServiceInScope()} will return a provider instance in the scope it should be in, or throw
- * an exception if that scope is not available right now.
  *
  * @param <T> type of the provided service
  */
@@ -31,7 +27,7 @@ class ServiceProvider<T> {
     private final ActivationRequest activationRequest;
     private final InterceptionMetadata interceptionMetadata;
     private final Contracts.ContractLookup contracts;
-    private volatile Map<Ip, Supplier<?>> injectionPlan = null;
+    private volatile Map<Ip, IpPlan<?>> injectionPlan = null;
 
     ServiceProvider(Services serviceRegistry,
                     ServiceDescriptor<T> descriptor) {
@@ -51,8 +47,8 @@ class ServiceProvider<T> {
         return descriptor.serviceType().fqName();
     }
 
-    public Map<Ip, Supplier<?>> injectionPlan() {
-        Map<Ip, Supplier<?>> usedIp = injectionPlan;
+    public Map<Ip, IpPlan<?>> injectionPlan() {
+        Map<Ip, IpPlan<?>> usedIp = injectionPlan;
         if (usedIp == null) {
             // no application, we have to create injection plan from current services
             usedIp = createInjectionPlan();
@@ -85,14 +81,14 @@ class ServiceProvider<T> {
         return descriptor;
     }
 
-    private Map<Ip, Supplier<?>> createInjectionPlan() {
+    private Map<Ip, IpPlan<?>> createInjectionPlan() {
         List<Ip> dependencies = descriptor.dependencies();
 
         if (dependencies.isEmpty()) {
             return Map.of();
         }
 
-        AtomicReference<Map<Ip, Supplier<?>>> injectionPlan = new AtomicReference<>();
+        AtomicReference<Map<Ip, IpPlan<?>>> injectionPlan = new AtomicReference<>();
 
         ServiceInjectionPlanBinder.Binder binder = ServicePlanBinder.create(registry,
                                                                             descriptor,

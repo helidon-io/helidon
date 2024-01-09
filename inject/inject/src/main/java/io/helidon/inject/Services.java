@@ -106,7 +106,6 @@ public final class Services {
 
     private final String id = String.valueOf(COUNTER.incrementAndGet());
     private final InjectionServicesImpl injectionServices;
-    private final InjectionConfig cfg;
     private final Counter lookupCounter;
     private final Counter lookupScanCounter;
     private final Counter cacheLookupCounter;
@@ -135,13 +134,14 @@ public final class Services {
     private final Map<TypeName, ScopeServicesFactory> scopeServicesFactories = new HashMap<>();
     private final Map<Lookup, List<ServiceInfo>> cache = new HashMap<>();
     private final SingletonScopeHandler singletonScopeHandler;
+    private final ServiceScopeHandler serviceScopeHandler;
 
     private List<ServiceManager<Interception.Interceptor>> interceptors;
 
     Services(InjectionServicesImpl injectionServices, State state) {
         this.injectionServices = injectionServices;
         this.state = state;
-        this.cfg = injectionServices.config();
+        InjectionConfig cfg = injectionServices.config();
 
         this.lookupCounter = Metrics.globalRegistry()
                 .getOrCreate(Counter.builder("io.helidon.inject.lookups")
@@ -163,8 +163,9 @@ public final class Services {
                                      .scope(Meter.Scope.VENDOR));
 
         this.singletonScopeHandler = new SingletonScopeHandler(this);
+        this.serviceScopeHandler = new ServiceScopeHandler(this);
         this.scopeHandlers.put(Injection.Singleton.TYPE_NAME, singletonScopeHandler);
-        this.scopeHandlers.put(Injection.Service.TYPE_NAME, new ServiceScopeHandler(this));
+        this.scopeHandlers.put(Injection.Service.TYPE_NAME, serviceScopeHandler);
 
         if (!injectionServices.config().interceptionEnabled()) {
             this.interceptors = List.of();
@@ -341,14 +342,7 @@ public final class Services {
         List<ServiceManager<T>> managers = lookupManagers(lookup);
 
         return managers.stream()
-                .flatMap(it -> {
-                    ManagedService<T> managedService = it.managedServiceInScope();
-                    return managedService.instances(lookup)
-                            .stream()
-                            .map(Supplier::get)
-                            .flatMap(List::stream)
-                            .map(qi -> it.registryInstance(lookup, qi));
-                })
+                .flatMap(it -> managerInstances(lookup, it).stream())
                 .toList();
 
     }
@@ -366,6 +360,7 @@ public final class Services {
      * @param lookup lookup criteria to find matching services
      * @return a list of service descriptors that match the lookup criteria
      */
+    @SuppressWarnings("deprecation")
     public List<ServiceInfo> lookupServices(Lookup lookup) {
         // a very special lookup
         if (lookup.qualifiers().contains(Qualifier.DRIVEN_BY_NAME)) {
@@ -376,7 +371,7 @@ public final class Services {
                 throw new InjectionException("Invalid injection lookup. @DrivenByName must use String contract.");
             }
             if (lookup.contracts().size() != 1) {
-                throw new InjectionException("Invalid injection lookup. @DrivenByName must String as the only contract.");
+                throw new InjectionException("Invalid injection lookup. @DrivenByName must use String as the only contract.");
             }
             return List.of(DrivenByName__ServiceDescriptor.INSTANCE);
         }
@@ -447,6 +442,23 @@ public final class Services {
         } finally {
             currentLock.unlock();
         }
+    }
+
+    <T> List<RegistryInstance<T>> managerInstances(Lookup lookup, ServiceManager<T> manager) {
+        return manager.managedServiceInScope()
+                .instances(lookup)
+                .stream()
+                .flatMap(List::stream)
+                .map(qi -> manager.registryInstance(lookup, qi))
+                .toList();
+    }
+
+    List<ServiceInfo> servicesByContract(TypeName drivenBy) {
+        Set<ServiceInfo> serviceInfos = servicesByContract.get(drivenBy);
+        if (serviceInfos == null) {
+            return List.of();
+        }
+        return List.copyOf(serviceInfos);
     }
 
     void postBindAllModules() {
@@ -545,8 +557,7 @@ public final class Services {
             for (ServiceManager<?> scopeHandlerManager : scopeHandlerManagers) {
                 ScopeHandler scopeHandler = (ScopeHandler) scopeHandlerManager.managedServiceInScope()
                         .instances(Lookup.EMPTY) // lookup instances
-                        .get() // Optional.get()
-                        .get() // Supplier.get()
+                        .orElseThrow(() -> new InjectionException("There is not scope handler service for scope " + scope.fqName()))
                         .getFirst() // List.getFirst() - Qualified instance
                         .instance();
                 if (scopeHandler.supportedScope().equals(scope)) {
@@ -579,7 +590,7 @@ public final class Services {
         ServiceProvider<T> provider = new ServiceProvider<>(this, descriptor);
         ManagedService<T> managedService = ManagedService.create(provider, instance);
 
-        bind(new ServiceManager<>(provider, (Supplier<ManagedService<T>>) () -> managedService));
+        bind(new ServiceManager<>(scopeSupplier(descriptor), provider, () -> managedService));
     }
 
     void bind(ServiceManager<?> provider) {
@@ -637,7 +648,7 @@ public final class Services {
         ServiceProvider provider = new ServiceProvider<>(this,
                                                          serviceDescriptor);
         Supplier managedService = () -> ManagedService.create(this, provider);
-        ServiceManager<?> manager = new ServiceManager<>(provider, managedService);
+        ServiceManager<?> manager = new ServiceManager<>(scopeSupplier(serviceDescriptor), provider, managedService);
 
         // scope handlers have a very specific meaning
         if (serviceDescriptor.contracts().contains(ScopeHandler.TYPE_NAME)) {
@@ -655,16 +666,38 @@ public final class Services {
                                                                       List<ServiceManager<T>> serviceManagers) {
         // this method is called when we resolve instances, so we can safely assume any scope is active
 
-        return serviceManagers.stream()
-                .flatMap(serviceManager -> serviceManager.managedServiceInScope()
-                        .instances(lookup)
-                        .stream()
-                        .map(Supplier::get)
-                        .flatMap(List::stream)
-                        .filter(it -> lookup.matchesQualifiers(it.qualifiers()))
-                        .map(it -> serviceManager.registryInstance(lookup, it)))
-                .sorted(RegistryInstanceComparator.instance())
-                .toList();
+        List<RegistryInstance<T>> result = new ArrayList<>();
+
+        for (ServiceManager<T> serviceManager : serviceManagers) {
+            serviceManager.managedServiceInScope()
+                    .instances(lookup)
+                    .stream()
+                    .flatMap(List::stream)
+                    //.filter(it -> lookup.matchesQualifiers(it.qualifiers()))
+                    .map(it -> serviceManager.registryInstance(lookup, it))
+                    .forEach(result::add);
+        }
+
+        result.sort(RegistryInstanceComparator.instance());
+
+        return List.copyOf(result);
+    }
+
+    private <T> Supplier<Scope> scopeSupplier(ServiceDescriptor<T> descriptor) {
+        TypeName scope = descriptor.scope();
+        if (Injection.Singleton.TYPE_NAME.equals(scope)) {
+            return () -> singletonScopeHandler.scope;
+        } else if (Injection.Service.TYPE_NAME.equals(scope)) {
+            return () -> serviceScopeHandler.scope;
+        } else {
+            // must be a lazy value, as the scope handler may not be available at the time this method is called
+            LazyValue<ScopeHandler> scopeHandler = LazyValue.create(() -> scopeHandler(scope));
+            return () -> scopeHandler.get()
+                    .currentScope() // must be called each time, as we must use the currently active scope, not a cached one
+                    .orElseThrow(() -> new ScopeNotActiveException("Scope not active fore service: "
+                                                                           + descriptor.serviceType().fqName(),
+                                                                   scope));
+        }
     }
 
     private static class ServiceSupplyBase<T> {
@@ -690,7 +723,6 @@ public final class Services {
         private final Supplier<T> value;
 
         // supply a single instance at runtime based on the manager
-        @SuppressWarnings("unchecked")
         ServiceSupply(Lookup lookup, List<ServiceManager<T>> managers) {
             super(lookup, managers);
 
@@ -700,17 +732,11 @@ public final class Services {
                     .stream()
                     .findFirst()
                     .map(RegistryInstance::get)
-                    .orElseThrow(() -> new InjectionException(
+                    .orElseThrow(() -> new InjectionServiceProviderException(
                             "Neither of matching services could provide a value. Descriptors: " + managers + ", "
                                     + "lookup: " + super.lookup));
 
-            if (singletonOnly(managers)) {
-                // in case all of these are in singleton or service scope, we can optimize
-                this.value = LazyValue.create(supplier);
-            } else {
-                // there is another scope used, we must resolve provider instances at runtime
-                this.value = supplier;
-            }
+            this.value = supplier;
         }
 
         @Override
@@ -732,7 +758,6 @@ public final class Services {
             super(lookup, managers);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public Optional<T> get() {
             Optional<RegistryInstance<T>> first = explodeFilterAndSort(super.lookup, super.managers)
@@ -748,7 +773,6 @@ public final class Services {
             super(lookup, managers);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public List<T> get() {
             Stream<RegistryInstance<T>> stream = explodeFilterAndSort(super.lookup, super.managers)

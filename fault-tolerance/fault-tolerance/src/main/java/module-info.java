@@ -35,7 +35,6 @@ module io.helidon.faulttolerance {
     requires io.helidon.inject.service;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.inject.configdriven.service;
     // used from our services, will be on module path if the services are used
     requires static io.helidon.inject;
 

@@ -51,7 +51,7 @@ class ConfigProducerTest {
                                             .build());
 
         // value should be overridden using our custom config source
-        Config config = InjectionServices.instance()
+        Config config = injectionServices
                 .services()
                 .get(Config.class);
 
@@ -68,7 +68,7 @@ class ConfigProducerTest {
                                                              .serviceLookupCaching(true)
                                                              .build());
 
-        Config config = InjectionServices.instance()
+        Config config = injectionServices
                 .services()
                 .get(Config.class);
 

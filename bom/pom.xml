@@ -1372,18 +1372,6 @@
                 <version>${helidon.version}</version>
             </dependency>
 
-            <!-- Injection Config-Driven related -->
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-service</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-codegen</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <!-- Injection Integrations related -->
             <dependency>
                 <groupId>io.helidon.integrations.oci.sdk</groupId>

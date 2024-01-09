@@ -26,25 +26,22 @@ import io.helidon.inject.testing.InjectionTestingSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
-
 class InjectionApplicationTest {
 
-    protected InjectionServices injectionServices;
-    protected Services services;
+    protected static InjectionServices injectionServices;
+    protected static Services services;
 
     @AfterAll
     static void tearDown() {
-        InjectionTestingSupport.resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     protected void resetWith(Config config) {
-        InjectionTestingSupport.resetAll();
-        this.injectionServices = testableServices(InjectionConfig.builder()
+        tearDown();
+        injectionServices = InjectionServices.create(InjectionConfig.builder()
                                                           .serviceConfig(config)
-                                                          .permitsDynamic(true)
                                                           .build());
-        this.services = injectionServices.services();
+        services = injectionServices.services();
     }
 
     @Test
