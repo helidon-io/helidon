@@ -19,7 +19,7 @@ package io.helidon.inject;
 /**
  * The activation status.
  *
- * @see ManagedService
+ * @see Activator
  */
 public enum ActivationStatus {
 

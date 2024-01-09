@@ -673,7 +673,7 @@ public final class Services {
 
     <T> void bindInstance(ServiceDescriptor<T> descriptor, T instance) {
         ServiceProvider<T> provider = new ServiceProvider<>(this, descriptor);
-        ManagedService<T> managedService = ManagedService.create(provider, instance);
+        Activator<T> managedService = Activator.create(provider, instance);
 
         bind(new ServiceManager<>(scopeSupplier(descriptor), provider, () -> managedService));
     }
@@ -732,7 +732,7 @@ public final class Services {
 
         ServiceProvider provider = new ServiceProvider<>(this,
                                                          serviceDescriptor);
-        Supplier managedService = () -> ManagedService.create(this, provider);
+        Supplier managedService = () -> Activator.create(this, provider);
         ServiceManager<?> manager = new ServiceManager<>(scopeSupplier(serviceDescriptor), provider, managedService);
 
         // scope handlers have a very specific meaning

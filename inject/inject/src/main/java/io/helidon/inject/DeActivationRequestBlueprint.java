@@ -20,7 +20,7 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Request to deactivate a {@link io.helidon.inject.ManagedService}.
+ * Request to deactivate a {@link Activator}.
  */
 @Prototype.Blueprint(isPublic = false, builderPublic = false)
 interface DeActivationRequestBlueprint {

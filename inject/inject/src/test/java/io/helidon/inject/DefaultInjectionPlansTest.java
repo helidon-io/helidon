@@ -71,7 +71,7 @@ class DefaultInjectionPlansTest {
                 .stream()
                 .map(ServiceManager::managedServiceInScope)
                 .filter(it -> it.descriptor().contracts().contains(IP_PROVIDER))
-                .map(ManagedService::description)
+                .map(Activator::description)
                 .toList();
 
         assertThat(result, IsCollectionWithSize.hasSize(1));
