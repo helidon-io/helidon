@@ -16,7 +16,6 @@
 
 package io.helidon.inject.service;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -60,46 +59,6 @@ public final class Injection {
     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
     @Documented
     public @interface Inject {
-    }
-
-    /**
-     * Customize lookup options that cannot be "guessed" from the injection point itself.
-     */
-    @Retention(RetentionPolicy.CLASS)
-    @Target({ElementType.PARAMETER, ElementType.FIELD})
-    @Documented
-    public @interface Criteria {
-        /**
-         * The scope of services to discover.
-         * This is useful when injecting a list of services, where we want to make sure we limit
-         * the result to services in a specific scope (or a set of scopes).
-         *
-         * @return scopes to lookup services in
-         */
-        Class<? extends Annotation>[] scopes() default {};
-
-        /**
-         * The contracts of services to discover.
-         * This is useful when injecting a list of services with different required contracts that cannot be
-         * declared using generics of the injected {@link java.util.List}.
-         *
-         * @return contracts of services to lookup
-         */
-        Class<?>[] contracts() default {};
-
-        /**
-         * Run level of services to lookup (finds this run level and lower).
-         *
-         * @return run level to use
-         */
-        int runLevel() default -1;
-
-        /**
-         * Weight of services to lookup (finds this weight and higher).
-         *
-         * @return weight to use
-         */
-        double weight() default -1;
     }
 
     /**
