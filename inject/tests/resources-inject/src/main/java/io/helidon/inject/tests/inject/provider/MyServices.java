@@ -18,23 +18,24 @@ package io.helidon.inject.tests.inject.provider;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.inject.service.ContextualLookup;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.inject.service.Lookup;
 
 public class MyServices {
 
-    @Injection.Singleton
+    @Injection.Service
     public static class MyConcreteClassContractPerRequestProvider implements Supplier<MyConcreteClassContract> {
-        private volatile int counter;
+        public static volatile AtomicInteger COUNTER = new AtomicInteger();
 
         @Override
         public MyConcreteClassContract get() {
-            int num = counter++;
+            int num = COUNTER.getAndIncrement();
             return new MyConcreteClassContract(getClass().getSimpleName() + ":instance_" + num);
         }
     }
@@ -54,7 +55,7 @@ public class MyServices {
         }
 
         @Override
-        public Optional<MyConcreteClassContract> first(ContextualLookup query) {
+        public Optional<MyConcreteClassContract> first(Lookup query) {
             assert (injected != null);
             assert (postConstructed);
             int num = counter++;

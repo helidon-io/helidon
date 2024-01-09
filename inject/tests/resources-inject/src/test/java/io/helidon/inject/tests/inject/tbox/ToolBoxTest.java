@@ -26,23 +26,21 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationResult;
-import io.helidon.inject.InjectionConfig;
+import io.helidon.inject.Application;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RegistryServiceProvider;
-import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.ServiceInfo;
 import io.helidon.inject.testing.InjectionTestingSupport;
 import io.helidon.inject.tests.inject.ASerialProviderImpl;
 import io.helidon.inject.tests.inject.ClassNamedY;
 import io.helidon.inject.tests.inject.TestingSingleton;
 import io.helidon.inject.tests.inject.provider.FakeConfig;
 import io.helidon.inject.tests.inject.provider.FakeServer;
-import io.helidon.inject.tests.inject.stacking.CommonContract;
 import io.helidon.inject.tests.inject.tbox.impl.BigHammer;
 import io.helidon.inject.tests.inject.tbox.impl.HandSaw;
 import io.helidon.inject.tests.inject.tbox.impl.MainToolBox;
@@ -56,16 +54,17 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static io.helidon.common.types.TypeName.create;
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
+import static io.helidon.inject.testing.InjectionTestingSupport.toSimpleTypes;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -74,25 +73,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class ToolBoxTest {
     private static final MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
 
-    private final InjectionConfig config = InjectionTestingSupport.basicTestableConfig();
     private InjectionServices injectionServices;
-    private Services serviceRegistry;
-    private ServiceProviderRegistry services;
+    private Services services;
 
     @BeforeEach
     void setUp() {
-        setUp(config);
-    }
-
-    void setUp(InjectionConfig config) {
-        this.injectionServices = testableServices(config);
-        this.serviceRegistry = injectionServices.services();
-        this.services = serviceRegistry.serviceProviders();
+        TestingSingleton.reset();
+        this.injectionServices = InjectionServices.create();
+        this.services = injectionServices.services();
     }
 
     @AfterEach
     void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
@@ -103,56 +96,53 @@ class ToolBoxTest {
 
     @Test
     void toolbox() {
-        List<RegistryServiceProvider<Awl>> blanks = services.all(Awl.class);
-        List<String> desc = blanks.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        // note that order matters here
-        assertThat(desc,
-                   contains("AwlImpl:INIT"));
+        List<Supplier<Awl>> blanks = services.allSuppliers(Awl.class);
+        assertThat(blanks, hasSize(1));
 
-        List<RegistryServiceProvider<ToolBox>> allToolBoxes = services.all(ToolBox.class);
-        desc = allToolBoxes.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc,
-                   contains("MainToolBox:INIT"));
+        List<Supplier<ToolBox>> allToolBoxes = services.allSuppliers(ToolBox.class);
+        assertThat(allToolBoxes, hasSize(1));
 
-        ToolBox toolBox = allToolBoxes.get(0).get();
+        ToolBox toolBox = allToolBoxes.getFirst().get();
         assertThat(toolBox.getClass(), equalTo(MainToolBox.class));
         MainToolBox mtb = (MainToolBox) toolBox;
         assertThat(mtb.postConstructCallCount, equalTo(1));
         assertThat(mtb.preDestroyCallCount, equalTo(0));
         assertThat(mtb.setterCallCount, equalTo(1));
+
         List<Supplier<Tool>> allTools = mtb.toolsInBox();
-        desc = allTools.stream().map(Object::toString).collect(Collectors.toList());
-        assertThat(desc,
-                   contains("SledgeHammer:INIT",
-                            "TableSaw:INIT",
-                            "AwlImpl:INIT",
-                            "HandSaw:INIT",
-                            "Screwdriver:ACTIVE",
-                            "BigHammer:INIT",
-                            "LittleHammer:INIT"));
+        assertThat(allTools, hasSize(7));
         assertThat(mtb.screwdriver(), notNullValue());
 
         Supplier<Hammer> hammer = Objects.requireNonNull(toolBox.preferredHammer());
         assertThat(hammer.get(), notNullValue());
-        assertThat(hammer.get(), is(hammer.get()));
-        assertThat(BigHammer.class, equalTo(hammer.get().getClass()));
-        desc = allTools.stream().map(Object::toString).collect(Collectors.toList());
-        assertThat(desc,
-                   contains("SledgeHammer:INIT",
-                            "TableSaw:INIT",
-                            "AwlImpl:INIT",
-                            "HandSaw:INIT",
-                            "Screwdriver:ACTIVE",
-                            "BigHammer:ACTIVE",
-                            "LittleHammer:INIT"));
+        assertThat(hammer.get(), sameInstance(hammer.get()));
+        assertThat(hammer.get(), instanceOf(BigHammer.class));
 
-        desc = (((MainToolBox) toolBox).allHammers()).stream().map(Object::toString).collect(Collectors.toList());
-        assertThat(desc,
-                   contains("SledgeHammer:INIT",
-                            "BigHammer:ACTIVE",
-                            "LittleHammer:INIT"));
-        assertThat(((RegistryServiceProvider<?>) ((MainToolBox) toolBox).bigHammer()).description(),
-                   equalTo("BigHammer:ACTIVE"));
+        List<String> toolTypes = allTools.stream()
+                .map(Supplier::get)
+                .map(Object::getClass)
+                .map(Class::getSimpleName)
+                .toList();
+        assertThat(toolTypes, contains("SledgeHammer", // weight + 2, tbox.impl.SledgeHammer
+                                       "BigHammer", // weight + 1, tbox.impl.BigHammer
+                                       "TableSaw",  // tbox.TableSaw
+                                       "AwlImpl", // tbox.impl.AwlImpl
+                                       "HandSaw", // tbox.impl.HandSaw
+                                       "Screwdriver", // tbox.impl.Screwdriver
+                                       "LittleHammer" // tbox.impl.LittleHammer, has qualifier Named
+        ));
+
+        List<String> hammers = mtb.allHammers()
+                .stream()
+                .map(Supplier::get)
+                .map(Object::getClass)
+                .map(Class::getSimpleName)
+                .toList();
+
+        assertThat(hammers,
+                   contains("SledgeHammer",
+                            "BigHammer",
+                            "LittleHammer"));
     }
 
     @Test
@@ -169,55 +159,49 @@ class ToolBoxTest {
      */
     @Test
     void autoExternalContracts() {
-        List<RegistryServiceProvider<Serializable>> allSerializable = services.all(Serializable.class);
-        List<String> desc = allSerializable.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
+        List<ServiceInfo> allSerializable = services.lookupServices(Lookup.create(Serializable.class));
+        List<String> found = toSimpleTypes(allSerializable);
+
         // note that order matters here
-        assertThat(desc,
-                   contains("ASerialProviderImpl:INIT", "Screwdriver:INIT"));
+        assertThat(found,
+                   contains("ASerialProviderImpl", "Screwdriver"));
     }
 
     @Test
     void providerTest() {
-        Serializable s1 = services.get(Serializable.class).get();
+        Serializable s1 = services.get(Serializable.class);
         assertThat(s1, notNullValue());
         assertThat(ASerialProviderImpl.class + " is a higher weight and should have been returned for " + String.class,
-                   String.class, equalTo(s1.getClass()));
-        assertThat(services.get(Serializable.class).get(), not(s1));
+                   s1,
+                   instanceOf(String.class));
+
+        assertThat(services.get(Serializable.class), not(s1));
     }
 
     @Test
     void modules() {
-        List<RegistryServiceProvider<ModuleComponent>> allModules = services.all(ModuleComponent.class);
-        List<String> desc = allModules.stream()
-                .map(it -> it.id() + ":" + it.currentActivationPhase())
-                .toList();
-        // note that order matters here
-        // there is now config module as active as well
-        assertThat("ensure that Annotation Processors are enabled in the tools module meta-inf/services",
-                   desc,
-                   contains("io.helidon.config.Injection__Module:ACTIVE",
-                            "io.helidon.inject.tests.inject.Injection__Module:ACTIVE",
-                            "io.helidon.inject.tests.inject.TestInjection__Module:ACTIVE"));
+        List<ModuleComponent> allModules = services.all(ModuleComponent.class);
         List<String> names = allModules.stream()
-                .sorted()
-                .map(RegistryServiceProvider::get)
                 .map(ModuleComponent::name)
                 .toList();
+
+        // note that order matters here
         assertThat(names,
                    contains("io.helidon.config",
+                            "io.helidon.inject",
                             "io.helidon.inject.tests.inject",
                             "unnamed/io.helidon.inject.tests.inject/test"));
     }
 
     @Test
     void innerClassesCanBeGenerated() {
-        FakeServer.Builder s1 = services.get(FakeServer.Builder.class).get();
+        FakeServer.Builder s1 = services.get(FakeServer.Builder.class);
         assertThat(s1, notNullValue());
-        assertThat(services.get(FakeServer.Builder.class).get(), is(s1));
+        assertThat(services.get(FakeServer.Builder.class), is(s1));
 
-        FakeConfig.Builder c1 = services.get(FakeConfig.Builder.class).get();
+        FakeConfig.Builder c1 = services.get(FakeConfig.Builder.class);
         assertThat(c1, notNullValue());
-        assertThat(services.get(FakeConfig.Builder.class).get(), is(c1));
+        assertThat(services.get(FakeConfig.Builder.class), is(c1));
     }
 
     /**
@@ -226,13 +210,15 @@ class ToolBoxTest {
      */
     @Test
     void hierarchyOfInjections() {
-        List<RegistryServiceProvider<AbstractSaw>> saws = services.all(AbstractSaw.class);
-        List<String> desc = saws.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
+        List<AbstractSaw> saws = services.all(AbstractSaw.class);
+        assertThat(saws, hasSize(2));
+        List<String> desc = toSimpleTypes(saws);
         // note that order matters here
         assertThat(desc,
-                   contains("TableSaw:INIT", "HandSaw:INIT"));
-        for (RegistryServiceProvider<AbstractSaw> saw : saws) {
-            saw.get().verifyState();
+                   contains("TableSaw", "HandSaw"));
+
+        for (AbstractSaw saw : saws) {
+            saw.verifyState();
         }
     }
 
@@ -244,23 +230,25 @@ class ToolBoxTest {
         Counter lookupCounter = lookupCounter();
         long initialCount = lookupCounter.count();
 
-        List<RegistryServiceProvider<Object>> runLevelServices = services
-                .all(Lookup.builder()
-                             .runLevel(Injection.RunLevel.STARTUP)
-                             .build());
-        List<String> desc = runLevelServices.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc,
-                   contains("TestingSingleton:INIT"));
+        Lookup lookup = Lookup.builder()
+                .runLevel(Injection.RunLevel.STARTUP)
+                .build();
 
-        runLevelServices.forEach(sp -> Objects.requireNonNull(sp.get(), sp + " failed on get()"));
+        List<ServiceInfo> runLevelServices = services
+                .lookupServices(lookup);
+        List<String> desc = toSimpleTypes(runLevelServices);
+        assertThat(desc,
+                   contains("TestingSingleton"));
+
+        services.allSuppliers(lookup)
+                .stream()
+                .map(Supplier::get)
+                .forEach(it -> assertThat(it, notNullValue()));
 
         long count = lookupCounter.count() - initialCount;
-        assertThat("activation should triggered one new lookup from startup",
+        assertThat("We have invoked lookup twice",
                    count,
-                   equalTo(1L));
-        desc = runLevelServices.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc,
-                   contains("TestingSingleton:ACTIVE"));
+                   equalTo(2L));
     }
 
     /**
@@ -269,19 +257,24 @@ class ToolBoxTest {
     @Test
     void noServiceActivationRequiresLookupWhenApplicationIsPresent() {
         Counter counter = lookupCounter();
+        long initialCount = counter.count();
 
-        List<RegistryServiceProvider<Object>> allServices = services
-                .all(Lookup.EMPTY);
+        List<Supplier<Object>> allServices = services
+                .allSuppliers(Lookup.EMPTY);
 
         // from this point, there should be no additional lookups
-        long initialCount = counter.count();
-        allServices.stream()
-                .filter(it -> !it.isProvider())
-                .forEach(sp -> {
-                    sp.get();
+        long postLookupCount = counter.count();
+        assertThat((postLookupCount - initialCount), is(1L));
+        allServices.forEach(sp -> {
+                    try {
+                        sp.get();
+                    } catch (Exception ignored) {
+                        // injection point providers will throw an exception, as they cannot resolve injection point
+                        // still should not lookup
+                    }
                     assertThat("activation should not have triggered any lookups (for singletons): "
                                        + sp + " triggered lookups", counter.count(),
-                               equalTo(initialCount));
+                               equalTo(postLookupCount));
                 });
     }
 
@@ -290,16 +283,14 @@ class ToolBoxTest {
         assertThat(TestingSingleton.postConstructCount(), equalTo(0));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
 
-        List<RegistryServiceProvider<CommonContract>> allInterceptedBefore = services.all(CommonContract.class);
-        assertThat(allInterceptedBefore.size(), greaterThan(0));
-        assertThat(TestingSingleton.postConstructCount(), equalTo(0));
-        assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
-        allInterceptedBefore.forEach(RegistryServiceProvider::get);
-
-        TestingSingleton testingSingletonFromLookup = services.get(TestingSingleton.class).get();
+        TestingSingleton testingSingletonFromLookup = services.get(TestingSingleton.class);
         assertThat(testingSingletonFromLookup, notNullValue());
         assertThat(TestingSingleton.postConstructCount(), equalTo(1));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
+
+        services.all(Application.class);
+        services.all(ModuleComponent.class);
+        services.get(Services.class);
 
         Map<TypeName, ActivationResult> map = injectionServices.shutdown();
         Map<TypeName, String> report = map.entrySet().stream()
@@ -321,15 +312,6 @@ class ToolBoxTest {
                    hasEntry(create("io.helidon.inject.tests.inject.TestInjection__Module"), "ACTIVE->DESTROYED"));
         expected++;
         assertThat(report,
-                   hasEntry(create("io.helidon.inject.tests.inject.stacking.MostOuterCommonContractImpl"), "ACTIVE->DESTROYED"));
-        expected++;
-        assertThat(report,
-                   hasEntry(create("io.helidon.inject.tests.inject.stacking.OuterCommonContractImpl"), "ACTIVE->DESTROYED"));
-        expected++;
-        assertThat(report,
-                   hasEntry(create("io.helidon.inject.tests.inject.stacking.CommonContractImpl"), "ACTIVE->DESTROYED"));
-        expected++;
-        assertThat(report,
                    hasEntry(create("io.helidon.inject.tests.inject.TestingSingleton"), "ACTIVE->DESTROYED"));
         expected++;
 
@@ -339,14 +321,17 @@ class ToolBoxTest {
         assertThat(report,
                    hasEntry(create("io.helidon.inject.Services"), "ACTIVE->DESTROYED"));
         expected++;
-        assertThat(report + " : expected " +  expected + " services to be present", report.size(), equalTo(expected));
+        assertThat(report,
+                   hasEntry(create("io.helidon.inject.Injection__Module"), "ACTIVE->DESTROYED"));
+        expected++;
+        assertThat(report + " : expected " + expected + " services to be present", report.size(), equalTo(expected));
 
         assertThat(TestingSingleton.postConstructCount(), equalTo(1));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(1));
 
         tearDown();
         setUp();
-        TestingSingleton testingSingletonFromLookup2 = injectionServices.services().get(TestingSingleton.class).get();
+        TestingSingleton testingSingletonFromLookup2 = injectionServices.services().get(TestingSingleton.class);
         assertThat(testingSingletonFromLookup2, not(testingSingletonFromLookup));
 
         map = injectionServices.shutdown();
@@ -354,8 +339,9 @@ class ToolBoxTest {
                 .collect(Collectors.toMap(Map.Entry::getKey,
                                           e2 -> e2.getValue().startingActivationPhase().toString()
                                                   + "->" + e2.getValue().finishingActivationPhase()));
-        // now contains config as well
-        assertThat(report.toString(), report.size(), is(expected));
+        // we only used testing singleton, so other service providers that require lifecycle management
+        // are not activated
+        assertThat(report.toString(), report.size(), is(1));
 
         tearDown();
         map = injectionServices.shutdown();
@@ -364,46 +350,47 @@ class ToolBoxTest {
 
     @Test
     void knownSuppliers() {
-        List<RegistryServiceProvider<Object>> providers = services.all(Lookup.create(Supplier.class));
-        List<String> desc = providers.stream().map(RegistryServiceProvider::description).toList();
+        List<ServiceInfo> providers = services.lookupServices(Lookup.create(Supplier.class));
+        List<String> desc = toSimpleTypes(providers);
 
         // this list must not contain InjectionPointProviders, as these do not implement Supplier (anymore)
         // so both MyServices.My..IPProvider and BladeProvider are not listed!
         // note that order matters here (weight ranked)
         assertThat(desc,
-                   contains("ASerialProviderImpl:INIT",
-                            "MyServices.MyConcreteClassContractPerRequestProvider:INIT"));
+                   contains("ASerialProviderImpl",
+                            "MyServices.MyConcreteClassContractPerRequestProvider"));
     }
 
     @Test
     void knownIpProviders() {
-        List<RegistryServiceProvider<Object>> providers = services.all(Lookup.create(InjectionPointProvider.class));
-        List<String> desc = providers.stream().map(RegistryServiceProvider::description).toList();
+        List<ServiceInfo> services = this.services.lookupServices(Lookup.create(InjectionPointProvider.class));
+        List<String> desc = toSimpleTypes(services);
 
         // this list must only InjectionPointProviders
         // so both MyServices.My..IPProvider and BladeProvider are listed
         // note that order matters here (weight ranked)
         assertThat(desc,
-                   contains("MyServices.MyConcreteClassContractPerRequestIPProvider:INIT",
-                            "BladeProvider:INIT"));
+                   contains("MyServices.MyConcreteClassContractPerRequestIPProvider",
+                            "BladeProvider"));
     }
 
     @Test
     void classNamed() {
-        List<RegistryServiceProvider<Object>> providers = services.all(
+        // as we need to get both normal services and injection point providers, we must use contextual
+        // lookup. To be able to invoke injection point providers, we must search for them using contract
+        List<ServiceInfo> descriptors = services.lookupServices(
                 Lookup.builder()
                         .addQualifier(Qualifier.createNamed(ClassNamedY.class))
                         .build());
-        List<String> desc = providers.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
+        List<String> desc = toSimpleTypes(descriptors);
         assertThat(desc,
-                   contains("YImpl:INIT",
-                            "BladeProvider:INIT"));
+                   contains("YImpl",
+                            "BladeProvider"));
 
-        providers = services.all(
-                Lookup.builder()
-                        .addQualifier(Qualifier.createNamed(ClassNamedY.class.getName()))
-                        .build());
-        List<String> desc2 = providers.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
+        descriptors = services.lookupServices(Lookup.builder()
+                                                      .addQualifier(Qualifier.createNamed(ClassNamedY.class.getName()))
+                                                      .build());
+        List<String> desc2 = toSimpleTypes(descriptors);
         assertThat(desc2,
                    equalTo(desc));
     }

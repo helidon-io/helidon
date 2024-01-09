@@ -131,6 +131,17 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                     .addJavadocTag("see", "#" + getterName() + "()")
                     .addContent(Objects.class)
                     .addContentLine(".requireNonNull(" + name() + ");")
+                    .update(it -> {
+                        if (configured.decorator() != null) {
+                            it.addContent("new ")
+                                    .addContent(configured.decorator())
+                                    .addContent("().decorate(this, ")
+                                    .addContent(Optional.class)
+                                    .addContent(".of(")
+                                    .addContent(name())
+                                    .addContentLine("));");
+                        }
+                    })
                     .addContentLine("this." + name() + " = " + name() + ";")
                     .addContentLine("return self();");
             classBuilder.addMethod(method);
@@ -229,6 +240,15 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                 .description("Clear existing value of this property.")
                 .returnType(returnType, "updated builder instance")
                 .addJavadocTag("see", "#" + getterName() + "()")
+                .update(it -> {
+                    if (configured.decorator() != null) {
+                        builder.addContent("new ")
+                                .addContent(configured.decorator())
+                                .addContent("().decorate(this, ")
+                                .addContent(Optional.class)
+                                .addContentLine(".empty());");
+                    }
+                })
                 .addContentLine("this." + name() + " = null;")
                 .addContentLine("return self();"));
     }

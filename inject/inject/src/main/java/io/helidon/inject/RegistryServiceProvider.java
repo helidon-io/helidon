@@ -16,29 +16,28 @@
 
 package io.helidon.inject;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceInfo;
-import io.helidon.inject.service.ServiceProvider;
 
 /**
  * Provides management lifecycle around services.
  * <p>
  * This should never be implemented by user code. The only exception is extensibility of the service registry itself.
- * Use {@link io.helidon.inject.service.ServiceProvider} or {@link io.helidon.inject.service.InjectionPointProvider} in
+ * Use {@link java.util.function.Supplier} or {@link io.helidon.inject.service.InjectionPointProvider} in
  * service code.
  *
  * @param <T> the type that this service provider manages
+ * @deprecated only intended for serviced registry implementation and service registry extensions
  */
-public interface RegistryServiceProvider<T> extends ServiceInfo, ServiceProvider<T>, InjectionPointProvider<T> {
+@Deprecated
+public interface RegistryServiceProvider<T> extends InjectionPointProvider<T>, Supplier<T> {
 
     /**
      * Identifies the service provider physically and uniquely.
@@ -55,7 +54,7 @@ public interface RegistryServiceProvider<T> extends ServiceInfo, ServiceProvider
      * @return the logical and immutable description
      */
     default String description() {
-        return serviceType().classNameWithEnclosingNames() + "[" + currentActivationPhase() + "]";
+        return serviceInfo().serviceType().classNameWithEnclosingNames() + "[" + currentActivationPhase() + "]";
     }
 
     /**
@@ -93,67 +92,20 @@ public interface RegistryServiceProvider<T> extends ServiceInfo, ServiceProvider
      */
     Phase currentActivationPhase();
 
-    /**
-     * The agent/instance to be used for binding this service provider to the injectable application that was code generated.
-     *
-     * @return the service provider that should be used for binding, or empty if this provider does not support binding
-     * @see io.helidon.inject.service.ModuleComponent
-     * @see io.helidon.inject.service.ServiceBinder
-     * @see io.helidon.inject.ServiceProviderBindable
-     */
-    default Optional<ServiceProviderBindable<T>> serviceProviderBindable() {
-        return Optional.empty();
-    }
-
-    @Override
-    default TypeName serviceType() {
-        return serviceInfo().serviceType();
-    }
-
-    @Override
-    default double weight() {
-        return serviceInfo().weight();
-    }
-
-    @Override
-    default String runtimeId() {
-        return serviceInfo().runtimeId();
-    }
-
-    @Override
-    default Set<TypeName> contracts() {
-        return serviceInfo().contracts();
-    }
-
-    @Override
-    default List<Ip> dependencies() {
-        return serviceInfo().dependencies();
-    }
-
-    @Override
     default Set<Qualifier> qualifiers() {
         return serviceInfo().qualifiers();
     }
 
-    @Override
-    default int runLevel() {
-        return serviceInfo().runLevel();
-    }
-
-    @Override
-    default TypeName scope() {
-        return serviceInfo().scope();
-    }
-
-    @Override
-    default TypeName infoType() {
-        return serviceInfo().infoType();
-    }
-
-    @Override
-    default boolean isAbstract() {
-        return serviceInfo().isAbstract();
-    }
-
     void injectionPlan(Map<Ip, Supplier<?>> ipSupplierMap);
+
+    /**
+     * Gets the root/parent provider for this service. A root/parent provider is intended to manage it's underlying
+     * providers. Note that "root" and "parent" are interchangeable here since there is at most one level of depth that occurs
+     * when {@link RegistryServiceProvider}'s are wrapped by other providers.
+     *
+     * @return the root/parent provider or empty if this instance is the root provider
+     */
+    default Optional<RegistryServiceProvider<?>> rootProvider() {
+        return Optional.empty();
+    }
 }

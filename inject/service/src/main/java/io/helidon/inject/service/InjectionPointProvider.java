@@ -35,16 +35,16 @@ public interface InjectionPointProvider<T> {
     /**
      * Type name of this interface.
      */
-    TypeName TYPE = TypeName.create(InjectionPointProvider.class);
+    TypeName TYPE_NAME = TypeName.create(InjectionPointProvider.class);
 
     /**
      * Get (or create) an instance of this service type for the given injection point context. This is logically the same
-     * as using the first element of the result from calling {@link #list(io.helidon.inject.service.ContextualLookup)}.
+     * as using the first element of the result from calling {@link #list(io.helidon.inject.service.Lookup)}.
      *
      * @param query the service query
      * @return the best service provider matching the criteria, if any matched
      */
-    Optional<T> first(ContextualLookup query);
+    Optional<T> first(Lookup query);
 
     /**
      * Get (or create) a list of instances matching the criteria for the given injection point context.
@@ -52,7 +52,7 @@ public interface InjectionPointProvider<T> {
      * @param query the service query
      * @return the resolved services matching criteria for the injection point in order of weight, or empty if none matching
      */
-    default List<T> list(ContextualLookup query) {
+    default List<T> list(Lookup query) {
         return first(query).map(List::of).orElseGet(List::of);
     }
 }

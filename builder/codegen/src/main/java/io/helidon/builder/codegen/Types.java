@@ -72,6 +72,7 @@ final class Types {
     static final TypeName OPTION_DEFAULT_CODE = TypeName.create("io.helidon.builder.api.Option.DefaultCode");
     static final TypeName OPTION_DEPRECATED = TypeName.create("io.helidon.builder.api.Option.Deprecated");
     static final TypeName OPTION_TYPE = TypeName.create("io.helidon.builder.api.Option.Type");
+    static final TypeName OPTION_DECORATOR = TypeName.create("io.helidon.builder.api.Option.Decorator");
 
     private Types() {
     }

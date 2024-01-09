@@ -9,7 +9,7 @@ import io.helidon.inject.service.ServiceDescriptor;
 
 @Injection.Singleton
 class RequestonControlImpl implements RequestonControl, ScopeHandler {
-    private static final ThreadLocal<Scope> REQUEST_SCOPES = new ThreadLocal<>();
+    private static final ThreadLocal<RequestScope> REQUEST_SCOPES = new ThreadLocal<>();
 
     private final ServicesSpi services;
 
@@ -31,13 +31,14 @@ class RequestonControlImpl implements RequestonControl, ScopeHandler {
     @Override
     public Scope startRequestScope(String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
         // no need to synchronize, this is per-thread
-        Scope scope = REQUEST_SCOPES.get();
+        RequestScope scope = REQUEST_SCOPES.get();
         if (scope != null) {
             throw new IllegalStateException("Attempt to re-create request scope. Already exists for this request: " + scope);
         }
 
-        scope = new RequestScope(services.createForScope(Injection.Requeston.TYPE_NAME, initialBindings));
+        scope = new RequestScope(services.createForScope(Injection.Requeston.TYPE_NAME, id, initialBindings));
         REQUEST_SCOPES.set(scope);
+        scope.activate();
         return scope;
     }
 
@@ -72,6 +73,8 @@ class RequestonControlImpl implements RequestonControl, ScopeHandler {
             return "Request scope for thread: " + thread + ", id: " + hashCode();
         }
 
-
+        void activate() {
+            thisScopeServices.activate();
+        }
     }
 }

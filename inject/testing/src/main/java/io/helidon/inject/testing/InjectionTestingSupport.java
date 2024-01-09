@@ -18,75 +18,22 @@ package io.helidon.inject.testing;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.LazyValue;
-import io.helidon.inject.InjectionConfig;
+import io.helidon.common.types.TypeName;
+import io.helidon.inject.ActivationResult;
+import io.helidon.inject.InjectionException;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.RegistryServiceProvider;
-import io.helidon.inject.ResettableHandler;
-import io.helidon.inject.Services;
-import io.helidon.inject.service.ServiceDescriptor;
+import io.helidon.inject.service.ServiceInfo;
 
 /**
- * Supporting helper utilities unit-testing Injection Services.
+ * Services with support for testing.
  */
 public class InjectionTestingSupport {
-    private static LazyValue<InjectionServices> instance = lazyCreate(basicTestableConfig());
-
     private InjectionTestingSupport() {
-    }
-
-    /**
-     * Resets all internal configuration instances, JVM global singletons, service registries, etc.
-     */
-    public static void resetAll() {
-        Internal.reset();
-    }
-
-    /**
-     * Provides a means to bind a service provider into the {@link io.helidon.inject.Services} registry.
-     *
-     * @param services        the services instance to bind into
-     * @param serviceProvider the service provider to bind
-     * @see io.helidon.inject.service.ServiceBinder
-     */
-    public static void bind(Services services,
-                            ServiceDescriptor<?> serviceProvider) {
-        services.binder().bind(serviceProvider);
-    }
-
-    /**
-     * Creates a {@link InjectionServices} interface more conducive to unit and integration testing.
-     *
-     * @return testable services instance
-     */
-    public static Services testableServices() {
-        return instance.get().services();
-    }
-
-    /**
-     * Creates a {@link InjectionServices} interface more conducive to unit and integration testing.
-     *
-     * @param config the config to use
-     * @return testable services instance
-     * @see io.helidon.inject.InjectionConfig
-     */
-    public static InjectionServices testableServices(InjectionConfig config) {
-        return lazyCreate(config).get();
-    }
-
-    /**
-     * Basic testable configuration.
-     *
-     * @return testable config
-     */
-    public static InjectionConfig basicTestableConfig() {
-        return InjectionConfig.builder()
-                .permitsDynamic(true)
-                .serviceLookupCaching(true)
-                .build();
     }
 
     /**
@@ -116,18 +63,63 @@ public class InjectionTestingSupport {
         return coll.stream().map(InjectionTestingSupport::toDescription).collect(Collectors.toList());
     }
 
-    private static LazyValue<InjectionServices> lazyCreate(InjectionConfig config) {
-        return LazyValue.create(() -> {
-            InjectionServices.configure(config);
-            return InjectionServices.instance();
-        });
+    /**
+     * Creates a list of service types simple type names of the service descriptors in the collection.
+     * If the class is an inner class, the returned collection contains the outer class name as well, separated by a dot.
+     *
+     * @param coll service descriptor collection to go through
+     * @return a list where each entry matches the simple class name of the entry in the provided collection
+     */
+    public static List<String> toSimpleTypes(List<ServiceInfo> coll) {
+        return coll.stream()
+                .map(ServiceInfo::serviceType)
+                .map(TypeName::classNameWithEnclosingNames)
+                .toList();
     }
 
-    private static class Internal extends ResettableHandler {
-        public static void reset() {
-            ResettableHandler.reset();
-            instance = lazyCreate(basicTestableConfig());
+    /**
+     * Creates a list of service types simple type names of the service descriptors in the collection.
+     * If the class is an inner class, the returned collection contains the outer class name as well, separated by a dot.
+     *
+     * @param coll service descriptor collection to go through
+     * @return a list where each entry matches the simple class name of the entry in the provided collection
+     */
+    public static List<String> toTypes(List<ServiceInfo> coll) {
+        return coll.stream()
+                .map(ServiceInfo::serviceType)
+                .map(TypeName::fqName)
+                .toList();
+    }
+
+    /**
+     * Creates a list of simple type names of the elements in the collection.
+     *
+     * @param coll collection to go through
+     * @return a list where each entry matches the simple class name of the entry in the provided collection
+     */
+    public static List<String> toSimpleTypes(Collection<?> coll) {
+        return coll.stream()
+                .map(Object::getClass)
+                .map(Class::getSimpleName)
+                .toList();
+    }
+
+    /**
+     * A shutdown method that fails on deactivation errors.
+     *
+     * @param injectionServices services to shut down, this may be {@code null} to prevent unexpected errors when registry
+     *                          fails to initialize in a test and is null at time of shutdown
+     */
+    public static void shutdown(InjectionServices injectionServices) {
+        if (injectionServices == null) {
+            return;
         }
+        Map<TypeName, ActivationResult> shutdown = injectionServices.shutdown();
+        shutdown.values()
+                .forEach(it -> {
+                    if (it.failure()) {
+                        throw new InjectionException("Failed to shutdown injection services: " + it, it.error().orElse(null));
+                    }
+                });
     }
-
 }

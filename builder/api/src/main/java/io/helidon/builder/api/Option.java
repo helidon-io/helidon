@@ -426,4 +426,23 @@ public final class Option {
          */
         String value();
     }
+
+    /**
+     * Define an option decorator.
+     * This is useful for example when setting a compound option, where we need to set additional options on this builder.
+     * <p>
+     * Decorator on collection based options will be ignored.
+     * Decorator on optional values must accept an option (as it would be called both from the setter and unset methods).
+     */
+    @Target(ElementType.METHOD)
+    // note: class retention needed for cases when derived builders are inherited across modules
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Decorator {
+        /**
+         * Type declaration including generic types (must match the declared generic type on the blueprint).
+         *
+         * @return type name with generic declaration
+         */
+        Class<? extends Prototype.OptionDecorator<?, ?>> value();
+    }
 }

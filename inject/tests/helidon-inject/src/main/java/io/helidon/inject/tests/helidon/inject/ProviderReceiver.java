@@ -25,14 +25,14 @@ import io.helidon.inject.service.Injection;
 @Injection.Singleton
 class ProviderReceiver {
     private final Supplier<NonSingletonService> provider;
-    private final List<Supplier<NonSingletonService>> listOfProviders;
-    private final Optional<Supplier<NonSingletonService>> optionalProvider;
+    private final Supplier<List<NonSingletonService>> listOfProviders;
+    private final Supplier<Optional<NonSingletonService>> optionalProvider;
     private final AContract contract;
 
     @Injection.Inject
     ProviderReceiver(Supplier<NonSingletonService> provider,
-                     List<Supplier<NonSingletonService>> listOfProviders,
-                     Optional<Supplier<NonSingletonService>> optionalProvider,
+                     Supplier<List<NonSingletonService>> listOfProviders,
+                     Supplier<Optional<NonSingletonService>> optionalProvider,
                      AContract contract) {
         this.provider = provider;
         this.listOfProviders = listOfProviders;
@@ -45,13 +45,11 @@ class ProviderReceiver {
     }
 
     List<NonSingletonService> listOfServices() {
-        return listOfProviders.stream()
-                .map(Supplier::get)
-                .toList();
+        return listOfProviders.get();
     }
 
     Optional<NonSingletonService> optionalService() {
-        return optionalProvider.map(Supplier::get);
+        return optionalProvider.get();
     }
 
     AContract contract() {

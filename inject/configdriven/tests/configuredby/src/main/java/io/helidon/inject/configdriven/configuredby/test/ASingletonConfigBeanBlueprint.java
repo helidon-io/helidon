@@ -17,9 +17,11 @@
 package io.helidon.inject.configdriven.configuredby.test;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.configdriven.service.ConfigBean;
+import io.helidon.inject.configdriven.service.ConfigDriven;
 
-@ConfigBean(wantDefault = true, atLeastOne = true)
+@ConfigDriven.ConfigBean
+@ConfigDriven.WantDefault
+@ConfigDriven.AtLeastOne
 @Prototype.Configured
 @Prototype.Blueprint
 interface ASingletonConfigBeanBlueprint {

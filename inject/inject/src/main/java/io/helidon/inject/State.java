@@ -19,7 +19,7 @@ package io.helidon.inject;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-class State implements Resettable, Cloneable {
+class State implements Cloneable {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private Phase currentPhase;
     private boolean isFinished;
@@ -54,8 +54,7 @@ class State implements Resettable, Cloneable {
         }
     }
 
-    @Override
-    public void reset(boolean deep) {
+    void reset() {
         ReentrantReadWriteLock.WriteLock wlock = lock.writeLock();
         wlock.lock();
         try {

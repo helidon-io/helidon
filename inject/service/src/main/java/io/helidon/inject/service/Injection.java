@@ -68,7 +68,7 @@ public final class Injection {
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Documented
-    public @interface Lookup {
+    public @interface Criteria {
         /**
          * The scope of services to discover.
          * This is useful when injecting a list of services, where we want to make sure we limit
@@ -151,7 +151,6 @@ public final class Injection {
     @Target(ElementType.ANNOTATION_TYPE)
     public @interface Scope {
     }
-
 
     /**
      * Annotation to force generation of a service descriptor, even if it otherwise would not be created.
@@ -282,6 +281,8 @@ public final class Injection {
     @Retention(RetentionPolicy.CLASS)
     public @interface ClassNamed {
 
+        TypeName TYPE_NAME = TypeName.create(ClassNamed.class);
+
         /**
          * The class used will function as the name.
          *
@@ -349,6 +350,48 @@ public final class Injection {
          * @return the startup int value, defaulting to {@link #NORMAL}
          */
         int value() default NORMAL;
+    }
 
+    /**
+     * An eager service will be instantiated automatically when the service registry scope it belongs to is activated.
+     * <p>
+     * Note that {@link io.helidon.inject.service.Injection.Service} "scope" is not a real scope, and as such services without
+     * scope cannot be annotated with this annotation (as there is no lifecycle event to start them).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Eager {
+    }
+
+    /**
+     * A service that has instances created for each named instance of the service it is driven by.
+     * <p>
+     * If there is a need to create an instance eagerly, annotate the service type with
+     * {@link io.helidon.inject.service.Injection.Eager} as well.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface DrivenBy {
+        /**
+         * The service type driving this service. The service type MUST provide {@link io.helidon.inject.service.Injection.Named}
+         * instances.
+         *
+         * @return type of the service driving instances of this service
+         */
+        Class<?> value();
+    }
+
+    /**
+     * For types that are {@link io.helidon.inject.service.Injection.DrivenBy}, an injection point (field, parameter) can
+     * be annotated with this annotation to receive the name qualifier associated with this instance.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Qualifier
+    public @interface DrivenByName {
+        TypeName TYPE_NAME = TypeName.create(DrivenByName.class);
     }
 }

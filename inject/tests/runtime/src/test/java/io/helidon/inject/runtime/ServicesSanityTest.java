@@ -16,10 +16,10 @@
 
 package io.helidon.inject.runtime;
 
-import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
 import io.helidon.inject.runtime.testsubjects.HelloInjection__Application;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,26 +29,21 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ServicesSanityTest {
+    private InjectionServices injectionServices;
 
     @BeforeEach
     void setUp() {
-        tearDown();
-        InjectionConfig cfg = InjectionConfig.builder()
-                .permitsDynamic(true)
-                .build();
-
-        InjectionServices.configure(cfg);
+        injectionServices = InjectionServices.create();
     }
 
     @AfterEach
     void tearDown() {
         HelloInjection__Application.ENABLED = true;
-        SimpleInjectionTestingSupport.resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
     void realizedServices() {
-        InjectionServices injectionServices = InjectionServices.instance();
         assertThat(injectionServices, notNullValue());
 
         Services services = injectionServices
@@ -56,5 +51,4 @@ class ServicesSanityTest {
 
         assertThat(services, notNullValue());
     }
-
 }

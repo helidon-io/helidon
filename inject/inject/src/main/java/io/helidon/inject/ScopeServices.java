@@ -1,6 +1,9 @@
 package io.helidon.inject;
 
+import java.lang.System.Logger.Level;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -10,51 +13,120 @@ import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInfo;
 
-import static io.helidon.inject.InjectionServicesImpl.shutdownComparator;
-
 /**
  * Services for a specific scope.
  * This type is owned by Helidon Injection, and cannot be customized.
+ * When a scope is properly accessible through its {@link io.helidon.inject.ScopeHandler}, {@link #activate()}
+ * must be invoked by its control, to make sure all eager services are correctly activated.
  */
 /*
 Cardinality: one instance per scope instance
 - 1 instance for Singleton scope
 - 1 instance per request for Requeston scope
  */
-class ScopeServices {
+public class ScopeServices {
     private final ReadWriteLock serviceProvidersLock = new ReentrantReadWriteLock();
-    private final Map<ServiceInfo, RegistryServiceProvider<?>> serviceProviders = new IdentityHashMap<>();
-    private final Map<ServiceInfo, Activator<?>> activators = new IdentityHashMap<>();
+    private final Map<ServiceInfo, ManagedService<?>> serviceProviders = new IdentityHashMap<>();
 
     private final System.Logger logger;
     private final TypeName scope;
     private final String id;
+    private final List<ServiceManager<?>> eagerServices;
     private boolean active = true;
 
-    ScopeServices(Services services, TypeName scope, String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
+    @SuppressWarnings("rawtypes")
+    ScopeServices(Services services,
+                  TypeName scope,
+                  String id, List<ServiceManager<?>> eagerServices,
+                  Map<ServiceDescriptor<?>, Object> initialBindings) {
         this.logger = System.getLogger(ScopeServices.class.getName() + "." + scope.className());
         this.scope = scope;
         this.id = id;
+        this.eagerServices = eagerServices;
 
         initialBindings.forEach((descriptor, value) -> {
-            InitialScopeBindingProvider<Object> provider = new InitialScopeBindingProvider<>(services,
-                                                                                             descriptor,
-                                                                                             value);
-            serviceProviders.put(descriptor, provider);
-            activators.put(descriptor, provider);
+            ServiceProvider provider = new ServiceProvider<>(services,
+                                                             descriptor);
+            ManagedService<?> fixedService = ManagedService.create(provider, value);
+            serviceProviders.put(descriptor, fixedService);
         });
     }
 
+    /**
+     * Activate this scope This method must be called just once,
+     * at the time the scope is active and instances can be created within it.
+     */
+    public void activate() {
+        eagerServices.forEach(ServiceManager::activate);
+    }
+
+    public Map<TypeName, ActivationResult> close() {
+        try {
+            serviceProvidersLock.writeLock().lock();
+            if (!active) {
+                return Map.of();
+            }
+
+            List<ManagedService<?>> toShutdown = serviceProviders.values()
+                    .stream()
+                    .filter(it -> it.phase().eligibleForDeactivation())
+                    .sorted(shutdownComparator())
+                    .toList();
+
+            Map<TypeName, ActivationResult> result = new LinkedHashMap<>();
+            for (ManagedService<?> managedService : toShutdown) {
+                Phase startingActivationPhase = managedService.phase();
+                try {
+                    ActivationResult activationResult = managedService.deactivate(DeActivationRequest.builder()
+                                                                                          .throwIfError(false)
+                                                                                          .build());
+                    if (activationResult.failure() && logger.isLoggable(Level.DEBUG)) {
+                        if (activationResult.error().isPresent()) {
+                            logger.log(Level.DEBUG,
+                                       "[" + id + "] Failed to deactivate " + managedService.description(),
+                                       activationResult.error().get());
+                        } else {
+                            logger.log(Level.DEBUG,
+                                       "[" + id + "] Failed to deactivate " + managedService.description() + ", deactivation "
+                                               + "result: " + result);
+                        }
+                    }
+                    result.put(managedService.descriptor().serviceType(), activationResult);
+                } catch (Exception e) {
+                    if (logger.isLoggable(Level.DEBUG)) {
+                        logger.log(Level.DEBUG, "[" + id + "] Failed to deactivate service provider: " + managedService, e);
+                    }
+
+                    ActivationResult activationResult = ActivationResult.builder()
+                            .serviceProvider(managedService)
+                            .startingActivationPhase(startingActivationPhase)
+                            .targetActivationPhase(Phase.DESTROYED)
+                            .finishingActivationPhase(managedService.phase())
+                            .finishingStatus(ActivationStatus.FAILURE)
+                            .error(e)
+                            .build();
+                    result.put(managedService.descriptor().serviceType(), activationResult);
+                }
+            }
+
+            active = false;
+
+            return result;
+        } finally {
+            serviceProvidersLock.writeLock().unlock();
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    <T> RegistryServiceProvider<T> serviceProvider(ServiceManager<T> serviceManager) {
+    <T> ManagedService<T> serviceProvider(ServiceManager<T> serviceManager) {
         ServiceDescriptor<T> descriptor = serviceManager.descriptor();
 
         try {
             serviceProvidersLock.readLock().lock();
             checkActive();
-            RegistryServiceProvider<?> serviceProvider = serviceProviders.get(descriptor);
+            ManagedService<?> serviceProvider = serviceProviders.get(descriptor);
             if (serviceProvider != null) {
-                return (RegistryServiceProvider<T>) serviceProvider;
+                return (ManagedService<T>) serviceProvider;
             }
         } finally {
             serviceProvidersLock.readLock().unlock();
@@ -64,70 +136,22 @@ class ScopeServices {
         try {
             serviceProvidersLock.writeLock().lock();
             checkActive();
-            return (RegistryServiceProvider<T>) serviceProviders.computeIfAbsent(descriptor, desc -> {
-                Activator<T> activator = serviceManager.activator();
-                activator.activate(ActivationRequest.builder()
-                                           .targetPhase(Phase.INIT)
-                                           .throwIfError(false)
-                                           .build());
-
-                activators.put(descriptor, activator);
-                RegistryServiceProvider<T> sp = activator.serviceProvider();
-                sp.injectionPlan(serviceManager.injectionPlan());
-                return sp;
-            });
+            return (ManagedService<T>) serviceProviders.computeIfAbsent(descriptor,
+                                                                        desc -> serviceManager.supplyManagedService());
         } finally {
             serviceProvidersLock.writeLock().unlock();
         }
     }
 
-    void close() {
-        try {
-            serviceProvidersLock.writeLock().lock();
-            if (!active) {
-                return;
-            }
-
-            List<RegistryServiceProvider<?>> toShutdown = serviceProviders.values()
-                    .stream()
-                    .filter(it -> it.currentActivationPhase().eligibleForDeactivation())
-                    .sorted(shutdownComparator())
-                    .toList();
-
-            for (RegistryServiceProvider<?> csp : toShutdown) {
-                Activator<?> activator = activators.get(csp.serviceInfo());
-                ActivationResult result = activator.deactivate(DeActivationRequest.builder()
-                                                                       .throwIfError(false)
-                                                                       .build());
-                if (result.failure() && logger.isLoggable(System.Logger.Level.DEBUG)) {
-                    if (result.error().isPresent()) {
-                        logger.log(System.Logger.Level.DEBUG,
-                                   "[" + id + "] Failed to deactivate " + csp.description(),
-                                   result.error().get());
-                    } else {
-                        logger.log(System.Logger.Level.DEBUG,
-                                   "[" + id + "] Failed to deactivate " + csp.description() + ", deactivation result: " + result);
-                    }
-                }
-            }
-
-            active = false;
-        } finally {
-            serviceProvidersLock.writeLock().unlock();
-        }
+    private static Comparator<? super ManagedService<?>> shutdownComparator() {
+        return Comparator
+                .<ManagedService<?>>comparingInt(it -> it.descriptor().runLevel())
+                .thenComparing(it -> it.descriptor().weight());
     }
 
     private void checkActive() {
         if (!active) {
             throw new InjectionException("Injection scope " + scope.fqName() + "[" + id + "] is no longer active.");
-        }
-    }
-
-    private static class InitialScopeBindingProvider<T> extends ServiceProviderBase<T> {
-        @SuppressWarnings({"rawtypes", "unchecked"})
-        InitialScopeBindingProvider(Services rootServices, ServiceDescriptor descriptor, T serviceInstance) {
-            super(rootServices, descriptor);
-            state(Phase.ACTIVE, serviceInstance);
         }
     }
 }

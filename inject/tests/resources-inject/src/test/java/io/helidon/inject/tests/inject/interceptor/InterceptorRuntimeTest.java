@@ -25,18 +25,18 @@ import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RegistryServiceProvider;
-import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Interception;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.testing.InjectionTestingSupport;
 import io.helidon.inject.testing.ReflectionBasedSingletonServiceDescriptor;
 import io.helidon.inject.tests.inject.ClassNamedY;
 import io.helidon.inject.tests.plain.interceptor.IB;
@@ -47,14 +47,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.basicTestableConfig;
-import static io.helidon.inject.testing.InjectionTestingSupport.bind;
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
-import static io.helidon.inject.testing.InjectionTestingSupport.toDescription;
-import static io.helidon.inject.testing.InjectionTestingSupport.toDescriptions;
+import static io.helidon.inject.testing.InjectionTestingSupport.toSimpleTypes;
 import static io.helidon.inject.tests.inject.TestUtils.loadStringFromResource;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -62,22 +58,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class InterceptorRuntimeTest {
-
-    private final InjectionConfig config = basicTestableConfig();
     private InjectionServices injectionServices;
 
     @BeforeEach
     void setUp() {
-        setUp(config);
-    }
-
-    void setUp(InjectionConfig config) {
-        this.injectionServices = testableServices(config);
+        this.injectionServices = InjectionServices.create();
     }
 
     @AfterEach
     void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test
@@ -109,22 +99,20 @@ class InterceptorRuntimeTest {
 
     @Test
     void runtimeWithNoInterception() throws Exception {
-        Services serviceRegistry = injectionServices.services();
-        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
+        Services services = injectionServices.services();
 
-        List<RegistryServiceProvider<Closeable>> closeableProviders = services.all(Closeable.class);
-        assertThat(toDescriptions(closeableProviders),
-                   contains("XImpl:INIT", "YImpl:INIT"));
+        List<Closeable> closeables = services.all(Closeable.class);
+        assertThat(toSimpleTypes(closeables),
+                   contains("XImpl__Intercepted", "YImpl__Intercepted"));
 
-        List<RegistryServiceProvider<IB>> ibProviders = services.all(IB.class);
-        assertThat(closeableProviders,
-                   equalTo(ibProviders));
+        List<IB> ibs = services.all(IB.class);
+        assertThat(closeables,
+                   equalTo(ibs));
 
-        RegistryServiceProvider<XImpl> ximplProvider = services.get(XImpl.class);
-        assertThat(closeableProviders.getFirst(),
-                   is(ximplProvider));
+        XImpl x = services.get(XImpl.class);
+        assertThat(closeables.getFirst(),
+                   is(x));
 
-        XImpl x = ximplProvider.get();
         x.methodIA1();
         x.methodIA2();
         x.methodIB("test");
@@ -148,14 +136,12 @@ class InterceptorRuntimeTest {
                    equalTo("forced"));
 
         // There is only one service (regardless of interception status)
-        RegistryServiceProvider<Closeable> yimplProvider = services.get(
+        IB ibOnYInterceptor = services.get(
                 Lookup.builder()
                         .addContract(Closeable.class)
                         .qualifiers(Set.of(Qualifier.create(Injection.Named.class, ClassNamedY.class.getName())))
                         .build());
-        assertThat(toDescription(yimplProvider),
-                   equalTo("YImpl:INIT"));
-        IB ibOnYInterceptor = (IB) yimplProvider.get();
+
         sval = ibOnYInterceptor.methodIB2("test");
         assertThat(sval,
                    equalTo("test"));
@@ -166,31 +152,28 @@ class InterceptorRuntimeTest {
         // disable application
         tearDown();
         setUp(InjectionConfig.builder()
-                      .permitsDynamic(true)
                       .useApplication(false)
+                      .addServiceDescriptor(ReflectionBasedSingletonServiceDescriptor
+                                                    .create(TestNamedInterceptor.class, new TestNamedInterceptorServiceInfo()))
                       .build());
-        Services serviceRegistry = injectionServices.services();
-        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
-        bind(serviceRegistry, ReflectionBasedSingletonServiceDescriptor
-                .create(TestNamedInterceptor.class, new TestNamedInterceptorServiceInfo()));
+        Services services = injectionServices.services();
         assertThat(TestNamedInterceptor.CONSTRUCTOR_COUNTER.get(),
                    equalTo(0));
 
-        List<RegistryServiceProvider<Closeable>> closeableProviders = services.all(Closeable.class);
+        List<Closeable> closeables = services.all(Closeable.class);
 
-        List<RegistryServiceProvider<IB>> ibProviders = services.all(IB.class);
-        assertThat(closeableProviders,
-                   equalTo(ibProviders));
+        List<IB> ibs = services.all(IB.class);
+        assertThat(closeables,
+                   equalTo(ibs));
 
-        RegistryServiceProvider<XImpl> ximplProvider = services.get(XImpl.class);
-        assertThat(closeableProviders.getFirst(),
-                   is(ximplProvider));
+        Supplier<XImpl> xInterceptedSupplier = services.supply(XImpl.class);
 
-        assertThat(TestNamedInterceptor.CONSTRUCTOR_COUNTER.get(),
-                   equalTo(0));
-        XImpl xIntercepted = ximplProvider.get();
+        XImpl xIntercepted = xInterceptedSupplier.get();
         assertThat(TestNamedInterceptor.CONSTRUCTOR_COUNTER.get(),
                    equalTo(1));
+
+        assertThat(closeables.getFirst(),
+                   is(xIntercepted));
 
         xIntercepted.methodIA1();
         xIntercepted.methodIA2();
@@ -218,13 +201,13 @@ class InterceptorRuntimeTest {
                    equalTo(1));
 
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
-        RegistryServiceProvider<IB> yimplProvider = services.get(Lookup.builder()
-                                                                 .addContract(IB.class)
-                                                                 .addQualifier(Qualifier.createNamed(ClassNamedY.class))
-                                                                 .build());
-        assertThat(toDescription(yimplProvider),
-                   equalTo("YImpl:INIT"));
-        IB ibInstance = yimplProvider.get();
+        IB ibInstance = services.get(Lookup.builder()
+                                             .addContract(IB.class)
+                                             .addQualifier(Qualifier.createNamed(ClassNamedY.class))
+                                             .build());
+        assertThat(ibInstance,
+                   instanceOf(YImpl.class));
+
         sval = ibInstance.methodIB2("test");
         assertThat(sval,
                    equalTo("intercepted:test"));
@@ -247,6 +230,10 @@ class InterceptorRuntimeTest {
         }
 
         return packageName + File.separatorChar + className + suffix;
+    }
+
+    private void setUp(InjectionConfig config) {
+        this.injectionServices = InjectionServices.create(config);
     }
 
     private void compareContentByLines(String description, List<String> generatedSource, String expectedSource)

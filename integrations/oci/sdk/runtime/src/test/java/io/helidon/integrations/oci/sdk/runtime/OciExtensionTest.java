@@ -24,9 +24,9 @@ import java.util.function.Supplier;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServiceProviderException;
 import io.helidon.inject.InjectionServices;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
@@ -37,7 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -52,18 +51,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests for {@link OciExtension} and {@link OciConfig}.
  */
 class OciExtensionTest {
+    private InjectionServices injectionServices;
 
     @BeforeEach
     void setUp() {
-        InjectionServices.configure(InjectionConfig.builder()
-                                            .permitsDynamic(true)
-                                            .build());
+        injectionServices = InjectionServices.create();
     }
 
     @AfterEach
     void reset() {
         OciExtension.ociConfigFileName(null);
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     @Test

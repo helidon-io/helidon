@@ -21,19 +21,13 @@ import java.util.Map;
 import io.helidon.common.config.Config;
 import io.helidon.config.ConfigSources;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 class InjectionServicesConfigTest {
-
-    @AfterEach
-    void reset() {
-        ResettableHandler.reset();
-    }
-
     /**
      * This tests the default injection configuration.
      */
@@ -41,10 +35,10 @@ class InjectionServicesConfigTest {
     void testDefaults() {
         InjectionConfig cfg = InjectionConfig.create();
         assertThat(cfg.serviceLookupCaching(), is(false));
-        assertThat(cfg.permitsDynamic(), is(false));
         assertThat(cfg.limitRuntimePhase(), is(Phase.ACTIVE));
         assertThat(cfg.useApplication(), is(true));
         assertThat(cfg.useModules(), is(true));
+        assertThat(cfg.serviceDescriptors(), is(hasSize(0)));
     }
 
     @Test
@@ -52,7 +46,6 @@ class InjectionServicesConfigTest {
         Config config = io.helidon.config.Config.builder(
                         ConfigSources.create(
                                 Map.of("inject.service-lookup-caching", "true",
-                                       "inject.permits-dynamic", "true",
                                        "inject.limit-runtime-phase", "INJECTING",
                                        "inject.use-application", "false",
                                        "inject.use-modules", "false"
@@ -63,7 +56,6 @@ class InjectionServicesConfigTest {
         InjectionConfig cfg = InjectionConfig.create(config.get("inject"));
 
         assertThat(cfg.serviceLookupCaching(), is(true));
-        assertThat(cfg.permitsDynamic(), is(true));
         assertThat(cfg.limitRuntimePhase(), is(Phase.INJECTING));
         assertThat(cfg.useApplication(), is(false));
         assertThat(cfg.useModules(), is(false));

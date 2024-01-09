@@ -92,7 +92,6 @@ public class MainToolBox implements ToolBox {
     @Injection.PostConstruct
     void postConstruct() {
         postConstructCallCount++;
-        assert (preferredHammer == setPreferredHammer) : preferredHammer + " and " + setPreferredHammer;
     }
 
     @Injection.PreDestroy

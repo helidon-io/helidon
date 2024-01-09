@@ -25,8 +25,6 @@ import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.ModuleComponent;
-import io.helidon.inject.service.ServiceBinder;
 import io.helidon.inject.service.ServiceDescriptor;
 
 import org.hamcrest.collection.IsCollectionWithSize;
@@ -42,16 +40,23 @@ class DefaultInjectionPlansTest {
     static final FakeRegularDescriptor sp2 = new FakeRegularDescriptor();
     private static final TypeName IP_PROVIDER = TypeName.create(InjectionPointProvider.class);
 
+    private InjectionServices injectionServices;
+    private Services services;
+
     @BeforeEach
     void init() {
-        InjectionServices.configure(InjectionConfig.builder()
-                                            .permitsDynamic(true)
-                                            .build());
+        injectionServices = InjectionServices.create(InjectionConfig.builder()
+                                                             .addServiceDescriptor(sp1)
+                                                             .addServiceDescriptor(sp2)
+                                                             .build());
+        services = injectionServices.services();
     }
 
     @AfterEach
     void tearDown() {
-        Resettor.reset();
+        if (injectionServices != null) {
+            injectionServices.shutdown();
+        }
     }
 
     /**
@@ -59,36 +64,19 @@ class DefaultInjectionPlansTest {
      */
     @Test
     void testInjectionPointResolversFor() {
-        InjectionServices injectionServices = InjectionServices.instance();
-        ServicesImpl services = (ServicesImpl) injectionServices.services();
-
-        services.bind(new FakeModuleComponent());
-
-        Lookup criteria = Lookup.builder()
-                .addContract(Closeable.class)
-                .build();
-        List<String> result = services.allProviders(criteria)
+        // services are created lazily, we must actually get them
+        List<String> result = services.lookupManagers(Lookup.builder()
+                                                              .addContract(Closeable.class)
+                                                              .build())
                 .stream()
-                .filter(it -> it.contracts().contains(IP_PROVIDER))
-                .map(RegistryServiceProvider::description)
+                .map(ServiceManager::managedServiceInScope)
+                .filter(it -> it.descriptor().contracts().contains(IP_PROVIDER))
+                .map(ManagedService::description)
                 .toList();
 
         assertThat(result, IsCollectionWithSize.hasSize(1));
         String description = result.getFirst();
         assertThat(description, is("DefaultInjectionPlansTest.FakeInjectionPointDescriptor:INIT"));
-    }
-
-    static class FakeModuleComponent implements ModuleComponent {
-        @Override
-        public String name() {
-            return "fake.module";
-        }
-
-        @Override
-        public void configure(ServiceBinder binder) {
-            binder.bind(sp1);
-            binder.bind(sp2);
-        }
     }
 
     static class FakeInjectionPointDescriptor implements ServiceDescriptor<FakeInjectionPointDescriptor> {
@@ -125,12 +113,6 @@ class DefaultInjectionPlansTest {
         @Override
         public TypeName serviceType() {
             return TypeName.create(FakeRegularDescriptor.class);
-        }
-    }
-
-    private static class Resettor extends ResettableHandler {
-        protected static void reset() {
-            ResettableHandler.reset();
         }
     }
 }

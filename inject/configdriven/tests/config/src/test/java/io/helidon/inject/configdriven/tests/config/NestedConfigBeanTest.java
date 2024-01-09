@@ -32,7 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.hamcrest.Matchers.hasEntry;
 
 class NestedConfigBeanTest extends AbstractConfigBeanTest {
 

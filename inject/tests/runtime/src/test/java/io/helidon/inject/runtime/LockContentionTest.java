@@ -26,12 +26,9 @@ import java.util.concurrent.Future;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationResult;
-import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -42,19 +39,6 @@ class LockContentionTest {
     final int COUNT = 100;
 
     private final ExecutorService es = Executors.newFixedThreadPool(16);
-    private final InjectionConfig config = InjectionConfig.builder()
-            .permitsDynamic(true)
-            .build();
-
-    @BeforeEach
-    void init() {
-        InjectionServices.configure(config);
-    }
-
-    @AfterEach
-    void tearDown() {
-        SimpleInjectionTestingSupport.resetAll();
-    }
 
     @Test
         // we cannot interlace shutdown with startups here - so instead we are checking to ensure N threads can call startup

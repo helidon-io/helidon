@@ -17,20 +17,16 @@
 package io.helidon.inject.maven.plugin;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
@@ -50,12 +46,11 @@ import io.helidon.inject.service.Interception;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.ServiceInfo;
 
 import static io.helidon.inject.codegen.InjectCodegenTypes.APPLICATION;
-import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_POINT_PROVIDER;
 import static io.helidon.inject.codegen.InjectCodegenTypes.MODULE_COMPONENT;
 import static io.helidon.inject.codegen.InjectCodegenTypes.SERVICE_INJECTION_PLAN_BINDER;
-import static io.helidon.inject.codegen.InjectCodegenTypes.SERVICE_PROVIDER;
 
 /**
  * The default implementation for {@link io.helidon.inject.maven.plugin.ApplicationCreator}.
@@ -96,7 +91,7 @@ class ApplicationCreator {
         Objects.requireNonNull(injectionServices);
         Objects.requireNonNull(serviceTypes);
 
-        List<TypeName> providersInUseThatAreNotAllowed = providersNotAllowed(injectionServices, serviceTypes);
+        Set<TypeName> providersInUseThatAreNotAllowed = providersNotAllowed(injectionServices);
         if (!providersInUseThatAreNotAllowed.isEmpty()) {
             handleError(new CodegenException("There are dynamic Providers being used that are not allow-listed: "
                                                      + providersInUseThatAreNotAllowed
@@ -198,7 +193,7 @@ class ApplicationCreator {
                             TypeName serviceTypeName) {
 
         Lookup lookup = toLookup(serviceTypeName);
-        WrappedProvider sp = services.get(lookup);
+        ServiceInfo sp = services.get(lookup);
         TypeName serviceDescriptorType = sp.infoType();
 
         if (!isQualifiedInjectionTarget(sp)) {
@@ -212,42 +207,22 @@ class ApplicationCreator {
 
         Set<Binding> bindings = new LinkedHashSet<>();
         for (Ip dependency : dependencies) {
-            // type of the result that satisfies the injection point (full generic type)
-            TypeName ipType = dependency.typeName();
-
             InjectionPlan iPlan = injectionPlan(services, sp, dependency);
-            List<WrappedProvider> qualified = iPlan.qualifiedProviders();
-            List<WrappedProvider> unqualified = iPlan.unqualifiedProviders();
-
-            BindingType type = bindingType(ipType);
-            boolean isProvider = isProvider(ipType);
-            BindingTime time;
-            List<WrappedProvider> usedList;
+            List<ServiceInfo> qualified = iPlan.qualifiedProviders();
+            List<ServiceInfo> unqualified = iPlan.unqualifiedProviders();
+            List<ServiceInfo> usedList;
 
             if (qualified.isEmpty() && !unqualified.isEmpty()) {
-                time = BindingTime.RUNTIME;
                 usedList = unqualified;
             } else {
-                time = BindingTime.BUILD;
                 usedList = qualified;
             }
 
-            bindings.add(new Binding(time,
-                                     type,
-                                     dependency,
-                                     isProvider,
-                                     usedList.stream()
-                                             .map(WrappedProvider::infoType)
-                                             .toList()));
+            bindings.add(new Binding(dependency,
+                                     usedList));
         }
 
         return new BindingPlan(serviceDescriptorType, bindings);
-    }
-
-    private static boolean isProvider(WrappedServices services,
-                                      TypeName typeName) {
-        return toServiceProvider(services, typeName)
-                .isProvider();
     }
 
     private static Lookup toLookup(TypeName typeName) {
@@ -256,18 +231,13 @@ class ApplicationCreator {
                 .build();
     }
 
-    private static WrappedProvider toServiceProvider(WrappedServices services,
-                                                     TypeName typeName) {
-        return services.get(toLookup(typeName));
-    }
-
     /**
      * Determines if the service provider is valid to receive injections.
      *
      * @param sp the service provider
      * @return true if the service provider can receive injection
      */
-    private static boolean isQualifiedInjectionTarget(WrappedProvider sp) {
+    private static boolean isQualifiedInjectionTarget(ServiceInfo sp) {
         Set<TypeName> contractsImplemented = sp.contracts();
         List<Ip> dependencies = sp.dependencies();
 
@@ -278,15 +248,13 @@ class ApplicationCreator {
                         && !contractsImplemented.contains(APPLICATION));
     }
 
-    private boolean isAllowListedProviderQualifierTypeName(WrappedServices services,
-                                                           TypeName typeName) {
+    private boolean isAllowListedProviderQualifierTypeName(ServiceInfo serviceInfo) {
 
         if (permittedProviderQualifierTypes.isEmpty()) {
             return false;
         }
 
-        WrappedProvider sp = toServiceProvider(services, typeName);
-        Set<TypeName> spQualifierTypeNames = sp.qualifiers().stream()
+        Set<TypeName> spQualifierTypeNames = serviceInfo.qualifiers().stream()
                 .map(Annotation::typeName)
                 .collect(Collectors.toSet());
         spQualifierTypeNames.retainAll(permittedProviderQualifierTypes);
@@ -309,48 +277,38 @@ class ApplicationCreator {
         }
     }
 
-    private List<TypeName> providersNotAllowed(WrappedServices services,
-                                               Set<TypeName> serviceTypes) {
+    private Set<TypeName> providersNotAllowed(WrappedServices services) {
 
-        List<WrappedProvider> providers = services.all(Lookup.create(Supplier.class));
-        if (providers.isEmpty()) {
-            return List.of();
-        }
+        Set<TypeName> notAllowed = new LinkedHashSet<>();
 
-        List<TypeName> providersInUseThatAreNotAllowed = new ArrayList<>();
-        for (TypeName typeName : serviceTypes) {
+        List<ServiceInfo> providers = services.all(Lookup.builder()
+                                                           .addContract(Supplier.class)
+                                                           .build());
+        gatherProvidersNotAllowed(notAllowed, providers);
+
+        providers = services.all(Lookup.builder().addContract(InjectCodegenTypes.INJECTION_POINT_PROVIDER).build());
+        gatherProvidersNotAllowed(notAllowed, providers);
+
+        return notAllowed;
+    }
+
+    private void gatherProvidersNotAllowed(Set<TypeName> notAllowedProviders, List<ServiceInfo> providers) {
+        for (ServiceInfo provider : providers) {
+            TypeName typeName = provider.serviceType();
             if (!isAllowListedProviderName(typeName)
-                    && isProvider(services, typeName)
-                    && !isAllowListedProviderQualifierTypeName(services, typeName)) {
-                providersInUseThatAreNotAllowed.add(typeName);
+                    && !isAllowListedProviderQualifierTypeName(provider)) {
+                notAllowedProviders.add(typeName);
             }
         }
-        return providersInUseThatAreNotAllowed;
-    }
-
-    private boolean isProvider(TypeName ipType) {
-        if (ipType.isOptional() || ipType.isList() && !ipType.typeArguments().isEmpty()) {
-            return isProvider(ipType.typeArguments().getFirst());
-        }
-
-        return ipType.isSupplier()
-                || INJECTION_POINT_PROVIDER.equals(ipType)
-                || SERVICE_PROVIDER.equals(ipType);
-    }
-
-    private BindingType bindingType(TypeName ipType) {
-        if (ipType.isList()) {
-            return BindingType.MANY;
-        }
-        if (ipType.isOptional()) {
-            return BindingType.OPTIONAL;
-        }
-        return BindingType.SINGLE;
     }
 
     private InjectionPlan injectionPlan(WrappedServices services,
-                                        WrappedProvider self,
+                                        ServiceInfo self,
                                         Ip dependency) {
+        /*
+         very similar code is used in ServiceManager.planForIp
+         make sure this is kept in sync!
+         */
         Lookup dependencyTo = Lookup.create(dependency);
         Set<Qualifier> qualifiers = dependencyTo.qualifiers();
         if (self.contracts().containsAll(dependencyTo.contracts()) && self.qualifiers().equals(qualifiers)) {
@@ -362,14 +320,6 @@ class ApplicationCreator {
                     .build();
         }
 
-        if (self.isInjectionResolver()) {
-            Optional<Object> resolved = self.resolve(dependency);
-            Object target = resolved.orElse(null);
-            if (target != null) {
-                return new InjectionPlan(List.of(self), toQualified(self, target).toList());
-            }
-        }
-
         /*
         An injection point can be satisfied by:
         1. a service that matches the type or contract, and qualifiers match
@@ -378,51 +328,50 @@ class ApplicationCreator {
         4. an InjectionResolver, where the method resolve returns an information if this type can be resolved (config driven)
         */
 
-        List<WrappedProvider> qualifiedProviders = new ArrayList<>(services.all(dependencyTo));
-        List<WrappedProvider> unqualifiedProviders = List.of();
+        List<ServiceInfo> qualifiedProviders = services.all(dependencyTo);
+        List<ServiceInfo> unqualifiedProviders;
 
         if (qualifiedProviders.isEmpty()) {
-            unqualifiedProviders = injectionPointProvidersFor(services, dependency);
+            unqualifiedProviders = injectionPointProvidersFor(services, dependency)
+                    .stream()
+                    .filter(it -> !it.serviceType().equals(self.serviceType()))
+                    .toList();
+        } else {
+            unqualifiedProviders = List.of();
         }
 
         // remove current service provider from matches
         qualifiedProviders = qualifiedProviders.stream()
-                .filter(it -> !it.serviceInfo().equals(self.serviceInfo()))
+                .filter(it -> !it.serviceType().equals(self.serviceType()))
                 .toList();
 
-        unqualifiedProviders = unqualifiedProviders.stream()
-                .filter(it -> !it.serviceInfo().equals(self.serviceInfo()))
-                .toList();
+        if (self.contracts().contains(InjectCodegenTypes.INJECT_INJECTION_RESOLVER)
+                && qualifiedProviders.isEmpty()
+                && unqualifiedProviders.isEmpty()) {
+            // we should not instantiate the provider (we could do it for singleton scope though)
+            return new InjectionPlan(List.of(self), List.of());
+        }
 
         // the list now contains all providers that match the processed injection points
         return new InjectionPlan(unqualifiedProviders, qualifiedProviders);
     }
 
-    private Stream<WrappedProvider> toQualified(WrappedProvider self, Object target) {
-        if (target instanceof Collection<?> collection) {
-            return collection.stream()
-                    .flatMap(target1 -> toQualified(self, target1));
-        }
-        return self.asProvider(target)
-                .stream();
-    }
-
-    private List<WrappedProvider> injectionPointProvidersFor(WrappedServices services, Ip ipoint) {
-        if (ipoint.qualifiers().isEmpty()) {
+    private List<ServiceInfo> injectionPointProvidersFor(WrappedServices services, Ip injectionPoint) {
+        if (injectionPoint.qualifiers().isEmpty()) {
             return List.of();
         }
-        Lookup criteria = Lookup.builder(Lookup.create(ipoint))
-                .qualifiers(Set.of())
-                .addContract(InjectCodegenTypes.INJECTION_POINT_PROVIDER)
+        Lookup criteria = Lookup.builder(Lookup.create(injectionPoint))
+                .qualifiers(Set.of()) // remove qualifier from lookup
+                .addContract(InjectCodegenTypes.INJECTION_POINT_PROVIDER) // only search for injection point providers
                 .build();
-        return new ArrayList<>(services.all(criteria));
+        return services.all(criteria);
     }
 
     private void createConfigureMethodBody(WrappedServices services,
                                            Set<TypeName> serviceTypes,
                                            Method.Builder method) {
         // find all interceptors and bind them
-        List<WrappedProvider> interceptors =
+        List<ServiceInfo> interceptors =
                 services.all(Lookup.builder()
                                      .addContract(Interception.Interceptor.class)
                                      .addQualifier(Qualifier.WILDCARD_NAMED)
@@ -433,7 +382,7 @@ class ApplicationCreator {
             method.addContentLine("");
         }
 
-        Iterator<WrappedProvider> interceptorIterator = interceptors.iterator();
+        Iterator<ServiceInfo> interceptorIterator = interceptors.iterator();
         while (interceptorIterator.hasNext()) {
             method.addContent(interceptorIterator.next().infoType().genericTypeName())
                     .addContent(".INSTANCE");
@@ -449,7 +398,6 @@ class ApplicationCreator {
 
         method.addContentLine(");")
                 .addContentLine("");
-
 
         // first collect required dependencies by descriptor
         Map<TypeName, Set<Binding>> injectionPlan = new LinkedHashMap<>();
@@ -470,15 +418,11 @@ class ApplicationCreator {
 
             for (Binding binding : bindings) {
                 Consumer<ContentBuilder<?>> ipId = content -> content
-                        .addContent(binding.ipInfo().descriptor().genericTypeName())
+                        .addContent(binding.injectionPoint().descriptor().genericTypeName())
                         .addContent(".")
-                        .addContent(binding.ipInfo.field());
+                        .addContent(binding.injectionPoint.field());
 
-                switch (binding.time()) {
-                case RUNTIME -> runtimeBinding(method, binding, ipId, supportNulls);
-                case BUILD -> buildTimeBinding(method, binding, ipId, supportNulls);
-                default -> throw new IllegalArgumentException("Unsupported binding time: " + binding.time());
-                }
+                buildTimeBinding(method, binding, ipId, supportNulls);
             }
 
             /*
@@ -494,140 +438,149 @@ class ApplicationCreator {
                                   Binding binding,
                                   Consumer<ContentBuilder<?>> ipId,
                                   boolean supportNulls) {
-        switch (binding.type()) {
-        case SINGLE -> {
-            if (binding.typeNames().isEmpty()) {
+
+        /*
+        Very similar code is used for runtime discovery in ServiceManager.planForIp
+        make sure this is doing the same thing!
+        Here we code generate the calls to the application class
+         */
+
+        Ip injectionPoint = binding.injectionPoint();
+        List<ServiceInfo> discovered = binding.descriptors();
+        Iterator<TypeName> descriptors = discovered.stream()
+                .map(ServiceInfo::infoType)
+                .iterator();
+
+        TypeName ipType = injectionPoint.typeName();
+
+        // now there are a few options - optional, list, and single instance
+        if (ipType.isList()) {
+            TypeName typeOfList = ipType.typeArguments().getFirst();
+            if (typeOfList.isSupplier()) {
+                // inject List<Supplier<Contract>>
+                method.addContent(".bindListOfSuppliers(");
+            } else {
+                // inject List<Contract>
+                method.addContent(".bindList(");
+            }
+            method.update(ipId::accept);
+
+            if (discovered.isEmpty()) {
+                method.addContentLine(")");
+            } else {
+                method.addContent(", ")
+                        .update(it -> {
+                            while (descriptors.hasNext()) {
+                                it.addContent(descriptors.next())
+                                        .addContent(".INSTANCE");
+                                if (descriptors.hasNext()) {
+                                    it.addContent(", ");
+                                }
+                            }
+                        })
+                        .addContentLine(")");
+            }
+        } else if (ipType.isOptional()) {
+            TypeName typeOfOptional = ipType.typeArguments().getFirst();
+            if (typeOfOptional.isSupplier()) {
+                // inject Optional<Supplier<Contract>>
+                method.addContent(".bindOptionalOfSupplier(");
+            } else {
+                // inject Optional<Contract>
+                method.addContent(".bindOptional(");
+            }
+            method.update(ipId::accept);
+
+            if (discovered.isEmpty()) {
+                method.addContentLine(")");
+            } else {
+                method.addContent(", ")
+                        .addContent(descriptors.next().genericTypeName())
+                        .addContentLine(".INSTANCE)");
+            }
+        } else if (ipType.isSupplier()) {
+            // one of the supplier options
+
+            TypeName typeOfSupplier = ipType.typeArguments().getFirst();
+            if (typeOfSupplier.isOptional()) {
+                // inject Supplier<Optional<Contract>>
+                method.addContent(".bindSupplierOfOptional(")
+                        .update(ipId::accept);
+                if (discovered.isEmpty()) {
+                    method.addContentLine(")");
+                } else {
+                    method.addContent(", ")
+                            .addContent(descriptors.next().genericTypeName())
+                            .addContentLine(".INSTANCE)");
+                }
+            } else if (typeOfSupplier.isList()) {
+                // inject Supplier<List<Contract>>
+                method.addContent(".bindSupplierOfList(")
+                        .update(ipId::accept);
+                if (discovered.isEmpty()) {
+                    method.addContentLine(")");
+                } else {
+                    method.addContent(", ")
+                            .update(it -> {
+                                while (descriptors.hasNext()) {
+                                    it.addContent(descriptors.next())
+                                            .addContent(".INSTANCE");
+                                    if (descriptors.hasNext()) {
+                                        it.addContent(", ");
+                                    }
+                                }
+                            })
+                            .addContentLine(")");
+                }
+            } else {
+                // inject Supplier<Contract>
+                method.addContent(".bindSupplier(")
+                        .update(ipId::accept);
+
+                if (discovered.isEmpty()) {
+                    // null binding is not supported at runtime
+                    throw new CodegenException("Injection point requires a value, but no provider discovered: "
+                                                       + injectionPoint);
+                }
+                method.addContent(", ")
+                        .addContent(descriptors.next().genericTypeName())
+                        .addContentLine(".INSTANCE)");
+            }
+        } else {
+            // inject Contract
+            if (discovered.isEmpty()) {
                 if (supportNulls) {
                     method.addContent(".bindNull(")
                             .update(ipId::accept)
                             .addContentLine(")");
                 } else {
+                    // null binding is not supported at runtime
                     throw new CodegenException("Injection point requires a value, but no provider discovered: "
-                                                       + binding.ipInfo());
+                                                       + injectionPoint);
                 }
             } else {
-                method.addContent(".bind")
-                        .addContent(binding.useProvider() ? "Provider" : "")
-                        .addContent("(")
+                method.addContent(".bind(")
                         .update(ipId::accept)
                         .addContent(", ")
-                        .addContent(binding.typeNames().getFirst().genericTypeName())
+                        .addContent(descriptors.next().genericTypeName())
                         .addContentLine(".INSTANCE)");
             }
         }
-        case OPTIONAL -> {
-            method.addContent(".bind")
-                    .addContent(binding.useProvider() ? "Provider" : "")
-                    .addContent("Optional(")
-                    .update(ipId::accept);
-            if (binding.typeNames().isEmpty()) {
-                method.addContentLine(")");
-            } else {
-                method.addContent(", ")
-                        .addContent(binding.typeNames().getFirst().genericTypeName())
-                        .addContentLine(".INSTANCE)");
-            }
-        }
-        case MANY -> {
-            method.addContent(".bind")
-                    .addContent(binding.useProvider() ? "Provider" : "")
-                    .addContent("List(")
-                    .update(ipId::accept);
-            if (binding.typeNames().isEmpty()) {
-                method.addContentLine(")");
-            } else {
-                method.addContent(", ")
-                        .update(it -> {
-                            Iterator<TypeName> iterator = binding.typeNames().iterator();
-                            while (iterator.hasNext()) {
-                                it.addContent(iterator.next())
-                                        .addContent(".INSTANCE");
-                                if (iterator.hasNext()) {
-                                    it.addContent(", ");
-                                }
-                            }
-                        })
-                        .addContentLine(")");
-            }
-        }
-        default -> throw new IllegalArgumentException("Unsupported binding type: " + binding.type());
-        }
     }
 
-    private void runtimeBinding(Method.Builder method, Binding binding, Consumer<ContentBuilder<?>> ipId, boolean supportNulls) {
-        method.addContent(".runtimeBind")
-                .addContent(binding.useProvider() ? "Provider" : "");
-
-        switch (binding.type()) {
-        case SINGLE -> method.addContent(supportNulls ? "Nullable" : "");
-        case OPTIONAL -> method.addContent("Optional");
-        case MANY -> method.addContent("List");
-        default -> throw new IllegalArgumentException("Unsupported binding type: " + binding.type());
-        }
-
-        // such as .runtimeBind(MyDescriptor.IP_ID_0, ConfigBean__ServiceDescriptor.INSTANCE)
-        method.addContent("(")
-                .update(ipId::accept);
-
-        switch (binding.type()) {
-        case SINGLE -> method
-                .addContent(", ")
-                .addContent(binding.typeNames().getFirst().genericTypeName())
-                .addContentLine(".INSTANCE)");
-        case OPTIONAL -> {
-            if (binding.typeNames().isEmpty()) {
-                method.addContentLine(")");
-            } else {
-                method.addContent(", ")
-                        .addContent(binding.typeNames().getFirst().genericTypeName())
-                        .addContentLine(".INSTANCE)");
-            }
-        }
-        case MANY -> {
-            if (binding.typeNames().isEmpty()) {
-                method.addContentLine(")");
-            } else {
-                method.addContent(", ")
-                        .update(it -> {
-                            Iterator<TypeName> iterator = binding.typeNames().iterator();
-                            while (iterator.hasNext()) {
-                                it.addContent(iterator.next())
-                                        .addContent(".INSTANCE");
-                                if (iterator.hasNext()) {
-                                    it.addContent(", ");
-                                }
-                            }
-                        })
-                        .addContentLine(")");
-            }
-        }
-        default -> throw new IllegalArgumentException("Unsupported binding type: " + binding.type());
-        }
-    }
-
-    enum BindingType {
-        SINGLE,
-        OPTIONAL,
-        MANY
-    }
-
-    enum BindingTime {
-        BUILD,
-        RUNTIME
-    }
-
-    record InjectionPlan(List<WrappedProvider> unqualifiedProviders,
-                         List<WrappedProvider> qualifiedProviders) {
+    record InjectionPlan(List<ServiceInfo> unqualifiedProviders,
+                         List<ServiceInfo> qualifiedProviders) {
     }
 
     record BindingPlan(TypeName descriptorType,
                        Set<Binding> bindings) {
     }
 
-    record Binding(BindingTime time,
-                   BindingType type,
-                   Ip ipInfo,
-                   boolean useProvider,
-                   List<TypeName> typeNames) {
+    /**
+     * @param injectionPoint to bind to
+     * @param descriptors    matching descriptors
+     */
+    record Binding(Ip injectionPoint,
+                   List<ServiceInfo> descriptors) {
     }
 }

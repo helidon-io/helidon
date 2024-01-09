@@ -16,6 +16,7 @@
 
 package io.helidon.inject.configdriven.interceptor.test;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -30,6 +31,7 @@ interface ZImplConfigBlueprint {
      *
      * @return for testing purposes
      */
+    @Option.Default("")
     String name();
 
 }

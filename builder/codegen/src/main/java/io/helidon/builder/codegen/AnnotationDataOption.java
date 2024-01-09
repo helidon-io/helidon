@@ -35,6 +35,7 @@ import static io.helidon.builder.codegen.Types.OPTION_ACCESS;
 import static io.helidon.builder.codegen.Types.OPTION_ALLOWED_VALUES;
 import static io.helidon.builder.codegen.Types.OPTION_CONFIDENTIAL;
 import static io.helidon.builder.codegen.Types.OPTION_CONFIGURED;
+import static io.helidon.builder.codegen.Types.OPTION_DECORATOR;
 import static io.helidon.builder.codegen.Types.OPTION_DEFAULT;
 import static io.helidon.builder.codegen.Types.OPTION_DEFAULT_BOOLEAN;
 import static io.helidon.builder.codegen.Types.OPTION_DEFAULT_CODE;
@@ -71,7 +72,9 @@ record AnnotationDataOption(Javadoc javadoc,
                             List<AllowedValue> allowedValues,
                             Consumer<ContentBuilder<?>> defaultValue,
                             DeprecationData deprecationData,
-                            List<Annotation> annotations) {
+                            List<Annotation> annotations,
+                            TypeName decorator // support for decorating an option when setting it
+) {
 
     static AnnotationDataOption create(TypeHandler handler, TypedElementInfo element) {
         Javadoc javadoc = javadoc(element);
@@ -158,6 +161,8 @@ record AnnotationDataOption(Javadoc javadoc,
         List<Annotation> annotations = new ArrayList<>();
         javadoc = processDeprecation(deprecationData, annotations, javadoc);
 
+        TypeName decorator = optionDecorator(element);
+
         // default/is required only based on annotations
         return new AnnotationDataOption(javadoc,
                                         configured,
@@ -178,7 +183,25 @@ record AnnotationDataOption(Javadoc javadoc,
                                         allowedValues,
                                         defaultValue,
                                         deprecationData,
-                                        annotations);
+                                        annotations,
+                                        decorator);
+    }
+
+    private static TypeName optionDecorator(TypedElementInfo element) {
+        if (element.hasAnnotation(OPTION_DECORATOR)) {
+            return element.annotation(OPTION_DECORATOR).typeValue()
+                    .orElseThrow(() -> new IllegalStateException("There is no value defined on " + OPTION_DECORATOR.fqName() + " on "
+                            + "element " + element + ", even though it is a required property."));
+        }
+        return null;
+    }
+
+    boolean hasDefault() {
+        return defaultValue != null;
+    }
+
+    boolean hasAllowedValues() {
+        return allowedValues != null && !allowedValues.isEmpty();
     }
 
     private static AccessModifier accessModifier(TypedElementInfo element) {
@@ -253,12 +276,12 @@ record AnnotationDataOption(Javadoc javadoc,
             return null;
         } else {
             return handler.toDefaultValue(defaultValues,
-                                                  defaultInts,
-                                                  defaultLongs,
-                                                  defaultDoubles,
-                                                  defaultBooleans,
-                                                  defaultCode,
-                                                  defaultMethod);
+                                          defaultInts,
+                                          defaultLongs,
+                                          defaultDoubles,
+                                          defaultBooleans,
+                                          defaultCode,
+                                          defaultMethod);
         }
 
     }
@@ -271,14 +294,6 @@ record AnnotationDataOption(Javadoc javadoc,
                         || genericType.equals(MAP)
                         || genericType.equals(SET)
                         || genericType.equals(LIST));
-    }
-
-    boolean hasDefault() {
-        return defaultValue != null;
-    }
-
-    boolean hasAllowedValues() {
-        return allowedValues != null && !allowedValues.isEmpty();
     }
 
     private static Javadoc processDeprecation(DeprecationData deprecationData, List<Annotation> annotations, Javadoc javadoc) {

@@ -24,7 +24,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Represents the result of a service activation or deactivation.
  *
- * @see Activator
+ * @see ManagedService
  **/
 @Prototype.Blueprint
 interface ActivationResultBlueprint {
@@ -34,7 +34,7 @@ interface ActivationResultBlueprint {
      *
      * @return the service provider generating the result
      */
-    RegistryServiceProvider<?> serviceProvider();
+    ManagedService<?> serviceProvider();
 
     /**
      * The activation phase that was found at onset of the phase transition.

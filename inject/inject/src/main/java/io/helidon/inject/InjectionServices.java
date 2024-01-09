@@ -23,6 +23,9 @@ import io.helidon.common.types.TypeName;
 
 /**
  * A factory for service registry. The global services can be accessed through {@link #instance()}.
+ * <p>
+ * Always use {@link #create()} or {@link #create(InjectionConfig)} for testing, to prevent lock-in of
+ * the global registry.
  */
 public interface InjectionServices {
     /**
@@ -48,11 +51,22 @@ public interface InjectionServices {
     /**
      * Create injection services for a specific configuration.
      * The instance obtained will not interact with {@link #instance()} and will provide a stand-alone service registry.
+     *
      * @param injectionConfig configuration of the services
      * @return a new injection services instance
      */
     static InjectionServices create(InjectionConfig injectionConfig) {
         return InjectionServicesImpl.create(injectionConfig);
+    }
+
+    /**
+     * Create injection services with default configuration.
+     * The instance obtained will not interact with {@link #instance()} and will provide a stand-alone service registry.
+     *
+     * @return a new injection services instance
+     */
+    static InjectionServices create() {
+        return create(InjectionConfig.create());
     }
 
     /**
@@ -70,7 +84,7 @@ public interface InjectionServices {
     InjectionConfig config();
 
     /**
-     * Attempts to perform a graceful {@link io.helidon.inject.Activator#deactivate(DeActivationRequest)} on all managed
+     * Attempts to perform a graceful {@link ManagedService#deactivate(DeActivationRequest)} on all managed
      * service instances in the {@link Services} registry.
      * Deactivation is handled within the current thread.
      * <p>

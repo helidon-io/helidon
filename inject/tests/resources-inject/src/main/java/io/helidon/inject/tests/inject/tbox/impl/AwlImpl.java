@@ -21,7 +21,6 @@ import io.helidon.inject.tests.inject.tbox.Awl;
 
 @Injection.Singleton
 public class AwlImpl implements Awl {
-
     @Injection.Inject
     AwlImpl() {
     }
