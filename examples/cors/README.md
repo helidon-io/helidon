@@ -14,7 +14,6 @@ uncomment that line and then package and run the application.
   
 ## Build and run
 
-With JDK11+
 ```bash
 mvn package
 java -jar helidon-examples-cors.jar
