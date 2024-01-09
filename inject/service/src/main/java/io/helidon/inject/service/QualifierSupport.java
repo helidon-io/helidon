@@ -48,6 +48,12 @@ class QualifierSupport {
         @Prototype.Constant
         static final Qualifier DRIVEN_BY_NAME = create(Injection.DrivenByName.class);
 
+        /**
+         * Represents a configuration based bean.
+         */
+        @Prototype.Constant
+        static final Qualifier CONFIG_BEAN = create(ConfigBeans.ConfigBean.class);
+
 
         private CustomMethods() {
         }

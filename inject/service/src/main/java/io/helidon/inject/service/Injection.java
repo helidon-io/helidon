@@ -366,9 +366,23 @@ public final class Injection {
 
     /**
      * A service that has instances created for each named instance of the service it is driven by.
+     * The instance created will have the same {@link io.helidon.inject.service.Injection.Named} qualifier as the
+     * driving instance (in addition to all qualifiers defined on this instance).
      * <p>
      * If there is a need to create an instance eagerly, annotate the service type with
      * {@link io.helidon.inject.service.Injection.Eager} as well.
+     * <p>
+     * There are a few restrictions on this type of services:
+     * <ul>
+     * <li>The service MUST NOT implement {@link java.util.function.Supplier}</li>
+     * <li>The service MUST NOT implement {@link io.helidon.inject.service.InjectionPointProvider} or any
+     * other service provider interface</li>
+     * <li>There MAY be an injection point of the type defined in {@link #value()}, without any qualifiers -
+     * this injection point will be satisfied by the driving instance</li>
+     * <li>There MAY be a {@link java.lang.String} injection point qualified with
+     * {@link io.helidon.inject.service.Injection.DrivenByName} - this injection point will be satisfied by the
+     * name of the driving instance</li>
+     * </ul>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)

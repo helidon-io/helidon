@@ -86,7 +86,6 @@
                                         we should not bring in the runtime modules of injection and config driven
                                         -->
                                         <exclude>io.helidon.inject:helidon-inject</exclude>
-                                        <exclude>io.helidon.inject.configdriven:helidon-configdriven</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>

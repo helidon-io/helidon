@@ -24,7 +24,6 @@ import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.InvocationException;
 import io.helidon.inject.Phase;
-import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.ServiceInjectionPlanBinder;
 import io.helidon.inject.Services;
 import io.helidon.inject.codegen.InjectCodegenTypes;
@@ -121,8 +120,6 @@ class InjectCodegenTypesTest {
                    is(InjectionServices.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.INJECT_SERVICES.fqName(),
                    is(Services.class.getCanonicalName()));
-        assertThat(InjectCodegenTypes.INJECT_REGISTRY_SERVICE_PROVIDER.fqName(),
-                   is(RegistryServiceProvider.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.PROTOTYPE_BLUEPRINT.fqName(),
                    is(Prototype.Blueprint.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.PROTOTYPE_CONFIGURED.fqName(),

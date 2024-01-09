@@ -41,7 +41,6 @@
         <module>codegen-javax</module>
         <module>testing</module>
         <module>tests</module>
-        <module>configdriven</module>
         <module>maven-plugin</module>
     </modules>
 

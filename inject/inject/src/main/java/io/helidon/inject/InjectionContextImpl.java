@@ -32,9 +32,9 @@ import io.helidon.inject.service.Ip;
  * @see io.helidon.inject.service.InjectionContext
  */
 class InjectionContextImpl implements InjectionContext {
-    private final Map<Ip, Supplier<?>> injectionPlans;
+    private final Map<Ip, IpPlan<?>> injectionPlans;
 
-    private InjectionContextImpl(Map<Ip, Supplier<?>> injectionPlans) {
+    private InjectionContextImpl(Map<Ip, IpPlan<?>> injectionPlans) {
         this.injectionPlans = injectionPlans;
     }
 
@@ -47,7 +47,7 @@ class InjectionContextImpl implements InjectionContext {
      * @param injectionPlan map of injection points to a provider that satisfies that injection point
      * @return a new injection context
      */
-    static InjectionContext create(Map<Ip, Supplier<?>> injectionPlan) {
+    static InjectionContext create(Map<Ip, IpPlan<?>> injectionPlan) {
         Objects.requireNonNull(injectionPlan);
 
         return new InjectionContextImpl(injectionPlan);

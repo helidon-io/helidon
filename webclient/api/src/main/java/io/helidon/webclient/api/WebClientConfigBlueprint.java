@@ -20,16 +20,16 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.ConfigBeans;
 import io.helidon.webclient.spi.ProtocolConfig;
 import io.helidon.webclient.spi.ProtocolConfigProvider;
 
 /**
  * WebClient configuration.
  */
-@ConfigDriven.ConfigBean
-@ConfigDriven.Repeatable
-@ConfigDriven.WantDefault
+@ConfigBeans.ConfigBean
+@ConfigBeans.Repeatable
+@ConfigBeans.WantDefault
 @Prototype.Blueprint
 @Prototype.Configured("clients")
 interface WebClientConfigBlueprint extends HttpClientConfigBlueprint, Prototype.Factory<WebClient> {

@@ -21,13 +21,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.ConfigBeans;
 
 /**
  * {@link Bulkhead} configuration bean.
  */
-@ConfigDriven.ConfigBean
-@ConfigDriven.Repeatable
+@ConfigBeans.ConfigBean
+@ConfigBeans.Repeatable
 @Prototype.Configured("fault-tolerance.bulkheads")
 @Prototype.Blueprint(decorator = BulkheadConfigBlueprint.BuilderDecorator.class)
 interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {

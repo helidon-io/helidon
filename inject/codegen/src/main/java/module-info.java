@@ -33,7 +33,8 @@ module io.helidon.inject.codegen {
             with io.helidon.inject.codegen.InjectCodegenProvider;
 
     provides io.helidon.inject.codegen.spi.InjectCodegenExtensionProvider
-            with io.helidon.inject.codegen.InjectionExtensionProvider;
+            with io.helidon.inject.codegen.InjectionExtensionProvider,
+                    io.helidon.inject.codegen.ConfigBeanCodegenProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.inject.codegen.MapClassNamedProvider,

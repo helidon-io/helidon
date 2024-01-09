@@ -3,13 +3,27 @@ Injections
 
 # Notes and questions
 
-Do we need a service registry lookup method that gives access to service instances with additional details, such
- as qualifiers?
+Users can inject:
+- `Contract` - the actual instance of the service (may be proxied for scoped values, if we decide so)
+- `Supplier<Contract>` - the service MUST NOT be activated until `.get()` is called, can be injected regardless of what service implements
+- `InjectionPointProvider<Contract>` - if the service implements this interface (handled by the ManagedService itself)
+- `RegistryInstance<Contract>` - instance with metadata
+- `Supplier<RegistryInstance>` - the service MUST NOT be activated until `.get()` is called
++ Optional, List and combinations
 
-List<ServiceInstance> instances =  services.all(Lookup.builder()
-                     .addQualifier(Qualifier.create(ConfigDriven.ConfigBean.class))
-                     .build());
-see ConfiguredByTest - to validate the named qualifiers are present etc.
+Activation (when):
+- `@Eager` services activate on scope activation
+- Service instance (what user annotated) - when activation required (somebody injecting contract, or registry instance)
+- Service targets (`ServicesProvider`) - when resolving what to inject (`explodeFilterAndSort`)
+
+Service can implement:
+- `Contract` 
+- `Supplier<Contract>` (not a service provider, as it MUST supply a value)
+- `InjectionPointProvider<Contract>`
+- `@DrivenBy(Driver.class)` - must not implement supplier, injection point provider
+// future
+- QualifiedProvider
+- TypedQualifiedProvider
 
 # Types
 

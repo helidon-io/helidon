@@ -105,15 +105,17 @@ public class HandSaw extends AbstractSaw {
         Verification.verifyInjected(setterInjectedLubricantInSubClass, getClass()
                 + ".injectLubricant(Optional<Lubricant> lubricant)", setterInjectedLubricantInSubClassInjectedCount, false, null);
 
+        // we use cardinality of the InjectionPointProvider
         Verification.verifyInjected(fineBladeFieldInjectedPkgPrivateProviderInSubClass, getClass()
-                + ".fineBladeFieldInjectedPkgPrivateProviderInSubClass", null, true, FineBlade.class);
+                + ".fineBladeFieldInjectedPkgPrivateProviderInSubClass", null, false, FineBlade.class);
         Verification.verifyInjected(fineBladeFieldInjectedPkgPrivateOptionalInSubClass, getClass() +
                 ".fineBladeFieldInjectedPkgPrivateOptionalInSubClass", null, true, FineBlade.class);
         Verification.verifyInjected(fineBladeFieldInjectedPkgPrivateListInSubClass, getClass() +
                 ".fineBladeFieldInjectedPkgPrivateListInSubClass", null, 1, FineBlade.class);
 
+        // we use cardinality of the InjectionPointProvider
         Verification.verifyInjected(setterInjectedPkgPrivateProviderInSubClass, getClass() +
-                ".setBladeProvider(Provider<AbstractBlade> blade)", setterInjectedPkgPrivateProviderInSubClassInjectedCount, true, DullBlade.class);
+                ".setBladeProvider(Provider<AbstractBlade> blade)", setterInjectedPkgPrivateProviderInSubClassInjectedCount, false, DullBlade.class);
         Verification.verifyInjected(setterInjectedPkgPrivateOptionalInSubClass, getClass() +
                 ".setBladeOptional(Optional<AbstractBlade> blade)", setterInjectedPkgPrivateOptionalInSubClassInjectedCount, true, DullBlade.class);
         Verification.verifyInjected(setterInjectedPkgPrivateListInSubClass, getClass() +

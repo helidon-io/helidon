@@ -23,7 +23,7 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
-import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.ConfigBeans;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -34,9 +34,9 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ServerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.CustomMethods.class)
 @Prototype.Configured("server")
-@ConfigDriven.ConfigBean
-@ConfigDriven.AtLeastOne
-@ConfigDriven.WantDefault
+@ConfigBeans.ConfigBean
+@ConfigBeans.AtLeastOne
+@ConfigBeans.WantDefault
 interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
     /**
      * When true the webserver registers a shutdown hook with the JVM Runtime.

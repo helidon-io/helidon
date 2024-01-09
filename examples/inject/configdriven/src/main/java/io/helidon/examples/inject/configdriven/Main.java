@@ -38,7 +38,7 @@ public class Main {
         Services services = InjectionServices.instance().services();
 
         // this will trigger the PostConstruct method to display the contents of the toolbox
-        services.get(ToolBox.class).get();
+        services.get(ToolBox.class);
     }
 
 }

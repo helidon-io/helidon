@@ -19,14 +19,11 @@ package io.helidon.inject.testing;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationResult;
 import io.helidon.inject.InjectionException;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RegistryServiceProvider;
 import io.helidon.inject.service.ServiceInfo;
 
 /**
@@ -34,33 +31,6 @@ import io.helidon.inject.service.ServiceInfo;
  */
 public class InjectionTestingSupport {
     private InjectionTestingSupport() {
-    }
-
-    /**
-     * Describe the provided instance or provider.
-     *
-     * @param providerOrInstance the instance to provider
-     * @return the description of the instance
-     */
-    public static String toDescription(Object providerOrInstance) {
-        if (providerOrInstance instanceof Optional<?> optional) {
-            providerOrInstance = optional.orElse(null);
-        }
-
-        if (providerOrInstance instanceof RegistryServiceProvider<?> sp) {
-            return sp.description();
-        }
-        return String.valueOf(providerOrInstance);
-    }
-
-    /**
-     * Describe the provided instance or provider collection.
-     *
-     * @param coll the instance to provider collection
-     * @return the description of the instance
-     */
-    public static List<String> toDescriptions(Collection<?> coll) {
-        return coll.stream().map(InjectionTestingSupport::toDescription).collect(Collectors.toList());
     }
 
     /**

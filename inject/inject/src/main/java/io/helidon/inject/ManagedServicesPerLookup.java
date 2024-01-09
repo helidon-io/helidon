@@ -11,7 +11,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionContext;
@@ -48,7 +47,7 @@ final class ManagedServicesPerLookup {
         // service provided null, or activation failed
         // service provided 1 or more instances
         @Override
-        public Optional<Supplier<List<QualifiedInstance<T>>>> instances(Lookup lookup) {
+        public Optional<List<QualifiedInstance<T>>> instances(Lookup lookup) {
             try {
                 readLock.lock();
                 if (currentPhase == Phase.ACTIVE) {
@@ -156,7 +155,7 @@ final class ManagedServicesPerLookup {
         protected void preDestroy(ActivationResult.Builder response) {
         }
 
-        protected abstract Optional<Supplier<List<QualifiedInstance<T>>>> targetInstances();
+        protected abstract Optional<List<QualifiedInstance<T>>> targetInstances();
 
         private void stateTransitionStart(ActivationResult.Builder res, Phase phase) {
             res.finishingActivationPhase(phase);
@@ -232,12 +231,12 @@ final class ManagedServicesPerLookup {
         }
 
         @Override
-        protected Optional<Supplier<List<QualifiedInstance<T>>>> targetInstances() {
+        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
-            return Optional.of(LazyValue.create(List.of(QualifiedInstance.create(serviceInstance.get(currentPhase),
-                                                                                 provider.descriptor().qualifiers()))));
+            return Optional.of(List.of(QualifiedInstance.create(serviceInstance.get(currentPhase),
+                                                                provider.descriptor().qualifiers())));
         }
 
         @Override
@@ -263,10 +262,10 @@ final class ManagedServicesPerLookup {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected Optional<Supplier<List<QualifiedInstance<T>>>> targetInstances() {
+        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
             Supplier<T> instanceSupplier = (Supplier<T>) serviceInstance.get(currentPhase);
-            return Optional.of(() -> List.of(QualifiedInstance.create(instanceSupplier.get(),
-                                                                            provider.descriptor().qualifiers())));
+            return Optional.of(List.of(QualifiedInstance.create(instanceSupplier.get(),
+                                                                provider.descriptor().qualifiers())));
         }
     }
 
@@ -280,16 +279,16 @@ final class ManagedServicesPerLookup {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Optional<Supplier<List<QualifiedInstance<T>>>> instances(Lookup lookup) {
+        public Optional<List<QualifiedInstance<T>>> instances(Lookup lookup) {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get(currentPhase);
 
-            return Optional.of(LazyValue.create(() -> ipProvider.list(lookup)
-                    .stream()
-                    .map(it -> QualifiedInstance.create(it, provider.descriptor().qualifiers()))
-                    .toList()));
+            return Optional.of(ipProvider.list(lookup)
+                                       .stream()
+                                       .map(it -> QualifiedInstance.create(it, provider.descriptor().qualifiers()))
+                                       .toList());
         }
     }
 
@@ -303,9 +302,9 @@ final class ManagedServicesPerLookup {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected Optional<Supplier<List<QualifiedInstance<T>>>> targetInstances() {
+        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
             ServicesProvider<T> instanceSupplier = (ServicesProvider<T>) serviceInstance.get(currentPhase);
-            return Optional.of(LazyValue.create(instanceSupplier::services));
+            return Optional.of(instanceSupplier.services());
         }
     }
 
@@ -337,12 +336,12 @@ final class ManagedServicesPerLookup {
         }
 
         @Override
-        protected Optional<Supplier<List<QualifiedInstance<T>>>> targetInstances() {
-            return Optional.of(LazyValue.create(serviceInstances.stream()
-                                                        .map(it -> QualifiedInstance.create(it.serviceInstance()
-                                                                                                    .get(currentPhase),
-                                                                                            it.qualifiers()))
-                                                        .toList()));
+        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+            return Optional.of(serviceInstances.stream()
+                                       .map(it -> QualifiedInstance.create(it.serviceInstance()
+                                                                                   .get(currentPhase),
+                                                                           it.qualifiers()))
+                                       .toList());
         }
 
         @Override
@@ -363,9 +362,9 @@ final class ManagedServicesPerLookup {
             Set<Qualifier> newQualifiers = new HashSet<>(provider.descriptor().qualifiers());
             newQualifiers.add(name);
 
-            Map<Ip, Supplier<?>> injectionPlan = ManagedServices.DrivenByActivator.injectionPlan(provider.injectionPlan(),
-                                                                                                 driver,
-                                                                                                 name);
+            Map<Ip, IpPlan<?>> injectionPlan = ManagedServices.DrivenByActivator.updatePlan(provider.injectionPlan(),
+                                                                                            driver,
+                                                                                            name);
 
             return new QualifiedOnDemandInstance<>(new OnDemandInstance<>(InjectionContextImpl.create(injectionPlan),
                                                                           provider.interceptMetadata(),

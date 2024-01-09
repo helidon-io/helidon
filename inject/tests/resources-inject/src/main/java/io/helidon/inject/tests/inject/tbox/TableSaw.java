@@ -99,15 +99,17 @@ public class TableSaw extends AbstractSaw {
         verifyInjected(ctorInjectedLubricantInSubClass, getClass() + ".<init>" , null, false, null);
         verifyInjected(setterInjectedLubricantInSubClass, getClass() + ".injectLubricant(Optional<Lubricant> lubricant)", setterInjectedLubricantInSubClassInjectedCount, false, null);
 
+        // injection point provider uses cardinality of the provider implementation (scope is not handled by registry)
         verifyInjected(coarseBladeFieldInjectedPkgPrivateProviderInSubClass, getClass()
-                + ".coarseBladeFieldInjectedPkgPrivateProviderInSubClass", null, true, CoarseBlade.class);
+                + ".coarseBladeFieldInjectedPkgPrivateProviderInSubClass", null, false, CoarseBlade.class);
         verifyInjected(coarseBladeFieldInjectedPkgPrivateOptionalInSubClass, getClass()
                 + ".coarseBladeFieldInjectedPkgPrivateOptionalInSubClass", null, true, CoarseBlade.class);
         verifyInjected(coarseBladeFieldInjectedPkgPrivateListInSubClass, getClass()
                 + ".coarseBladeFieldInjectedPkgPrivateListInSubClass", null, 1, CoarseBlade.class);
 
+        // injection point provider uses cardinality of the provider implementation (scope is not handled by registry)
         verifyInjected(setterInjectedPkgPrivateProviderInSubClass, getClass()
-                + ".setBladeProvider(Provider<AbstractBlade> blade)", setterInjectedPkgPrivateProviderInSubClassInjectedCount, true, DullBlade.class);
+                + ".setBladeProvider(Provider<AbstractBlade> blade)", setterInjectedPkgPrivateProviderInSubClassInjectedCount, false, DullBlade.class);
         verifyInjected(setterInjectedPkgPrivateOptionalInSubClass, getClass()
                 + ".setBladeOptional(Optional<AbstractBlade> blade)", setterInjectedPkgPrivateOptionalInSubClassInjectedCount, true, DullBlade.class);
         verifyInjected(setterInjectedPkgPrivateListInSubClass, getClass()

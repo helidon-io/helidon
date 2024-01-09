@@ -10,15 +10,17 @@ import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.RegistryInstance;
 import io.helidon.inject.service.ServiceDescriptor;
 
-class ServiceManager<T> {
+final class ServiceManager<T> {
     private final ServiceProvider<T> provider;
     private final Supplier<ManagedService<T>> managedServiceSupplier;
-    private final TypeName scope;
+    private final Supplier<Scope> scopeSupplier;
 
-    ServiceManager(ServiceProvider<T> provider, Supplier<ManagedService<T>> managedServiceSupplier) {
+    ServiceManager(Supplier<Scope> scopeSupplier,
+                   ServiceProvider<T> provider,
+                   Supplier<ManagedService<T>> managedServiceSupplier) {
+        this.scopeSupplier = scopeSupplier;
         this.provider = provider;
         this.managedServiceSupplier = managedServiceSupplier;
-        this.scope = provider.descriptor().scope();
     }
 
     public RegistryInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
@@ -45,12 +47,8 @@ class ServiceManager<T> {
       Get service provider for the scope it is in (always works for singleton, may fail for other)
     */
     ManagedService<T> managedServiceInScope() {
-        return provider.registry()
-                .scopeHandler(scope)
-                .currentScope()
-                .orElseThrow(() -> new ScopeNotActiveException("Scope not active fore service: "
-                                                                       + descriptor().serviceType().fqName(),
-                                                               scope))
+        return scopeSupplier
+                .get()
                 .services()
                 .serviceProvider(this);
     }
@@ -64,7 +62,7 @@ class ServiceManager<T> {
         return descriptor().serviceType().classNameWithEnclosingNames();
     }
 
-    private static class RegistryInstanceHolder<T> implements RegistryInstance<T> {
+    private static final class RegistryInstanceHolder<T> implements RegistryInstance<T> {
         private final ServiceDescriptor<T> descriptor;
         private final QualifiedInstance<T> qualifiedInstance;
         private final Set<TypeName> contracts;
@@ -105,6 +103,11 @@ class ServiceManager<T> {
         @Override
         public TypeName serviceType() {
             return descriptor.serviceType();
+        }
+
+        @Override
+        public String toString() {
+            return "Instance of " + descriptor.serviceType().fqName() + ": " + qualifiedInstance;
         }
     }
 }
