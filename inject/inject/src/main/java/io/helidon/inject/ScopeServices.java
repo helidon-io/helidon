@@ -37,7 +37,7 @@ import io.helidon.inject.service.ServiceInfo;
  */
 public class ScopeServices {
     private final ReadWriteLock serviceProvidersLock = new ReentrantReadWriteLock();
-    private final Map<ServiceInfo, ManagedService<?>> serviceProviders = new IdentityHashMap<>();
+    private final Map<ServiceInfo, Activator<?>> serviceProviders = new IdentityHashMap<>();
 
     private final System.Logger logger;
     private final TypeName scope;
@@ -58,7 +58,7 @@ public class ScopeServices {
         initialBindings.forEach((descriptor, value) -> {
             ServiceProvider provider = new ServiceProvider<>(services,
                                                              descriptor);
-            ManagedService<?> fixedService = ManagedService.create(provider, value);
+            Activator<?> fixedService = Activator.create(provider, value);
             serviceProviders.put(descriptor, fixedService);
         });
     }
@@ -85,7 +85,7 @@ public class ScopeServices {
                 return Map.of();
             }
 
-            List<ManagedService<?>> toShutdown = serviceProviders.values()
+            List<Activator<?>> toShutdown = serviceProviders.values()
                     .stream()
                     .filter(it -> it.phase().eligibleForDeactivation())
                     .sorted(shutdownComparator())
@@ -95,7 +95,7 @@ public class ScopeServices {
             DeActivationRequest request = DeActivationRequest.builder()
                     .throwIfError(false)
                     .build();
-            for (ManagedService<?> managedService : toShutdown) {
+            for (Activator<?> managedService : toShutdown) {
                 Phase startingActivationPhase = managedService.phase();
                 try {
                     ActivationResult activationResult = managedService.deactivate(request);
@@ -137,15 +137,15 @@ public class ScopeServices {
     }
 
     @SuppressWarnings("unchecked")
-    <T> ManagedService<T> serviceProvider(ServiceManager<T> serviceManager) {
+    <T> Activator<T> serviceProvider(ServiceManager<T> serviceManager) {
         ServiceDescriptor<T> descriptor = serviceManager.descriptor();
 
         try {
             serviceProvidersLock.readLock().lock();
             checkActive();
-            ManagedService<?> serviceProvider = serviceProviders.get(descriptor);
+            Activator<?> serviceProvider = serviceProviders.get(descriptor);
             if (serviceProvider != null) {
-                return (ManagedService<T>) serviceProvider;
+                return (Activator<T>) serviceProvider;
             }
         } finally {
             serviceProvidersLock.readLock().unlock();
@@ -155,16 +155,16 @@ public class ScopeServices {
         try {
             serviceProvidersLock.writeLock().lock();
             checkActive();
-            return (ManagedService<T>) serviceProviders.computeIfAbsent(descriptor,
+            return (Activator<T>) serviceProviders.computeIfAbsent(descriptor,
                                                                         desc -> serviceManager.supplyManagedService());
         } finally {
             serviceProvidersLock.writeLock().unlock();
         }
     }
 
-    private static Comparator<? super ManagedService<?>> shutdownComparator() {
+    private static Comparator<? super Activator<?>> shutdownComparator() {
         return Comparator
-                .<ManagedService<?>>comparingInt(it -> it.descriptor().runLevel())
+                .<Activator<?>>comparingInt(it -> it.descriptor().runLevel())
                 .thenComparing(it -> it.descriptor().weight());
     }
 

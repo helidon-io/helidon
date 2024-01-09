@@ -28,12 +28,12 @@ import io.helidon.inject.service.ServiceDescriptor;
 
 final class ServiceManager<T> {
     private final ServiceProvider<T> provider;
-    private final Supplier<ManagedService<T>> managedServiceSupplier;
+    private final Supplier<Activator<T>> managedServiceSupplier;
     private final Supplier<Scope> scopeSupplier;
 
     ServiceManager(Supplier<Scope> scopeSupplier,
                    ServiceProvider<T> provider,
-                   Supplier<ManagedService<T>> managedServiceSupplier) {
+                   Supplier<Activator<T>> managedServiceSupplier) {
         this.scopeSupplier = scopeSupplier;
         this.provider = provider;
         this.managedServiceSupplier = managedServiceSupplier;
@@ -55,14 +55,14 @@ final class ServiceManager<T> {
     }
 
     // creates a new instance on each call!!!!
-    ManagedService<T> supplyManagedService() {
+    Activator<T> supplyManagedService() {
         return managedServiceSupplier.get();
     }
 
     /*
       Get service provider for the scope it is in (always works for singleton, may fail for other)
     */
-    ManagedService<T> managedServiceInScope() {
+    Activator<T> managedServiceInScope() {
         return scopeSupplier
                 .get()
                 .services()

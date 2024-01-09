@@ -41,14 +41,23 @@ import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServicesProvider;
 
 /*
- Developer note: when changing this, also change ManagedServices
+ Developer note: when changing this, also change Activators
+ */
+
+/**
+ * Activator types for various types the users can implement, for services without scope
+ * (with {@link io.helidon.inject.service.Injection.Service} as its scope in descriptor).
+ * <p>
+ * Activators in this type create an instance per injection, or per call to {@link java.util.function.Supplier#get()}.
+ *
+ * @see io.helidon.inject.Activators
  */
 @SuppressWarnings("checkstyle:VisibilityModifier") // as long as all are inner classes, this is OK
-final class ManagedServicesPerLookup {
-    private ManagedServicesPerLookup() {
+final class ActivatorsPerLookup {
+    private ActivatorsPerLookup() {
     }
 
-    abstract static class BaseActivator<T> implements ManagedService<T> {
+    abstract static class BaseActivator<T> implements Activator<T> {
         final ServiceProvider<T> provider;
         private final ReadWriteLock instanceLock = new ReentrantReadWriteLock();
         protected final Lock readLock = instanceLock.readLock();
@@ -379,9 +388,9 @@ final class ManagedServicesPerLookup {
             Set<Qualifier> newQualifiers = new HashSet<>(provider.descriptor().qualifiers());
             newQualifiers.add(name);
 
-            Map<Ip, IpPlan<?>> injectionPlan = ManagedServices.DrivenByActivator.updatePlan(provider.injectionPlan(),
-                                                                                            driver,
-                                                                                            name);
+            Map<Ip, IpPlan<?>> injectionPlan = Activators.DrivenByActivator.updatePlan(provider.injectionPlan(),
+                                                                                       driver,
+                                                                                       name);
 
             return new QualifiedOnDemandInstance<>(new OnDemandInstance<>(InjectionContextImpl.create(injectionPlan),
                                                                           provider.interceptMetadata(),

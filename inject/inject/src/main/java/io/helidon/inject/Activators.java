@@ -47,14 +47,20 @@ import io.helidon.inject.service.ServicesProvider;
 import static java.util.function.Predicate.not;
 
 /*
- Developer note: when changing this, change ManagedServicesPerLookup as well
+ Developer note: when changing this, change ActivatorsPerLookup as well
+ */
+
+/**
+ * Activator types for various types the users can implement, for real scopes (singleton, request scope).
+ *
+ * @see io.helidon.inject.ActivatorsPerLookup
  */
 @SuppressWarnings("checkstyle:VisibilityModifier") // as long as all are inner classes, this is OK
-final class ManagedServices {
-    private ManagedServices() {
+final class Activators {
+    private Activators() {
     }
 
-    abstract static class BaseActivator<T> implements ManagedService<T> {
+    abstract static class BaseActivator<T> implements Activator<T> {
         final ServiceProvider<T> provider;
         private final ReadWriteLock instanceLock = new ReentrantReadWriteLock();
         protected final Lock readLock = instanceLock.readLock();

@@ -84,7 +84,7 @@ public interface InjectionServices {
     InjectionConfig config();
 
     /**
-     * Attempts to perform a graceful {@link ManagedService#deactivate(DeActivationRequest)} on all managed
+     * Attempts to perform a graceful {@link Activator#deactivate(DeActivationRequest)} on all managed
      * service instances in the {@link Services} registry.
      * Deactivation is handled within the current thread.
      * <p>
