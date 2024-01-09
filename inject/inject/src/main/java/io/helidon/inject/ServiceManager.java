@@ -93,7 +93,7 @@ final class ServiceManager<T> {
 
         @Override
         public T get() {
-            return qualifiedInstance.instance();
+            return qualifiedInstance.get();
         }
 
         @Override
