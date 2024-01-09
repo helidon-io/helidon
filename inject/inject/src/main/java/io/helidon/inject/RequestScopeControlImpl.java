@@ -24,19 +24,19 @@ import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.ServiceDescriptor;
 
 @Injection.Singleton
-class RequestonControlImpl implements RequestonControl, ScopeHandler {
+class RequestScopeControlImpl implements RequestScopeControl, ScopeHandler {
     private static final ThreadLocal<RequestScope> REQUEST_SCOPES = new ThreadLocal<>();
 
     private final ServicesSpi services;
 
     @Injection.Inject
-    RequestonControlImpl(ServicesSpi services) {
+    RequestScopeControlImpl(ServicesSpi services) {
         this.services = services;
     }
 
     @Override
     public TypeName supportedScope() {
-        return Injection.Requeston.TYPE_NAME;
+        return Injection.RequestScope.TYPE_NAME;
     }
 
     @Override
@@ -52,7 +52,7 @@ class RequestonControlImpl implements RequestonControl, ScopeHandler {
             throw new IllegalStateException("Attempt to re-create request scope. Already exists for this request: " + scope);
         }
 
-        scope = new RequestScope(services.createForScope(Injection.Requeston.TYPE_NAME, id, initialBindings));
+        scope = new RequestScope(services.createForScope(Injection.RequestScope.TYPE_NAME, id, initialBindings));
         REQUEST_SCOPES.set(scope);
         scope.activate();
         return scope;

@@ -4,7 +4,7 @@ Helidon Inject Scopes
 Helidon inject supports the following scopes out of the box:
 
 1. A `@Singleton` service has at maximum a single instance within a service registry.
-2. A `@Requeston` service has at maximum a single instance per request (the concept of request may differ, consider HTTP request)
+2. A `@RequestScope` service has at maximum a single instance per request (the concept of request may differ, consider HTTP request)
 3. A `@Service` service gets a new instance per injection, and the instance is not managed (no `@PreDestroy` support)
 
 # Singleton Scope
@@ -28,15 +28,15 @@ depending on the implemented scope.
 When a scope is started, it may provide "initial bindings" - a set of service descriptor and service instances that for the
 core of the scope, and that can be injected to other services within the scope.
 
-When a scoped service gets injected into another service in a different scope (except for Singleton, which always uses 
-the same instance), a generated proxy is injected instead, which implements the same contracts as the original service. 
-This means that non-singleton services that need to reside in a different scope must use contract interfaces, and not classes.
-There is a way to support classes as well (see Requeston.value()).
+Currently a service can be injection into a different scope (except for Singleton, which always uses the same instance,
+and a service without a scope, which always creates a new instance) only through a `Supplier<Contract>`, and the scope
+is resolved each time the `get()` method is called.
+We do not support proxying of types for scope purposes.
 
-# Requeston Scope
+# Request Scope
 
-Requeston scope is implemented through APIs and can be replaced by a custom implementation if desired
+Request scope is implemented through APIs and can be replaced by a custom implementation if desired
 
-Our implementation of the Requeston scope uses a `RequestonControl` to start the scope. Once started, it is kept in a thread 
-local of the current thread (as Helidon always uses exactly one virtual thread for the duration of a request), and it closed
+Our implementation of the Request scope uses a `RequesetScopeControl` to start the scope. Once started, it is kept in a thread 
+local of the current thread (as Helidon always uses exactly one virtual thread for the duration of a request), and it is closed
 when the request finishes (this must be handled by the component starting the context, such as an HTTP Service).

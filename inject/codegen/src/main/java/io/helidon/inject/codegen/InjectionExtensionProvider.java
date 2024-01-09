@@ -52,7 +52,7 @@ public class InjectionExtensionProvider implements InjectCodegenExtensionProvide
                       InjectCodegenTypes.INJECTION_POST_CONSTRUCT,
                       InjectCodegenTypes.INJECTION_INJECT,
                       InjectCodegenTypes.INJECTION_SERVICE,
-                      InjectCodegenTypes.INJECTION_REQUESTON);
+                      InjectCodegenTypes.INJECTION_REQUEST_SCOPE);
     }
 
     @Override

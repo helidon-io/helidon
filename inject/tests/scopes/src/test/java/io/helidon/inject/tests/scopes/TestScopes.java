@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RequestonControl;
+import io.helidon.inject.RequestScopeControl;
 import io.helidon.inject.Scope;
 import io.helidon.inject.ScopeNotActiveException;
 import io.helidon.inject.Services;
@@ -63,7 +63,7 @@ class TestScopes {
         SingletonContract service = serviceProvider.get();
 
         ScopeNotActiveException scopeNotAvailableException = assertThrows(ScopeNotActiveException.class, service::id);
-        assertThat(scopeNotAvailableException.scope(), is(Injection.Requeston.TYPE_NAME));
+        assertThat(scopeNotAvailableException.scope(), is(Injection.RequestScope.TYPE_NAME));
     }
 
     @Test
@@ -71,7 +71,7 @@ class TestScopes {
         Supplier<SingletonContract> serviceProvider = services.supply(SingletonContract.class);
         SingletonContract service = serviceProvider.get();
 
-        RequestonControl requestonControl = services.get(RequestonControl.class);
+        RequestScopeControl requestonControl = services.get(RequestScopeControl.class);
 
         int id;
         try (Scope scope = requestonControl.startRequestScope("test-1", Map.of())) {
@@ -82,7 +82,7 @@ class TestScopes {
         ScopeNotActiveException scopeNotAvailableException = assertThrows(ScopeNotActiveException.class, service::id);
         assertThat("We should not be in scope when it has been closed",
                    scopeNotAvailableException.scope(),
-                   is(Injection.Requeston.TYPE_NAME));
+                   is(Injection.RequestScope.TYPE_NAME));
 
         try (Scope scope = requestonControl.startRequestScope("test-2", Map.of())) {
             int nextId = service.id();

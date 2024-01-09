@@ -31,9 +31,9 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName INJECTION_SINGLETON = TypeName.create("io.helidon.inject.service.Injection.Singleton");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.Injection.Requeston}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.Injection.RequestScope}.
      */
-    public static final TypeName INJECTION_REQUESTON = TypeName.create("io.helidon.inject.service.Injection.Requeston");
+    public static final TypeName INJECTION_REQUEST_SCOPE = TypeName.create("io.helidon.inject.service.Injection.RequestScope");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.Injection.Named}.
      */
