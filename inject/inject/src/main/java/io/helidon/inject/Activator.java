@@ -31,23 +31,15 @@ import io.helidon.inject.service.ServicesProvider;
 
 /**
  * Activators are responsible for lifecycle creation and lazy activation of service providers.
- * They are responsible for taking the
- * {@link RegistryServiceProvider}'s managed service instance from {@link io.helidon.inject.Phase#PENDING}
+ * They are responsible for taking the scope instance from {@link io.helidon.inject.Phase#INIT}
  * through {@link io.helidon.inject.Phase#POST_CONSTRUCTING} (i.e., including any
  * {@link io.helidon.inject.service.Injection.PostConstruct} invocations, etc.), and finally into the
  * {@link io.helidon.inject.Phase#ACTIVE} phase.
  * <p>
- * Assumption:
- * <ol>
- *  <li>Each {@link RegistryServiceProvider} managing its backing service will have an activator strategy conforming
- *  to the DI
- *  specification.</li>
- * </ol>
- * Activation includes:
  * <ol>
  *  <li>Management of the service's {@link io.helidon.inject.Phase}.</li>
  *  <li>Control over creation (i.e., invoke the constructor non-reflectively).</li>
- *  <li>Control over gathering the service requisite dependencies (ctor, field, setters) and optional activation of those.</li>
+ *  <li>Control over injection (i.e. injecting fields, constructor parameters, and method parameters</li>
  *  <li>Invocation of any {@link io.helidon.inject.service.Injection.PostConstruct} method.</li>
  * </ol>
  *
@@ -57,46 +49,51 @@ import io.helidon.inject.service.ServicesProvider;
  *
  * @param <T> type of the service provided by the activated service provider
  */
-interface ManagedService<T> {
-    static <T> ManagedService<T> create(ServiceProvider<T> provider, T instance) {
-        return new ManagedServices.FixedActivator<>(provider, instance);
+interface Activator<T> {
+    static <T> Activator<T> create(ServiceProvider<T> provider, T instance) {
+        return new Activators.FixedActivator<>(provider, instance);
     }
 
-    static <T> ManagedService<T> create(Services services, ServiceProvider<T> provider) {
+    static <T> Activator<T> create(Services services, ServiceProvider<T> provider) {
         ServiceDescriptor<T> descriptor = provider.descriptor();
         Set<TypeName> contracts = descriptor.contracts();
 
         if (descriptor.scope().equals(Injection.Service.TYPE_NAME)) {
             if (contracts.contains(ServicesProvider.TYPE_NAME)) {
-                return new ManagedServicesPerLookup.ServicesProviderActivator<>(provider);
+                return new ActivatorsPerLookup.ServicesProviderActivator<>(provider);
             }
             if (contracts.contains(InjectionPointProvider.TYPE_NAME)) {
-                return new ManagedServicesPerLookup.IpProviderActivator<>(provider);
+                return new ActivatorsPerLookup.IpProviderActivator<>(provider);
             }
             if (contracts.contains(TypeNames.SUPPLIER)) {
-                return new ManagedServicesPerLookup.SupplierActivator<>(provider);
+                return new ActivatorsPerLookup.SupplierActivator<>(provider);
             }
             if (descriptor.drivenBy().isPresent()) {
-                return new ManagedServicesPerLookup.DrivenByActivator<>(services, provider);
+                return new ActivatorsPerLookup.DrivenByActivator<>(services, provider);
             }
-            return new ManagedServicesPerLookup.SingleServiceActivator<>(provider);
+            return new ActivatorsPerLookup.SingleServiceActivator<>(provider);
         } else {
             if (contracts.contains(ServicesProvider.TYPE_NAME)) {
-                return new ManagedServices.ServicesProviderActivator<>(provider);
+                return new Activators.ServicesProviderActivator<>(provider);
             }
             if (contracts.contains(InjectionPointProvider.TYPE_NAME)) {
-                return new ManagedServices.IpProviderActivator<>(provider);
+                return new Activators.IpProviderActivator<>(provider);
             }
             if (contracts.contains(TypeNames.SUPPLIER)) {
-                return new ManagedServices.SupplierActivator<>(provider);
+                return new Activators.SupplierActivator<>(provider);
             }
             if (descriptor.drivenBy().isPresent()) {
-                return new ManagedServices.DrivenByActivator<>(services, provider);
+                return new Activators.DrivenByActivator<>(services, provider);
             }
-            return new ManagedServices.SingleServiceActivator<>(provider);
+            return new Activators.SingleServiceActivator<>(provider);
         }
     }
 
+    /**
+     * Service descriptor of this activator.
+     *
+     * @return service descriptor
+     */
     ServiceDescriptor<T> descriptor();
 
     /**
@@ -133,5 +130,10 @@ interface ManagedService<T> {
      */
     Phase phase();
 
+    /**
+     * Description of this activator, including the current phase.
+     *
+     * @return description of this activator
+     */
     String description();
 }
