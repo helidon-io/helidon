@@ -1,7 +1,7 @@
 package io.helidon.inject;
 
 /**
- * A scope.
+ * A scope, such as request scope.
  */
 public interface Scope extends AutoCloseable {
     /**

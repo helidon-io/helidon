@@ -32,6 +32,7 @@ import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
@@ -41,8 +42,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
-import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -52,8 +51,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciAuthenticationDetailsProviderTest {
 
-    InjectionServices injectionServices;
-    Services services;
+    static InjectionServices injectionServices;
+    static Services services;
 
     @BeforeEach
     @AfterEach
@@ -63,14 +62,14 @@ class OciAuthenticationDetailsProviderTest {
 
     @AfterAll
     static void tearDown() {
-        resetAll();
+        InjectionTestingSupport.shutdown(injectionServices);
     }
 
     void resetWith(Config config, InjectionConfig injectionConfig) {
         GlobalConfig.config(() -> config, true);
-        resetAll();
-        this.injectionServices = testableServices(injectionConfig);
-        this.services = injectionServices.services();
+        tearDown();
+        injectionServices = InjectionServices.create(injectionConfig);
+        services = injectionServices.services();
     }
 
     @Test
@@ -163,15 +162,13 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void selectionWhenNoConfigIsSet() {
-        resetWith(Config.empty(), InjectionConfig.builder()
-                          .permitsDynamic(true)
-                          .build());
+        resetWith(Config.empty(), InjectionConfig.create());
 
         assertThat(OciExtension.isSufficientlyConfigured(Config.empty()),
                    is(false));
 
         Supplier<AbstractAuthenticationDetailsProvider> authServiceProvider =
-                services.get(AbstractAuthenticationDetailsProvider.class);
+                services.supply(AbstractAuthenticationDetailsProvider.class);
         Objects.requireNonNull(authServiceProvider);
 
         // this code is dependent upon whether and OCI config-file is present - so leaving this commented out intentionally
@@ -186,12 +183,10 @@ class OciAuthenticationDetailsProviderTest {
         Config config = OciExtensionTest.createTestConfig(
                 OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
                 OciExtensionTest.ociAuthConfigFile("./target", "profile"));
-        resetWith(config, InjectionConfig.builder()
-                .permitsDynamic(true)
-                .build());
+        resetWith(config, InjectionConfig.create());
 
         Supplier<AbstractAuthenticationDetailsProvider> authServiceProvider =
-                services.get(AbstractAuthenticationDetailsProvider.class);
+                services.supply(AbstractAuthenticationDetailsProvider.class);
 
         InjectionServiceProviderException e = assertThrows(InjectionServiceProviderException.class, authServiceProvider::get);
         assertThat(e.getCause().getClass(),
@@ -203,12 +198,10 @@ class OciAuthenticationDetailsProviderTest {
         Config config = OciExtensionTest.createTestConfig(
                 OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
                 OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "passphrase", "fp", "privKey", null, "us-phoenix-1"));
-        resetWith(config, InjectionConfig.builder()
-                .permitsDynamic(true)
-                .build());
+        resetWith(config, InjectionConfig.create());
 
         Supplier<AbstractAuthenticationDetailsProvider> authServiceProvider =
-                services.get(AbstractAuthenticationDetailsProvider.class);
+                services.supply(AbstractAuthenticationDetailsProvider.class);
 
         AbstractAuthenticationDetailsProvider authProvider = authServiceProvider.get();
         assertThat(authProvider.getClass(),

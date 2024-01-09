@@ -18,11 +18,11 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.Optional;
 
-import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.Injection;
 
 import jakarta.inject.Inject;
 
-@ConfigDriven(FakeServerConfigBlueprint.class)
+@Injection.DrivenBy(FakeServerConfigBlueprint.class)
 public class FakeWebServerNotDrivenAndHavingConfiguredByOverrides extends FakeWebServer {
 
     @Inject

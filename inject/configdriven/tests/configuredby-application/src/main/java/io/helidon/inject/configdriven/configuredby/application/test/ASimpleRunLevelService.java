@@ -18,29 +18,23 @@ package io.helidon.inject.configdriven.configuredby.application.test;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
-import io.helidon.inject.Resettable;
 import io.helidon.inject.configdriven.configuredby.test.ASingletonServiceContract;
 import io.helidon.inject.configdriven.tests.config.FakeWebServerContract;
 import io.helidon.inject.service.Injection;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
-
-@Singleton
+@Injection.Singleton
 @Injection.RunLevel(Injection.RunLevel.STARTUP)
-public class ASimpleRunLevelService implements Resettable {
+public class ASimpleRunLevelService {
 
     static int postConstructCount;
     static int preDestroyCount;
     private boolean running;
     private ASingletonServiceContract singleton;
-    private List<Provider<FakeWebServerContract>> fakeWebServers;
+    private List<Supplier<FakeWebServerContract>> fakeWebServers;
 
-    @Inject // testing an empty/void ctor here
+    @Injection.Inject // testing an empty/void ctor here
     public ASimpleRunLevelService() {
     }
 
@@ -52,26 +46,12 @@ public class ASimpleRunLevelService implements Resettable {
         return preDestroyCount;
     }
 
-    @Inject
-    void setSingleton(ASingletonServiceContract singleton) {
-        assert (this.singleton == null);
-        this.singleton = Objects.requireNonNull(singleton);
-    }
-
-    @Inject
-    void setWebServer(List<Provider<FakeWebServerContract>> fakeWebServers) {
-        assert (this.fakeWebServers == null);
-        assert (!Objects.requireNonNull(fakeWebServers).isEmpty());
-        this.fakeWebServers = Objects.requireNonNull(fakeWebServers);
-    }
-
-    @Override
-    public void reset(boolean deep) {
+    public static void reset() {
         postConstructCount = 0;
         preDestroyCount = 0;
     }
 
-    @PostConstruct
+    @Injection.PostConstruct
     public void postConstruct() {
         assert (!running);
         Objects.requireNonNull(singleton);
@@ -80,7 +60,7 @@ public class ASimpleRunLevelService implements Resettable {
         postConstructCount++;
     }
 
-    @PreDestroy
+    @Injection.PreDestroy
     public void preDestroy() {
         assert (running);
         Objects.requireNonNull(singleton);
@@ -91,6 +71,19 @@ public class ASimpleRunLevelService implements Resettable {
 
     public boolean isRunning() {
         return running;
+    }
+
+    @Injection.Inject
+    void setSingleton(ASingletonServiceContract singleton) {
+        assert (this.singleton == null);
+        this.singleton = Objects.requireNonNull(singleton);
+    }
+
+    @Injection.Inject
+    void setWebServer(List<Supplier<FakeWebServerContract>> fakeWebServers) {
+        assert (this.fakeWebServers == null);
+        assert (!Objects.requireNonNull(fakeWebServers).isEmpty());
+        this.fakeWebServers = Objects.requireNonNull(fakeWebServers);
     }
 
 }

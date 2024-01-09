@@ -19,7 +19,7 @@ package io.helidon.inject.configdriven.tests.config;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.inject.configdriven.service.ConfigDriven;
+import io.helidon.inject.service.Injection;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -28,7 +28,9 @@ import jakarta.inject.Inject;
 /**
  * For Testing.
  */
-@ConfigDriven(value = FakeServerConfigBlueprint.class, activateByDefault = true)
+@Injection.DrivenBy(FakeServerConfigBlueprint.class)
+@Injection.Eager
+@Injection.Singleton
 public class FakeWebServer implements FakeWebServerContract {
 
     private final FakeServerConfig cfg;

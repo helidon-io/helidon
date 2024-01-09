@@ -42,9 +42,12 @@ class QualifierSupport {
         static final Qualifier DEFAULT_NAMED = createNamed(Injection.Named.DEFAULT_NAME);
 
         /**
-         * The type name for {@link Injection.ClassNamed}.
+         * Represents a qualifier used for injecting name of {@link io.helidon.inject.service.Injection.DrivenBy}
+         * instances.
          */
-        private static final TypeName CLASS_NAMED = TypeName.create(Injection.ClassNamed.class);
+        @Prototype.Constant
+        static final Qualifier DRIVEN_BY_NAME = create(Injection.DrivenByName.class);
+
 
         private CustomMethods() {
         }
@@ -192,7 +195,7 @@ class QualifierSupport {
         }
 
         private static TypeName maybeNamed(TypeName qualifierType) {
-            if (CLASS_NAMED.equals(qualifierType)) {
+            if (Injection.ClassNamed.TYPE_NAME.equals(qualifierType)) {
                 return Injection.Named.TYPE_NAME;
             }
             return qualifierType;

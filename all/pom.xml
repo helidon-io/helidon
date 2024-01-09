@@ -1044,10 +1044,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
             <artifactId>helidon-inject-configdriven-codegen</artifactId>
         </dependency>
         <dependency>

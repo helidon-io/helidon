@@ -16,12 +16,9 @@
 
 package io.helidon.inject.tests.inject;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.inject.Resettable;
 import io.helidon.inject.service.Injection;
-import io.helidon.inject.tests.inject.stacking.CommonContract;
 import io.helidon.inject.tests.inject.tbox.Awl;
 
 import jakarta.annotation.PostConstruct;
@@ -34,16 +31,22 @@ import jakarta.inject.Singleton;
 @Injection.RunLevel(Injection.RunLevel.STARTUP)
 @Singleton
 @Named("testing")
-public class TestingSingleton implements Resettable, CommonContract {
+public class TestingSingleton implements CommonContract {
     final static AtomicInteger postConstructCount = new AtomicInteger();
     final static AtomicInteger preDestroyCount = new AtomicInteger();
 
-    CommonContract inner;
     @Inject Provider<Awl> awlProvider;
 
     @Inject
-    TestingSingleton(Optional<CommonContract> inner) {
-        this.inner = inner.orElseThrow();
+    TestingSingleton() {
+    }
+
+    public static int postConstructCount() {
+        return postConstructCount.get();
+    }
+
+    public static int preDestroyCount() {
+        return preDestroyCount.get();
     }
 
     @PostConstruct
@@ -56,27 +59,18 @@ public class TestingSingleton implements Resettable, CommonContract {
         preDestroyCount.incrementAndGet();
     }
 
-    public static int postConstructCount() {
-        return postConstructCount.get();
-    }
-
-    public static int preDestroyCount() {
-        return preDestroyCount.get();
-    }
-
-    @Override
-    public void reset(boolean deep) {
+    public static void reset() {
         postConstructCount.set(0);
         preDestroyCount.set(0);
     }
 
     @Override
     public CommonContract getInner() {
-        return inner;
+        return null;
     }
 
     @Override
     public String sayHello(String arg) {
-        return "TS: " + getInner().sayHello(arg);
+        return "Hi";
     }
 }

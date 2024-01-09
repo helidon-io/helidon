@@ -470,8 +470,18 @@ class TypeHandler {
             builder.addContent(Objects.class)
                     .addContentLine(".requireNonNull(" + name() + ");");
         }
-        builder.addContentLine("this." + name() + " = " + name() + ";")
-                .addContentLine("return self();");
+
+        if (configured.decorator() != null) {
+            builder.addContent("new ")
+                    .addContent(configured.decorator())
+                    .addContent("().decorate(this, ")
+                    .addContent(name())
+                    .addContentLine(");");
+        }
+
+        builder.addContentLine("this." + name() + " = " + name() + ";");
+
+        builder.addContentLine("return self();");
         classBuilder.addMethod(builder);
     }
 

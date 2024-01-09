@@ -6,7 +6,6 @@
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
-
         http://www.apache.org/licenses/LICENSE-2.0
 
     Unless required by applicable law or agreed to in writing, software
@@ -30,7 +29,10 @@
 
     <artifactId>helidon-inject-tests-resources-inject</artifactId>
     <name>Helidon Injection Test Injectable Resources</name>
-    <description>a jar that offers contracts and other artifacts and is a native injection module (e.g., uses injection APT).</description>
+    <description>
+        A jar that offers contracts and other artifacts and is a native injection module (e.g., uses injection APT).
+        Test for basic service registry operations and service interactions.
+    </description>
 
     <properties>
         <checkstyle.skip>true</checkstyle.skip>

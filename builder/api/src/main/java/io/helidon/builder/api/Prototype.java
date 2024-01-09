@@ -309,7 +309,7 @@ public final class Prototype {
      * The builder provides accessors to all types, using {@link java.util.Optional} for any field that is optional,
      * or any other field unless it has a default value. Primitive types are an exception (unless declared as required).
      *
-     * @param <T> the type of the bean builder to intercept
+     * @param <T> the type of the builder to decorate
      * @see io.helidon.builder.api.Prototype.Blueprint#decorator()
      */
     @FunctionalInterface
@@ -320,6 +320,28 @@ public final class Prototype {
          * @param target the target being decorated
          */
         void decorate(T target);
+    }
+
+    /**
+     * Provides a way to decorate a single option when it is applied to the builder.
+     * The decorator must have an accessible no argument constructor (at least package local).
+     *
+     * @param <B> the type of the builder to decorate
+     * @param <T> the type of the option to decorate
+     * @see io.helidon.builder.api.Prototype.Blueprint#decorator()
+     */
+    @FunctionalInterface
+    public interface OptionDecorator<B, T> {
+        /**
+         * Provides the ability to decorate option as it is being set on the target builder.
+         * This method is invoked from within the setter of the value before the value is set on the builder (i.e. the
+         * builder still contains previous value).
+         * Do not call the same setter again from within this method, as it would end in a stack overflow.
+         *
+         * @param builder the target builder being decorated
+         * @param optionValue option value set by the caller of the setter method
+         */
+        void decorate(B builder, T optionValue);
     }
 
     /**

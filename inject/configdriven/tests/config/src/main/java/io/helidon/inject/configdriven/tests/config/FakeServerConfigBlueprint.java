@@ -22,12 +22,14 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.inject.configdriven.service.ConfigDriven;
 
 /**
  * aka ServerConfiguration.
  */
 @Prototype.Blueprint
 @Prototype.Configured("server")
+@ConfigDriven.ConfigBean
 interface FakeServerConfigBlueprint extends FakeSocketConfigBlueprint {
 
     /**

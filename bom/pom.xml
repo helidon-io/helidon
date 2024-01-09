@@ -1380,11 +1380,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
                 <artifactId>helidon-inject-configdriven-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

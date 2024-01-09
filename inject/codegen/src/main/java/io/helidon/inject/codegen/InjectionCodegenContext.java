@@ -134,7 +134,6 @@ public interface InjectionCodegenContext extends CodegenContext {
         TypeName generic = typeName.genericTypeName();
 
         return generic.equals(TypeNames.SUPPLIER)
-                || generic.equals(InjectCodegenTypes.SERVICE_PROVIDER)
                 || generic.equals(InjectCodegenTypes.INJECTION_POINT_PROVIDER);
     }
 

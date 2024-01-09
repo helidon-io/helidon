@@ -18,32 +18,25 @@ package io.helidon.inject.runtime;
 
 import java.util.List;
 
-import io.helidon.common.types.TypeName;
-import io.helidon.inject.ActivationResult;
-import io.helidon.inject.Activator;
 import io.helidon.inject.Application;
-import io.helidon.inject.DeActivationRequest;
-import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Phase;
-import io.helidon.inject.RegistryServiceProvider;
-import io.helidon.inject.ServiceProviderRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.runtime.testsubjects.HelloInjectionWorld;
 import io.helidon.inject.runtime.testsubjects.HelloInjectionWorldImpl;
 import io.helidon.inject.runtime.testsubjects.HelloInjection__Application;
 import io.helidon.inject.runtime.testsubjects.InjectionWorld;
-import io.helidon.inject.service.Injection;
+import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
+import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
@@ -51,52 +44,43 @@ import static org.hamcrest.Matchers.sameInstance;
  * Sanity type tests only. The "real" testing is in the tests submodules.
  */
 class HelloInjectionWorldSanityTest {
-    // helidon-config is now one of the modules
-    private static final int EXPECTED_MODULES = 3;
-
-    @BeforeEach
-    void setUp() {
-        tearDown();
-        InjectionConfig cfg = InjectionConfig.builder()
-                .permitsDynamic(true)
-                .build();
-
-        InjectionServices.configure(cfg);
-    }
-
     @AfterEach
     void tearDown() {
         HelloInjection__Application.ENABLED = true;
-        SimpleInjectionTestingSupport.resetAll();
     }
 
     @Test
     void sanity() {
-        Services serviceRegistry = InjectionServices.instance().services();
-        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
+        InjectionServices injectionServices = InjectionServices.create();
+        try {
+            Services services = injectionServices.services();
 
-        List<RegistryServiceProvider<ModuleComponent>> moduleProviders = services.all(ModuleComponent.class);
-        assertThat(moduleProviders.size(),
-                   equalTo(EXPECTED_MODULES));
-        List<String> descriptions = ProviderUtil.toDescriptions(moduleProviders);
-        // helidon-config is now first
-        assertThat(descriptions,
-                   containsInAnyOrder("Injection__Module:ACTIVE",
-                                      "EmptyModule:ACTIVE",
-                                      "HelloInjection__Module:ACTIVE"));
+            List<ServiceInfo> moduleProviders = services.lookupServices(Lookup.create(ModuleComponent.class));
+            // config, inject itself, empty module, hello injection module
+            assertThat(String.join(", ", InjectionTestingSupport.toTypes(moduleProviders)),
+                       moduleProviders.size(),
+                       equalTo(4));
+            List<String> descriptions = InjectionTestingSupport.toTypes(moduleProviders);
+            // helidon-config is now first
+            assertThat(descriptions,
+                       containsInAnyOrder("io.helidon.config.Injection__Module",
+                                          "io.helidon.inject.Injection__Module",
+                                          "io.helidon.inject.runtime.testsubjects.EmptyModule",
+                                          "io.helidon.inject.runtime.testsubjects.HelloInjection__Module"));
 
-        List<RegistryServiceProvider<Application>> applications = services.all(Application.class);
-        assertThat(applications.size(),
-                   equalTo(1));
-        assertThat(ProviderUtil.toDescriptions(applications),
-                   containsInAnyOrder("HelloInjection__Application:ACTIVE"));
+            List<ServiceInfo> applications = services.lookupServices(Lookup.create(Application.class));
+            assertThat(applications.size(),
+                       equalTo(1));
+            assertThat(InjectionTestingSupport.toTypes(applications),
+                       containsInAnyOrder("io.helidon.inject.runtime.testsubjects.HelloInjection__Application"));
+        } finally {
+            InjectionTestingSupport.shutdown(injectionServices);
+        }
     }
 
     @Test
     void standardActivationWithNoApplicationEnabled() {
         HelloInjection__Application.ENABLED = false;
-
-        SimpleInjectionTestingSupport.resetAll();
 
         standardActivation();
     }
@@ -105,84 +89,39 @@ class HelloInjectionWorldSanityTest {
     void standardActivationWithApplicationEnabled() {
         HelloInjection__Application.ENABLED = true;
 
-        SimpleInjectionTestingSupport.resetAll();
-
         standardActivation();
     }
 
     void standardActivation() {
-        Services serviceRegistry = InjectionServices.instance().services();
-        ServiceProviderRegistry services = serviceRegistry.serviceProviders();
+        InjectionServices injectionServices = InjectionServices.create();
 
-        RegistryServiceProvider<HelloInjectionWorld> helloProvider1 =
-                services.get(HelloInjectionWorld.class);
-        assertThat(helloProvider1,
-                   notNullValue());
+        try {
+            Services services = injectionServices.services();
 
-        RegistryServiceProvider<HelloInjectionWorldImpl> helloProvider2 = services.get(HelloInjectionWorldImpl.class);
-        assertThat(helloProvider1,
-                   sameInstance(helloProvider2));
-        assertThat(helloProvider1.id(),
-                   equalTo(HelloInjectionWorldImpl.class.getName()));
-        assertThat(helloProvider1.currentActivationPhase(),
-                   equalTo(Phase.INIT));
-        assertThat(helloProvider1.description(),
-                   equalTo(HelloInjectionWorldImpl.class.getSimpleName() + ":" + Phase.INIT));
+            HelloInjectionWorld hello1 = services.get(HelloInjectionWorld.class);
+            assertThat(hello1,
+                       notNullValue());
 
-        assertThat(helloProvider1.serviceType(),
-                   equalTo(TypeName.create(HelloInjectionWorldImpl.class)));
-        assertThat(helloProvider1.contracts(),
-                   containsInAnyOrder(TypeName.create(HelloInjectionWorld.class)));
-        assertThat(helloProvider1.scope(),
-                   is(Injection.Singleton.TYPE_NAME));
-        assertThat(helloProvider1.qualifiers().size(),
-                   equalTo(0));
-        assertThat(helloProvider1.runLevel(),
-                   equalTo(Injection.RunLevel.NORMAL));
-        assertThat(helloProvider1.weight(),
-                   equalTo(Services.INJECT_WEIGHT));
+            HelloInjectionWorldImpl hello2 = services.get(HelloInjectionWorldImpl.class);
+            assertThat(hello2,
+                       sameInstance(hello1));
 
-        RegistryServiceProvider<InjectionWorld> worldProvider1 = services.get(InjectionWorld.class);
-        assertThat(worldProvider1, notNullValue());
-        assertThat(worldProvider1.description(),
-                   equalTo("InjectionWorldImpl:INIT"));
+            InjectionWorld world1 = services.get(InjectionWorld.class);
+            assertThat(world1, notNullValue());
 
-        // now activate
-        HelloInjectionWorld hello1 = helloProvider1.get();
-        assertThat(hello1.sayHello(),
-                   equalTo("Hello inject"));
-        assertThat(helloProvider1.currentActivationPhase(),
-                   equalTo(Phase.ACTIVE));
-        assertThat(helloProvider1.description(),
-                   equalTo("HelloInjectionWorldImpl:ACTIVE"));
+            // now activate
+            assertThat(hello1.sayHello(),
+                       equalTo("Hello inject"));
 
-        // world should be active now too, since Hello should have implicitly activated it
-        assertThat(worldProvider1.description(),
-                   equalTo("InjectionWorldImpl:ACTIVE"));
-
-        // check the post construct counts
-        assertThat(((HelloInjectionWorldImpl) helloProvider1.get()).postConstructCallCount(),
-                   equalTo(1));
-        assertThat(((HelloInjectionWorldImpl) helloProvider1.get()).preDestroyCallCount(),
-                   equalTo(0));
-
-        // deactivate just the Hello service
-        ActivationResult result = ((Activator<?>) helloProvider1).deactivate(DeActivationRequest.create());
-        assertThat(result.success(),
-                   is(true));
-        assertThat(result.serviceProvider(),
-                   sameInstance(helloProvider2));
-        assertThat(result.finishingActivationPhase(),
-                   is(Phase.DESTROYED));
-        assertThat(result.startingActivationPhase(),
-                   is(Phase.ACTIVE));
-        assertThat(helloProvider1.description(),
-                   equalTo("HelloInjectionWorldImpl:DESTROYED"));
-        assertThat(((HelloInjectionWorldImpl) hello1).postConstructCallCount(),
-                   equalTo(1));
-        assertThat(((HelloInjectionWorldImpl) hello1).preDestroyCallCount(),
-                   equalTo(1));
-        assertThat(worldProvider1.description(),
-                   equalTo("InjectionWorldImpl:ACTIVE"));
+            assertThat(hello1, instanceOf(HelloInjectionWorldImpl.class));
+            HelloInjectionWorldImpl hello1Impl = (HelloInjectionWorldImpl) hello1;
+            // check the post construct counts
+            assertThat(hello1Impl.postConstructCallCount(),
+                       equalTo(1));
+            assertThat(hello1Impl.preDestroyCallCount(),
+                       equalTo(0));
+        } finally {
+            InjectionTestingSupport.shutdown(injectionServices);
+        }
     }
 }

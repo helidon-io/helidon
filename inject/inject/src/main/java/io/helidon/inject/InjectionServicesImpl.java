@@ -16,28 +16,21 @@
 
 package io.helidon.inject;
 
-import java.lang.System.Logger.Level;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.ModuleComponent;
-import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.service.ServiceDescriptor;
 
-class InjectionServicesImpl extends ResettableHandler implements InjectionServices {
-    private static final System.Logger LOGGER = System.getLogger(InjectionServices.class.getName());
+class InjectionServicesImpl implements InjectionServices {
     private static final ReadWriteLock INSTANCE_LOCK = new ReentrantReadWriteLock();
     private static final AtomicReference<InjectionConfig> CONFIG = new AtomicReference<>();
 
@@ -47,7 +40,7 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
     private final ReentrantReadWriteLock lifecycleLock = new ReentrantReadWriteLock();
     private final InjectionConfig config;
 
-    private volatile ServicesImpl services;
+    private volatile Services services;
 
     private InjectionServicesImpl(InjectionConfig config) {
         this.config = config;
@@ -75,7 +68,6 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
                 config = InjectionConfig.create(GlobalConfig.config().get("inject"));
             }
             InjectionServicesImpl newInstance = new InjectionServicesImpl(config);
-            ResettableHandler.addResettable(new ResetInjectionServices(newInstance));
 
             InjectionServicesImpl.instance = newInstance;
 
@@ -89,8 +81,9 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
         CONFIG.set(config);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public ServicesImpl services() {
+    public Services services() {
         Lock readLock = lifecycleLock.readLock();
         try {
             readLock.lock();
@@ -108,8 +101,12 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
                 return services;
             }
             state.currentPhase(Phase.ACTIVATION_STARTING);
-            services = new ServicesImpl(this, state);
-            services.bindSelf();
+            services = new Services(this, state);
+            services.bindInstance(Services__ServiceDescriptor.INSTANCE, services);
+
+            for (ServiceDescriptor<?> serviceDescriptor : config.serviceDescriptors()) {
+                services.bind(serviceDescriptor);
+            }
 
             if (config.useModules()) {
                 List<ModuleComponent> modules = findModules();
@@ -122,20 +119,13 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
                 apps.forEach(services::bind);
             }
 
-            List<ActivationPhaseReceiver> phaseReceivers = services.allProviders()
-                    .stream()
-                    .filter(sp -> sp instanceof ActivationPhaseReceiver)
-                    .map(ActivationPhaseReceiver.class::cast)
-                    .toList();
 
             state.currentPhase(Phase.POST_BIND_ALL_MODULES);
-            phaseReceivers.forEach(sp -> sp.onPhaseEvent(Phase.POST_BIND_ALL_MODULES));
+            services.postBindAllModules();
 
             state.currentPhase(Phase.FINAL_RESOLVE);
-            phaseReceivers.forEach(sp -> sp.onPhaseEvent(Phase.FINAL_RESOLVE));
 
             state.currentPhase(Phase.SERVICES_READY);
-            phaseReceivers.forEach(sp -> sp.onPhaseEvent(Phase.SERVICES_READY));
 
             state.finished(true);
 
@@ -161,76 +151,16 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
             State currentState = state.clone().currentPhase(Phase.PRE_DESTROYING);
             return doShutdown(services, currentState);
         } finally {
+            state.reset();
             services = null;
             lock.unlock();
         }
     }
 
-    private static Map<TypeName, ActivationResult> doShutdown(ServicesImpl services, State state) {
-        Map<TypeName, ActivationResult> result = new LinkedHashMap<>();
-
+    private static Map<TypeName, ActivationResult> doShutdown(Services services, State state) {
         state.currentPhase(Phase.DESTROYED);
 
-        // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
-        List<RegistryServiceProvider<?>> serviceProviders = services.allProviders();
-        serviceProviders = serviceProviders.stream()
-                .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
-                .collect(Collectors.toList()); // must be a mutable list, as we sort it in next step
-        serviceProviders.sort(shutdownComparator());
-        doFinalShutdown(services, serviceProviders, result);
-
-        return result;
-    }
-
-    static Comparator<? super RegistryServiceProvider<?>> shutdownComparator() {
-        return Comparator.comparingInt(ServiceInfo::runLevel)
-                .thenComparing(ServiceInfo::weight);
-    }
-
-    private static void doFinalShutdown(ServicesImpl services,
-                                        Collection<RegistryServiceProvider<?>> serviceProviders,
-                                        Map<TypeName, ActivationResult> map) {
-        for (RegistryServiceProvider<?> csp : serviceProviders) {
-            Phase startingActivationPhase = csp.currentActivationPhase();
-            try {
-                Activator<?> activator;
-                Optional<Activator<?>> activatorOptional = services.activator(csp);
-                if (activatorOptional.isPresent()) {
-                    activator = activatorOptional.get();
-                } else {
-                    if (csp instanceof Activator<?> cspa) {
-                        activator = cspa;
-                    } else {
-                        ActivationResult result = ActivationResult.builder()
-                                .serviceProvider(csp)
-                                .startingActivationPhase(startingActivationPhase)
-                                .targetActivationPhase(Phase.DESTROYED)
-                                .finishingActivationPhase(csp.currentActivationPhase())
-                                .finishingStatus(ActivationStatus.FAILURE)
-                                .error(new InjectionException("Failed to discover activator for the service provider,"
-                                                                      + " cannot shut down"))
-                                .build();
-                        map.put(csp.serviceType(), result);
-                        continue;
-                    }
-                }
-                ActivationResult result = activator.deactivate(DeActivationRequest.builder()
-                                                                       .throwIfError(false)
-                                                                       .build());
-                map.put(csp.serviceType(), result);
-            } catch (Throwable t) {
-                LOGGER.log(Level.WARNING, "Failed to deactivate service provider: " + csp, t);
-                ActivationResult result = ActivationResult.builder()
-                        .serviceProvider(csp)
-                        .startingActivationPhase(startingActivationPhase)
-                        .targetActivationPhase(Phase.DESTROYED)
-                        .finishingActivationPhase(csp.currentActivationPhase())
-                        .finishingStatus(ActivationStatus.FAILURE)
-                        .error(t)
-                        .build();
-                map.put(csp.serviceType(), result);
-            }
-        }
+        return services.close();
     }
 
     private List<Application> findApplications() {
@@ -241,44 +171,5 @@ class InjectionServicesImpl extends ResettableHandler implements InjectionServic
     private List<ModuleComponent> findModules() {
         return HelidonServiceLoader.create(ServiceLoader.load(ModuleComponent.class))
                 .asList();
-    }
-
-    private static class ResetInjectionServices implements Resettable {
-
-        private final InjectionServicesImpl instance;
-
-        private ResetInjectionServices(InjectionServicesImpl instance) {
-            this.instance = instance;
-        }
-
-        @Override
-        public void reset(boolean deep) {
-            // first reset the singleton instance (so a new singleton can be created with different config)
-            Lock writeLock = INSTANCE_LOCK.writeLock();
-            try {
-                writeLock.lock();
-                InjectionServicesImpl.CONFIG.set(null);
-                InjectionServicesImpl.instance = null;
-            } finally {
-                writeLock.unlock();
-            }
-
-            // now reset this instance
-            Lock lock = instance.lifecycleLock.writeLock();
-            try {
-                lock.lock();
-
-                if (!instance.config.permitsDynamic()) {
-                    throw new IllegalStateException(
-                            "Attempting to reset InjectionServices that do not support dynamic updates. Set option "
-                                    + "permitsDynamic, "
-                                    + "or configuration option 'inject.permits-dynamic=true' to enable");
-                }
-
-                instance.services = null;
-            } finally {
-                lock.unlock();
-            }
-        }
     }
 }

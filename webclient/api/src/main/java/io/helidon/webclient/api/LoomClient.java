@@ -28,7 +28,6 @@ import java.util.concurrent.Executors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.http.Method;
-import io.helidon.inject.configdriven.service.ConfigDriven;
 import io.helidon.inject.service.Injection;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 import io.helidon.webclient.spi.HttpClientSpi;
@@ -40,7 +39,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
  * Base class for HTTP implementations of {@link WebClient}.
  */
 @SuppressWarnings("rawtypes")
-@ConfigDriven(WebClientConfigBlueprint.class)
+@Injection.DrivenBy(WebClientConfigBlueprint.class)
 class LoomClient implements WebClient {
     static final LazyValue<ExecutorService> EXECUTOR = LazyValue.create(() -> {
         return Executors.newThreadPerTaskExecutor(Thread.ofVirtual()

@@ -82,8 +82,8 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     public void init(TlsConfig tls) {
         this.tlsConfig = tls;
         Services services = InjectionServices.instance().services();
-        this.pkDownloader = services.get(OciPrivateKeyDownloader.class);
-        this.certDownloader = services.get(OciCertificatesDownloader.class);
+        this.pkDownloader = services.supply(OciPrivateKeyDownloader.class);
+        this.certDownloader = services.supply(OciCertificatesDownloader.class);
         this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();
         this.async = Async.builder().executor(asyncExecutor).build();
 
@@ -91,8 +91,9 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
         loadContext(true);
 
         // register for any available graceful shutdown events
-        Optional<Supplier<LifecycleHook>> shutdownHook = services.first(LifecycleHook.class);
-        shutdownHook.ifPresent(sp -> sp.get().registerShutdownConsumer(this::shutdown));
+        Optional<LifecycleHook> shutdownHook = services.supplyFirst(LifecycleHook.class)
+                .get();
+        shutdownHook.ifPresent(hook -> hook.registerShutdownConsumer(this::shutdown));
 
         // now schedule for reload checking
         String taskIntervalDescription =

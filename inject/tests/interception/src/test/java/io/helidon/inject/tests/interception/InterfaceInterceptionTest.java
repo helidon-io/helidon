@@ -48,7 +48,7 @@ class InterfaceInterceptionTest {
     static void init() {
         injectionServices = InjectionServices.instance();
         services = injectionServices.services();
-        service = services.get(OtherContract.class).get();
+        service = services.get(OtherContract.class);
 
         assertAll(
                 () -> assertThat("Interceptors should not be called for constructor - returning",

@@ -50,6 +50,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.inject</groupId>
+            <artifactId>helidon-inject-testing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
