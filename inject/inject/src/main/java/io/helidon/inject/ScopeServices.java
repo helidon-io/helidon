@@ -45,7 +45,7 @@ public class ScopeServices {
     private final List<ServiceManager<?>> eagerServices;
     private boolean active = true;
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     ScopeServices(Services services,
                   TypeName scope,
                   String id, List<ServiceManager<?>> eagerServices,
