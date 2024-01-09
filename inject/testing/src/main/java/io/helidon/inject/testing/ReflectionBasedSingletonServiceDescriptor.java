@@ -62,7 +62,7 @@ public class ReflectionBasedSingletonServiceDescriptor<T> implements ServiceDesc
      * @param serviceInfo the service info basic descriptor, or null to generate a default (empty) placeholder
      * @param <T>         the class of the service type
      * @return the service provider capable of being bound to the services registry
-     * @see InjectionTestingSupport#bind(io.helidon.inject.Services, io.helidon.inject.service.ServiceDescriptor)
+     * @see io.helidon.inject.InjectionConfig.Builder#addServiceDescriptor(io.helidon.inject.service.ServiceDescriptor)
      */
     public static <T> ServiceDescriptor<T> create(Class<T> serviceType,
                                                   ServiceInfo serviceInfo) {

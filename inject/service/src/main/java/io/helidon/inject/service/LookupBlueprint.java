@@ -109,9 +109,9 @@ interface LookupBlueprint {
     default boolean matches(Lookup criteria) {
         return matchesContracts(criteria)
                 && matchesAbstract(includeAbstract(), criteria.includeAbstract())
-                && matches(scopes(), criteria.scopes())
+                && matchesTypes(scopes(), criteria.scopes())
                 && Qualifiers.matchesQualifiers(qualifiers(), criteria.qualifiers())
-                && matches(runLevel(), criteria.runLevel());
+                && matchesOptionals(runLevel(), criteria.runLevel());
     }
 
     /**
@@ -152,7 +152,7 @@ interface LookupBlueprint {
             return true;
         }
 
-        boolean matches = matches(serviceType(), criteria.serviceType());
+        boolean matches = matchesOptionals(serviceType(), criteria.serviceType());
         if (matches && criteria.serviceType().isEmpty()) {
             matches = contracts().containsAll(criteria.contracts());
         }
@@ -187,7 +187,7 @@ interface LookupBlueprint {
         return Objects.equals(src, criteria.get());
     }
 
-    private boolean matches(Set<TypeName> scopes, Set<TypeName> criteria) {
+    private boolean matchesTypes(Set<TypeName> scopes, Set<TypeName> criteria) {
         if (criteria.isEmpty()) {
             return true;
         }
@@ -199,7 +199,7 @@ interface LookupBlueprint {
         return false;
     }
 
-    private boolean matches(Optional<?> src, Optional<?> criteria) {
+    private boolean matchesOptionals(Optional<?> src, Optional<?> criteria) {
         if (criteria.isEmpty()) {
             return true;
         }
