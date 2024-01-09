@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.inject;
 
 import java.lang.System.Logger.Level;
@@ -18,11 +34,6 @@ import io.helidon.inject.service.ServiceInfo;
  * This type is owned by Helidon Injection, and cannot be customized.
  * When a scope is properly accessible through its {@link io.helidon.inject.ScopeHandler}, {@link #activate()}
  * must be invoked by its control, to make sure all eager services are correctly activated.
- */
-/*
-Cardinality: one instance per scope instance
-- 1 instance for Singleton scope
-- 1 instance per request for Requeston scope
  */
 public class ScopeServices {
     private final ReadWriteLock serviceProvidersLock = new ReentrantReadWriteLock();
@@ -60,6 +71,13 @@ public class ScopeServices {
         eagerServices.forEach(ServiceManager::activate);
     }
 
+    /**
+     * Close this services instance.
+     * The returned map contains a map of all service types to a de-activation result that was done.
+     * Note that only services that were in a state that supports de-activation are listed.
+     *
+     * @return map of de-activation results
+     */
     public Map<TypeName, ActivationResult> close() {
         try {
             serviceProvidersLock.writeLock().lock();
@@ -74,12 +92,13 @@ public class ScopeServices {
                     .toList();
 
             Map<TypeName, ActivationResult> result = new LinkedHashMap<>();
+            DeActivationRequest request = DeActivationRequest.builder()
+                    .throwIfError(false)
+                    .build();
             for (ManagedService<?> managedService : toShutdown) {
                 Phase startingActivationPhase = managedService.phase();
                 try {
-                    ActivationResult activationResult = managedService.deactivate(DeActivationRequest.builder()
-                                                                                          .throwIfError(false)
-                                                                                          .build());
+                    ActivationResult activationResult = managedService.deactivate(request);
                     if (activationResult.failure() && logger.isLoggable(Level.DEBUG)) {
                         if (activationResult.error().isPresent()) {
                             logger.log(Level.DEBUG,

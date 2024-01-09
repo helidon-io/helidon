@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -306,8 +306,8 @@ class InjectionExtension implements InjectCodegenExtension {
         } else {
             TypeName drivenByType = drivenBy.get()
                     .typeValue()
-                    .orElseThrow(() -> new CodegenException(INJECTION_DRIVEN_BY.fqName() +
-                                                                    ".value() is required, yet not found on type: "
+                    .orElseThrow(() -> new CodegenException(INJECTION_DRIVEN_BY.fqName()
+                                                                    + ".value() is required, yet not found on type: "
                                                                     + typeInfo.typeName().fqName()));
 
             String drivenByClassName = drivenByType.className();
