@@ -30,10 +30,6 @@
     <name>Helidon Injection Tests Config Beans Drivent</name>
     <description>tests the fuller config-driven services (i.e., full config not just common and with config-driven services)</description>
 
-    <properties>
-        <helidon.services.skip>true</helidon.services.skip>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.inject.tests</groupId>

@@ -912,7 +912,12 @@ class InjectionExtension implements InjectCodegenExtension {
                 // provider must have a type argument (and the type argument is an automatic contract
                 TypeName providedType = typeName.typeArguments().getFirst();
                 if (!providedType.generic()) {
-                    collectedContracts.add(providedType);
+                    Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
+                    if (providedTypeInfo.isPresent()) {
+                        contracts(collectedContracts, providedTypeInfo.get(), true);
+                    } else {
+                        collectedContracts.add(providedType);
+                    }
                 }
             }
 

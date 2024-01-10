@@ -27,7 +27,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Lookup criteria to discover services, mostly used when interacting with a service registry.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(createEmptyPublic = false)
 @Prototype.CustomMethods(LookupSupport.CustomMethods.class)
 interface LookupBlueprint {
 

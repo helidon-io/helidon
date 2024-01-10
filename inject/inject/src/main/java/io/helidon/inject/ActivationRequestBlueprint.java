@@ -24,8 +24,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Request to activate a service.
  */
-@Prototype.Blueprint(decorator = ActivationRequestSupport.BuilderDecorator.class,
-                     isPublic = false)
+@Prototype.Blueprint(isPublic = false)
 interface ActivationRequestBlueprint {
     /**
      * The phase to start activation. Typically, this should be left as the default (i.e., PENDING).

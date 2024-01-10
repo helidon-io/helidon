@@ -23,8 +23,8 @@ import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.QualifiedInstance;
 import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.RegistryInstance;
 import io.helidon.inject.service.ServiceDescriptor;
+import io.helidon.inject.service.ServiceInstance;
 
 final class ServiceManager<T> {
     private final ServiceProvider<T> provider;
@@ -39,14 +39,19 @@ final class ServiceManager<T> {
         this.managedServiceSupplier = managedServiceSupplier;
     }
 
-    public RegistryInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
-        return new RegistryInstanceHolder<>(provider.descriptor(),
-                                            provider.contracts(lookup),
-                                            instance);
+    public ServiceInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
+        return new ServiceInstanceImpl<>(provider.descriptor(),
+                                         provider.contracts(lookup),
+                                         instance);
     }
 
     public ServiceInjectionPlanBinder.Binder servicePlanBinder() {
         return provider.servicePlanBinder();
+    }
+
+    @Override
+    public String toString() {
+        return descriptor().serviceType().classNameWithEnclosingNames();
     }
 
     void activate() {
@@ -73,19 +78,14 @@ final class ServiceManager<T> {
         return provider.descriptor();
     }
 
-    @Override
-    public String toString() {
-        return descriptor().serviceType().classNameWithEnclosingNames();
-    }
-
-    private static final class RegistryInstanceHolder<T> implements RegistryInstance<T> {
+    private static final class ServiceInstanceImpl<T> implements ServiceInstance<T> {
         private final ServiceDescriptor<T> descriptor;
         private final QualifiedInstance<T> qualifiedInstance;
         private final Set<TypeName> contracts;
 
-        private RegistryInstanceHolder(ServiceDescriptor<T> descriptor,
-                                       Set<TypeName> contracts,
-                                       QualifiedInstance<T> qualifiedInstance) {
+        private ServiceInstanceImpl(ServiceDescriptor<T> descriptor,
+                                    Set<TypeName> contracts,
+                                    QualifiedInstance<T> qualifiedInstance) {
             this.descriptor = descriptor;
             this.contracts = contracts;
             this.qualifiedInstance = qualifiedInstance;

@@ -36,7 +36,6 @@
     </description>
 
     <properties>
-        <checkstyle.skip>true</checkstyle.skip>
         <helidon.services.skip>false</helidon.services.skip>
     </properties>
 

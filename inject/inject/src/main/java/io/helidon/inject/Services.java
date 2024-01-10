@@ -42,10 +42,10 @@ import io.helidon.inject.service.Interception;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.RegistryInstance;
 import io.helidon.inject.service.ServiceBinder;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.service.ServiceInstance;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
@@ -326,24 +326,6 @@ public final class Services {
     }
 
     /**
-     * Get a supplier for the provided service info. The service info must already be known by this registry,
-     * either through a code generated module, or registered through
-     * {@link io.helidon.inject.InjectionConfig.Builder#addServiceDescriptor(io.helidon.inject.service.ServiceDescriptor)}.
-     *
-     * @param descriptor service descriptor to get a supplier for, please use the singleton instance (usually code generated
-     *                   into a public {@code __ServiceDescriptor} class), we use instance equality to discover services
-     * @param <T>        type of the service, if you use any other than {@link java.lang.Object}, make sure
-     *                   you have configured appropriate contracts in the lookup, as we cannot infer this
-     * @return supplier of an instance for the descriptor provided
-     */
-    public <T> Supplier<T> supply(ServiceInfo descriptor) {
-        return new ServiceSupply<>(Lookup.builder()
-                                           .serviceType(descriptor.serviceType())
-                                           .build(),
-                                   List.of(serviceManager(descriptor)));
-    }
-
-    /**
      * Find the first service provider matching the lookup with the expectation that there may not be a match available.
      *
      * @param lookup lookup criteria to find matching services
@@ -403,12 +385,12 @@ public final class Services {
     }
 
     /**
-     * Injection services this instance is managed by.
+     * Configuration this service registry was created with.
      *
-     * @return injection services
+     * @return service registry configuration
      */
-    public InjectionServices injectionServices() {
-        return injectionServices;
+    public InjectionConfig config() {
+        return injectionServices.config();
     }
 
     /**
@@ -421,13 +403,31 @@ public final class Services {
      *               you have configured appropriate contracts in the lookup, as we cannot infer this
      * @return list of registry instances (with metadata)
      */
-    public <T> List<RegistryInstance<T>> lookupInstances(Lookup lookup) {
+    public <T> List<ServiceInstance<T>> lookupInstances(Lookup lookup) {
         List<ServiceManager<T>> managers = lookupManagers(lookup);
 
         return managers.stream()
                 .flatMap(it -> managerInstances(lookup, it).stream())
                 .toList();
 
+    }
+
+    /**
+     * Get a supplier for the provided service info. The service info must already be known by this registry,
+     * either through a code generated module, or registered through
+     * {@link io.helidon.inject.InjectionConfig.Builder#addServiceDescriptor(io.helidon.inject.service.ServiceDescriptor)}.
+     *
+     * @param descriptor service descriptor to get a supplier for, please use the singleton instance (usually code generated
+     *                   into a public {@code __ServiceDescriptor} class), we use instance equality to discover services
+     * @param <T>        type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *                   you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return supplier of an instance for the descriptor provided
+     */
+    public <T> Supplier<T> supply(ServiceInfo descriptor) {
+        return new ServiceSupply<>(Lookup.builder()
+                                           .serviceType(descriptor.serviceType())
+                                           .build(),
+                                   List.of(serviceManager(descriptor)));
     }
 
     /**
@@ -527,7 +527,7 @@ public final class Services {
         }
     }
 
-    <T> List<RegistryInstance<T>> managerInstances(Lookup lookup, ServiceManager<T> manager) {
+    <T> List<ServiceInstance<T>> managerInstances(Lookup lookup, ServiceManager<T> manager) {
         return manager.managedServiceInScope()
                 .instances(lookup)
                 .stream()
@@ -747,11 +747,11 @@ public final class Services {
         bind(manager);
     }
 
-    private static <T> List<RegistryInstance<T>> explodeFilterAndSort(Lookup lookup,
-                                                                      List<ServiceManager<T>> serviceManagers) {
+    private static <T> List<ServiceInstance<T>> explodeFilterAndSort(Lookup lookup,
+                                                                     List<ServiceManager<T>> serviceManagers) {
         // this method is called when we resolve instances, so we can safely assume any scope is active
 
-        List<RegistryInstance<T>> result = new ArrayList<>();
+        List<ServiceInstance<T>> result = new ArrayList<>();
 
         for (ServiceManager<T> serviceManager : serviceManagers) {
             serviceManager.managedServiceInScope()
@@ -816,7 +816,7 @@ public final class Services {
             supplier = () -> explodeFilterAndSort(lookup, managers)
                     .stream()
                     .findFirst()
-                    .map(RegistryInstance::get)
+                    .map(ServiceInstance::get)
                     .orElseThrow(() -> new InjectionServiceProviderException(
                             "Neither of matching services could provide a value. Descriptors: " + managers + ", "
                                     + "lookup: " + super.lookup));
@@ -845,7 +845,7 @@ public final class Services {
 
         @Override
         public Optional<T> get() {
-            Optional<RegistryInstance<T>> first = explodeFilterAndSort(super.lookup, super.managers)
+            Optional<ServiceInstance<T>> first = explodeFilterAndSort(super.lookup, super.managers)
                     .stream()
                     .findFirst();
             return first.map(Supplier::get);
@@ -860,7 +860,7 @@ public final class Services {
 
         @Override
         public List<T> get() {
-            Stream<RegistryInstance<T>> stream = explodeFilterAndSort(super.lookup, super.managers)
+            Stream<ServiceInstance<T>> stream = explodeFilterAndSort(super.lookup, super.managers)
                     .stream();
 
             return stream.map(Supplier::get)
