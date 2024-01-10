@@ -168,10 +168,6 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName INJECT_SERVICES = TypeName.create("io.helidon.inject.Services");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InjectionResolver}.
-     */
-    public static final TypeName INJECT_INJECTION_RESOLVER = TypeName.create("io.helidon.inject.InjectionResolver");
-    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.builder.api.Prototype.Blueprint}.
      */
     public static final TypeName PROTOTYPE_BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");

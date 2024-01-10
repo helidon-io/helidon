@@ -102,9 +102,10 @@
                     <permittedProviderType>NAMED</permittedProviderType>
                     <permittedProviderTypeNames>
                         <permittedProviderTypeName>io.helidon.examples.inject.providers.BladeProvider</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.examples.inject.providers.NailProvider</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.examples.inject.configdriven.Drill</permittedProviderTypeName>
                     </permittedProviderTypeNames>
+                    <permittedProviderQualifierTypeNames>
+                        <typeName>io.helidon.inject.service.ConfigDriven.ConfigBean</typeName>
+                    </permittedProviderQualifierTypeNames>
                 </configuration>
             </plugin>
             <plugin>

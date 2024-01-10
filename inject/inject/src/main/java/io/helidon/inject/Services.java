@@ -758,7 +758,6 @@ public final class Services {
                     .instances(lookup)
                     .stream()
                     .flatMap(List::stream)
-                    //.filter(it -> lookup.matchesQualifiers(it.qualifiers()))
                     .map(it -> serviceManager.registryInstance(lookup, it))
                     .forEach(result::add);
         }
