@@ -363,6 +363,16 @@ final class Activators {
             super(provider);
         }
 
+        @Override
+        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+            if (lookup.contracts().contains(TypeNames.SUPPLIER)) {
+                // the user requested the provider, not the provided
+                T instance = serviceInstance.get();
+                return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
+            }
+            return super.targetInstances(lookup);
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         protected void setTargetInstances() {

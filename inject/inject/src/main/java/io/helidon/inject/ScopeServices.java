@@ -37,7 +37,7 @@ import io.helidon.inject.service.ServiceInfo;
  */
 public class ScopeServices {
     private final ReadWriteLock serviceProvidersLock = new ReentrantReadWriteLock();
-    private final Map<ServiceInfo, Activator<?>> serviceProviders = new IdentityHashMap<>();
+    private final Map<ServiceInfo, Activator<?>> activators = new IdentityHashMap<>();
 
     private final System.Logger logger;
     private final TypeName scope;
@@ -59,7 +59,7 @@ public class ScopeServices {
             ServiceProvider provider = new ServiceProvider<>(services,
                                                              descriptor);
             Activator<?> fixedService = Activator.create(provider, value);
-            serviceProviders.put(descriptor, fixedService);
+            activators.put(descriptor, fixedService);
         });
     }
 
@@ -85,7 +85,7 @@ public class ScopeServices {
                 return Map.of();
             }
 
-            List<Activator<?>> toShutdown = serviceProviders.values()
+            List<Activator<?>> toShutdown = activators.values()
                     .stream()
                     .filter(it -> it.phase().eligibleForDeactivation())
                     .sorted(shutdownComparator())
@@ -143,7 +143,7 @@ public class ScopeServices {
         try {
             serviceProvidersLock.readLock().lock();
             checkActive();
-            Activator<?> serviceProvider = serviceProviders.get(descriptor);
+            Activator<?> serviceProvider = activators.get(descriptor);
             if (serviceProvider != null) {
                 return (Activator<T>) serviceProvider;
             }
@@ -155,7 +155,7 @@ public class ScopeServices {
         try {
             serviceProvidersLock.writeLock().lock();
             checkActive();
-            return (Activator<T>) serviceProviders.computeIfAbsent(descriptor,
+            return (Activator<T>) activators.computeIfAbsent(descriptor,
                                                                         desc -> serviceManager.supplyManagedService());
         } finally {
             serviceProvidersLock.writeLock().unlock();

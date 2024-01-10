@@ -28,6 +28,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectionServiceProviderException;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
+import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceInfo;
@@ -321,6 +322,28 @@ class SingletonLookupTest {
 
         ContractSingleton instance = services.get(lookup);
         assertThat(instance, instanceOf(SingletonInjectionPointProviderExample.SecondClass.class));
+    }
+
+    @Test
+    void testIpProviderLookup() {
+        Lookup lookup = Lookup.builder()
+                .addContract(ContractSingleton.class)
+                .addContract(InjectionPointProvider.class)
+                .build();
+        InjectionPointProvider<?> instance = services.get(lookup);
+
+        assertThat(instance, instanceOf(SingletonInjectionPointProviderExample.class));
+    }
+
+    @Test
+    void testSupplierLookup() {
+        Lookup lookup = Lookup.builder()
+                .addContract(ContractSingleton.class)
+                .addContract(Supplier.class)
+                .build();
+        Supplier<?> instance = services.get(lookup);
+
+        assertThat(instance, instanceOf(SingletonSupplierExample.class));
     }
 
     private void checkInstance(ServiceInstance<ContractSingleton> serviceInstance,
