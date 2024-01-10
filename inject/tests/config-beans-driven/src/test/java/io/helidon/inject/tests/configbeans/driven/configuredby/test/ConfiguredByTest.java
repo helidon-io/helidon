@@ -26,7 +26,7 @@ import io.helidon.config.MapConfigSource;
 import io.helidon.inject.service.ConfigBeans;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.RegistryInstance;
+import io.helidon.inject.service.ServiceInstance;
 import io.helidon.inject.tests.configbeans.driven.configuredby.yaml.test.Async;
 
 import org.junit.jupiter.api.Test;
@@ -73,7 +73,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                           .disableSystemPropertiesSource()
                           .build());
 
-        List<RegistryInstance<Object>> configBeans = services.lookupInstances(Lookup.builder()
+        List<ServiceInstance<Object>> configBeans = services.lookupInstances(Lookup.builder()
                                                                                       .addQualifier(Qualifier.create(
                                                                                               ConfigBeans.ConfigBean.class))
                                                                                       .addQualifier(Qualifier.WILDCARD_NAMED)
@@ -92,10 +92,10 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                 ), "config-nested-default-8080");
     }
 
-    private void assertHasNamed(List<RegistryInstance<Object>> instances, Class<?> type, String name) {
+    private void assertHasNamed(List<ServiceInstance<Object>> instances, Class<?> type, String name) {
         boolean contains = false;
 
-        for (RegistryInstance<Object> instance : instances) {
+        for (ServiceInstance<Object> instance : instances) {
             if (instance.contracts().contains(TypeName.create(type))) {
                 if (instance.qualifiers().contains(Qualifier.createNamed(name))) {
                     contains = true;

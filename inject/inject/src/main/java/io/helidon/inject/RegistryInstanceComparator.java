@@ -18,9 +18,9 @@ package io.helidon.inject;
 
 import java.util.Comparator;
 
-import io.helidon.inject.service.RegistryInstance;
+import io.helidon.inject.service.ServiceInstance;
 
-class RegistryInstanceComparator implements Comparator<RegistryInstance<?>> {
+class RegistryInstanceComparator implements Comparator<ServiceInstance<?>> {
     private static final RegistryInstanceComparator INSTANCE = new RegistryInstanceComparator();
 
     private RegistryInstanceComparator() {
@@ -36,8 +36,8 @@ class RegistryInstanceComparator implements Comparator<RegistryInstance<?>> {
     }
 
     @Override
-    public int compare(RegistryInstance<?> p1,
-                       RegistryInstance<?> p2) {
+    public int compare(ServiceInstance<?> p1,
+                       ServiceInstance<?> p2) {
         if (p1 == p2) {
             return 0;
         }

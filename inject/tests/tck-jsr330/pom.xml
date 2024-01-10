@@ -31,11 +31,6 @@
     <artifactId>helidon-inject-tests-tck-jsr330</artifactId>
     <name>Helidon Injection Test JSR-330 TCK</name>
 
-    <properties>
-        <checkstyle.skip>true</checkstyle.skip>
-        <helidon.services.skip>true</helidon.services.skip>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>jakarta.inject</groupId>

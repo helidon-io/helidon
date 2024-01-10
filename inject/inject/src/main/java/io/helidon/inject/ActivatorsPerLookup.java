@@ -36,8 +36,8 @@ import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.QualifiedInstance;
 import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.RegistryInstance;
 import io.helidon.inject.service.ServiceDescriptor;
+import io.helidon.inject.service.ServiceInstance;
 import io.helidon.inject.service.ServicesProvider;
 
 /*
@@ -351,7 +351,7 @@ final class ActivatorsPerLookup {
         @Override
         protected void construct(ActivationResult.Builder response) {
             // at this moment, we must resolve services that are driving this instance
-            List<RegistryInstance<Object>> drivingInstances = services.lookupInstances(Lookup.builder().addContract(drivenBy)
+            List<ServiceInstance<Object>> drivingInstances = services.lookupInstances(Lookup.builder().addContract(drivenBy)
                                                                                                .build());
             serviceInstances = drivingInstances.stream()
                     .map(it -> QualifiedOnDemandInstance.create(provider, it))
@@ -376,7 +376,7 @@ final class ActivatorsPerLookup {
     private record QualifiedOnDemandInstance<T>(OnDemandInstance<T> serviceInstance,
                                                 Set<Qualifier> qualifiers) {
         static <T> QualifiedOnDemandInstance<T> create(ServiceProvider<T> provider,
-                                                       RegistryInstance<?> driver) {
+                                                       ServiceInstance<?> driver) {
             Set<Qualifier> qualifiers = driver.qualifiers();
             Qualifier name = qualifiers.stream()
                     .filter(it -> Injection.Named.TYPE_NAME.equals(it.typeName()))

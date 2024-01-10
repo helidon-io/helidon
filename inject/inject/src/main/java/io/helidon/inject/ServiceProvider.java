@@ -53,7 +53,7 @@ class ServiceProvider<T> {
 
         this.contracts = Contracts.create(descriptor);
         this.activationRequest = ActivationRequest.builder()
-                .targetPhase(serviceRegistry.injectionServices().config().limitRuntimePhase())
+                .targetPhase(serviceRegistry.config().limitRuntimePhase())
                 .build();
         this.interceptionMetadata = new InterceptionMetadataImpl(registry);
     }
