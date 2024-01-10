@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -722,8 +722,7 @@ Helidon also support custom metrics.  To add a new metric, annotate the
  below:
 
 TIP:  You can find details of the available annotations in the
- https://microprofile.io/project/eclipse/microprofile-metrics[MicroProfile Metrics
- Specification].
+link:{microprofile-metrics-spec-url}[MicroProfile Metrics Specification]
 
 [source,java]
 .Updated GreetResource.java with custom metrics
@@ -1154,7 +1153,7 @@ There were several links to more detailed information included in the
 * link:{jakarta-cdi-spec-url}[Contexts and Dependency Injection Specification]
 * xref:../server.adoc[Server Configuration]
 * xref:../config/introduction.adoc[Config]
-* https://microprofile.io/project/eclipse/microprofile-metrics[MicroProfile Metrics Specification]
+* link:{microprofile-metrics-spec-url}[MicroProfile Metrics Specification]
 * xref:metrics.adoc[Metrics Guide]
 * link:{microprofile-health-spec-url}##_protocol_and_wireformat[MicroProfile Health Protocol and Wireformat]
 * xref:../../about/kubernetes.adoc[Install Kubernetes on your desktop]

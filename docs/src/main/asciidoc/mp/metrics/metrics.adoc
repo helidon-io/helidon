@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -584,4 +584,4 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=k8s-and-prometheus-integrati
 === References
 link:{microprofile-metrics-spec-url}[MicroProfile Metrics specification]
 
-link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/package-info.html[MicroProfile Metrics API]
+link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/package-summary.html[MicroProfile Metrics API]

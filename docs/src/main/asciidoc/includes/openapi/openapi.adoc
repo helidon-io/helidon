@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -184,7 +184,7 @@ A Jandex index stores information about the classes and methods in your app and
 what annotations they have. It allows CDI to process annotations faster during your
 application's start-up.
 
-Add the link:https://github.com/smallrye/jandex/maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
+Add the link:https://github.com/smallrye/jandex/tree/main/maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
 section of your `pom.xml`:
 
 [source,xml,subs="attributes+"]

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ Add the following plugin declaration to your pom.xml:
 
 NOTE: By default, Jib uses link:https://github.com/GoogleContainerTools/distroless/tree/master/java[distroless/java] as
  the base image. You can override the default with configuration see the
- link:{jib-base-url}/jib-maven-plugin/README.md#extended-usage[documentation]
+ link:{jib-base-url}/README.md#extended-usage[documentation]
 
 [source,bash]
 .Package the updated application
@@ -128,6 +128,6 @@ REPOSITORY          TAG           IMAGE ID      CREATED        SIZE
 jib-quickstart-se   latest        384aebda5594  48 years ago   124MB <1>
 ----
 <1> Ignore the fact that it says the image was created 48 years ago. Refer to
- the  link:{jib-base-url}/docs/faq.md#why-is-my-image-created-48-years-ago[Jib FAQ] for explanations.
+ the  link:{jib-base-url}/../docs/faq.md#why-is-my-image-created-48-years-ago[Jib FAQ] for explanations.
 
 NOTE: the Jib image is smaller because of the use of a distroless base image.
