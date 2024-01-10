@@ -36,7 +36,7 @@ public class Main {
      */
     public static void main(String... args) {
         // get the global service registry
-        Services services = InjectionServices.instance().services();
+        Services services = InjectionServices.create().services();
 
         // 0. Demonstrates programmatic lookup from the Services registry.
         // 1. when a service is being managed by a DI provider (like Helidon Injection) it should be "looked up" or injected instead of new'ed

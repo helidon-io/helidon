@@ -22,10 +22,10 @@ import java.util.Objects;
 import io.helidon.common.types.TypeName;
 
 /**
- * A factory for service registry. The global services can be accessed through {@link #instance()}.
- * <p>
- * Always use {@link #create()} or {@link #create(InjectionConfig)} for testing, to prevent lock-in of
- * the global registry.
+ * A factory for service registry.
+ *
+ * @see #create()
+ * @see #create(InjectionConfig)
  */
 public interface InjectionServices {
     /**
@@ -40,17 +40,9 @@ public interface InjectionServices {
     }
 
     /**
-     * The singleton instance of injection services.
-     *
-     * @return injection services
-     */
-    static InjectionServices instance() {
-        return InjectionServicesImpl.instance();
-    }
-
-    /**
      * Create injection services for a specific configuration.
-     * The instance obtained will not interact with {@link #instance()} and will provide a stand-alone service registry.
+     * Each call to this method or to {@link #create()} creates a new instance of service registry that do not
+     * interact with each other.
      *
      * @param injectionConfig configuration of the services
      * @return a new injection services instance
@@ -61,7 +53,8 @@ public interface InjectionServices {
 
     /**
      * Create injection services with default configuration.
-     * The instance obtained will not interact with {@link #instance()} and will provide a stand-alone service registry.
+     * Each call to this method or to {@link #create(InjectionConfig)} creates a new instance of service registry that do not
+     * interact with each other.
      *
      * @return a new injection services instance
      */

@@ -81,7 +81,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     @Override // TlsManager
     public void init(TlsConfig tls) {
         this.tlsConfig = tls;
-        Services services = InjectionServices.instance().services();
+        Services services = InjectionServices.create().services();
         this.pkDownloader = services.supply(OciPrivateKeyDownloader.class);
         this.certDownloader = services.supply(OciCertificatesDownloader.class);
         this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -97,7 +97,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
         // now schedule for reload checking
         String taskIntervalDescription =
-                io.helidon.scheduling.Scheduling.cronBuilder()
+                io.helidon.scheduling.Scheduling.cron()
                         .executor(asyncExecutor)
                         .expression(cfg.schedule())
                         .task(inv -> maybeReload())

@@ -31,7 +31,7 @@ public class Main {
      */
     public static void main(String... args) {
         // global service registry
-        Services services = InjectionServices.instance().services();
+        Services services = InjectionServices.create().services();
 
         // use the intercepted screwdriver - note that hashCode(), equals(), and toString() are not intercepted
         ScrewDriver screwDriver = services.get(ScrewDriver.class);

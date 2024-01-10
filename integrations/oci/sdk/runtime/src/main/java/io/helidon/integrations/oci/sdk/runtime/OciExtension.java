@@ -115,8 +115,8 @@ import static java.util.function.Predicate.not;
  * for details.
  *
  * @see <a
- * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
- * target="_top">Oracle Cloud Infrastructure Java SDK</a>
+ *         href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
+ *         target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension {
     /**
@@ -130,6 +130,9 @@ public final class OciExtension {
                                     .map(AuthStrategy::id)
                                     .toList())
             .build());
+
+    // the field is not final (and volatile) so tests can replace the injection services used by this instance
+    static volatile LazyValue<InjectionServices> injectionServices = LazyValue.create(InjectionServices::create);
     private static String overrideOciConfigFile;
     private static volatile Supplier<io.helidon.common.config.Config> ociConfigSupplier;
     private static volatile Supplier<io.helidon.common.config.Config> fallbackConfigSupplier;
@@ -193,7 +196,7 @@ public final class OciExtension {
      */
     public static Supplier<? extends AbstractAuthenticationDetailsProvider> ociAuthenticationProvider() {
         return () -> {
-            Services services = InjectionServices.instance().services();
+            Services services = injectionServices.get().services();
             Supplier<AbstractAuthenticationDetailsProvider> authProvider =
                     services.supply(AbstractAuthenticationDetailsProvider.class);
             return authProvider.get();
@@ -264,9 +267,11 @@ public final class OciExtension {
      * @return true if the given config can be used to identify an OCI authentication strategy
      */
     public static boolean isSufficientlyConfigured(io.helidon.common.config.Config config) {
-        return (config != null
-                        && (config.get(KEY_AUTH_STRATEGY).exists()
-                                    || config.get(KEY_AUTH_STRATEGIES).exists()));
+        return (
+                config != null
+                        && (
+                        config.get(KEY_AUTH_STRATEGY).exists()
+                                || config.get(KEY_AUTH_STRATEGIES).exists()));
     }
 
     // in support for testing a variant of oci.yaml

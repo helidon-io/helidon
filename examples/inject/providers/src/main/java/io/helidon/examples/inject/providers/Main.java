@@ -36,7 +36,7 @@ public class Main {
      */
     public static void main(String... args) {
         // global service registry
-        Services services = InjectionServices.instance().services();
+        Services services = InjectionServices.create().services();
 
         Lookup criteria = Lookup.builder()
                 .runLevel(Injection.RunLevel.STARTUP)
