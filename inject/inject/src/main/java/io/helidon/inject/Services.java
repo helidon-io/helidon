@@ -135,8 +135,9 @@ public final class Services {
     private final Map<Lookup, List<ServiceInfo>> cache = new HashMap<>();
     private final SingletonScopeHandler singletonScopeHandler;
     private final ServiceScopeHandler serviceScopeHandler;
+    private final boolean interceptionDisabled;
 
-    private List<ServiceManager<Interception.Interceptor>> interceptors;
+    private Map<ServiceInfo, ServiceManager<Interception.Interceptor>> interceptors;
 
     Services(InjectionServicesImpl injectionServices, State state) {
         this.injectionServices = injectionServices;
@@ -166,10 +167,7 @@ public final class Services {
         this.serviceScopeHandler = new ServiceScopeHandler(this);
         this.scopeHandlers.put(Injection.Singleton.TYPE_NAME, singletonScopeHandler);
         this.scopeHandlers.put(Injection.Service.TYPE_NAME, serviceScopeHandler);
-
-        if (!injectionServices.config().interceptionEnabled()) {
-            this.interceptors = List.of();
-        }
+        this.interceptionDisabled = !injectionServices.config().interceptionEnabled();
     }
 
     /**
@@ -578,24 +576,52 @@ public final class Services {
                 .orElseGet(Map::of);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     void interceptors(ServiceInfo... serviceInfos) {
-        if (this.interceptors == null) {
-            List list = Stream.of(serviceInfos)
-                    .map(this::serviceManager)
-                    .toList();
-            this.interceptors = List.copyOf(list);
+        if (interceptionDisabled) {
+            return;
+        }
+        try {
+            stateWriteLock.lock();
+            if (this.interceptors == null) {
+                this.interceptors = new IdentityHashMap<>();
+            }
+            // there may be more than one application, we need to add to existing
+            for (ServiceInfo serviceInfo : serviceInfos) {
+                this.interceptors.computeIfAbsent(serviceInfo,
+                                                  this::serviceManager);
+            }
+        } finally {
+            stateWriteLock.unlock();
         }
     }
 
     List<ServiceManager<Interception.Interceptor>> interceptors() {
-        if (interceptors == null) {
-            interceptors = lookupManagers(Lookup.builder()
-                                                  .addContract(Interception.Interceptor.class)
-                                                  .addQualifier(Qualifier.WILDCARD_NAMED)
-                                                  .build());
+        if (interceptionDisabled) {
+            return List.of();
         }
-        return interceptors;
+        try {
+            stateReadLock.lock();
+            if (interceptors != null) {
+                return List.copyOf(interceptors.values());
+            }
+        } finally {
+            stateReadLock.unlock();
+        }
+        try {
+            stateWriteLock.lock();
+            if (interceptors == null) {
+                List<ServiceInfo> serviceInfos = lookupServices(Lookup.builder()
+                                                                        .addContract(Interception.Interceptor.class)
+                                                                        .addQualifier(Qualifier.WILDCARD_NAMED)
+                                                                        .build());
+                for (ServiceInfo serviceInfo : serviceInfos) {
+                    this.interceptors.put(serviceInfo, serviceManager(serviceInfo));
+                }
+            }
+            return List.copyOf(interceptors.values());
+        } finally {
+            stateWriteLock.unlock();
+        }
     }
 
     void bind(ModuleComponent module) {

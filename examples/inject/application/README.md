@@ -14,30 +14,20 @@ mvn package
 java -jar target/helidon-examples-inject-application.jar
 ```
 
-Expected Output:
+Expected Output (redacted):
 ```
-Startup service providers (ranked according to weight, pre-activated): [NailGun:INIT, ToolBox:INIT, CircularSaw:INIT, TableSaw:INIT]
-Highest weighted service provider: NailGun:INIT
-Nail Gun: (nail provider=NailProvider:INIT); initialized
-Highest weighted service provider (after activation): io.helidon.examples.inject.providers.NailGun
-Preferred (highest weighted) 'Big' Tool: Big Hammer
-Optional 'Little' Hammer: Optional[Little Hammer]
+--------------------------------
+- Initialize services          -
+--------------------------------
+A few lines with details from injected objects
 --------------------------------
 - Initializing all tools       -
 --------------------------------
-io.helidon.examples.inject.providers.AngleGrinderSaw::blade will be injected with Optional[SMALL Blade]
-Angle Grinder Saw: (blade=SMALL Blade); initialized
-io.helidon.examples.inject.providers.CircularSaw::blade will be injected with Optional.empty
-Circular Saw: (blade=null); initialized
-io.helidon.examples.inject.providers.HandSaw::blade will be injected with Optional.empty
-Hand Saw: (blade=null); initialized
-io.helidon.examples.inject.providers.TableSaw::blade will be injected with Optional[LARGE Blade]
-Table Saw: (blade=LARGE Blade); initialized
-Hand; initialized
+A few lines with details from injected objects in tools
 --------------------------------
 - Tools in the virtual ToolBox -
 --------------------------------
- tool: Nail Gun: (nail provider=NailProvider:INIT)
+ tool: Nail Gun: (nail provider=io.helidon.examples.inject.providers.NailProvider)
  tool: Hammer
  tool: Angle Grinder Saw: (blade=SMALL Blade)
  tool: Circular Saw: (blade=null)
@@ -47,10 +37,18 @@ Hand; initialized
  tool: Little Hammer
  tool: Hand Drill
  tool: Impact Drill
-All service providers (after all activations): [NailGun:ACTIVE, ToolBox:ACTIVE, CircularSaw:ACTIVE, TableSaw:ACTIVE]
-Service lookup count: 2
+--------------------------------
+- Programmatic lookup          -
+--------------------------------
+All services in RunLevel.STARTUP (ranked according to weight):
+  io.helidon.examples.inject.providers.NailGun
+  io.helidon.examples.inject.basics.ToolBox
+  io.helidon.examples.inject.providers.CircularSaw
+  io.helidon.examples.inject.providers.TableSaw
+Highest weighted service provider: io.helidon.examples.inject.providers.NailGun
+Service lookup count: 2 (expected to be 2, as we lookup twice in basics.Main)
 ```
 
-While the output of this example may look similar to the previous [providers](../providers) example, the implementation is different since this example builds (at compile time) [Application.java](target/generated-sources/annotations/io/helidon/examples/inject/application/Injection$$Application.java). This establishes direct bindings to each and every injection point in your application avoiding runtime resolution with the exception for truly dynamic runtime providers (i.e., anything that is config-driven services or _Provider_ type implementations).
+While the output of this example may look similar to the previous [providers](../providers) example, the implementation is different since this example builds (at compile time) [Injection__Application.java](target/generated-sources/annotations/io/helidon/examples/inject/application/Injection__Application.java). This establishes direct bindings to each and every injection point in your application avoiding runtime resolution with the exception for truly dynamic runtime providers (i.e., anything that is config-driven services or _Provider_ type implementations).
 
 Note that the lookup count is 2 based upon the direct lookup calls used in the delegated [Main](../basics/src/main/java/io/helidon/examples/inject/basics/Main.java).

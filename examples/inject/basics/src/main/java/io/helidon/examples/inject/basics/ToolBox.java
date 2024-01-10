@@ -38,7 +38,7 @@ import io.helidon.inject.service.Injection;
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
 public class ToolBox {
 
-    private final List<Supplier<Tool>> allToolProviders;
+    private final Supplier<List<Tool>> allToolProviders;
     private Tool preferredBigTool;
 
     // Field injection is supported for non-static, non-private fields (but not recommended)
@@ -53,8 +53,8 @@ public class ToolBox {
      * @param allToolProviders all tool providers
      */
     @Injection.Inject
-    ToolBox(List<Supplier<Tool>> allToolProviders) {
-        this.allToolProviders = Objects.requireNonNull(allToolProviders);
+    ToolBox(Supplier<List<Tool>> allToolProviders) {
+        this.allToolProviders = allToolProviders;
     }
 
     @Override
@@ -92,9 +92,7 @@ public class ToolBox {
         System.out.println("- Initializing all tools       -");
         System.out.println("--------------------------------");
         List<Tool> tools = new ArrayList<>();
-        for (Supplier<Tool> tool : allToolProviders) {
-            tools.add(tool.get());
-        }
+        tools.addAll(allToolProviders.get());
         System.out.println("--------------------------------");
         System.out.println("- Tools in the virtual ToolBox -");
         System.out.println("--------------------------------");

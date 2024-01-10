@@ -43,7 +43,7 @@ public class Main {
 
         if (counter.isPresent()) {
             System.out.println("Service lookup count: " + counter.get().count()
-                                       + " (expected to be 2, as we lookup twice in basics.Main");
+                                       + " (expected to be 2, as we lookup twice in basics.Main)");
         } else {
             System.out.println("Service lookup counter is not present");
         }
