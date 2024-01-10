@@ -71,6 +71,51 @@ final class Activators {
             this.provider = provider;
         }
 
+        // three states
+        // service provided an empty list (services provider etc.)
+        // service provided null, or activation failed
+        // service provided 1 or more instances
+        @Override
+        public Optional<List<QualifiedInstance<T>>> instances(Lookup lookup) {
+            /*
+            At the time we are looking up instances, we also resolve them to appropriate type
+            As this type represents a value within a scope, and not "instance per call", we can safely
+            store the result, unless it is lookup bound
+             */
+            try {
+                readLock.lock();
+                if (currentPhase == Phase.ACTIVE) {
+                    return targetInstances(lookup);
+                }
+            } finally {
+                readLock.unlock();
+            }
+
+            try {
+                writeLock.lock();
+                if (currentPhase != Phase.ACTIVE) {
+                    ActivationResult res = activate(provider.activationRequest());
+                    if (res.failure()) {
+                        return Optional.empty();
+                    }
+                }
+                return targetInstances(lookup);
+            } finally {
+                writeLock.unlock();
+            }
+        }
+
+        @Override
+        public ServiceDescriptor<T> descriptor() {
+            return provider.descriptor();
+        }
+
+        @Override
+        public String description() {
+            return provider.descriptor().serviceType().classNameWithEnclosingNames()
+                    + ":" + currentPhase;
+        }
+
         @Override
         public ActivationResult activate(ActivationRequest request) {
             try {
@@ -138,51 +183,6 @@ final class Activators {
             return currentPhase;
         }
 
-        // three states
-        // service provided an empty list (services provider etc.)
-        // service provided null, or activation failed
-        // service provided 1 or more instances
-        @Override
-        public Optional<List<QualifiedInstance<T>>> instances(Lookup lookup) {
-            /*
-            At the time we are looking up instances, we also resolve them to appropriate type
-            As this type represents a value within a scope, and not "instance per call", we can safely
-            store the result, unless it is lookup bound
-             */
-            try {
-                readLock.lock();
-                if (currentPhase == Phase.ACTIVE) {
-                    return targetInstances(lookup);
-                }
-            } finally {
-                readLock.unlock();
-            }
-
-            try {
-                writeLock.lock();
-                if (currentPhase != Phase.ACTIVE) {
-                    ActivationResult res = activate(provider.activationRequest());
-                    if (res.failure()) {
-                        return Optional.empty();
-                    }
-                }
-                return targetInstances(lookup);
-            } finally {
-                writeLock.unlock();
-            }
-        }
-
-        @Override
-        public ServiceDescriptor<T> descriptor() {
-            return provider.descriptor();
-        }
-
-        @Override
-        public String description() {
-            return provider.descriptor().serviceType().classNameWithEnclosingNames()
-                    + ":" + currentPhase;
-        }
-
         @Override
         public String toString() {
             return getClass().getSimpleName() + " for " + provider;
@@ -203,7 +203,8 @@ final class Activators {
         protected void preDestroy(ActivationResult.Builder response) {
         }
 
-        protected abstract void setTargetInstances();
+        protected void setTargetInstances() {
+        }
 
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             return targetInstances();
@@ -297,9 +298,6 @@ final class Activators {
             return instances;
         }
 
-        @Override
-        protected void setTargetInstances() {
-        }
     }
 
     /**
@@ -437,11 +435,17 @@ final class Activators {
             targetInstances = instanceSupplier.services();
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+            if (lookup.contracts().contains(ServicesProvider.TYPE_NAME)) {
+                return Optional.of(List.of(QualifiedInstance.create((T) serviceInstance, descriptor().qualifiers())));
+            }
+
             if (targetInstances == null) {
                 return Optional.empty();
             }
+
             List<QualifiedInstance<T>> response = new ArrayList<>();
             for (QualifiedInstance<T> instance : targetInstances) {
                 if (lookup.matchesQualifiers(instance.qualifiers())) {
