@@ -21,11 +21,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class IntegerParserTest {
+class ParserHelperTest {
 
     @Test
     void testNormalParse() {
-        int v = IntegerParser.parseNonNegative(
+        int v = ParserHelper.parseNonNegative(
                 "7FFFFFFF",
                 16,
                 () -> new RuntimeException("Oops"));
@@ -35,7 +35,7 @@ class IntegerParserTest {
     @Test
     void testNegativeParse() {
         assertThrows(RuntimeException.class, () ->
-                IntegerParser.parseNonNegative("FFFFFFFF",
+                ParserHelper.parseNonNegative("FFFFFFFF",
                 16,
                 () -> new RuntimeException("Value is invalid")));
     }

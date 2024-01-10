@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.helidon.common.IntegerParser;
+import io.helidon.common.ParserHelper;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
@@ -57,7 +57,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 abstract class Http1CallChainBase implements WebClientService.Chain {
     private static final System.Logger LOGGER = System.getLogger(Http1CallChainBase.class.getName());
-    private static final Supplier<IllegalArgumentException> INVALID_SIZE_SUPPLIER =
+    private static final Supplier<IllegalArgumentException> INVALID_SIZE_EXCEPTION_SUPPLIER =
             () -> new IllegalArgumentException("Chunk size is invalid");
 
     private final BufferData writeBuffer = BufferData.growing(128);
@@ -511,7 +511,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             reader.skip(2); // CRLF
             int length;
             try {
-                length = IntegerParser.parseNonNegative(hex, 16, INVALID_SIZE_SUPPLIER);
+                length = ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Chunk size is not a number:\n"
                                                            + BufferData.create(hex.getBytes(US_ASCII)).debugDataHex());

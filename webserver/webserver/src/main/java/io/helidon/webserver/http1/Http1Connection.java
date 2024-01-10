@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
-import io.helidon.common.IntegerParser;
+import io.helidon.common.ParserHelper;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
@@ -66,7 +66,7 @@ import static java.lang.System.Logger.Level.WARNING;
  */
 public class Http1Connection implements ServerConnection, InterruptableTask<Void> {
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());
-    private static final Supplier<RequestException> INVALID_SIZE_SUPPLIER =
+    private static final Supplier<RequestException> INVALID_SIZE_EXCEPTION_SUPPLIER =
             () -> RequestException.builder()
                     .type(EventType.BAD_REQUEST)
                     .message("Chunk size is invalid")
@@ -271,7 +271,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private BufferData readNextChunk(HttpPrologue prologue, WritableHeaders<?> headers) {
         // chunk length processing
         String hex = reader.readLine();
-        int chunkLength = IntegerParser.parseNonNegative(hex, 16, INVALID_SIZE_SUPPLIER);
+        int chunkLength = ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
 
         currentEntitySizeRead += chunkLength;
         if (maxPayloadSize != -1 && currentEntitySizeRead > maxPayloadSize) {

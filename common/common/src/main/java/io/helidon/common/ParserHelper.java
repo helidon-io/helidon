@@ -18,11 +18,11 @@ package io.helidon.common;
 import java.util.function.Supplier;
 
 /**
- * Utility class to properly report integer parsing errors.
+ * Utility class for parsing.
  */
-public class IntegerParser {
+public class ParserHelper {
 
-    private IntegerParser() {
+    private ParserHelper() {
     }
 
     /**
