@@ -16,16 +16,14 @@
 
 package io.helidon.inject;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Injection;
@@ -39,6 +37,8 @@ import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInstance;
 import io.helidon.inject.service.ServicesProvider;
+
+import static java.util.function.Predicate.not;
 
 /*
  Developer note: when changing this, also change Activators
@@ -57,199 +57,11 @@ final class ActivatorsPerLookup {
     private ActivatorsPerLookup() {
     }
 
-    abstract static class BaseActivator<T> implements Activator<T> {
-        final ServiceProvider<T> provider;
-        private final ReadWriteLock instanceLock = new ReentrantReadWriteLock();
-        protected final Lock readLock = instanceLock.readLock();
-        protected final Lock writeLock = instanceLock.writeLock();
-        volatile Phase currentPhase = Phase.INIT;
-
-        BaseActivator(ServiceProvider<T> provider) {
-            this.provider = provider;
-        }
-
-        // three states
-        // service provided an empty list (services provider etc.)
-        // service provided null, or activation failed
-        // service provided 1 or more instances
-        @Override
-        public Optional<List<QualifiedInstance<T>>> instances(Lookup lookup) {
-            try {
-                readLock.lock();
-                if (currentPhase == Phase.ACTIVE) {
-                    return targetInstances();
-                }
-            } finally {
-                readLock.unlock();
-            }
-
-            try {
-                writeLock.lock();
-                if (currentPhase != Phase.ACTIVE) {
-                    ActivationResult res = activate(provider.activationRequest());
-                    if (res.failure()) {
-                        return Optional.empty();
-                    }
-                }
-                return targetInstances();
-            } finally {
-                writeLock.unlock();
-            }
-        }
-
-        @Override
-        public ServiceDescriptor<T> descriptor() {
-            return provider.descriptor();
-        }
-
-        @Override
-        public String description() {
-            return provider.descriptor().serviceType().classNameWithEnclosingNames()
-                    + ":" + currentPhase;
-        }
-
-        @Override
-        public ActivationResult activate(ActivationRequest request) {
-            try {
-                // probably re-entering the same lock
-                writeLock.lock();
-
-                if (currentPhase == request.targetPhase()) {
-                    // we are already there, just return success
-                    return ActivationResult.builder()
-                            .serviceProvider(this)
-                            .startingActivationPhase(currentPhase)
-                            .finishingActivationPhase(currentPhase)
-                            .targetActivationPhase(currentPhase)
-                            .finishingStatus(ActivationStatus.SUCCESS)
-                            .build();
-                }
-                if (currentPhase.ordinal() > request.targetPhase().ordinal()) {
-                    // we are already ahead, this is a problem
-                    return ActivationResult.builder()
-                            .serviceProvider(this)
-                            .startingActivationPhase(currentPhase)
-                            .finishingActivationPhase(currentPhase)
-                            .targetActivationPhase(request.targetPhase())
-                            .finishingStatus(ActivationStatus.FAILURE)
-                            .build();
-                }
-                return doActivate(request);
-            } finally {
-                writeLock.unlock();
-            }
-        }
-
-        @Override
-        public ActivationResult deactivate(DeActivationRequest request) {
-            try {
-                // probably re-entering the same lock
-                writeLock.lock();
-                ActivationResult.Builder response = ActivationResult.builder()
-                        .serviceProvider(this)
-                        .finishingStatus(ActivationStatus.SUCCESS);
-
-                if (!currentPhase.eligibleForDeactivation()) {
-                    stateTransitionStart(response, Phase.DESTROYED);
-                    return ActivationResult.builder()
-                            .serviceProvider(this)
-                            .targetActivationPhase(Phase.DESTROYED)
-                            .finishingActivationPhase(currentPhase)
-                            .finishingStatus(ActivationStatus.SUCCESS)
-                            .build();
-                }
-
-                response.startingActivationPhase(this.currentPhase);
-                stateTransitionStart(response, Phase.PRE_DESTROYING);
-                preDestroy(response);
-                stateTransitionStart(response, Phase.DESTROYED);
-
-                return response.build();
-            } finally {
-                writeLock.unlock();
-            }
-        }
-
-        @Override
-        public Phase phase() {
-            return currentPhase;
-        }
-
-        protected void construct(ActivationResult.Builder response) {
-        }
-
-        protected void preDestroy(ActivationResult.Builder response) {
-        }
-
-        protected abstract Optional<List<QualifiedInstance<T>>> targetInstances();
-
-        private void stateTransitionStart(ActivationResult.Builder res, Phase phase) {
-            res.finishingActivationPhase(phase);
-            this.currentPhase = phase;
-        }
-
-        private ActivationResult doActivate(ActivationRequest request) {
-            // we just move to the correct phase, as we can do nothing until an instance is requested
-            Phase initialPhase = this.currentPhase;
-            Phase startingPhase = request.startingPhase().orElse(initialPhase);
-            Phase targetPhase = request.targetPhase();
-            this.currentPhase = startingPhase;
-            Phase finishingPhase = startingPhase;
-
-            ActivationResult.Builder response = ActivationResult.builder()
-                    .serviceProvider(this)
-                    .startingActivationPhase(initialPhase)
-                    .finishingActivationPhase(startingPhase)
-                    .targetActivationPhase(targetPhase)
-                    .finishingStatus(ActivationStatus.SUCCESS);
-
-            if (targetPhase.ordinal() > Phase.ACTIVATION_STARTING.ordinal()
-                    && initialPhase == Phase.INIT) {
-                if (Phase.INIT == startingPhase
-                        || Phase.PENDING == startingPhase
-                        || Phase.ACTIVATION_STARTING == startingPhase
-                        || Phase.DESTROYED == startingPhase) {
-                    stateTransitionStart(response, Phase.ACTIVATION_STARTING);
-                }
-            }
-
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= Phase.CONSTRUCTING.ordinal()) {
-                stateTransitionStart(response, Phase.CONSTRUCTING);
-                construct(response);
-            }
-
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= Phase.INJECTING.ordinal()
-                    && (Phase.CONSTRUCTING == finishingPhase)) {
-                stateTransitionStart(response, Phase.INJECTING);
-            }
-
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= Phase.POST_CONSTRUCTING.ordinal()
-                    && (Phase.INJECTING == finishingPhase)) {
-                stateTransitionStart(response, Phase.POST_CONSTRUCTING);
-            }
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= Phase.ACTIVATION_FINISHING.ordinal()
-                    && (Phase.POST_CONSTRUCTING == finishingPhase)) {
-                stateTransitionStart(response, Phase.ACTIVATION_FINISHING);
-            }
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= Phase.ACTIVE.ordinal()
-                    && (Phase.ACTIVATION_FINISHING == finishingPhase)) {
-                stateTransitionStart(response, Phase.ACTIVE);
-            }
-
-            return response.build();
-        }
-    }
-
     /**
      * {@code MyService implements Contract}.
      * Created for a service within each scope.
      */
-    static class SingleServiceActivator<T> extends BaseActivator<T> {
+    static class SingleServiceActivator<T> extends Activators.BaseActivator<T> {
         protected OnDemandInstance<T> serviceInstance;
 
         SingleServiceActivator(ServiceProvider<T> provider) {
@@ -305,13 +117,23 @@ final class ActivatorsPerLookup {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Optional<List<QualifiedInstance<T>>> instances(Lookup lookup) {
+        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get(currentPhase);
 
-            return Optional.of(ipProvider.list(lookup));
+            if (lookup.contracts().contains(InjectionPointProvider.TYPE_NAME)) {
+                // the user requested the provider, not the provided
+                T instance = (T) ipProvider;
+                return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
+            }
+
+            try {
+                return Optional.of(ipProvider.list(lookup));
+            } catch (RuntimeException e) {
+                throw new InjectionServiceProviderException("Failed to list instances in InjectionPointProvider", e, provider);
+            }
         }
     }
 
@@ -325,16 +147,28 @@ final class ActivatorsPerLookup {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             ServicesProvider<T> instanceSupplier = (ServicesProvider<T>) serviceInstance.get(currentPhase);
-            return Optional.of(instanceSupplier.services());
+
+            if (lookup.contracts().contains(ServicesProvider.TYPE_NAME)) {
+                return Optional.of(List.of(QualifiedInstance.create((T) instanceSupplier, descriptor().qualifiers())));
+            }
+
+            List<QualifiedInstance<T>> response = new ArrayList<>();
+            for (QualifiedInstance<T> instance : instanceSupplier.services()) {
+                if (lookup.matchesQualifiers(instance.qualifiers())) {
+                    response.add(instance);
+                }
+            }
+
+            return Optional.of(List.copyOf(response));
         }
     }
 
     /**
      * Service annotated {@link io.helidon.inject.service.Injection.DrivenBy}.
      */
-    static class DrivenByActivator<T> extends BaseActivator<T> {
+    static class DrivenByActivator<T> extends Activators.BaseActivator<T> {
         private final Services services;
         private final TypeName drivenBy;
         private List<QualifiedOnDemandInstance<T>> serviceInstances;
@@ -352,7 +186,7 @@ final class ActivatorsPerLookup {
         protected void construct(ActivationResult.Builder response) {
             // at this moment, we must resolve services that are driving this instance
             List<ServiceInstance<Object>> drivingInstances = services.lookupInstances(Lookup.builder().addContract(drivenBy)
-                                                                                               .build());
+                                                                                              .build());
             serviceInstances = drivingInstances.stream()
                     .map(it -> QualifiedOnDemandInstance.create(provider, it))
                     .toList();
@@ -379,10 +213,14 @@ final class ActivatorsPerLookup {
                                                        ServiceInstance<?> driver) {
             Set<Qualifier> qualifiers = driver.qualifiers();
             Qualifier name = qualifiers.stream()
+                    .filter(not(Qualifier.WILDCARD_NAMED::equals))
                     .filter(it -> Injection.Named.TYPE_NAME.equals(it.typeName()))
                     .findFirst()
                     .orElse(Qualifier.DEFAULT_NAMED);
-            Set<Qualifier> newQualifiers = new HashSet<>(provider.descriptor().qualifiers());
+            Set<Qualifier> newQualifiers = provider.descriptor().qualifiers()
+                    .stream()
+                    .filter(not(Qualifier.WILDCARD_NAMED::equals))
+                    .collect(Collectors.toSet());
             newQualifiers.add(name);
 
             Map<Ip, IpPlan<?>> injectionPlan = Activators.DrivenByActivator.updatePlan(provider.injectionPlan(),
