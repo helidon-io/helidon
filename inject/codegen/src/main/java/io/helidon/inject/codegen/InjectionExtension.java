@@ -210,7 +210,7 @@ class InjectionExtension implements InjectCodegenExtension {
             /*
             Fields
              */
-        singletonInstanceField(classModel, descriptorType);
+        singletonInstanceField(classModel, serviceType, descriptorType);
         serviceTypeFields(classModel, serviceType, descriptorType);
         typeFields(classModel, genericTypes);
         contractsField(classModel, contracts);
@@ -959,15 +959,15 @@ class InjectionExtension implements InjectCodegenExtension {
         typeInfo.interfaceTypeInfo().forEach(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified));
     }
 
-    private void singletonInstanceField(ClassModel.Builder classModel, TypeName descriptorType) {
+    private void singletonInstanceField(ClassModel.Builder classModel, TypeName serviceType, TypeName descriptorType) {
         // singleton instance of the descriptor
         classModel.addField(instance -> instance.description("Global singleton instance for this descriptor.")
                 .accessModifier(AccessModifier.PUBLIC)
                 .isStatic(true)
                 .isFinal(true)
-                .type(descriptorType)
+                .type(descriptorInstanceType(serviceType, descriptorType))
                 .name("INSTANCE")
-                .defaultValueContent("new " + descriptorType.className() + "()"));
+                .defaultValueContent("new " + descriptorType.className() + "<>()"));
     }
 
     private void serviceTypeFields(ClassModel.Builder classModel, TypeName serviceType, TypeName descriptorType) {
@@ -1851,6 +1851,12 @@ class InjectionExtension implements InjectCodegenExtension {
 
     private InjectionCodegenContext.Assignment translateParameter(TypeName typeName, String constantName) {
         return ctx.assignment(typeName, "ctx__helidonInject.param(" + constantName + ")");
+    }
+
+    private TypeName descriptorInstanceType(TypeName serviceType, TypeName descriptorType) {
+        return TypeName.builder(descriptorType)
+                .addTypeArgument(serviceType)
+                .build();
     }
 
     private record GenericTypeDeclaration(String constantName,

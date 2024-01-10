@@ -610,6 +610,7 @@ public final class Services {
         try {
             stateWriteLock.lock();
             if (interceptors == null) {
+                this.interceptors = new IdentityHashMap<>();
                 List<ServiceInfo> serviceInfos = lookupServices(Lookup.builder()
                                                                         .addContract(Interception.Interceptor.class)
                                                                         .addQualifier(Qualifier.WILDCARD_NAMED)

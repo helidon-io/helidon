@@ -16,17 +16,14 @@
 
 package io.helidon.inject.tests.configbeans;
 
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.LazyValue;
 import io.helidon.inject.service.ConfigDriven;
 
 /**
@@ -40,14 +37,6 @@ import io.helidon.inject.service.ConfigDriven;
 @Prototype.Blueprint
 interface FakeWebServerTlsConfigBlueprint {
     String PROTOCOL = "TLS";
-    // secure random cannot be stored in native image, it must be initialized at runtime
-    LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
-
-    /**
-     * This constant is a context classifier for the x509 client certificate if it is present. Callers may use this
-     * constant to lookup the client certificate associated with the current request context.
-     */
-    String CLIENT_X509_CERTIFICATE = FakeWebServerTlsConfigBlueprint.class.getName() + ".client-x509-certificate";
 
     @Option.Configured
     Set<String> enabledTlsProtocols();
