@@ -37,7 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests for {@link io.helidon.inject.service.ConfigBeans}.
+ * Tests for {@link io.helidon.inject.service.ConfigDriven}.
  */
 public abstract class AbstractConfiguredByTest {
     protected static final String FAKE_SERVER_CONFIG = "fake-server";

@@ -20,13 +20,13 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.service.ConfigBeans;
+import io.helidon.inject.service.ConfigDriven;
 
 /**
  * For testing purpose.
  */
-@ConfigBeans.ConfigBean
-@ConfigBeans.Repeatable
+@ConfigDriven.ConfigBean
+@ConfigDriven.Repeatable
 @Prototype.Configured("test.client")
 @Prototype.Blueprint
 interface TestClientConfigBlueprint extends TestCommonConfigBlueprint {

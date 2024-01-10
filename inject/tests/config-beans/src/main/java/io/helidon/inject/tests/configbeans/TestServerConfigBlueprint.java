@@ -20,13 +20,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.service.ConfigBeans;
+import io.helidon.inject.service.ConfigDriven;
 
 /**
  * For testing purpose.
  */
-@ConfigBeans.ConfigBean
-@ConfigBeans.AtLeastOne
+@ConfigDriven.ConfigBean
+@ConfigDriven.AtLeastOne
 @Prototype.Blueprint
 @Prototype.Configured("server")
 interface TestServerConfigBlueprint extends TestCommonConfigBlueprint {
