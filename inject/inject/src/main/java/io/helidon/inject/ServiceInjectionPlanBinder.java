@@ -57,7 +57,7 @@ public interface ServiceInjectionPlanBinder {
          * The injection point expects a single service instance.
          *
          * @param injectionPoint the injection point identity
-         * @param descriptor     the service descriptor to bind to this identity.
+         * @param descriptor     the service descriptor to bind to this identity
          * @return the binder builder
          */
         Binder bind(Ip injectionPoint,
