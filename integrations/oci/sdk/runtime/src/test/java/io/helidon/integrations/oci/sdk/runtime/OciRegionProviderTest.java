@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
@@ -61,7 +60,7 @@ class OciRegionProviderTest {
     void resetWith(Config config, InjectionConfig injectionConfig) {
         InjectionTestingSupport.shutdown(injectionServices);
         injectionServices = InjectionServices.create(injectionConfig);
-        OciExtension.injectionServices = LazyValue.create(injectionServices);
+        OciExtension.injectionServices(injectionServices);
         services = injectionServices.services();
         GlobalConfig.config(() -> config, true);
     }
