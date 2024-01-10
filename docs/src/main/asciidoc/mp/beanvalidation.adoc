@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -396,7 +396,7 @@ public class GreetingProvider {
 +
 NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.
 
-Examples are available in link:{helidon-github-tree-url}}/examples/microprofile/bean-validation[our official GitHub repository].
+Examples are available in link:{helidon-github-tree-url}/examples/microprofile/bean-validation[our official GitHub repository].
 
 == Additional Information
 
@@ -404,4 +404,4 @@ Helidon uses link:https://hibernate.org/validator/[Hibernate Bean Validator] for
 
 == Reference
 
-* link:{jakarta-bean-validation-spec-url}}[Bean Validation Specification]
+* link:{jakarta-bean-validation-spec-url}[Bean Validation Specification]

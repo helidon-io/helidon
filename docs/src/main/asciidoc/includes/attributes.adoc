@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ endif::[]
 :version-lib-microprofile-metrics-api: 5.0.1
 :version-lib-microprofile-openapi-api: 3.1
 :version-lib-microprofile-reactive-messaging-api: 3.0
-:version-lib-microprofile-rs-operators-api: 3.1.1
+:version-lib-microprofile-rs-operators-api: 3.0
 :version-lib-microprofile-rest-client: 3.0
 :version.lib.microprofile-telemetry-tck: 1.0
 :version-lib-microprofile-telemetry: 1.0
@@ -57,23 +57,23 @@ endif::[]
 
 // jakarta specifications
 :version-lib-jakarta-core: 10
-:version-lib-jakarta-cdi: 4.0.1
-:version-lib-jakarta-websockets-api: 2.1.0
+:version-lib-jakarta-cdi: 4.0
+:version-lib-jakarta-websockets-api: 2.1
 :version-lib-jakarta-bean-validation: 3.0
-:version-lib-jakarta-jsonp-api: 2.1.1
+:version-lib-jakarta-jsonp-api: 2.1
 :version-lib-jakarta-jsonb-api: 3.0
-:version-lib-jakarta-jsonp-api: 2.1.1
+:version-lib-jakarta-jsonp-api: 2.1
 :version-lib-jakarta-annotations-api: 2.1.1
 :version-lib-jakarta-transaction-api: 2.0
-:version-lib-jakarta-persistence-api: 3.1.0
-:version-lib-jakarta-jaxrs-api: 3.1.0
-:version-lib-jakarta-inject: 2.0.1
+:version-lib-jakarta-persistence-api: 3.1
+:version-lib-jakarta-jaxrs-api: 3.1
+:version-lib-jakarta-inject: 2.0
 
 // 3rd party
 :version-lib-jaeger: 1.22
 :version-lib-hikaricp: 5.0.1
 :version-lib-eclipselink: 4.0.2
-:version-lib-hibernate: 6.1.7.Final
+:version-lib-hibernate: 6.1
 :version-lib-oracle-jdbc: 21
 :version-lib-oracle-ucp: {version-lib-oracle-jdbc}
 :version-plugin-jib: 0.10.1
@@ -141,7 +141,7 @@ endif::[]
 
 :microprofile-graphql-base-url: {microprofile-base-url}/microprofile-graphql-{version-lib-microprofile-graphql}
 :microprofile-graphql-spec-url: {microprofile-graphql-base-url}/microprofile-graphql-spec-{version-lib-microprofile-graphql}.html
-:microprofile-graphql-javadoc-url: {microprofile-rest-graphql-url}/apidocs
+:microprofile-graphql-javadoc-url: {microprofile-graphql-base-url}/apidocs
 
 // Jakarta versioned URLs
 
@@ -152,11 +152,11 @@ endif::[]
 :jakarta-cdi-javadoc-url: {jakarta-cdi-base-url}/apidocs/
 
 :jakarta-websocket-base-url: {jakarta-base-url}/websocket/{version-lib-jakarta-websockets-api}
-:jakarta-websocket-spec-url: {jakarta-websocket-base-url}/websocket-spec-{version-lib-jakarta-websockets-api}.html
+:jakarta-websocket-spec-url: {jakarta-websocket-base-url}/jakarta-websocket-spec-{version-lib-jakarta-websockets-api}.html
 :jakarta-websocket-javadoc-url: {jakarta-websocket-base-url}/apidocs/
 
 :jakarta-bean-validation-base-url: {jakarta-base-url}/bean-validation/{version-lib-jakarta-bean-validation}
-:jakarta-bean-validation-spec-url: {jakarta-bean-validation-base-url}/bean-validation_{version-lib-jakarta-bean-validation}.html
+:jakarta-bean-validation-spec-url: {jakarta-bean-validation-base-url}/jakarta-bean-validation-spec-{version-lib-jakarta-bean-validation}.html
 :jakarta-bean-validation-javadoc-url: {jakarta-bean-validation-base-url}/apidocs
 
 :jakarta-jsonp-base-url: {jakarta-base-url}/jsonp/{version-lib-jakarta-jsonp-api}
@@ -267,7 +267,7 @@ endif::[]
 :oracle-ucp-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjuar
 
 :micrometer-url: https://micrometer.io
-:micrometer-api-url: https://micrometer.io/docs/concepts
+:micrometer-api-url: https://docs.micrometer.io/micrometer/reference/concepts.html
 :micrometer-javadoc-base-url: https://javadoc.io/doc/io.micrometer
 :micrometer-javadoc-registry-prometheus-base-url: {micrometer-javadoc-base-url}/micrometer-registry-prometheus/{version-lib-micrometer}/io/micrometer/prometheus
 

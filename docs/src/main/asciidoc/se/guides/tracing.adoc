@@ -332,7 +332,8 @@ server:
   host: 0.0.0.0
 ----
 
-NOTE: The settings above are for development and experimental purposes only. For a production environment please see the xref:../tracing.adoc[Tracing documentation].
+NOTE: The settings above are for development and experimental purposes only. For production environment, please see the
+xref:{rootdir}/se/tracing.adoc[Tracing documentation].
 
 [source,java]
 .Update the `GreetService` class. Replace the `getDefaultMessageHandler` method:

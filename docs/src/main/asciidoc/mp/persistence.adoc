@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ pools:
 
 1. https://github.com/brettwooldridge/HikariCP[HikariCP]
 
-2. link:{oracle-ucp-doc-base-url}index.html[Oracle Universal
+2. link:{oracle-ucp-doc-base-url}/index.html[Oracle Universal
    Connection Pool]
 
 You can choose to use either, but not both.
@@ -146,7 +146,7 @@ managed]
 
 ====== Maven Coordinates (Oracle Universal Connection Pool) [[DS-UCP-Maven-Coordinates]]
 
-To include the link:{oracle-ucp-doc-base-url}index.html[Oracle
+To include the link:{oracle-ucp-doc-base-url}/index.html[Oracle
 Universal Connection Pool] in your Helidon MP application:
 
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
@@ -1428,7 +1428,7 @@ relational database tables, and how to perform other related tasks.
 * link:{jakarta-persistence-javadoc-url}/[Jakarta Persistence
   {persistence-lib-jakarta-persistence-api} API Reference]
 
-* link:{hibernate-doc-jboss-url}userguide/html_single/Hibernate_User_Guide.html[Hibernate
+* link:{hibernate-doc-jboss-url}/userguide/html_single/Hibernate_User_Guide.html[Hibernate
   ORM User Guide]
 
 * https://www.eclipse.org/eclipselink/documentation/[Eclipselink documentation]
