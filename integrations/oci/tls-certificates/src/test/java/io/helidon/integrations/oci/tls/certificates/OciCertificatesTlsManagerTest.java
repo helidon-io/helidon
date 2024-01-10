@@ -48,7 +48,7 @@ class OciCertificatesTlsManagerTest {
 
     @Test
     void serverRuntime() throws Exception {
-        Services services = InjectionServices.instance().services();
+        Services services = InjectionServices.create().services();
         LifecycleHook lifecycleHook = services.get(LifecycleHook.class);
         CountDownLatch startup = new CountDownLatch(1);
 

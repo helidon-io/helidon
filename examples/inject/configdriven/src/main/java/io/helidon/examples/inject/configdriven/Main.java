@@ -35,7 +35,7 @@ public class Main {
 
 
         // this drives config-driven service activations (see the contents of the toolbox being output)
-        Services services = InjectionServices.instance().services();
+        Services services = InjectionServices.create().services();
 
         // this will trigger the PostConstruct method to display the contents of the toolbox
         services.get(ToolBox.class);

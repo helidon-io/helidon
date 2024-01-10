@@ -16,6 +16,7 @@
 
 package io.helidon.inject.runtime;
 
+import io.helidon.config.Config;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Phase;
@@ -26,12 +27,24 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /*
-Test that configuration is used if not configured explicitly
+Configuration is never used automagically.
  */
 class ConfigTest {
     @Test
+    void testDefault() {
+        InjectionConfig config = InjectionServices.create()
+                .config();
+
+        assertThat(config.useModules(), is(true));
+        assertThat(config.useApplication(), is(true));
+        assertThat(config.limitRuntimePhase(), is(Phase.ACTIVE));
+        assertThat(config.interceptionEnabled(), is(true));
+        assertThat(config.serviceLookupCaching(), is(false));
+    }
+
+    @Test
     void testConfigUsed() {
-        InjectionConfig config = InjectionServices.instance()
+        InjectionConfig config = InjectionServices.create(InjectionConfig.create(Config.create().get("inject")))
                 .config();
 
         assertThat(config.useModules(), is(false));

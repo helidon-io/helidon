@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
@@ -60,6 +61,7 @@ class OciRegionProviderTest {
     void resetWith(Config config, InjectionConfig injectionConfig) {
         InjectionTestingSupport.shutdown(injectionServices);
         injectionServices = InjectionServices.create(injectionConfig);
+        OciExtension.injectionServices = LazyValue.create(injectionServices);
         services = injectionServices.services();
         GlobalConfig.config(() -> config, true);
     }
@@ -71,7 +73,7 @@ class OciRegionProviderTest {
                 OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
         resetWith(config, InjectionConfig.create());
 
-        Supplier<Region> regionSupplier = InjectionServices.instance()
+        Supplier<Region> regionSupplier = injectionServices
                 .services()
                 .supply(Lookup.builder().addContract(Region.class).build());
         assertThrows(InjectionServiceProviderException.class,
@@ -92,7 +94,7 @@ class OciRegionProviderTest {
                         .addQualifier(Qualifier.createNamed("us-phoenix-1"))
                         .build());
 
-        InjectionPointProvider<Region> regionProvider = InjectionServices.instance()
+        InjectionPointProvider<Region> regionProvider = injectionServices
                 .services()
                 .get(Lookup.builder()
                              .addContract(InjectionPointProvider.class)

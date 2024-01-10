@@ -18,7 +18,6 @@ package io.helidon.inject.runtime;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,7 +26,6 @@ import java.util.concurrent.Future;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationResult;
 import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Services;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,19 +39,13 @@ class LockContentionTest {
     private final ExecutorService es = Executors.newFixedThreadPool(16);
 
     @Test
-        // we cannot interlace shutdown with startups here - so instead we are checking to ensure N threads can call startup
-        // and then N threads can call shutdown in parallel, but in phases
     void lockContention() {
+        // each instance is independent, let's just make sure we can shutdown in parallel
         Map<String, Future<?>> result = new ConcurrentHashMap<>();
-        for (int i = 1; i <= COUNT; i++) {
-            result.put("start run:" + i, es.submit(this::start));
-        }
 
-        verify(result);
-        result.clear();
-
+        InjectionServices is = InjectionServices.create();
         for (int i = 1; i <= COUNT; i++) {
-            result.put("shutdown run:" + i, es.submit(this::shutdown));
+            result.put("shutdown run:" + i, es.submit(() -> this.shutdown(is)));
         }
 
         verify(result);
@@ -69,12 +61,7 @@ class LockContentionTest {
         });
     }
 
-    Services start() {
-        return Objects.requireNonNull(InjectionServices.instance().services());
-    }
-
-    Map<TypeName, ActivationResult> shutdown() {
-        InjectionServices injectionServices = InjectionServices.instance();
+    Map<TypeName, ActivationResult> shutdown(InjectionServices injectionServices) {
         Map<TypeName, ActivationResult> result = new LinkedHashMap<>();
         Map<TypeName, ActivationResult> round;
         do {

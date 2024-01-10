@@ -46,7 +46,7 @@ class InterfaceInterceptionTest {
 
     @BeforeAll
     static void init() {
-        injectionServices = InjectionServices.instance();
+        injectionServices = InjectionServices.create();
         services = injectionServices.services();
         service = services.get(OtherContract.class);
 
