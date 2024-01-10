@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionContext;
 import io.helidon.inject.service.InjectionPointProvider;
@@ -96,6 +97,16 @@ final class ActivatorsPerLookup {
     static class SupplierActivator<T> extends SingleServiceActivator<T> {
         SupplierActivator(ServiceProvider<T> provider) {
             super(provider);
+        }
+
+        @Override
+        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+            if (lookup.contracts().contains(TypeNames.SUPPLIER)) {
+                // the user requested the provider, not the provided
+                T instance = serviceInstance.get(currentPhase);
+                return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
+            }
+            return targetInstances();
         }
 
         @SuppressWarnings("unchecked")
