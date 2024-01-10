@@ -146,6 +146,9 @@
                 </executions>
                 <configuration>
                     <permittedProviderType>NAMED</permittedProviderType>
+                    <permittedProviderQualifierTypeNames>
+                        <typeName>io.helidon.inject.service.ConfigDriven.ConfigBean</typeName>
+                    </permittedProviderQualifierTypeNames>
                 </configuration>
             </plugin>
         </plugins>

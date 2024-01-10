@@ -166,8 +166,6 @@
                     <permittedProviderType>NAMED</permittedProviderType>
                     <permittedProviderTypeNames>
                         <permittedProviderTypeName>io.helidon.inject.tests.inject.provider.MyServices.MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.inject.tests.inject.provider.MyServices.MyConcreteClassContractPerRequestProvider</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.inject.tests.inject.ASerialProviderImpl</permittedProviderTypeName>
                         <permittedProviderTypeName>io.helidon.inject.tests.inject.tbox.impl.BladeProvider</permittedProviderTypeName>
                     </permittedProviderTypeNames>
                 </configuration>

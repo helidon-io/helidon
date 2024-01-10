@@ -149,15 +149,14 @@ after the singleton scope is active.
 1. Create `Services` instance
 2. Apply all modules
    1. Register ServiceManager for each ServiceDescriptor
-   2. 
 3. Apply all applications
 4. Initialize `@Service` scope (never creates any instances)
 5. Initialize `@Singleton` scope (may create instances of eager services, may need injections of suppliers from other scopes)
 
 `ServiceManager`
    - 1:1 mapping to service descriptor
-   - 1:N mapping to `InstanceManager` 
+   - 1:N mapping to `Activator` 
 
-`InstanceManager`
+`Activator`
    - each service manager has an instance manager for the service it holds, and may have additional instance managers if the service is a `ServicesProvider`
    - all of these instances are managed together (lifecycle), the "main" instance can receive injection points and have postconstruct and predestroy

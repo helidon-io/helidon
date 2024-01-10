@@ -37,6 +37,6 @@ We do not support proxying of types for scope purposes.
 
 Request scope is implemented through APIs and can be replaced by a custom implementation if desired
 
-Our implementation of the Request scope uses a `RequesetScopeControl` to start the scope. Once started, it is kept in a thread 
+Our implementation of the Request scope uses a `RequestScopeControl` to start the scope. Once started, it is kept in a thread 
 local of the current thread (as Helidon always uses exactly one virtual thread for the duration of a request), and it is closed
 when the request finishes (this must be handled by the component starting the context, such as an HTTP Service).

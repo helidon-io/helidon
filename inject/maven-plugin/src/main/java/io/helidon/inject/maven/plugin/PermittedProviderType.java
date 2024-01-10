@@ -17,9 +17,10 @@
 package io.helidon.inject.maven.plugin;
 
 /**
- * Defines how the generator should allow the presence of {@link java.util.function.Supplier}'s,
- * {@link io.helidon.inject.RegistryServiceProvider}, or
- * {@link io.helidon.inject.service.InjectionPointProvider}'s. Since providers add a level of non-deterministic behavior
+ * Defines how the generator should allow the presence of
+ * {@link io.helidon.inject.service.ServicesProvider}, or
+ * {@link io.helidon.inject.service.InjectionPointProvider}'s.
+ * Since providers add a level of non-deterministic behavior
  * to the system it is required for the application to explicitly define whether this feature should be permitted.
  */
 enum PermittedProviderType {

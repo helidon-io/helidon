@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenEvent;
@@ -281,18 +280,18 @@ class ApplicationCreator {
 
         Set<TypeName> notAllowed = new LinkedHashSet<>();
 
-        List<ServiceInfo> providers = services.all(Lookup.builder()
-                                                           .addContract(Supplier.class)
-                                                           .build());
-        gatherProvidersNotAllowed(notAllowed, providers);
-
-        providers = services.all(Lookup.builder().addContract(InjectCodegenTypes.INJECTION_POINT_PROVIDER).build());
-        gatherProvidersNotAllowed(notAllowed, providers);
+        gatherProvidersNotAllowed(services, notAllowed, InjectCodegenTypes.INJECTION_POINT_PROVIDER);
+        gatherProvidersNotAllowed(services, notAllowed, InjectCodegenTypes.SERVICES_PROVIDER);
 
         return notAllowed;
     }
 
-    private void gatherProvidersNotAllowed(Set<TypeName> notAllowedProviders, List<ServiceInfo> providers) {
+    private void gatherProvidersNotAllowed(WrappedServices services,
+                                           Set<TypeName> notAllowedProviders,
+                                           TypeName contract) {
+        List<ServiceInfo> providers = services.all(Lookup.builder()
+                                                           .addContract(contract)
+                                                           .build());
         for (ServiceInfo provider : providers) {
             TypeName typeName = provider.serviceType();
             if (!isAllowListedProviderName(typeName)
@@ -344,13 +343,6 @@ class ApplicationCreator {
         qualifiedProviders = qualifiedProviders.stream()
                 .filter(it -> !it.serviceType().equals(self.serviceType()))
                 .toList();
-
-        if (self.contracts().contains(InjectCodegenTypes.INJECT_INJECTION_RESOLVER)
-                && qualifiedProviders.isEmpty()
-                && unqualifiedProviders.isEmpty()) {
-            // we should not instantiate the provider (we could do it for singleton scope though)
-            return new InjectionPlan(List.of(self), List.of());
-        }
 
         // the list now contains all providers that match the processed injection points
         return new InjectionPlan(unqualifiedProviders, qualifiedProviders);
