@@ -18,14 +18,14 @@ package io.helidon.inject.tests.configbeans.driven.interceptor.test;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.service.ConfigBeans;
+import io.helidon.inject.service.ConfigDriven;
 
 /**
  * Drives {@link ZImpl} activation.
  */
 @Prototype.Blueprint
 @Prototype.Configured
-@ConfigBeans.ConfigBean
+@ConfigDriven.ConfigBean
 interface ZImplConfigBlueprint {
 
     /**

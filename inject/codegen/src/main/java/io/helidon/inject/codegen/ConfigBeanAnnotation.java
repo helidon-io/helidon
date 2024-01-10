@@ -26,15 +26,15 @@ record ConfigBeanAnnotation(String configKey,
                             boolean repeatable,
                             boolean atLeastOne,
                             boolean wantDefault) {
-    static final TypeName CONFIG_BEAN_TYPE = TypeName.create("io.helidon.inject.service.ConfigBeans.ConfigBean");
-    static final TypeName AT_LEAST_ONE_TYPE = TypeName.create("io.helidon.inject.service.ConfigBeans.AtLeastOne");
-    static final TypeName REPEATABLE_TYPE = TypeName.create("io.helidon.inject.service.ConfigBeans.Repeatable");
-    static final TypeName WANT_DEFAULT_TYPE = TypeName.create("io.helidon.inject.service.ConfigBeans.WantDefault");
+    static final TypeName CONFIG_BEAN_TYPE = TypeName.create("io.helidon.inject.service.ConfigDriven.ConfigBean");
+    static final TypeName AT_LEAST_ONE_TYPE = TypeName.create("io.helidon.inject.service.ConfigDriven.AtLeastOne");
+    static final TypeName REPEATABLE_TYPE = TypeName.create("io.helidon.inject.service.ConfigDriven.Repeatable");
+    static final TypeName WANT_DEFAULT_TYPE = TypeName.create("io.helidon.inject.service.ConfigDriven.WantDefault");
 
     static ConfigBeanAnnotation create(TypeInfo typeInfo) {
         /*
          config key is obtained in this order:
-         1. ConfigBeans.ConfigBean annotation
+         1. ConfigDriven.ConfigBean annotation
          2. Prototype.Configured annotation
          3. Configured annotation
          */

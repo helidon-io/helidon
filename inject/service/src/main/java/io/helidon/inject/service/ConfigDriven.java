@@ -22,8 +22,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A set of annotations and other types for using config beans.
- * If you want to use {@link io.helidon.inject.service.ConfigBeans.ConfigBean} annotation, at least
+ * A set of annotations and other types for using config beans and services that are
+ * driven by configuration in general.
+ * If you want to use {@link ConfigDriven.ConfigBean} annotation, at least
  * Helidon common config must be on the classpath. To make use of it, you should also include an implementation
  * ({@code helidon-config}, or maybe {@code helidon-config-yaml}).
  * <p>
@@ -31,8 +32,8 @@ import java.lang.annotation.Target;
  * <p>
  * When a configurable type is annotated, it will be added as a named instance to the registry.
  */
-public final class ConfigBeans {
-    private ConfigBeans() {
+public final class ConfigDriven {
+    private ConfigDriven() {
     }
 
     /**
@@ -47,7 +48,7 @@ public final class ConfigBeans {
      * <ul>
      *     <li>{@code static Type create(io.helidon.common.config.Config)} method</li>
      *     <li>{@code static Type create()} method if also annotated with
-     *     {@link io.helidon.inject.service.ConfigBeans.WantDefault}</li>
+     *     {@link ConfigDriven.WantDefault}</li>
      * </ul>
      */
     @Documented
@@ -64,8 +65,8 @@ public final class ConfigBeans {
          * If the annotated type is not a Blueprint, the key must be defined on this annotation.
          * In such a case the type must provide an accessible factory method (at least package local)
          * "{@code static MyConfigBean create(io.helidon.common.config.Config)}", if the type is also annotated
-         * with either of {@link ConfigBeans.AtLeastOne} or
-         * {@link ConfigBeans.WantDefault}, an additional factory method must exist:
+         * with either of {@link ConfigDriven.AtLeastOne} or
+         * {@link ConfigDriven.WantDefault}, an additional factory method must exist:
          * "{@code static MyConfigBean create()}".
          * <p>
          * If places we look for yield an empty string key, we actually use the root configuration.
@@ -77,7 +78,7 @@ public final class ConfigBeans {
 
     /**
      * At least one instance is required.
-     * If {@link ConfigBeans.WantDefault} is not configured,
+     * If {@link ConfigDriven.WantDefault} is not configured,
      * the instance must be configured in config.
      */
     @Documented
@@ -106,12 +107,12 @@ public final class ConfigBeans {
     /**
      * There will always be an instance created with defaults.
      * <p>
-     * If combined with {@link ConfigBeans.AtLeastOne}:
+     * If combined with {@link ConfigDriven.AtLeastOne}:
      * <ul>
      *     <li>If there is no configuration in config, default instance is created</li>
      *     <li>If there is a configuration in config with {@code @default} name, that instance is created</li>
      *     <li>If there is one ore more configurations in config, all of those would be create, plus the default instance;
-     *          in case this is not {@link ConfigBeans.Repeatable}, default instance
+     *          in case this is not {@link ConfigDriven.Repeatable}, default instance
      *          WOULD NOT be created</li>
      * </ul>
      */

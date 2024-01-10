@@ -52,7 +52,7 @@ class QualifierSupport {
          * Represents a configuration based bean.
          */
         @Prototype.Constant
-        static final Qualifier CONFIG_BEAN = create(ConfigBeans.ConfigBean.class);
+        static final Qualifier CONFIG_BEAN = create(ConfigDriven.ConfigBean.class);
 
 
         private CustomMethods() {

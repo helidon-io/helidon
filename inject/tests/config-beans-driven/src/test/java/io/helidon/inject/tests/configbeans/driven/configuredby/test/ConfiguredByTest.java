@@ -23,7 +23,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.inject.service.ConfigBeans;
+import io.helidon.inject.service.ConfigDriven;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceInstance;
@@ -75,7 +75,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
 
         List<ServiceInstance<Object>> configBeans = services.lookupInstances(Lookup.builder()
                                                                                       .addQualifier(Qualifier.create(
-                                                                                              ConfigBeans.ConfigBean.class))
+                                                                                              ConfigDriven.ConfigBean.class))
                                                                                       .addQualifier(Qualifier.WILDCARD_NAMED)
                                                                                       .build());
 
