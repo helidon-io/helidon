@@ -26,11 +26,11 @@ import io.helidon.common.types.TypeName;
  *
  * @param <T> type of the instance
  */
-public interface RegistryInstance<T> extends QualifiedInstance<T> {
+public interface ServiceInstance<T> extends QualifiedInstance<T> {
     /**
      * Type name of this interface. {@link io.helidon.common.types.TypeName} is used in various APIs of service registry.
      */
-    TypeName TYPE_NAME = TypeName.create(RegistryInstance.class);
+    TypeName TYPE_NAME = TypeName.create(ServiceInstance.class);
 
     /**
      * Contracts of the service instance.

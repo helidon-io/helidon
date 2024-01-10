@@ -65,7 +65,7 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
 
     private List<Supplier<Interception.Interceptor>> interceptors(List<Annotation> typeAnnotations,
                                                                   TypedElementInfo element) {
-        if (!services.injectionServices().config().interceptionEnabled()) {
+        if (!services.config().interceptionEnabled()) {
             return List.of();
         }
 

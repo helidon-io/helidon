@@ -54,7 +54,7 @@ class InjectionTest {
 
     @AfterAll
     static void tearDownRegistry() {
-        services.injectionServices().shutdown();
+        injectionServices.shutdown();
         if (lifecycleReceiver != null) {
             assertThat("Pre destroy of a singleton should have been called", lifecycleReceiver.preDestroyCalled(), is(true));
         }

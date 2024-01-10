@@ -39,9 +39,9 @@ import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.QualifiedInstance;
 import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.RegistryInstance;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.service.ServiceInstance;
 import io.helidon.inject.service.ServicesProvider;
 
 import static java.util.function.Predicate.not;
@@ -307,7 +307,7 @@ final class Activators {
      * Created for a service within each scope.
      */
     static class SingleServiceActivator<T> extends BaseActivator<T> {
-        protected ServiceInstance<T> serviceInstance;
+        protected InstanceHolder<T> serviceInstance;
         protected List<QualifiedInstance<T>> targetInstances;
 
         SingleServiceActivator(ServiceProvider<T> provider) {
@@ -321,7 +321,7 @@ final class Activators {
 
         @Override
         protected void construct(ActivationResult.Builder response) {
-            this.serviceInstance = ServiceInstance.create(provider, provider.injectionPlan());
+            this.serviceInstance = InstanceHolder.create(provider, provider.injectionPlan());
             this.serviceInstance.construct();
         }
 
@@ -472,7 +472,7 @@ final class Activators {
         }
 
         static Map<Ip, IpPlan<?>> updatePlan(Map<Ip, IpPlan<?>> injectionPlan,
-                                             RegistryInstance<?> driver,
+                                             ServiceInstance<?> driver,
                                              Qualifier name) {
 
             Set<Ip> ips = Set.copyOf(injectionPlan.keySet());
@@ -486,7 +486,7 @@ final class Activators {
                 if (contracts.contains(ip.contract())
                         && ip.qualifiers().size() == 1
                         && ip.qualifiers().contains(Qualifier.WILDCARD_NAMED)) {
-                    if (RegistryInstance.TYPE_NAME.equals(ip.typeName())) {
+                    if (ServiceInstance.TYPE_NAME.equals(ip.typeName())) {
                         // if the injection point has the same contract, no qualifiers, then it is the driving instance
                         updatedPlan.put(ip, new IpPlan<>(() -> driver, injectionPlan.get(ip).descriptors()));
                     } else {
@@ -513,7 +513,7 @@ final class Activators {
             // at this moment, we must resolve services that are driving this instance
 
             // we do not want to use lookup, as that is doing too much for us
-            List<RegistryInstance<Object>> drivingInstances = driversFromPlan(provider.injectionPlan(), drivenBy)
+            List<ServiceInstance<Object>> drivingInstances = driversFromPlan(provider.injectionPlan(), drivenBy)
                     .stream()
                     .map(services::serviceManager)
                     .flatMap(it -> services.managerInstances(Lookup.EMPTY, it).stream())
@@ -555,7 +555,7 @@ final class Activators {
             if (serviceInstances != null) {
                 serviceInstances.stream()
                         .map(QualifiedServiceInstance::serviceInstance)
-                        .forEach(ServiceInstance::preDestroy);
+                        .forEach(InstanceHolder::preDestroy);
             }
             serviceInstances = null;
             targetInstances = null;
@@ -590,9 +590,9 @@ final class Activators {
             return services.servicesByContract(drivenBy);
         }
 
-        private record QualifiedServiceInstance<T>(ServiceInstance<T> serviceInstance,
+        private record QualifiedServiceInstance<T>(InstanceHolder<T> serviceInstance,
                                                    Set<Qualifier> qualifiers) {
-            static <T> QualifiedServiceInstance<T> create(ServiceProvider<T> provider, RegistryInstance<?> driver) {
+            static <T> QualifiedServiceInstance<T> create(ServiceProvider<T> provider, ServiceInstance<?> driver) {
                 Set<Qualifier> qualifiers = driver.qualifiers();
                 Qualifier name = qualifiers.stream()
                         .filter(not(Qualifier.WILDCARD_NAMED::equals))
@@ -607,29 +607,29 @@ final class Activators {
 
                 Map<Ip, IpPlan<?>> injectionPlan = updatePlan(provider.injectionPlan(), driver, name);
 
-                return new QualifiedServiceInstance<>(ServiceInstance.create(provider, injectionPlan), newQualifiers);
+                return new QualifiedServiceInstance<>(InstanceHolder.create(provider, injectionPlan), newQualifiers);
             }
         }
     }
 
-    static class ServiceInstance<T> {
+    static class InstanceHolder<T> {
         private final InjectionContext ctx;
         private final InterceptionMetadata interceptionMetadata;
         private final ServiceDescriptor<T> source;
 
         private volatile T instance;
 
-        private ServiceInstance(InjectionContext ctx, InterceptionMetadata interceptionMetadata, ServiceDescriptor<T> source) {
+        private InstanceHolder(InjectionContext ctx, InterceptionMetadata interceptionMetadata, ServiceDescriptor<T> source) {
             this.ctx = ctx;
             this.interceptionMetadata = interceptionMetadata;
             this.source = source;
         }
 
-        static <T> ServiceInstance<T> create(ServiceProvider<T> serviceProvider, Map<Ip, IpPlan<?>> injectionPlan) {
+        static <T> InstanceHolder<T> create(ServiceProvider<T> serviceProvider, Map<Ip, IpPlan<?>> injectionPlan) {
             // the same instance is returned for the lifetime of the service provider
-            return new ServiceInstance<>(InjectionContextImpl.create(injectionPlan),
-                                         serviceProvider.interceptMetadata(),
-                                         serviceProvider.descriptor());
+            return new InstanceHolder<>(InjectionContextImpl.create(injectionPlan),
+                                        serviceProvider.interceptMetadata(),
+                                        serviceProvider.descriptor());
         }
 
         T get() {
