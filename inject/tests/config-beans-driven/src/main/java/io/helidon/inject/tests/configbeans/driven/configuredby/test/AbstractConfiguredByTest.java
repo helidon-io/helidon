@@ -82,9 +82,6 @@ public abstract class AbstractConfiguredByTest {
                           .disableSystemPropertiesSource()
                           .build());
 
-        // verify the services registry
-        testRegistry();
-
         Supplier<FakeWebServer> fakeWebServer = services.supply(FakeWebServer__ServiceDescriptor.INSTANCE);
         assertThat(fakeWebServer.get().isRunning(), is(true));
 
@@ -96,77 +93,6 @@ public abstract class AbstractConfiguredByTest {
         testShutdown(fakeWebServer.get());
     }
 
-    //    @Test
-    void testRegistry() {
-        //        Lookup criteria = Lookup.builder()
-        //                .addQualifier(Qualifier.create(ConfigDriven.class))
-        //                .build();
-        //        List<RegistryServiceProvider<Object>> list = services.all(criteria);
-        //        List<String> desc = list.stream()
-        //                .filter(it -> !it.serviceType().resolvedName().contains(".yaml."))
-        //                .map(RegistryServiceProvider::description)
-        //                .toList();
-        //        // order matters here since it should be based upon weight
-        //        assertThat("root providers are config-driven, auto-started services unless overridden to not be driven",
-        //                   desc,
-        //                   containsInAnyOrder("ASingletonService{root}:ACTIVE",
-        //                                      "FakeTlsWSNotDrivenByCB{root}:PENDING",
-        //                                      "FakeWebServer{root}:ACTIVE",
-        //                                      "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING",
-        //                                      "SomeConfiguredServiceWithAnAbstractBase{root}:PENDING"
-        //                   ));
-        //
-        //        criteria = Lookup.builder()
-        //                .addContract(FakeWebServerContract.class)
-        //                .build();
-        //        list = services.all(criteria);
-        //        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        //        assertThat("no root providers expected in result, but all are auto-started unless overridden", desc,
-        //                   contains("FakeWebServer{@default}:ACTIVE",
-        //                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{@default}:INIT"));
-        //
-        //        criteria = Lookup.builder()
-        //                .serviceType(TypeName.create(FakeTlsWSNotDrivenByCB.class))
-        //                .build();
-        //        list = services.all(criteria);
-        //        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        //        assertThat("root providers expected here since we looked up by service type name", desc,
-        //                   contains("FakeTlsWSNotDrivenByCB{root}:PENDING"));
-        //
-        //        criteria = Lookup.builder()
-        //                .addContract(FakeTlsWSNotDrivenByCB.class)
-        //                .addQualifier(Qualifier.createNamed("*"))
-        //                .build();
-        //        list = services.all(criteria);
-        //        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        //        assertThat("root providers expected here since no configuration for this service", desc,
-        //                   contains("FakeTlsWSNotDrivenByCB{root}:PENDING"));
-        //
-        //        RegistryServiceProvider<?> fakeTlsProvider = list.getFirst();
-        //        InjectionServiceProviderException e = assertThrows(InjectionServiceProviderException.class,
-        //        fakeTlsProvider::get);
-        //        assertThat("There is no configuration, so cannot activate this service",
-        //                   e.getMessage(),
-        //                   equalTo("Expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));
-        //
-        //        criteria = Lookup.builder()
-        //                .addContract(ASingletonService.class)
-        //                .addQualifier(Qualifier.createNamed("jane"))
-        //                .build();
-        //        list = services.all(criteria);
-        //        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        //        assertThat("Even though there is a @default, it cannot match named", list, empty());
-        //
-        //        criteria = Lookup.builder()
-        //                .addContract(ASingletonService.class)
-        //                .build();
-        //        list = services.all(criteria);
-        //        desc = list.stream().map(RegistryServiceProvider::description).collect(Collectors.toList());
-        //        assertThat("Managed providers expected here since we have default configuration for this service", desc,
-        //                   contains("ASingletonService{@default}:ACTIVE"));
-    }
-
-    //    @Test
     void testShutdown(FakeWebServer fakeWebServer) {
         assertThat(fakeWebServer.isRunning(), is(true));
 
