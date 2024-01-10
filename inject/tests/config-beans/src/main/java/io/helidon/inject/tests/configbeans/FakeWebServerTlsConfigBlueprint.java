@@ -27,7 +27,7 @@ import javax.net.ssl.SSLContext;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.LazyValue;
-import io.helidon.inject.service.ConfigBeans;
+import io.helidon.inject.service.ConfigDriven;
 
 /**
  * aka WebServerTls.
@@ -35,7 +35,7 @@ import io.helidon.inject.service.ConfigBeans;
  * A class wrapping transport layer security (TLS) configuration for
  * WebServer sockets.
  */
-@ConfigBeans.ConfigBean
+@ConfigDriven.ConfigBean
 @Prototype.Configured("tls")
 @Prototype.Blueprint
 interface FakeWebServerTlsConfigBlueprint {
