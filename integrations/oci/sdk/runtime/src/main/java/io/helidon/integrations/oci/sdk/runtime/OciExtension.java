@@ -132,7 +132,7 @@ public final class OciExtension {
             .build());
 
     // the field is not final (and volatile) so tests can replace the injection services used by this instance
-    static volatile LazyValue<InjectionServices> injectionServices = LazyValue.create(InjectionServices::create);
+    private static volatile LazyValue<InjectionServices> injectionServices = LazyValue.create(InjectionServices::create);
     private static String overrideOciConfigFile;
     private static volatile Supplier<io.helidon.common.config.Config> ociConfigSupplier;
     private static volatile Supplier<io.helidon.common.config.Config> fallbackConfigSupplier;
@@ -286,4 +286,7 @@ public final class OciExtension {
         return (overrideOciConfigFile == null) ? DEFAULT_OCI_GLOBAL_CONFIG_FILE : overrideOciConfigFile;
     }
 
+    static void injectionServices(InjectionServices services) {
+        OciExtension.injectionServices = LazyValue.create(services);
+    }
 }
