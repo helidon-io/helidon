@@ -44,7 +44,7 @@ public class Jsr330TckTest {
      */
     @Test
     public void testItAll() {
-        InjectionServices injectionServices = InjectionServices.instance();
+        InjectionServices injectionServices = InjectionServices.create();
         Supplier<Car> carProvider = injectionServices.services().supply(Car.class);
         Objects.requireNonNull(carProvider.get());
         assertThat("sanity", carProvider.get(), not(carProvider.get()));

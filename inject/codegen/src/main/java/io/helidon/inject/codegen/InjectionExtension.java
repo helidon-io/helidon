@@ -179,7 +179,8 @@ class InjectionExtension implements InjectCodegenExtension {
         Optional<TypeName> scope = scope(typeInfo);
         Set<Annotation> qualifiers = qualifiers(typeInfo, typeInfo);
         Set<TypeName> contracts = new HashSet<>();
-        contracts(contracts, typeInfo, autoAddContracts);
+        Set<String> collectedFullyQualifiedContracts = new HashSet<>();
+        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts);
 
         // declare the class
         ClassModel.Builder classModel = ClassModel.builder()
@@ -897,11 +898,20 @@ class InjectionExtension implements InjectCodegenExtension {
         return result.stream().findFirst();
     }
 
-    private void contracts(Set<TypeName> collectedContracts, TypeInfo typeInfo, boolean contractEligible) {
+    private void contracts(TypeInfo typeInfo,
+                           boolean contractEligible,
+                           Set<TypeName> collectedContracts,
+                           Set<String> collectedFullyQualified) {
         TypeName typeName = typeInfo.typeName();
 
+        boolean addedThisContract = false;
         if (contractEligible) {
             collectedContracts.add(typeName);
+            addedThisContract = true;
+            if (!collectedFullyQualified.add(typeName.resolvedName())) {
+                // let us go no further, this type was already processed
+                return;
+            }
         }
 
         if (typeName.isSupplier()
@@ -914,15 +924,25 @@ class InjectionExtension implements InjectCodegenExtension {
                 if (!providedType.generic()) {
                     Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
                     if (providedTypeInfo.isPresent()) {
-                        contracts(collectedContracts, providedTypeInfo.get(), true);
+                        contracts(providedTypeInfo.get(), true, collectedContracts, collectedFullyQualified);
                     } else {
                         collectedContracts.add(providedType);
+                        if (!collectedFullyQualified.add(providedType.resolvedName())) {
+                            // let us go no further, this type was already processed
+                            return;
+                        }
                     }
                 }
             }
 
             // provider itself is a contract
-            collectedContracts.add(typeName);
+            if (!addedThisContract) {
+                collectedContracts.add(typeName);
+                if (!collectedFullyQualified.add(typeName.resolvedName())) {
+                    // let us go no further, this type was already processed
+                    return;
+                }
+            }
         }
 
         // add contracts from interfaces and types annotated as @Contract
@@ -934,9 +954,9 @@ class InjectionExtension implements InjectCodegenExtension {
                 .ifPresent(it -> collectedContracts.addAll(it.typeValues().orElseGet(List::of)));
 
         // go through hierarchy
-        typeInfo.superTypeInfo().ifPresent(it -> contracts(collectedContracts, it, contractEligible));
+        typeInfo.superTypeInfo().ifPresent(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified));
         // interfaces are considered contracts by default
-        typeInfo.interfaceTypeInfo().forEach(it -> contracts(collectedContracts, it, contractEligible));
+        typeInfo.interfaceTypeInfo().forEach(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified));
     }
 
     private void singletonInstanceField(ClassModel.Builder classModel, TypeName descriptorType) {
