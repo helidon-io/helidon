@@ -16,38 +16,19 @@
 package io.helidon.microprofile.telemetry;
 
 import java.util.List;
-
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
-import io.helidon.microprofile.testing.junit5.HelidonTest;
+import java.util.stream.Stream;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.sdk.trace.data.SpanData;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@HelidonTest
-@AddBean(WithSpanBean.class)
-@AddBean(TestSpanExporter.class)
-@AddConfig(key = "otel.sdk.disabled", value = "false")
-@AddConfig(key = "otel.traces.exporter", value = "in-memory")
-class WithSpanTest {
-
-    @Inject
-    private WithSpanBean withSpanBean;
-
-    @Inject
-    private TestSpanExporter testSpanExporter;
-
-    @BeforeEach
-    void clear() {
-        testSpanExporter.clear();
-    }
+class WithSpanTest extends WithSpanTestBase {
 
     @Test
     void testSpanName() {
@@ -73,5 +54,16 @@ class WithSpanTest {
         attrs = spanData.get(1).getAttributes();
         assertThat("String attribute", attrs.get(stringKey), is("attrTestObject"));
         assertThat("Long attribute", attrs.get(longKey), is(5L));
+    }
+
+    @ParameterizedTest()
+    @MethodSource()
+    void testDefaultAppSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
+        testSpanNameFromPath(spanPathTestInfo);
+    }
+
+    static Stream<SpanPathTestInfo> testDefaultAppSpanNameFromPath() {
+        return Stream.of(new SpanPathTestInfo("traced", "GET /traced"),
+                         new SpanPathTestInfo("traced/sub/data", "GET /traced/sub/{name}"));
     }
 }

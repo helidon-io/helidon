@@ -37,6 +37,11 @@ import static org.hamcrest.Matchers.iterableWithSize;
 public class TestSpanExporter implements SpanExporter {
 
     private final List<SpanData> spanData = new CopyOnWriteArrayList<>();
+    private final System.Logger LOGGER = System.getLogger(TestSpanExporter.class.getName());
+
+    private final int RETRY_COUNT = Integer.getInteger(TestSpanExporter.class.getName() + ".test.retryCount", 15);
+    private final int RETRY_DELAY_MS = Integer.getInteger(TestSpanExporter.class.getName() + ".test.retryDelayMs", 500);
+
 
     private enum State {READY, STOPPED}
 
@@ -64,11 +69,21 @@ public class TestSpanExporter implements SpanExporter {
     }
 
     List<SpanData> spanData(int expectedCount) {
-        return MatcherWithRetry.assertThatWithRetry("Expected span count",
+        long startTime = 0;
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            startTime = System.currentTimeMillis();
+        }
+        var result = MatcherWithRetry.assertThatWithRetry("Expected span count",
                                              () -> new ArrayList<>(spanData),
                                              iterableWithSize(expectedCount),
-                                             15,
-                                             1000);
+                                             RETRY_COUNT,
+                                             RETRY_DELAY_MS);
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            LOGGER.log(System.Logger.Level.DEBUG, "spanData waited "
+                    + (System.currentTimeMillis() - startTime)
+                    + " ms for expected spans to arrive.");
+        }
+        return result;
     }
 
     void clear() {
