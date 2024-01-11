@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -166,20 +168,20 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         ExtendedUriInfo extendedUriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
 
         // Derive the original path (including path parameters) of the matched resource from the bottom up.
-        StringBuilder derivedPath = new StringBuilder();
+        Deque<String> derivedPath = new LinkedList<>();
 
         Resource resource = extendedUriInfo.getMatchedModelResource();
         while (resource != null) {
-            derivedPath.insert(0, resource.getPath());
+            derivedPath.push(resource.getPath());
             if (!resource.getPath().startsWith("/")) {
-                derivedPath.insert(0, "/");
+                derivedPath.push("/");
             }
             resource = resource.getParent();
         }
 
-        derivedPath.insert(0, applicationPath())
-                .insert(0, requestContext.getMethod() + " ");
-        return derivedPath.toString();
+        derivedPath.push(applicationPath());
+        derivedPath.push(requestContext.getMethod() + " ");
+        return String.join("", derivedPath);
     }
 
     private String applicationPath() {

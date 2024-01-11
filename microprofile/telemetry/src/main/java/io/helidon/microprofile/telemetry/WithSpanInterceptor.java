@@ -90,14 +90,14 @@ class WithSpanInterceptor {
                 Class<?> paramType = p.getType();
                 Object pValue = context.getParameters()[i];
 
-                if (paramType.isAssignableFrom(String.class)) {
+                if (String.class.isAssignableFrom(paramType)) {
                     spanBuilder.setAttribute(attrName, (String) pValue);
-                } else if (paramType.isAssignableFrom(long.class) || paramType.isAssignableFrom(Long.class)) {
-                    spanBuilder.setAttribute(attrName, (long) pValue);
-                } else if (paramType.isAssignableFrom(double.class) || paramType.isAssignableFrom(Double.class)) {
-                    spanBuilder.setAttribute(attrName, (double) pValue);
-                } else if (paramType.isAssignableFrom(boolean.class) || paramType.isAssignableFrom(Boolean.class)) {
-                    spanBuilder.setAttribute(attrName, (boolean) pValue);
+                } else if (Long.class.isAssignableFrom(paramType) || long.class.isAssignableFrom(paramType)) {
+                    spanBuilder.setAttribute(attrName, (Long) pValue);
+                } else if (Double.class.isAssignableFrom(paramType) || double.class.isAssignableFrom(paramType)) {
+                    spanBuilder.setAttribute(attrName, (Double) pValue);
+                } else if (Boolean.class.isAssignableFrom(paramType) || boolean.class.isAssignableFrom(paramType)) {
+                    spanBuilder.setAttribute(attrName, (Boolean) pValue);
                 } else {
                     spanBuilder.setAttribute(attrName, pValue.toString());
                 }
