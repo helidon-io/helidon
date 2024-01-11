@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,10 +118,23 @@ public class Aggregator {
 
         Builder config(Config config) {
             if (config.exists()) {
-                ConfigValue<CrossOriginConfig.Builder> configValue = config.map(CrossOriginConfig::builder);
-                if (configValue.isPresent()) {
-                    CrossOriginConfig crossOriginConfig = configValue.get().build();
-                    addPathlessCrossOrigin(crossOriginConfig);
+                // The config node might be a simple config block for a single cross-origin config (containing allow-origins,
+                // allow-methods, etc.). Or it might be a mapped cross-origin config introduced by "paths" and
+                // containing a list, each element of which has a path-pattern plus the "plain" cross-origin config settings
+                // (allow-origins, etc.)
+                Config pathsNode = config.get(CrossOriginConfig.CORS_PATHS_CONFIG_KEY);
+                if (pathsNode.exists()) {
+                    ConfigValue<MappedCrossOriginConfig.Builder> configValue = config.map(MappedCrossOriginConfig::builder);
+                    if (configValue.isPresent()) {
+                        MappedCrossOriginConfig mappedCrossOriginConfig = configValue.get().build();
+                        mappedCrossOriginConfig.forEach(this::addCrossOrigin);
+                    }
+                } else {
+                    ConfigValue<CrossOriginConfig.Builder> configValue = config.map(CrossOriginConfig::builder);
+                    if (configValue.isPresent()) {
+                        CrossOriginConfig crossOriginConfig = configValue.get().build();
+                        addPathlessCrossOrigin(crossOriginConfig);
+                    }
                 }
             }
             return this;

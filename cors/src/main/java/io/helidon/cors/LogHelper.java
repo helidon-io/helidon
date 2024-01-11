@@ -96,20 +96,23 @@ class LogHelper {
         }
 
         if (host.isEmpty()) {
-            reasonsWhyNormal.add("header " + HeaderNames.HOST + " is absent");
+            reasonsWhyNormal.add("header " + HeaderNames.HOST + "/requested URI is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.HOST, host));
+            factorsWhyCrossHost.add(String.format("header %s/requested URI is present (%s)", HeaderNames.HOST, host));
         }
 
         if (originOpt.isPresent()) {
             String partOfOriginMatchingHost = "://" + host;
             if (originOpt.get()
                     .contains(partOfOriginMatchingHost)) {
-                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", HeaderNames.ORIGIN,
+                reasonsWhyNormal.add(String.format("header %s '%s' matches header/requested URI %s '%s'", HeaderNames.ORIGIN,
                                                    effectiveOrigin, HeaderNames.HOST, host));
             } else {
-                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", HeaderNames.ORIGIN,
-                                                      effectiveOrigin, HeaderNames.HOST, host));
+                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header/requested URI %s '%s'",
+                                                      HeaderNames.ORIGIN,
+                                                      effectiveOrigin,
+                                                      HeaderNames.HOST,
+                                                      host));
             }
         }
 

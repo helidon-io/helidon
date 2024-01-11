@@ -197,6 +197,7 @@ endif::[]
 :config-git-javadoc-base-url: {javadoc-base-url}/io.helidon.config.git
 :config-mapping-javadoc-base-url: {javadoc-base-url}/io.helidon.config.objectmapping
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
+:cors-javadoc-base-url: {javadoc-base-url}/io.helidon.cors
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks

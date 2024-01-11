@@ -73,3 +73,10 @@ same-host-diff-ports:
       allow-origins: [ "http://here.com:8080"]
     - path-pattern: "/greet"
       allow-origins: [ "http://here.com"]
+
+
+built-in-service:
+  paths:
+    - path-pattern: "/observe/health"
+      allow-origins: ["http://roothere.com"]
+      allow-methods: ["GET", "HEAD"]
