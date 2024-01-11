@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 import io.helidon.common.Version;
+import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
@@ -91,12 +92,21 @@ class HelidonConnector implements Connector {
 
         HelidonStructures.createProxy(config).ifPresent(webClientBuilder::proxy);
 
-        HelidonStructures.helidonConfig(config).ifPresent(webClientBuilder::config);
+        Optional<Config> helidonConfig = HelidonStructures.helidonConfig(config);
+        helidonConfig.ifPresent(webClientBuilder::config);
 
         webClientBuilder.connectTimeout(ClientProperties.getValue(config.getProperties(),
                 ClientProperties.CONNECT_TIMEOUT, 10000), TimeUnit.MILLISECONDS);
 
-        HelidonStructures.createSSL(client.getSslContext()).ifPresent(webClientBuilder::tls);
+        //Whether WebClient TLS has been already set via config
+        boolean helidonConfigTlsSet = helidonConfig.map(hc -> hc.get("tls").exists()).orElse(false);
+        boolean isJerseyClient = client instanceof JerseyClient;
+        //Whether Jersey client has non-default SslContext set. If so, we should honor these settings
+        boolean jerseyHasDefaultSsl = isJerseyClient && ((JerseyClient) client).isDefaultSslContext();
+
+        if (!helidonConfigTlsSet || !isJerseyClient || !jerseyHasDefaultSsl) {
+            HelidonStructures.createSSL(client.getSslContext()).ifPresent(webClientBuilder::tls);
+        }
 
         webClient = webClientBuilder.build();
     }
