@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,9 +21,6 @@
 :keywords: helidon, inject, injection, java, microservices, virtual threads
 :feature-name: Helidon Injection
 :rootdir: {docdir}/..
-
-
-
 
 == Contents
 
@@ -60,8 +57,26 @@ Helidon Injection's minimalist, compile-time generated dependency injection (DI)
 
 == Usage
 
-Once you have planned how each of your resources should support Injection, you specify the behavior in one of two ways:
+Once you have planned how each of your resources should support Injection, you annotate your service types
+(see <<_creating_services, Creating Services>>), add annotation processor to generate the Helidon specific sources
+(see <<_code_generation_configuration, Code generation>>).
 
+Then at runtime, you simply need to trigger your starting services by looking them up from the registry, and either
+"just" obtaining an instance, or calling some methods on them, such as:
+
+[source,java]
+----
+// create new service registry manager
+InjectionServices registryManager = InjectionServices.create();
+// get the service registry
+Services services = registryManager.services();
+// query
+Supplier<MyService> serviceSupplier = services.supply(MyService.class);
+// lazily activate
+MyService myLazyActivatedService = serviceSupplier.get();
+----
+
+[#_creating_services]
 == Creating Services
 
 When creating a module that may provide services (or just contracts) that could be used by the service registry at runtime, you need to declare a dependency, annotation processor, and update your sources.
@@ -86,21 +101,49 @@ The library also contains all types that are required to compile the generated s
 All types listed bellow are inner types of `io.helidon.inject.service.Injection`.
 
 * `Contract` - signifies that the type can be used for lookup in the service registry
-* `ExternalContracts` - same as Contract, but applied to the implementation class instead
+* `ExternalContracts` - same as Contract, but applied to the implementation class instead, marking other interfaces as contracts
 * `RunLevel` - ascribes meaning for when the service should start
 * `Inject` - equivalent of Jakarta `@Inject` annotation, that marks a field, method, or constructor as injection receiver
 * `Qualifier` - equivalent of Jakarta `@Qualifier` annotation, marks a qualifier annotation
 * `Named` - equivalent of Jakarta `@Named` annotation, a qualifier that names a service instance (and `ClassNamed` is a specific `Named` class that uses the classes fully qualified name as the name)
 * `Service` - marks a type as a service to be registered in the service registry, if no scope is defined, an instance will be created for each injection point (or each time the `Supplier` is called)
 * `Singleton` - scope that ensures a single instance for the lifetime of the Service registry (i.e. this is not a JVM singleton)
+* `RequestScope` - scope that is created for each request (intended primarily for HTTP requests)
 * `PostConstruct` - post construct lifecycle method
 * `PreDestroy` - pre destroy lifecycle method
 
+[#_code_generation_configuration]
 === Code generation configuration
 
 Once your contracts and services are correctly annotated, you need to add the following annotation processor paths
 
 .Compiler plugin configuration
+[source,xml]
+----
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <compilerArgs>
+            <!-- possible configuration of Helidon annotation processors
+            <arg>-Ahelidon.inject.autoAddNonContractInterfaces=true</arg>
+            -->
+        </compilerArgs>
+        <annotationProcessorPaths>
+            <path>
+                <groupId>io.helidon.bundles</groupId>
+                <artifactId>helidon-bundles-apt</artifactId>
+                <version>${helidon.version}</version>
+            </path>
+        </annotationProcessorPaths>
+    </configuration>
+</plugin>
+----
+
+The bundle contains Helidon annotation processor, and all code generators supported by Helidon.
+To provide a finer-grained setup, you can use:
+
+.Compiler plugin configuration (Helidon Injection only)
 [source,xml]
 ----
 <plugin>
