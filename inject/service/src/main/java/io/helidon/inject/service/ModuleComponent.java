@@ -22,13 +22,17 @@ package io.helidon.inject.service;
  * Implementations of this contract are normally code generated, although then can be programmatically written by the developer
  * for special cases.
  * <p>
+ * The module component must be provided as a Java {@link java.util.ServiceLoader} provider implementation, either
+ * through {@code META-INF/services} or {@code module-info.java} {@code provides} statement. For code generated
+ * services, this is enforced by the annotation processor.
+ * <p>
  * Note: instances of this type are not eligible for injection.
  */
 @Injection.Contract
 public interface ModuleComponent {
 
     /**
-     * Called by the provider implementation at bootstrapping time to bind all service descriptors to the
+     * Called by the Service registry at bootstrapping time to bind all service descriptors to the
      * service registry.
      *
      * @param binder the binder used to register the services to the registry

@@ -30,7 +30,15 @@ import java.lang.annotation.Target;
  * <p>
  * <b>Note</b> that config is not on the classpath by default, as it is not required for Service registry itself.
  * <p>
- * When a configurable type is annotated, it will be added as a named instance to the registry.
+ * A configuration bean works as follows:
+ * <ol>
+ *     <li>Config instance is discovered (expected to be a service in the service registry, provided fpr example by Helidon
+ *     Config)</li>
+ *     <li>The generated config bean acts as a {@link io.helidon.inject.service.ServicesProvider} for the service type</li>
+ *     <li>Based on the annotations in this type, instance(s) would be created</li>
+ *     <li>These instances can be lookup up from the registry, or can be used to drive instances of other services using
+ *     {@link io.helidon.inject.service.Injection.DrivenBy}</li>
+ * </ol>
  */
 public final class ConfigDriven {
     private ConfigDriven() {
@@ -39,7 +47,7 @@ public final class ConfigDriven {
     /**
      * This configured type should be acting as a config bean. This means that if appropriate configuration
      * exists (must be a root configured type with a defined prefix), an instance will be created from that configuration.
-     * Additional setup is possible to ensure an instance even if not present in config, and to create default (unnamed) instance.
+     * Additional setup is possible to ensure an instance even if not present in config, and to create default instance.
      * <p>
      * Placing this annotation on any type makes that type configurable from the root of configuration, even if the prototype
      * configuration says otherwise (there is no validation for this), {@link #value()} is used as the configuration key.

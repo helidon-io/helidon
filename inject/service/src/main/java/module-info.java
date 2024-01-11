@@ -15,8 +15,28 @@
  */
 
 /**
- * API requires for code generating classes required for Helidon Inject.
- * This is the minimal set of types that must be available.
+ * API required to define services, and to compile the code generated sources for Helidon Inject.
+ * This is the minimal set of types that must be available both for compilation and runtime (if there is at least one service).
+ * <p>
+ * Types for defining services:
+ * <ul>
+ *     <li>{@link io.helidon.inject.service.Injection} - contains annotations to declare a service</li>
+ *     <li>{@link io.helidon.inject.service.ConfigDriven} - contains annotations to declare config beans driven by
+ *              configuration (when used, Config would need to be on classpath)</li>
+ *     <li>{@link io.helidon.inject.service.InjectionPointProvider} - to define a service that resolves injection
+ *              points (or {@link io.helidon.inject.service.Lookup})</li>
+ *     <li>{@link io.helidon.inject.service.ServicesProvider} - to define a service that provides other services at runtime</li>
+ *     <li>{@link io.helidon.inject.service.Interception} - to declare interceptor trigger annotations, and to implement
+ *              interceptor services</li>
+ * </ul>
+ * <p>
+ * Types required by code generated sources:
+ * <ul>
+ *     <li>{@link io.helidon.inject.service.ServiceDescriptor} - generated metadata and factory for a service</li>
+ *     <li>{@link io.helidon.inject.service.ModuleComponent} - generated module to bind services to registry</li>
+ * </ul>
+ * <p>
+ * The rest of the types are used as parameters in methods of the types described above.
  */
 module io.helidon.inject.service {
     // required for generated code
