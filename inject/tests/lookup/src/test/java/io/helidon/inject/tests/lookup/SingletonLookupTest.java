@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionServiceProviderException;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.InjectionPointProvider;
@@ -47,7 +46,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test all lookup methods for singleton.
@@ -122,34 +120,6 @@ class SingletonLookupTest {
         List<ContractSingleton> all = services.all(CONTRACT);
 
         checkAll(all, 4);
-    }
-
-    @Test
-    void allSuppliersLookupTest() {
-        List<Supplier<ContractSingleton>> suppliers = services.allSuppliers(LOOKUP);
-
-        // this cannot succeed, as the injection point provider does not return a value for unqualified requests
-        assertThrows(InjectionServiceProviderException.class, () -> suppliers.stream()
-                .map(Supplier::get)
-                .toList());
-
-        List<Supplier<ContractSingleton>> noIpProviderSuppliers = services.allSuppliers(LOOKUP_NO_IP_PROVIDER);
-
-        // we can only get 3, as the servicesProvider is a single service, and we cannot know at the time of lookup
-        // how many instances it may provide
-        checkAll(noIpProviderSuppliers.stream()
-                         .map(Supplier::get)
-                         .toList(), 3);
-    }
-
-    @Test
-    void allSuppliersTypeTest() {
-        List<Supplier<ContractSingleton>> suppliers = services.allSuppliers(CONTRACT);
-
-        // this cannot succeed, as the injection point provider does not return a value for unqualified requests
-        assertThrows(InjectionServiceProviderException.class, () -> suppliers.stream()
-                .map(Supplier::get)
-                .toList());
     }
 
     @Test

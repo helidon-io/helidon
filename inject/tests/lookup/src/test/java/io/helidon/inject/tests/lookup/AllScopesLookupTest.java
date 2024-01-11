@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionServiceProviderException;
 import io.helidon.inject.InjectionServices;
 import io.helidon.inject.RequestScopeControl;
 import io.helidon.inject.Scope;
@@ -50,7 +49,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test all lookup methods for all scopes (combination).
@@ -126,32 +124,6 @@ class AllScopesLookupTest {
         List<ContractCommon> all = services.all(CONTRACT);
 
         assertThat(all, hasSize(12));
-    }
-
-    @Test
-    void allSuppliersLookupTest() {
-        List<Supplier<ContractCommon>> suppliers = services.allSuppliers(LOOKUP);
-
-        // this cannot succeed, as the injection point provider does not return a value for unqualified requests
-        assertThrows(InjectionServiceProviderException.class, () -> suppliers.stream()
-                .map(Supplier::get)
-                .toList());
-
-        List<Supplier<ContractCommon>> noIpProviderSuppliers = services.allSuppliers(LOOKUP_NO_IP_PROVIDER);
-
-        // we can only get 9, as the servicesProvider is a single service, and we cannot know at the time of lookup
-        // how many instances it may provide
-        assertThat(noIpProviderSuppliers, hasSize(9));
-    }
-
-    @Test
-    void allSuppliersTypeTest() {
-        List<Supplier<ContractCommon>> suppliers = services.allSuppliers(CONTRACT);
-
-        // this cannot succeed, as the injection point provider does not return a value for unqualified requests
-        assertThrows(InjectionServiceProviderException.class, () -> suppliers.stream()
-                .map(Supplier::get)
-                .toList());
     }
 
     @Test

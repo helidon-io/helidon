@@ -42,12 +42,8 @@ public class Main {
                 .runLevel(Injection.RunLevel.STARTUP)
                 .build();
 
-        List<Supplier<Object>> startupServiceProviders = services.allSuppliers(criteria);
-        System.out.println("Startup service providers (ranked according to weight, pre-activated): " + startupServiceProviders);
-
-        // trigger all activations for startup service providers
-        startupServiceProviders.forEach(Supplier::get);
-        System.out.println("All service providers (after all activations): " + startupServiceProviders);
+        Supplier<List<Object>> startupServiceProviders = services.supplyAll(criteria);
+        System.out.println("All services (after all activations): " + startupServiceProviders.get());
     }
 
 }
