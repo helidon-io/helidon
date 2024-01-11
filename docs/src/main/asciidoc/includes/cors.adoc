@@ -87,7 +87,7 @@ one or more key/value pairs. Each key-value pair assigns one characteristic of C
 {basic-table-intro}
 
 [[config-key-table]]
-include::[tag=cors-config-table]
+include::{rootdir}/includes/cors.adoc[tag=cors-config-table]
 
 The following example of basic cross-origin
 ifdef::se-flavor[configuration, when loaded and used by the application,]
