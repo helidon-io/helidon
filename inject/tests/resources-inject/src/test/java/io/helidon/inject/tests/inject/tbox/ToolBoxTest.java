@@ -96,13 +96,13 @@ class ToolBoxTest {
 
     @Test
     void toolbox() {
-        List<Supplier<Awl>> blanks = services.allSuppliers(Awl.class);
+        List<ServiceInfo> blanks = services.lookupServices(Lookup.create(Awl.class));
         assertThat(blanks, hasSize(1));
 
-        List<Supplier<ToolBox>> allToolBoxes = services.allSuppliers(ToolBox.class);
+        List<ServiceInfo> allToolBoxes = services.lookupServices(Lookup.create(ToolBox.class));
         assertThat(allToolBoxes, hasSize(1));
 
-        ToolBox toolBox = allToolBoxes.getFirst().get();
+        ToolBox toolBox = services.get(ToolBox.class);
         assertThat(toolBox.getClass(), equalTo(MainToolBox.class));
         MainToolBox mtb = (MainToolBox) toolBox;
         assertThat(mtb.postConstructCallCount, equalTo(1));
@@ -240,9 +240,8 @@ class ToolBoxTest {
         assertThat(desc,
                    contains("TestingSingleton"));
 
-        services.allSuppliers(lookup)
-                .stream()
-                .map(Supplier::get)
+        services.supplyAll(lookup)
+                .get()
                 .forEach(it -> assertThat(it, notNullValue()));
 
         long count = lookupCounter.count() - initialCount;
@@ -259,15 +258,15 @@ class ToolBoxTest {
         Counter counter = lookupCounter();
         long initialCount = counter.count();
 
-        List<Supplier<Object>> allServices = services
-                .allSuppliers(Lookup.EMPTY);
+        List<ServiceInfo> allServices = services.lookupServices(Lookup.EMPTY);
 
         // from this point, there should be no additional lookups
         long postLookupCount = counter.count();
         assertThat((postLookupCount - initialCount), is(1L));
         allServices.forEach(sp -> {
                     try {
-                        sp.get();
+                        services.supply(sp)
+                                .get();
                     } catch (Exception ignored) {
                         // injection point providers will throw an exception, as they cannot resolve injection point
                         // still should not lookup

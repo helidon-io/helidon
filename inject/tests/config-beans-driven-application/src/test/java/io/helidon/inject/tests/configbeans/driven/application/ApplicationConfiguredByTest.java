@@ -83,9 +83,9 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
         Lookup criteria = Lookup.builder()
                 .runLevel(Injection.RunLevel.STARTUP)
                 .build();
-        List<Supplier<Object>> startups = services.allSuppliers(criteria);
+        Supplier<List<Object>> startups = services.supplyAll(criteria);
 
-        startups.forEach(Supplier::get);
+        startups.get();
 
         long endingLookupCount = lookupCounter.count() - initialCount;
 

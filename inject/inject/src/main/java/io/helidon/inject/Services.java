@@ -246,45 +246,6 @@ public final class Services {
     }
 
     /**
-     * Get all service suppliers matching the lookup with the expectation that there may not be a match available.
-     * <p>
-     * This method is limited to services that are directly accessible in the registry, and may not provide all instances
-     * from {@link io.helidon.inject.service.ServicesProvider} (and possible other types that can produce an unknown number
-     * of instances).
-     * <p>
-     * Use {@link #supplyAll(io.helidon.inject.service.Lookup)} instead.
-     *
-     * @param lookup lookup criteria to find matching services
-     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
-     *               you have configured appropriate contracts in the lookup, as we cannot infer this
-     * @return list of service suppliers matching the criteria, may be empty if none matched, or no instances were provided
-     */
-    public <T> List<Supplier<T>> allSuppliers(Lookup lookup) {
-        List<ServiceManager<T>> managers = lookupManagers(lookup);
-
-        return managers.stream()
-                .map(it -> (Supplier<T>) new ServiceSupply<>(lookup, List.of(it)))
-                .toList();
-    }
-
-    /**
-     * Get all service suppliers matching the lookup with the expectation that there may not be a match available.
-     * <p>
-     * This method is limited to services that are directly accessible in the registry, and may not provide all instances
-     * from {@link io.helidon.inject.service.ServicesProvider} (and possible other types that can produce an unknown number
-     * of instances).
-     * <p>
-     * Use {@link #supplyAll(io.helidon.inject.service.Lookup)} instead.
-     *
-     * @param type contract to look-up
-     * @param <T>  type of the contract
-     * @return list of service suppliers matching the criteria, may be empty if none matched, or no instances were provided
-     */
-    public <T> List<Supplier<T>> allSuppliers(Class<T> type) {
-        return allSuppliers(Lookup.create(type));
-    }
-
-    /**
      * Get the first service supplier matching the lookup with the expectation that there is a match available.
      * The provided {@link java.util.function.Supplier#get()} may throw an
      * {@link io.helidon.inject.InjectionException} in case the matching service cannot provide a value (either because
@@ -414,6 +375,7 @@ public final class Services {
      * Get a supplier for the provided service info. The service info must already be known by this registry,
      * either through a code generated module, or registered through
      * {@link io.helidon.inject.InjectionConfig.Builder#addServiceDescriptor(io.helidon.inject.service.ServiceDescriptor)}.
+     * This method bypasses lookup.
      *
      * @param descriptor service descriptor to get a supplier for, please use the singleton instance (usually code generated
      *                   into a public {@code __ServiceDescriptor} class), we use instance equality to discover services
@@ -523,6 +485,41 @@ public final class Services {
         } finally {
             currentLock.unlock();
         }
+    }
+
+    /**
+     * Get all service suppliers matching the lookup with the expectation that there may not be a match available.
+     * <p>
+     * This method is limited to services that are directly accessible in the registry, and may not provide all instances
+     * from {@link io.helidon.inject.service.ServicesProvider} (and possible other types that can produce an unknown number
+     * of instances).
+     * <p>
+     * Use {@link #supplyAll(io.helidon.inject.service.Lookup)} instead.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return list of service suppliers matching the criteria, may be empty if none matched, or no instances were provided
+     */
+    <T> List<Supplier<T>> allSuppliers(Lookup lookup) {
+        /*
+         this method is not public, as it is not capable of fulfilling the contracts of some of our extensions,
+         such as ServicesProvider and InjectionPointProvider - as these may produce zero or more instances when
+         initialized, the list would need to change its size (which is just not possible)
+         we need to support this for injection (the old "List<Provider>" as JSR-330 sees it)
+
+         we have the following options:
+         - current option (this method is not public, users must use `supplyAll` instead
+         - make the methods public, with the limited features (you may not get all instances)
+         - return something else than a Supplier, that can provide a list (still would not work nicely with JSR-330)
+         - resolve `ServicesProvider` or `InjectionPointProvider` before this method returns
+                (this would break the promise we make on lazy initialization)
+         */
+        List<ServiceManager<T>> managers = lookupManagers(lookup);
+
+        return managers.stream()
+                .map(it -> (Supplier<T>) new ServiceSupply<>(lookup, List.of(it)))
+                .toList();
     }
 
     <T> List<ServiceInstance<T>> managerInstances(Lookup lookup, ServiceManager<T> manager) {
