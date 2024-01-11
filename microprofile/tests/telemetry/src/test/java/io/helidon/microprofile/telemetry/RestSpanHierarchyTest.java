@@ -88,7 +88,7 @@ public class RestSpanHierarchyTest {
 
 
         assertThat(spanItems.get(2).getKind(), is(SERVER));
-        assertThat(spanItems.get(2).getName(), is("mixed"));
+        assertThat(spanItems.get(2).getName(), is("/mixed"));
     }
 
     @Test
@@ -110,7 +110,7 @@ public class RestSpanHierarchyTest {
 
 
         assertThat(spanItems.get(2).getKind(), is(SERVER));
-        assertThat(spanItems.get(2).getName(), is("mixed_injected"));
+        assertThat(spanItems.get(2).getName(), is("/mixed_injected"));
     }
 
 

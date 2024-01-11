@@ -156,14 +156,16 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     }
 
     private String spanName(ContainerRequestContext requestContext) {
-        // According to OpenTelemetry semantic conventions for spans, the span name for a REST endpoint should be
+        // According to recent OpenTelemetry semantic conventions for spans, the span name for a REST endpoint should be
         //
         // http-method-name low-cardinality-path
         //
         // where a low-cardinality path would be, for example /greet/{name} rather than /greet/Joe, /greet/Dmitry, etc.
+        // But the version of semantic conventions in force when the MP Telemetry spec was published did not include the
+        // http-method-name. So our code omits that for now to pass the MP Telemetry TCK.
 
         if (spanNameFullUrl) {
-            return requestContext.getMethod() + " " + requestContext.getUriInfo().getAbsolutePath().toString();
+            return requestContext.getUriInfo().getAbsolutePath().toString();
         }
         ExtendedUriInfo extendedUriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
 
