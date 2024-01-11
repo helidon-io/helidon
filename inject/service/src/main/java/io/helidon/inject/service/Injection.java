@@ -43,8 +43,8 @@ public final class Injection {
     }
 
     /**
-     * Method, constructor, or method marked with this annotation is considered an injection point, and will be satisfied with
-     * services from the service registry.
+     * Method, constructor, or field marked with this annotation is considered as injectable, and its injection points
+     * will be satisfied with services from the service registry. An injection point is a filed, or a single parameter.
      * <p>
      * An injection point may expect instance of a service, or a {@link java.util.function.Supplier} of the same.
      * <p>
@@ -104,6 +104,8 @@ public final class Injection {
 
     /**
      * Scope annotation.
+     * A scope defines the cardinality of instances. This is a meta-annotation used to define that an annotation is a scope.
+     * Note that a single service can only have one scope annotation, and that scopes are not inheritable.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
@@ -140,7 +142,7 @@ public final class Injection {
      * Alternative to this annotation is {@link io.helidon.inject.service.Injection.Service} (or no annotation on a type
      * that has {@link io.helidon.inject.service.Injection.Inject} on its elements). Such a service would be injected
      * every time its provider is invoked (each injection point, or on call to {@link java.util.function.Supplier#get()} if
-     * supplier is injected).
+     * supplier is injected), and {@link io.helidon.inject.service.Injection.RequestScope} for request bound instances.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
@@ -162,6 +164,7 @@ public final class Injection {
      * A service with an instance per request.
      * Injections to different scopes are supported, but must be through a {@link java.util.function.Supplier},
      * as we do not provide a proxy mechanism for instances.
+     * For example an HTTP request would most likely start a request scope.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
@@ -207,12 +210,9 @@ public final class Injection {
      * If the developer does not have access to the source to place this annotation on the interface definition directly then
      * consider
      * using {@link Injection.ExternalContracts} instead - this annotation can be placed on the
-     * implementation class implementing the given
-     * {@code Contract} interface(s).
+     * implementation class implementing the given {@code Contract} interface(s).
      * <p>
-     * Default behavior of the service registry is to only provide injections based on
-     * {@link Injection.Contract}
-     * annotated types.
+     * Default behavior of the service registry is to only provide injections based on {@link Injection.Contract} annotated types.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
@@ -320,7 +320,7 @@ public final class Injection {
     /**
      * A service that has instances created for each named instance of the service it is driven by.
      * The instance created will have the same {@link io.helidon.inject.service.Injection.Named} qualifier as the
-     * driving instance (in addition to all qualifiers defined on this instance).
+     * driving instance (in addition to all qualifiers defined on this service).
      * <p>
      * If there is a need to create an instance eagerly, annotate the service type with
      * {@link io.helidon.inject.service.Injection.Eager} as well.
@@ -328,8 +328,8 @@ public final class Injection {
      * There are a few restrictions on this type of services:
      * <ul>
      * <li>The service MUST NOT implement {@link java.util.function.Supplier}</li>
-     * <li>The service MUST NOT implement {@link io.helidon.inject.service.InjectionPointProvider} or any
-     * other service provider interface</li>
+     * <li>The service MUST NOT implement {@link io.helidon.inject.service.InjectionPointProvider}</li>
+     * <li>The service MUST NOT implement {@link io.helidon.inject.service.ServicesProvider}</li>
      * <li>There MAY be an injection point of the type defined in {@link #value()}, without any qualifiers -
      * this injection point will be satisfied by the driving instance</li>
      * <li>There MAY be a {@link java.lang.String} injection point qualified with

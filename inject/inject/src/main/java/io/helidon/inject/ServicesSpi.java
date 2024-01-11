@@ -24,6 +24,8 @@ import io.helidon.inject.service.ServiceDescriptor;
 
 /**
  * Additional methods for extensibility of the registry, such as when adding a new scope.
+ * <p>
+ * This type can be injected, and is expected to be used by custom scope controls.
  */
 @Injection.Contract
 public interface ServicesSpi {

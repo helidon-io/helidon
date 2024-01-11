@@ -21,7 +21,7 @@ package io.helidon.inject;
  *
  * @see Activator
  */
-public enum ActivationStatus {
+enum ActivationStatus {
 
     /**
      * The service has been activated and is fully ready to receive requests.

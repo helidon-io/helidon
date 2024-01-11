@@ -26,12 +26,11 @@ import io.helidon.inject.service.ServiceDescriptor;
 /**
  * Service descriptor to enable injection of String name of a {@link io.helidon.inject.service.Injection.DrivenBy}
  * service.
- *
- * @deprecated not intended for direct use by users, implementation detail of the service registry, must be public,
+ * <p>
+ * Not intended for direct use by users, implementation detail of the service registry, must be public,
  *  as it may be used in generated applications
  */
-@Deprecated
-@SuppressWarnings({"checkstyle:TypeName", "DeprecatedIsStillUsed"}) // matches pattern of generated descriptors
+@SuppressWarnings({"checkstyle:TypeName"}) // matches pattern of generated descriptors
 public class DrivenByName__ServiceDescriptor implements ServiceDescriptor<String> {
     /**
      * Singleton instance to be referenced when building applications.
