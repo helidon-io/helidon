@@ -172,15 +172,17 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
         Resource resource = extendedUriInfo.getMatchedModelResource();
         while (resource != null) {
-            derivedPath.push(resource.getPath());
-            if (!resource.getPath().startsWith("/")) {
-                derivedPath.push("/");
+            String resourcePath = resource.getPath();
+            if (!resourcePath.equals("/") && !resourcePath.isBlank()) {
+                derivedPath.push(resourcePath);
+                if (!resourcePath.startsWith("/")) {
+                    derivedPath.push("/");
+                }
             }
             resource = resource.getParent();
         }
 
         derivedPath.push(applicationPath());
-        derivedPath.push(requestContext.getMethod() + " ");
         return String.join("", derivedPath);
     }
 
@@ -193,7 +195,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             return "";
         }
         ApplicationPath applicationPath = getRealClass(app.getClass()).getAnnotation(ApplicationPath.class);
-        return (applicationPath == null) ? "" : applicationPath.value();
+        return (applicationPath == null || applicationPath.value().equals("/")) ? "" : applicationPath.value();
     }
 
     // Resolve target string.

@@ -38,7 +38,7 @@ class WithSpanWithExplicitAppTest extends WithSpanTestBase {
     }
 
     static Stream<SpanPathTestInfo> testExplicitAppSpanNameFromPath() {
-        return Stream.of(new SpanPathTestInfo("topapp/apptraced", "GET /topapp/apptraced"),
-                         new SpanPathTestInfo("topapp/apptraced/sub/data", "GET /topapp/apptraced/sub/{name}"));
+        return Stream.of(new SpanPathTestInfo("topapp/apptraced", "/topapp/apptraced"),
+                         new SpanPathTestInfo("topapp/apptraced/sub/data", "/topapp/apptraced/sub/{name}"));
     }
 }

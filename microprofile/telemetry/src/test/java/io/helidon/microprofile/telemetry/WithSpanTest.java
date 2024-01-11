@@ -63,7 +63,7 @@ class WithSpanTest extends WithSpanTestBase {
     }
 
     static Stream<SpanPathTestInfo> testDefaultAppSpanNameFromPath() {
-        return Stream.of(new SpanPathTestInfo("traced", "GET /traced"),
-                         new SpanPathTestInfo("traced/sub/data", "GET /traced/sub/{name}"));
+        return Stream.of(new SpanPathTestInfo("traced", "/traced"),
+                         new SpanPathTestInfo("traced/sub/data", "/traced/sub/{name}"));
     }
 }
