@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.inject.Services.ServiceSupply;
@@ -54,10 +55,14 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
 
     @Override
     public ServiceInjectionPlanBinder.Binder bind(Ip injectionPoint, ServiceInfo descriptor) {
-        ServiceSupply<?> supply = new ServiceSupply<>(Lookup.create(injectionPoint),
-                                                      List.of(services.serviceManager(descriptor)));
+        if (descriptor == DrivenByName__ServiceDescriptor.INSTANCE) {
+            injectionPlan.put(injectionPoint, new IpPlan<>(new DrivenByNameFailingSupplier(injectionPoint), descriptor));
+        } else {
+            ServiceSupply<?> supply = new ServiceSupply<>(Lookup.create(injectionPoint),
+                                                          List.of(services.serviceManager(descriptor)));
 
-        injectionPlan.put(injectionPoint, new IpPlan<>(supply, descriptor));
+            injectionPlan.put(injectionPoint, new IpPlan<>(supply, descriptor));
+        }
         return this;
     }
 
@@ -149,5 +154,18 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         return Stream.of(descriptors)
                 .map(services::<T>serviceManager)
                 .toList();
+    }
+
+    private static final class DrivenByNameFailingSupplier implements Supplier<Object> {
+        private final Ip ip;
+
+        private DrivenByNameFailingSupplier(Ip ip) {
+            this.ip = ip;
+        }
+
+        @Override
+        public Object get() {
+            throw new InjectionException("@DrivenByName should have been resolved to correct name during lookup for " + ip);
+        }
     }
 }

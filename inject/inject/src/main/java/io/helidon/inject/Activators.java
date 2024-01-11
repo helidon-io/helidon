@@ -496,10 +496,9 @@ final class Activators {
             Map<Ip, IpPlan<?>> updatedPlan = new HashMap<>(injectionPlan);
 
             for (Ip ip : ips) {
-                // injection point for the driving instance - we add the wildcard named ourself
+                // injection point for the driving instance
                 if (contracts.contains(ip.contract())
-                        && ip.qualifiers().size() == 1
-                        && ip.qualifiers().contains(Qualifier.WILDCARD_NAMED)) {
+                        && ip.qualifiers().isEmpty()) {
                     if (ServiceInstance.TYPE_NAME.equals(ip.typeName())) {
                         // if the injection point has the same contract, no qualifiers, then it is the driving instance
                         updatedPlan.put(ip, new IpPlan<>(() -> driver, injectionPlan.get(ip).descriptors()));
@@ -514,7 +513,9 @@ final class Activators {
                     if (ip.qualifiers()
                             .stream()
                             .anyMatch(it -> Injection.DrivenByName.TYPE_NAME.equals(it.typeName()))) {
-                        updatedPlan.put(ip, new IpPlan<>(() -> name, injectionPlan.get(ip).descriptors()));
+                        updatedPlan.put(ip,
+                                        new IpPlan<>(() -> name.value().orElse(Injection.Named.DEFAULT_NAME),
+                                                     injectionPlan.get(ip).descriptors()));
                     }
                 }
             }

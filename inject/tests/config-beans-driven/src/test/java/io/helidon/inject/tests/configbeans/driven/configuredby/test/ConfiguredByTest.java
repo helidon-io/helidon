@@ -55,6 +55,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                                            .build());
         assertThat(async.config(), notNullValue());
         assertThat(async.config().executor(), is("exec"));
+        assertThat(async.name(), is("first"));
 
         async = services.get(Lookup.builder()
                                      .addContract(Async.class)
@@ -62,6 +63,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                                      .build());
         assertThat(async.config(), notNullValue());
         assertThat(async.config().executor(), is("service"));
+        assertThat(async.name(), is("second"));
     }
 
     @Test

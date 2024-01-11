@@ -39,7 +39,7 @@ final class Qualifiers {
     static boolean matchesQualifiers(Collection<Qualifier> src,
                                      Collection<Qualifier> criteria) {
         if (criteria.isEmpty()) {
-;            // the criteria do not care about qualifiers at all
+            // the criteria do not care about qualifiers at all
             return true;
         }
 
