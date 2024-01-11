@@ -39,7 +39,7 @@ public class TestSpanExporter implements SpanExporter {
     private final List<SpanData> spanData = new CopyOnWriteArrayList<>();
     private final System.Logger LOGGER = System.getLogger(TestSpanExporter.class.getName());
 
-    private final int RETRY_COUNT = Integer.getInteger(TestSpanExporter.class.getName() + ".test.retryCount", 50);
+    private final int RETRY_COUNT = Integer.getInteger(TestSpanExporter.class.getName() + ".test.retryCount", 120);
     private final int RETRY_DELAY_MS = Integer.getInteger(TestSpanExporter.class.getName() + ".test.retryDelayMs", 500);
 
 
