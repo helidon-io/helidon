@@ -1380,7 +1380,7 @@
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc-bom</artifactId>
-                <version>${version.lib.ojdbc8}</version>
+                <version>${version.lib.ojdbc}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
