@@ -403,7 +403,6 @@ public final class Services {
      * @param lookup lookup criteria to find matching services
      * @return a list of service descriptors that match the lookup criteria
      */
-    @SuppressWarnings("deprecation")
     public List<ServiceInfo> lookupServices(Lookup lookup) {
         // a very special lookup
         if (lookup.qualifiers().contains(Qualifier.DRIVEN_BY_NAME)) {

@@ -67,8 +67,10 @@ import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_DRIVEN_BY;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_EAGER;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
+import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_POINT_PROVIDER;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
 import static io.helidon.inject.codegen.InjectCodegenTypes.PROTOTYPE_BLUEPRINT;
+import static io.helidon.inject.codegen.InjectCodegenTypes.SERVICES_PROVIDER;
 import static java.util.function.Predicate.not;
 
 class InjectionExtension implements InjectCodegenExtension {
@@ -261,8 +263,8 @@ class InjectionExtension implements InjectCodegenExtension {
         scopesMethod(classModel);
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
-        isEagerMethod(typeInfo, classModel, superType);
-        drivenByMethod(typeInfo, classModel, superType);
+        isEagerMethod(typeInfo, classModel, superType, scope);
+        drivenByMethod(typeInfo, classModel, superType, contracts);
 
         ctx.addDescriptor(serviceType,
                           descriptorType,
@@ -288,7 +290,7 @@ class InjectionExtension implements InjectCodegenExtension {
         }
     }
 
-    private void drivenByMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType) {
+    private void drivenByMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType, Set<TypeName> contracts) {
         Optional<Annotation> drivenBy = typeInfo.findAnnotation(INJECTION_DRIVEN_BY);
         if (!superType.hasSupertype() && drivenBy.isEmpty()) {
             // this is the default
@@ -305,6 +307,14 @@ class InjectionExtension implements InjectCodegenExtension {
                     .addContentLine(".empty();")
             );
         } else {
+            // make sure that driven by does not implement providers
+            if (contracts.contains(INJECTION_POINT_PROVIDER) || contracts.contains(SERVICES_PROVIDER)) {
+                throw new CodegenException("Service " + typeInfo.typeName().classNameWithEnclosingNames()
+                                                   + " is annotated with @DrivenBy, and as such it must not implement any "
+                                                   + "provider interfaces. Contracts: " + contracts,
+                                           typeInfo.originatingElement().orElseGet(() -> typeInfo.typeName().fqName()));
+            }
+
             TypeName drivenByType = drivenBy.get()
                     .typeValue()
                     .orElseThrow(() -> new CodegenException(INJECTION_DRIVEN_BY.fqName()
@@ -353,11 +363,16 @@ class InjectionExtension implements InjectCodegenExtension {
 
     }
 
-    private void isEagerMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType) {
+    private void isEagerMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType, Optional<TypeName> scope) {
         boolean isEager = typeInfo.hasAnnotation(INJECTION_EAGER);
         if (!superType.hasSupertype() && !isEager) {
             // this is the default
             return;
+        }
+        if (isEager && scope.isEmpty()) {
+            throw new CodegenException("Scope is not defined for service " + typeInfo.typeName().classNameWithEnclosingNames()
+                                               + ", yet it is annotated as @Eager. This combination is not allowed.",
+                                       typeInfo.originatingElement().orElseGet(() -> typeInfo.typeName().fqName()));
         }
         classModel.addMethod(isEagerMethod -> isEagerMethod
                 .accessModifier(AccessModifier.PUBLIC)
@@ -799,7 +814,8 @@ class InjectionExtension implements InjectCodegenExtension {
             }
         }
 
-        if (service.hasAnnotation(INJECTION_DRIVEN_BY)) {
+        if (service.hasAnnotation(INJECTION_DRIVEN_BY) && element == service) {
+            // only for the type, not for injection points
             result.add(WILDCARD_NAMED);
         }
 
@@ -915,8 +931,8 @@ class InjectionExtension implements InjectCodegenExtension {
         }
 
         if (typeName.isSupplier()
-                || typeName.equals(InjectCodegenTypes.INJECTION_POINT_PROVIDER)
-                || typeName.equals(InjectCodegenTypes.SERVICES_PROVIDER)) {
+                || typeName.equals(INJECTION_POINT_PROVIDER)
+                || typeName.equals(SERVICES_PROVIDER)) {
             // this may be the interface itself, and then it does not have a type argument
             if (!typeName.typeArguments().isEmpty()) {
                 // provider must have a type argument (and the type argument is an automatic contract

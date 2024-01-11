@@ -22,13 +22,19 @@ import io.helidon.inject.service.Injection;
 public class Async {
 
     final AsyncConfig cfg;
+    private final String name;
 
     @Injection.Inject
-    Async(AsyncConfig cfg) {
+    Async(AsyncConfig cfg, @Injection.DrivenByName String name) {
         this.cfg = cfg;
+        this.name = name;
     }
 
     public AsyncConfig config() {
         return cfg;
+    }
+
+    public String name() {
+        return name;
     }
 }
