@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 package io.helidon.microprofile.telemetry;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -75,19 +78,42 @@ class WithSpanInterceptor {
             spanName = className + "." + method.getName();
         }
 
-        // Start new Span
-        Span span = tracer.spanBuilder(spanName)
+        SpanBuilder spanBuilder = tracer.spanBuilder(spanName)
                 .setSpanKind(annotation.kind())
-                .setParent(Context.current())
-                .startSpan();
+                .setParent(Context.current());
+
+        for (int i = 0; i < method.getParameters().length; i++) {
+            Parameter p = method.getParameters()[i];
+            if (p.isAnnotationPresent(SpanAttribute.class)) {
+                SpanAttribute spanAttribute = p.getAnnotation(SpanAttribute.class);
+                var attrName = spanAttribute.value().isBlank() ? p.getName() : spanAttribute.value();
+                Class<?> paramType = p.getType();
+                Object pValue = context.getParameters()[i];
+
+                if (String.class.isAssignableFrom(paramType)) {
+                    spanBuilder.setAttribute(attrName, (String) pValue);
+                } else if (Long.class.isAssignableFrom(paramType) || long.class.isAssignableFrom(paramType)) {
+                    spanBuilder.setAttribute(attrName, (Long) pValue);
+                } else if (Double.class.isAssignableFrom(paramType) || double.class.isAssignableFrom(paramType)) {
+                    spanBuilder.setAttribute(attrName, (Double) pValue);
+                } else if (Boolean.class.isAssignableFrom(paramType) || boolean.class.isAssignableFrom(paramType)) {
+                    spanBuilder.setAttribute(attrName, (Boolean) pValue);
+                } else {
+                    spanBuilder.setAttribute(attrName, pValue.toString());
+                }
+            }
+        }
+
+        // Start new Span
+        Span span = spanBuilder.startSpan();
 
         try (Scope scope = span.makeCurrent()) {
-            return context.proceed();
+            Object result = context.proceed();
+            span.end();
+            return result;
         } catch (Exception e) {
             span.recordException(e);
             throw e;
-        } finally {
-            span.end();
         }
     }
 
