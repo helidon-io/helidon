@@ -46,6 +46,7 @@ import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientRequest;
 import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
 import org.glassfish.jersey.client.spi.Connector;
 import org.glassfish.jersey.internal.util.PropertiesHelper;
@@ -82,7 +83,8 @@ class HelidonConnector implements Connector {
         var builder = WebClientConfig.builder();
 
         // use config for client
-        builder.config(helidonConfig(config).orElse(Config.empty()));
+        Config helidonConfig = helidonConfig(config).orElse(Config.empty());
+        builder.config(helidonConfig);
 
         // proxy support
         proxy = ProxyBuilder.createProxy(config).orElse(Proxy.create());
@@ -98,11 +100,18 @@ class HelidonConnector implements Connector {
             builder.followRedirects(getValue(properties, FOLLOW_REDIRECTS, true));
         }
 
-        // prefer Tls over SSLContext
-        if (properties.containsKey(TLS)) {
-            builder.tls(getValue(properties, TLS, Tls.class));
-        } else if (client.getSslContext() != null) {
-            builder.tls(Tls.builder().sslContext(client.getSslContext()).build());
+        //Whether WebClient TLS has been already set via config
+        boolean helidonConfigTlsSet = helidonConfig.map(hc -> hc.get("tls").exists()).orElse(false);
+        boolean isJerseyClient = client instanceof JerseyClient;
+        //Whether Jersey client has non-default SslContext set. If so, we should honor these settings
+        boolean jerseyHasDefaultSsl = isJerseyClient && ((JerseyClient) client).isDefaultSslContext();
+
+        if (!helidonConfigTlsSet || !isJerseyClient || !jerseyHasDefaultSsl) {// prefer Tls over SSLContext
+            if (properties.containsKey(TLS)) {
+                builder.tls(getValue(properties, TLS, Tls.class));
+            } else if (client.getSslContext() != null) {
+                builder.tls(Tls.builder().sslContext(client.getSslContext()).build());
+            }
         }
 
         // protocol configs
