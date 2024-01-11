@@ -53,6 +53,11 @@ abstract class WebClientMetric implements WebClientService {
         return new Builder(clientMetricType);
     }
 
+    @Override
+    public String type() {
+        return "metrics";
+    }
+
     MeterRegistry meterRegistry() {
         return registry;
     }

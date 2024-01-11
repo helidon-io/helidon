@@ -83,6 +83,11 @@ public class WebClientSecurity implements WebClientService {
     }
 
     @Override
+    public String type() {
+        return "security";
+    }
+
+    @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         if ("true".equalsIgnoreCase(request.properties().get(OutboundConfig.PROPERTY_DISABLE_OUTBOUND))) {
             return chain.proceed(request);

@@ -29,7 +29,7 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 public interface WebClientService extends NamedService {
     @Override
     default String name() {
-        return "@default";
+        return type();
     }
 
     @Override

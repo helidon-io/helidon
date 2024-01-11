@@ -76,6 +76,11 @@ public class WebClientTracing implements WebClientService {
     }
 
     @Override
+    public String type() {
+        return "tracing";
+    }
+
+    @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         String method = request.method().text();
 
