@@ -82,11 +82,6 @@ public class ReflectionBasedSingletonServiceDescriptor<T> implements ServiceDesc
     }
 
     @Override
-    public String runtimeId() {
-        return serviceInfo.runtimeId();
-    }
-
-    @Override
     public TypeName serviceType() {
         return serviceInfo.serviceType();
     }
