@@ -282,6 +282,7 @@ class ApplicationCreator {
 
         gatherProvidersNotAllowed(services, notAllowed, InjectCodegenTypes.INJECTION_POINT_PROVIDER);
         gatherProvidersNotAllowed(services, notAllowed, InjectCodegenTypes.SERVICES_PROVIDER);
+        gatherProvidersNotAllowed(services, notAllowed, InjectCodegenTypes.QUALIFIED_PROVIDER);
 
         return notAllowed;
     }

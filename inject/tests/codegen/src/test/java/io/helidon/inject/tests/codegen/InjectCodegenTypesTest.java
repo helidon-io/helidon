@@ -37,6 +37,7 @@ import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.QualifiedInstance;
+import io.helidon.inject.service.QualifiedProvider;
 import io.helidon.inject.service.ServiceBinder;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInfo;
@@ -126,5 +127,7 @@ class InjectCodegenTypesTest {
                    is(Configured.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.COMMON_CONFIG.fqName(),
                    is(Config.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.QUALIFIED_PROVIDER.fqName(),
+                   is(QualifiedProvider.class.getCanonicalName()));
     }
 }

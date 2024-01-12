@@ -58,6 +58,7 @@
         <module>codegen</module>
         <module>scopes</module>
         <module>lookup</module>
+        <module>qualified-providers</module>
         <!-- and config bean tests -->
         <module>config-beans</module>
         <module>config-beans-driven</module>

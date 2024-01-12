@@ -26,6 +26,7 @@ import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.QualifiedInstance;
+import io.helidon.inject.service.QualifiedProvider;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServicesProvider;
 
@@ -71,6 +72,9 @@ interface Activator<T> {
             if (descriptor.drivenBy().isPresent()) {
                 return new ActivatorsPerLookup.DrivenByActivator<>(services, provider);
             }
+            if (contracts.contains(QualifiedProvider.TYPE_NAME)) {
+                return new ActivatorsPerLookup.QualifiedProviderActivator<>(provider);
+            }
             return new ActivatorsPerLookup.SingleServiceActivator<>(provider);
         } else {
             if (contracts.contains(ServicesProvider.TYPE_NAME)) {
@@ -84,6 +88,9 @@ interface Activator<T> {
             }
             if (descriptor.drivenBy().isPresent()) {
                 return new Activators.DrivenByActivator<>(services, provider);
+            }
+            if (contracts.contains(QualifiedProvider.TYPE_NAME)) {
+                return new Activators.QualifiedProviderActivator<>(provider);
             }
             return new Activators.SingleServiceActivator<>(provider);
         }

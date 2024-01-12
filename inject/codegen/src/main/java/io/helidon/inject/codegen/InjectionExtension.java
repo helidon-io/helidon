@@ -70,6 +70,7 @@ import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_POINT_PROVIDER;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
 import static io.helidon.inject.codegen.InjectCodegenTypes.PROTOTYPE_BLUEPRINT;
+import static io.helidon.inject.codegen.InjectCodegenTypes.QUALIFIED_PROVIDER;
 import static io.helidon.inject.codegen.InjectCodegenTypes.SERVICES_PROVIDER;
 import static java.util.function.Predicate.not;
 
@@ -179,10 +180,11 @@ class InjectionExtension implements InjectCodegenExtension {
 
         Map<String, GenericTypeDeclaration> genericTypes = genericTypes(params, methods);
         Optional<TypeName> scope = scope(typeInfo);
-        Set<Annotation> qualifiers = qualifiers(typeInfo, typeInfo);
         Set<TypeName> contracts = new HashSet<>();
+        Set<Annotation> qualifiers = new HashSet<>();
         Set<String> collectedFullyQualifiedContracts = new HashSet<>();
-        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts);
+        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts, qualifiers);
+        qualifiers(typeInfo, qualifiers);
 
         // declare the class
         ClassModel.Builder classModel = ClassModel.builder()
@@ -308,7 +310,9 @@ class InjectionExtension implements InjectCodegenExtension {
             );
         } else {
             // make sure that driven by does not implement providers
-            if (contracts.contains(INJECTION_POINT_PROVIDER) || contracts.contains(SERVICES_PROVIDER)) {
+            if (contracts.contains(INJECTION_POINT_PROVIDER)
+                    || contracts.contains(SERVICES_PROVIDER)
+                    || contracts.contains(QUALIFIED_PROVIDER)) {
                 throw new CodegenException("Service " + typeInfo.typeName().classNameWithEnclosingNames()
                                                    + " is annotated with @DrivenBy, and as such it must not implement any "
                                                    + "provider interfaces. Contracts: " + contracts,
@@ -805,6 +809,15 @@ class InjectionExtension implements InjectCodegenExtension {
                                        null));
     }
 
+    private void qualifiers(TypeInfo service, Set<Annotation> qualifiers) {
+        qualifiers.addAll(qualifiers(service, service));
+        // the type info itself
+        if (service.hasAnnotation(INJECTION_DRIVEN_BY)) {
+            // only for the type, not for injection points
+            qualifiers.add(WILDCARD_NAMED);
+        }
+    }
+
     private Set<Annotation> qualifiers(TypeInfo service, Annotated element) {
         Set<Annotation> result = new LinkedHashSet<>();
 
@@ -812,11 +825,6 @@ class InjectionExtension implements InjectCodegenExtension {
             if (service.hasMetaAnnotation(anno.typeName(), InjectCodegenTypes.INJECTION_QUALIFIER)) {
                 result.add(anno);
             }
-        }
-
-        if (service.hasAnnotation(INJECTION_DRIVEN_BY) && element == service) {
-            // only for the type, not for injection points
-            result.add(WILDCARD_NAMED);
         }
 
         // note: should qualifiers be inheritable? Right now we assume not to support the jsr-330 spec (see note above).
@@ -917,7 +925,8 @@ class InjectionExtension implements InjectCodegenExtension {
     private void contracts(TypeInfo typeInfo,
                            boolean contractEligible,
                            Set<TypeName> collectedContracts,
-                           Set<String> collectedFullyQualified) {
+                           Set<String> collectedFullyQualified,
+                           Set<Annotation> qualifiers) {
         TypeName typeName = typeInfo.typeName();
 
         boolean addedThisContract = false;
@@ -930,7 +939,35 @@ class InjectionExtension implements InjectCodegenExtension {
             }
         }
 
-        if (typeName.isSupplier()
+        if (typeName.equals(QUALIFIED_PROVIDER)) {
+            // a very special case
+            if (typeName.typeArguments().isEmpty()) {
+                // this is the QualifiedProvider interface itself, no need to do anything
+                return;
+            }
+            TypeName providedType = typeName.typeArguments().get(1); // second type
+            if (providedType.generic()) {
+                // just a <T> or similar
+                return;
+            }
+            // add the qualifier of this qualified provider
+            qualifiers.add(Annotation.create(typeName.typeArguments().get(0)));
+            collectedContracts.add(QUALIFIED_PROVIDER);
+            if (TypeNames.OBJECT.equals(providedType)) {
+                collectedContracts.add(TypeNames.OBJECT);
+            } else {
+                Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
+                if (providedTypeInfo.isPresent()) {
+                    contracts(providedTypeInfo.get(), true, collectedContracts, collectedFullyQualified, qualifiers);
+                } else {
+                    collectedContracts.add(providedType);
+                    if (!collectedFullyQualified.add(providedType.resolvedName())) {
+                        // let us go no further, this type was already processed
+                        return;
+                    }
+                }
+            }
+        } else if (typeName.isSupplier()
                 || typeName.equals(INJECTION_POINT_PROVIDER)
                 || typeName.equals(SERVICES_PROVIDER)) {
             // this may be the interface itself, and then it does not have a type argument
@@ -940,7 +977,7 @@ class InjectionExtension implements InjectCodegenExtension {
                 if (!providedType.generic()) {
                     Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
                     if (providedTypeInfo.isPresent()) {
-                        contracts(providedTypeInfo.get(), true, collectedContracts, collectedFullyQualified);
+                        contracts(providedTypeInfo.get(), true, collectedContracts, collectedFullyQualified, qualifiers);
                     } else {
                         collectedContracts.add(providedType);
                         if (!collectedFullyQualified.add(providedType.resolvedName())) {
@@ -970,9 +1007,11 @@ class InjectionExtension implements InjectCodegenExtension {
                 .ifPresent(it -> collectedContracts.addAll(it.typeValues().orElseGet(List::of)));
 
         // go through hierarchy
-        typeInfo.superTypeInfo().ifPresent(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified));
+        typeInfo.superTypeInfo().ifPresent(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified,
+                                                           qualifiers));
         // interfaces are considered contracts by default
-        typeInfo.interfaceTypeInfo().forEach(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified));
+        typeInfo.interfaceTypeInfo().forEach(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified,
+                                                             qualifiers));
     }
 
     private void singletonInstanceField(ClassModel.Builder classModel, TypeName serviceType, TypeName descriptorType) {
