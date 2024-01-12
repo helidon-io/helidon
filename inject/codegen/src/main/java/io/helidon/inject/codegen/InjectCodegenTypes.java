@@ -124,6 +124,10 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName INJECTION_POINT_PROVIDER = TypeName.create("io.helidon.inject.service.InjectionPointProvider");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.QualifiedProvider}.
+     */
+    public static final TypeName QUALIFIED_PROVIDER = TypeName.create("io.helidon.inject.service.QualifiedProvider");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.InjectionContext}.
      */
     public static final TypeName INJECTION_CONTEXT = TypeName.create("io.helidon.inject.service.InjectionContext");

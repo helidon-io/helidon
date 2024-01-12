@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,9 +41,10 @@ import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.Interception;
+import io.helidon.inject.service.Interception.Interceptor;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.ModuleComponent;
+import io.helidon.inject.service.QualifiedProvider;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceBinder;
 import io.helidon.inject.service.ServiceDescriptor;
@@ -126,6 +130,10 @@ public final class Services {
     private final Map<TypeName, ServiceInfo> servicesByType = new HashMap<>();
     // implemented contracts to their manager(s)
     private final Map<TypeName, Set<ServiceInfo>> servicesByContract = new HashMap<>();
+    // map of qualifier type to a service info that can provide instances for it
+    private final Map<TypeName, Set<ServiceInfo>> qualifiedProvidersByQualifier = new HashMap<>();
+    // map of a qualifier type and contract to a service info
+    private final Map<TypedQualifiedProviderKey, Set<ServiceInfo>> typedQualifiedProviders = new HashMap<>();
     // service managers of discovered scope handlers
     private final List<ServiceManager<?>> scopeHandlerManagers = new ArrayList<>();
     // scope handle can give us a scope instance
@@ -137,7 +145,7 @@ public final class Services {
     private final ServiceScopeHandler serviceScopeHandler;
     private final boolean interceptionDisabled;
 
-    private Map<ServiceInfo, ServiceManager<Interception.Interceptor>> interceptors;
+    private Map<ServiceInfo, ServiceManager<Interceptor>> interceptors;
 
     Services(InjectionServicesImpl injectionServices, State state) {
         this.injectionServices = injectionServices;
@@ -472,6 +480,25 @@ public final class Services {
                     .sorted(SERVICE_INFO_COMPARATOR)
                     .forEach(result::add);
 
+            if (result.isEmpty() && !lookup.qualifiers().isEmpty()) {
+                // check qualified providers
+                if (lookup.contracts().size() == 1) {
+                    TypeName contract = lookup.contracts().iterator().next();
+                    for (Qualifier qualifier : lookup.qualifiers()) {
+                        TypeName qualifierType = qualifier.typeName();
+                        Set<ServiceInfo> found = typedQualifiedProviders.get(new TypedQualifiedProviderKey(qualifierType,
+                                                                                                           contract));
+                        if (found != null) {
+                            result.addAll(found);
+                        }
+                        found = qualifiedProvidersByQualifier.get(qualifierType);
+                        if (found != null) {
+                            result.addAll(found);
+                        }
+                    }
+                }
+            }
+
             if (cacheEnabled) {
                 // upgrade to write lock
                 currentLock.unlock();
@@ -591,7 +618,7 @@ public final class Services {
         }
     }
 
-    List<ServiceManager<Interception.Interceptor>> interceptors() {
+    List<ServiceManager<Interceptor>> interceptors() {
         if (interceptionDisabled) {
             return List.of();
         }
@@ -606,13 +633,14 @@ public final class Services {
         try {
             stateWriteLock.lock();
             if (interceptors == null) {
-                this.interceptors = new IdentityHashMap<>();
-                List<ServiceInfo> serviceInfos = lookupServices(Lookup.builder()
-                                                                        .addContract(Interception.Interceptor.class)
-                                                                        .addQualifier(Qualifier.WILDCARD_NAMED)
-                                                                        .build());
-                for (ServiceInfo serviceInfo : serviceInfos) {
-                    this.interceptors.put(serviceInfo, serviceManager(serviceInfo));
+                // we must preserve the order of services, as they are weight ordered!
+                this.interceptors = new LinkedHashMap<>();
+                List<ServiceManager<Interceptor>> serviceManagers = lookupManagers(Lookup.builder()
+                                                                                      .addContract(Interceptor.class)
+                                                                                      .addQualifier(Qualifier.WILDCARD_NAMED)
+                                                                                      .build());
+                for (ServiceManager<Interceptor> serviceManager : serviceManagers) {
+                    this.interceptors.put(serviceManager.descriptor(), serviceManager);
                 }
             }
             return List.copyOf(interceptors.values());
@@ -768,6 +796,37 @@ public final class Services {
         }
 
         bind(manager);
+
+        if (serviceDescriptor.contracts().contains(QualifiedProvider.TYPE_NAME)) {
+            // a special kind of service that matches ANY qualifier instance of a specific type, and also may match
+            // ANY contract
+            bindQualifiedProvider(serviceDescriptor);
+        }
+    }
+
+    private void bindQualifiedProvider(ServiceDescriptor<?> descriptor) {
+        if (descriptor.qualifiers().size() != 1) {
+            throw new InjectionException("Cannot bind qualified provider " + descriptor.serviceType().fqName() + ", as it "
+                                                 + "does not have exactly one defined qualifier from implemented"
+                                                 + " interface. Qualifiers: " + descriptor.qualifiers());
+        }
+        TypeName qualifierType = descriptor.qualifiers().iterator().next().typeName();
+        Set<TypeName> contracts = descriptor.contracts();
+        if (contracts.contains(TypeNames.OBJECT)) {
+            // can match any contract
+            qualifiedProvidersByQualifier.computeIfAbsent(qualifierType, it -> new LinkedHashSet<>())
+                    .add(descriptor);
+        } else {
+            // contract specific
+            Set<TypeName> realContracts = contracts.stream()
+                    .filter(Predicate.not(QualifiedProvider.TYPE_NAME::equals))
+                    .collect(Collectors.toSet());
+            for (TypeName realContract : realContracts) {
+                TypedQualifiedProviderKey key = new TypedQualifiedProviderKey(qualifierType, realContract);
+                typedQualifiedProviders.computeIfAbsent(key, it -> new LinkedHashSet<>())
+                        .add(descriptor);
+            }
+        }
     }
 
     private static <T> List<ServiceInstance<T>> explodeFilterAndSort(Lookup lookup,
@@ -1013,5 +1072,8 @@ public final class Services {
         public String toString() {
             return "Service binder for application: " + appName;
         }
+    }
+
+    private record TypedQualifiedProviderKey(TypeName qualifier, TypeName contract) {
     }
 }

@@ -27,6 +27,7 @@ Service can implement:
   service provider, as it MUST supply a value
 - `InjectionPointProvider<Contract>` - supplier of qualified instances based on lookup (or injection into an injection point)
 - `ServicesProvider` - supplier of qualified instances (once) - config beans use this approach
+- `QualifiedProvider` - supplier of qualified instances that may be of different types
 - `@DrivenBy(Driver.class)` - must not implement supplier, injection point provider - a service driven by instances of another
   contract (Driver)
   // future
@@ -45,6 +46,15 @@ This service actually provides more than one instance, the instances may have di
 Scope of services: inherited from provider
 Mutability: immutable within the scope
 Registry: MUST store the result and re-use it
+
+### `QualifiedProvider`
+
+This service provides one or more instances that are qualified by a specific qualifier, and are either typed,
+or of any type (depending on the second generic type parameter - if `java.lang.Object`, then the provider
+accepts any contract, if anything else, only that contract would be supported).
+
+Scope of services: inherited from provider
+Mutability: depends on the provider, each injection point causes an invocation of this provider
 
 ### `InjectionPointProvider`
 
@@ -103,24 +113,25 @@ and behavior on "not found"
 A user implements a scoped typed, that acts as a provider of a service. The following options are available (the type is expected
 to be annotated with a scope, such as `@Injection.Singleton`):
 
-| Type                  | Declaration                                                 | Description                                                                |
-|-----------------------|-------------------------------------------------------------|----------------------------------------------------------------------------|
-| Direct                | `class Service`                                             | A simple service implementation                                            |
-| Contract              | `class Service implements Contract`                         | Service implements an injectable contract interface                        |
-| Provider              | `class Service implements Supplier<Contract>`               | Service provider (can use `ServiceProvider` instead of `Supplier` as well) |
-| IP provider           | `class Service implements InjectionPointProvider<Contract>` | Service that provides instance(s) based on injection point                 |
-| Provider of providers | `class Service implements ServicesProvider<Contract>`       | Service that provides 0 to N other services                                |
+| Type                  | Declaration                                                       | Description                                                                |
+|-----------------------|-------------------------------------------------------------------|----------------------------------------------------------------------------|
+| Direct                | `class Service`                                                   | A simple service implementation                                            |
+| Contract              | `class Service implements Contract`                               | Service implements an injectable contract interface                        |
+| Provider              | `class Service implements Supplier<Contract>`                     | Service provider (can use `ServiceProvider` instead of `Supplier` as well) |
+| IP provider           | `class Service implements InjectionPointProvider<Contract>`       | Service that provides instance(s) based on injection point                 |
+| Provider of providers | `class Service implements ServicesProvider<Contract>`             | Service that provides 0 to N other services                                |
+| Qualified provider    | `class Service implements QualifiedProvider<Qualifier, Contract>` | Service that can provide instances for different qualifier property values |
 
 The following table lists appropriate use cases for each provider type (and how it is used in Helidon):
 
-| Type                  | Use case                                                       | Example in Helidon             |
-|-----------------------|----------------------------------------------------------------|--------------------------------|
-| Direct                | Simple service                                                 | Testing - such as `ToolBox`    |
-| Contract              | Implementation of a contract (most common)                     | `ConfigProducer`               |
-| Provider              | Create an instance per call, usually in non-singleton services | N/A                            |
-| IP provider           | Where we need to analyze the injection point                   | `OciRegionProvider`            |
-| Provider of providers | Create one or more instances based on external state           | `ConfigDrivenServiceProvider`  |
-| Injection resolver    | Injection point may be resolved by the service itself          | `ConfigDrivenInstanceProvider` |
+| Type                  | Use case                                                       | Example in Helidon                                     |
+|-----------------------|----------------------------------------------------------------|--------------------------------------------------------|
+| Direct                | Simple service                                                 | Testing - such as `ToolBox`                            |
+| Contract              | Implementation of a contract (most common)                     | `ConfigProducer`                                       |
+| Provider              | Create an instance per call, usually in non-singleton services | N/A                                                    |
+| IP provider           | Where we need to analyze the injection point                   | `OciRegionProvider`                                    |
+| Provider of providers | Create one or more instances based on external state           | `ConfigDrivenServiceProvider`                          |
+| Qualified provider    | We need to resolve unknown set of qualifier values             | not yet, suitable for example for configuration values |
 
 # Driven by
 

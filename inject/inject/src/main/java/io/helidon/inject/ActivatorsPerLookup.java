@@ -34,6 +34,7 @@ import io.helidon.inject.service.InterceptionMetadata;
 import io.helidon.inject.service.Ip;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.QualifiedInstance;
+import io.helidon.inject.service.QualifiedProvider;
 import io.helidon.inject.service.Qualifier;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInstance;
@@ -115,6 +116,54 @@ final class ActivatorsPerLookup {
             Supplier<T> instanceSupplier = (Supplier<T>) serviceInstance.get(currentPhase);
             return Optional.of(List.of(QualifiedInstance.create(instanceSupplier.get(),
                                                                 provider.descriptor().qualifiers())));
+        }
+    }
+
+    /**
+     * {@code MyService implements QualifiedProvider}.
+     */
+    static class QualifiedProviderActivator<T> extends SingleServiceActivator<T> {
+        private final TypeName supportedQualifier;
+        private final Set<TypeName> supportedContracts;
+        private final boolean anyMatch;
+
+        QualifiedProviderActivator(ServiceProvider<T> provider) {
+            super(provider);
+            this.supportedQualifier = provider.descriptor().qualifiers().iterator().next().typeName();
+            this.supportedContracts = provider.descriptor().contracts()
+                    .stream()
+                    .filter(not(QualifiedProvider.TYPE_NAME::equals))
+                    .collect(Collectors.toSet());
+            this.anyMatch = this.supportedContracts.contains(TypeNames.OBJECT);
+        }
+
+        @Override
+        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+            if (serviceInstance == null) {
+                return Optional.empty();
+            }
+
+            return lookup.qualifiers()
+                    .stream()
+                    .filter(it -> this.supportedQualifier.equals(it.typeName()))
+                    .findFirst()
+                    .flatMap(qualifier -> targetInstances(lookup, qualifier));
+        }
+
+        private Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup, Qualifier qualifier) {
+            if (lookup.contracts().size() == 1) {
+                if (anyMatch || this.supportedContracts.containsAll(lookup.contracts())) {
+                    return Optional.of(targetInstances(lookup, qualifier, lookup.contracts().iterator().next()));
+                }
+            }
+            return Optional.empty();
+        }
+
+        @SuppressWarnings("unchecked")
+        private List<QualifiedInstance<T>> targetInstances(Lookup lookup, Qualifier qualifier, TypeName contract) {
+            var qProvider = (QualifiedProvider<?, T>) serviceInstance.get(currentPhase);
+
+            return qProvider.list(qualifier, lookup, contract);
         }
     }
 
