@@ -45,6 +45,7 @@ interface LookupBlueprint {
      *
      * @return the service scope type name
      */
+    @Option.Singular
     Set<TypeName> scopes();
 
     /**

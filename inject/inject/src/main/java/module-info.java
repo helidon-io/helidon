@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.inject.InjectStartupProvider;
+
 /**
  * Helidon Inject.
  * <p>
@@ -24,6 +26,7 @@ module io.helidon.inject {
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.builder.api;
 
+    requires io.helidon;
     requires io.helidon.metrics.api;
 
     exports io.helidon.inject;
@@ -31,6 +34,8 @@ module io.helidon.inject {
     uses io.helidon.inject.service.ModuleComponent;
     uses io.helidon.inject.Application;
 
+    provides io.helidon.spi.HelidonStartupProvider
+            with InjectStartupProvider;
     provides io.helidon.inject.service.ModuleComponent
             with io.helidon.inject.Injection__Module;
 }

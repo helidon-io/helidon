@@ -46,6 +46,7 @@
         <module>testing</module>
         <module>webserver</module>
         <module>websocket</module>
+        <module>codegen</module>
     </modules>
 
     <profiles>

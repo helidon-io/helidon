@@ -36,6 +36,7 @@
         <module>configdriven</module>
         <module>interceptors</module>
         <module>application</module>
+        <module>webserver</module>
     </modules>
 
 </project>

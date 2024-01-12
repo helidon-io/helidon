@@ -16,12 +16,19 @@
 
 package io.helidon.http;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import io.helidon.inject.service.Injection;
+
 /**
- * All types from this class are moved to top-level classes.
- * This "container" class will be reused later, kept here for deprecation purposes to point to the right place
- * for the time being.
+ * Container for Helidon Declarative HTTP types.
+ * <p>
+ * All types that used to be in this class are moved to top-level classes.
  *
- * @deprecated please use the top level classes in this package
  * @see io.helidon.http.Method
  * @see io.helidon.http.Status
  * @see io.helidon.http.HeaderName
@@ -31,8 +38,187 @@ package io.helidon.http;
  * @see io.helidon.http.HeaderValues
  * @see io.helidon.http.DateTime
  */
-@Deprecated(since = "4.0.0")
 public final class Http {
     private Http() {
+    }
+
+    /**
+     * Path of an endpoint, or sub-path of a method.
+     * Path can be overridden using configuration for a class annotation (not for method annotations).
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    public @interface Path {
+        /**
+         * Configuration key of the routing path, appended after the fully qualified class name (does not contain the leading dot).
+         */
+        String CONFIG_KEY_PATH = "routing-path.path";
+
+        /**
+         * Path to use, defaults to {@code /}.
+         *
+         * @return path to use
+         */
+        String value() default "/";
+    }
+
+    /**
+     * Listener socket assigned to this endpoint.
+     * This only makes sense for server side, as it is binding endpoint to a server socket.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    public @interface Listener {
+        /**
+         * Configuration key of the routing name, appended after the fully qualified class name (does not contain the leading dot).
+         */
+        String CONFIG_KEY_NAME = "routing-name.name";
+        /**
+         * Configuration key of the routing name required flag,
+         * appended after the fully qualified class name (does not contain the leading dot).
+         */
+        String CONFIG_KEY_REQUIRED = "routing-name.required";
+
+        /**
+         * Name of a routing to bind this application/service to.
+         * @return name of a routing (or listener host/port) on WebServer
+         */
+        String value();
+
+        /**
+         * Set to true if the {@link #value()} MUST be configured.
+         *
+         * @return {@code true} to enforce existence of the named routing
+         */
+        boolean required() default false;
+    }
+
+    /**
+     * Inject entity into a method parameter.
+     */
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Injection.Qualifier
+    public @interface Entity {
+    }
+
+    /**
+     * GET method of an HTTP endpoint.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @HttpMethod("GET")
+    public @interface GET {
+
+    }
+
+    /**
+     * Inject header into a method parameter.
+     */
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Injection.Qualifier
+    public @interface HeaderParam {
+        /**
+         * Name of the header.
+         * @return name of the header
+         */
+        String value();
+    }
+
+    /**
+     * HTTP Method. Can be used as a meta annotation.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    public @interface HttpMethod {
+        /**
+         * Text of the HTTP method.
+         * @return method
+         */
+        String value();
+    }
+
+    /**
+     * Inject path parameter into a method parameter.
+     * Path parameters are obtained from the path template of the routing method.
+     */
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Injection.Qualifier
+    public @interface PathParam {
+        /**
+         * Name of the parameter.
+         * @return name of the path parameter
+         */
+        String value();
+    }
+
+    /**
+     * POST method of an HTTP endpoint.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @HttpMethod("POST")
+    public @interface POST {
+
+    }
+
+    /**
+     * Status that should be returned. Only use when not setting it explicitly.
+     * If an exception is thrown from the method, status is determined based on
+     * error handling
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @HttpMethod("POST")
+    public @interface Status {
+        /**
+         * Status code to use.
+         *
+         * @return status code
+         */
+        int value();
+
+        /**
+         * If this is a non-standard status, add a custom reason to it.
+         *
+         * @return reason to use
+         */
+        String reason() default "";
+    }
+
+    /**
+     * Inject query parameter into a method parameter.
+     */
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Injection.Qualifier
+    public @interface QueryParam {
+        /**
+         * Name of the parameter.
+         * @return name of the query parameter
+         */
+        String value();
+    }
+
+    /**
+     * A qualifier that is used for all HTTP related services.
+     * This is to allow a blank approval for them when using deterministic service registry with a generated
+     * application while checking producers.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Injection.Qualifier
+    public @interface HttpQualified {
+
     }
 }

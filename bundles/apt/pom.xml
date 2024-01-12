@@ -61,6 +61,10 @@
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-codegen</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-codegen</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>

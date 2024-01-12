@@ -21,11 +21,13 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.context.Context;
 import io.helidon.common.tls.Tls;
+import io.helidon.inject.service.Injection;
 
 /**
  * Server that opens server sockets and handles requests through routing.
  */
 @RuntimeType.PrototypedBy(WebServerConfig.class)
+@Injection.Contract
 public interface WebServer extends RuntimeType.Api<WebServerConfig> {
     /**
      * The default server socket configuration name. All the default server socket

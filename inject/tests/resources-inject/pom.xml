@@ -165,9 +165,12 @@
                 <configuration>
                     <permittedProviderType>NAMED</permittedProviderType>
                     <permittedProviderTypeNames>
-                        <permittedProviderTypeName>io.helidon.inject.tests.inject.provider.MyServices.MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.inject.tests.inject.tbox.impl.BladeProvider</permittedProviderTypeName>
+                        <typeName>io.helidon.inject.tests.inject.provider.MyServices.MyConcreteClassContractPerRequestIPProvider</typeName>
+                        <typeName>io.helidon.inject.tests.inject.tbox.impl.BladeProvider</typeName>
                     </permittedProviderTypeNames>
+                    <permittedProviderQualifierTypeNames>
+                        <typeName>io.helidon.http.Http.HttpQualified</typeName>
+                    </permittedProviderQualifierTypeNames>
                 </configuration>
             </plugin>
         </plugins>

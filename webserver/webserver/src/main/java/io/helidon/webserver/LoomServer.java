@@ -39,15 +39,20 @@ import java.util.logging.Logger;
 
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
+import io.helidon.inject.service.Injection;
 import io.helidon.webserver.http.DirectHandlers;
+import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.spi.ServerFeature;
 
+@Injection.Singleton
+@Injection.RunLevel(Injection.RunLevel.STARTUP)
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
@@ -64,6 +69,15 @@ class LoomServer implements WebServer {
     private volatile Thread shutdownHook;
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
+
+    // only for use by service registry
+    @Injection.Inject
+    LoomServer(Config config, List<HttpFeature> httpFeatures) {
+        this(WebServerConfig.builder()
+                     .config(config.get("server"))
+                     .routing(routing -> httpFeatures.forEach(routing::addFeature))
+                     .buildPrototype());
+    }
 
     LoomServer(WebServerConfig serverConfig) {
         this.registerShutdownHook = serverConfig.shutdownHook();
@@ -185,6 +199,11 @@ class LoomServer implements WebServer {
     @Override
     public Context context() {
         return context;
+    }
+
+    @Injection.PostConstruct
+    void injectionPostConstruct() {
+        start();
     }
 
     private void stopIt() {

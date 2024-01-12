@@ -19,6 +19,7 @@ package io.helidon.inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -53,6 +54,10 @@ import io.helidon.inject.service.ServicesProvider;
 interface Activator<T> {
     static <T> Activator<T> create(ServiceProvider<T> provider, T instance) {
         return new Activators.FixedActivator<>(provider, instance);
+    }
+
+    static <T> Activator<T> create(ServiceProvider<T> provider, Supplier<T> instanceSupplier) {
+        return new Activators.FixedSupplierActivator<>(provider, instanceSupplier);
     }
 
     static <T> Activator<T> create(Services services, ServiceProvider<T> provider) {

@@ -105,6 +105,7 @@
                     </permittedProviderTypeNames>
                     <permittedProviderQualifierTypeNames>
                         <typeName>io.helidon.inject.service.ConfigDriven.ConfigBean</typeName>
+                        <typeName>io.helidon.http.Http.HttpQualified</typeName>
                     </permittedProviderQualifierTypeNames>
                 </configuration>
             </plugin>

@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.inject.service.Injection;
@@ -298,6 +299,25 @@ final class Activators {
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances() {
             return instances;
+        }
+    }
+
+    static class FixedSupplierActivator<T> extends BaseActivator<T> {
+        private final Supplier<Optional<List<QualifiedInstance<T>>>> instances;
+
+        FixedSupplierActivator(ServiceProvider<T> provider, Supplier<T> instanceSupplier) {
+            super(provider);
+
+            instances = LazyValue.create(() -> {
+                List<QualifiedInstance<T>> values = List.of(QualifiedInstance.create(instanceSupplier.get(),
+                                                                                     provider.descriptor().qualifiers()));
+                return Optional.of(values);
+            });
+        }
+
+        @Override
+        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+            return instances.get();
         }
 
     }

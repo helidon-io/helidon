@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.ServiceDescriptor;
@@ -36,10 +37,12 @@ import io.helidon.inject.service.ServiceInfo;
  * must be invoked by its control, to make sure all eager services are correctly activated.
  */
 public class ScopeServices {
+    private static final System.Logger LOGGER = System.getLogger(ScopeServices.class.getName());
+
     private final ReadWriteLock serviceProvidersLock = new ReentrantReadWriteLock();
     private final Map<ServiceInfo, Activator<?>> activators = new IdentityHashMap<>();
 
-    private final System.Logger logger;
+
     private final TypeName scope;
     private final String id;
     private final List<ServiceManager<?>> eagerServices;
@@ -48,19 +51,28 @@ public class ScopeServices {
     @SuppressWarnings({"rawtypes", "unchecked"})
     ScopeServices(Services services,
                   TypeName scope,
-                  String id, List<ServiceManager<?>> eagerServices,
+                  String id,
+                  List<ServiceManager<?>> eagerServices,
                   Map<ServiceDescriptor<?>, Object> initialBindings) {
-        this.logger = System.getLogger(ScopeServices.class.getName() + "." + scope.className());
         this.scope = scope;
         this.id = id;
         this.eagerServices = eagerServices;
 
-        initialBindings.forEach((descriptor, value) -> {
+        for (Map.Entry<ServiceDescriptor<?>, Object> entry : initialBindings.entrySet()) {
+            ServiceDescriptor<?> key = entry.getKey();
             ServiceProvider provider = new ServiceProvider<>(services,
-                                                             descriptor);
-            Activator<?> fixedService = Activator.create(provider, value);
-            activators.put(descriptor, fixedService);
-        });
+                                                             key);
+            Object value = entry.getValue();
+            Activator<?> fixedService;
+
+            if (value instanceof Supplier<?> supplier) {
+                fixedService = Activator.create(provider, value);
+            } else {
+                fixedService = Activator.create(provider, value);
+            }
+
+            activators.put(key, fixedService);
+        }
     }
 
     /**
@@ -99,21 +111,21 @@ public class ScopeServices {
                 Phase startingActivationPhase = managedService.phase();
                 try {
                     ActivationResult activationResult = managedService.deactivate(request);
-                    if (activationResult.failure() && logger.isLoggable(Level.DEBUG)) {
+                    if (activationResult.failure() && LOGGER.isLoggable(Level.DEBUG)) {
                         if (activationResult.error().isPresent()) {
-                            logger.log(Level.DEBUG,
+                            LOGGER.log(Level.DEBUG,
                                        "[" + id + "] Failed to deactivate " + managedService.description(),
                                        activationResult.error().get());
                         } else {
-                            logger.log(Level.DEBUG,
+                            LOGGER.log(Level.DEBUG,
                                        "[" + id + "] Failed to deactivate " + managedService.description() + ", deactivation "
                                                + "result: " + result);
                         }
                     }
                     result.put(managedService.descriptor().serviceType(), activationResult);
                 } catch (Exception e) {
-                    if (logger.isLoggable(Level.DEBUG)) {
-                        logger.log(Level.DEBUG, "[" + id + "] Failed to deactivate service provider: " + managedService, e);
+                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG, "[" + id + "] Failed to deactivate service provider: " + managedService, e);
                     }
 
                     ActivationResult activationResult = ActivationResult.builder()

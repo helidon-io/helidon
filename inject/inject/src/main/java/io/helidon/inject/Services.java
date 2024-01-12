@@ -565,6 +565,7 @@ public final class Services {
     }
 
     void postBindAllModules() {
+        scopeServicesFactories.values().forEach(ScopeServicesFactory::postBindAllModules);
         singletonScopeHandler.activate();
     }
 

@@ -21,6 +21,8 @@ module io.helidon.http {
 
     requires static io.helidon.config.metadata;
 
+    requires io.helidon.inject.service;
+
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.mapper;
@@ -30,4 +32,6 @@ module io.helidon.http {
 
     exports io.helidon.http;
 
+    provides io.helidon.inject.service.ModuleComponent
+            with io.helidon.http.Injection__Module;
 }

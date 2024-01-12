@@ -24,6 +24,8 @@ module io.helidon.inject.tests.inject {
     requires io.helidon.inject;
     requires io.helidon.inject.tests.plain;
     requires io.helidon.config;
+    // used in application
+    requires io.helidon.http;
 
     exports io.helidon.inject.tests.inject;
     exports io.helidon.inject.tests.inject.interceptor;
