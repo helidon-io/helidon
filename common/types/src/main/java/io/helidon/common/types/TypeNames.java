@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.Generated;
+import io.helidon.common.GenericType;
 
 /**
  * Commonly used type names.
@@ -175,6 +176,10 @@ public final class TypeNames {
      * Helidon Generated annotation type.
      */
     public static final TypeName GENERATED = TypeName.create(Generated.class);
+    /**
+     * Helidon {@link io.helidon.common.GenericType}.
+     */
+    public static final TypeName GENERIC_TYPE = TypeName.create(GenericType.class);
 
     private TypeNames() {
     }

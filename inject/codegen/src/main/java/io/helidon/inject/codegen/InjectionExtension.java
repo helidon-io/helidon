@@ -108,6 +108,9 @@ class InjectionExtension implements InjectCodegenExtension {
             .kind(ElementKind.CONSTRUCTOR)
             .build();
     private static final TypeName GENERIC_T_TYPE = TypeName.createFromGenericDeclaration("T");
+    private static final TypeName ANY_GENERIC_TYPE = TypeName.builder(TypeNames.GENERIC_TYPE)
+            .addTypeArgument(TypeName.create("?"))
+            .build();
     private static final Annotation WILDCARD_NAMED = Annotation.create(INJECTION_NAMED, "*");
 
     private final InjectionCodegenContext ctx;
@@ -178,15 +181,6 @@ class InjectionExtension implements InjectCodegenExtension {
                constructorInjectElement,
                fieldInjectElements);
 
-        Map<String, GenericTypeDeclaration> genericTypes = genericTypes(params, methods);
-        Optional<TypeName> scope = scope(typeInfo);
-        Set<TypeName> contracts = new HashSet<>();
-        Set<Annotation> qualifiers = new HashSet<>();
-        Set<String> collectedFullyQualifiedContracts = new HashSet<>();
-        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts, qualifiers);
-        qualifiers(typeInfo, qualifiers);
-
-        // declare the class
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(GENERATOR,
                                                  serviceType,
@@ -205,18 +199,27 @@ class InjectionExtension implements InjectCodegenExtension {
                 // we need to keep insertion order, as constants may depend on each other
                 .sortStaticFields(false);
 
+        Map<String, GenericTypeDeclaration> genericTypes = genericTypes(classModel, params, methods);
+        Optional<TypeName> scope = scope(typeInfo);
+        Set<TypeName> contracts = new HashSet<>();
+        Set<Annotation> qualifiers = new HashSet<>();
+        Set<String> collectedFullyQualifiedContracts = new HashSet<>();
+        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts, qualifiers);
+        qualifiers(typeInfo, qualifiers);
+
+        // declare the class
+
         if (superType.hasSupertype()) {
             classModel.superType(superType.superDescriptorType());
         } else {
             classModel.addInterface(SERVICE_SOURCE_TYPE);
         }
 
-            /*
-            Fields
-             */
+        /*
+        Fields
+         */
         singletonInstanceField(classModel, serviceType, descriptorType);
         serviceTypeFields(classModel, serviceType, descriptorType);
-        typeFields(classModel, genericTypes);
         contractsField(classModel, contracts);
         qualifiersField(classModel, qualifiers);
         scopeField(classModel, scope.orElse(InjectCodegenTypes.INJECTION_SERVICE));
@@ -870,28 +873,91 @@ class InjectionExtension implements InjectCodegenExtension {
         return typeName;
     }
 
-    private Map<String, GenericTypeDeclaration> genericTypes(List<ParamDefinition> params, List<MethodDefinition> methods) {
+    private Map<String, GenericTypeDeclaration> genericTypes(ClassModel.Builder classModel,
+                                                             List<ParamDefinition> params,
+                                                             List<MethodDefinition> methods) {
         // we must use map by string (as type name is equal if the same class, not full generic declaration)
         Map<String, GenericTypeDeclaration> result = new LinkedHashMap<>();
         AtomicInteger counter = new AtomicInteger();
 
         for (ParamDefinition param : params) {
             result.computeIfAbsent(param.translatedType().resolvedName(),
-                                   type -> new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
-                                                                      param.declaredType()));
+                                   type -> {
+                                       var response = new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
+                                                                                 param.declaredType());
+                                       addTypeConstant(classModel, param.translatedType(), response);
+                                       return response;
+                                   });
             result.computeIfAbsent(param.contract().fqName(),
-                                   type -> new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
-                                                                      param.declaredType()));
+                                   type -> {
+                                       var response = new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
+                                                                                 param.declaredType());
+                                       addTypeConstant(classModel, param.contract(), response);
+                                       return response;
+                                   });
         }
 
         for (MethodDefinition method : methods) {
             method.params()
                     .forEach(it -> result.computeIfAbsent(it.declaredType().resolvedName(),
-                                                          type -> new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
-                                                                                             it.declaredType())));
+                                                          type -> {
+                                                              var response =
+                                                                      new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
+                                                                                                        it.declaredType());
+                                                              addTypeConstant(classModel,
+                                                                              it.declaredType(),
+                                                                              response
+                                                              );
+                                                              return response;
+                                                          }));
         }
 
         return result;
+    }
+
+    private void addTypeConstant(ClassModel.Builder classModel,
+                                 TypeName typeName,
+                                 GenericTypeDeclaration generic) {
+        String stringType = typeName.resolvedName();
+        // constants for injection point parameter types (used by next section)
+        classModel.addField(field -> field
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .type(TypeNames.TYPE_NAME)
+                .name(generic.constantName())
+                .update(it -> {
+                    if (stringType.indexOf('.') < 0) {
+                        // there is no package, we must use class (if this is a generic type, we have a problem)
+                        it.addContent(TypeNames.TYPE_NAME)
+                                .addContent(".create(")
+                                .addContent(typeName)
+                                .addContent(".class)");
+                    } else {
+                        it.addContentCreate(typeName);
+                    }
+                }));
+        classModel.addField(field -> field
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .type(ANY_GENERIC_TYPE)
+                .name("G" + generic.constantName())
+                .update(it -> {
+                    if (typeName.primitive()) {
+                        it.addContent(TypeNames.GENERIC_TYPE)
+                                .addContent(".create(")
+                                .addContent(typeName.className())
+                                .addContent(".class)");
+                    } else {
+                     it.addContent("new ")
+                                .addContent(TypeNames.GENERIC_TYPE)
+                                .addContent("<")
+                                .addContent(typeName)
+                                .addContent(">() {}");
+                    }
+                })
+        );
     }
 
     private Optional<TypeName> scope(TypeInfo service) {
@@ -1043,26 +1109,6 @@ class InjectionExtension implements InjectCodegenExtension {
                 .addContentCreate(descriptorType.genericTypeName()));
     }
 
-    private void typeFields(ClassModel.Builder classModel, Map<String, GenericTypeDeclaration> genericTypes) {
-        // constants for injection point parameter types (used by next section)
-        genericTypes.forEach((typeName, generic) -> classModel.addField(field -> field.accessModifier(AccessModifier.PRIVATE)
-                .isStatic(true)
-                .isFinal(true)
-                .type(TypeNames.TYPE_NAME)
-                .name(generic.constantName())
-                .update(it -> {
-                    if (typeName.indexOf('.') < 0) {
-                        // there is no package, we must use class (if this is a generic type, we have a problem)
-                        it.addContent(TypeNames.TYPE_NAME)
-                                .addContent(".create(")
-                                .addContent(typeName)
-                                .addContent(".class)");
-                    } else {
-                        it.addContentCreate(TypeName.create(typeName));
-                    }
-                })));
-    }
-
     private void injectionPointFields(ClassModel.Builder classModel,
                                       TypeInfo service,
                                       Map<String, GenericTypeDeclaration> genericTypes,
@@ -1110,6 +1156,9 @@ class InjectionExtension implements InjectCodegenExtension {
                                 .addContent(param.constantName())
                                 .addContentLine("\")")
                                 .addContent(".contract(")
+                                .addContent(genericTypes.get(param.contract().fqName()).constantName())
+                                .addContentLine(")")
+                                .addContent(".contractType(G")
                                 .addContent(genericTypes.get(param.contract().fqName()).constantName())
                                 .addContentLine(")");
                         if (param.access() != AccessModifier.PACKAGE_PRIVATE) {

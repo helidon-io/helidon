@@ -19,7 +19,7 @@ package io.helidon.inject.tests.qualified.providers;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.types.TypeName;
+import io.helidon.common.GenericType;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.QualifiedInstance;
@@ -32,7 +32,9 @@ class SecondQualifiedProvider implements QualifiedProvider<SecondQualifier, Qual
                                                                  "second", new QualifiedContractImpl("second"));
 
     @Override
-    public Optional<QualifiedInstance<QualifiedContract>> first(Qualifier qualifier, Lookup lookup, TypeName type) {
+    public Optional<QualifiedInstance<QualifiedContract>> first(Qualifier qualifier,
+                                                                Lookup lookup,
+                                                                GenericType<QualifiedContract> type) {
         return Optional.ofNullable(values.get(qualifier.value().orElse("not-defined")))
                 .map(it -> QualifiedInstance.create(it, qualifier));
     }

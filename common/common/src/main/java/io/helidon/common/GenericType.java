@@ -66,6 +66,10 @@ public class GenericType<T> implements Type {
      * Generic type for String.
      */
     public static final GenericType<String> STRING = GenericType.create(String.class);
+    /**
+     * Generic type for Object.
+     */
+    public static final GenericType<Object> OBJECT = GenericType.create(Object.class);
 
     private final Type type;
     private final Class<?> rawType;

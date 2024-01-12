@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 
 final class LookupSupport {
@@ -97,6 +98,10 @@ final class LookupSupport {
                 Ip value = injectionPoint.get();
                 builder.qualifiers(value.qualifiers())
                         .addContract(value.contract());
+
+                if (!GenericType.OBJECT.equals(value.contractType())) {
+                    builder.contractType(value.contractType());
+                }
             } else {
                 builder.injectionPoint().ifPresent(existing -> {
                     // clear if contained only IP stuff
@@ -112,10 +117,21 @@ final class LookupSupport {
                     if (shouldClear) {
                         builder.qualifiers(Set.of());
                         builder.contracts(Set.of());
+                        builder.clearContractType();
                     }
                 });
             }
 
+        }
+    }
+
+    static class GenericTypeDecorator implements Prototype.OptionDecorator<Lookup.BuilderBase<?, ?>, Optional<GenericType<?>>> {
+        @Override
+        public void decorate(Lookup.BuilderBase<?, ?> builder, Optional<GenericType<?>> optionValue) {
+            if (optionValue.isEmpty()) {
+                return;
+            }
+            builder.addContract(TypeName.create(optionValue.get().rawType()));
         }
     }
 }

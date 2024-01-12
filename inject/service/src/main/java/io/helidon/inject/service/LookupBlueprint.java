@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -62,6 +63,16 @@ interface LookupBlueprint {
      */
     @Option.Singular
     Set<TypeName> contracts();
+
+    /**
+     * A single {@link io.helidon.common.GenericType} can be defined if the lookup should also honor
+     * {@link io.helidon.inject.service.QualifiedProvider} services that can handle any type.
+     * This would be the target type to convert to. If not specified, Object will be used.
+     *
+     * @return generic type of the contract, if only one contract is desired
+     */
+    @Option.Decorator(LookupSupport.GenericTypeDecorator.class)
+    Optional<GenericType<?>> contractType();
 
     /**
      * The optional {@link io.helidon.inject.service.Injection.RunLevel} ascribed to the service.
