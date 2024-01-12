@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
@@ -40,7 +39,6 @@ import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.classmodel.ClassModel;
-import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
@@ -724,7 +722,7 @@ class InjectionExtension implements InjectCodegenExtension {
 
         // we did not find a method on this type, let's look above
         SuperType superType = superType(type, services);
-        if (superType.hasSupertype) {
+        if (superType.hasSupertype()) {
             return overrides(services, superType.superType(), method, arguments, currentPackage, expectedAnnotations);
         }
         return Optional.empty();
@@ -898,18 +896,19 @@ class InjectionExtension implements InjectCodegenExtension {
         }
 
         for (MethodDefinition method : methods) {
-            method.params()
-                    .forEach(it -> result.computeIfAbsent(it.declaredType().resolvedName(),
-                                                          type -> {
-                                                              var response =
-                                                                      new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
-                                                                                                        it.declaredType());
-                                                              addTypeConstant(classModel,
-                                                                              it.declaredType(),
-                                                                              response
-                                                              );
-                                                              return response;
-                                                          }));
+            for (ParamDefinition param : method.params()) {
+                result.computeIfAbsent(param.declaredType().resolvedName(),
+                                       type -> {
+                                           var response =
+                                                   new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
+                                                                              param.declaredType());
+                                           addTypeConstant(classModel,
+                                                           param.declaredType(),
+                                                           response
+                                           );
+                                           return response;
+                                       });
+            }
         }
 
         return result;
@@ -1136,7 +1135,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                         maybeElementKind.addContent(".elementKind(")
                                                 .addContent(TypeNames.ELEMENT_KIND)
                                                 .addContent(".")
-                                                .addContent(param.kind.name())
+                                                .addContent(param.kind().name())
                                                 .addContentLine(")");
                                     }
                                 })
@@ -1666,7 +1665,7 @@ class InjectionExtension implements InjectCodegenExtension {
 
         // method for field and method injections
         List<ParamDefinition> fields = params.stream()
-                .filter(it -> it.kind == ElementKind.FIELD)
+                .filter(it -> it.kind() == ElementKind.FIELD)
                 .toList();
         if (fields.isEmpty() && methods.isEmpty()) {
             // only generate this method if we do something
@@ -1787,7 +1786,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                                  + field.ipParamName()
                                                  + " = ctx__helidonInject.param(" + field.constantName() + ");");
             String interceptorsName = field.ipParamName() + "__interceptors";
-            String constantName = fieldElementConstantName(field.ipParamName);
+            String constantName = fieldElementConstantName(field.ipParamName());
             methodBuilder.addContent("var ")
                     .addContent(interceptorsName)
                     .addContent(" = interceptMeta__helidonInject.interceptors(QUALIFIERS, ANNOTATIONS, ")
@@ -1977,54 +1976,6 @@ class InjectionExtension implements InjectCodegenExtension {
                                     boolean isFinal) {
         public String invokeName() {
             return "invoke" + capitalize(methodId());
-        }
-    }
-
-    /**
-     * @param owningElement      if this is an argument, the constructor or method this belongs to
-     * @param methodConstantName in case this param belongs to a method, the constant of the method, otherwise null
-     * @param elementInfo        element info of field or argument
-     * @param constantName       name of the constant that holds the IpId of this parameter
-     * @param declaredType       type of the field as required by the injection point
-     * @param translatedType     type used for injection into this param (e.g. using Supplier where #type uses Provider),
-     *                           same instance as #type if not translated
-     * @param assignmentHandler  to provide source for assigning the result from injection context
-     * @param kind               kind of the owning element (field, method, constructor)
-     * @param ipName             name of the field or method
-     * @param ipParamName        name of the field or parameter
-     * @param fieldId            unique identification of this param within the type (field name, methodid + param name)
-     * @param isStatic           whether the field is static
-     * @param annotations        annotations on this injection param
-     * @param qualifiers         qualifiers of this injection param
-     * @param contract           contract expected for this injection param (ignoring list, supplier, optional etc.)
-     * @param access             access modifier of this param
-     * @param methodId           id of the method (unique identification of method within the class)
-     */
-    private record ParamDefinition(TypedElementInfo owningElement,
-                                   String methodConstantName,
-                                   TypedElementInfo elementInfo,
-                                   String constantName,
-                                   TypeName declaredType,
-                                   TypeName translatedType,
-                                   Consumer<ContentBuilder<?>> assignmentHandler,
-                                   ElementKind kind,
-                                   String ipName,
-                                   String ipParamName,
-                                   String fieldId,
-                                   boolean isStatic,
-                                   List<Annotation> annotations,
-                                   Set<Annotation> qualifiers,
-                                   TypeName contract,
-                                   AccessModifier access,
-                                   String methodId) {
-
-    }
-
-    private record SuperType(boolean hasSupertype,
-                             TypeName superDescriptorType,
-                             TypeInfo superType) {
-        static SuperType noSuperType() {
-            return new SuperType(false, null, null);
         }
     }
 }
