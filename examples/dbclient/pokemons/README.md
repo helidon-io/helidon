@@ -53,6 +53,15 @@ Start your database before running this example.
 Example docker commands to start databases in temporary containers: 
 
 Oracle:
+
+For MacOs arch64, `Colima` is recommended to run the database docker image.
+```
+export DOCKER_HOST="unix://$HOME/.colima/docker.sock"
+colima start --arch x86_64
+```
+
+Then run the docker image:
+
 ```
 docker run --rm --name xe -p 1521:1521 -p 8888:8080 wnameless/oracle-xe-11g-r2
 ```
