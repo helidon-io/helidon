@@ -17,6 +17,7 @@
 package io.helidon.inject.service;
 
 import io.helidon.common.Errors;
+import io.helidon.common.GenericType;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeNames;
@@ -39,6 +40,7 @@ class IpTest {
                 .contract(TypeNames.STRING)
                 .field("FIELD_0")
                 .typeName(TypeNames.STRING)
+                .contractType(GenericType.STRING)
                 .build();
 
         assertThat(ip.elementKind(), is(ElementKind.CONSTRUCTOR));
@@ -54,6 +56,7 @@ class IpTest {
                                                                        .contract(TypeNames.STRING)
                                                                        .field("FIELD_0")
                                                                        .typeName(TypeNames.STRING)
+                                                                       .contractType(GenericType.STRING)
                                                                        .build(),
                                                                "Service type should be required");
 
@@ -66,6 +69,7 @@ class IpTest {
                                          .contract(TypeNames.STRING)
                                          .field("FIELD_0")
                                          .typeName(TypeNames.STRING)
+                                         .contractType(GenericType.STRING)
                                          .build(),
                                  "IP name should be required");
 
@@ -78,6 +82,7 @@ class IpTest {
                                          .contract(TypeNames.STRING)
                                          .field("FIELD_0")
                                          .typeName(TypeNames.STRING)
+                                         .contractType(GenericType.STRING)
                                          .build(),
                                  "Descriptor type should be required");
 
@@ -90,6 +95,7 @@ class IpTest {
                                          .descriptor(TypeNames.STRING)
                                          .field("FIELD_0")
                                          .typeName(TypeNames.STRING)
+                                         .contractType(GenericType.STRING)
                                          .build(),
                                  "Contract type should be required");
 
@@ -102,6 +108,7 @@ class IpTest {
                                          .descriptor(TypeNames.STRING)
                                          .contract(TypeNames.STRING)
                                          .typeName(TypeNames.STRING)
+                                         .contractType(GenericType.STRING)
                                          .build(),
                                  "Field constant name should be required");
 
@@ -113,6 +120,7 @@ class IpTest {
                                          .name("fieldName")
                                          .descriptor(TypeNames.STRING)
                                          .contract(TypeNames.STRING)
+                                         .contractType(GenericType.STRING)
                                          .field("FIELD_0")
                                          .build(),
                                  "IP type should be required");

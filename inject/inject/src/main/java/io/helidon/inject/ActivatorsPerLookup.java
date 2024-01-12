@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.inject.service.Injection;
@@ -40,6 +41,7 @@ import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInstance;
 import io.helidon.inject.service.ServicesProvider;
 
+import static io.helidon.inject.Activators.QualifiedProviderActivator.OBJECT_GENERIC_TYPE;
 import static java.util.function.Predicate.not;
 
 /*
@@ -150,17 +152,24 @@ final class ActivatorsPerLookup {
                     .flatMap(qualifier -> targetInstances(lookup, qualifier));
         }
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         private Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup, Qualifier qualifier) {
             if (lookup.contracts().size() == 1) {
                 if (anyMatch || this.supportedContracts.containsAll(lookup.contracts())) {
-                    return Optional.of(targetInstances(lookup, qualifier, lookup.contracts().iterator().next()));
+                    Optional<GenericType<?>> genericType = lookup.injectionPoint()
+                            .map(Ip::contractType);
+                    GenericType contract = genericType
+                            .or(lookup::contractType)
+                            .orElse(OBJECT_GENERIC_TYPE);
+
+                    return Optional.of(targetInstances(lookup, qualifier, contract));
                 }
             }
             return Optional.empty();
         }
 
         @SuppressWarnings("unchecked")
-        private List<QualifiedInstance<T>> targetInstances(Lookup lookup, Qualifier qualifier, TypeName contract) {
+        private List<QualifiedInstance<T>> targetInstances(Lookup lookup, Qualifier qualifier, GenericType<T> contract) {
             var qProvider = (QualifiedProvider<?, T>) serviceInstance.get(currentPhase);
 
             return qProvider.list(qualifier, lookup, contract);

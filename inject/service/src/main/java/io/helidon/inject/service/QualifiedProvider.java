@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -51,7 +52,7 @@ public interface QualifiedProvider<A extends Annotation, T> {
      * @param type      type to be injected (or type requested)
      * @return the qualified instance matching the request, or an empty optional if none match
      */
-    Optional<QualifiedInstance<T>> first(Qualifier qualifier, Lookup lookup, TypeName type);
+    Optional<QualifiedInstance<T>> first(Qualifier qualifier, Lookup lookup, GenericType<T> type);
 
     /**
      * Get all instances matching the qualifier and type.
@@ -61,7 +62,7 @@ public interface QualifiedProvider<A extends Annotation, T> {
      * @param type      type to be injected (or type requested)
      * @return the qualified instance matching the request, or an empty optional if none match
      */
-    default List<QualifiedInstance<T>> list(Qualifier qualifier, Lookup lookup, TypeName type) {
+    default List<QualifiedInstance<T>> list(Qualifier qualifier, Lookup lookup, GenericType<T> type) {
         return first(qualifier, lookup, type)
                 .map(List::of)
                 .orElseGet(List::of);

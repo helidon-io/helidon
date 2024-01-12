@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.GenericType;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -71,6 +72,15 @@ interface IpBlueprint {
     @Option.Redundant
     // kind + service type + name is a unique identification already
     TypeName contract();
+
+    /**
+     * Generic type equivalent to {@link #contract()}. We need both, to prevent reflection at runtime.
+     *
+     * @return generic type of the injected contract
+     */
+    @Option.Redundant
+    @Option.Default("OBJECT")
+    GenericType<?> contractType();
 
     /**
      * The qualifier type annotations on this element.

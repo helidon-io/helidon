@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.inject.service.Injection;
@@ -391,6 +392,8 @@ final class Activators {
      * {@code MyService implements QualifiedProvider}.
      */
     static class QualifiedProviderActivator<T> extends SingleServiceActivator<T> {
+        static final GenericType<?> OBJECT_GENERIC_TYPE = GenericType.create(Object.class);
+
         private final TypeName supportedQualifier;
         private final Set<TypeName> supportedContracts;
         private final boolean anyMatch;
@@ -423,17 +426,24 @@ final class Activators {
                     .flatMap(qualifier -> targetInstances(lookup, qualifier));
         }
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         private Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup, Qualifier qualifier) {
             if (lookup.contracts().size() == 1) {
                 if (anyMatch || this.supportedContracts.containsAll(lookup.contracts())) {
-                    return Optional.of(targetInstances(lookup, qualifier, lookup.contracts().iterator().next()));
+                    Optional<GenericType<?>> genericType = lookup.injectionPoint()
+                            .map(Ip::contractType);
+                    GenericType contract = genericType
+                            .or(lookup::contractType)
+                            .orElse(OBJECT_GENERIC_TYPE);
+
+                    return Optional.of(targetInstances(lookup, qualifier, contract));
                 }
             }
             return Optional.empty();
         }
 
         @SuppressWarnings("unchecked")
-        private List<QualifiedInstance<T>> targetInstances(Lookup lookup, Qualifier qualifier, TypeName contract) {
+        private List<QualifiedInstance<T>> targetInstances(Lookup lookup, Qualifier qualifier, GenericType<T> contract) {
             var qProvider = (QualifiedProvider<?, T>) serviceInstance.get();
 
             return qProvider.list(qualifier, lookup, contract);

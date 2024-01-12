@@ -19,8 +19,7 @@ package io.helidon.inject.tests.qualified.providers;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
+import io.helidon.common.GenericType;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.QualifiedInstance;
@@ -33,18 +32,20 @@ class FirstQualifiedProvider implements QualifiedProvider<FirstQualifier, Object
                                                       "second", "49");
 
     @Override
-    public Optional<QualifiedInstance<Object>> first(Qualifier qualifier, Lookup lookup, TypeName type) {
+    public Optional<QualifiedInstance<Object>> first(Qualifier qualifier, Lookup lookup, GenericType<Object> type) {
         Optional<String> stringValue = Optional.of(values.get(qualifier.value().orElse("not-defined")));
 
         return stringValue.map(str -> QualifiedInstance.create(mapType(str, type), qualifier));
     }
 
-    private Object mapType(String str, TypeName type) {
-        if (type.equals(TypeNames.STRING)) {
+    private Object mapType(String str, GenericType<Object> type) {
+        if (type.equals(GenericType.OBJECT) || type.equals(GenericType.STRING)) {
             return str;
-        } else if (type.boxed().equals(TypeNames.BOXED_INT)) {
+        }
+        if (type.rawType().equals(Integer.class) || type.rawType().equals(int.class)) {
             return Integer.parseInt(str);
         }
-        throw new IllegalArgumentException("This provider only supports string and int, but " + type.fqName() + " was requested");
+        throw new IllegalArgumentException("This provider only supports string and int, but " + type.getTypeName() + " was "
+                                                   + "requested");
     }
 }
