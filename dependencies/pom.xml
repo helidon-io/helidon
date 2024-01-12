@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.jackson>2.15.2</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
-        <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
+        <version.lib.jakarta.annotation-api>2.1.0</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>3.0.0</version.lib.jakarta.cdi-api>
         <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
         <version.lib.jakarta.inject>2.0.0</version.lib.jakarta.inject>
@@ -106,9 +106,10 @@
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.6.6</version.lib.micrometer>
-        <version.lib.micronaut>3.8.7</version.lib.micronaut>
-        <version.lib.micronaut.data>3.4.3</version.lib.micronaut.data>
-        <version.lib.micronaut.sql>4.8.0</version.lib.micronaut.sql>
+        <version.lib.micronaut>4.2.2</version.lib.micronaut>
+        <version.lib.micronaut.validation>4.2.0</version.lib.micronaut.validation>
+        <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
+        <version.lib.micronaut.sql>5.4.0</version.lib.micronaut.sql>
         <version.lib.microprofile-config>3.0.1</version.lib.microprofile-config>
         <version.lib.microprofile-fault-tolerance-api>4.0</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>2.0</version.lib.microprofile-graphql>
@@ -1002,14 +1003,6 @@
                 <version>${version.lib.micronaut}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>javax.annotation</groupId>
-                        <artifactId>javax.annotation-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.inject</groupId>
-                        <artifactId>javax.inject</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-annotations</artifactId>
                     </exclusion>
@@ -1018,6 +1011,11 @@
                         <artifactId>jsr305</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-core-processor</artifactId>
+                <version>${version.lib.micronaut}</version>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
@@ -1086,20 +1084,19 @@
                 <version>${version.lib.activemq}</version>
             </dependency>
             <dependency>
-                <groupId>io.micronaut</groupId>
+                <groupId>io.micronaut.validation</groupId>
                 <artifactId>micronaut-validation</artifactId>
-                <version>${version.lib.micronaut}</version>
+                <version>${version.lib.micronaut.validation}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut.validation</groupId>
+                <artifactId>micronaut-validation-processor</artifactId>
+                <version>${version.lib.micronaut.validation}</version>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-runtime</artifactId>
                 <version>${version.lib.micronaut}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.validation</groupId>
-                        <artifactId>validation-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.micronaut.sql</groupId>

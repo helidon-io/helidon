@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -43,6 +43,10 @@
         <dependency>
             <groupId>io.micronaut.data</groupId>
             <artifactId>micronaut-data-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.validation</groupId>
+            <artifactId>micronaut-validation</artifactId>
         </dependency>
         <dependency>
             <groupId>io.micronaut</groupId>
@@ -118,8 +122,13 @@
                         </path>
                         <path>
                             <groupId>io.micronaut</groupId>
-                            <artifactId>micronaut-validation</artifactId>
+                            <artifactId>micronaut-core-processor</artifactId>
                             <version>${version.lib.micronaut}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut.validation</groupId>
+                            <artifactId>micronaut-validation-processor</artifactId>
+                            <version>${version.lib.micronaut.validation}</version>
                         </path>
                         <path>
                             <groupId>io.micronaut.data</groupId>
