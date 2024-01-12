@@ -109,7 +109,7 @@ class OpenTelemetrySpan implements Span {
     @Override
     public Optional<String> baggage(String key) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
-        return Optional.ofNullable(Baggage.fromContext(getContext()).getEntryValue(key));
+        return Optional.ofNullable(baggage.getEntryValue(key));
     }
 
     // Check if OTEL Context is already available in Global Helidon Context.
