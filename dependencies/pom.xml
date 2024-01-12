@@ -80,7 +80,7 @@
         <version.lib.jakarta.jsonp-api>2.1.3</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.1.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
-        <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
+        <version.lib.jakarta.validation-api>3.0.2</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.0</version.lib.jakarta.xml.bind-api>
@@ -100,9 +100,10 @@
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.11.3</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.11.3</version.lib.micrometer-prometheus>
-        <version.lib.micronaut>3.8.7</version.lib.micronaut>
-        <version.lib.micronaut.data>3.4.3</version.lib.micronaut.data>
-        <version.lib.micronaut.sql>4.8.0</version.lib.micronaut.sql>
+        <version.lib.micronaut>4.2.2</version.lib.micronaut>
+        <version.lib.micronaut.validation>4.2.0</version.lib.micronaut.validation>
+        <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
+        <version.lib.micronaut.sql>5.4.0</version.lib.micronaut.sql>
         <!-- FIXME upgrade to 3.1 when it is released in Maven -->
         <version.lib.microprofile-config>3.0.3</version.lib.microprofile-config>
         <!-- FIXME upgrade to 4.1 when it is released in Maven -->
@@ -1018,43 +1019,20 @@
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-inject</artifactId>
                 <version>${version.lib.micronaut}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.annotation</groupId>
-                        <artifactId>javax.annotation-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.inject</groupId>
-                        <artifactId>javax.inject</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-core</artifactId>
                 <version>${version.lib.micronaut}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.annotation</groupId>
-                        <artifactId>javax.annotation-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.inject</groupId>
-                        <artifactId>javax.inject</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs-annotations</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-aop</artifactId>
+                <version>${version.lib.micronaut}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-core-processor</artifactId>
                 <version>${version.lib.micronaut}</version>
             </dependency>
             <!-- Neo4j -->
@@ -1119,20 +1097,19 @@
                 <version>${version.lib.activemq}</version>
             </dependency>
             <dependency>
-                <groupId>io.micronaut</groupId>
+                <groupId>io.micronaut.validation</groupId>
                 <artifactId>micronaut-validation</artifactId>
-                <version>${version.lib.micronaut}</version>
+                <version>${version.lib.micronaut.validation}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut.validation</groupId>
+                <artifactId>micronaut-validation-processor</artifactId>
+                <version>${version.lib.micronaut.validation}</version>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-runtime</artifactId>
                 <version>${version.lib.micronaut}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.validation</groupId>
-                        <artifactId>validation-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.micronaut.sql</groupId>
