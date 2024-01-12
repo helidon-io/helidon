@@ -29,21 +29,6 @@ import io.helidon.common.types.TypeName;
  */
 public interface ServiceInfo extends Weighted {
     /**
-     * Id used by the basic Helidon injection.
-     */
-    String INJECTION_RUNTIME_ID = "INJECTION";
-
-    /**
-     * Id of runtime responsible for this service, such as
-     * injection, or config driven. The provider is discovered at runtime through service loader.
-     *
-     * @return type of the runtime
-     */
-    default String runtimeId() {
-        return INJECTION_RUNTIME_ID;
-    }
-
-    /**
      * Type of the service this descriptor describes.
      *
      * @return service type
