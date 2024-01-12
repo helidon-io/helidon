@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import java.util.logging.Logger;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
 import io.helidon.common.tls.Tls;
-import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.config.Config;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -143,18 +142,8 @@ class HelidonConnector implements Connector {
         HttpClientRequest httpRequest = webClient
                 .method(Method.create(request.getMethod()))
                 .proxy(requestProxy)
+                .skipUriEncoding(true)      // already encoded by Jersey
                 .uri(uri);
-
-        // map query parameters
-        String queryString = uri.getQuery();
-        if (queryString != null) {
-            UriQueryWriteable query = UriQueryWriteable.create();
-            query.fromQueryString(queryString);
-            query.names().forEach(name -> {
-                String[] values = query.all(name).toArray(new String[0]);
-                httpRequest.queryParam(name, values);
-            });
-        }
 
         // map request headers
         request.getRequestHeaders().forEach((key, value) -> {
