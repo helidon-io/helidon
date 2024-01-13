@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.examples.integrations</groupId>
         <artifactId>helidon-examples-integrations-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.3-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples.integrations.vault</groupId>
     <artifactId>helidon-examples-integrations-vault-project</artifactId>
