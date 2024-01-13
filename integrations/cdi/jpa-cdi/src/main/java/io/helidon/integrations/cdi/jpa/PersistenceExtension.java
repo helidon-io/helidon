@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,9 @@ import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
@@ -107,6 +109,7 @@ import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_AFTER;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.persistence.PersistenceContextType.EXTENDED;
 import static jakarta.persistence.SynchronizationType.SYNCHRONIZED;
 import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
@@ -618,6 +621,52 @@ public final class PersistenceExtension implements Extension {
         this.containerManagedEntityManagerQualifiers.clear();
         this.implicitPersistenceUnits.clear();
         this.unlistedManagedClassesByUnitNames.clear();
+    }
+
+    // This will take some explaining.
+    //
+    // Weld 5.1.2.Final and later has a bug? interesting feature? where if a very, very particular way of acquiring a
+    // contextual reference is the first such way that Weld encounters, a Bean metadata bean
+    // (https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0#bean_metadata) is NOT properly created for the
+    // acquisition.
+    //
+    // This impacts this class because this give-me-the-Bean-metadata facility helps determine what qualifiers are in
+    // play for any given bean's means of production. See, for example, #produceEntityManagerFactory(Instance) above.
+    //
+    // The path to trigger this bug seems to be something like this:
+    //
+    // If the first encounter of an injection point is during the initialization of a contextual reference that must
+    // exist in order for an observer method to be called on it, then it *seems* that in this one case only the
+    // CreationalContext hierarchy that Weld uses to keep track of which thing is injecting which other thing breaks
+    // down, and null is returned where really it shouldn't be. See
+    // https://github.com/weld/core/blob/5.1.1.SP2/impl/src/main/java/org/jboss/weld/bean/builtin/BeanMetadataBean.java#L59.
+    //
+    // The following observer method, whose analog also exists in the (now-deprecated, soon to-be-removed) JpaExtension
+    // class, works around that problem by ensuring that the first encounter of the type (EntityManagerFactory) will
+    // never meet the criteria outlined above. (It will, in fact, be when emfs.next() is effectively called below.)
+    //
+    // This observer method also calls a business method
+    // (https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0#biz_method) on each EntityManagerFactory. It
+    // doesn't matter which one. This will cause the contextual reference's underlying contextual instance to become
+    // fully initialized. If the user has instructed the EntityManagerFactory to predeploy persistence units, such
+    // predeployment will happen here as a convenient result.
+    private void
+        workAroundWeldBeanMetadataCreationBug(@Observes
+                                              @Initialized(ApplicationScoped.class)
+                                              @Priority(LIBRARY_BEFORE + 20) // Must be later than metrics CDI extension priority
+                                              Object event,
+                                              @ContainerManaged
+                                              Instance<EntityManagerFactory> emfs) {
+        if (this.enabled && !emfs.isUnsatisfied()) {
+            for (EntityManagerFactory emfProxy : emfs) {
+                // Container-managed EntityManagerFactory instances are client proxies, so we call a business method (it
+                // doesn't matter which one, so a speedy simple one will suffice) to force "inflation" of the proxied
+                // instance.  This, in turn, may run DDL and persistence provider validation if the persistence provider
+                // has been configured to do such things early (like Eclipselink with its eclipselink.deploy-on-startup
+                // property).
+                emfProxy.isOpen();
+            }
+        }
     }
 
 
@@ -1305,7 +1354,7 @@ public final class PersistenceExtension implements Extension {
 
 
     private static JtaExtendedEntityManager produceJtaExtendedEntityManager(Instance<Object> instance) {
-        BeanAttributes<JtaExtendedEntityManager> ba = instance.select(BEAN_JTAEXTENDEDENTITYMANAGER_TYPELITERAL).get();
+        BeanAttributes<?> ba = instance.select(BEAN_JTAEXTENDEDENTITYMANAGER_TYPELITERAL).get();
         Set<Annotation> containerManagedSelectionQualifiers = new HashSet<>();
         containerManagedSelectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
         Set<Annotation> selectionQualifiers = new HashSet<>();
@@ -1376,7 +1425,7 @@ public final class PersistenceExtension implements Extension {
     }
 
     private static EntityManagerFactory produceEntityManagerFactory(Instance<Object> instance) {
-        BeanAttributes<EntityManagerFactory> ba = instance.select(BEAN_ENTITYMANAGERFACTORY_TYPELITERAL).get();
+        BeanAttributes<?> ba = instance.select(BEAN_ENTITYMANAGERFACTORY_TYPELITERAL).get();
         Set<Annotation> selectionQualifiers = new HashSet<>();
         Set<Annotation> namedSelectionQualifiers = new HashSet<>();
         for (Annotation beanQualifier: ba.getQualifiers()) {
