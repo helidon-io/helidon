@@ -10,6 +10,19 @@ on:
         description: 'Helidon version this issue was reported for'
         required: true
         default: '2.x'
+      target-2:
+        type: boolean
+        description: 'Port to 2.x?'
+        default:  false
+      target-3:
+        type: boolean
+        description: 'Port to 3.x?'
+        default: true
+      target-4:
+        type: boolean
+        description: 'Port to 4.x?'
+        default: true
+
 env:
   GITHUB_API_KEY: ${{ secrets.GITHUB_TOKEN }}
 
@@ -20,4 +33,4 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - run: etc/scripts/actions/create-backport-issues.sh $GITHUB_REPOSITORY ${{ github.event.inputs.issue }} ${{ github.event.inputs.version }}
+      - run: etc/scripts/actions/create-backport-issues.sh $GITHUB_REPOSITORY ${{ github.event.inputs.issue }} ${{ github.event.inputs.version }} ${{ github.event.inputs.target-2 }} ${{ github.event.inputs.target-3 }} ${{ github.event.inputs.target-4 }}

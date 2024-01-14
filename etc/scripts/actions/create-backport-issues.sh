@@ -37,6 +37,9 @@ function join_by {
 readonly REPOSITORY_FULL_NAME="$1"
 readonly ISSUE_NUMBER="$2"
 readonly HELIDON_VERSION="$3"
+readonly TARGET_2="$4"
+readonly TARGET_3="$5"
+readonly TARGET_4="$6"
 
 if [ -z "${REPOSITORY_FULL_NAME}" -o -z "${ISSUE_NUMBER}" -o -z "${HELIDON_VERSION}" ]; then
   echo "usage: $0 <repository-name> <issue-number> <helidon-version>"
