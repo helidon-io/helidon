@@ -38,4 +38,4 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - run: etc/scripts/actions/create-backport-issues.sh $GITHUB_REPOSITORY ${{ github.event.inputs.issue }} ${{ github.event.inputs.version }} ${{ github.event.inputs.target-2 }} ${{ github.event.inputs.target-3 }} ${{ github.event.inputs.target-4 }}
+      - run: etc/scripts/actions/create-backport-issues.sh helidon-io/helidon ${{ github.event.inputs.issue }} ${{ github.event.inputs.version }} ${{ github.event.inputs.target-2 }} ${{ github.event.inputs.target-3 }} ${{ github.event.inputs.target-4 }}

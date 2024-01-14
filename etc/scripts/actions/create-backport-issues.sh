@@ -38,8 +38,6 @@ readonly REPOSITORY_FULL_NAME="$1"
 readonly ISSUE_NUMBER="$2"
 readonly HELIDON_VERSION="$3"
 
-echo "Repo: $REPOSITORY_FULL_NAME"
-exit 1
 if [ -z "${REPOSITORY_FULL_NAME}" -o -z "${ISSUE_NUMBER}" -o -z "${HELIDON_VERSION}" -o $# -le 3 ]; then
   echo "usage: $0 <repository-name> <issue-number> <helidon-version> <helidon-versions-to-port-to...>"
   exit 1
