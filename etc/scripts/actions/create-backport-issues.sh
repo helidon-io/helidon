@@ -114,9 +114,12 @@ issue_title=$(sed "s/\"/'/g" <<< "$issue_title")
 ############################################################
 # For each version the caller specified add a porting issue.
 ############################################################
-for version in "${@:4}"; do
-  if [ "$version" != "$HELIDON_VERSION" ]; then
-    # Create issue for all other versions and add the same labels and assignee
+version_targets=()
+next_version_to_check=2
+for is_version_selected in "${@:4}"; do
+  version=${next_version_to_check}.x
+  if [ "$version" != "$HELIDON_VERSION" -a "$is_version_selected" = "true" ]; then
+    # Create issue for other indicated versions and add the same labels and assignee
     new_issue_title="[$version] ${issue_title}"
     new_issue_text="Backport of #${ISSUE_NUMBER} for Helidon ${version}"
 
