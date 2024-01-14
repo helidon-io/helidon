@@ -37,12 +37,9 @@ function join_by {
 readonly REPOSITORY_FULL_NAME="$1"
 readonly ISSUE_NUMBER="$2"
 readonly HELIDON_VERSION="$3"
-readonly TARGET_2="$4"
-readonly TARGET_3="$5"
-readonly TARGET_4="$6"
 
-if [ -z "${REPOSITORY_FULL_NAME}" -o -z "${ISSUE_NUMBER}" -o -z "${HELIDON_VERSION}" ]; then
-  echo "usage: $0 <repository-name> <issue-number> <helidon-version>"
+if [ -z "${REPOSITORY_FULL_NAME}" -o -z "${ISSUE_NUMBER}" -o -z "${HELIDON_VERSION}" -o $# -le 3 ]; then
+  echo "usage: $0 <repository-name> <issue-number> <helidon-version> <helidon-versions-to-port-to...>"
   exit 1
 fi
 
@@ -115,9 +112,9 @@ fi
 issue_title=$(sed "s/\"/'/g" <<< "$issue_title")
 
 ############################################################
-# For each version that is not the issue's version, add backport
+# For each version the caller specified add a porting issue.
 ############################################################
-for version in ${VERSIONS[@]}; do
+for version in "${@:4}"; do
   if [ "$version" != "$HELIDON_VERSION" ]; then
     # Create issue for all other versions and add the same labels and assignee
     new_issue_title="[$version] ${issue_title}"
