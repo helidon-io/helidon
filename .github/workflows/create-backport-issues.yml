@@ -9,6 +9,11 @@ on:
       version:
         description: 'Helidon version this issue was reported for'
         required: true
+        type: choice
+        options:
+          - 2.x
+          - 3.x
+          - 4.x
         default: '2.x'
       target-2:
         type: boolean
