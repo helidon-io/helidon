@@ -118,6 +118,7 @@ version_targets=()
 next_version_to_check=2
 for is_version_selected in "${@:4}"; do
   version=${next_version_to_check}.x
+  next_version_to_check=$((next_version_to_check+1))
   if [ "$version" != "$HELIDON_VERSION" -a "$is_version_selected" = "true" ]; then
     # Create issue for other indicated versions and add the same labels and assignee
     new_issue_title="[$version] ${issue_title}"
