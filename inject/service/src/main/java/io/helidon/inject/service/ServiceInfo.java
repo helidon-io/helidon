@@ -109,7 +109,7 @@ public interface ServiceInfo extends Weighted {
     }
 
     /**
-     * Scope of this service. Defaults to Singleton scope.
+     * Scope of this service.
      *
      * @return scope of the service
      */
@@ -123,5 +123,15 @@ public interface ServiceInfo extends Weighted {
      */
     default boolean isAbstract() {
         return false;
+    }
+
+    /**
+     * Type of qualifier a {@link io.helidon.inject.service.QualifiedProvider} provides. This method is only generated
+     * for a type that implements qualified provider.
+     *
+     * @return type name of the qualifier this qualified provider can provide instances for
+     */
+    default Optional<TypeName> qualifierType() {
+        return Optional.empty();
     }
 }

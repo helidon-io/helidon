@@ -21,7 +21,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -805,16 +804,15 @@ public final class Services {
     }
 
     private void bindQualifiedProvider(ServiceDescriptor<?> descriptor) {
-        if (descriptor.qualifiers().size() != 1) {
+        if (descriptor.qualifierType().isEmpty()) {
             throw new InjectionException("Cannot bind qualified provider " + descriptor.serviceType().fqName() + ", as it "
-                                                 + "does not have exactly one defined qualifier from implemented"
-                                                 + " interface. Qualifiers: " + descriptor.qualifiers());
+                                                 + "does not have a qualifier type defined in its descriptor");
         }
-        TypeName qualifierType = descriptor.qualifiers().iterator().next().typeName();
+        TypeName qualifierType = descriptor.qualifierType().get();
         Set<TypeName> contracts = descriptor.contracts();
         if (contracts.contains(TypeNames.OBJECT)) {
             // can match any contract
-            qualifiedProvidersByQualifier.computeIfAbsent(qualifierType, it -> new LinkedHashSet<>())
+            qualifiedProvidersByQualifier.computeIfAbsent(qualifierType, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
                     .add(descriptor);
         } else {
             // contract specific
@@ -823,7 +821,7 @@ public final class Services {
                     .collect(Collectors.toSet());
             for (TypeName realContract : realContracts) {
                 TypedQualifiedProviderKey key = new TypedQualifiedProviderKey(qualifierType, realContract);
-                typedQualifiedProviders.computeIfAbsent(key, it -> new LinkedHashSet<>())
+                typedQualifiedProviders.computeIfAbsent(key, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
                         .add(descriptor);
             }
         }

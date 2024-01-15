@@ -72,6 +72,10 @@ public final class InjectCodegenTypes {
      */
     public static final TypeName INJECTION_SERVICE = TypeName.create("io.helidon.inject.service.Injection.Service");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.Injection.Descriptor}.
+     */
+    public static final TypeName INJECTION_DESCRIPTOR = TypeName.create("io.helidon.inject.service.Injection.Descriptor");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.service.Injection.DrivenBy}.
      */
     public static final TypeName INJECTION_DRIVEN_BY = TypeName.create("io.helidon.inject.service.Injection.DrivenBy");

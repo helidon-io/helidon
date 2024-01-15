@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
@@ -60,12 +61,12 @@ import io.helidon.inject.codegen.spi.InjectCodegenExtension;
 import io.helidon.inject.codegen.spi.InjectCodegenObserver;
 import io.helidon.inject.codegen.spi.InjectCodegenObserverProvider;
 
-import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_DRIVEN_BY;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_EAGER;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_POINT_PROVIDER;
+import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_SERVICE;
 import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
 import static io.helidon.inject.codegen.InjectCodegenTypes.PROTOTYPE_BLUEPRINT;
 import static io.helidon.inject.codegen.InjectCodegenTypes.QUALIFIED_PROVIDER;
@@ -200,9 +201,11 @@ class InjectionExtension implements InjectCodegenExtension {
         Map<String, GenericTypeDeclaration> genericTypes = genericTypes(classModel, params, methods);
         Optional<TypeName> scope = scope(typeInfo);
         Set<TypeName> contracts = new HashSet<>();
-        Set<Annotation> qualifiers = new HashSet<>();
         Set<String> collectedFullyQualifiedContracts = new HashSet<>();
-        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts, qualifiers);
+        AtomicReference<TypeName> qualifiedProviderQualifier = new AtomicReference<>();
+        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts, qualifiedProviderQualifier);
+
+        Set<Annotation> qualifiers = new HashSet<>();
         qualifiers(typeInfo, qualifiers);
 
         // declare the class
@@ -213,14 +216,9 @@ class InjectionExtension implements InjectCodegenExtension {
             classModel.addInterface(SERVICE_SOURCE_TYPE);
         }
 
-        /*
-        Fields
-         */
+        // Fields
         singletonInstanceField(classModel, serviceType, descriptorType);
         serviceTypeFields(classModel, serviceType, descriptorType);
-        contractsField(classModel, contracts);
-        qualifiersField(classModel, qualifiers);
-        scopeField(classModel, scope.orElse(InjectCodegenTypes.INJECTION_SERVICE));
         methodFields(classModel, methods);
 
         // public fields are last, so they do not intersect with private fields (it is not as nice to read)
@@ -243,16 +241,11 @@ class InjectionExtension implements InjectCodegenExtension {
             // service descriptor delegating to a generated type
         }
 
-            /*
-            Constructor
-             */
         // add protected constructor
         classModel.addConstructor(constructor -> constructor.description("Constructor with no side effects")
                 .accessModifier(AccessModifier.PROTECTED));
 
-            /*
-            Methods
-             */
+        // methods (some methods define fields as well)
         serviceTypeMethod(classModel);
         descriptorTypeMethod(classModel);
         contractsMethod(classModel, contracts);
@@ -263,11 +256,12 @@ class InjectionExtension implements InjectCodegenExtension {
         postConstructMethod(typeInfo, classModel, serviceType);
         preDestroyMethod(typeInfo, classModel, serviceType);
         qualifiersMethod(classModel, qualifiers, superType);
-        scopesMethod(classModel);
+        scopeMethod(classModel, scope.orElse(INJECTION_SERVICE));
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
         isEagerMethod(typeInfo, classModel, superType, scope);
         drivenByMethod(typeInfo, classModel, superType, contracts);
+        qualifiedProvider(classModel, qualifiedProviderQualifier.get());
 
         ctx.addDescriptor(serviceType,
                           descriptorType,
@@ -291,6 +285,33 @@ class InjectionExtension implements InjectCodegenExtension {
                         serviceType,
                         typeInfo.originatingElement().orElse(serviceType));
         }
+    }
+
+    private void qualifiedProvider(ClassModel.Builder classModel, TypeName typeName) {
+        if (typeName == null) {
+            // just use default from interface, we only need to declare this on a type that explicitly implements
+            // QualifiedProvider
+            return;
+        }
+        classModel.addField(qpField -> qpField
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .name("QP_QUALIFIER")
+                .type(OPTIONAL_TYPE)
+                .addContent(TypeNames.OPTIONAL)
+                .addContent(".of(")
+                .addContentCreate(typeName)
+                .addContent(")")
+        );
+        classModel.addMethod(qpMethod ->
+                                     qpMethod
+                                             .accessModifier(AccessModifier.PUBLIC)
+                                             .returnType(OPTIONAL_TYPE)
+                                             .name("qualifierType")
+                                             .addAnnotation(Annotations.OVERRIDE)
+                                             .addContentLine("return QP_QUALIFIER;")
+        );
     }
 
     private void drivenByMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType, Set<TypeName> contracts) {
@@ -949,7 +970,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                 .addContent(typeName.className())
                                 .addContent(".class)");
                     } else {
-                     it.addContent("new ")
+                        it.addContent("new ")
                                 .addContent(TypeNames.GENERIC_TYPE)
                                 .addContent("<")
                                 .addContent(typeName)
@@ -991,7 +1012,7 @@ class InjectionExtension implements InjectCodegenExtension {
                            boolean contractEligible,
                            Set<TypeName> collectedContracts,
                            Set<String> collectedFullyQualified,
-                           Set<Annotation> qualifiers) {
+                           AtomicReference<TypeName> qualifiedProviderQualifier) {
         TypeName typeName = typeInfo.typeName();
 
         boolean addedThisContract = false;
@@ -1015,15 +1036,19 @@ class InjectionExtension implements InjectCodegenExtension {
                 // just a <T> or similar
                 return;
             }
-            // add the qualifier of this qualified provider
-            qualifiers.add(Annotation.create(typeName.typeArguments().get(0)));
+            // add the qualifier of this qualified provider (we care about the first one - if supertype implements it, ignore
+            qualifiedProviderQualifier.compareAndSet(null, typeName.typeArguments().get(0));
             collectedContracts.add(QUALIFIED_PROVIDER);
             if (TypeNames.OBJECT.equals(providedType)) {
                 collectedContracts.add(TypeNames.OBJECT);
             } else {
                 Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
                 if (providedTypeInfo.isPresent()) {
-                    contracts(providedTypeInfo.get(), true, collectedContracts, collectedFullyQualified, qualifiers);
+                    contracts(providedTypeInfo.get(),
+                              true,
+                              collectedContracts,
+                              collectedFullyQualified,
+                              qualifiedProviderQualifier);
                 } else {
                     collectedContracts.add(providedType);
                     if (!collectedFullyQualified.add(providedType.resolvedName())) {
@@ -1042,7 +1067,11 @@ class InjectionExtension implements InjectCodegenExtension {
                 if (!providedType.generic()) {
                     Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
                     if (providedTypeInfo.isPresent()) {
-                        contracts(providedTypeInfo.get(), true, collectedContracts, collectedFullyQualified, qualifiers);
+                        contracts(providedTypeInfo.get(),
+                                  true,
+                                  collectedContracts,
+                                  collectedFullyQualified,
+                                  qualifiedProviderQualifier);
                     } else {
                         collectedContracts.add(providedType);
                         if (!collectedFullyQualified.add(providedType.resolvedName())) {
@@ -1072,11 +1101,19 @@ class InjectionExtension implements InjectCodegenExtension {
                 .ifPresent(it -> collectedContracts.addAll(it.typeValues().orElseGet(List::of)));
 
         // go through hierarchy
-        typeInfo.superTypeInfo().ifPresent(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified,
-                                                           qualifiers));
+        typeInfo.superTypeInfo().ifPresent(it -> contracts(it,
+                                                           contractEligible,
+                                                           collectedContracts,
+                                                           collectedFullyQualified,
+                                                           qualifiedProviderQualifier
+        ));
         // interfaces are considered contracts by default
-        typeInfo.interfaceTypeInfo().forEach(it -> contracts(it, contractEligible, collectedContracts, collectedFullyQualified,
-                                                             qualifiers));
+        typeInfo.interfaceTypeInfo().forEach(it -> contracts(it,
+                                                             contractEligible,
+                                                             collectedContracts,
+                                                             collectedFullyQualified,
+                                                             qualifiedProviderQualifier
+        ));
     }
 
     private void singletonInstanceField(ClassModel.Builder classModel, TypeName serviceType, TypeName descriptorType) {
@@ -1273,29 +1310,6 @@ class InjectionExtension implements InjectCodegenExtension {
         }
     }
 
-    private void contractsField(ClassModel.Builder classModel, Set<TypeName> contracts) {
-        if (contracts.isEmpty()) {
-            return;
-        }
-        classModel.addField(contractsField -> contractsField
-                .isStatic(true)
-                .isFinal(true)
-                .name("CONTRACTS")
-                .type(SET_OF_TYPES)
-                .addContent(Set.class)
-                .addContent(".of(")
-                .update(it -> {
-                    Iterator<TypeName> iterator = contracts.iterator();
-                    while (iterator.hasNext()) {
-                        it.addContentCreate(iterator.next().genericTypeName());
-                        if (iterator.hasNext()) {
-                            it.addContent(", ");
-                        }
-                    }
-                })
-                .addContent(")"));
-    }
-
     private void dependenciesField(ClassModel.Builder classModel, List<ParamDefinition> params) {
         classModel.addField(dependencies -> dependencies
                 .isStatic(true)
@@ -1308,26 +1322,6 @@ class InjectionExtension implements InjectCodegenExtension {
                     Iterator<ParamDefinition> iterator = params.iterator();
                     while (iterator.hasNext()) {
                         it.addContent(iterator.next().constantName());
-                        if (iterator.hasNext()) {
-                            it.addContent(", ");
-                        }
-                    }
-                })
-                .addContent(")"));
-    }
-
-    private void qualifiersField(ClassModel.Builder classModel, Set<Annotation> qualifiers) {
-        classModel.addField(qualifiersField -> qualifiersField
-                .isStatic(true)
-                .isFinal(true)
-                .name("QUALIFIERS")
-                .type(SET_OF_QUALIFIERS)
-                .addContent(Set.class)
-                .addContent(".of(")
-                .update(it -> {
-                    Iterator<Annotation> iterator = qualifiers.iterator();
-                    while (iterator.hasNext()) {
-                        codeGenQualifier(it, iterator.next());
                         if (iterator.hasNext()) {
                             it.addContent(", ");
                         }
@@ -1349,15 +1343,6 @@ class InjectionExtension implements InjectCodegenExtension {
                 .addContent(".create(")
                 .addContentCreate(qualifier.typeName())
                 .addContent(")");
-    }
-
-    private void scopeField(ClassModel.Builder classModel, TypeName scope) {
-        classModel.addField(scopesField -> scopesField
-                .isStatic(true)
-                .isFinal(true)
-                .name("SCOPE")
-                .type(TypeNames.TYPE_NAME)
-                .addContentCreate(scope));
     }
 
     private void methodFields(ClassModel.Builder classModel, List<MethodDefinition> methods) {
@@ -1447,6 +1432,24 @@ class InjectionExtension implements InjectCodegenExtension {
         if (contracts.isEmpty()) {
             return;
         }
+        classModel.addField(contractsField -> contractsField
+                .isStatic(true)
+                .isFinal(true)
+                .name("CONTRACTS")
+                .type(SET_OF_TYPES)
+                .addContent(Set.class)
+                .addContent(".of(")
+                .update(it -> {
+                    Iterator<TypeName> iterator = contracts.iterator();
+                    while (iterator.hasNext()) {
+                        it.addContentCreate(iterator.next().genericTypeName());
+                        if (iterator.hasNext()) {
+                            it.addContent(", ");
+                        }
+                    }
+                })
+                .addContent(")"));
+
         // Set<Class<?>> contracts()
         classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                 .name("contracts")
@@ -1735,7 +1738,7 @@ class InjectionExtension implements InjectCodegenExtension {
                 // this method "disabled" injection point from superclass
                 continue;
             }
-            if (!method.isFinal) {
+            if (!method.isFinal()) {
                 methodBuilder.addContentLine("if (" + method.invokeName() + ") {");
             }
             List<ParamDefinition> params = method.params();
@@ -1770,7 +1773,7 @@ class InjectionExtension implements InjectCodegenExtension {
             // single line
             methodBuilder.addContentLine(");");
 
-            if (!method.isFinal) {
+            if (!method.isFinal()) {
                 methodBuilder.addContentLine("}");
             }
             methodBuilder.addContentLine("");
@@ -1876,9 +1879,29 @@ class InjectionExtension implements InjectCodegenExtension {
     }
 
     private void qualifiersMethod(ClassModel.Builder classModel, Set<Annotation> qualifiers, SuperType superType) {
+        // qualifier field is always needed, as it is used for interception
+        classModel.addField(qualifiersField -> qualifiersField
+                .isStatic(true)
+                .isFinal(true)
+                .name("QUALIFIERS")
+                .type(SET_OF_QUALIFIERS)
+                .addContent(Set.class)
+                .addContent(".of(")
+                .update(it -> {
+                    Iterator<Annotation> iterator = qualifiers.iterator();
+                    while (iterator.hasNext()) {
+                        codeGenQualifier(it, iterator.next());
+                        if (iterator.hasNext()) {
+                            it.addContent(", ");
+                        }
+                    }
+                })
+                .addContent(")"));
+
         if (qualifiers.isEmpty() && !superType.hasSupertype()) {
             return;
         }
+
         // List<Qualifier> qualifiers()
         classModel.addMethod(qualifiersMethod -> qualifiersMethod.name("qualifiers")
                 .addAnnotation(Annotations.OVERRIDE)
@@ -1886,8 +1909,15 @@ class InjectionExtension implements InjectCodegenExtension {
                 .addContentLine("return QUALIFIERS;"));
     }
 
-    private void scopesMethod(ClassModel.Builder classModel) {
+    private void scopeMethod(ClassModel.Builder classModel, TypeName scope) {
         // TypeName scope()
+        classModel.addField(scopesField -> scopesField
+                .isStatic(true)
+                .isFinal(true)
+                .name("SCOPE")
+                .type(TypeNames.TYPE_NAME)
+                .addContentCreate(scope));
+
         classModel.addMethod(scopeMethod -> scopeMethod.name("scope")
                 .addAnnotation(Annotations.OVERRIDE)
                 .returnType(TypeNames.TYPE_NAME)
@@ -1964,18 +1994,5 @@ class InjectionExtension implements InjectCodegenExtension {
 
     private record GenericTypeDeclaration(String constantName,
                                           TypeName typeName) {
-    }
-
-    private record MethodDefinition(TypeName declaringType, AccessModifier access,
-                                    String methodId,
-                                    String constantName,
-                                    String methodName,
-                                    boolean overrides,
-                                    List<ParamDefinition> params,
-                                    boolean isInjectionPoint,
-                                    boolean isFinal) {
-        public String invokeName() {
-            return "invoke" + capitalize(methodId());
-        }
     }
 }

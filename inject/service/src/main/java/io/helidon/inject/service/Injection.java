@@ -365,4 +365,23 @@ public final class Injection {
          */
         TypeName TYPE_NAME = TypeName.create(DrivenByName.class);
     }
+
+    /**
+     * Annotation to add a custom service descriptor.
+     * <p>
+     * The service descriptor will be added as any other service descriptor that is generated, only it is expected
+     * as a source.
+     * The descriptor MUST follow the approach of Helidon service descriptor, and must be public,
+     *  provide a public constant called {@code INSTANCE}, and all its injection points ({@link io.helidon.inject.service.Ip}
+     *  must be available as public constants (and correctly described in each Ip instance).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
+    public @interface Descriptor {
+        /**
+         * Type name of this interface.
+         */
+        TypeName TYPE_NAME = TypeName.create(Descriptor.class);
+    }
 }

@@ -400,7 +400,7 @@ final class Activators {
 
         QualifiedProviderActivator(ServiceProvider<T> provider) {
             super(provider);
-            this.supportedQualifier = provider.descriptor().qualifiers().iterator().next().typeName();
+            this.supportedQualifier = provider.descriptor().qualifierType().get();
             this.supportedContracts = provider.descriptor().contracts()
                     .stream()
                     .filter(not(QualifiedProvider.TYPE_NAME::equals))

@@ -71,6 +71,8 @@ class InjectCodegenTypesTest {
                    is(Injection.ExternalContracts.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.INJECTION_SERVICE.fqName(),
                    is(Injection.Service.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.INJECTION_DESCRIPTOR.fqName(),
+                   is(Injection.Descriptor.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.INJECTION_DRIVEN_BY.fqName(),
                    is(Injection.DrivenBy.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.INJECTION_EAGER.fqName(),
