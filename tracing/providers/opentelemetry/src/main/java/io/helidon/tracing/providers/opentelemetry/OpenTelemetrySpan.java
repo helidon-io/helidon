@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 
-import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.StatusCode;
@@ -32,6 +31,7 @@ import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpan implements Span {
     private final io.opentelemetry.api.trace.Span delegate;
+    private final MutableOpenTelemetryBaggage baggage = new MutableOpenTelemetryBaggage();
 
     OpenTelemetrySpan(io.opentelemetry.api.trace.Span span) {
         this.delegate = span;
@@ -93,26 +93,22 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public Scope activate() {
-        return new OpenTelemetryScope(delegate.makeCurrent());
+        io.opentelemetry.context.Scope baggageScope = baggage.makeCurrent();
+        return new OpenTelemetryScope(delegate.makeCurrent(), baggageScope);
     }
 
     @Override
     public Span baggage(String key, String value) {
-        Objects.requireNonNull(key, "Baggage Key cannot be null");
-        Objects.requireNonNull(value, "Baggage Value cannot be null");
-
-        Baggage.builder()
-                .put(key, value)
-                .build()
-                .storeInContext(getContext())
-                .makeCurrent();
+        Objects.requireNonNull(key, "baggage key cannot be null");
+        Objects.requireNonNull(value, "baggage value cannot be null");
+        baggage.baggage(key, value);
         return this;
     }
 
     @Override
     public Optional<String> baggage(String key) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
-        return Optional.ofNullable(Baggage.fromContext(getContext()).getEntryValue(key));
+        return Optional.ofNullable(baggage.getEntryValue(key));
     }
 
     // Check if OTEL Context is already available in Global Helidon Context.
