@@ -41,7 +41,7 @@ class TestSpanAndBaggage {
     @BeforeAll
     static void init() {
         originalOtelSdkAutoConfiguredSetting = System.setProperty(OTEL_AUTO_CONFIGURE_PROP, "true");
-        originalOtelSdkDisabledSetting = System.setProperty(OTEL_SDK_DISABLED_PROP, "true");
+        originalOtelSdkDisabledSetting = System.setProperty(OTEL_SDK_DISABLED_PROP, "false");
     }
 
     @AfterAll
