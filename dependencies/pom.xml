@@ -139,6 +139,7 @@
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry>1.22.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.semconv>1.22.0-alpha</version.lib.opentelemetry.semconv>
+        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.22.0-alpha</version.lib.opentelemetry-sdk-extension-autoconfigure>
         <version.lib.opentelemetry.opentracing.shim>1.22.0-alpha</version.lib.opentelemetry.opentracing.shim>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
