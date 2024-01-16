@@ -44,7 +44,7 @@ public final class Injection {
 
     /**
      * Method, constructor, or field marked with this annotation is considered as injectable, and its injection points
-     * will be satisfied with services from the service registry. An injection point is a filed, or a single parameter.
+     * will be satisfied with services from the service registry. An injection point is a field, or a single parameter.
      * <p>
      * An injection point may expect instance of a service, or a {@link java.util.function.Supplier} of the same.
      * <p>
