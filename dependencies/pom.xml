@@ -80,7 +80,7 @@
         <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
-        <version.lib.jakarta.jsonp-api>2.0.1</version.lib.jakarta.jsonp-api>
+        <version.lib.jakarta.jsonp-api>2.0.2</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.0.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
