@@ -171,9 +171,9 @@ public final class JwkKeys {
         public Builder resource(Resource resource) {
             Objects.requireNonNull(resource, "Json resource must not be null");
             try (InputStream is = resource.stream()) {
-                JsonObject jsonObject = AUTOMATIC_CHARSET_DETECTION ?
-                        JSON.createReader(is).readObject() :
-                        JSON.createReader(is, StandardCharsets.UTF_8).readObject();
+                JsonObject jsonObject = AUTOMATIC_CHARSET_DETECTION
+                        ? JSON.createReader(is).readObject()
+                        : JSON.createReader(is, StandardCharsets.UTF_8).readObject();
                 addKeys(jsonObject);
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, "Failed to close input stream on resource: " + resource);
