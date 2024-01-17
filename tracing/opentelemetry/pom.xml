@@ -113,7 +113,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <!-- Run in a separate execution so other tests interfere. -->
+                        <!-- Run in a separate execution so other tests do not interfere. -->
                         <id>test-with-explicit-app</id>
                         <goals>
                             <goal>test</goal>

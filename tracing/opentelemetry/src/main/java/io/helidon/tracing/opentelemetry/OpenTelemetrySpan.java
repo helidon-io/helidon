@@ -71,7 +71,7 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public SpanContext context() {
-        return new OpenTelemetrySpanContext(Context.current().with(delegate));
+        return new OpenTelemetrySpanContext(Context.current().with(delegate).with(baggage));
     }
 
     @Override
@@ -109,14 +109,6 @@ class OpenTelemetrySpan implements Span {
     public Optional<String> baggage(String key) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
         return Optional.ofNullable(baggage.getEntryValue(key));
-    }
-
-    // Check if OTEL Context is already available in Global Helidon Context.
-    // If not – use Current context.
-    private static Context getContext() {
-        return Contexts.context()
-                .flatMap(ctx -> ctx.get(Context.class))
-                .orElseGet(Context::current);
     }
 
     private Attributes toAttributes(Map<String, ?> attributes) {

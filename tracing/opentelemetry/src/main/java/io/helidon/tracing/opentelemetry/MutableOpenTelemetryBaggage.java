@@ -29,6 +29,7 @@ import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 class MutableOpenTelemetryBaggage implements Baggage {
 
     private final Map<String, BaggageEntry> values = new LinkedHashMap<>();
+    private final Map<String, BaggageEntry> valuesView = Collections.unmodifiableMap(values);
 
     MutableOpenTelemetryBaggage() {
     }
@@ -49,7 +50,7 @@ class MutableOpenTelemetryBaggage implements Baggage {
 
     @Override
     public Map<String, BaggageEntry> asMap() {
-        return Collections.unmodifiableMap(values);
+        return valuesView;
     }
 
     @Override
