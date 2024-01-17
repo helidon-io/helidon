@@ -244,12 +244,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
             BufferData data = BufferData.create(b, off, len);
 
-            if (data.available() < 0) {
-                throw new IllegalStateException("Buffer returned negative available: "
-                                                        + data
-                                                        + ", received: off=" + off + ", len=" + len + ", b.length=" + b.length );
-            }
-
             if (!chunked) {
                 if (firstPacket == null) {
                     firstPacket = data;
