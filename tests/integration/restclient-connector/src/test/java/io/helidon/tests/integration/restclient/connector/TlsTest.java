@@ -21,7 +21,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import javax.json.JsonObject;
 import javax.net.ssl.SSLContext;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.client.WebTarget;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -32,9 +35,6 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.tests.integration.resclient.connector.GreetResourceClient;
 import io.helidon.tests.integration.resclient.connector.GreetResourceFilter;
 
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.ProcessingException;
-import jakarta.ws.rs.client.WebTarget;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.junit.jupiter.api.Test;
 

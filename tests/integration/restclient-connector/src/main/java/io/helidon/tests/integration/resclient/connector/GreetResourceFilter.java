@@ -18,10 +18,10 @@ package io.helidon.tests.integration.resclient.connector;
 import java.io.IOException;
 import java.net.URI;
 
-import io.helidon.common.context.Contexts;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
 
-import jakarta.ws.rs.client.ClientRequestContext;
-import jakarta.ws.rs.client.ClientRequestFilter;
+import io.helidon.common.context.Contexts;
 
 /**
  * A client request filter that replaces port 8080 by the ephemeral port allocated for the
