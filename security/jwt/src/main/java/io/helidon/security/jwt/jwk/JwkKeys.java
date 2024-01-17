@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package io.helidon.security.jwt.jwk;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -27,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.NativeImageHelper;
 import io.helidon.common.configurable.Resource;
 
 import jakarta.json.Json;
@@ -54,6 +58,26 @@ public final class JwkKeys {
 
     private final Map<String, Jwk> keyMap = new HashMap<>();
     private final List<Jwk> noKeyIdKeys = new LinkedList<>();
+
+    private static final boolean AUTOMATIC_CHARSET_DETECTION;
+
+    // Workaround for https://github.com/eclipse-ee4j/parsson/issues/121
+    static {
+        boolean utf32Available = false;
+        try {
+            Charset.forName("UTF-32LE");
+            Charset.forName("UTF-32BE");
+            utf32Available = true;
+        } catch (UnsupportedCharsetException e) {
+            if (NativeImageHelper.isNativeImage()) {
+                LOGGER.log(Level.TRACE, "Automatic JSON unicode detection not available."
+                        + " Add -H:+AddAllCharsets to build your native image with UTF-32 support.", e);
+            } else {
+                LOGGER.log(Level.TRACE, "Automatic JSON unicode detection not available.", e);
+            }
+        }
+        AUTOMATIC_CHARSET_DETECTION = utf32Available;
+    }
 
     private JwkKeys(Builder builder) {
         this.keyMap.putAll(builder.keyMap);
@@ -147,7 +171,9 @@ public final class JwkKeys {
         public Builder resource(Resource resource) {
             Objects.requireNonNull(resource, "Json resource must not be null");
             try (InputStream is = resource.stream()) {
-                JsonObject jsonObject = JSON.createReader(is).readObject();
+                JsonObject jsonObject = AUTOMATIC_CHARSET_DETECTION ?
+                        JSON.createReader(is).readObject() :
+                        JSON.createReader(is, StandardCharsets.UTF_8).readObject();
                 addKeys(jsonObject);
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, "Failed to close input stream on resource: " + resource);
