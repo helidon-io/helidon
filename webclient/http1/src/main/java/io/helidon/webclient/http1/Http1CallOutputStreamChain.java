@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -244,6 +244,12 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
             BufferData data = BufferData.create(b, off, len);
 
+            if (data.available() < 0) {
+                throw new IllegalStateException("Buffer returned negative available: "
+                                                        + data
+                                                        + ", received: off=" + off + ", len=" + len + ", b.length=" + b.length );
+            }
+
             if (!chunked) {
                 if (firstPacket == null) {
                     firstPacket = data;
@@ -324,6 +330,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
         private void writeChunked(BufferData buffer) {
             int available = buffer.available();
+
             byte[] hex = Integer.toHexString(available).getBytes(StandardCharsets.UTF_8);
 
             BufferData toWrite = BufferData.create(available + hex.length + 4); // \r\n after size, another after chunk
