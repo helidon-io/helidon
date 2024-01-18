@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -176,7 +176,7 @@ You can add your own custom health checks. These typically assess the conditions
 The following trivial but illustrative example adds a custom start-up check that reports `DOWN` until the server has been running for eight seconds and reports `UP` thereafter. Note the two main steps in the example code:
 
 1. Create an explicit instance of `ObserveFeature` which contains a custom `HealthObserver` with the custom check.
-2. Add that `ObserveFeature` instance to the `WebServer.Builder` as a feature.
+2. Add that `ObserveFeature` instance to the `WebServerConfig.Builder` as a feature.
 
 
 [source,java]
