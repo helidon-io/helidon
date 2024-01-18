@@ -67,14 +67,23 @@ final class TracerProviderHelper {
     }
 
     static Tracer global() {
+        if (TRACER_PROVIDER == null) {
+            throw new IllegalStateException("Use before initialization has completed");
+        }
         return TRACER_PROVIDER.global();
     }
 
     static void global(Tracer tracer) {
+        if (TRACER_PROVIDER == null) {
+            throw new IllegalStateException("Use before initialization has completed");
+        }
         TRACER_PROVIDER.global(tracer);
     }
 
     static TracerBuilder<?> findTracerBuilder() {
+        if (TRACER_PROVIDER == null) {
+            throw new IllegalStateException("Use before initialization has completed");
+        }
         return TRACER_PROVIDER.createBuilder();
     }
 }
