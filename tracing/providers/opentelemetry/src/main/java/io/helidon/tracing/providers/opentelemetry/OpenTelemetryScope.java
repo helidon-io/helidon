@@ -21,21 +21,16 @@ import io.helidon.tracing.Scope;
 
 class OpenTelemetryScope implements Scope {
     private final io.opentelemetry.context.Scope delegate;
-    private final io.opentelemetry.context.Scope baggageScope;
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    OpenTelemetryScope(io.opentelemetry.context.Scope scope, io.opentelemetry.context.Scope baggageScope) {
+    OpenTelemetryScope(io.opentelemetry.context.Scope scope) {
         delegate = scope;
-        this.baggageScope = baggageScope;
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
-            if (baggageScope != null) {
-                baggageScope.close();
-            }
         }
     }
 

@@ -71,7 +71,7 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public SpanContext context() {
-        return new OpenTelemetrySpanContext(Context.current().with(delegate));
+        return new OpenTelemetrySpanContext(otelContextWithSpanAndBaggage());
     }
 
     @Override
@@ -93,8 +93,8 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public Scope activate() {
-        io.opentelemetry.context.Scope baggageScope = baggage.makeCurrent();
-        return new OpenTelemetryScope(delegate.makeCurrent(), baggageScope);
+        io.opentelemetry.context.Scope scope = otelContextWithSpanAndBaggage().makeCurrent();
+        return new OpenTelemetryScope(scope);
     }
 
     @Override
@@ -117,6 +117,12 @@ class OpenTelemetrySpan implements Span {
         return Contexts.context()
                 .flatMap(ctx -> ctx.get(Context.class))
                 .orElseGet(Context::current);
+    }
+
+    private Context otelContextWithSpanAndBaggage() {
+        // Because the Helidon tracing API links baggage with a span, any OTel context we create for the span
+        // needs to have the baggage with it.
+        return getContext().with(delegate).with(baggage);
     }
 
     private Attributes toAttributes(Map<String, ?> attributes) {
