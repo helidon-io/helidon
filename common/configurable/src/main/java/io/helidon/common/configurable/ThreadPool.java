@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -693,6 +693,8 @@ public class ThreadPool extends ThreadPoolExecutor {
         // We can't make pool final because it is a circular dependency, but we set it during the construction of
         // the pool itself and therefore don't have to worry about concurrent access.
         private ThreadPool pool;
+        private final AtomicInteger underOffer = new AtomicInteger(0);
+
 
         /**
          * Constructor.
@@ -721,36 +723,42 @@ public class ThreadPool extends ThreadPoolExecutor {
             if (currentSize >= maxPoolSize) {
 
                 // Yes, so enqueue if we can
-
                 Event.add(Event.Type.MAX, pool, this);
                 return super.offer(task);
 
-            } else if (pool.getActiveThreads() < currentSize) {
-
-                // No, but we've got idle threads so enqueue if we can
-
-                Event.add(Event.Type.IDLE, pool, this);
-                return super.offer(task);
-
             } else {
+                int underOfferSize = underOffer.incrementAndGet();
+                try {
+                    // Include count of tasks active, offered and queued to ensure proper growth
+                    int activeSize = pool.getActiveCount() + underOfferSize + size();
+                    if (activeSize <= currentSize) {
 
-                // Ok, we might want to add a thread so ask our policy
+                        // No, but we've got idle threads so enqueue if we can
+                        Event.add(Event.Type.IDLE, pool, this);
+                        return super.offer(task);
 
-                if (growthPolicy.test(pool)) {
+                    } else {
 
-                    // Add a thread. Note that this can still result in a rejection due to a race condition
-                    // in which the pool has not yet grown from a previous false return (and so our maxPoolSize
-                    // check above is not accurate); in this case, the rejection handler will just add it to
-                    // the queue.
+                        // Ok, we might want to add a thread so ask our policy
+                        if (growthPolicy.test(pool)) {
 
-                    if (LOGGER.isLoggable(Level.FINE)) {
-                        LOGGER.fine("Adding a thread, pool size = " + pool.getPoolSize() + ", queue size = " + size());
+                            // Add a thread. Note that this can still result in a rejection due to a race
+                            // condition in which the pool has not yet grown from a previous false return (and so
+                            // our maxPoolSize check above is not accurate); in this case, the rejection handler
+                            // will just add it to the queue.
+                            if (LOGGER.isLoggable(Level.FINEST)) {
+                                LOGGER.finest(() -> "Adding a thread, pool size = " + pool.getPoolSize()
+                                        + " queue size = " + size());
+                            }
+                            return false;
+
+                        } else {
+                            // Enqueue if we can
+                            return super.offer(task);
+                        }
                     }
-                    return false;
-
-                } else {
-                    // Enqueue if we can
-                    return super.offer(task);
+                } finally {
+                    underOffer.decrementAndGet();
                 }
             }
         }
