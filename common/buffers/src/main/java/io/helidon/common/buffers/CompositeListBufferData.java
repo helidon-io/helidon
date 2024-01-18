@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,13 @@ class CompositeListBufferData extends ReadOnlyBufferData implements CompositeBuf
 
     @Override
     public void writeTo(OutputStream out) {
+        if (data.size() == 1) {
+            BufferData datum = data.get(0);
+            if (!(datum instanceof CompositeBufferData)) {
+                datum.writeTo(out);
+                return;
+            }
+        }
         copy().writeTo(out);
     }
 
