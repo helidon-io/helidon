@@ -92,7 +92,7 @@
    <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
 </suppress>
 
-<!-- False Positive. This does not apply to server Java deployment and certainly not to our use of graalvm SDK.
+<!-- False Positive. These do not apply to server Java deployment and certainly not to our use of graalvm SDK.
     This vulnerability applies to Java deployments, typically in clients running sandboxed
     Java Web Start applications or sandboxed Java applets, that load and run untrusted code
     (e.g., code that comes from the internet) and rely on the Java sandbox for security. This
@@ -104,6 +104,13 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal\-sdk@.*$</packageUrl>
    <vulnerabilityName>CVE-2023-22006</vulnerabilityName>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-22.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal\-sdk@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-20932</vulnerabilityName>
 </suppress>
 
 <!-- 
