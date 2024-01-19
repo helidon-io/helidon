@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ include::{rootdir}/includes/security/providers/jwt.adoc[]
 
 == Reference
 
-* link:{https://github.com/oracle/helidon/tree/master/examples/security[Helidon Security Examples]
+* link:{helidon-github-tree-url}examples/security[Helidon Security Examples]
 * link:{security-provider-oidc-base-url}/module-summary.html[Helidon OIDC JavaDoc]
 * link:{security-provider-httpauth-base-url}/module-summary.html[Helidon HTTP Authentication JavaDoc]
 * link:{security-provider-header-base-url}/module-summary.html[Helidon Header Authentication JavaDoc]

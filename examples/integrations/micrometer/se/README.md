@@ -34,7 +34,6 @@ The `GreetingService` class
 
 ## Build and run
 
-With JDK11+
 ```bash
 mvn package
 java -jar target/helidon-examples-integrations-micrometer-se.jar

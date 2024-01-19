@@ -23,7 +23,6 @@ Use this example for inspiration in writing your own service or just use the `Ht
 ## Build and run
 
 
-With JDK17+
 ```bash
 mvn package
 java -jar target/http-status-count-se.jar

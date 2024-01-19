@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -174,5 +179,59 @@ public class CrossOriginConfigTest {
         assertThat("Match for /callback/other",
                    crossOriginConfigOpt.get().pathPattern(),
                    is(crossOriginConfigs.get(1).pathPattern()));
+    }
+
+    @Test
+    void testBuiltInServiceConfig() {
+        Config node = testConfig.get("built-in-service");
+        assertThat(node, is(notNullValue()));
+        assertThat(node.exists(), is(true));
+        CorsSupportHelper<TestCorsServerRequestAdapter, TestCorsServerResponseAdapter> helper =
+                CorsSupportHelper.<TestCorsServerRequestAdapter, TestCorsServerResponseAdapter>builder()
+                .config(node)
+                .build();
+
+        // In the first test, use an unacceptable origin and make sure we get a 403 response.
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.ORIGIN, "http://bad.com")
+                .add(HeaderNames.HOST, "someProxy.com")
+                .add(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "GET");
+        UriInfo uriInfo = UriInfo.builder()
+                .scheme("http")
+                .host("localhost")
+                .path("/")
+                .port(80)
+                .build();
+        CorsRequestAdapter<TestCorsServerRequestAdapter> req = new TestCorsServerRequestAdapter("/observe/health",
+                                                                                                uriInfo,
+                                                                                                "GET",
+                                                                                                headers);
+        CorsResponseAdapter<TestCorsServerResponseAdapter> resp = new TestCorsServerResponseAdapter();
+        Optional<TestCorsServerResponseAdapter> resultOpt = helper.processRequest(req, resp);
+
+        assertThat("Response from GET to built-in service path",
+                   resultOpt,
+                   OptionalMatcher.optionalPresent());
+        assertThat("Response status from secure PUT to unsecured path",
+                   resultOpt.get().status(),
+                   is(Status.FORBIDDEN_403.code()));
+
+        // In the next test, use an acceptable origin in the request. There should be no response because that's how
+        // the CORS support helper lets the caller know that it's an acceptable CORS request.
+        headers = WritableHeaders.create();
+        headers.add(HeaderNames.ORIGIN, "http://roothere.com")
+                .add(HeaderNames.HOST, "someProxy.com")
+                .add(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "GET");
+        req = new TestCorsServerRequestAdapter("/observe/health",
+                                               uriInfo,
+                                               "GET",
+                                               headers);
+        resp = new TestCorsServerResponseAdapter();
+
+        resultOpt = helper.processRequest(req, resp);
+
+        assertThat("Response from GET to built-in service path",
+                   resultOpt,
+                   OptionalMatcher.optionalEmpty());
     }
 }

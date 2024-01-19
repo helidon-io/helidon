@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2049,7 +2049,7 @@ public class JpaExtension implements Extension {
                            Object event,
                            @ContainerManaged
                            Instance<EntityManagerFactory> emfs) {
-        if (!emfs.isUnsatisfied()) {
+        if (this.enabled && !emfs.isUnsatisfied()) {
             for (EntityManagerFactory emfProxy : emfs) {
                 // Container-managed EntityManagerFactory instances are client proxies, so we call a business method to
                 // force "inflation" of the proxied instance.  This, in turn, may run DDL and persistence provider

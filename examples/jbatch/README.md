@@ -4,7 +4,6 @@ Minimal Helidon MP + jBatch PoC.
 
 ## Build and run
 
-With JDK11+
 ```bash
 mvn package
 java -jar target/helidon-jbatch-example.jar

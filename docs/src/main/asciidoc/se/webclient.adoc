@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ Once the request setup is completed, the following methods can be used to send i
 * `HttpClientResponse outputStream(OutputStreamHandler outputStreamConsumer)`
 * `<T> ClientResponseTyped<T> outputStream(OutputStreamHandler outputStreamConsumer, Class<T> requestedType)`
 
-Each of the methods will provide a way to allow response to be retrieved in a particular response type. Refer to link:{webclient-javadoc-base-url}..api/io/helidon/webclient/api/ClientRequest.html[ClientRequest API] for more details about these methods.
+Each of the methods will provide a way to allow response to be retrieved in a particular response type. Refer to link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/ClientRequest.html[ClientRequest API] for more details about these methods.
 
 .Execute a simple GET request to endpoint and receive a String response:
 [source,java]

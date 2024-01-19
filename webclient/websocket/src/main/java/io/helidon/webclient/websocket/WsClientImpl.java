@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ class WsClientImpl implements WsClient {
 
         ClientRequestHeaders headers = http1Client.prototype().defaultRequestHeaders();
         headers.set(HEADER_UPGRADE_WS);
+        headers.set(HEADER_CONN_UPGRADE);
         headers.set(HEADER_WS_VERSION);
         headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
         if (clientConfig.protocolConfig().subProtocols().isEmpty()) {

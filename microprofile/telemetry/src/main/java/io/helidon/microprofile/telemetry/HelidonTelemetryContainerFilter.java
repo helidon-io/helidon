@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,12 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+
+import io.helidon.common.context.Contexts;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
@@ -27,13 +31,16 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Path;
+import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.Provider;
+import org.glassfish.jersey.server.ExtendedUriInfo;
+import org.glassfish.jersey.server.model.Resource;
 
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
@@ -96,29 +103,14 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             LOGGER.log(System.Logger.Level.TRACE, "Starting Span in a Container Request");
         }
 
-        Context parentContext = Context.current();
-
         // Extract Parent Context from request headers to be used from previous filters
         Context extractedContext = openTelemetry.getPropagators().getTextMapPropagator()
                 .extract(Context.current(), requestContext, CONTEXT_HEADER_INJECTOR);
 
-        if (extractedContext != null) {
-            parentContext = extractedContext;
-        }
-
-        String annotatedPath;
-        if (spanNameFullUrl) {
-            annotatedPath = requestContext.getUriInfo().getAbsolutePath().toString();
-        } else {
-            annotatedPath = requestContext.getUriInfo().getPath();
-            Path pathAnnotation = resourceInfo.getResourceMethod().getAnnotation(Path.class);
-            if (pathAnnotation != null) {
-                annotatedPath = pathAnnotation.value();
-            }
-        }
+        Context parentContext = Objects.requireNonNullElseGet(extractedContext, Context::current);
 
         //Start new span for container request.
-        Span span = tracer.spanBuilder(annotatedPath)
+        Span span = tracer.spanBuilder(spanName(requestContext))
                 .setParent(parentContext)
                 .setSpanKind(SpanKind.SERVER)
                 .setAttribute(HTTP_METHOD, requestContext.getMethod())
@@ -163,6 +155,51 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
     }
 
+    private String spanName(ContainerRequestContext requestContext) {
+        // According to recent OpenTelemetry semantic conventions for spans, the span name for a REST endpoint should be
+        //
+        // http-method-name low-cardinality-path
+        //
+        // where a low-cardinality path would be, for example /greet/{name} rather than /greet/Joe, /greet/Dmitry, etc.
+        // But the version of semantic conventions in force when the MP Telemetry spec was published did not include the
+        // http-method-name. So our code omits that for now to pass the MP Telemetry TCK.
+
+        if (spanNameFullUrl) {
+            return requestContext.getUriInfo().getAbsolutePath().toString();
+        }
+        ExtendedUriInfo extendedUriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
+
+        // Derive the original path (including path parameters) of the matched resource from the bottom up.
+        Deque<String> derivedPath = new LinkedList<>();
+
+        Resource resource = extendedUriInfo.getMatchedModelResource();
+        while (resource != null) {
+            String resourcePath = resource.getPath();
+            if (!resourcePath.equals("/") && !resourcePath.isBlank()) {
+                derivedPath.push(resourcePath);
+                if (!resourcePath.startsWith("/")) {
+                    derivedPath.push("/");
+                }
+            }
+            resource = resource.getParent();
+        }
+
+        derivedPath.push(applicationPath());
+        return String.join("", derivedPath);
+    }
+
+    private String applicationPath() {
+        Application app = Contexts.context()
+                .flatMap(it -> it.get(Application.class))
+                .orElseThrow(() -> new IllegalStateException("Application missing from context"));
+
+        if (app == null) {
+            return "";
+        }
+        ApplicationPath applicationPath = getRealClass(app.getClass()).getAnnotation(ApplicationPath.class);
+        return (applicationPath == null || applicationPath.value().equals("/")) ? "" : applicationPath.value();
+    }
+
     // Resolve target string.
     private String resolveTarget(ContainerRequestContext requestContext) {
         String path = requestContext.getUriInfo().getRequestUri().getPath();
@@ -190,4 +227,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
     }
 
+    private static Class<?> getRealClass(Class<?> object) {
+        Class<?> result = object;
+        while (result.isSynthetic()) {
+            result = result.getSuperclass();
+        }
+        return result;
+    }
 }

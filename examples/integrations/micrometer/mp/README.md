@@ -22,7 +22,6 @@ The example is similar to the one from the Helidon MP QuickStart with these diff
 
 ## Build and run
 
-With JDK11+
 ```bash
 mvn package
 java -jar target/helidon-examples-integrations-micrometer-mp.jar

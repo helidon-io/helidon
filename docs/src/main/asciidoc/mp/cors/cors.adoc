@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -222,7 +222,7 @@ include::{rootdir}/includes/cors.adoc[tag=understanding-cors-support-in-services
 
 include::{rootdir}/includes/cors.adoc[tag=builtin-getting-started]
 
-include::{rootdir}/includes/cors.adoc[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
+include::{rootdir}/includes/cors.adoc[tags=configuring-cors-for-builtin-services;!se-config-example]
 
 The following example restricts sharing of
 
@@ -232,9 +232,10 @@ The following example restricts sharing of
 .Configuration which restricts sharing of the health and metrics resources
 [source,properties]
 ----
-health.cors.allow-origins=http://there.com
-
-metrics.cors.allow-origins=http://foo.com
+cors.paths.0.path-pattern=/health
+cors.paths.0.allow-origins=http://there.com
+cors.paths.1.path-pattern=/metrics
+cors.paths.1.allow-origins=http://foo.com
 ----
 
 include::{rootdir}/includes/cors.adoc[tag=accessing-shared-resources-intro]

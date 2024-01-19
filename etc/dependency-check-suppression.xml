@@ -227,4 +227,24 @@
    <cve>CVE-2023-28360</cve>
 </suppress>
 
+<!-- False Positives. This was identifying Helidon's dbclient mongodb support artifact with MongoDB itself -->
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.dbclient:helidon-dbclient-mongodb:4.0.0-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.dbclient/helidon\-dbclient\-mongodb@.*$</packageUrl>
+   <cpe>cpe:/a:mongodb:mongodb</cpe>
+</suppress>
+
+
+
+<!-- False Positives. This was identifying Helidon's mysql support artifact with MySQL itself -->
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.integrations.db:helidon-integrations-db-mysql:4.0.0-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.db/helidon\-integrations\-db\-mysql@.*$</packageUrl>
+   <cpe>cpe:/a:mysql:mysql</cpe>
+</suppress>
+
 </suppressions>

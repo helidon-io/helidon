@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,10 @@ public final class UriEncoding {
      * @return decoded string
      */
     public static String decodeUri(String uriSegment) {
-        if (uriSegment.length() == 0) {
+        if (uriSegment.isEmpty()) {
             return "";
         }
-        if (uriSegment.indexOf('%') == -1) {
+        if (uriSegment.indexOf('%') == -1 && uriSegment.indexOf('+') == -1) {
             return uriSegment;
         }
 
@@ -124,7 +124,6 @@ public final class UriEncoding {
     }
 
     private static String decode(String string) {
-
         int len = string.length();
 
         StringBuilder sb = new StringBuilder(len);
@@ -143,7 +142,7 @@ public final class UriEncoding {
                 betweenBrackets = false;
             }
             if (c != '%' || betweenBrackets) {
-                sb.append(c);
+                sb.append(c == '+' && !betweenBrackets ? ' ' : c);      // handles '+' decoding
                 if (++i >= len) {
                     break;
                 }

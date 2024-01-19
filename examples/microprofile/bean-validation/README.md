@@ -15,7 +15,6 @@ To be able to use bean validation add the following dependency:
 
 ## Build and run
 
-With JDK11+
 ```bash
 mvn package
 java -jar target/helidon-examples-microprofile-bean-validation.jar

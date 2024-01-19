@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -45,6 +47,9 @@ public class ProducerTest extends MetricsBaseTest {
 
     @Inject
     private MetricRegistry appRegistry;
+
+    @Inject
+    private RegistryFactory registryFactory;
 
     private final MetricID counter1 = new MetricID("counter1");
     private final MetricID counter2 = new MetricID("counter2");
@@ -78,5 +83,17 @@ public class ProducerTest extends MetricsBaseTest {
         assertThat("Counters are different", appCounter, is(not(sameInstance(specialCounter))));
         assertThat("App registry counter", appCounter.getCount(), is(appCounterIncr));
         assertThat("Special registry counter", specialCounter.getCount(), is(specialCounterIncr));
+    }
+
+    @Test
+    void testRegistryFactoryProducer() {
+        MetricRegistry customRegistry = registryFactory.getRegistry("myCustomScope");
+        assertThat("Custom scoped MetricRegistry", customRegistry, notNullValue());
+    }
+
+    @Test
+    void testDirectMetricRegistryLookup() {
+        MetricRegistry appRegistry = CDI.current().select(MetricRegistry.class).get();
+        assertThat("Directly-looked-up app registry", appRegistry, notNullValue());
     }
 }

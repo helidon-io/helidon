@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @AddConfig(key = "security.providers.1.oidc.cookie-use", value = "false")
 @AddConfig(key = "security.providers.1.oidc.query-param-use", value = "true")
+@AddConfig(key = "server.protocols.http_1_1.max-prologue-length", value = "4096")
 class QueryBasedLoginIT extends CommonLoginBase {
 
     @Test

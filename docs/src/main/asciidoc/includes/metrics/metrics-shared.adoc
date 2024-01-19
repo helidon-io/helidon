@@ -153,24 +153,70 @@ In addition to your application {metrics}, the reports contain other
 To register or look up {metrics} programmatically, your service code uses the link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/MetricRegistry.html[`MetricRegistry`] instance for the scope of interest: `base`, `vendor`, `application`, or a custom scope.
 
 ifdef::mp-flavor[]
-To get a `MetricRegistry` reference
+Either of the following techniques gets a `MetricRegistry` reference.
+Remember that injection works only if the class is a bean so CDI can inject into it.
 
-* `@Inject` the metric registry you want, perhaps also using the link:{microprofile-metrics-javadoc-annotation-url}/RegistryScope.html[`@RegistryScope`] annotation to select the registry type, or
-* Get a Helidon link:{metrics-mp-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`]; either
+* `@Inject MetricRegistry`, optionally using link:{microprofile-metrics-javadoc-annotation-url}/RegistryScope.html[`@RegistryScope`] to indicate the registry scope.
 +
 --
-** `@Inject` `RegistryFactory` or
-** Invoke one of the static `getInstance` methods on `RegistryFactory`
+[source,java]
+.Injecting the default `MetricRegistry` (for the application scope)
+----
+class Example {
+
+    @Inject
+    private MetricRegistry applicationRegistry;
+}
+----
+
+[source,java]
+.Injecting a non-default `MetricRegistry`
+----
+class Example {
+
+    @RegistryScope("myCustomScope")
+    @Inject
+    private MetricRegistry myCustomRegistry;
+}
+----
 --
+* Get a Helidon link:{metrics-mp-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`] instance and invoke its `getRegistry` method.
 +
-Then invoke `getRegistry` on the `RegistryFactory` instance.
-endif::[]
-ifdef::se-flavor[]
-To get a `MetricRegistry` reference, first get a Helidon link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`].
-Then invoke `getRegistry` on the `RegistryFactory` instance.
+--
+Obtain the `RegistryFactory` using either of the following techniques:
+
+** `@Inject RegistryFactory`.
++
+[source,java]
+.Getting the `RegistryFactory` using injection
+----
+class InjectExample {
+
+    @Inject
+    private RegistryFactory registryFactory;
+
+    private MetricRegistry findRegistry(String scope) {
+        return registryFactory.getRegistry(scope);
+    }
+}
+----
++
+** Invoke the static `getInstance()` method on the `RegistryFactory` class.
++
+[source,java]
+.Getting the `RegistryFactory` programmatically
+----
+class Example {
+
+    private MetricRegistry findRegistry(String scope) {
+        return RegistryFactory.getInstance().getRegistry(scope);
+    }
+}
+----
+--
 endif::[]
 
-The `MetricRegistry` allows your code to register new metrics, look up previously-registered metrics, and remove metrics.
+Once it has a reference to a `MetricRegistry` your code can use the reference to register new metrics, look up previously-registered metrics, and remove metrics.
 // end::metric-registry-api[]
 
 // tag::example-apps[]

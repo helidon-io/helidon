@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
@@ -54,6 +55,10 @@ class EchoService implements WsListener {
     @Override
     public Optional<Headers> onHttpUpgrade(HttpPrologue prologue, Headers headers) throws WsUpgradeException {
         WritableHeaders<?> upgradeHeaders = WritableHeaders.create();
+
+        if (!headers.get(HeaderNames.CONNECTION).get().equalsIgnoreCase("Upgrade")) {
+            throw new WsUpgradeException("Must include 'Connection' header with value 'Upgrade'");
+        }
         if (headers.contains(WsUpgrader.PROTOCOL)) {
             List<String> subProtocols = headers.get(WsUpgrader.PROTOCOL).allValues(true);
             if (subProtocols.contains("chat")) {

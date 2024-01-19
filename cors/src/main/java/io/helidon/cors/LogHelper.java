@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,19 @@ class LogHelper {
         }
     }
 
+
+    static <T> void logIsRequestTypeNormalNoOrigin(boolean silent, CorsRequestAdapter<T> requestAdapter) {
+        if (silent || !CorsSupportHelper.LOGGER.isLoggable(DECISION_LEVEL)) {
+            return;
+        }
+        CorsSupportHelper.LOGGER.log(DECISION_LEVEL,
+                                     String.format("Request %s is not cross-host: %s",
+                                                   requestAdapter,
+                                                   List.of("header " + HeaderNames.ORIGIN + " is absent")));
+    }
+
     static <T> void logIsRequestTypeNormal(boolean result, boolean silent, CorsRequestAdapter<T> requestAdapter,
-            Optional<String> originOpt, String host) {
+            Optional<String> originOpt, String effectiveOrigin, String host) {
         if (silent || !CorsSupportHelper.LOGGER.isLoggable(DECISION_LEVEL)) {
             return;
         }
@@ -81,24 +92,27 @@ class LogHelper {
         if (originOpt.isEmpty()) {
             reasonsWhyNormal.add("header " + HeaderNames.ORIGIN + " is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.ORIGIN, originOpt.get()));
+            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.ORIGIN, effectiveOrigin));
         }
 
         if (host.isEmpty()) {
-            reasonsWhyNormal.add("header " + HeaderNames.HOST + " is absent");
+            reasonsWhyNormal.add("header " + HeaderNames.HOST + "/requested URI is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.HOST, host));
+            factorsWhyCrossHost.add(String.format("header %s/requested URI is present (%s)", HeaderNames.HOST, host));
         }
 
         if (originOpt.isPresent()) {
             String partOfOriginMatchingHost = "://" + host;
             if (originOpt.get()
                     .contains(partOfOriginMatchingHost)) {
-                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", HeaderNames.ORIGIN,
-                                                   originOpt.get(), HeaderNames.HOST, host));
+                reasonsWhyNormal.add(String.format("header %s '%s' matches header/requested URI %s '%s'", HeaderNames.ORIGIN,
+                                                   effectiveOrigin, HeaderNames.HOST, host));
             } else {
-                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", HeaderNames.ORIGIN,
-                                                      originOpt.get(), HeaderNames.HOST, host));
+                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header/requested URI %s '%s'",
+                                                      HeaderNames.ORIGIN,
+                                                      effectiveOrigin,
+                                                      HeaderNames.HOST,
+                                                      host));
             }
         }
 

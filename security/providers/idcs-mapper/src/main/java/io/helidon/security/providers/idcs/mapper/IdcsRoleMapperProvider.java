@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,7 +160,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
 
         try {
             List<? extends Grant> grants = appToken.getToken(tracing)
-                    .map(appToken -> obtainGrantsFromServer(subjectName, subjectType, tracing))
+                    .map(appToken -> obtainGrantsFromServer(subjectName, subjectType, appToken, tracing))
                     .orElseThrow(() -> new SecurityException("Application token not available"));
 
             tracing.finish();
@@ -172,7 +172,10 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         }
     }
 
-    private List<? extends Grant> obtainGrantsFromServer(String subjectName, String subjectType, RoleMapTracing tracing) {
+    private List<? extends Grant> obtainGrantsFromServer(String subjectName,
+                                                         String subjectType,
+                                                         String appToken,
+                                                         RoleMapTracing tracing) {
         JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
                 .add("mappingAttributeValue", subjectName)
                 .add("subjectType", subjectType)

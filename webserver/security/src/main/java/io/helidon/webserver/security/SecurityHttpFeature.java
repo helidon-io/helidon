@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,11 @@ public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Wei
      * to the integration).
      */
     public static final String CONTEXT_ADD_HEADERS = "security.addHeaders";
+    /**
+     * Security can accept additional headers to be added to security request.
+     * This will be used to propagate additional headers from successful security response to the final server response.
+     */
+    public static final String CONTEXT_RESPONSE_HEADERS = "security.responseHeaders";
 
     private static final Logger LOGGER = Logger.getLogger(SecurityHttpFeature.class.getName());
 

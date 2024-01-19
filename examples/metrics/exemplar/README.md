@@ -15,7 +15,6 @@ docker run --name zipkin -d -p 9411:9411 openzipkin/zipkin
 
 ## Build and run
 
-With JDK11+
 ```bash
 mvn package
 java -jar target/helidon-examples-metrics-exemplar.jar

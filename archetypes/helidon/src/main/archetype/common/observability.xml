@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -103,14 +103,14 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value>io.helidon.metrics.api.MetricsFactory</value>
                                     </list>
                                     <list key="MainTest-other-imports">
-                                        <value>org.junit.jupiter.api.BeforeAll</value>
+                                        <value>org.junit.jupiter.api.AfterAll</value>
                                     </list>
                                     <list key="MainTest-static-imports">
                                         <value>static org.junit.jupiter.api.Assertions.assertEquals</value>
                                     </list>
                                     <list key="MainTest-methods" order="999">
                                         <value><![CDATA[
-    @BeforeAll
+    @AfterAll
     static void clear() {
         MetricsFactory.closeAll();
     }
@@ -199,7 +199,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value>io.helidon.metrics.api.MetricsFactory</value>
                                     </list>
                                     <list key="MainTest-other-imports">
-                                        <value>org.junit.jupiter.api.BeforeAll</value>
+                                        <value>org.junit.jupiter.api.AfterAll</value>
                                     </list>
                                     <list key="MainTest-static-fields">
                                         <value><![CDATA[
@@ -208,7 +208,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     </list>
                                     <list key="MainTest-methods" order="999">
                                         <value><![CDATA[
-    @BeforeAll
+    @AfterAll
     static void clear() {
         MetricsFactory.closeAll();
     }

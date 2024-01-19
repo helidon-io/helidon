@@ -9,8 +9,6 @@ Use this example for inspiration in writing your own filter or just use the filt
 
 ## Build and run
 
-
-With JDK17+
 ```bash
 mvn package
 java -jar target/http-status-count-mp.jar

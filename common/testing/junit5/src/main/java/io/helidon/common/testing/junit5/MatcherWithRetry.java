@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,15 +44,34 @@ public class MatcherWithRetry {
      * @param <T> type of the supplied value
      */
     public static <T> T assertThatWithRetry(String reason, Supplier<T> actualSupplier, Matcher<? super T> matcher) {
+        return assertThatWithRetry(reason, actualSupplier, matcher, RETRY_COUNT, RETRY_DELAY_MS);
+    }
+
+    /**
+     * Checks the matcher, possibly multiple times after configured delays, invoking the supplier of the matched value each time,
+     * until either the matcher passes or the maximum retry expires.
+     * @param reason explanation of the assertion
+     * @param actualSupplier {@code Supplier} that furnishes the value to submit to the matcher
+     * @param matcher Hamcrest matcher which evaluates the supplied value
+     * @param retryCount number of times to retry the supplier while it does not give an answer satisfying the matcher
+     * @param retryDelayMs delay in milliseconds between retries
+     * @return the supplied value
+     * @param <T> type of the supplied value
+     */
+    public static <T> T assertThatWithRetry(String reason,
+                                            Supplier<T> actualSupplier,
+                                            Matcher<? super T> matcher,
+                                            int retryCount,
+                                            int retryDelayMs) {
 
         T actual = null;
-        for (int i = 0; i < RETRY_COUNT; i++) {
+        for (int i = 0; i < retryCount; i++) {
             actual = actualSupplier.get();
             if (matcher.matches(actual)) {
                 return actual;
             }
             try {
-                Thread.sleep(RETRY_DELAY_MS);
+                Thread.sleep(retryDelayMs);
             } catch (InterruptedException e) {
                 fail("Error sleeping during assertThatWithRetry", e);
             }

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ Incompatible changes described in link:https://download.eclipse.org/microprofile
 
 * *MicroProfile Metrics {version-lib-microprofile-metrics-api}*:
 +
-Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-metrics-5.0/microprofile-metrics-spec-5.0.html#_incompatible_changes[MicroProfile Metrics {version-lib-microprofile-metrics-api} Specification]
+Incompatible changes described in link:https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.html#_incompatible_changes[MicroProfile Metrics {version-lib-microprofile-metrics-api} Specification]
 
 * *MicroProfile OpenAPI {version-lib-microprofile-openapi-api}*:
 +
