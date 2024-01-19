@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,10 +112,10 @@ class MpConfigImpl implements Config {
             profiledKey = "%" + configProfile + "." + key;
         }
         if (configProfile == null) {
-            return findConfigValue(key, Optional.empty())
+            return findConfigValue(key, null)
                     .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
         }
-        return findConfigValue(key, Optional.of(profiledKey))
+        return findConfigValue(key, profiledKey)
                 .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
     }
 
@@ -129,15 +129,11 @@ class MpConfigImpl implements Config {
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
-        String profiledPropertyName = null;
-        if (configProfile != null) {
-            profiledPropertyName = "%" + configProfile + "." + propertyName;
-        }
         if (configProfile == null) {
-            return optionalValue(propertyName, propertyType, Optional.empty());
+            return optionalValue(propertyName, propertyType, null);
+        } else {
+            return optionalValue(propertyName, propertyType, "%" + configProfile + "." + propertyName);
         }
-
-        return optionalValue(propertyName, propertyType, Optional.of(profiledPropertyName));
     }
 
     @SuppressWarnings("unchecked")
@@ -192,13 +188,13 @@ class MpConfigImpl implements Config {
         }
     }
 
-    private <T> Optional<T> optionalValue(String propertyName, Class<T> propertyType, Optional<String> profiledPropertyName) {
+    private <T> Optional<T> optionalValue(String propertyName, Class<T> propertyType, String profiledPropertyName) {
         // let's resolve arrays
         if (propertyType.isArray()) {
             Optional<T> array = Optional.empty();
-            if (profiledPropertyName.isPresent()) {
+            if (profiledPropertyName != null) {
                 // Try first with profiled property
-                array = arrayValue(profiledPropertyName.get(), propertyType);
+                array = arrayValue(profiledPropertyName, propertyType);
             }
             if (array.isEmpty()) {
                 array = arrayValue(propertyName, propertyType);
@@ -334,14 +330,14 @@ class MpConfigImpl implements Config {
         }
     }
 
-    private Optional<ConfigValue> findConfigValue(String propertyName, Optional<String> profiledPropertyName) {
+    private Optional<ConfigValue> findConfigValue(String propertyName, String profiledPropertyName) {
         for (ConfigSource source : sources) {
             String selectedProperty = null;
             String value = null;
-            if (profiledPropertyName.isPresent()) {
+            if (profiledPropertyName != null) {
                 // Try profiled property first
-                selectedProperty = profiledPropertyName.get();
-                value = source.getValue(profiledPropertyName.get());
+                selectedProperty = profiledPropertyName;
+                value = source.getValue(profiledPropertyName);
             }
             if (value == null) {
                 selectedProperty = propertyName;
@@ -355,26 +351,27 @@ class MpConfigImpl implements Config {
             String rawValue = value;
             String name = source.getName();
             int ordinal = source.getOrdinal();
-            final String propName = selectedProperty;
+            // Required final variable, as it is used in lambdas
+            final String selectedPropertyFinal = selectedProperty;
             if (value.isEmpty()) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE, "Found property " + propName
+                    LOGGER.log(Level.TRACE, "Found property " + selectedPropertyFinal
                                           + " in source " + source.getName()
                                           + " and it is empty (removed)");
                 }
-                return Optional.of(new ConfigValueImpl(propName, null, rawValue, name, ordinal));
+                return Optional.empty();
             }
 
             if (LOGGER.isLoggable(Level.TRACE)) {
-                LOGGER.log(Level.TRACE, "Found property " + propName + " in source " + source.getName());
+                LOGGER.log(Level.TRACE, "Found property " + selectedPropertyFinal + " in source " + source.getName());
             }
 
             try {
-                return applyFilters(propName, value)
-                        .map(it -> resolveReferences(propName, it))
-                        .map(it -> new ConfigValueImpl(propName, it, rawValue, name, ordinal));
+                return applyFilters(selectedPropertyFinal, value)
+                        .map(it -> resolveReferences(selectedPropertyFinal, it))
+                        .map(it -> new ConfigValueImpl(selectedPropertyFinal, it, rawValue, name, ordinal));
             } catch (NoSuchElementException e) {
-                return Optional.of(new ConfigValueImpl(propName, null, rawValue, name, ordinal));
+                return Optional.of(new ConfigValueImpl(selectedPropertyFinal, null, rawValue, name, ordinal));
             }
         }
 
