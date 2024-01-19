@@ -60,7 +60,7 @@ import org.glassfish.jersey.spi.ExecutorServiceProvider;
 class HelidonConnector implements Connector {
 
     private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
-            + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";
+            + PropertiesHelper.getSystemProperty("java.runtime.version").run() + ")";
     static final Logger LOGGER = Logger.getLogger(HelidonConnector.class.getName());
 
     private final WebClient webClient;
@@ -148,8 +148,6 @@ class HelidonConnector implements Connector {
         final WebClientRequestBuilder webClientRequestBuilder = webClient.method(request.getMethod());
         webClientRequestBuilder.uri(request.getUri());
 
-        webClientRequestBuilder.headers(HelidonStructures.createHeaders(request.getRequestHeaders()));
-
         for (String propertyName : request.getConfiguration().getPropertyNames()) {
             Object property = request.getConfiguration().getProperty(propertyName);
             if (!propertyName.startsWith("jersey") && String.class.isInstance(property)) {
@@ -177,6 +175,7 @@ class HelidonConnector implements Connector {
                     entityType, request, webClientRequestBuilder, executorServiceKeeper.getExecutorService(request)
             );
         } else {
+            webClientRequestBuilder.headers(HelidonStructures.createHeaders(request.getRequestHeaders()));
             responseStage = webClientRequestBuilder.submit();
         }
 

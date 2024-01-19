@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.jersey.connector;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
@@ -106,27 +107,45 @@ class HelidonEntity {
         if (type != null) {
             final int bufferSize = requestContext.resolveProperty(
                     ClientProperties.OUTBOUND_CONTENT_LENGTH_BUFFER, 8192);
+            CompletableFuture<Void> firstWrite = new CompletableFuture<>();
             switch (type) {
                 case BYTE_ARRAY_OUTPUT_STREAM:
                     final ByteArrayOutputStream baos = new ByteArrayOutputStream(bufferSize);
-                    requestContext.setStreamProvider(contentLength -> baos);
-                    ((ProcessingRunnable) requestContext::writeEntity).run();
-                    stage = requestBuilder.submit(baos);
+                    requestContext.setStreamProvider(unused -> {
+                        requestBuilder.headers(HelidonStructures.createHeaders(requestContext.getRequestHeaders()));
+                        firstWrite.complete(null);
+                        return baos;
+                    });
+                    try {
+                        requestContext.writeEntity();
+                        stage = requestBuilder.submit(baos);
+                    } catch (IOException e) {
+                        stage = CompletableFuture.failedStage(e);
+                    }
                     break;
                 case READABLE_BYTE_CHANNEL:
                     final OutputStreamChannel channel = new OutputStreamChannel(bufferSize);
-                    requestContext.setStreamProvider(contentLength -> channel);
+                    requestContext.setStreamProvider(unused -> {
+                        requestBuilder.headers(HelidonStructures.createHeaders(requestContext.getRequestHeaders()));
+                        firstWrite.complete(null);
+                        return channel;
+                    });
                     executorService.execute((ProcessingRunnable) requestContext::writeEntity);
-                    stage = requestBuilder.submit(channel);
+                    stage = firstWrite.thenCompose(unused -> requestBuilder.submit(channel));
                     break;
                 case OUTPUT_STREAM_MULTI:
                     final OutputStreamMulti publisher = IoMulti.outputStreamMulti();
-                    requestContext.setStreamProvider(contentLength -> publisher);
+                    requestContext.setStreamProvider(unused -> {
+                        requestBuilder.headers(HelidonStructures.createHeaders(requestContext.getRequestHeaders()));
+                        firstWrite.complete(null);
+                        return publisher;
+                    });
                     executorService.execute((ProcessingRunnable) () -> {
                         requestContext.writeEntity();
                         publisher.close();
                     });
-                    stage = requestBuilder.submit(Multi.create(publisher).map(DataChunk::create));
+                    Multi<DataChunk> m = Multi.create(publisher).map(DataChunk::create);
+                    stage = firstWrite.thenCompose(unused -> requestBuilder.submit(m));
                     break;
                 default:
             }
