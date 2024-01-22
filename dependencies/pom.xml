@@ -151,7 +151,7 @@
         <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
-        <version.lib.tyrus>2.1.4</version.lib.tyrus>
+        <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
         <version.lib.weld>4.0.3.Final</version.lib.weld>
         <version.lib.yasson>2.0.4</version.lib.yasson>
