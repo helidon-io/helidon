@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -246,7 +247,16 @@ public class TcpClientConnection implements ClientConnection {
     private InetSocketAddress inetSocketAddress() {
         DnsResolver dnsResolver = connectionKey.dnsResolver();
         if (dnsResolver.useDefaultJavaResolver()) {
-            return new InetSocketAddress(connectionKey.host(), connectionKey.port());
+            try {
+                InetAddress[] addresses = InetAddress.getAllByName(connectionKey.host());
+                addresses = connectionKey.dnsAddressLookup().filter(addresses);
+                if (addresses.length > 0) {
+                    return new InetSocketAddress(addresses[0], connectionKey.port());
+                }
+            } catch (UnknownHostException e) {
+                // falls through
+            }
+            throw new IllegalArgumentException("Failed to get address from host: " + connectionKey.host());
         } else {
             InetAddress address = dnsResolver.resolveAddress(connectionKey.host(), connectionKey.dnsAddressLookup());
             return new InetSocketAddress(address, connectionKey.port());
