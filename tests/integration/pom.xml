@@ -33,7 +33,6 @@
     <name>Helidon Tests Integration</name>
 
     <properties>
-        <version.lib.testcontainers>1.17.5</version.lib.testcontainers>
         <version.lib.testcontainers.keycloak>2.3.0</version.lib.testcontainers.keycloak>
     </properties>
 
