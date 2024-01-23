@@ -22,7 +22,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -246,21 +245,8 @@ public class TcpClientConnection implements ClientConnection {
 
     private InetSocketAddress inetSocketAddress() {
         DnsResolver dnsResolver = connectionKey.dnsResolver();
-        if (dnsResolver.useDefaultJavaResolver()) {
-            try {
-                InetAddress[] addresses = InetAddress.getAllByName(connectionKey.host());
-                addresses = connectionKey.dnsAddressLookup().filter(addresses);
-                if (addresses.length > 0) {
-                    return new InetSocketAddress(addresses[0], connectionKey.port());
-                }
-            } catch (UnknownHostException e) {
-                // falls through
-            }
-            throw new IllegalArgumentException("Failed to get address from host: " + connectionKey.host());
-        } else {
-            InetAddress address = dnsResolver.resolveAddress(connectionKey.host(), connectionKey.dnsAddressLookup());
-            return new InetSocketAddress(address, connectionKey.port());
-        }
+        InetAddress address = dnsResolver.resolveAddress(connectionKey.host(), connectionKey.dnsAddressLookup());
+        return new InetSocketAddress(address, connectionKey.port());
     }
 
     private void debugTls(SSLSocket sslSocket) {
