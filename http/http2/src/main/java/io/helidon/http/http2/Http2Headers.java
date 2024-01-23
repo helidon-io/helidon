@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1277,10 +1277,10 @@ public class Http2Headers {
         }
     }
 
-    private static record DynamicHeader(HeaderName headerName, String value, int size) implements HeaderRecord {
+    private record DynamicHeader(HeaderName headerName, String value, int size) implements HeaderRecord {
     }
 
-    private static record IndexedHeader(HeaderRecord delegate, int index) implements IndexedHeaderRecord {
+    private record IndexedHeader(HeaderRecord delegate, int index) implements IndexedHeaderRecord {
         @Override
         public HeaderName headerName() {
             return delegate().headerName();

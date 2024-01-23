@@ -238,11 +238,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-webserver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.security</groupId>
                 <artifactId>helidon-security-annotations</artifactId>
                 <version>${helidon.version}</version>
@@ -507,16 +502,49 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-apt</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-scan</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-compiler</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-class-model</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor-helidon-copyright</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor-class-model</artifactId>
                 <version>${helidon.version}</version>
@@ -1294,6 +1322,11 @@
             <dependency>
                 <groupId>io.helidon.builder</groupId>
                 <artifactId>helidon-builder-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

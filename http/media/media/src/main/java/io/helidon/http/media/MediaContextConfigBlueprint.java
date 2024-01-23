@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,10 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
 @Prototype.Blueprint(decorator = MediaContextBuilderDecorator.class)
-@Configured
+@Prototype.Configured
 interface MediaContextConfigBlueprint extends Prototype.Factory<MediaContext> {
     /**
      * Media supports to use.
@@ -37,8 +35,8 @@ interface MediaContextConfigBlueprint extends Prototype.Factory<MediaContext> {
      * @return media supports
      */
     @Option.Singular
-    @ConfiguredOption(provider = true,
-                      providerType = MediaSupportProvider.class)
+    @Option.Configured
+    @Option.Provider(MediaSupportProvider.class)
     List<MediaSupport> mediaSupports();
 
     /**
@@ -46,7 +44,7 @@ interface MediaContextConfigBlueprint extends Prototype.Factory<MediaContext> {
      *
      * @return media context to use if supports configured on this request cannot provide a good result
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<MediaContext> fallback();
 
     /**
@@ -54,6 +52,7 @@ interface MediaContextConfigBlueprint extends Prototype.Factory<MediaContext> {
      *
      * @return whether to register default media supports
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean registerDefaults();
 }

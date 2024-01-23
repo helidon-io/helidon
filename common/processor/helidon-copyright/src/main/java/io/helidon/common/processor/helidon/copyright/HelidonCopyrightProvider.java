@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Java {@link java.util.ServiceLoader} provider implementation that generates copyright as used by the Helidon project.
+ *
+ * @deprecated use {@code helidon-codegen-helidon-copyright} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 @Weight(100)
 public class HelidonCopyrightProvider implements CopyrightProvider {
     private static final String COPYRIGHT_TEMPLATE = """

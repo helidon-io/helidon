@@ -386,6 +386,30 @@
             <artifactId>helidon-common-tls</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-apt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-scan</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-compiler</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-class-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-helidon-copyright</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.processor</groupId>
             <artifactId>helidon-common-processor</artifactId>
         </dependency>
@@ -985,6 +1009,10 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-processor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
