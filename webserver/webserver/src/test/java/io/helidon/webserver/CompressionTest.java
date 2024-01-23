@@ -123,6 +123,22 @@ public class CompressionTest {
     }
 
     /**
+     * Test that "content-encoding" header is "br". Note that we use a
+     * {@code SocketHttpClient} as other clients may remove this header after
+     * processing.
+     *
+     * @throws Exception if error occurs.
+     */
+    @Test
+    public void testBrotliHeader() throws Exception {
+        List<String> requestHeaders = Arrays.asList("Accept-Encoding: br");
+        String s = SocketHttpClient.sendAndReceive("/compressed", Http.Method.GET, null,
+                requestHeaders, webServer);
+        Map<String, String> responseHeaders = cutHeaders(s);
+        assertThat(responseHeaders, hasEntry("content-encoding", "br"));
+    }
+
+    /**
      * Test that the entity is decompressed using the correct algorithm.
      *
      * @throws Exception if error occurs.
@@ -146,6 +162,21 @@ public class CompressionTest {
     public void testDeflateContent() throws Exception {
         WebClientRequestBuilder builder = webClient.get();
         builder.headers().add("Accept-Encoding", "deflate");
+        WebClientResponse response = builder.path("/compressed")
+                .request()
+                .await(TIME_OUT);
+        assertThat(response.content().as(String.class).get(), equalTo("It works!"));
+    }
+
+    /**
+     * Test that the entity is decompressed using the correct algorithm.
+     *
+     * @throws Exception if error occurs.
+     */
+    @Test
+    public void testBrotliContent() throws Exception {
+        WebClientRequestBuilder builder = webClient.get();
+        builder.headers().add("Accept-Encoding", "br");
         WebClientResponse response = builder.path("/compressed")
                 .request()
                 .await(TIME_OUT);
