@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,13 @@ public interface DnsResolver {
 
     /**
      * Whether to use standard Java DNS resolver.
-     * If this method returns true, {@link #resolveAddress(String, io.helidon.webclient.api.DnsAddressLookup)} method is not invoked and
-     * no {@link DnsAddressLookup} preferences will be applied.
+     * If this method returns true, {@link #resolveAddress(String, io.helidon.webclient.api.DnsAddressLookup)}
+     * method is not invoked and no {@link DnsAddressLookup} preferences will be applied.
      *
      * @return use standard Java resolver
+     * @deprecated this method is no longer invoked and may be removed in the future
      */
+    @Deprecated(forRemoval = true, since = "4.0.4")
     default boolean useDefaultJavaResolver() {
         return false;
     }

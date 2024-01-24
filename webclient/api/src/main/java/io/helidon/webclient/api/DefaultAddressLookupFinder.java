@@ -41,10 +41,14 @@ final class DefaultAddressLookupFinder {
 
     private static final LazyValue<DnsAddressLookup> DEFAULT_IP_VERSION = LazyValue.create(() -> {
         if (IPV4_PREFERRED.get() || !IPV6_PREFERRED.get()) {
-            LOGGER.log(Level.DEBUG, "Preferring IPv4 over IPv6 address resolution");
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Preferring IPv4 over IPv6 address resolution");
+            }
             return DnsAddressLookup.IPV4_PREFERRED;
         }
-        LOGGER.log(Level.DEBUG, "Preferring IPv6 over IPv4 address resolution");
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG, "Preferring IPv6 over IPv4 address resolution");
+        }
         return DnsAddressLookup.IPV6_PREFERRED;
     });
 
