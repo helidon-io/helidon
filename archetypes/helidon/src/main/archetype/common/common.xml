@@ -51,13 +51,6 @@
         </templates>
         <model>
             <value key="dot-helidon-schema-version">1.1.0</value>
-            <list key="dependencies">
-                <map>
-                    <value key="groupId">io.helidon.logging</value>
-                    <value key="artifactId">helidon-logging-jul</value>
-                    <value key="scope">runtime</value>
-                </map>
-            </list>
         </model>
     </output>
 </archetype-script>

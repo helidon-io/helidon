@@ -38,5 +38,6 @@
         <boolean path="k8s">true</boolean>
         <boolean path="v8o">false</boolean>
         <boolean path="jpms">false</boolean>
+        <boolean path="logging">false</boolean>
     </presets>
 </archetype-script>
