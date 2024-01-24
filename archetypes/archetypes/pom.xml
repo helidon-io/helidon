@@ -26,8 +26,8 @@
         <version>4.0.0-SNAPSHOT</version>
     </parent>
     <packaging>helidon-archetype</packaging>
-    <artifactId>helidon</artifactId>
-    <name>Helidon Archetype</name>
+    <artifactId>helidon-archetypes</artifactId>
+    <name>Helidon Archetypes</name>
 
     <dependencies>
         <dependency>
@@ -83,12 +83,13 @@
                                         <archive target="cli-data/${project.version}/cli-data.zip">
                                             <copy-artifacts>
                                                 <copy-artifact groupId="io.helidon.archetypes"
-                                                               artifactId="helidon"
+                                                               artifactId="helidon-archetypes"
                                                                version="${project.version}"
+                                                               target="helidon-{version}.{type}"
                                                                type="jar"/>
                                             </copy-artifacts>
                                             <templates>
-                                                <template source="src/main/cli/metadata.properties.mustache"
+                                                <template source="src/main/cli/metadata.properties.hbs"
                                                           target="metadata.properties">
                                                     <variables>
                                                         <variable name="buildtoolsVersion"
@@ -101,7 +102,7 @@
                                         </archive>
                                     </archives>
                                     <templates>
-                                        <template source="src/main/cli/versions.xml.mustache" target="cli-data/versions.xml">
+                                        <template source="src/main/cli/versions.xml.hbs" target="cli-data/versions.xml">
                                             <variables>
                                                 <variable name="version" value="${project.version}"/>
                                             </variables>
