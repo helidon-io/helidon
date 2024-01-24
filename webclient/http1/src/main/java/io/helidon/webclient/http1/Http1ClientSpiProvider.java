@@ -52,6 +52,7 @@ public class Http1ClientSpiProvider implements HttpClientSpiProvider<Http1Client
                                    Http1ClientConfig.builder()
                                            .from(client.prototype())
                                            .protocolConfig(config)
+                                           .servicesDiscoverServices(false)
                                            .buildPrototype());
     }
 }
