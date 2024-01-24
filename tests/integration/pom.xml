@@ -59,6 +59,7 @@
         <module>native-image</module>
         <module>oidc</module>
         <module>restclient</module>
+        <module>restclient-connector</module>
         <module>security</module>
         <module>vault</module>
         <module>zipkin-mp-2.2</module>
