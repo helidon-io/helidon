@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
@@ -84,6 +85,13 @@ final class OidcEncryption {
                 Files.writeString(path, password, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
                 if (path.getFileSystem().supportedFileAttributeViews().contains("posix")) {
                     Files.setPosixFilePermissions(path, Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+                } else {
+                    File file = path.toFile();
+                    boolean readable = file.setReadable(true, true);
+                    boolean executable = file.setExecutable(true, true);
+                    if (!readable || !executable) {
+                        LOGGER.log(Level.DEBUG, "Could not set file permission to " + file.toPath());
+                    }
                 }
             } catch (IOException e) {
                 throw new SecurityException("Failed to create OIDC secret " + path.toAbsolutePath(), e);
