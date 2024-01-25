@@ -41,7 +41,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.archetypes</groupId>
-            <artifactId>helidon</artifactId>
+            <artifactId>helidon-archetypes</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -71,7 +71,7 @@
                             <!--suppress UnresolvedMavenProperty -->
                             <enum path="app-type">${app-type}</enum>
                         </presets>
-                        <exec url="mvn://io.helidon.archetypes:helidon:${project.version}!/main.xml"/>
+                        <exec url="mvn://io.helidon.archetypes:helidon-archetypes:${project.version}!/main.xml"/>
                     </entrypoint>
                 </configuration>
             </plugin>
