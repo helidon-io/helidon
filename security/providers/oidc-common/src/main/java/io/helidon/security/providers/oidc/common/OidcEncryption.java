@@ -88,9 +88,9 @@ final class OidcEncryption {
                 } else {
                     File file = path.toFile();
                     boolean readable = file.setReadable(true, true);
-                    boolean executable = file.setExecutable(true, true);
-                    if (!readable || !executable) {
-                        LOGGER.log(Level.DEBUG, "Could not set file permission to " + file.toPath());
+                    boolean executable = file.setWritable(true, true);
+                    if ((!readable || !executable) && LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG, "Could not set file permission to " + path);
                     }
                 }
             } catch (IOException e) {
