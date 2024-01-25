@@ -99,4 +99,9 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
         }
         return result;
     }
+
+    @Override
+    public <T> T unwrap(Class<T> type) {
+        return type.cast(delegate);
+    }
 }

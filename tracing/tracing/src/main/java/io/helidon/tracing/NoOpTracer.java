@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,11 @@ class NoOpTracer implements Tracer {
 
     }
 
+    @Override
+    public <T> T unwrap(Class<T> tracerClass) {
+        return tracerClass.cast(this);
+    }
+
     private static class Builder implements Span.Builder<Builder> {
         @Override
         public Span build() {
@@ -90,6 +95,11 @@ class NoOpTracer implements Tracer {
         @Override
         public Span start(Instant instant) {
             return SPAN;
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> type) {
+            return type.cast(this);
         }
     }
 
@@ -145,6 +155,11 @@ class NoOpTracer implements Tracer {
         @Override
         public Optional<String> baggage(String key) {
             return Optional.empty();
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> spanClass) {
+            return spanClass.cast(this);
         }
     }
 

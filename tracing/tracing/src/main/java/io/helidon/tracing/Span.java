@@ -157,13 +157,7 @@ public interface Span {
      * @return instance of the span
      * @throws java.lang.IllegalArgumentException in case the span cannot provide the expected type
      */
-    default <T> T unwrap(Class<T> spanClass) {
-        try {
-            return spanClass.cast(this);
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException("This span is not compatible with " + spanClass.getName());
-        }
-    }
+    <T> T unwrap(Class<T> spanClass);
 
     /**
      * Span kind.
@@ -297,12 +291,6 @@ public interface Span {
          * @throws java.lang.IllegalArgumentException when the expected type is not the actual type, or the builder cannot be
          *                                            coerced into that type
          */
-        default <T> T unwrap(Class<T> type) {
-            if (type.isAssignableFrom(getClass())) {
-                return type.cast(this);
-            }
-            throw new IllegalArgumentException("This instance cannot be unwrapped to " + type.getName()
-                                                       + ", this builder: " + getClass().getName());
-        }
+        <T> T unwrap(Class<T> type);
     }
 }

@@ -97,6 +97,11 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
         return result;
     }
 
+    @Override
+    public <T> T unwrap(Class<T> type) {
+        return type.cast(spanBuilder);
+    }
+
     // used to set open telemetry context as parent, to be equivalent in function to
     // #parent(SpanContext)
     void parent(Context context) {

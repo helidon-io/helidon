@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,7 @@ class OpenTelemetrySpanContext implements SpanContext {
 
     @Override
     public void asParent(io.helidon.tracing.Span.Builder<?> spanBuilder) {
-        spanBuilder.unwrap(OpenTelemetrySpanBuilder.class)
-                .parent(context);
+        ((OpenTelemetrySpanBuilder) spanBuilder).parent(context);
     }
 
     Context openTelemetry() {

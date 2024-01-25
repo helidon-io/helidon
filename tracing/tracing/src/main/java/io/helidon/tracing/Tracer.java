@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,11 +94,5 @@ public interface Tracer {
      * @param <T> type of the tracer
      * @throws java.lang.IllegalArgumentException in case the tracer cannot provide the expected type
      */
-    default <T> T unwrap(Class<T> tracerClass) {
-        try {
-            return tracerClass.cast(this);
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException("This tracer is not compatible with " + tracerClass.getName());
-        }
-    }
+    <T> T unwrap(Class<T> tracerClass);
 }
