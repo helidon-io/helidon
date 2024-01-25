@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.WritableHeaders;
@@ -46,7 +44,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 /**
  * This can be used by any HTTP client version, and does not act as a factory, for easy extensibility.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint(decorator = HttpClientConfigSupport.HttpBuilderDecorator.class)
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
@@ -66,7 +64,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return base uri of the client requests
      */
-    @ConfiguredOption(type = String.class)
+    @Option.Configured
     Optional<ClientUri> baseUri();
 
     /**
@@ -95,7 +93,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return socket options
      */
-    @ConfiguredOption
+    @Option.Configured
     SocketOptions socketOptions();
 
     /**
@@ -118,7 +116,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return default headers
      */
-    @ConfiguredOption(key = "default-headers", builderMethod = false)
+    @Option.Configured("default-headers")
     Map<String, String> defaultHeadersMap();
 
     /**
@@ -146,7 +144,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return media type parsing mode
      */
-    @ConfiguredOption("STRICT")
+    @Option.Configured
+    @Option.Default("STRICT")
     ParserMode mediaTypeParserMode();
 
     /**
@@ -156,7 +155,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return content encoding context
      */
-    @ConfiguredOption
+    @Option.Configured
     ContentEncodingContext contentEncoding();
 
     /**
@@ -166,7 +165,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return media context
      */
-    @ConfiguredOption("create()")
+    @Option.Configured
+    @Option.Default("create()")
     MediaContext mediaContext();
 
     /**
@@ -184,7 +184,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * @return services to use with this web client
      */
     @Option.Singular
-    @ConfiguredOption(provider = true, providerType = WebClientServiceProvider.class)
+    @Option.Configured
+    @Option.Provider(WebClientServiceProvider.class)
     List<WebClientService> services();
 
     /**
@@ -193,7 +194,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return relative URIs flag
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean relativeUris();
 
     /**
@@ -211,7 +213,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return whether Expect:100-Continue header should be sent on streamed transfers
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean sendExpectContinue();
 
     /**
@@ -220,7 +223,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * This option limits the size. Setting this number lower than the "usual" number of target services will cause connections
      * to be closed and reopened frequently.
      */
-    @ConfiguredOption("256")
+    @Option.Configured
+    @Option.DefaultInt(256)
     int connectionCacheSize();
 
     /**
@@ -228,7 +232,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return cookie manager to use
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<WebClientCookieManager> cookieManager();
 
     /**
@@ -237,7 +241,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return read 100-Continue timeout duration
      */
-    @ConfiguredOption("PT1S")
+    @Option.Configured
+    @Option.Default("PT1S")
     Duration readContinueTimeout();
 
     /**
@@ -245,7 +250,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return true if connection cache is shared
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean shareConnectionCache();
 
     /**
@@ -257,6 +263,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return maximal number of bytes to buffer in memory for supported writers
      */
-    @ConfiguredOption("131072")
+    @Option.Configured
+    @Option.DefaultInt(131072)
     int maxInMemoryEntity();
 }

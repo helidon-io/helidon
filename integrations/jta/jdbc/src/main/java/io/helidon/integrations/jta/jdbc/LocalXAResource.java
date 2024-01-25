@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,17 +42,6 @@ import static javax.transaction.xa.XAException.XAER_PROTO;
 import static javax.transaction.xa.XAException.XAER_RMERR;
 import static javax.transaction.xa.XAException.XAER_RMFAIL;
 import static javax.transaction.xa.XAException.XA_RBROLLBACK;
-import static javax.transaction.xa.XAResource.TMENDRSCAN;
-import static javax.transaction.xa.XAResource.TMFAIL;
-import static javax.transaction.xa.XAResource.TMJOIN;
-import static javax.transaction.xa.XAResource.TMNOFLAGS;
-import static javax.transaction.xa.XAResource.TMONEPHASE;
-import static javax.transaction.xa.XAResource.TMRESUME;
-import static javax.transaction.xa.XAResource.TMSTARTRSCAN;
-import static javax.transaction.xa.XAResource.TMSUCCESS;
-import static javax.transaction.xa.XAResource.TMSUSPEND;
-import static javax.transaction.xa.XAResource.XA_OK;
-import static javax.transaction.xa.XAResource.XA_RDONLY;
 
 /**
  * An {@link XAResource} that adapts an ordinary arbitrary {@link Connection} as much as possible to the {@link
@@ -702,12 +691,11 @@ final class LocalXAResource implements XAResource {
      * Inner and nested classes.
      */
 
-
-    static record Association(BranchState branchState,
-                              Xid xid,
-                              boolean suspended,
-                              Connection connection,
-                              boolean priorAutoCommit) {
+    record Association(BranchState branchState,
+                       Xid xid,
+                       boolean suspended,
+                       Connection connection,
+                       boolean priorAutoCommit) {
 
         private static final Logger LOGGER = Logger.getLogger(Association.class.getName());
 

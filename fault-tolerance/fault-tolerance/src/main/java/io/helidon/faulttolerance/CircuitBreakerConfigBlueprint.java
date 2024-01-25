@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,10 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 @Prototype.Blueprint(decorator = CircuitBreakerConfigBlueprint.BuilderDecorator.class)
-@Configured(prefix = "fault-tolerance.circuit-breakers", root = true)
+@Prototype.Configured("fault-tolerance.circuit-breakers")
 @ConfigBean(wantDefault = true, repeatable = true)
 interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker> {
     int DEFAULT_ERROR_RATIO = 60;
@@ -42,7 +40,8 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      *
      * @return delay
      */
-    @ConfiguredOption("PT5S")
+    @Option.Configured
+    @Option.Default("PT5S")
     Duration delay();
 
     /**
@@ -54,7 +53,8 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      * @return percent of failure that trigger the circuit to open
      * @see #volume()
      */
-    @ConfiguredOption("60")
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_ERROR_RATIO)
     int errorRatio();
 
     /**
@@ -64,7 +64,8 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      * @return how big a window is used to calculate error errorRatio
      * @see #errorRatio()
      */
-    @ConfiguredOption("10")
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_VOLUME)
     int volume();
 
     /**
@@ -74,7 +75,8 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      *
      * @return number of calls
      */
-    @ConfiguredOption("1")
+    @Option.Configured
+    @Option.DefaultInt(DEFAULT_SUCCESS_THRESHOLD)
     int successThreshold();
 
     /**

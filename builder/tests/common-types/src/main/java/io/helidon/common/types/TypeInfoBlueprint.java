@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,14 @@ interface TypeInfoBlueprint extends Annotated {
      */
     @Option.Required
     TypeName typeName();
+
+    /**
+     * Description, such as javadoc, if available.
+     *
+     * @return description of this element
+     */
+    @Option.Redundant
+    Optional<String> description();
 
     /**
      * The type element kind.
@@ -182,7 +190,7 @@ interface TypeInfoBlueprint extends Annotated {
      */
     @Option.Singular
     @Option.Redundant
-    @Option.Deprecated("typeModifiers")
+    @Option.Deprecated("elementModifiers")
     @Deprecated(forRemoval = true, since = "4.1.0")
     Set<String> modifiers();
 
