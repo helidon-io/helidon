@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,11 @@ import static io.helidon.builder.processor.Types.RUNTIME_PROTOTYPE_TYPE;
 /**
  * Annotation processor for prototype blueprints.
  * Generates prototype implementation from the blueprint.
+ *
+ * @deprecated replaced with helidon-builder-codegen in
+ *     combination with helidon-codegen-apt
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public class BlueprintProcessor extends AbstractProcessor {
     private static final String SOURCE_SPACING = "    ";
     private static final TypeName GENERATOR = TypeName.create(BlueprintProcessor.class);
