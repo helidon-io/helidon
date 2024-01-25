@@ -41,5 +41,6 @@
         <module>gh2772</module>
         <module>path-params</module>
         <module>security-response-mapper</module>
+        <module>security-annotation</module>
     </modules>
 </project>

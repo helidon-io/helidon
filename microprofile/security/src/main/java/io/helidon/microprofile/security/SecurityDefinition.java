@@ -229,11 +229,13 @@ class SecurityDefinition {
             default -> {}
         }
 
-        this.requiresAuthorization = switch (analyzerResponse.authorizationResponse()) {
-            case REQUIRED, OPTIONAL -> true;
-            case FORBIDDEN -> false;
-            default -> null;
-        };
+        if (this.requiresAuthorization == null) {
+            this.requiresAuthorization = switch (analyzerResponse.authorizationResponse()) {
+                case REQUIRED, OPTIONAL -> true;
+                case FORBIDDEN -> false;
+                default -> null;
+            };
+        }
 
         this.authenticator = analyzerResponse.authenticator().orElse(this.authenticator);
         this.authorizer = analyzerResponse.authorizer().orElse(this.authorizer);
