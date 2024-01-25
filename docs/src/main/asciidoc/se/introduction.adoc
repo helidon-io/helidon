@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-Helidon SE is Helidon's foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking. 
+Helidon SE is Helidon's foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking.
 
 == Components
 
@@ -135,8 +135,8 @@ HTTP client that handles responses to the HTTP requests.
 .WebServer
 [icon=settings_ethernet,link=webserver.adoc]
 --
-A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests. 
-// Each request runs in its own dedicated thread so it is free to perform blocking operations in a simple synchronous way without blocking a platform thread or starving other requests.
+A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests.
+// Each request runs in its own dedicated thread, so it is free to perform blocking operations in a simple synchronous way without blocking a platform thread or starving other requests.
 
 --
 //WebSocket

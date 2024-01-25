@@ -1,4 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
+
     Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,8 +42,8 @@ This dependency allows your application to create, configure, and register the `
 include::{ui-inc}[tag=usage]
 
 == API
-With the Helidon OpenAPI UI dependency in your `pom.xml` file, Helidon's OpenAPI support automatically includes the default UI behavior, possibly modified by any UI settings you have in your configuration.
-You do not have to do anything else to enable the UI.
+With the Helidon OpenAPI UI dependency in your `pom.xml` file, the OpenAPI support automatically includes the default UI behavior,
+ possibly modified by any UI settings you have in your configuration. You do not have to do anything else to enable the UI.
 
 === Creating `OpenApiFeature` with Automatic UI Behavior
 Some applications explicitly create the `OpenApiFeature` object to tailor its behavior before registering it with the server.
@@ -51,18 +52,9 @@ If your `pom.xml` includes a dependency on the OpenAPI UI component, then any `O
 [source,java]
 .Create `OpenApiFeature` with automatic UI
 ----
-Config config = Config.create(); // <1>
-Config.global(config);
-
-WebServer server = WebServer.builder()
-        .config(config.get("server"))
-        .addFeature(OpenApiFeature.create(Config.global().get("openapi"))) // <2>
-        .routing(Main::routing)
-        .build()
-        .start();
+include::{sourcedir}/se/OpenApiSnippets.java[tag=snippet_1, indent=0]
 ----
-<1> Load and set the global configuration.
-<2> Add the OpenAPI feature to the server, configured using the `openapi` section of the configuration.
+<1> Add the OpenAPI feature to the server, configured using the `openapi` section of the configuration.
 
 If your code invokes the `OpenApiFeature.Builder` `config` method, Helidon automatically applies the `ui` section of the `openapi` configuration to the UI.
 
@@ -77,35 +69,17 @@ The following example illustrates these steps, combining configuration with expl
 [source,java]
 .Create `OpenApiUi` and `OpenAPISupport` instances
 ----
-Config config = Config.create(); // <1>
-Config.global(config);
-
-Config openApiConfig = Config.global().get("openapi"); // <2>
-WebServer server = WebServer.builder()
-        .config(config.get("server"))
-        .addFeature(OpenApiFeature.builder() // <3>
-                            .addService(OpenApiUi.builder() // <4>
-                                                .webContext("my-ui") // <5>
-                                                .config(openApiConfig.get("ui")) // <6>
-                                                .build()) // <7>
-                            .config(openApiConfig)
-                            .build()) // <8>
-        .routing(Main::routing)
-        .build()
-        .start();
+include::{sourcedir}/se/OpenApiSnippets.java[tag=snippet_2, indent=0]
 ----
-<1> Load and set global configuration.
-<2> Extract the `openapi` config.
-<3> Begin setting up the `OpenApiFeature` builder.
-<4> Create the UI builder.
-<5> Set UI behavior programmatically.
-<6> Set additional UI behavior based on UI configuration.
-<7> Build the `OpenApiUi` object.
-<8> Build the `OpenApiFeature` object.
+<1> Extract the `openapi` config.
+<2> Begin setting up the `OpenApiFeature` builder.
+<3> Create the UI builder.
+<4> Set UI behavior programmatically.
+<5> Set additional UI behavior based on UI configuration.
 
 The order in which your code invokes the methods on `OpenApiUi.Builder` and `OpenApiFeature.Builder` determines the outcome.
 For instance, the example above adds the UI service to the `OpenApiFeature.Builder` _before_ applying configuration to the `OpenApiFeature.Builder`.
-If the configuration contains a setting for the UI's `web-context` value, then the UI uses the configured value and not the programmatic value because your code applies the configuration later.
+If the configuration contains a setting for the UI `web-context` value, then the UI uses the configured value and not the programmatic value because your code applies the configuration later.
 Your code should typically apply configuration _after_ setting any values programmatically.
 Doing so allows users or deployers of your service to set the behavior using configuration according to their particular needs which your code might not be able to anticipate.
 

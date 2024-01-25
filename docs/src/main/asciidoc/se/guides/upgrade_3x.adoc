@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,13 +21,16 @@
 :keywords: helidon, porting, migration, upgrade, incompatibilities
 :rootdir: {docdir}/../..
 
+include::{rootdir}/includes/attributes.adoc[]
+
 In Helidon 3 we have made some changes to APIs and runtime behavior. This guide
 will help you upgrade a Helidon SE 2.x application to 3.x.
 
 
 == Java 17 Runtime
 
-Java 11 is no longer supported in Helidon 3. Java 17 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
+Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
+Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
 
 == New Routing
 
@@ -61,7 +64,7 @@ available on the classpath.
 ----
 <dependency>
     <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-reactive-webserver-http2</artifactId>
+    <artifactId>helidon-webserver-http2</artifactId>
 </dependency>
 ----
 
@@ -92,7 +95,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 ----
 <dependency>
     <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-reactive-webserver-tyrus</artifactId>
+    <artifactId>helidon-webserver-tyrus</artifactId>
 </dependency>
 ----
 
@@ -101,7 +104,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 ----
 <dependency>
     <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-reactive-webserver-websocket</artifactId>
+    <artifactId>helidon-webserver-websocket</artifactId>
 </dependency>
 ----
 
@@ -110,17 +113,7 @@ In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as addi
 .Helidon 2 WebSocket route registering
 [source, java]
 ----
-WebServer.builder(Routing.builder()
-             .register("/rest", new SomeRestService()) //<1>
-             .register("/websocket",TyrusSupport.builder() //<2>
-                 .register(ServerEndpointConfig.Builder
-                           .create(MessageBoardEndpoint.class, "/")
-                           .encoders(encoders)
-                           .build())
-                 .build()
-             ))
-             .port(8080)
-   .build();
+include::{sourcedir}/se/guides/Upgrade3xSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Traditional REST routing service registration
 <2> WebSocket setup with Tyrus service
@@ -130,17 +123,7 @@ In Helidon 3, WebSocket routing is defined by adding another routing:
 .Helidon 3 WebSocket route registering
 [source, java]
 ----
-WebServer.builder()
-         .routing(r -> r
-              .register("/rest", new SomeRestService()) //<1>
-         )
-         .addRouting(WebSocketRouting.builder() //<2>
-                        .endpoint("/websocket", ServerEndpointConfig.Builder
-                                .create(MessageBoardEndpoint.class, "/board")
-                                .encoders(encoders)
-                                .build())
-                        .build())
-         .port(8080)
+include::{sourcedir}/se/guides/Upgrade3xSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Traditional REST routing service registration
 <2> WebSocket routing setup
@@ -148,7 +131,10 @@ WebServer.builder()
 
 == Deprecations
 
-- The custom Helidon OCI clients have been deprecated (link:https://github.com/oracle/helidon/pull/4015[See PR]). Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
+- The custom Helidon OCI clients have been deprecated (link:https://github.com/oracle/helidon/pull/4015[See PR]).
+
+Use the OCI Java SDK instead.
+If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
 
 NOTE: See xref:{rootdir}/se/integrations/oci.adoc#oci-compatibility[Resolving compatibility issue with OCI SDK] for detailed information on how to work around this issue.
 

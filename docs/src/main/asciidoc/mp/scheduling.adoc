@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ For simple fixed rate invocation interval is `@FixedRate` the easiest way for sc
 
 [source,java]
 ----
-@FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_1, indent=0]
 ----
 
 All values defined with the annotation can be overridden from the config.
@@ -79,7 +79,7 @@ _FixedRateInvocation_ injected as method parameter.
 
 [source,java]
 ----
-@FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_2, indent=0]
 ----
 
 === Cron expression
@@ -88,8 +88,7 @@ For more complicated interval definition, cron expression can be leveraged with 
 
 [source,java]
 ----
-@Scheduled("0 15 8 ? * *", concurrentExecution = false)
-public void methodName() { ... }
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_3, indent=0]
 ----
 
 include::{rootdir}/includes/cron.adoc[lines=19..]
@@ -99,8 +98,7 @@ Metadata like human-readable interval description or configured values are avail
 
 [source,java]
 ----
-@Scheduled("0 15 8 ? * *")
-public void methodName(CronInvocation inv) { ... }
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_4, indent=0]
 ----
 
 == Configuration
@@ -131,10 +129,7 @@ fully.qualified.ClassName.methodName:
 [source,java]
 .Example of scheduling with fixed rate
 ----
-@FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
-public void methodName() {
-    System.out.println("Every 10 minutes, first invocation 5 minutes after start");
-}
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_5, indent=0]
 ----
 
 === FixedRate Metadata Injection
@@ -142,10 +137,7 @@ public void methodName() {
 [source,java]
 .Example with invocation metadata
 ----
-@FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
-public void methodName(FixedRateInvocation inv) {
-    System.out.println("Method invoked " + inv.description());
-}
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_6, indent=0]
 ----
 
 === Cron expression
@@ -153,10 +145,7 @@ public void methodName(FixedRateInvocation inv) {
 [source,java]
 .Example of scheduling with cron expression
 ----
-@Scheduled("0 15 8 ? * *", concurrentExecution = false)
-public void methodName() {
-    System.out.println("Executer every day at 8:15");
-}
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_7, indent=0]
 ----
 
 === Scheduled Metadata Injection.
@@ -164,10 +153,7 @@ public void methodName() {
 [source,java]
 .Example with invocation metadata
 ----
-@Scheduled("0 15 8 ? * *")
-public void methodName(CronInvocation inv) {
-    System.out.println("Method invoked " + inv.description());
-}
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_8, indent=0]
 ----
 
 == Reference

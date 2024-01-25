@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -64,16 +64,7 @@ First you'll need to create a test class with an empty test method, and annotate
 [source,java]
 .Test Class
 ----
-import io.helidon.microprofile.testing.junit5.HelidonTest;
-
-import org.junit.jupiter.api.Test;
-
-@HelidonTest
-class GreetTest {
-    @Test
-    void testDefaultGreeting() {
-    }
-}
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_1, indent=0]
 ----
 
 The `@HelidonTest` annotation will cause the test extension to start a Helidon MicroProfile server so that you do not need to manage the server lifecycle in your test. The container is initialized once before the test class is instantiated, and shut down after the last test runs.
@@ -82,8 +73,7 @@ You can see this in the test output:
 
 [source,listing]
 ----
-`INFO io.helidon.microprofile.server.ServerCdiExtension: Server started on http://localhost:56293 (and all other host addresses) in 1893 milliseconds (since JVM startup)`.
-[source,java]
+INFO io.helidon.microprofile.server.ServerCdiExtension: Server started on http://localhost:56293 (and all other host addresses) in 1893 milliseconds (since JVM startup).
 ----
 
 NOTE: The `@HelidonTest` annotation uses a random port regardless of the port configured in the application.yaml.
@@ -138,31 +128,7 @@ Here's an example showing how these approaches are used to execute the same endp
 
 [source,java]
 ----
-@HelidonTest(resetPerTest = true)
-class GreetTest {
-    @Test
-    void testDefaultGreeting(WebTarget webTarget) {
-        validate(webTarget, "/greet", "Hello World!");
-    }
-
-    @Test
-    @AddConfig(key = "app.greeting", value = "Unite")
-    void testConfiguredGreeting(WebTarget webTarget) {
-        validate(webTarget, "/greet", "Unite World!");
-    }
-
-    private void validate(WebTarget webTarget,
-                          String path,
-                          String expected) {
-
-        JsonObject jsonObject = webTarget.path(path)
-                .request()
-                .get(JsonObject.class);
-
-        String actual = jsonObject.getString("message");
-        assertEquals(expected, actual, "Message in JSON");
-    }
-}
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_2, indent=0]
 ----
 
 === Use Beans for Testing
@@ -171,14 +137,14 @@ If you prefer to use only beans for testing, and want to add a different bean fo
 
 [source,java]
 ----
-@AddBean(TestBean.class)
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_3, indent=0]
 ----
 
-By default the bean is added to the container with scope set to `ApplicationScoped`. You can customize scope either by annotating the bean class with another scope or through the annotation:
+By default, the bean is added to the container with scope set to `ApplicationScoped`. You can customize scope either by annotating the bean class with another scope or through the annotation:
 
 [source, java]
 ----
-@AddBean(value = TestBean.class, scope = Dependent.class)
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_4, indent=0]
 ----
 
 
@@ -192,7 +158,7 @@ For this purpose, we provide the following annotation which adds the extension t
 
 [source, java]
 ----
-@AddExtension(TestExtension.class)
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_5, indent=0]
 ----
 
 
@@ -202,7 +168,7 @@ If you want to disable discovery and only add custom extensions and beans, then 
 
 [source, java]
 ----
-@DisableDiscovery
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_6, indent=0]
 ----
 
 NOTE: This annotation is typically used in conjunction with `@AddBeans` and/or `@AddExtension`. As you have seen in standard test output, by default Helidon starts with the dependencies defined in pom.xml.
@@ -214,44 +180,7 @@ If you want just the basic test features enabled, then you only have to add a fe
 
 [source, java]
 ----
-import jakarta.inject.Inject;
-
-import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
-import io.helidon.microprofile.testing.junit5.AddExtension;
-import io.helidon.microprofile.testing.junit5.DisableDiscovery;
-import io.helidon.microprofile.testing.junit5.HelidonTest;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@HelidonTest
-@DisableDiscovery
-@AddExtension(ConfigCdiExtension.class)
-@AddBean(GreetTest.ConfiguredBean.class)
-@AddConfig(key = "test.message", value = "Hello Guide!")
-class GreetTest {
-    @Inject
-    ConfiguredBean bean;
-
-    @Test
-    void testBean() {
-        assertEquals("Hello Guide!", bean.message());
-    }
-
-    public static class ConfiguredBean {
-        @Inject
-        @ConfigProperty(name = "test.message")
-        private String message;
-
-        String message() {
-            return message;
-        }
-    }
-}
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_7, indent=0]
 ----
 
 == Summary

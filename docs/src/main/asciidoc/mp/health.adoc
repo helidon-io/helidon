@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -247,18 +247,7 @@ using CDI.  The following example shows how to add a custom liveness health chec
 [source,java]
 .Create a new `GreetLivenessCheck` class with the following content:
 ----
-@Liveness // <1>
-@ApplicationScoped // <2>
-public class GreetLivenessCheck implements HealthCheck {
-
-  @Override
-  public HealthCheckResponse call() {
-    return HealthCheckResponse.named("LivenessCheck")  // <3>
-        .up()
-        .withData("time", System.currentTimeMillis())
-        .build();
-  }
-}
+include::{sourcedir}/mp/HealthSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Annotation indicating this is a liveness health check.
 <2> Annotation indicating this is a bean instantiated once per application (in Helidon this means just once per runtime).
@@ -295,28 +284,7 @@ example, the server will wait five seconds before it becomes ready.
 [source,java]
 .Create a new `GreetReadinessCheck` class with the following content:
 ----
-@Readiness // <1>
-@ApplicationScoped
-public class GreetReadinessCheck implements HealthCheck {
-  private final AtomicLong readyTime = new AtomicLong(0);
-
-  @Override
-  public HealthCheckResponse call() {
-    return HealthCheckResponse.named("ReadinessCheck")  // <2>
-        .status(isReady())
-        .withData("time", readyTime.get())
-        .build();
-  }
-
-  public void onStartUp(
-      @Observes @Initialized(ApplicationScoped.class) Object init) {
-    readyTime.set(System.currentTimeMillis()); // <3>
-  }
-
-  private boolean isReady() { // <4>
-    return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 5;
-  }
-}
+include::{sourcedir}/mp/HealthSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Annotation indicating that this is a readiness health check.
 <2> Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
@@ -393,29 +361,7 @@ In this example, the server will wait eight seconds before it declares itself st
 [source,java]
 .Create a new `GreetStartedCheck` class with the following content:
 ----
-@Startup // <1>
-@ApplicationScoped
-public class GreetStartedCheck implements HealthCheck {
-  private final AtomicLong readyTime = new AtomicLong(0);
-
-
-  @Override
-  public HealthCheckResponse call() {
-    return HealthCheckResponse.named("StartedCheck")  // <2>
-        .status(isStarted())
-        .withData("time", readyTime.get())
-        .build();
-  }
-
-  public void onStartUp(
-      @Observes @Initialized(ApplicationScoped.class) Object init) {
-    readyTime.set(System.currentTimeMillis()); // <3>
-  }
-
-  private boolean isStarted() { // <4>
-    return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 8;
-  }
-}
+include::{sourcedir}/mp/HealthSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Annotation indicating that this is a startup health check.
 <2> Build the `HealthCheckResponse` with status `UP` after eight seconds, else `DOWN`.

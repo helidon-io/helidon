@@ -32,6 +32,8 @@
     <properties>
         <helidon.services.skip>true</helidon.services.skip>
         <helidon.sitegen.skip>false</helidon.sitegen.skip>
+        <version.lib.jbatch-api>2.1.0</version.lib.jbatch-api>
+        <version.lib.jbatch.container>2.1.0</version.lib.jbatch.container>
     </properties>
 
     <dependencies>
@@ -39,6 +41,29 @@
             <groupId>io.helidon</groupId>
             <artifactId>helidon-all</artifactId>
             <type>pom</type>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-client</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-objectstorage</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.batch</groupId>
+            <artifactId>jakarta.batch-api</artifactId>
+            <version>${version.lib.jbatch-api}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.jbatch</groupId>
+            <artifactId>com.ibm.jbatch.spi</artifactId>
+            <version>${version.lib.jbatch.container}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
@@ -68,6 +93,22 @@
                     <siteGenerateSkip>${helidon.sitegen.skip}</siteGenerateSkip>
                     <siteArchiveSkip>${helidon.sitegen.skip}</siteArchiveSkip>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <proc>none</proc>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

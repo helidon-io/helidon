@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,14 +46,7 @@ For JAX-RS resources, declare security by adding annotations to a resource class
 [source,java]
 .Protected resource method
 ----
-@GET
-@io.helidon.security.annotations.Authenticated
-@io.helidon.security.annotations.Authorized
-// you can also use io.helidon.security.abac.role.RoleValidator.Roles
-@RolesAllowed("admin")
-public String adminResource(@Context io.helidon.security.SecurityContext securityContext) {
-  return "you are " + securityContext.userName();
-}
+include::{sourcedir}/mp/security/SecuritySnippets.java[tag=snippet_1, indent=0]
 ----
 
 Security in Helidon MicroProfile is built on top of Jersey's and can be enabled/disabled

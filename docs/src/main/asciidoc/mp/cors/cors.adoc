@@ -152,26 +152,7 @@ The discussion below describes the changes in the application which:
 .Using annotations to declare CORS behavior
 [source,java]
 ----
-@Path("/greet")
-public class GreetResource { // <1>
-
-    @GET
-    public JsonObject getDefaultMessage() {...} // <2>
-
-    @Path("/greeting")
-    @PUT
-    public Response updateGreeting(JsonObject jsonObject) {...} // <3>
-
-    @OPTIONS
-    @CrossOrigin()
-    public void optionsForRetrievingUnnamedGreeting() {} // <4>
-
-    @OPTIONS
-    @Path("/greeting")
-    @CrossOrigin({"http://foo.com", "http://there.com"},
-                 allowMethods = {HttpMethod.PUT})
-    public void optionsForUpdatingGreeting() {} // <5>
-}
+include::{sourcedir}/mp/cors/CorsSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Existing `GreetResource` resource class with path `/greet`.
 <2> Existing `@GET` method for resource `/greet`.

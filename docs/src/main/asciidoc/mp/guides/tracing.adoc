@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
-Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
+Distributed tracing is a critical feature of microservice based applications, since it traces workflow both
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
 which helps you identify performance and operational issues.  Helidon MP includes support for distributed tracing
 through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer
@@ -125,14 +125,16 @@ default host and port, `localhost:14250`.
 [source,xml]
 .Add the following dependency to `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.microprofile.tracing</groupId>
-    <artifactId>helidon-microprofile-tracing</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.microprofile.tracing</groupId>
+        <artifactId>helidon-microprofile-tracing</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.tracing.providers</groupId>
+        <artifactId>helidon-tracing-providers-jaeger</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 All spans sent by Helidon to Jaeger need to be associated with a service.  Specify the service name below.
@@ -165,7 +167,7 @@ curl http://localhost:8080/greet
 
 === View Tracing Using Jaeger UI
 
-The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents a structure of spans.  Jaeger provides a web-based UI at http://localhost:16686/search, where you can see a visual representation of the same data and the relationship between spans within a trace.  If you see a `Lens UI` button at the top center then click on it and it will take you to the specific UI used by this guide.
+The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents a structure of spans.  Jaeger provides a web-based UI at http://localhost:16686/search, where you can see a visual representation of the same data and the relationship between spans within a trace.  If you see a `Lens UI` button at the top center then click on it, and it will take you to the specific UI used by this guide.
 
 Click on the UI Find traces button (the search icon) as shown in the image below.
 
@@ -177,7 +179,7 @@ The image below shows the trace summary, including start time and duration of ea
 .Tracing list view
 image::guides/12_tracing_top.png[Traces]
 
-Click on a trace and you will see the trace detail page where the spans are listed.  You can clearly see the root span and the relationship among all the spans in the trace, along with timing information.
+Click on a trace, and you will see the trace detail page where the spans are listed.  You can clearly see the root span and the relationship among all the spans in the trace, along with timing information.
 
 .Trace detail page
 image::guides/12_tracing_detail.png[Trace Detail]
@@ -197,17 +199,9 @@ To trace at the method level, you just annotate a method with @Traced.
 [source,java]
 .Update the `GreetingProvider` class; 1) Add a new import and 2) Add the @Traced annotation to the `getMessage` method:
 ----
-import org.eclipse.microprofile.opentracing.Traced; // <1>
-
-class MyClass{
-    @Traced  // <2>
-    String getMessage() {
-        return message.get();
-    }
-}
+include::{sourcedir}/mp/guides/TracingSnippets.java[tag=snippet_1, indent=0]
 ----
-<1> Import the `Traced` annotation.
-<2> Enable tracing for getMessage.
+<1> Enable tracing for getMessage.
 
 [source,bash]
 .Build and run the application, then invoke the endpoints and check the response:
@@ -227,14 +221,7 @@ except for the constructor and private methods.
 [source,java]
 .Update the `GreetingProvider` class; 1) Add @Traced to the `GreetingProvider` class and 2) Remove @Traced from the `getMessage` method:
 ----
-@Traced // <1>
-@ApplicationScoped
-public class GreetingProvider {
-
-    String getMessage() { // <2>
-        return message.get();
-    }
-}
+include::{sourcedir}/mp/guides/TracingSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> This will enable tracing for all class methods, except for the constructor and methods that are private.
 <2> Remove @Traced for the `getMessage` method.
@@ -251,29 +238,7 @@ NOTE: Methods invoked directly by your code are not enabled for tracing, even if
 [source,java]
 .Update the `GreetingProvider` class with the following code:
 ----
-@ApplicationScoped
-public class GreetingProvider {
-    private final AtomicReference<String> message = new AtomicReference<>();
-
-    @Inject
-    public GreetingProvider(@ConfigProperty(name = "app.greeting") String message) {
-        this.message.set(message);
-    }
-
-    @Traced // <1>
-    String getMessage() {
-        return getMessage2();
-    }
-
-    @Traced  // <2>
-    String getMessage2() {
-        return message.get();
-    }
-
-    void setMessage(String message) {
-        this.message.set(message);
-    }
-}
+include::{sourcedir}/mp/guides/TracingSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> The `getMessage` method will be traced since it is externally invoked by `GreetResource`.
 <2> The `getMessage2` method will not be traced, even with the @Traced annotation, since it is called internally by `getMessage`.
@@ -363,55 +328,7 @@ call it.
 [source,java]
 .Replace the `GreetResource` class with the following code:
 ----
-package io.helidon.examples.quickstart.se;
-
-import java.util.Collections;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
-import org.glassfish.jersey.server.Uri;
-
-@Path("/greet")
-@RequestScoped
-public class GreetResource {
-
-  @Uri("http://localhost:8081/greet")
-  private WebTarget target; // <1>
-
-  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-  private final GreetingProvider greetingProvider;
-
-  @Inject
-  public GreetResource(GreetingProvider greetingConfig) {
-    this.greetingProvider = greetingConfig;
-  }
-
-  @SuppressWarnings("checkstyle:designforextension")
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  public JsonObject getDefaultMessage() {
-    return createResponse("World");
-  }
-
-  @GET
-  @Path("/outbound") // <2>
-  public JsonObject outbound() {
-    return target.request().accept(MediaType.APPLICATION_JSON_TYPE).get(JsonObject.class);
-  }
-
-  private JsonObject createResponse(String who) {
-    String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
-
-    return JSON.createObjectBuilder().add("message", msg).build();
-  }
-}
+include::{sourcedir}/mp/guides/TracingSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> This is the `WebTarget` needed to send a request to the second service at port `8081`.
 <2> This is the new endpoint that will call the second service.
@@ -424,7 +341,7 @@ curl -i http://localhost:8080/greet/outbound // <1>
 ----
 <1> The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
 
-[source, json]
+[source, hocon]
 ----
 {
   "message": "Hello From MP-2 World!" // <1>
@@ -514,7 +431,7 @@ take a few seconds before it is ready.
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-tracing // <1>
+  name: helidon-tracing # <1>
   labels:
     app: helidon-tracing
 spec:
@@ -531,7 +448,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-tracing
 spec:
-  replicas: 1 // <2>
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-tracing

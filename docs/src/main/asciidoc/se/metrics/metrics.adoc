@@ -52,7 +52,8 @@ Helidon SE metrics is a neutral metrics API which provides
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=overview]
 
 === A Word about Terminology
-Helidon {flavor-uc} uses the term "metrics" to refer to the subsystem in Helidon which manages the registration of, updates to, and reporting of aggregate statistical measurements about the service.
+Helidon {flavor-uc} uses the term "metrics" to refer to the subsystem in Helidon which manages the registration of, updates to,
+ and reporting of aggregate statistical measurements about the service.
 The term "{meter}" refers to an entity which collects these measurements, such as a counter or a timer.
 
 // Maven coordinates comes next
@@ -124,22 +125,7 @@ If you disable auto-discovery, you can add the metrics observer explicitly.
 
 [source,java]
 ----
-Config config = Config.create();
-Config.global(config);
-
-ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(MetricsObserver.create())
-        .build();
-
-WebServer server = WebServer.builder()
-                .config(Config.global().get("server"))
-                .featuresDiscoverServices(false)
-                .addFeature(observe)
-                .routing(Main::routing)
-                .build()
-                .start();
-
+include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_1, indent=0]
 ----
 
 
@@ -205,35 +191,15 @@ The rest of this section shows how to add a custom meter to your code and how to
 
 === Example Application Code
 
-The following example, based on the Helidon SE QuickStart application, shows how to register and update a new `Counter` in application code. The counter tracks the number of times any of the service endpoints is accessed.
+The following example, based on the Helidon SE QuickStart application, shows how to register and update a new `Counter` in application code.
+ The counter tracks the number of times any of the service endpoints is accessed.
 
 .Define and use a `Counter`
 [source,java]
 ----
-import io.helidon.metrics.api.Counter;
-//...
+include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_2, indent=0]
 
-public class GreetService implements HttpService {
-
-    private final Counter accessCtr = Metrics.globalRegistry() // <1>
-            .getOrCreate(Counter.builder("accessctr"));        // <2>
-
-    @Override
-    public void routing(HttpRules rules) {
-        rules
-            .any(this::countAccess)                            // <3>
-            .get("/", this::getDefaultMessageHandler)
-            .get("/{name}", this::getMessageHandler)
-            .put("/greeting", this::updateGreetingHandler)
-
-    }
-
-    private void countAccess(ServerRequest request,
-                             ServerResponse response) {
-            accessCtr.inc();                                   // <4>
-            request.next();
-    }
-}
+include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Get the global meter registry.
 <2> Create (or find) a counter named "accessctr" in the global registry.
@@ -250,13 +216,13 @@ java -jar target/helidon-quickstart-se.jar
 ----
 
 .Retrieve `application` metrics
-[source.bash]
+[source, bash]
 ----
 curl 'http://localhost:8080/observe/metrics?scope=application' # <1>
 
 # HELP accessctr_total
 # TYPE accessctr_total counter
-accessctr_total{scope="application",} 0.0 // <2>
+accessctr_total{scope="application",} 0.0 # <2>
 ----
 <1> Access the metrics endpoint, selecting only application meters.
 <2> Note the counter is zero; we have not accessed a service endpoint yet.
@@ -276,7 +242,7 @@ curl 'http://localhost:8080/observe/metrics?scope=application'
 
 # HELP accessctr_total
 # TYPE accessctr_total counter
-accessctr_total{scope="application",} 1.0 // <1>
+accessctr_total{scope="application",} 1.0 # <1>
 ----
 <1> The counter now reports 1, reflecting our earlier access to the `/greet` endpoint.
 
@@ -296,36 +262,35 @@ To use it, your service registers Prometheus support with your routing set-up.
 You can customize its configuration. For information about using Prometheus, see the
 Prometheus documentation: https://prometheus.io/docs/introduction/overview/.
 
-NOTE: Helidon's fully-functional, built-in metrics implementation supports Prometheus (OpenMetrics) output. Use the optional support described in _this_ section only if you want to use the Prometheus _API_ from your application code.
+NOTE: Helidon's fully-functional, built-in metrics implementation supports Prometheus (OpenMetrics) output.
+ Use the optional support described in _this_ section only if you want to use the Prometheus _API_ from your application code.
 
-[#prom-maven-coordinates]
+[[prom-maven-coordinates]]
 ==== Maven Coordinates
 
 .Dependency for Helidon Prometheus API support
 [source,xml]
 ----
-    <dependency>
-        <groupId>io.helidon.metrics</groupId>
-        <artifactId>helidon-metrics-prometheus</artifactId>
-    </dependency>
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-prometheus</artifactId>
+</dependency>
 ----
 
-[#prom-usage]
+[[prom-usage]]
 ==== Usage
 Your application code uses the Prometheus API to manage metrics.
 To expose those metrics to clients via a REST endpoint, your code uses the `PrometheusSupport` interface which Helidon provides.
 
-[#prom-api]
+[[prom-api]]
 ==== API
 Your code creates a link:{prometheus-javadoc-base-url}/io/helidon/metrics/prometheus/PrometheusSupport.html[`PrometheusSupport`] object either using a static factory method (shown in the following example) or by using its link:{prometheus-javadoc-base-url}/io/helidon/metrics/prometheus/PrometheusSupport.Builder.html[`Builder`].
 
 [source,java]
 ----
-import io.helidon.metrics.prometheus.PrometheusSupport;
+include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_4, indent=0]
 
-routing
-            .register(PrometheusSupport.create())
-            .register("/myapp", new MyService());
+include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_5, indent=0]
 ----
 
 This example uses the default Prometheus `CollectorRegistry`. By default, the `PrometheusSupport` and exposes its REST endpoint at the path

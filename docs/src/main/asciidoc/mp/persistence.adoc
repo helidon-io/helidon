@@ -545,16 +545,7 @@ Here is how to define such a field-backed injection point:
 
 [source,java]
 ----
-import javax.sql.DataSource;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-
-// ...
-
-@Inject // <1>
-@Named("test") // <2>
-private DataSource ds; // <3>
+include::{sourcedir}/mp/PersistenceSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> link:{jakarta-inject-javadoc-url}/jakarta/inject/inject[`@Inject`]
     marks the field as an injection point.  Its behavior is defined by
@@ -572,19 +563,7 @@ Here is how to define such a constructor parameter injection point:
 
 [source,java]
 ----
-import javax.sql.DataSource;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-
-// ...
-
-private final DataSource ds; // <1>
-
-@Inject // <2>
-public SomeObject(@Named("test") DataSource ds) { // <3>
-    this.ds = ds; // <4>
-}
+include::{sourcedir}/mp/PersistenceSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> This is the field whose value will be set in the constructor.
 <2> link:{jakarta-inject-javadoc-url}/jakarta/inject/inject[`@Inject`]
@@ -699,14 +678,7 @@ annotation:
 
 [source,java]
 ----
-import jakarta.transaction.Transactional;
-
-// ...
-
-@Transactional // <1>
-public String getGreeting(Integer id) {
-  // Use a JTA-aware facility to do something transactional here. <2>
-}
+include::{sourcedir}/mp/PersistenceSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> The
     link:{jakarta-transactions-javadoc-url}/jakarta/transaction/transactional[`@Transactional`

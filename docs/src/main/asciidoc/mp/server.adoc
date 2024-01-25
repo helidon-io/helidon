@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -263,11 +263,7 @@ The annotation has two attributes:
 [source,java]
 .`@RoutingName` example
 ----
-@ApplicationScoped
-@RoutingName(value="admin", required="true")
-@RoutingPath("/admin")
-public class AdminService implements HttpService {
-}
+include::{sourcedir}/mp/ServerSnippets.java[tag=snippet_1, indent=0]
 ----
 
 The example above will be bound to `admin` routing (and port) and will fail if such a port
@@ -384,16 +380,7 @@ Helidon makes the requested URI information available as a property in the reque
 [source,java]
 .Retrieving Requested URI Information
 ----
-import io.helidon.common.uri.UriInfo;
-
-public class MyFilter implements ContainerRequestFilter {
-
-    @Override
-    public void filter(ContainerRequestContext requestContext) {
-        UriInfo uriInfo = (UriInfo) requestContext.getProperty("io.helidon.jaxrs.requested-uri");
-        // ...
-    }
-}
+include::{sourcedir}/mp/ServerSnippets.java[tag=snippet_2, indent=0]
 ----
 See the link:{uri-javadoc-base-url}/io/helidon/common/uri/UriInfo.html[`UriInfo`] JavaDoc for more information.
 

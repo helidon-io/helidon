@@ -50,7 +50,7 @@ include::{rootdir}/includes/cors.adoc[tag=cors-intro]
 ==== Choosing How To Implement CORS
 You can add CORS support to your application in either or both of the following ways, depending on your specific requirements:
 
-* Use configuration and Helidon's automatic feature detection: *recommended*.
+* Use configuration and automatic feature detection: *recommended*.
 +
 If you add the Helidon CORS Maven artifact to your project, at runtime Helidon automatically discovers it and activates it according to configuration. You do not need to change your Java code. Instead, you control your application's CORS behavior entirely using configuration linked to the resource paths your application exposes.
 +
@@ -148,16 +148,7 @@ The following code shows one way to prepare your application's routing to suppor
 [[intro-quick-start-code-example]]
 [source,java]
 ----
-static void routing(HttpRouting.Builder routing) {
-    CorsSupport corsSupport = CorsSupport.builder()  // <1>
-            .addCrossOrigin(CrossOriginConfig.builder() // <2>
-                        .allowOrigins("http://foo.com", "http://there.com") // <3>
-                        .allowMethods("PUT", "DELETE") // <4>
-                        .build()) // <5>
-            .addCrossOrigin(CrossOriginConfig.create()) // <6>
-            .build(); // <7>
-    routing.register("/greet", corsSupport, new GreetService()); // <8>
-}
+include::{sourcedir}/se/CorsSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Create a `CorsSupport.Builder` instance.
 <2> Add a `CrossOriginConfig` instance (using _its_ builder) to constrain resource sharing.
@@ -175,6 +166,7 @@ request.
 
 By adding the few additional lines described above you allow the greeting application to participate in CORS.
 
+[[_configuration]]
 == Configuration
 
 You can use configuration instead of or in combination with the Helidon CORS SE API to add CORS support to your resources by
@@ -184,7 +176,7 @@ replacing some Java code with declarative configuration.
 Recall that simply by adding the `{ws-cors-artifact}` artifact to your project you allow Helidon to automatically use configuration to set up CORS behavior throughout your application.
 
 To use this automatic support, make sure your configuration contains a `cors` section which contains mapped CORS configuration as described below and as shown in the following example.
-[source,hocon,subs="attributes+"]
+[source,yaml,subs="attributes+"]
 ----
 cors:
   paths:
@@ -194,7 +186,6 @@ cors:
     - path-pattern: /
       allow-methods: ["GET", "HEAD", "OPTIONS", "POST"]
 ----
-
 
 include::{rootdir}/includes/cors.adoc[tag=cors-configuration-formats-intro]
 include::{rootdir}/includes/cors.adoc[tag=basic-cross-origin-config]
@@ -232,30 +223,12 @@ As an alternative to using the low-level API, this example uses config to create
 
 [source,java]
 ----
-static void routing(HttpRouting.Builder routing) {
-
-    CorsSupport.Builder builder = CorsSupport.builder();
-
-    Config config = Config.global();
-    config.get("my-cors") // <1>
-            .ifExists(builder::mappedConfig);
-    config.get("restrictive-cors") // <2>
-            .ifExists(builder::config);
-    builder.addCrossOrigin(CrossOriginConfig.create()); // <3>
-
-    CorsSupport corsSupport = builder.build(); // <4>
-
-    // Note: Add the CORS routing *before* registering the GreetService routing.
-    return Routing.builder()
-            .register("/greet", corsSupport, new GreetService()) // <5>
-            .build();
-}
+include::{sourcedir}/se/CorsSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> If `my-cors` exists in the configuration, use it to add mapped CORS config to the `CorsSupport` builder.
 <2> If `restrictive-cors` exists in the configuration, use it to add basic (not mapped) config to the builder.
 <3> Provide default CORS handling for requests that do not match earlier entries.
-<4> Obtain the finished `CorsSupport` instance.
-<5> Use `corsSupport` in constructing the routing rules.
+<4> Add the CORS routing *before* registering the GreetService routing.
 
 
 As each request arrives, Helidon checks it against the cross-origin config instances in the order that your application
@@ -277,7 +250,8 @@ For a complete example, see {helidon-github-tree-url}/examples/cors[Helidon SE C
 == Additional Information
 
 include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-intro]
-You can configure how the Helidon server handles these headers as described in the documentation for xref:{rootdir}/se/webserver.adoc#_requested_uri_discovery[requested URI discovery].
+You can configure how the Helidon server handles these headers as described in the documentation for
+xref:{rootdir}/se/webserver.adoc#_requested_uri_discovery[requested URI discovery].
 
 include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-wrapup]
 

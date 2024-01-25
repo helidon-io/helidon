@@ -123,25 +123,7 @@ using CDI.  The following example shows how to add a custom liveness health chec
 [source,java]
 .Create a new `GreetLivenessCheck` class with the following content:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.Liveness;
-
-@Liveness // <1>
-@ApplicationScoped // <2>
-public class GreetLivenessCheck implements HealthCheck {
-
-  @Override
-  public HealthCheckResponse call() {
-    return HealthCheckResponse.named("LivenessCheck")  // <3>
-        .up()
-        .withData("time", System.currentTimeMillis())
-        .build();
-  }
-}
+include::{sourcedir}/mp/guides/HealthSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Annotation indicating this is a liveness health check.
 <2> Annotation indicating there is a single liveness `HealthCheck` object during the lifetime of the application.
@@ -178,56 +160,15 @@ example, the server will wait five seconds before it becomes ready.
 [source,java]
 .Create a new `GreetReadinessCheck` class with the following content:
 ----
-
-package io.helidon.examples.quickstart.mp;
-
-import java.time.Duration; // <1>
-import java.util.concurrent.atomic.AtomicLong;
-import jakarta.enterprise.context.ApplicationScoped;
-
-import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.event.Observes;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.Readiness;
-
-@Readiness // <2>
-@ApplicationScoped
-public class GreetReadinessCheck implements HealthCheck {
-  private final AtomicLong readyTime = new AtomicLong(0);
-
-
-  @Override
-  public HealthCheckResponse call() {
-    return HealthCheckResponse.named("ReadinessCheck")  // <3>
-        .status(isReady())
-        .withData("time", readyTime.get())
-        .build();
-  }
-
-  public void onStartUp(
-      @Observes @Initialized(ApplicationScoped.class) Object init) {
-    readyTime.set(System.currentTimeMillis()); // <4>
-  }
-
-  /**
-   * Become ready after 5 seconds
-   *
-   * @return true if application ready
-   */
-  private boolean isReady() {
-    return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 5;
-  }
-}
+include::{sourcedir}/mp/guides/HealthSnippets.java[tag=snippet_2, indent=0]
 ----
-<1> Include additional imports.
-<2> Annotation indicating that this is a readiness health check.
-<3> Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
-<4> Record the time at startup.
+<1> Annotation indicating that this is a readiness health check.
+<2> Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
+<3> Record the time at startup.
 
 
 [source,bash]
-.Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application is not ready:
+.Build and run the application.  Issue the curl command with -v within five seconds, and you will see that the application is not ready:
 ----
 curl -v  http://localhost:8080/health/ready
 ----
@@ -288,61 +229,21 @@ curl -v http://localhost:8080/health/ready
 
 === Custom Startup Health Checks
 
-You can add a startup check to indicate whether or not the application has initialized to the point that the other health checks make sense.
+You can add a startup check to indicate if the application is initialized to the point that the other health checks make sense.
 In this example, the server will wait eight seconds before it declares itself started.
 
 [source,java]
 .Create a new `GreetStartedCheck` class with the following content:
 ----
-
-package io.helidon.examples.quickstart.mp;
-
-import java.time.Duration; // <1>
-import java.util.concurrent.atomic.AtomicLong;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.event.Observes;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.Startup;
-
-@Startup // <2>
-@ApplicationScoped
-public class GreetStartedCheck implements HealthCheck {
-    private final AtomicLong readyTime = new AtomicLong(0);
-
-    @Override
-    public HealthCheckResponse call() {
-        return HealthCheckResponse.named("StartedCheck")  // <3>
-                .status(isStarted())
-                .withData("time", readyTime.get())
-                .build();
-    }
-
-    public void onStartUp(
-            @Observes @Initialized(ApplicationScoped.class) Object init) {
-        readyTime.set(System.currentTimeMillis()); // <4>
-    }
-
-    /**
-     * Become ready after 5 seconds
-     *
-     * @return true if application ready
-     */
-    private boolean isStarted() {
-        return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 8;
-    }
-}
+include::{sourcedir}/mp/guides/HealthSnippets.java[tag=snippet_3, indent=0]
 ----
-<1> Include additional imports.
-<2> Annotation indicating that this is a startup health check.
-<3> Build the `HealthCheckResponse` with status `UP` after eight seconds, else `DOWN`.
-<4> Record the time at startup of Helidon; the application will declare itself as started eight seconds later.
+<1> Annotation indicating that this is a startup health check.
+<2> Build the `HealthCheckResponse` with status `UP` after eight seconds, else `DOWN`.
+<3> Record the time at startup of Helidon; the application will declare itself as started eight seconds later.
 
 
 [source,bash]
-.Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application has not yet started:
+.Build and run the application.  Issue the curl command with -v within five seconds, and you will see that the application has not yet started:
 ----
 curl -v  http://localhost:8080/health/started
 ----
@@ -489,7 +390,7 @@ The example below will change the root path.
 .Create a file named `application.yaml` in the `resources` directory with the following contents:
 ----
 health:
-  endpoint: "/myhealth"  // <1>
+  endpoint: "/myhealth"  # <1>
 ----
 <1> The `endpoint` settings specifies the root path for the health endpoint.
 
@@ -508,15 +409,15 @@ The following example will change the root path and the health port.
 .Update application.yaml to use a different port and root path for the health endpoint:
 ----
 server:
-  port: 8080            // <1>
+  port: 8080            # <1>
   sockets:
-    - name: "admin"     // <2>
-      port: 8081        // <3>
+    - name: "admin"     # <2>
+      port: 8081        # <3>
   features:
     observe:
-      sockets: "admin"  // <4>
+      sockets: "admin"  # <4>
 health:
-  endpoint: "/myhealth" // <5>
+  endpoint: "/myhealth" # <5>
 
 ----
 <1> The default port for the application.
@@ -559,7 +460,7 @@ docker build -t helidon-quickstart-mp .
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-health // <1>
+  name: helidon-health # <1>
   labels:
     app: helidon-health
 spec:
@@ -574,7 +475,7 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: helidon-health // <2>
+  name: helidon-health # <2>
 spec:
   replicas: 1
   selector:
@@ -594,24 +495,24 @@ spec:
             - containerPort: 8080
           livenessProbe:
             httpGet:
-              path: /health/live // <3>
+              path: /health/live # <3>
               port: 8080
-            initialDelaySeconds: 5 // <4>
+            initialDelaySeconds: 5 # <4>
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health/ready // <5>
+              path: /health/ready # <5>
               port: 8080
-            initialDelaySeconds: 5 // <6>
+            initialDelaySeconds: 5 # <6>
             periodSeconds: 2
             timeoutSeconds: 3
           startupProbe:
             httpGet:
-              path: /health/started // <7>
+              path: /health/started # <7>
               port: 8080
-            initialDelaySeconds: 8 // <8>
+            initialDelaySeconds: 8 # <8>
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
@@ -642,7 +543,7 @@ kubectl get service/helidon-health
 [source,bash]
 ----
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s // <1>
+helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s # <1>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `30116`.
 

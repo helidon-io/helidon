@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -68,10 +68,7 @@ Then just inject the driver:
 
 [source,java]
 ----
-@Inject
-public MovieRepository(Driver driver) {
-   this.driver = driver;
-}
+include::{sourcedir}/mp/integrations/Neo4jSnippets.java[tag=snippet_1, indent=0]
 ----
 
 The driver can be used according to the link:https://neo4j.com/developer/java/[Neo4j documentation].
@@ -130,48 +127,7 @@ Finally, we are able to inject and use the `Neo4j` driver.
 
 [source,java]
 ----
-@ApplicationScoped
-public class MovieRepository {
-
-    private final Driver driver;
-
-    @Inject
-    public MovieRepository(Driver driver) { // <1>
-        this.driver = driver;
-    }
-
-    public List<Movie> findAll() { // <2>
-
-        try (var session = driver.session()) {
-
-            var query = ""
-                    + "match (m:Movie) "
-                    + "match (m) <- [:DIRECTED] - (d:Person) "
-                    + "match (m) <- [r:ACTED_IN] - (a:Person) "
-                    + "return m, collect(d) as directors, collect({name:a.name, roles: r.roles}) as actors";
-
-            return session.readTransaction(tx -> tx.run(query).list(r -> {
-                var movieNode = r.get("m").asNode();
-
-                var directors = r.get("directors").asList(v -> {
-                    var personNode = v.asNode();
-                    return new Person(personNode.get("born").asInt(), personNode.get("name").asString());
-                });
-
-                var actors = r.get("actors").asList(v -> {
-                    return new Actor(v.get("name").asString(), v.get("roles").asList(Value::asString));
-                });
-
-                var m = new Movie(movieNode.get("title").asString(), movieNode.get("tagline").asString());
-                m.setReleased(movieNode.get("released").asInt());
-                m.setDirectorss(directors);
-                m.setActors(actors);
-                return m;
-            }));
-        }
-    }
-}
-
+include::{sourcedir}/mp/integrations/Neo4jSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> `Neo4j` driver constructor injection
 <2> Use of `Neo4j` driver to extract all Movies
@@ -180,11 +136,7 @@ Movies can now be returned as JSON objects:
 
 [source,java]
 ----
-@GET
-@Produces(MediaType.APPLICATION_JSON)
-public List<Movie> getAllMovies() {
-    return movieRepository.findAll();
-}
+include::{sourcedir}/mp/integrations/Neo4jSnippets.java[tag=snippet_3, indent=0]
 ----
 
 Now build and run with JDK17+

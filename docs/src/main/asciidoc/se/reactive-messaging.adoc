@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-Connecting your streams to external services usually requires a lot of boiler-plate
+Connecting your streams to external services usually requires a lot of boilerplate
 code for configuration handling, backpressure propagation, acknowledgement and more.
 
 In Helidon there is a system of connectors, emitters and means to orchestrate these tasks
@@ -83,14 +83,7 @@ to generate the `Publisher` or `Subscriber`.
 [source,java]
 .Example of simple channel:
 ----
-Channel<String> channel1 = Channel.create("channel1");
-
-Messaging.builder()
-        .publisher(channel1, Multi.just("message 1", "message 2")
-                                  .map(Message::of))
-        .listener(channel1, s -> System.out.println("Intecepted message " + s))
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_1, indent=0]
 ----
 
 === Processor
@@ -102,27 +95,7 @@ reactive stream.
 [source,java]
 .Example of processor usage:
 ----
-Channel<String> firstChannel = Channel.create("first-channel");
-Channel<String> secondChannel = Channel.create("second-channel");
-
-Messaging.builder()
-        .publisher(secondChannel, ReactiveStreams.of("test1", "test2", "test3")
-                .map(Message::of))
-        .processor(secondChannel, firstChannel, ReactiveStreams.<Message<String>>builder()
-                .map(Message::getPayload)
-                .map(String::toUpperCase)
-                .map(Message::of)
-        )
-        .subscriber(firstChannel, ReactiveStreams.<Message<String>>builder()
-                .peek(Message::ack)
-                .map(Message::getPayload)
-                .forEach(s -> System.out.println("Consuming message " + s)))
-        .build()
-        .start();
-
->Consuming message TEST1
->Consuming message TEST2
->Consuming message TEST3
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_2, indent=0]
 ----
 
 === Message
@@ -161,22 +134,7 @@ Channels in Reactive Messaging. Messaging connector is just an implementation of
 [source,java]
 .Example connector `example-connector`:
 ----
-@Connector("example-connector")
-public class ExampleConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
-
-   @Override
-   public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
-       return ReactiveStreams.of("foo", "bar")
-               .map(Message::of);
-   }
-
-   @Override
-   public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(Config config) {
-       return ReactiveStreams.<Message<?>>builder()
-               .map(Message::getPayload)
-               .forEach(o -> System.out.println("Connector says: " + o));
-   }
-}
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_3, indent=0]
 ----
 
 [source,yaml]
@@ -189,38 +147,13 @@ mp.messaging.incoming.from-connector-channel.connector: example-connector
 [source,java]
 .Example producing to connector:
 ----
-Config config = Config.create();
-
-Messaging.builder()
-         .config(config)
-         .connector(new ExampleConnector())
-         .publisher(Channel.create("to-connector-channel"),
-                ReactiveStreams.of("fee", "fie")
-                    .map(Message::of)
-         )
-         .build()
-         .start();
-
-> Connector says: fee
-> Connector says: fie
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_4, indent=0]
 ----
 
 [source,java]
 .Example consuming from connector:
 ----
-Messaging.builder()
-        .connector(new ExampleConnector())
-        .subscriber(Channel.create("from-connector-channel"),
-                ReactiveStreams.<Message<String>>builder()
-                    .peek(Message::ack)
-                    .map(Message::getPayload)
-                    .forEach(s -> System.out.println("Consuming: " + s))
-        )
-        .build()
-        .start();
-
-> Consuming: foo
-> Consuming: bar
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_5, indent=0]
 ----
 
 ===== Configuration for Messaging Connector
@@ -237,19 +170,7 @@ two mandatory attributes:
 [source,java]
 .Example connector accessing configuration:
 ----
-@Connector("example-connector")
-public class ExampleConnector implements IncomingConnectorFactory {
-
-    @Override
-    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
-
-        String firstPropValue = config.getValue("first-test-prop", String.class);<1>
-        String secondPropValue = config.getValue("second-test-prop", String.class);
-
-        return ReactiveStreams.of(firstPropValue, secondPropValue)
-                .map(Message::of);
-    }
-}
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Config context is merged from channel and connector contexts
 
@@ -263,32 +184,7 @@ the mandatory attributes and any implicit configuration found. The resulting con
 [source,java]
 .Example consuming from Kafka connector with explicit config:
 ----
-String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
-String topic = config.get("app.kafka.topic").asString().get();
-
-Channel<String> fromKafka = Channel.<String>builder()<1><2>
-        .name("from-kafka")
-        .publisherConfig(KafkaConnector.configBuilder()
-                .bootstrapServers(kafkaServer)
-                .groupId("example-group-" + session.getId())
-                .topic(topic)
-                .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.LATEST)
-                .enableAutoCommit(true)
-                .keyDeserializer(StringDeserializer.class)
-                .valueDeserializer(StringDeserializer.class)
-                .build()
-        )
-        .build();
-
-KafkaConnector kafkaConnector = KafkaConnector.create();<3>
-
-Messaging messaging = Messaging.builder()
-        .connector(kafkaConnector)
-        .listener(fromKafka, payload -> {
-            System.out.println("Kafka says: " + payload);
-        })
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Prepare channel for connecting kafka connector with specific publisher configuration -> listener,
 <2> Channel -> connector mapping is automatic when using `KafkaConnector.configBuilder()`
@@ -312,18 +208,7 @@ mp.messaging.connector.example-connector.second-test-prop: bar<3>
 [source,java]
 .Example consuming from connector:
 ----
-Config config = Config.create();
-
-Messaging.builder()
-        .config(config)
-        .connector(new ExampleConnector())
-        .listener(Channel.create("from-connector-channel"),
-                    s -> System.out.println("Consuming: " + s))
-        .build()
-        .start();
-
-> Consuming: foo
-> Consuming: bar
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_8, indent=0]
 ----
 
 ==== Reusability in MP Messaging
@@ -355,32 +240,7 @@ Connecting streams to Kafka with Reactive Messaging couldn't be easier.
 [source,java]
 .Example of consuming from Kafka:
 ----
-String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
-String topic = config.get("app.kafka.topic").asString().get();
-
-Channel<String> fromKafka = Channel.<String>builder()<1><2>
-        .name("from-kafka")
-        .publisherConfig(KafkaConnector.configBuilder()
-                .bootstrapServers(kafkaServer)
-                .groupId("example-group-" + session.getId())
-                .topic(topic)
-                .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.LATEST)
-                .enableAutoCommit(true)
-                .keyDeserializer(StringDeserializer.class)
-                .valueDeserializer(StringDeserializer.class)
-                .build()
-        )
-        .build();
-
-KafkaConnector kafkaConnector = KafkaConnector.create();<3>
-
-Messaging messaging = Messaging.builder()
-        .connector(kafkaConnector)
-        .listener(fromKafka, payload -> {
-            System.out.println("Kafka says: " + payload);
-        })
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_9, indent=0]
 ----
 <1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
@@ -389,25 +249,7 @@ Messaging messaging = Messaging.builder()
 [source,java]
 .Example of producing to Kafka:
 ----
-String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
-String topic = config.get("app.kafka.topic").asString().get();
-
-Channel<String> toKafka = Channel.<String>builder()<1><2>
-        .subscriberConfig(KafkaConnector.configBuilder()
-                .bootstrapServers(kafkaServer)
-                .topic(topic)
-                .keySerializer(StringSerializer.class)
-                .valueSerializer(StringSerializer.class)
-                .build()
-        ).build();
-
-KafkaConnector kafkaConnector = KafkaConnector.create();<3>
-
-messaging = Messaging.builder()
-        .publisher(toKafka, Multi.just("test1", "test2").map(Message::of))
-        .connector(kafkaConnector)
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_10, indent=0]
 ----
 <1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
@@ -446,44 +288,20 @@ mp.messaging:
 [source,java]
 .Example of consuming from Kafka:
 ----
-Config config = Config.create();
-
-Channel<String> fromKafka = Channel.create("from-kafka");
-
-KafkaConnector kafkaConnector = KafkaConnector.create();<1>
-
-Messaging messaging = Messaging.builder()
-        .config(config)
-        .connector(kafkaConnector)
-        .listener(fromKafka, payload -> {
-            System.out.println("Kafka says: " + payload);
-        })
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_11, indent=0]
 ----
 <1> Prepare Kafka connector, can be used by any channel
 
 [source,java]
 .Example of producing to Kafka:
 ----
-Config config = Config.create();
-
-Channel<String> toKafka = Channel.create("to-kafka");
-
-KafkaConnector kafkaConnector = KafkaConnector.create();<1>
-
-messaging = Messaging.builder()
-        .config(config)
-        .publisher(toKafka, Multi.just("test1", "test2").map(Message::of))
-        .connector(kafkaConnector)
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_12, indent=0]
 ----
 <1> Prepare Kafka connector, can be used by any channel
 
 Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 
-* https://github.com/oracle/helidon/tree/master/examples/messaging
+* {helidon-github-tree-url}/examples/messaging
 
 ==== JMS Connector
 
@@ -505,26 +323,7 @@ Connecting streams to JMS with Reactive Messaging couldn't be easier.
 [source,java]
 .Example of consuming from JMS:
 ----
-Channel<String> fromJms = Channel.<String>builder()<1><2>
-        .name("from-jms")
-        .publisherConfig(JmsConnector.configBuilder()
-                .jndiInitialFactory(ActiveMQInitialContextFactory.class)
-                .jndiProviderUrl("tcp://127.0.0.1:61616")
-                .type(JmsConfigBuilder.Type.QUEUE)
-                .destination("se-example-queue-1")
-                .build()
-        )
-        .build();
-
-JmsConnector jmsConnector = JmsConnector.create();<3>
-
-Messaging messaging = Messaging.builder()
-        .connector(jmsConnector)
-        .listener(fromJms, payload -> {
-            System.out.println("Jms says: " + payload);
-        })
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_13, indent=0]
 ----
 <1> Prepare a channel for connecting jms connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using JmsConnector.configBuilder()
@@ -533,22 +332,7 @@ Messaging messaging = Messaging.builder()
 [source,java]
 .Example of producing to JMS:
 ----
-Channel<String> toJms = Channel.<String>builder()<1><2>
-        .subscriberConfig(JmsConnector.configBuilder()
-                .jndiInitialFactory(ActiveMQInitialContextFactory.class)
-                .jndiProviderUrl("tcp://127.0.0.1:61616")
-                .type(JmsConfigBuilder.Type.QUEUE)
-                .destination("se-example-queue-1")
-                .build()
-        ).build();
-
-JmsConnector jmsConnector = JmsConnector.create();<3>
-
-messaging = Messaging.builder()
-        .publisher(toJms, Multi.just("test1", "test2").map(Message::of))
-        .connector(jmsConnector)
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_14, indent=0]
 ----
 <1> Prepare a channel for connecting jms connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using JmsConnector.configBuilder()
@@ -569,8 +353,8 @@ mp.messaging:
 
   outgoing.to-jms:
     connector: helidon-jms
-      destination: se-example-queue-1
-      type: queue
+    destination: se-example-queue-1
+    type: queue
 
   connector:
     helidon-jms:
@@ -585,44 +369,20 @@ mp.messaging:
 [source,java]
 .Example of consuming from JMS:
 ----
-Config config = Config.create();
-
-Channel<String> fromJms = Channel.create("from-jms");
-
-JmsConnector jmsConnector = JmsConnector.create();<1>
-
-Messaging messaging = Messaging.builder()
-        .config(config)
-        .connector(jmsConnector)
-        .listener(fromJms, payload -> {
-            System.out.println("Jms says: " + payload);
-        })
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_15, indent=0]
 ----
 <1> Prepare JMS connector, can be used by any channel
 
 [source,java]
 .Example of producing to JMS:
 ----
-Config config = Config.create();
-
-Channel<String> toJms = Channel.create("to-jms");
-
-JmsConnector jmsConnector = JmsConnector.create();<1>
-
-messaging = Messaging.builder()
-        .config(config)
-        .publisher(toJms, Multi.just("test1", "test2").map(Message::of))
-        .connector(jmsConnector)
-        .build()
-        .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_16, indent=0]
 ----
 <1> Prepare JMS connector, can be used by any channel
 
 Don't forget to check out the examples with pre-configured ActiveMQ docker image, for easy testing:
 
-* https://github.com/oracle/helidon/tree/master/examples/messaging
+* link:{helidon-github-tree-url}/examples/messaging[Helidon Messaging Examples]
 
 ==== AQ Connector
 
@@ -642,38 +402,7 @@ Don't forget to check out the examples with pre-configured ActiveMQ docker image
 [source,java]
 .Example of producing to and consuming from Oracle AQ:
 ----
-PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource();<1>
-pds.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
-pds.setURL("jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=192.168.0.123)(Port=1521))(CONNECT_DATA=(SID=XE)))");
-pds.setUser("frank");
-pds.setPassword("frank");
-
-AqConnector seConn = AqConnector.builder()<2>
-    .dataSource("test-ds", pds)
-    .build();
-
-Channel<String> toAq = Channel.<String>builder()<3>
-    .name("toAq")
-    .subscriberConfig(AqConnector.configBuilder()
-        .queue("example_queue_1")
-        .dataSource("test-ds")
-        .build())
-    .build();
-
-Channel<String> fromAq = Channel.<String>builder()<4>
-    .name("fromAq")
-    .publisherConfig(AqConnector.configBuilder()
-        .queue("example_queue_1")
-        .dataSource("test-ds")
-        .build())
-    .build();
-
-Messaging.builder()<5>
-    .connector(seConn)
-    .publisher(toAq, Multi.just("Hello", "world", "from", "Oracle", "DB!").map(Message::of))<6>
-    .listener(fromAq, s -> System.out.pritln("Message received: "+s))<7>
-    .build()
-    .start();
+include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_17, indent=0]
 ----
 <1> Prepare Oracle UCP
 <2> Setup AQ connector and provide datasource with an identifier `test-ds`

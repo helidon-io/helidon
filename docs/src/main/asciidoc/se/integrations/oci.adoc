@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -51,9 +51,7 @@ by using the link:{oci-javasdk-url}[OCI CLI] to access the service.
 
 [source,java]
 ----
-ConfigFile config
-= ConfigFileReader.parse("~/.oci/config", "DEFAULT");
-AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(config);
+include::{sourcedir}/se/integrations/OciSnippets.java[tag=snippet_1, indent=0]
 ----
 
 You also need to add the following dependency to your application for this
@@ -94,10 +92,7 @@ Now you can create OCI SDK Clients.
 
 [source,java]
 ----
-ConfigFile config
-= ConfigFileReader.parse("~/.oci/config", "DEFAULT");
-AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(config);
-ObjectStorageAsync objectStorageAsyncClient = new ObjectStorageAsyncClient(authProvider);
+include::{sourcedir}/se/integrations/OciSnippets.java[tag=snippet_2, indent=0]
 ----
 
 === Using the Object Storage client
@@ -111,4 +106,3 @@ Once you have created an ObjectStorage client you can use it as described in:
 
 * link:{helidon-github-tree-url}/examples/integrations/oci[OCI SDK Usage Examples]
 * link:https://docs.oracle.com/en-us/iaas/Content/home.htm[OCI Documentation]
-]

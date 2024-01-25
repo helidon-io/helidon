@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -86,10 +86,7 @@ the provided configuration.
 [source,java]
 .Example
 ----
-SomeResource greetResource = RestClientBuilder.newBuilder()
-                                 .baseUri(URI.create("http://localhost:8080/greet"))
-                                 .build(GreetRestClient.class);
-greetResource.getDefaultMessage();
+include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_1, indent=0]
 ----
 
 The `RestClientBuilder` interface extends the `Configurable` interface from Jakarta REST (JAX-RS),
@@ -98,12 +95,7 @@ enabling direct registration of _providers_ such as filters, param converters, e
 [source,java]
 .Example
 ----
-SomeResource greetResource = RestClientBuilder.newBuilder()
-                                 .baseUri(URI.create("http://localhost:8080"))
-                                 .register(GreetClientRequestFilter.class)
-                                 .register(GreetClientExceptionMapper.class)
-                                 .build(GreetRestClient.class);
-greetResource.getDefaultMessage();
+include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_2, indent=0]
 ----
 
 === Creating a New Client Using CDI
@@ -115,11 +107,7 @@ to access the service.
 [source,java]
 .Example
 ----
-@Path("/greet")
-@RegisterRestClient(baseUri="http://localhost:8080")
-public interface GreetRestClient {
-    // ...
-}
+include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_3, indent=0]
 ----
 
 Any Jakarta REST (JAX-RS) providers for a client can be registered using the (repeatable)
@@ -128,13 +116,7 @@ Any Jakarta REST (JAX-RS) providers for a client can be registered using the (re
 [source,java]
 .Example
 ----
-@Path("/greet")
-@RegisterRestClient(baseUri="http://localhost:8080")
-@RegisterProvider(GreetClientRequestFilter.class)
-@RegisterProvider(GreetClientExceptionMapper.class)
-public interface GreetRestClient {
-    // ...
-}
+include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_4, indent=0]
 ----
 Once a client interface is annotated, it can be injected into any CDI bean.
 
@@ -144,15 +126,7 @@ All properties in annotation `RegisterRestClient` can be overridden via configur
 [source,java]
 .Example
 ----
-public class MyBean {
-    @Inject
-    @RestClient
-    GreetRestClient client;
-
-    void myMethod() {
-        client.getMessage("Helidon");
-    }
-}
+include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_5, indent=0]
 ----
 
 == Configuration
@@ -221,17 +195,7 @@ Add a dependency on the Helidon Rest Client implementation and create the follow
 [source,java]
 .client interface
 ----
-@Path("/greet")
-interface GreetRestClient {
-
-     @GET
-     JsonObject getDefaultMessage();
-
-     @Path("/{name}")
-     @GET
-     JsonObject getMessage(@PathParam("name") String name);
-
-}
+include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_6, indent=0]
 ----
 Then create a runnable method as described in <<creating-a-new-client, Creating new client>>, but with baseUri
 `http://localhost:8080/greet` and the above interface.

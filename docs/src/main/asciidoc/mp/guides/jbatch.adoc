@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -58,34 +58,14 @@ In this demonstration you will first create sample input and output records and 
 * `MyItemProcessor`
 * `MyItemWriter`
 
-Finally you will create `MyBatchlet` to demonstrate all possible usages of JBatch.
+Finally, you will create `MyBatchlet` to demonstrate all possible usages of JBatch.
 
 === 1. Create a unit of input information
 
 [source,java]
 .MyInputRecord
 ----
-public class MyInputRecord {
-    private int id;
-
-
-    public MyInputRecord(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    @Override
-    public String toString() {
-        return "MyInputRecord: " + id;
-    }
-}
+include::{sourcedir}/mp/guides/JbatchSnippets.java[tag=snippet_1, indent=0]
 ----
 
 ==== 2. Create a unit of output information
@@ -93,27 +73,7 @@ public class MyInputRecord {
 [source,java]
 .MyOutputRecord
 ----
-public class MyOutputRecord {
-
-    private int id;
-
-    public MyOutputRecord(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    @Override
-    public String toString() {
-        return "MyOutputRecord: " + id;
-    }
-}
+include::{sourcedir}/mp/guides/JbatchSnippets.java[tag=snippet_2, indent=0]
 ----
 
 ==== 3. Create `MyItemReader` to extend `AbstractItemReader`
@@ -124,26 +84,7 @@ public class MyOutputRecord {
 .MyItemReader
 
 ----
-public class MyItemReader extends AbstractItemReader {
-
-    private final StringTokenizer tokens;
-
-    public MyItemReader() {
-        tokens = new StringTokenizer("1,2,3,4,5,6,7,8,9,10", ",");
-    }
-
-    /**
-     * Perform read Item.
-     * @return Stage result.
-     */
-    @Override
-    public MyInputRecord readItem() {
-        if (tokens.hasMoreTokens()) {
-            return new MyInputRecord(Integer.valueOf(tokens.nextToken()));
-        }
-        return null;
-    }
-}
+include::{sourcedir}/mp/guides/JbatchSnippets.java[tag=snippet_3, indent=0]
 ----
 
 ==== 4. Create `MyItemProcessor` to implement `ItemProcessor`
@@ -154,15 +95,7 @@ The `MyItemProcessor` will perform some simple operations:
 .MyItemProcessor
 
 ----
-public class MyItemProcessor implements ItemProcessor {
-
-    @Override
-    public MyOutputRecord processItem(Object t) {
-        System.out.println("processItem: " + t);
-
-        return (((MyInputRecord) t).getId() % 2 == 0) ? null : new MyOutputRecord(((MyInputRecord) t).getId() * 2);
-    }
-}
+include::{sourcedir}/mp/guides/JbatchSnippets.java[tag=snippet_4, indent=0]
 ----
 
 ==== 5. Create `MyItemWriter` to extend `AbstractItemWriter`
@@ -173,13 +106,7 @@ public class MyItemProcessor implements ItemProcessor {
 .MyItemWriter
 
 ----
-public class MyItemWriter extends AbstractItemWriter {
-
-    @Override
-    public void writeItems(List list) {
-        System.out.println("writeItems: " + list);
-    }
-}
+include::{sourcedir}/mp/guides/JbatchSnippets.java[tag=snippet_5, indent=0]
 ----
 
 ==== 6. Create `MyBatchlet` to extend `AbstractBatchlet`
@@ -190,16 +117,7 @@ public class MyItemWriter extends AbstractItemWriter {
 .MyBatchlet
 
 ----
-public class MyBatchlet extends AbstractBatchlet {
-
-    @Override
-    public String process() {
-        System.out.println("Running inside a batchlet");
-
-        return "COMPLETED";
-    }
-
-}
+include::{sourcedir}/mp/guides/JbatchSnippets.java[tag=snippet_6, indent=0]
 ----
 
 == Update the Descriptor File
@@ -236,61 +154,19 @@ Create a small endpoint to activate the job:
 .new endpoint
 
 ----
-@Path("/batch")
-@ApplicationScoped
-public class BatchResource {
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    private JobOperator jobOperator;
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject executeBatch() {
-
-        BatchSPIManager batchSPIManager = BatchSPIManager.getInstance();
-        batchSPIManager.registerPlatformMode(BatchSPIManager.PlatformMode.SE);
-        batchSPIManager.registerExecutorServiceProvider(new HelidonExecutorServiceProvider());
-
-        jobOperator = getJobOperator();
-        Long executionId = jobOperator.start("myJob", new Properties());
-
-        return JSON.createObjectBuilder()
-                .add("Started a job with Execution ID: ", executionId)
-                .build();
-    }
-
-
-    @GET
-    @Path("/status/{execution-id}")
-    public JsonObject status(@PathParam("execution-id") Long executionId){
-        JobExecution jobExecution = jobOperator.getJobExecution(executionId);
-
-        List<StepExecution> stepExecutions = jobOperator.getStepExecutions(executionId);
-        List<String> executedSteps = new ArrayList<>();
-        for (StepExecution stepExecution : stepExecutions) {
-            executedSteps.add(stepExecution.getStepName());
-        }
-
-        return JSON.createObjectBuilder()
-                .add("Steps executed", Arrays.toString(executedSteps.toArray()))
-                .add("Status", jobExecution.getBatchStatus().toString())
-                .build();
-    }
-}
+include::{sourcedir}/mp/guides/JbatchSnippets.java[tag=snippet_7, indent=0]
 ----
 
-Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will also register the `HelidonExecutorServiceProvider` which is actually relatively small. For our example we need something really small, like a `FixedTheadPool` with 2 threads. This provider is used to tell our JBatch engine exactly which ExecutorService to use.
+Helidon specifies to JBatch that it should run in Standalone (SE) mode.
+It will also register the `HelidonExecutorServiceProvider` which is actually relatively small.
+For our example we need something quite small, like a `FixedTheadPool` with 2 threads.
+This provider is used to tell our JBatch engine exactly which ExecutorService to use.
 
 [source, java]
 .HelidonExecutorServiceProvider
 
 ----
-public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
-    @Override
-    public ExecutorService getExecutorService() {
-        return ThreadPoolSupplier.builder().corePoolSize(2).build().get();
-    }
-}
+include::{sourcedir}/mp/guides/JbatchSnippets.java[tag=snippet_8, indent=0]
 ----
 
 == Run the Code

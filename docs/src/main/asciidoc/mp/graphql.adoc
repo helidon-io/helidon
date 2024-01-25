@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -69,44 +69,7 @@ against a fictional `CustomerService` service and `Customer` class.
 [source,java]
 .Simple ContactGraphQLApi
 ----
-@ApplicationScoped
-@GraphQLApi
-public class ContactGraphQLApi {
-
-    @Inject
-    private CustomerService customerService;
-
-    @Query
-    public Collection<Customer> findAllCustomers() {  <1>
-        return customerService.getAllCustomers();
-    }
-
-    @Query
-    public Customer findCustomer(@Name("customerId") int id) {  <2>
-        return customerService.getCustomer(id);
-    }
-
-    @Query
-    public Collection<Customer> findCustomersByName(@Name("name") String name) {  <3>
-        return customerService.getAllCustomers(name);
-    }
-
-    @Mutation
-    public Contact createCustomer(@Name("customerId") int id,  <4>
-                                  @Name("name") String name,
-                                  @Name("balance") float balance) {
-        return customerService.createCustomer(id, name, balance);
-    }
-}
-
-public class customer {
-    private int id;
-    @NonNull
-    private String name;
-    private float balance;
-
-    // getters and setters omitted for brevity
-}
+include::{sourcedir}/mp/GraphqlSnippets.java[tag=snippet_1, indent=0]
 ----
 
 <1> a query with no-arguments that will return all `Customer` s

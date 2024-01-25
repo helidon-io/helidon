@@ -358,40 +358,21 @@ The resource method shall never be called if the validation fails, with a 400
 +
 [source,java]
 ----
-@Path("helloworld")
-public class HelloWorld {
-
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void post(@NotNull @Valid Greeting greeting) {
-        // ...
-    }
-}
+include::{sourcedir}/mp/BeanvalidationSnippets.java[tag=snippet_1, indent=0]
 ----
 
 2. The following example shows a simple application with one field declared as _not null_ using `@NotNull` annotation:
 +
 [source,java]
 ----
-public class GreetingHolder {
-    @NotNull
-    private String greeting;
-    //...
-}
+include::{sourcedir}/mp/BeanvalidationSnippets.java[tag=snippet_2, indent=0]
 ----
 +
 If the bean contains a method parameter annotated with @Valid, and GreetingHolder with _null_greeting is passed, then a _ValidationException_ will be thrown:
 +
 [source,java]
 ----
-@ApplicationScoped
-public class GreetingProvider {
-    private GreetingHolder greetingHolder;
-    //..
-    void setGreeting(@Valid GreetingHolder greetingHolder) {
-        this.greetingHolder = greetingHolder;
-    }
-}
+include::{sourcedir}/mp/BeanvalidationSnippets.java[tag=snippet_3, indent=0]
 ----
 +
 NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.

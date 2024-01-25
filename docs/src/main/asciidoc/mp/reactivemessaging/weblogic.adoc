@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -140,21 +140,13 @@ Destination for UDD doesn't have `./` prefix, because distributed destinations c
 [source,java]
 .Consuming one by one unwrapped value:
 ----
-@Incoming("from-wls")
-public void consumeWls(String msg) {
-    System.out.println("WebLogic says: " + msg);
-}
+include::{sourcedir}/mp/reactivemessaging/WeblogicSnippets.java[tag=snippet_1, indent=0]
 ----
 
 [source,java]
 .Consuming one by one, manual ack:
 ----
-@Incoming("from-wls")
-@Acknowledgment(Acknowledgment.Strategy.MANUAL)
-public CompletionStage<?> consumewls(JmsMessage<String> msg) {
-    System.out.println("WebLogic says: " + msg.getPayload());
-    return msg.ack();
-}
+include::{sourcedir}/mp/reactivemessaging/WeblogicSnippets.java[tag=snippet_2, indent=0]
 ----
 
 === Producing
@@ -162,42 +154,18 @@ public CompletionStage<?> consumewls(JmsMessage<String> msg) {
 [source,java]
 .Producing to WebLogic JMS:
 ----
-@Outgoing("to-wls")
-public PublisherBuilder<String> produceToWls() {
-    return ReactiveStreams.of("test1", "test2");
-}
+include::{sourcedir}/mp/reactivemessaging/WeblogicSnippets.java[tag=snippet_3, indent=0]
 ----
 
 [source,java]
 .Example of more advanced producing to WebLogic JMS:
 ----
-@Outgoing("to-wls")
-public PublisherBuilder<String> produceToJms() {
-    return ReactiveStreams.of("test1", "test2")
-                .map(s -> JmsMessage.builder(s)
-                              .correlationId(UUID.randomUUID().toString())
-                              .property("stringProp", "cool property")
-                              .property("byteProp", 4)
-                              .property("intProp", 5)
-                              .onAck(() -> System.out.println("Acked!"))
-                              .build());
-}
+include::{sourcedir}/mp/reactivemessaging/WeblogicSnippets.java[tag=snippet_4, indent=0]
 ----
 [source,java]
 .Example of even more advanced producing to WebLogic JMS with custom mapper:
 ----
-@Outgoing("to-wls")
-public PublisherBuilder<String> produceToJms() {
-    return ReactiveStreams.of("test1", "test2")
-                .map(s -> JmsMessage.builder(s)
-                            .customMapper((p, session) -> {
-                                TextMessage textMessage = session.createTextMessage(p);
-                                textMessage.setStringProperty("custom-mapped-property", "XXX" + p);
-                                return textMessage;
-                            })
-                            .build()
-                    );
-}
+include::{sourcedir}/mp/reactivemessaging/WeblogicSnippets.java[tag=snippet_5, indent=0]
 ----
 
 === Secured t3 over SSL(t3s)

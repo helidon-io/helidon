@@ -76,14 +76,7 @@ The rest of this section takes you through the process of changing your applicat
 [source,java]
 .Initialize Micrometer support
 ----
-import io.helidon.integrations.micrometer.MicrometerSupport;
-
-MicrometerSupport micrometerSupport = MicrometerSupport.create(); // <1>
-
-Routing.builder()
-                .register(micrometerSupport) // <2>
-                .register("/myapp", new MyService(micrometerSupport.registry())) // <3>
-                .build();
+include::{sourcedir}/se/metrics/MicrometerSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Create the `MicrometerSupport` instance, using the default built-in Prometheus meter registry.
 <2> Register the `MicrometerSupport` instance as a service; by default, `MicrometerSupport` exposes the endpoint as `/micrometer`.
@@ -95,28 +88,7 @@ Routing.builder()
 [source,java]
 .Define and use a `Counter`
 ----
-import io.micrometer.core.instrument.Counter;
-
-public class MyService implements HttpService {
-
-    private final Counter requestCounter;
-
-    public MyService(MicrometerMeterRegistry registry) {
-        requestCounter = registry.counter("allRequests"); // <1>
-    }
-
-    @Override
-    public void routing(HttpRules rules) {
-        rules
-            .any(this::countRequests) // <2>
-            .get("/", this::myGet);
-    }
-
-    private void countRequests(ServerRequest request, ServerResponse response) {
-        requestCounter.increment(); // <3>
-        request.next();
-    }
-}
+include::{sourcedir}/se/metrics/MicrometerSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Use the Micrometer meter registry to create the request counter.
 <2> Add routing for any request to invoke the method which counts requests by updating the counter.
@@ -146,15 +118,9 @@ object's collection of meter registries
 [source,java]
 .Overriding defaults for built-in meter registries using `MicrometerSupport.Builder`
 ----
-PrometheusConfig myPrometheusConfig = ...; // <1>
-MicrometerSupport support = MicrometerSupport.builder()
-                .enrollBuiltInRegistry( // <2>
-                        MicrometerSupport.BuiltInRegistryType.PROMETHEUS,
-                        myPrometheusConfig)
-                .build();
+include::{sourcedir}/se/metrics/MicrometerSnippets.java[tag=snippet_3, indent=0]
 ----
-<1> Create the meter registry configuration however you need.
-<2> Enroll the `PROMETHEUS` built-in registry type with your custom configuration.
+<1> Enroll the `PROMETHEUS` built-in registry type with your meter registry configuration.
 
 
 ==== Using Configuration
@@ -187,21 +153,10 @@ stopping as soon as one function provides a handler.
 [source,java]
 .Creating and enrolling your own Micrometer meter registry
 ----
-MeterRegistry myRegistry = new PrometheusMeterRegistry(myPrometheusConfig); // <1>
-MicrometerSupport support = MicrometerSupport.builder()
-                .enrollRegistry(myRegistry,
-                               request -> request // <2>
-                                    .headers()
-                                    .bestAccepted(MediaType.TEXT_PLAIN).isPresent()
-                                    ? Optional.of((req, resp) ->
-                                            resp.send(myRegistry.scrape())) // <3>
-                                    : Optional.empty())
-                .build();
+include::{sourcedir}/se/metrics/MicrometerSnippets.java[tag=snippet_4, indent=0]
 ----
-<1> Create the meter registry. This example uses a Prometheus registry but it can be any extension of `MeterRegistry`.
+<1> Create the meter registry. This example uses a Prometheus registry, but it can be any extension of `MeterRegistry`.
 <2> Provide the function that checks if the link:{webserver-javadoc-base-url}/io/helidon/webserver/http/ServerRequest.html[`ServerRequest`]
- accepts content that your meter registry can produce (e.g., either `text/plain` or unspecified is normally an indication for Prometheus-style output)
-and returns the appropriate `Optional<link:{webserver-javadoc-base-url}/io/helidon/webserver/http/Handler.html[``Handler``]>`.
 <3> A very simple in-line `Handler` that sets the response entity from the Prometheus registry's `scrape()` method.
 
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=accessing-endpoint-intro]

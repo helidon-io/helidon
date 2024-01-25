@@ -19,7 +19,7 @@
 = Helidon Testing
 :h1Prefix: SE
 :pagename: Helidon Testing
-:description: Testing in Helidon 
+:description: Testing in Helidon
 :keywords: helidon, test, testing, junit
 :feature-name: Helidon Testing Framework
 :rootdir: {docdir}/..
@@ -168,29 +168,7 @@ You can create the following test to validate that the server returns the correc
 .Basic Helidon test framework usage.
 [source, java]
 ----
-@ServerTest     <1>
-class IntegrationTest {
-
-    private final Http1Client client;
-
-    protected IntegrationTest(Http1Client client) { <2>
-        this.client = client;
-    }
-
-    @SetUpRoute <3>
-    static void routing(HttpRouting.Builder builder) {
-        QuickstartMain.routing(builder);
-    }
-
-    @Test <4>
-    void testRootRoute() {
-        try (Http1ClientResponse response = client.get("/greet")
-                .request()) {   <5>
-
-            assertThat(response.status(), is(Http.Status.OK_200));  <6>
-        }
-    }
-}
+include::{sourcedir}/se/TestingSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Use `@ServerTest` to trigger the testing framework.
 <2> Inject `Http1Client` for the test.
@@ -214,30 +192,7 @@ If there is no need to set up and run a server, a `DirectClient` client can be u
 .Routing test using `@RoutingTest` and `DirectClient`.
 [source, java]
 ----
-@RoutingTest    <1>
-class RoutingTest {
-
-    private final Http1Client client;
-
-    protected RoutingTest(DirectClient client) { <2>
-        this.client = client;
-    }
-
-    @SetUpRoute <3>
-    static void routing(HttpRouting.Builder builder) {
-        QuickstartMain.routing(builder);
-    }
-
-    @Test <4>
-    void testRootRoute() {
-        try (Http1ClientResponse response = client.get("/greet")
-                .request()) {   <5>
-
-            JsonObject json = response.as(JsonObject.class);    <6>
-            assertThat(json.getString("message"), is("Hello World!"));
-        }
-    }
-}
+include::{sourcedir}/se/TestingSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Use `@RoutingTest` to trigger the testing framework.
 <2> Inject `DirectClient` for the test.
@@ -275,32 +230,7 @@ The WebSocket Testing extension adds support for routing configuration and injec
 .WebSocket sample test.
 [source,java]
 ----
-@ServerTest
-class WsSocketTest {
-
-    private static final ServerSideListener WS_LISTENER = new ServerSideListener();
-
-    private final WsClient wsClient;    <1>
-
-    protected WsSocketTest(WsClient wsClient) {
-        this.wsClient = wsClient;
-    }
-
-    @SetUpRoute
-    static void routing(WsRouting.Builder ws) { <2>
-        ws.endpoint("/testWs", WS_LISTENER);
-    }
-
-    @Test
-    void testWsEndpoint() { <3>
-        WS_LISTENER.reset();
-
-        ClientSideListener clientListener = new ClientSideListener();
-        wsClient.connect("/testWs", clientListener);    <4>
-
-        assertThat(clientListener.message, is("ws"));   <5>
-    }
-}
+include::{sourcedir}/se/TestingSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Declare `WsClient` and later inject it in the constructor.
 <2> Using @SetUpRoute, create WebSocket routing and assign a serverside listener.
@@ -308,84 +238,23 @@ class WsSocketTest {
 <4> Create and assign the clientside listener.
 <5> Check if the received message is correct.
 
-[NOTE]
-====
-The WebSocket `ClientSideListener` is a helper class that implements `WsListener`. `ClientSideListener` is very simple and as shown below:
-
 .`ClientSideListener` helper class.
 [source,java]
 ----
-private static class ClientSideListener implements WsListener {
-    private final CountDownLatch cdl = new CountDownLatch(1);
-    private String message;
-    private volatile Throwable throwable;
-
-    @Override
-    public void onOpen(WsSession session) { <1>
-        session.send("hello", true);
-    }
-
-    @Override
-    public void onMessage(WsSession session, String text, boolean last) {   <2>
-        this.message = text;
-        session.close(WsCloseCodes.NORMAL_CLOSE, "End");
-    }
-
-    @Override
-    public void onClose(WsSession session, int status, String reason) { <3>
-        cdl.countDown();
-    }
-
-    @Override
-    public void onError(WsSession session, Throwable t) {   <4>
-        this.throwable = t;
-        cdl.countDown();
-    }
-}
+include::{sourcedir}/se/TestingSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Send "Hello" when a connection is opened.
 <2> Save the message when received and close the connection.
-<3> Close the connection.
-<4> React on an error.
+<3> React on an error.
 
 The WebSocket `ClientSideListener` is also a helper class that implements `WsListener` and is very straightforward:
 
 .`ServerSideListener` helper class.
 [source,java]
 ----
-private static class ServerSideListener implements WsListener {
-    boolean opened;
-    boolean closed;
-    String message;
-
-    @Override
-    public void onMessage(WsSession session, String text, boolean last) {   <1>
-        message = text;
-        session.send("ws", true);
-    }
-
-    @Override
-    public void onClose(WsSession session, int status, String reason) {     <2>
-        closed = true;
-    }
-
-    @Override
-    public void onOpen(WsSession session) {     <3>
-        opened = true;
-    }
-
-    void reset() {          <4>
-        opened = false;
-        closed = false;
-        message = null;
-    }
-}
+include::{sourcedir}/se/TestingSnippets.java[tag=snippet_5, indent=0]
 ----
 <1> Send "ws" on a received message.
-<2> Called when the connection is called.
-<3> Called on connection is opened.
-<4> Used to reset the state.
-====
 
 The testing class should be annotated with `@RoutingTest` only if routing tests are required without real port opening. Instead of `WsClient`, use `DirectWsClient`.
 
