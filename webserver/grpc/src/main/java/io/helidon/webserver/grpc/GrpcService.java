@@ -60,6 +60,7 @@ public interface GrpcService {
          * @return updated routing
          */
         <ReqT, ResT> Routing unary(String methodName, ServerCalls.UnaryMethod<ReqT, ResT> method);
+        <ReqT, ResT> Routing unary(String methodName, GrpcServerCalls.Unary<ReqT, ResT> method);
 
         /**
          * Bidirectional route.
@@ -71,6 +72,7 @@ public interface GrpcService {
          * @return updated routing
          */
         <ReqT, ResT> Routing bidi(String methodName, ServerCalls.BidiStreamingMethod<ReqT, ResT> method);
+        <ReqT, ResT> Routing bidi(String methodName, GrpcServerCalls.Bidi<ReqT, ResT> method);
 
         /**
          * Server streaming route.
@@ -82,6 +84,7 @@ public interface GrpcService {
          * @return updated routing
          */
         <ReqT, ResT> Routing serverStream(String methodName, ServerCalls.ServerStreamingMethod<ReqT, ResT> method);
+        <ReqT, ResT> Routing serverStream(String methodName, GrpcServerCalls.ServerStream<ReqT, ResT> method);
 
         /**
          * Client streaming route.
@@ -93,5 +96,6 @@ public interface GrpcService {
          * @return updated routing
          */
         <ReqT, ResT> Routing clientStream(String methodName, ServerCalls.ClientStreamingMethod<ReqT, ResT> method);
+        <ReqT, ResT> Routing clientStream(String methodName, GrpcServerCalls.ClientStream<ReqT, ResT> method);
     }
 }

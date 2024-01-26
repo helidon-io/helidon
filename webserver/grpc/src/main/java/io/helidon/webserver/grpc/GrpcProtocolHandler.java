@@ -160,8 +160,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void sendHeaders(Metadata headers) {
-                // todo ignoring headers, just sending required response headers
                 WritableHeaders<?> writable = WritableHeaders.create();
+
                 writable.set(GRPC_CONTENT_TYPE);
                 writable.set(GRPC_ENCODING_IDENTITY);
 

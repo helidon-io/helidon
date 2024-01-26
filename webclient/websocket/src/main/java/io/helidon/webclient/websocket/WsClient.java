@@ -31,7 +31,7 @@ import io.helidon.websocket.WsListener;
 @RuntimeType.PrototypedBy(WsClientConfig.class)
 public interface WsClient extends RuntimeType.Api<WsClientConfig> {
     /**
-     * Protocol to use to obtain an instance of WebSocket specific clietn from
+     * Protocol to use to obtain an instance of WebSocket specific client from
      * {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)}.
      */
     Protocol<WsClient, WsClientProtocolConfig> PROTOCOL = WsProtocolProvider::new;
