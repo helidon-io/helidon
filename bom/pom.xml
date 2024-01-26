@@ -94,6 +94,12 @@
                 <artifactId>helidon-microprofile-graphql-server</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- GRPC -->
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-core</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Micronaut integrations -->
             <dependency>
                 <groupId>io.helidon.integrations.micronaut</groupId>
@@ -1258,6 +1264,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.webserver.testing.junit5</groupId>
+                <artifactId>helidon-webserver-testing-junit5-grpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-api</artifactId>
                 <version>${helidon.version}</version>
@@ -1280,6 +1291,11 @@
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-websocket</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-grpc</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

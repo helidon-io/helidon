@@ -79,11 +79,21 @@ public class ProtocolsMain {
                                     .unary(Strings.getDescriptor(),
                                            "StringService",
                                            "Upper",
-                                           ProtocolsMain::grpcUpper))
+                                           ProtocolsMain::grpcUpper)
+                                    .unary(Strings.getDescriptor(),
+                                           "StringService",
+                                           "Upper",
+                                           ProtocolsMain::blockingGrpcUpper))
                 .addRouting(WsRouting.builder()
                                     .endpoint("/tyrus/echo", ProtocolsMain::wsEcho))
                 .build()
                 .start();
+    }
+
+    private static Strings.StringMessage blockingGrpcUpper(Strings.StringMessage reqT) {
+        return Strings.StringMessage.newBuilder()
+                .setText(reqT.getText().toUpperCase(Locale.ROOT))
+                .build();
     }
 
     private static void grpcUpper(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {

@@ -203,6 +203,7 @@
         <module>dependencies</module>
         <module>fault-tolerance</module>
         <module>graphql</module>
+        <module>grpc</module>
         <module>health</module>
         <module>helidon</module>
         <module>http</module>

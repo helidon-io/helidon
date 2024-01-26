@@ -54,6 +54,15 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         return grpc(proto, serviceName, methodName, ServerCalls.asyncUnaryCall(method));
     }
 
+    static <ReqT, ResT> Grpc<ReqT, ResT> unary(Descriptors.FileDescriptor proto,
+                                               String serviceName,
+                                               String methodName,
+                                               GrpcServerCalls.Unary<ReqT, ResT> method) {
+
+        return grpc(proto, serviceName, methodName, GrpcServerCalls.unaryCall(method));
+    }
+
+
     static <ReqT, ResT> Grpc<ReqT, ResT> bidi(Descriptors.FileDescriptor proto,
                                               String serviceName,
                                               String methodName,
@@ -136,17 +145,17 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
          - to invoke a static method on it
          */
         Class<ReqT> requestType = load(getClassName(mtd.getInputType()));
-        Class<ResT> responsetype = load(getClassName(mtd.getOutputType()));
+        Class<ResT> responseType = load(getClassName(mtd.getOutputType()));
 
         MethodDescriptor.Marshaller<ReqT> reqMarshaller = ProtoMarshaller.get(requestType);
-        MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responsetype);
+        MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responseType);
 
         io.grpc.MethodDescriptor.Builder<ReqT, ResT> grpcDesc = io.grpc.MethodDescriptor.<ReqT, ResT>newBuilder()
                 .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(serviceName, methodName))
                 .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
-        return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), requestType, responsetype, callHandler);
+        return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), requestType, responseType, callHandler);
     }
 
 

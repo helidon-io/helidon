@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,30 +13,26 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+  -->
 
--->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.webserver.testing</groupId>
-        <artifactId>helidon-webserver-testing-project</artifactId>
+        <groupId>io.helidon</groupId>
+        <artifactId>helidon-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
-
-    <groupId>io.helidon.webserver.testing.junit5</groupId>
-    <artifactId>helidon-webserver-testing-junit5-project</artifactId>
-    <name>Helidon WebServer Testing JUnit5 Project</name>
-
     <packaging>pom</packaging>
 
-    <modules>
-        <module>junit5</module>
-        <module>websocket</module>
-        <module>http2</module>
-        <module>grpc</module>
-    </modules>
+    <groupId>io.helidon.grpc</groupId>
+    <artifactId>helidon-grpc-project</artifactId>
+    <name>Helidon gRPC Project</name>
 
+    <description>gRPC support for Helidon</description>
+
+    <modules>
+        <module>core</module>
+    </modules>
 </project>

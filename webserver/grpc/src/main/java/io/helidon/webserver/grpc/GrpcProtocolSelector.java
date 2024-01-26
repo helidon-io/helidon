@@ -65,7 +65,7 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
         Headers httpHeaders = headers.httpHeaders();
 
         if (httpHeaders.contains(HeaderNames.CONTENT_TYPE)) {
-            String contentType = httpHeaders.get(HeaderNames.CONTENT_TYPE).value();
+            String contentType = httpHeaders.get(HeaderNames.CONTENT_TYPE).get();
 
             if (contentType.startsWith("application/grpc")) {
                 GrpcRouting routing = router.routing(GrpcRouting.class, GrpcRouting.empty());

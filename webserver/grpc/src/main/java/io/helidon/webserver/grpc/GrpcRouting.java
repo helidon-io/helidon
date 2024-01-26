@@ -134,6 +134,25 @@ public class GrpcRouting implements Routing {
         }
 
         /**
+         * Unary route.
+         *
+         * @param proto       proto descriptor
+         * @param serviceName service name
+         * @param methodName  method name
+         * @param method      method to handle this route
+         * @param <ReqT>      request type
+         * @param <ResT>      response type
+         * @return updated builder
+         */
+        public <ReqT, ResT> Builder unary(Descriptors.FileDescriptor proto,
+                                          String serviceName,
+                                          String methodName,
+                                          GrpcServerCalls.Unary<ReqT, ResT> method) {
+
+            return route(Grpc.unary(proto, serviceName, methodName, method));
+        }
+
+        /**
          * Bidirectional route.
          *
          * @param proto       proto descriptor

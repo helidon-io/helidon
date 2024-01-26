@@ -46,11 +46,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-grpc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-http2</artifactId>
+            <artifactId>helidon-webserver-http2</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
@@ -58,7 +54,23 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-http2</artifactId>
+            <artifactId>helidon-webserver-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-websocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-grpc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -68,6 +80,26 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5-http2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5-websocket</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5-grpc</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
