@@ -19,7 +19,7 @@ package io.helidon.inject.tests.inject;
 import java.util.List;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Lookup;
@@ -42,13 +42,13 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
  * Javax to Jakarta related tests.
  */
 class JavaxTest {
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        this.injectionServices = InjectionServices.create();
-        this.services = injectionServices.services();
+        this.injectionServices = ManagedRegistry.create();
+        this.services = injectionServices.registry();
     }
 
     @AfterEach

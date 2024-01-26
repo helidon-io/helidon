@@ -16,8 +16,8 @@ import io.helidon.spi.HelidonStartupProvider;
 public class InjectStartupProvider implements HelidonStartupProvider {
     @Override
     public void start(String[] arguments) {
-        InjectionServices.create()
-                .services()
+        ManagedRegistry.create()
+                .registry()
                 .all(Lookup.builder()
                              .addScope(Injection.Singleton.TYPE_NAME)
                              .runLevel(Injection.RunLevel.STARTUP)

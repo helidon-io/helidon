@@ -74,7 +74,7 @@ interface IpBlueprint {
     TypeName contract();
 
     /**
-     * Generic type equivalent to {@link #contract()}. We need both, to prevent reflection at runtime.
+     * Generic type equivalent to {@link Ip#contract()}. We need both, to prevent reflection at runtime.
      *
      * @return generic type of the injected contract
      */
@@ -93,7 +93,7 @@ interface IpBlueprint {
     Set<Qualifier> qualifiers();
 
     /**
-     * Field name that declares this ID in the {@link #descriptor()}. Can be used for code generation.
+     * Field name that declares this ID in the {@link Ip#descriptor()}. Can be used for code generation.
      * This field is always a public constant.
      *
      * @return field that has the id on the descriptor

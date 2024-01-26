@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.RequestScopeControl;
 import io.helidon.inject.Scope;
 import io.helidon.inject.ScopeNotActiveException;
@@ -37,18 +37,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestScopes {
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
     private Services services;
 
     @BeforeEach
     void init() {
-        injectionServices = InjectionServices.create(InjectionConfig.create());
-        services = injectionServices.services();
+        injectionServices = ManagedRegistry.create(InjectionConfig.create());
+        services = injectionServices.registry();
     }
 
     @AfterEach
     void destroy() {
-        InjectionServices toShutdown = injectionServices;
+        ManagedRegistry toShutdown = injectionServices;
         injectionServices = null;
         services = null;
 

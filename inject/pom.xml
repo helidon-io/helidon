@@ -33,6 +33,11 @@
 
     <packaging>pom</packaging>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+        <dependency-plugin.skip>false</dependency-plugin.skip>
+    </properties>
+
     <modules>
         <module>service</module>
         <module>inject</module>
@@ -44,4 +49,29 @@
         <module>maven-plugin</module>
     </modules>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <phase>verify</phase>
+                        <configuration>
+                            <skip>${dependency-plugin.skip}</skip>
+                            <ignoredPackagings>
+                                <packaging>pom</packaging>
+                            </ignoredPackagings>
+                            <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
+                            <failOnWarning>true</failOnWarning>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

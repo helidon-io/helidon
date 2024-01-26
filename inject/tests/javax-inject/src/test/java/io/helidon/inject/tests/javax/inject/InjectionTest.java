@@ -18,7 +18,7 @@ package io.helidon.inject.tests.javax.inject;
 
 import java.util.function.Supplier;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -42,14 +42,14 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class InjectionTest {
-    private static InjectionServices injectionServices;
+    private static ManagedRegistry injectionServices;
     private static Services services;
     private static LifecycleReceiver lifecycleReceiver;
 
     @BeforeAll
     static void initRegistry() {
-        injectionServices = InjectionServices.create();
-        services = injectionServices.services();
+        injectionServices = ManagedRegistry.create();
+        services = injectionServices.registry();
     }
 
     @AfterAll

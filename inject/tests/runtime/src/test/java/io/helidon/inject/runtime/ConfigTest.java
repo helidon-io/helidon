@@ -18,7 +18,7 @@ package io.helidon.inject.runtime;
 
 import io.helidon.config.Config;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Phase;
 
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ Configuration is never used automagically.
 class ConfigTest {
     @Test
     void testDefault() {
-        InjectionConfig config = InjectionServices.create()
+        InjectionConfig config = ManagedRegistry.create()
                 .config();
 
         assertThat(config.useModules(), is(true));
@@ -44,7 +44,7 @@ class ConfigTest {
 
     @Test
     void testConfigUsed() {
-        InjectionConfig config = InjectionServices.create(InjectionConfig.create(Config.create().get("inject")))
+        InjectionConfig config = ManagedRegistry.create(InjectionConfig.create(Config.create().get("inject")))
                 .config();
 
         assertThat(config.useModules(), is(false));

@@ -27,7 +27,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServiceProviderException;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciRegionProviderTest {
-    static InjectionServices injectionServices;
+    static ManagedRegistry injectionServices;
     static Services services;
 
     @AfterAll
@@ -59,9 +59,9 @@ class OciRegionProviderTest {
 
     void resetWith(Config config, InjectionConfig injectionConfig) {
         InjectionTestingSupport.shutdown(injectionServices);
-        injectionServices = InjectionServices.create(injectionConfig);
+        injectionServices = ManagedRegistry.create(injectionConfig);
         OciExtension.injectionServices(injectionServices);
-        services = injectionServices.services();
+        services = injectionServices.registry();
         GlobalConfig.config(() -> config, true);
     }
 
@@ -73,7 +73,7 @@ class OciRegionProviderTest {
         resetWith(config, InjectionConfig.create());
 
         Supplier<Region> regionSupplier = injectionServices
-                .services()
+                .registry()
                 .supply(Lookup.builder().addContract(Region.class).build());
         assertThrows(InjectionServiceProviderException.class,
                      regionSupplier::get);
@@ -94,7 +94,7 @@ class OciRegionProviderTest {
                         .build());
 
         InjectionPointProvider<Region> regionProvider = injectionServices
-                .services()
+                .registry()
                 .get(Lookup.builder()
                              .addContract(InjectionPointProvider.class)
                              .addContract(Region.class)

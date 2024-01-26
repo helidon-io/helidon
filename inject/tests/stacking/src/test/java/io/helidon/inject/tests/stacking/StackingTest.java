@@ -18,7 +18,7 @@ package io.helidon.inject.tests.stacking;
 
 import java.util.List;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.testing.InjectionTestingSupport;
@@ -42,13 +42,13 @@ import static org.hamcrest.Matchers.contains;
  */
 class StackingTest {
 
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        this.injectionServices = InjectionServices.create();
-        this.services = injectionServices.services();
+        this.injectionServices = ManagedRegistry.create();
+        this.services = injectionServices.registry();
     }
 
     @AfterEach

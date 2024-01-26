@@ -19,7 +19,7 @@ package io.helidon.inject.runtime;
 import java.util.List;
 
 import io.helidon.inject.Application;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.runtime.testsubjects.HelloInjectionWorld;
 import io.helidon.inject.runtime.testsubjects.HelloInjectionWorldImpl;
@@ -51,22 +51,24 @@ class HelloInjectionWorldSanityTest {
 
     @Test
     void sanity() {
-        InjectionServices injectionServices = InjectionServices.create();
+        ManagedRegistry injectionServices = ManagedRegistry.create();
         try {
-            Services services = injectionServices.services();
+            Services services = injectionServices.registry();
 
             List<ServiceInfo> moduleProviders = services.lookupServices(Lookup.create(ModuleComponent.class));
-            // config, inject itself, empty module, hello injection module
+            // config, inject itself, empty module, hello injection module, http, common context
             assertThat(String.join(", ", InjectionTestingSupport.toTypes(moduleProviders)),
                        moduleProviders.size(),
-                       equalTo(4));
+                       equalTo(6));
             List<String> descriptions = InjectionTestingSupport.toTypes(moduleProviders);
             // helidon-config is now first
             assertThat(descriptions,
                        containsInAnyOrder("io.helidon.config.Injection__Module",
                                           "io.helidon.inject.Injection__Module",
                                           "io.helidon.inject.runtime.testsubjects.EmptyModule",
-                                          "io.helidon.inject.runtime.testsubjects.HelloInjection__Module"));
+                                          "io.helidon.inject.runtime.testsubjects.HelloInjection__Module",
+                                          "io.helidon.http.Injection__Module",
+                                          "io.helidon.common.context.Injection__Module"));
 
             List<ServiceInfo> applications = services.lookupServices(Lookup.create(Application.class));
             assertThat(applications.size(),
@@ -93,10 +95,10 @@ class HelloInjectionWorldSanityTest {
     }
 
     void standardActivation() {
-        InjectionServices injectionServices = InjectionServices.create();
+        ManagedRegistry injectionServices = ManagedRegistry.create();
 
         try {
-            Services services = injectionServices.services();
+            Services services = injectionServices.registry();
 
             HelloInjectionWorld hello1 = services.get(HelloInjectionWorld.class);
             assertThat(hello1,

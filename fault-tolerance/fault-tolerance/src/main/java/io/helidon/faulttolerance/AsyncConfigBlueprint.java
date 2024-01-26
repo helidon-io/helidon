@@ -22,10 +22,13 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.inject.service.ConfigDriven;
 
 /**
  * {@link Async} configuration bean.
  */
+@ConfigDriven.ConfigBean("fault-tolerance.asyncs")
+@ConfigDriven.Repeatable
 @Prototype.Blueprint(decorator = AsyncConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured
 interface AsyncConfigBlueprint extends Prototype.Factory<Async> {

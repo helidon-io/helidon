@@ -17,6 +17,7 @@
 package io.helidon.inject.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.Annotation;
@@ -28,6 +29,15 @@ import io.helidon.common.types.TypedElementInfo;
  */
 @Prototype.Blueprint
 interface InvocationContextBlueprint {
+    /**
+     * The service instance being intercepted.
+     * This always returns the underlying instance.
+     *
+     * @return instance being intercepted, or empty optional if the intercepted method is not done on an instance
+     *          (i.e. a constructor interception)
+     */
+    Optional<Object> serviceInstance();
+
     /**
      * The service being intercepted.
      *

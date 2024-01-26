@@ -189,6 +189,7 @@ class XImpl__Intercepted extends XImpl {
         super(optionalIA);
 
         this.close_0_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
@@ -198,6 +199,7 @@ class XImpl__Intercepted extends XImpl {
                 return null;
             }, Set.of(java.io.IOException.class));
         this.methodIA2_1_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
@@ -207,12 +209,14 @@ class XImpl__Intercepted extends XImpl {
                 return null;
             }, Set.of());
         this.methodIB2_3_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
             METHOD_3_METHOD_IB2,
             helidonInject__params -> super.methodIB2((java.lang.String) helidonInject__params[0]), Set.of());
         this.methodIB_2_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
@@ -222,24 +226,28 @@ class XImpl__Intercepted extends XImpl {
                 return null;
             }, Set.of());
         this.methodX_4_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
             METHOD_4_METHOD_X,
             helidonInject__params -> super.methodX((java.lang.String) helidonInject__params[0], (int) helidonInject__params[1], (boolean) helidonInject__params[2]), Set.of(java.io.IOException.class));
         this.methodY_5_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
             METHOD_5_METHOD_Y,
             helidonInject__params -> super.methodY(), Set.of());
         this.methodZ_6_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
             METHOD_6_METHOD_Z,
             helidonInject__params -> super.methodZ(), Set.of());
         this.throwRuntimeException_7_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,

@@ -18,7 +18,7 @@ package io.helidon.inject.tests.service.lifecycle;
 
 import java.util.function.Supplier;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -33,7 +33,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ServiceLifecycleTest {
-    private static InjectionServices injectionServices;
+    private static ManagedRegistry injectionServices;
     private static Services services;
 
     @BeforeAll
@@ -43,8 +43,8 @@ class ServiceLifecycleTest {
         AServiceContractImpl.INJECTIONS.set(0);
         AServiceContractImpl.INSTANCES.set(0);
 
-        injectionServices = InjectionServices.create();
-        services = injectionServices.services();
+        injectionServices = ManagedRegistry.create();
+        services = injectionServices.registry();
 
         assertThat(services, notNullValue());
     }

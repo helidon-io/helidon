@@ -25,7 +25,7 @@ import java.util.concurrent.Future;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationResult;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +43,7 @@ class LockContentionTest {
         // each instance is independent, let's just make sure we can shutdown in parallel
         Map<String, Future<?>> result = new ConcurrentHashMap<>();
 
-        InjectionServices is = InjectionServices.create();
+        ManagedRegistry is = ManagedRegistry.create();
         for (int i = 1; i <= COUNT; i++) {
             result.put("shutdown run:" + i, es.submit(() -> this.shutdown(is)));
         }
@@ -61,7 +61,7 @@ class LockContentionTest {
         });
     }
 
-    Map<TypeName, ActivationResult> shutdown(InjectionServices injectionServices) {
+    Map<TypeName, ActivationResult> shutdown(ManagedRegistry injectionServices) {
         Map<TypeName, ActivationResult> result = new LinkedHashMap<>();
         Map<TypeName, ActivationResult> round;
         do {

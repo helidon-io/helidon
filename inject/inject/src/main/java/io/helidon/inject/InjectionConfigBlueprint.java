@@ -17,6 +17,7 @@
 package io.helidon.inject;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
@@ -99,6 +100,15 @@ interface InjectionConfigBlueprint {
      */
     @Option.Singular
     List<ServiceDescriptor<?>> serviceDescriptors();
+
+    /**
+     * Manually register initial bindings for some of the services in the registry.
+     *
+     * @return service instances to register
+     */
+    @Option.Singular
+    @Option.SameGeneric
+    Map<ServiceDescriptor<?>, Object> serviceInstances();
 
     /**
      * Configuration to use to set up business application services.

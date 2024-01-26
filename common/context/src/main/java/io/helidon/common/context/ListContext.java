@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.inject.service.ServiceRegistry;
 
 /**
  * A {@link Context} implementation with deque registry.

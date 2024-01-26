@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Interception;
@@ -58,11 +58,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class InterceptorRuntimeTest {
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
 
     @BeforeEach
     void setUp() {
-        this.injectionServices = InjectionServices.create();
+        this.injectionServices = ManagedRegistry.create();
     }
 
     @AfterEach
@@ -99,7 +99,7 @@ class InterceptorRuntimeTest {
 
     @Test
     void runtimeWithNoInterception() throws Exception {
-        Services services = injectionServices.services();
+        Services services = injectionServices.registry();
 
         List<Closeable> closeables = services.all(Closeable.class);
         assertThat(toSimpleTypes(closeables),
@@ -156,7 +156,7 @@ class InterceptorRuntimeTest {
                       .addServiceDescriptor(ReflectionBasedSingletonServiceDescriptor
                                                     .create(TestNamedInterceptor.class, new TestNamedInterceptorServiceInfo()))
                       .build());
-        Services services = injectionServices.services();
+        Services services = injectionServices.registry();
         assertThat(TestNamedInterceptor.CONSTRUCTOR_COUNTER.get(),
                    equalTo(0));
 
@@ -233,7 +233,7 @@ class InterceptorRuntimeTest {
     }
 
     private void setUp(InjectionConfig config) {
-        this.injectionServices = InjectionServices.create(config);
+        this.injectionServices = ManagedRegistry.create(config);
     }
 
     private void compareContentByLines(String description, List<String> generatedSource, String expectedSource)

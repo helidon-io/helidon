@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.RequestScopeControl;
 import io.helidon.inject.Scope;
 import io.helidon.inject.Services;
@@ -59,14 +59,14 @@ class AllScopesLookupTest {
     private static final Lookup LOOKUP_NO_IP_PROVIDER = Lookup.builder()
             .addContract(ContractNoIpProvider.class)
             .build();
-    private static InjectionServices injectionServices;
+    private static ManagedRegistry injectionServices;
     private static Services services;
     private Scope requestScope;
 
     @BeforeAll
     static void init() {
-        injectionServices = InjectionServices.create();
-        services = injectionServices.services();
+        injectionServices = ManagedRegistry.create();
+        services = injectionServices.registry();
     }
 
     @AfterAll

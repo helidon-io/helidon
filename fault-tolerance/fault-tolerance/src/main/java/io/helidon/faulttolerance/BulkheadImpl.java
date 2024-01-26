@@ -34,6 +34,7 @@ import java.util.function.Supplier;
 
 import io.helidon.inject.service.Injection;
 
+@Injection.DrivenBy(BulkheadConfigBlueprint.class)
 class BulkheadImpl implements Bulkhead {
     private static final System.Logger LOGGER = System.getLogger(BulkheadImpl.class.getName());
 

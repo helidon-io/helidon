@@ -19,7 +19,7 @@ package io.helidon.examples.inject.basics;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Lookup;
@@ -36,7 +36,7 @@ public class Main {
      */
     public static void main(String... args) {
         // get the global service registry
-        Services services = InjectionServices.create().services();
+        Services services = ManagedRegistry.create().registry();
 
         // 0. Demonstrates programmatic lookup from the Services registry.
         // 1. when a service is being managed by a DI provider (like Helidon Injection) it should be "looked up" or injected

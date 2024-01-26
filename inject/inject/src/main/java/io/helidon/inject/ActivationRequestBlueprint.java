@@ -36,7 +36,7 @@ interface ActivationRequestBlueprint {
     /**
      * Ultimate target phase for activation.
      * <p>
-     * Defaults to {@link io.helidon.inject.InjectionConfig#limitRuntimePhase()}.
+     * Defaults to {@link ServiceRegistryConfig#limitRuntimePhase()}.
      *
      * @return phase to target
      */

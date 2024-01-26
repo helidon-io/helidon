@@ -21,6 +21,7 @@ import java.util.Set;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.ServiceDescriptor;
+import io.helidon.inject.service.ServiceRegistry;
 
 /**
  * Service descriptor to enable injection of {@link io.helidon.inject.Services}.
@@ -41,7 +42,7 @@ public class Services__ServiceDescriptor implements ServiceDescriptor<Services> 
 
     private static final TypeName SERVICES = TypeName.create(Services.class);
     private static final TypeName INFO_TYPE = TypeName.create(Services__ServiceDescriptor.class);
-    private static final Set<TypeName> CONTRACTS = Set.of(Services.TYPE_NAME);
+    private static final Set<TypeName> CONTRACTS = Set.of(Services.TYPE_NAME, ServiceRegistry.TYPE_NAME);
 
     private Services__ServiceDescriptor() {
     }

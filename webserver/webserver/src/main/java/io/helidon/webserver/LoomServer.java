@@ -72,10 +72,10 @@ class LoomServer implements WebServer {
 
     // only for use by service registry
     @Injection.Inject
-    LoomServer(Config config, List<HttpFeature> httpFeatures) {
+    LoomServer(WebServerService service) {
+        // not setting registry, as we do not want that one additional lookup
         this(WebServerConfig.builder()
-                     .config(config.get("server"))
-                     .routing(routing -> httpFeatures.forEach(routing::addFeature))
+                     .update(service::updateServerBuilder)
                      .buildPrototype());
     }
 

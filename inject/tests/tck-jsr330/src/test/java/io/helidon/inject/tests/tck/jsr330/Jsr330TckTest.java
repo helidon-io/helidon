@@ -20,7 +20,7 @@ import java.util.Enumeration;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 
 import junit.framework.TestFailure;
 import junit.framework.TestResult;
@@ -44,8 +44,8 @@ public class Jsr330TckTest {
      */
     @Test
     public void testItAll() {
-        InjectionServices injectionServices = InjectionServices.create();
-        Supplier<Car> carProvider = injectionServices.services().supply(Car.class);
+        ManagedRegistry injectionServices = ManagedRegistry.create();
+        Supplier<Car> carProvider = injectionServices.registry().supply(Car.class);
         Objects.requireNonNull(carProvider.get());
         assertThat("sanity", carProvider.get(), not(carProvider.get()));
         junit.framework.Test jsrTest = Tck.testsFor(carProvider.get(),

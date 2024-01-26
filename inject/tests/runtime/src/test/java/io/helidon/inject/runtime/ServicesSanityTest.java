@@ -16,7 +16,7 @@
 
 package io.helidon.inject.runtime;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.runtime.testsubjects.HelloInjection__Application;
 import io.helidon.inject.testing.InjectionTestingSupport;
@@ -29,11 +29,11 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ServicesSanityTest {
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
 
     @BeforeEach
     void setUp() {
-        injectionServices = InjectionServices.create();
+        injectionServices = ManagedRegistry.create();
     }
 
     @AfterEach
@@ -47,7 +47,7 @@ class ServicesSanityTest {
         assertThat(injectionServices, notNullValue());
 
         Services services = injectionServices
-                .services();
+                .registry();
 
         assertThat(services, notNullValue());
     }

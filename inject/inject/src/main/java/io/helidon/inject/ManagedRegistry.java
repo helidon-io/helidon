@@ -20,14 +20,15 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.service.ServiceRegistry;
 
 /**
- * A factory for service registry.
+ * A lifecycle manager for a {@link io.helidon.inject.service.ServiceRegistry}.
  *
  * @see #create()
  * @see #create(InjectionConfig)
  */
-public interface InjectionServices {
+public interface ManagedRegistry {
     /**
      * Configure the bootstrap of injection. This method must be called before obtaining an instance
      * of {@link io.helidon.inject.Services}, otherwise it will be ignored.
@@ -47,7 +48,7 @@ public interface InjectionServices {
      * @param injectionConfig configuration of the services
      * @return a new injection services instance
      */
-    static InjectionServices create(InjectionConfig injectionConfig) {
+    static ManagedRegistry create(InjectionConfig injectionConfig) {
         return InjectionServicesImpl.create(injectionConfig);
     }
 
@@ -58,7 +59,7 @@ public interface InjectionServices {
      *
      * @return a new injection services instance
      */
-    static InjectionServices create() {
+    static ManagedRegistry create() {
         return create(InjectionConfig.create());
     }
 
@@ -67,7 +68,7 @@ public interface InjectionServices {
      *
      * @return the services registry
      */
-    Services services();
+    Services registry();
 
     /**
      * The governing configuration.

@@ -19,7 +19,7 @@ package io.helidon.examples.inject.application;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 
 class InjectionApplicationTest {
 
-    protected static InjectionServices injectionServices;
+    protected static ManagedRegistry injectionServices;
     protected static Services services;
 
     @AfterAll
@@ -38,10 +38,10 @@ class InjectionApplicationTest {
 
     protected void resetWith(Config config) {
         tearDown();
-        injectionServices = InjectionServices.create(InjectionConfig.builder()
+        injectionServices = ManagedRegistry.create(InjectionConfig.builder()
                                                           .serviceConfig(config)
                                                           .build());
-        services = injectionServices.services();
+        services = injectionServices.registry();
     }
 
     @Test

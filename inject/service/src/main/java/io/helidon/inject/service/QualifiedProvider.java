@@ -31,7 +31,7 @@ import io.helidon.common.types.TypeName;
  * service declares the type parameters of this interface. If you use any type other than {@link java.lang.Object}, that will
  * be the only supported contract, otherwise any type is expected to be supported.
  * <p>
- * A good practise is to create an accompanying codegen extension that validates injection points at build time.
+ * A good practice is to create an accompanying codegen extension that validates injection points at build time.
  *
  * @param <A> type of qualifier supported by this provider
  * @param <T> type of the provided instance, the special case is {@link java.lang.Object} - if used, we consider this

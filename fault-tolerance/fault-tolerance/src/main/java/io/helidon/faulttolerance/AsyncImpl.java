@@ -27,10 +27,12 @@ import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
+import io.helidon.inject.service.ServiceRegistry;
 
 /**
  * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
  */
+@Injection.DrivenBy(AsyncConfigBlueprint.class)
 class AsyncImpl implements Async {
     private static final System.Logger LOGGER = System.getLogger(AsyncImpl.class.getName());
 
@@ -40,7 +42,7 @@ class AsyncImpl implements Async {
 
     // this must only be invoked when within Inject, so we can use inject services
     @Injection.Inject
-    AsyncImpl(Services services, AsyncConfig config) {
+    AsyncImpl(ServiceRegistry services, AsyncConfig config) {
         this.executor = config.executor()
                 .or(() -> config.executorName().flatMap(it -> executorService(services, it)))
                 .orElseGet(() -> FaultTolerance.executor().get());
@@ -95,7 +97,7 @@ class AsyncImpl implements Async {
         return result;
     }
 
-    private static Optional<ExecutorService> executorService(Services services, String name) {
+    private static Optional<ExecutorService> executorService(ServiceRegistry services, String name) {
         return services.first(Lookup.builder()
                                       .addContract(ExecutorService.class)
                                       .addQualifier(Qualifier.createNamed(name))

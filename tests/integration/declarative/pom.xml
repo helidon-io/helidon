@@ -102,6 +102,11 @@
                             <artifactId>helidon-webserver-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.fault-tolerance</groupId>
+                            <artifactId>helidon-fault-tolerance-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
@@ -120,7 +125,26 @@
                         <artifactId>helidon-webserver-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>io.helidon.fault-tolerance</groupId>
+                        <artifactId>helidon-fault-tolerance-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.inject</groupId>
+                <artifactId>helidon-inject-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>application-create</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

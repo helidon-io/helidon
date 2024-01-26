@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package io.helidon.inject;
 
+import io.helidon.inject.service.ServiceRegistryException;
+
 /**
  * A general exception indicating that something failed related to Injection.
  */
-public class InjectionException extends RuntimeException {
+public class InjectionException extends ServiceRegistryException {
 
     /**
      * A general purpose exception from the Injection Framework.

@@ -18,7 +18,7 @@ package io.helidon.inject.tests.inject.provider;
 
 import java.util.function.Supplier;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -31,13 +31,13 @@ import static org.hamcrest.Matchers.equalTo;
 
 class PerRequestProviderTest {
 
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        this.injectionServices = InjectionServices.create();
-        this.services = injectionServices.services();
+        this.injectionServices = ManagedRegistry.create();
+        this.services = injectionServices.registry();
     }
 
     @AfterEach

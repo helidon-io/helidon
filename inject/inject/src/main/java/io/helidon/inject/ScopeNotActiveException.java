@@ -24,6 +24,9 @@ import io.helidon.common.types.TypeName;
  * An attempt was done to get a service instance from a scope that is not active.
  */
 public class ScopeNotActiveException extends InjectionException {
+    /**
+     * Scope that was expected to be active.
+     */
     private final TypeName scope;
 
     /**

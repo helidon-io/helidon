@@ -24,6 +24,7 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
 import io.helidon.inject.service.ConfigDriven;
+import io.helidon.inject.service.ServiceRegistry;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -88,4 +89,12 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      */
     Optional<Context> serverContext();
 
+    /**
+     * When running with a service registry, it can be configured in builder, and used to obtain components to set up the
+     * server, such as {@link io.helidon.webserver.http.HttpFeature}, {@link io.helidon.webserver.spi.ServerFeature},
+     * {@link io.helidon.http.media.MediaSupport} etc.
+     *
+     * @return service registry, if configured
+     */
+    Optional<ServiceRegistry> serviceRegistry();
 }

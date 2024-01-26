@@ -49,6 +49,7 @@ import io.helidon.inject.service.ServiceBinder;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInfo;
 import io.helidon.inject.service.ServiceInstance;
+import io.helidon.inject.service.ServiceRegistry;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
@@ -81,7 +82,7 @@ import io.helidon.metrics.api.Metrics;
  * {@link io.helidon.common.Weighted}, and finally by the alphabetic ordering according
  * to the type name (package and class canonical name).
  */
-public final class Services {
+public final class Services implements ServiceRegistry {
     /**
      * public weight used by Helidon Injection components.
      * It is lower than the default, so it is easy to override service with custom providers.

@@ -27,7 +27,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.InjectionServiceProviderException;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.Ip;
@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciAuthenticationDetailsProviderTest {
 
-    static InjectionServices injectionServices;
+    static ManagedRegistry injectionServices;
     static Services services;
 
     @BeforeEach
@@ -68,8 +68,8 @@ class OciAuthenticationDetailsProviderTest {
     void resetWith(Config config, InjectionConfig injectionConfig) {
         GlobalConfig.config(() -> config, true);
         tearDown();
-        injectionServices = InjectionServices.create(injectionConfig);
-        services = injectionServices.services();
+        injectionServices = ManagedRegistry.create(injectionConfig);
+        services = injectionServices.registry();
     }
 
     @Test

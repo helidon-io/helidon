@@ -17,7 +17,7 @@
 package io.helidon.inject.tests.qualified.providers;
 
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -29,11 +29,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class QualifiedProvidersTest {
     @Test
     public void testQualifiedProvidersNoApp() {
-        InjectionServices injectionServices = InjectionServices.create(InjectionConfig.builder()
+        ManagedRegistry injectionServices = ManagedRegistry.create(InjectionConfig.builder()
                                                                                .useApplication(false)
                                                                                .build());
         try {
-            testServices(injectionServices.services());
+            testServices(injectionServices.registry());
         } finally {
             InjectionTestingSupport.shutdown(injectionServices);
         }
@@ -41,9 +41,9 @@ public class QualifiedProvidersTest {
 
     @Test
     public void testQualifiedProvidersWithApp() {
-        InjectionServices injectionServices = InjectionServices.create();
+        ManagedRegistry injectionServices = ManagedRegistry.create();
         try {
-            testServices(injectionServices.services());
+            testServices(injectionServices.registry());
         } finally {
             InjectionTestingSupport.shutdown(injectionServices);
         }

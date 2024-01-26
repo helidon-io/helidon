@@ -83,6 +83,14 @@ class WebServerConfigSupport {
                                                   + " \"ServerConfig.Builder\", not as a named routing.");
             }
 
+            if (target.serviceRegistry().isPresent()) {
+                target.serviceRegistry()
+                        .get()
+                        .<WebServerService>supply(WebServerService__ServiceDescriptor.INSTANCE)
+                        .get()
+                        .updateServerBuilder(target);
+            }
+
             List<ServerFeature> features = target.features();
             List<ServerFeature> uniqueFeatures = new ArrayList<>();
             Set<FeatureId> registeredFeatures = new HashSet<>();

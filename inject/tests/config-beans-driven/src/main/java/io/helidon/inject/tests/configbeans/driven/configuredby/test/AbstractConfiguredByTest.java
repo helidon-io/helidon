@@ -24,7 +24,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 import io.helidon.inject.tests.configbeans.FakeWebServer;
@@ -42,7 +42,7 @@ import static org.hamcrest.Matchers.is;
 public abstract class AbstractConfiguredByTest {
     protected static final String FAKE_SERVER_CONFIG = "fake-server";
 
-    protected static InjectionServices injectionServices;
+    protected static ManagedRegistry injectionServices;
     protected static Services services;
 
     @AfterAll
@@ -66,12 +66,12 @@ public abstract class AbstractConfiguredByTest {
     protected void resetWith(Config config) {
         GlobalConfig.config(() -> config, true);
 
-        injectionServices = InjectionServices.create(InjectionConfig.builder()
+        injectionServices = ManagedRegistry.create(InjectionConfig.builder()
                                                              .serviceLookupCaching(true)
                                                              .config(config.get("inject"))
                                                              .serviceConfig(config)
                                                              .build());
-        services = injectionServices.services();
+        services = injectionServices.registry();
     }
 
     @Test

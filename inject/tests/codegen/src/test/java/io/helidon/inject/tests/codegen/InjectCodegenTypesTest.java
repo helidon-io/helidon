@@ -21,7 +21,7 @@ import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.inject.Application;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.InvocationException;
 import io.helidon.inject.Phase;
 import io.helidon.inject.ServiceInjectionPlanBinder;
@@ -41,6 +41,7 @@ import io.helidon.inject.service.QualifiedProvider;
 import io.helidon.inject.service.ServiceBinder;
 import io.helidon.inject.service.ServiceDescriptor;
 import io.helidon.inject.service.ServiceInfo;
+import io.helidon.inject.service.ServiceRegistry;
 import io.helidon.inject.service.ServicesProvider;
 
 import org.junit.jupiter.api.Test;
@@ -117,10 +118,10 @@ class InjectCodegenTypesTest {
                    is(InjectionConfig.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.INJECT_PHASE.fqName(),
                    is(Phase.class.getCanonicalName()));
-        assertThat(InjectCodegenTypes.INJECT_INJECTION_SERVICES.fqName(),
-                   is(InjectionServices.class.getCanonicalName()));
-        assertThat(InjectCodegenTypes.INJECT_SERVICES.fqName(),
-                   is(Services.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.MANAGED_REGISTRY.fqName(),
+                   is(ManagedRegistry.class.getCanonicalName()));
+        assertThat(InjectCodegenTypes.SERVICE_REGISTRY.fqName(),
+                   is(ServiceRegistry.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.PROTOTYPE_BLUEPRINT.fqName(),
                    is(Prototype.Blueprint.class.getCanonicalName()));
         assertThat(InjectCodegenTypes.PROTOTYPE_CONFIGURED.fqName(),

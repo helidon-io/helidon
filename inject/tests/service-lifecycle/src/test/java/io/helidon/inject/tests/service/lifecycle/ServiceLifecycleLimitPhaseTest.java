@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationResult;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Phase;
 import io.helidon.inject.Services;
 
@@ -39,7 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class ServiceLifecycleLimitPhaseTest {
-    private static InjectionServices injectionServices;
+    private static ManagedRegistry injectionServices;
     private static Services services;
 
     @BeforeAll
@@ -49,10 +49,10 @@ class ServiceLifecycleLimitPhaseTest {
         AServiceContractImpl.INJECTIONS.set(0);
         AServiceContractImpl.INSTANCES.set(0);
 
-        injectionServices = InjectionServices.create(InjectionConfig.builder()
+        injectionServices = ManagedRegistry.create(InjectionConfig.builder()
                                                              .limitRuntimePhase(Phase.CONSTRUCTING)
                                                              .build());
-        services = injectionServices.services();
+        services = injectionServices.registry();
 
         assertThat(services, notNullValue());
     }

@@ -16,7 +16,7 @@
 
 package io.helidon.inject.tests.interception;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.InvocationException;
 import io.helidon.inject.Services;
 
@@ -40,14 +40,14 @@ Modifying
 Repeating
  */
 class InterceptionTest {
-    private static InjectionServices injectionServices;
+    private static ManagedRegistry injectionServices;
     private static Services services;
     private static TheService service;
 
     @BeforeAll
     static void init() {
-        injectionServices = InjectionServices.create();
-        services = injectionServices.services();
+        injectionServices = ManagedRegistry.create();
+        services = injectionServices.registry();
         service = services.get(TheService.class);
 
         assertAll(

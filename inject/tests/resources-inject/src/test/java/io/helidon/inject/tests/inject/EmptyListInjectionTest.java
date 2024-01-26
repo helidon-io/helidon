@@ -18,7 +18,7 @@ package io.helidon.inject.tests.inject;
 
 import java.util.function.Supplier;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -30,13 +30,13 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class EmptyListInjectionTest {
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
-        this.injectionServices = InjectionServices.create();
-        this.services = injectionServices.services();
+        this.injectionServices = ManagedRegistry.create();
+        this.services = injectionServices.registry();
     }
 
     @AfterEach

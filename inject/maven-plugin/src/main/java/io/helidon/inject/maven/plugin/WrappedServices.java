@@ -79,11 +79,11 @@ class WrappedServices implements AutoCloseable {
             InjectionServices injectionServices = InjectionServices.create(injectionConfig)
             Services services = injectionServices.services();
              */
-            Class<?> injectionServicesType = classLoader.loadClass(InjectCodegenTypes.INJECT_INJECTION_SERVICES.fqName());
+            Class<?> injectionServicesType = classLoader.loadClass(InjectCodegenTypes.MANAGED_REGISTRY.fqName());
             Object injectionServices = injectionServicesType.getMethod("create", injectConfigType)
                     .invoke(null, injectionConfig);
-            Class<?> servicesType = classLoader.loadClass(InjectCodegenTypes.INJECT_SERVICES.fqName());
-            Object services = injectionServicesType.getMethod("services")
+            Class<?> servicesType = classLoader.loadClass(InjectCodegenTypes.SERVICE_REGISTRY.fqName());
+            Object services = injectionServicesType.getMethod("registry")
                     .invoke(injectionServices);
 
             return new WrappedServices(classLoader,

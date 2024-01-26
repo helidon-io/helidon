@@ -112,6 +112,7 @@ class YImpl__Intercepted extends YImpl {
         super(optionalIA);
 
         this.close_0_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
@@ -121,12 +122,14 @@ class YImpl__Intercepted extends YImpl {
                 return null;
             }, Set.of(java.io.IOException.class));
         this.methodIB2_2_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,
             METHOD_2_METHOD_IB2,
             helidonInject__params -> super.methodIB2((java.lang.String) helidonInject__params[0]), Set.of());
         this.methodIB_1_invoker = helidonInject__interceptMeta.createInvoker(
+            this,
             helidonInject__serviceDescriptor,
             helidonInject__typeQualifiers,
             helidonInject__typeAnnotations,

@@ -71,4 +71,5 @@ module io.helidon.webserver {
     provides io.helidon.inject.service.ModuleComponent
             with io.helidon.webserver.Injection__Module;
 
+    opens io.helidon.webserver to io.helidon.inject.service;
 }

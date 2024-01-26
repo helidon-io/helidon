@@ -41,9 +41,11 @@
         <dependency-check.skip>true</dependency-check.skip>
         <helidon.services.skip>true</helidon.services.skip>
         <checkstyle.skip>true</checkstyle.skip>
+        <dependency-plugin.skip>true</dependency-plugin.skip>
     </properties>
 
     <modules>
+        <module>codegen</module>
         <module>service-lifecycle</module>
         <module>stacking</module>
         <module>helidon-inject</module>
@@ -55,7 +57,6 @@
         <module>interception</module>
         <module>api</module>
         <module>runtime</module>
-        <module>codegen</module>
         <module>scopes</module>
         <module>lookup</module>
         <module>qualified-providers</module>

@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationResult;
 import io.helidon.inject.Application;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Injection;
 import io.helidon.inject.service.InjectionPointProvider;
@@ -64,6 +64,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -73,14 +74,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class ToolBoxTest {
     private static final MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
 
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
     private Services services;
 
     @BeforeEach
     void setUp() {
         TestingSingleton.reset();
-        this.injectionServices = InjectionServices.create();
-        this.services = injectionServices.services();
+        this.injectionServices = ManagedRegistry.create();
+        this.services = injectionServices.registry();
     }
 
     @AfterEach
@@ -187,7 +188,9 @@ class ToolBoxTest {
 
         // note that order matters here
         assertThat(names,
-                   contains("io.helidon.config",
+                   contains("io.helidon.common.context",
+                            "io.helidon.config",
+                            "io.helidon.http",
                             "io.helidon.inject",
                             "io.helidon.inject.tests.inject",
                             "unnamed/io.helidon.inject.tests.inject/test"));
@@ -323,6 +326,12 @@ class ToolBoxTest {
         assertThat(report,
                    hasEntry(create("io.helidon.inject.Injection__Module"), "ACTIVE->DESTROYED"));
         expected++;
+        assertThat(report,
+                   hasEntry(create("io.helidon.common.context.Injection__Module"), "ACTIVE->DESTROYED"));
+        expected++;
+        assertThat(report,
+                   hasEntry(create("io.helidon.http.Injection__Module"), "ACTIVE->DESTROYED"));
+        expected++;
         assertThat(report + " : expected " + expected + " services to be present", report.size(), equalTo(expected));
 
         assertThat(TestingSingleton.postConstructCount(), equalTo(1));
@@ -330,7 +339,7 @@ class ToolBoxTest {
 
         tearDown();
         setUp();
-        TestingSingleton testingSingletonFromLookup2 = injectionServices.services().get(TestingSingleton.class);
+        TestingSingleton testingSingletonFromLookup2 = injectionServices.registry().get(TestingSingleton.class);
         assertThat(testingSingletonFromLookup2, not(testingSingletonFromLookup));
 
         map = injectionServices.shutdown();

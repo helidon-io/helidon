@@ -31,5 +31,6 @@
 
     <modules>
         <module>fault-tolerance</module>
+        <module>codegen</module>
     </modules>
 </project>

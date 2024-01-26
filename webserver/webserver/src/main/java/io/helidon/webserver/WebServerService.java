@@ -6,6 +6,10 @@ import java.util.Optional;
 import io.helidon.common.config.Config;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.encoding.ContentEncoding;
+import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.encoding.ContentEncodingContextConfig;
+import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.MediaContextConfig;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.inject.service.Injection;
 import io.helidon.webserver.http.DirectHandlers;
@@ -15,6 +19,9 @@ import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 import io.helidon.webserver.spi.ServerFeature;
 
+/*
+Combines configuration done by hand with services discovered using the registry.
+ */
 @Injection.Singleton
 class WebServerService {
     private final Optional<Config> config;
@@ -24,7 +31,6 @@ class WebServerService {
     private final List<ContentEncoding> contentEncodings;
     private final List<MediaSupport> mediaSupports;
     private final List<ServerConnectionSelector> connectionSelectors;
-    private final List<DirectHandlers> directHandlers;
     private final Optional<RequestedUriDiscoveryContext> requestedUriDiscoveryContext;
 
     @Injection.Inject
@@ -45,14 +51,34 @@ class WebServerService {
         this.contentEncodings = contentEncodings;
         this.mediaSupports = mediaSupports;
         this.connectionSelectors = connectionSelectors;
-        this.directHandlers = directHandlers;
         this.requestedUriDiscoveryContext = requestedUriDiscoveryContext;
     }
 
-    void updateServerBuilder(WebServerConfig.Builder builder) {
+    void updateServerBuilder(WebServerConfig.BuilderBase<?, ?> builder) {
         if (builder.config().isEmpty()) {
             config.map(it -> it.get("server")).ifPresent(builder::config);
         }
+        if (builder.requestedUriDiscoveryContext().isEmpty()) {
+            requestedUriDiscoveryContext.ifPresent(builder::requestedUriDiscoveryContext);
+        }
+
+        protocolConfigs.forEach(builder::addProtocol);
+        if (!contentEncodings.isEmpty()) {
+            Optional<ContentEncodingContext> ctx = builder.contentEncoding();
+            ContentEncodingContextConfig.Builder ctxBuilder = ContentEncodingContext.builder();
+            ctx.ifPresent(contentEncodingContext -> ctxBuilder.from(contentEncodingContext.prototype()));
+            builder.contentEncoding(ctxBuilder.update(it -> contentEncodings.forEach(it::addContentEncoding))
+                        .build());
+
+        }
+        if (!mediaSupports.isEmpty()) {
+            Optional<MediaContext> ctx = builder.mediaContext();
+            MediaContextConfig.Builder ctxBuilder = MediaContextConfig.builder();
+            ctx.ifPresent(mediaContext -> ctxBuilder.from(mediaContext.prototype()));
+            builder.mediaContext(ctxBuilder.update(it -> mediaSupports.forEach(it::addMediaSupport))
+                                            .build());
+        }
+        connectionSelectors.forEach(builder::addConnectionSelector);
         if (builder.requestedUriDiscoveryContext().isEmpty()) {
             requestedUriDiscoveryContext.ifPresent(builder::requestedUriDiscoveryContext);
         }
@@ -84,8 +110,9 @@ class WebServerService {
 
                 builder.routing(routingBuilder);
             } else {
-                builder.routing
-                builder.routing(socket, it -> it.addFeature(httpFeature));
+                // TODO update routing of a specific socket that does not remove existing routes
+                // this may require custom builder...
+                // builder.routing(socket, it -> it.addFeature(httpFeature));
             }
 
         }

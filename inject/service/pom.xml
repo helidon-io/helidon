@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-inject-service</artifactId>
-    <name>Helidon Injection Service API</name>
+    <name>Helidon Injection Service</name>
     <description>This is the minimal API as required by modules, that want to expose services without full dependency on Inject
         API and/or Runtime
     </description>
@@ -35,16 +35,15 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-junit5</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>

@@ -16,7 +16,7 @@
 
 package io.helidon.examples.inject.interceptors;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 
 /**
@@ -31,7 +31,7 @@ public class Main {
      */
     public static void main(String... args) {
         // global service registry
-        Services services = InjectionServices.create().services();
+        Services services = ManagedRegistry.create().registry();
 
         // use the intercepted screwdriver - note that hashCode(), equals(), and toString() are not intercepted
         ScrewDriver screwDriver = services.get(ScrewDriver.class);

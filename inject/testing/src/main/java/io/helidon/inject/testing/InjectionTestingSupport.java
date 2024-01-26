@@ -23,7 +23,7 @@ import java.util.Map;
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.ActivationResult;
 import io.helidon.inject.InjectionException;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.service.ServiceInfo;
 
 /**
@@ -80,7 +80,7 @@ public class InjectionTestingSupport {
      * @param injectionServices services to shut down, this may be {@code null} to prevent unexpected errors when registry
      *                          fails to initialize in a test and is null at time of shutdown
      */
-    public static void shutdown(InjectionServices injectionServices) {
+    public static void shutdown(ManagedRegistry injectionServices) {
         if (injectionServices == null) {
             return;
         }

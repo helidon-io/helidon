@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -163,11 +164,14 @@ class InterceptedTypeGenerator {
     }
 
     private void createInvokers(Constructor.Builder cModel) {
+        boolean hasGenericType = false;
+
         for (MethodDefinition interceptedMethod : interceptedMethods) {
             cModel.addContent("this.")
                     .addContent(interceptedMethod.invokerName)
                     .addContentLine(" = helidonInject__interceptMeta.createInvoker(")
                     .increaseContentPadding()
+                    .addContentLine("this,")
                     .addContentLine("helidonInject__serviceDescriptor,")
                     .addContentLine("helidonInject__typeQualifiers,")
                     .addContentLine("helidonInject__typeAnnotations,")
@@ -186,6 +190,9 @@ class InterceptedTypeGenerator {
             for (int i = 0; i < args.size(); i++) {
                 TypedElementInfo arg = args.get(i);
                 allArgs.add("(" + arg.typeName().resolvedName() + ") helidonInject__params[" + i + "]");
+                if (!arg.typeName().typeArguments().isEmpty()) {
+                    hasGenericType = true;
+                }
             }
             cModel.addContent(String.join(", ", allArgs));
             cModel.addContent(")");
@@ -204,6 +211,9 @@ class InterceptedTypeGenerator {
                                         .collect(Collectors.joining(", ")))
                     .addContentLine("));")
                     .decreaseContentPadding();
+        }
+        if (hasGenericType) {
+            cModel.addAnnotation(Annotation.create(TypeName.create(SuppressWarnings.class), "unchecked"));
         }
     }
 

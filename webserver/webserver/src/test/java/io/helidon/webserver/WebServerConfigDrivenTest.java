@@ -16,7 +16,7 @@
 
 package io.helidon.webserver;
 
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
 
@@ -27,12 +27,12 @@ import org.junit.jupiter.api.Test;
 
 @Disabled
 class WebServerConfigDrivenTest {
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
     private Services services;
 
     @BeforeEach
     void init() {
-        injectionServices = InjectionServices.create();
+        injectionServices = ManagedRegistry.create();
     }
 
     @AfterEach

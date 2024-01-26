@@ -30,7 +30,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.inject.service.ModuleComponent;
 import io.helidon.inject.service.ServiceDescriptor;
 
-class InjectionServicesImpl implements InjectionServices {
+class InjectionServicesImpl implements ManagedRegistry {
     private static final ReadWriteLock INSTANCE_LOCK = new ReentrantReadWriteLock();
     private static final AtomicReference<InjectionConfig> CONFIG = new AtomicReference<>();
 
@@ -46,11 +46,11 @@ class InjectionServicesImpl implements InjectionServices {
         this.config = config;
     }
 
-    static InjectionServices create(InjectionConfig injectionConfig) {
+    static ManagedRegistry create(InjectionConfig injectionConfig) {
         return new InjectionServicesImpl(injectionConfig);
     }
 
-    static InjectionServices instance() {
+    static ManagedRegistry instance() {
         Lock lock = INSTANCE_LOCK.readLock();
         try {
             lock.lock();
@@ -83,7 +83,7 @@ class InjectionServicesImpl implements InjectionServices {
 
     @SuppressWarnings("deprecation")
     @Override
-    public Services services() {
+    public Services registry() {
         Lock readLock = lifecycleLock.readLock();
         try {
             readLock.lock();

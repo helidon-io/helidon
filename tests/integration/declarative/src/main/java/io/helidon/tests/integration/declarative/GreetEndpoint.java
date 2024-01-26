@@ -18,28 +18,31 @@ package io.helidon.tests.integration.declarative;
 
 import java.io.IOException;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 import io.helidon.common.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.inject.InjectionException;
 import io.helidon.inject.service.Injection;
-import io.helidon.security.SecurityContext;
+import io.helidon.inject.service.ServiceRegistry;
 
 @Http.Path("/greet")
 class GreetEndpoint {
-    private String greeting;
+    private final ServiceRegistry registry;
+    private volatile String greeting;
 
     @Injection.Inject
-    GreetEndpoint(Config config) {
+    GreetEndpoint(Config config, ServiceRegistry serviceRegistry) {
         this.greeting = config.get("app.greeting").asString().orElse("Hello");
+        this.registry = serviceRegistry;
     }
 
     static String greetNamedFallback(String name,
-                                     boolean shouldThrow,
+                                     Optional<Boolean> shouldThrow,
                                      String hostHeader,
-                                     SecurityContext securityContext,
                                      Throwable t) {
         return "Fallback for \"greetNamed\": Failed to obtain greeting for " + name + ", message: " + t.getMessage();
     }
@@ -58,9 +61,9 @@ class GreetEndpoint {
     @FaultTolerance.CircuitBreaker
     @FaultTolerance.Bulkhead(name = "bulkhead-it")
     String greetNamed(@Http.PathParam("name") String name,
-                      @Http.QueryParam(value = "throw", defaultValue = "false") boolean shouldThrow,
+                      @Http.QueryParam(value = "throw") Optional<Boolean> shouldThrow,
                       @Http.HeaderParam(HeaderNames.HOST_STRING) String hostHeader) {
-        if (shouldThrow) {
+        if (shouldThrow.orElse(false)) {
             throw new InjectionException("Failed on purpose");
         }
         return greeting + " " + name + "! Requested host: " + hostHeader;
@@ -70,5 +73,6 @@ class GreetEndpoint {
     @Http.Status(value = 254, reason = "CustomCode")
     void post(@Http.Entity String message) throws IOException {
         greeting = message;
+        registry.get(Headers.class);
     }
 }

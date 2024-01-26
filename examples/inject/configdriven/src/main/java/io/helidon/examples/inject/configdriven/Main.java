@@ -17,7 +17,7 @@
 package io.helidon.examples.inject.configdriven;
 
 import io.helidon.examples.inject.basics.ToolBox;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 
 /**
@@ -35,7 +35,7 @@ public class Main {
 
 
         // this drives config-driven service activations (see the contents of the toolbox being output)
-        Services services = InjectionServices.create().services();
+        Services services = ManagedRegistry.create().registry();
 
         // this will trigger the PostConstruct method to display the contents of the toolbox
         services.get(ToolBox.class);

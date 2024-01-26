@@ -170,11 +170,11 @@ public final class InjectCodegenTypes {
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InjectionServices}.
      */
-    public static final TypeName INJECT_INJECTION_SERVICES = TypeName.create("io.helidon.inject.InjectionServices");
+    public static final TypeName MANAGED_REGISTRY = TypeName.create("io.helidon.inject.ManagedRegistry");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.Services}.
      */
-    public static final TypeName INJECT_SERVICES = TypeName.create("io.helidon.inject.Services");
+    public static final TypeName SERVICE_REGISTRY = TypeName.create("io.helidon.inject.service.ServiceRegistry");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.builder.api.Prototype.Blueprint}.
      */

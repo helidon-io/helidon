@@ -20,7 +20,7 @@ import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.inject.service.Lookup;
 import io.helidon.inject.service.Qualifier;
@@ -31,7 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class NamedConfiguredByTest {
-    InjectionServices injectionServices;
+    ManagedRegistry injectionServices;
     Services services;
 
     @AfterEach
@@ -48,10 +48,10 @@ class NamedConfiguredByTest {
                 .build();
         GlobalConfig.config(() -> config, true);
 
-        this.injectionServices = InjectionServices.create(InjectionConfig.builder()
+        this.injectionServices = ManagedRegistry.create(InjectionConfig.builder()
                                                                   .serviceConfig(config)
                                                                   .build());
-        this.services = injectionServices.services();
+        this.services = injectionServices.registry();
     }
 
     @Test

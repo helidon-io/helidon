@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.InjectionServices;
+import io.helidon.inject.ManagedRegistry;
 import io.helidon.inject.Services;
 import io.helidon.microprofile.server.Server;
 
@@ -48,7 +48,7 @@ class OciCertificatesTlsManagerTest {
 
     @Test
     void serverRuntime() throws Exception {
-        Services services = InjectionServices.create().services();
+        Services services = ManagedRegistry.create().registry();
         LifecycleHook lifecycleHook = services.get(LifecycleHook.class);
         CountDownLatch startup = new CountDownLatch(1);
 

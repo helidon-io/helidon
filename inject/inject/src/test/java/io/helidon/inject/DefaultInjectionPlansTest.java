@@ -40,16 +40,16 @@ class DefaultInjectionPlansTest {
     static final FakeRegularDescriptor sp2 = new FakeRegularDescriptor();
     private static final TypeName IP_PROVIDER = TypeName.create(InjectionPointProvider.class);
 
-    private InjectionServices injectionServices;
+    private ManagedRegistry injectionServices;
     private Services services;
 
     @BeforeEach
     void init() {
-        injectionServices = InjectionServices.create(InjectionConfig.builder()
+        injectionServices = ManagedRegistry.create(InjectionConfig.builder()
                                                              .addServiceDescriptor(sp1)
                                                              .addServiceDescriptor(sp2)
                                                              .build());
-        services = injectionServices.services();
+        services = injectionServices.registry();
     }
 
     @AfterEach

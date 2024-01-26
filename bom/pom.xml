@@ -1327,6 +1327,11 @@
                 <artifactId>helidon-fault-tolerance</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.fault-tolerance</groupId>
+                <artifactId>helidon-fault-tolerance-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Builder -->
             <dependency>

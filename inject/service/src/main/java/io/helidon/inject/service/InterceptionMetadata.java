@@ -32,7 +32,7 @@ import io.helidon.common.types.TypedElementInfo;
  */
 public interface InterceptionMetadata {
     /**
-     * Create an invoker that handles interception if needed.
+     * Create an invoker that handles interception if needed, for constructors.
      *
      * @param descriptor        metadata of the service being intercepted
      * @param typeQualifiers    qualifiers on the type
@@ -45,6 +45,28 @@ public interface InterceptionMetadata {
      *         be re-thrown, any runtime exception will be re-thrown
      */
     <T> Invoker<T> createInvoker(ServiceInfo descriptor,
+                                 Set<Qualifier> typeQualifiers,
+                                 List<Annotation> typeAnnotations,
+                                 TypedElementInfo element,
+                                 Invoker<T> targetInvoker,
+                                 Set<Class<? extends Throwable>> checkedExceptions);
+
+    /**
+     * Create an invoker that handles interception if needed.
+     *
+     * @param serviceInstance   instance of the service that is being intercepted
+     * @param descriptor        metadata of the service being intercepted
+     * @param typeQualifiers    qualifiers on the type
+     * @param typeAnnotations   annotations on the type
+     * @param element           element being intercepted
+     * @param targetInvoker     invoker of the element
+     * @param checkedExceptions expected checked exceptions that can be thrown by the invoker
+     * @param <T>               type of the result of the invoker
+     * @return an invoker that handles interception if enabled and if there are matching interceptors, any checkedException will
+     *         be re-thrown, any runtime exception will be re-thrown
+     */
+    <T> Invoker<T> createInvoker(Object serviceInstance,
+                                 ServiceInfo descriptor,
                                  Set<Qualifier> typeQualifiers,
                                  List<Annotation> typeAnnotations,
                                  TypedElementInfo element,
