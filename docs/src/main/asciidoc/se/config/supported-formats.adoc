@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ Config config = Config.create(classpath("my-config")                            
 cannot choose a parser automatically.
 <2> The config system will parse the resource `my-config` on the runtime classpath
 using the YAML parser instance created by the
-link:{config-javadoc-base-url}/io/helidon/config/yaml/YamlConfigParser.html[`YamlConfigParser`].
+link:{config-javadoc-base-url}.yaml/io/helidon/config/yaml/YamlConfigParser.html[`YamlConfigParser`].
 The `create()` method creates a config parser with default behavior.
 
 [source,java]
@@ -275,7 +275,7 @@ The config system will use the <<Config-ModuleYaml,YAML parser>> automatically i
 because the file type of the key is `.yaml`.
 
 The `EtcdConfigSourceBuilder` class extends
-link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractConfigSourceBuilder.html[`AbstractConfigSourceBuilder`]
+link:{config-javadoc-base-url}/io/helidon/config/AbstractConfigSourceBuilder.html[`AbstractConfigSourceBuilder`]
 and so supports the usual settings on config sources.
 
 ==== Monitoring for Source Changes
@@ -420,8 +420,8 @@ meta-configuration from a git config source set the following properties for the
 
 The meta-configuration must set the `path` and one of `uri` or `directory`.
 Other optional `properties` are inherited from
- `AbstractParsableConfigSource.Builder` (see
- link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
+ `AbstractConfigSourceBuilder` (see
+ link:{config-javadoc-base-url}/io/helidon/config/AbstractConfigSourceBuilder.html[javadoc])
 
 [source,java]
 .Load Config from meta-configuration

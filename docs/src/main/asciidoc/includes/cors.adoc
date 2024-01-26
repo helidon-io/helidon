@@ -27,6 +27,9 @@ ifndef::h1-prefix[:h1-prefix: SE]
 :config-table-methods-column-header: builder method
 :cors-config-key-explanation:
 
+:ws-cors-javadoc: {webserver-cors-javadoc-base-url}/io/helidon/webserver/cors
+:cors-javadoc: {cors-javadoc-base-url}/io/helidon/cors
+
 = CORS Shared content
 
 // tag::cors-intro[]
@@ -74,9 +77,9 @@ the following dependency in your project:
 Support in Helidon for CORS configuration uses two closely-related cross-origin configuration formats: basic and mapped.
 Each format corresponds to a class
 in the Helidon CORS library.
-The basic format corresponds to the link:{ws-cors-javadoc}/CrossOriginConfig.html[`CrossOriginConfig`]
+The basic format corresponds to the link:{cors-javadoc}/CrossOriginConfig.html[`CrossOriginConfig`]
 class, and the mapped format corresponds to the
-link:{ws-cors-javadoc}/MappedCrossOriginConfig.html[`MappedCrossOriginConfig`] class.
+link:{cors-javadoc}/MappedCrossOriginConfig.html[`MappedCrossOriginConfig`] class.
 //end::cors-configuration-formats-intro[]
 
 //tag::basic-cross-origin-config[]

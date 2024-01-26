@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@ Except for the `system-properties` and `environment-variables` types, the profil
 `properties` section for a source can also specify any optional settings for the
 corresponding config source type. The JavaDoc for the related config source
 type builders lists the supported properties for each type. (For example,
-link:{config-javadoc-base-url}/io/helidon/config/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
+link:{config-javadoc-base-url}/io/helidon/config/FileConfigSource.Builder.html[`FileConfigSource.Builder`].)
 
 Here is an example profile in YAML format. Note how the `properties` sections
 are at the same level as the `type` or `class` within a `sources` array entry.
@@ -291,7 +291,7 @@ accompanying `properties`.
 |Policy Type |Usage |Properties
 
 |`repeat`
-|Regularly-scheduled - see link:{config-javadoc-base-url}/io/helidon/configRetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
+|Regularly-scheduled - see link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
 a|`retries` (`int`) - number of retries to perform +
 
 Optional:

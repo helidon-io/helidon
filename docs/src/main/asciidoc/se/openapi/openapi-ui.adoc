@@ -1,6 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,7 +24,7 @@
 include::{rootdir}/includes/se.adoc[]
 
 :javadoc-path: {openapi-ui-javadoc-base-url}/io/helidon/integrations/openapi/ui
-:openapi-javadoc-path: {openapi-javadoc-base-url}/io/helidon/openapi
+:openapi-javadoc-path: {openapi-javadoc-base-url}/io/helidon/integrations/openapi
 
 include::{ui-inc}[tag=preamble]
 
@@ -70,8 +69,8 @@ If your code invokes the `OpenApiFeature.Builder` `config` method, Helidon autom
 === Customizing the UI Behavior
 You can control some of the behavior of the UI programmatically in two steps:
 
-. Create an link:{javadoc-path}/OpenApiUi.Builder.html[`OpenApiUi.Builder`] and invoke methods on it to set the UI behavior, then invoke the builder's `build` method to create the `OpenApiUi` object.
-. Invoke the `addService` method on link:{openapi-javadoc-base-url}/io.helidon.openapi.OpenApiFeature.Builder.html[`OpenApiFeature.Builder`], passing the `OpenApiUi` object you prepared above.
+. Create an link:{javadoc-path}/OpenApiUiConfig.Builder.html[`OpenApiUiConfig.Builder`] and invoke methods on it to set the UI behavior, then invoke the builder's `build` method to create the `OpenApiUi` object.
+. Invoke the `addService` method on link:{openapi-javadoc-base-url}/io/helidon/openapi/OpenApiFeatureConfig.Builder.html[`OpenApiFeature.Builder`], passing the `OpenApiUi` object you prepared above.
 
 The following example illustrates these steps, combining configuration with explicit programmatic settings.
 

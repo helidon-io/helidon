@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -146,7 +146,7 @@ WebServer server = WebServer.builder()
 == API
 To work with Helidon Metrics in your code, follow these steps:
 
-. Use the static `globalRegistry` method on the link:{metrics-javadoc-base-url}/Metrics.html[`Metrics`] interface to get a reference to the global  link:{metrics-javadoc-base-url}/MeterRegistry.html[`MeterRegistry`] instance.
+. Use the static `globalRegistry` method on the link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.html[`Metrics`] interface to get a reference to the global  link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MeterRegistry.html[`MeterRegistry`] instance.
 . Use the `MeterRegistry` instance to register new {metrics} and look up previously-registered {metrics}.
 . Use the {metric} reference returned from the `MeterRegistry` to update the {metric} or get its value.
 
@@ -163,17 +163,17 @@ The following table summarizes the {metric} types.
 |====
 | {Metric_uc} Type | Usage
 
-| link:{metrics-javadoc-base-url}/Counter.html[`Counter`]
+| link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Counter.html[`Counter`]
 | Monotonically increasing count of events.
 
-| link:{metrics-javadoc-base-url}/Gauge.html[`Gauge`]
+| link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Gauge.html[`Gauge`]
 | Access to a value managed by other code in the service.
 
-|link:{metrics-javadoc-base-url}/DistributionSummary.html[`DistributionSummary`]
+|link:{metrics-javadoc-base-url}/io/helidon/metrics/api/DistributionSummary.html[`DistributionSummary`]
 |Calculates the distribution of a value.
 
 
-| link:{metrics-javadoc-base-url}/Timer.html[`Timer`]
+| link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Timer.html[`Timer`]
 | Frequency of invocations and the distribution of how long the invocations take.
 
 |====
@@ -317,7 +317,7 @@ To expose those metrics to clients via a REST endpoint, your code uses the `Prom
 
 [#prom-api]
 ==== API
-Your code creates a link:{prometheus-javadoc-base-url}/PrometheusSupport.html[`PrometheusSupport`] object either using a static factory method (shown in the following example) or by using its link:{prometheus-javadoc-base-url}/PrometheusSupport.Builder.html[`Builder`].
+Your code creates a link:{prometheus-javadoc-base-url}/io/helidon/metrics/prometheus/PrometheusSupport.html[`PrometheusSupport`] object either using a static factory method (shown in the following example) or by using its link:{prometheus-javadoc-base-url}/io/helidon/metrics/prometheus/PrometheusSupport.Builder.html[`Builder`].
 
 [source,java]
 ----
