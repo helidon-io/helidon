@@ -28,12 +28,12 @@ import io.helidon.common.types.TypeName;
  */
 public final class Parameter extends AnnotatedComponent {
 
-    private final boolean optional;
+    private final boolean vararg;
     private final List<String> description;
 
     private Parameter(Builder builder) {
         super(builder);
-        this.optional = builder.optional;
+        this.vararg = builder.vararg;
         this.description = List.copyOf(builder.description);
     }
 
@@ -54,7 +54,7 @@ public final class Parameter extends AnnotatedComponent {
             writer.write(" ");
         }
         type().writeComponent(writer, declaredTokens, imports, classType);
-        if (optional) {
+        if (vararg) {
             writer.write("...");
         }
         writer.write(" " + name());
@@ -69,13 +69,13 @@ public final class Parameter extends AnnotatedComponent {
             return false;
         }
         Parameter parameter = (Parameter) o;
-        return optional == parameter.optional
+        return vararg == parameter.vararg
                 && type().equals(parameter.type());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(optional);
+        return Objects.hash(vararg);
     }
 
     @Override
@@ -92,7 +92,7 @@ public final class Parameter extends AnnotatedComponent {
      */
     public static final class Builder extends AnnotatedComponent.Builder<Builder, Parameter> {
 
-        private boolean optional = false;
+        private boolean vararg = false;
         private final List<String> description = new ArrayList<>();
 
         private Builder() {
@@ -107,13 +107,14 @@ public final class Parameter extends AnnotatedComponent {
         }
 
         /**
-         * Whether this parameter is optional.
+         * Whether this parameter is a vararg (zero to n repetitions, declared as {@code Object... objects}).
+         * Note that vararg parameter can be only one per method, and it MUST be the last argument defined.
          *
-         * @param optional optional parameter
+         * @param vararg whether this is a vararg parameter
          * @return updated builder instance
          */
-        public Builder optional(boolean optional) {
-            this.optional = optional;
+        public Builder vararg(boolean vararg) {
+            this.vararg = vararg;
             return this;
         }
 
