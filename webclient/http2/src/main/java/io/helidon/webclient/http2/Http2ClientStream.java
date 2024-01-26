@@ -53,7 +53,7 @@ import io.helidon.webclient.api.ReleasableResource;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
-class Http2ClientStream implements Http2Stream, ReleasableResource {
+public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());
     private static final Set<Http2StreamState> NON_CANCELABLE = Set.of(Http2StreamState.CLOSED, Http2StreamState.IDLE);
@@ -80,7 +80,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     private int streamId;
     private StreamBuffer buffer;
 
-    Http2ClientStream(Http2ClientConnection connection,
+    protected Http2ClientStream(Http2ClientConnection connection,
                       Http2Settings serverSettings,
                       SocketContext ctx,
                       Http2StreamConfig http2StreamConfig,
@@ -111,6 +111,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.currentHeaders = headers;
         this.hasEntity = !endOfStream;
     }
+
     @Override
     public boolean rstStream(Http2RstStream rstStream) {
         if (state == Http2StreamState.IDLE) {

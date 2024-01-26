@@ -29,15 +29,17 @@ import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.PriorityBag;
 
 /**
- * Encapsulates all metadata necessary to define a gRPC method. In addition to wrapping a {@link io.grpc.MethodDescriptor},
- * this class also holds the request and response types of the gRPC method. A
- * {@link io.helidon.webclient.grpc.GrpcServiceDescriptor} can contain zero or more {@link io.grpc.MethodDescriptor}.
+ * Encapsulates all metadata necessary to define a gRPC method. In addition to wrapping
+ * a {@link io.grpc.MethodDescriptor}, this class also holds the request and response
+ * types of the gRPC method. A {@link io.helidon.webclient.grpc.GrpcServiceDescriptor}
+ * can contain zero or more {@link io.grpc.MethodDescriptor}.
  * <p>
- * An instance of ClientMethodDescriptor can be created either from an existing {@link io.grpc.MethodDescriptor} or
- * from one of the factory methods {@link #bidirectional(String, String)}, {@link #clientStreaming(String, String)},
+ * An instance of ClientMethodDescriptor can be created either from an existing
+ * {@link io.grpc.MethodDescriptor} or from one of the factory methods
+ * {@link #bidirectional(String, String)}, {@link #clientStreaming(String, String)},
  * {@link #serverStreaming(String, String)} or {@link #unary(String, String)}.
  */
-public final class ClientMethodDescriptor {
+public final class GrpcClientMethodDescriptor {
 
     /**
      * The simple name of the method.
@@ -45,10 +47,10 @@ public final class ClientMethodDescriptor {
     private final String name;
 
     /**
-     * The {@link io.grpc.MethodDescriptor} for this method. This is usually obtained from protocol buffer
-     * method getDescriptor (from service getDescriptor).
+     * The {@link io.grpc.MethodDescriptor} for this method. This is usually obtained from
+     * protocol buffer method getDescriptor (from service getDescriptor).
      */
-    private final MethodDescriptor descriptor;
+    private final MethodDescriptor<?, ?> descriptor;
 
     /**
      * The list of client interceptors for this method.
@@ -63,13 +65,13 @@ public final class ClientMethodDescriptor {
     /**
      * The method handler for this method.
      */
-    private final MethodHandler methodHandler;
+    private final MethodHandler<?, ?> methodHandler;
 
-    private ClientMethodDescriptor(String name,
-                                   MethodDescriptor descriptor,
-                                   List<ClientInterceptor> interceptors,
-                                   CallCredentials callCredentials,
-                                   MethodHandler methodHandler) {
+    private GrpcClientMethodDescriptor(String name,
+                                       MethodDescriptor<?, ?> descriptor,
+                                       List<ClientInterceptor> interceptors,
+                                       CallCredentials callCredentials,
+                                       MethodHandler<?, ?> methodHandler) {
         this.name = name;
         this.descriptor = descriptor;
         this.interceptors = interceptors;
@@ -78,79 +80,80 @@ public final class ClientMethodDescriptor {
     }
 
     /**
-     * Creates a new {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder} with the specified name and {@link io.grpc.MethodDescriptor}.
+     * Creates a new {@link GrpcClientMethodDescriptor.Builder} with the
+     * specified name and {@link io.grpc.MethodDescriptor}.
      *
      * @param serviceName the name of the owning gRPC service
      * @param name        the simple method name
      * @param descriptor  the underlying gRPC {@link io.grpc.MethodDescriptor.Builder}
-     * @return A new instance of a {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder}
+     * @return A new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
-    static Builder builder(String serviceName,
+    public static Builder builder(String serviceName,
                            String name,
-                           MethodDescriptor.Builder descriptor) {
+                           MethodDescriptor.Builder<?, ?> descriptor) {
         return new Builder(serviceName, name, descriptor);
     }
 
     /**
-     * Creates a new {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder} with the specified
-     * name and {@link io.grpc.MethodDescriptor}.
+     * Creates a new {@link GrpcClientMethodDescriptor.Builder} with the
+     * specified name and {@link io.grpc.MethodDescriptor}.
      *
      * @param serviceName the name of the owning gRPC service
      * @param name        the simple method name
      * @param descriptor  the underlying gRPC {@link io.grpc.MethodDescriptor.Builder}
-     * @return a new instance of a {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder}
+     * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
-    static ClientMethodDescriptor create(String serviceName,
-                                         String name,
-                                         MethodDescriptor.Builder descriptor) {
+    public static GrpcClientMethodDescriptor create(String serviceName,
+                                             String name,
+                                             MethodDescriptor.Builder<?, ?> descriptor) {
         return builder(serviceName, name, descriptor).build();
     }
 
     /**
-     * Creates a new unary {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder} with
+     * Creates a new unary {@link GrpcClientMethodDescriptor.Builder} with
      * the specified name.
      *
      * @param serviceName the name of the owning gRPC service
      * @param name        the method name
-     * @return a new instance of a {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder}
+     * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
-    static Builder unary(String serviceName, String name) {
+    public static Builder unary(String serviceName, String name) {
         return builder(serviceName, name, MethodDescriptor.MethodType.UNARY);
     }
 
     /**
-     * Creates a new client Streaming {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder} with
+     * Creates a new client Streaming {@link GrpcClientMethodDescriptor.Builder} with
      * the specified name.
      *
      * @param serviceName the name of the owning gRPC service
      * @param name        the method name
-     * @return a new instance of a {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder}
+     * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
-    static Builder clientStreaming(String serviceName, String name) {
+    public static Builder clientStreaming(String serviceName, String name) {
         return builder(serviceName, name, MethodDescriptor.MethodType.CLIENT_STREAMING);
     }
 
     /**
-     * Creates a new server streaming {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder} with
+     * Creates a new server streaming {@link GrpcClientMethodDescriptor.Builder} with
      * the specified name.
      *
      * @param serviceName the name of the owning gRPC service
      * @param name        the method name
-     * @return a new instance of a {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder}
+     * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
-    static Builder serverStreaming(String serviceName, String name) {
+    public static Builder serverStreaming(String serviceName, String name) {
         return builder(serviceName, name, MethodDescriptor.MethodType.SERVER_STREAMING);
     }
 
     /**
-     * Creates a new bidirectional {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder} with
+     * Creates a new bidirectional {@link GrpcClientMethodDescriptor.Builder} with
      * the specified name.
      *
      * @param serviceName the name of the owning gRPC service
      * @param name        the method name
-     * @return a new instance of a {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder}
+     * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
-    static Builder bidirectional(String serviceName, String name) {
+    public static Builder bidirectional(String serviceName, String name) {
         return builder(serviceName, name, MethodDescriptor.MethodType.BIDI_STREAMING);
     }
 
@@ -164,21 +167,17 @@ public final class ClientMethodDescriptor {
     }
 
     /**
-     * Creates a new {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder} with the specified name.
+     * Creates a new {@link GrpcClientMethodDescriptor.Builder} with the specified name.
      *
      * @param serviceName the name of the owning gRPC service
      * @param name        the method name
      * @param methodType  the gRPC method type
-     * @return a new instance of a {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Builder}
+     * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
-    static Builder builder(String serviceName,
-                                                  String name,
-                                                  MethodDescriptor.MethodType methodType) {
-
-        MethodDescriptor.Builder builder = MethodDescriptor.newBuilder()
+    public static Builder builder(String serviceName, String name, MethodDescriptor.MethodType methodType) {
+        MethodDescriptor.Builder<?, ?> builder = MethodDescriptor.newBuilder()
                 .setFullMethodName(serviceName + "/" + name)
                 .setType(methodType);
-
         return new Builder(serviceName, name, builder)
                 .requestType(Object.class)
                 .responseType(Object.class);
@@ -200,9 +199,8 @@ public final class ClientMethodDescriptor {
      * @param <RespT> the response type
      * @return The {@link io.grpc.MethodDescriptor} of this method.
      */
-    @SuppressWarnings("unchecked")
     public <ReqT, RespT> MethodDescriptor<ReqT, RespT> descriptor() {
-        return descriptor;
+        return (MethodDescriptor<ReqT, RespT>) descriptor;
     }
 
     public MethodDescriptor.MethodType type() {
@@ -223,7 +221,7 @@ public final class ClientMethodDescriptor {
      *
      * @return the {@link MethodHandler} to use to make client calls
      */
-    public MethodHandler methodHandler() {
+    public MethodHandler<?, ?> methodHandler() {
         return methodHandler;
     }
 
@@ -236,23 +234,26 @@ public final class ClientMethodDescriptor {
          * Sets the type of parameter of this method.
          *
          * @param type The type of parameter of this method.
-         * @return this {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Rules} instance for fluent call chaining
+         * @return this {@link GrpcClientMethodDescriptor.Rules} instance for
+         *              fluent call chaining
          */
-        Rules requestType(Class type);
+        Rules requestType(Class<?> type);
 
         /**
          * Sets the type of parameter of this method.
          *
          * @param type The type of parameter of this method.
-         * @return this {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Rules} instance for fluent call chaining
+         * @return this {@link GrpcClientMethodDescriptor.Rules} instance for
+         *              fluent call chaining
          */
-        Rules responseType(Class type);
+        Rules responseType(Class<?> type);
 
         /**
          * Register one or more {@link io.grpc.ClientInterceptor interceptors} for the method.
          *
          * @param interceptors the interceptor(s) to register
-         * @return this {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Rules} instance for fluent call chaining
+         * @return this {@link GrpcClientMethodDescriptor.Rules} instance for
+         * fluent call chaining
          */
         Rules intercept(ClientInterceptor... interceptors);
 
@@ -263,7 +264,8 @@ public final class ClientMethodDescriptor {
          *
          * @param priority     the priority to assign to the interceptors
          * @param interceptors one or more {@link io.grpc.ClientInterceptor}s to register
-         * @return this {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Rules} to allow fluent method chaining
+         * @return this {@link GrpcClientMethodDescriptor.Rules} to allow
+         *              fluent method chaining
          */
         Rules intercept(int priority, ClientInterceptor... interceptors);
 
@@ -273,16 +275,19 @@ public final class ClientMethodDescriptor {
          * If not set the default {@link MarshallerSupplier} from the service will be used.
          *
          * @param marshallerSupplier the {@link MarshallerSupplier} for the service
-         * @return this {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Rules} instance for fluent call chaining
+         * @return this {@link GrpcClientMethodDescriptor.Rules} instance
+         *              for fluent call chaining
          */
         Rules marshallerSupplier(MarshallerSupplier marshallerSupplier);
 
         /**
-         * Register the specified {@link io.grpc.CallCredentials} to be used for this method. This overrides
-         * any {@link io.grpc.CallCredentials} set on the {@link io.helidon.webclient.grpc.ClientMethodDescriptor}.
+         * Register the specified {@link io.grpc.CallCredentials} to be used for this method.
+         * This overrides any {@link io.grpc.CallCredentials} set on the
+         * {@link GrpcClientMethodDescriptor}.
          *
          * @param callCredentials the {@link io.grpc.CallCredentials} to set.
-         * @return this {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Rules} instance for fluent call chaining
+         * @return this {@link GrpcClientMethodDescriptor.Rules} instance
+         *              for fluent call chaining
          */
         Rules callCredentials(CallCredentials callCredentials);
 
@@ -290,26 +295,27 @@ public final class ClientMethodDescriptor {
          * Set the {@link MethodHandler} that can be used to invoke the method.
          *
          * @param methodHandler  the {2link MethodHandler} to use
-         * @return this {@link io.helidon.webclient.grpc.ClientMethodDescriptor.Rules} instance for fluent call chaining
+         * @return this {@link GrpcClientMethodDescriptor.Rules} instance
+         *              for fluent call chaining
          */
-        Rules methodHandler(MethodHandler methodHandler);
+        Rules methodHandler(MethodHandler<?, ?> methodHandler);
     }
 
     /**
      * {@link io.grpc.MethodDescriptor} builder implementation.
      */
     public static class Builder
-            implements Rules, io.helidon.common.Builder<Builder, ClientMethodDescriptor> {
+            implements Rules, io.helidon.common.Builder<Builder, GrpcClientMethodDescriptor> {
 
         private String name;
-        private MethodDescriptor.Builder descriptor;
+        private final MethodDescriptor.Builder<?, ?> descriptor;
         private Class<?> requestType;
         private Class<?> responseType;
-        private PriorityBag<ClientInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
+        private final PriorityBag<ClientInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
         private MarshallerSupplier marshallerSupplier;
         private CallCredentials callCredentials;
-        private MethodHandler methodHandler;
+        private MethodHandler<?, ?> methodHandler;
 
         /**
          * Constructs a new Builder instance.
@@ -318,19 +324,19 @@ public final class ClientMethodDescriptor {
          * @param name        the name of this method
          * @param descriptor  The gRPC method descriptor builder
          */
-        Builder(String serviceName, String name, MethodDescriptor.Builder descriptor) {
+        Builder(String serviceName, String name, MethodDescriptor.Builder<?, ?> descriptor) {
             this.name = name;
             this.descriptor = descriptor.setFullMethodName(serviceName + "/" + name);
         }
 
         @Override
-        public Builder requestType(Class type) {
+        public Builder requestType(Class<?> type) {
             this.requestType = type;
             return this;
         }
 
         @Override
-        public Builder responseType(Class type) {
+        public Builder responseType(Class<?> type) {
             this.responseType = type;
             return this;
         }
@@ -363,7 +369,7 @@ public final class ClientMethodDescriptor {
         }
 
         @Override
-        public Builder methodHandler(MethodHandler methodHandler) {
+        public Builder methodHandler(MethodHandler<?, ?> methodHandler) {
             this.methodHandler = methodHandler;
             return this;
         }
@@ -387,13 +393,13 @@ public final class ClientMethodDescriptor {
         }
 
         /**
-         * Builds and returns a new instance of {@link io.helidon.webclient.grpc.ClientMethodDescriptor}.
+         * Builds and returns a new instance of {@link GrpcClientMethodDescriptor}.
          *
-         * @return a new instance of {@link io.helidon.webclient.grpc.ClientMethodDescriptor}
+         * @return a new instance of {@link GrpcClientMethodDescriptor}
          */
         @Override
         @SuppressWarnings("unchecked")
-        public ClientMethodDescriptor build() {
+        public GrpcClientMethodDescriptor build() {
             MarshallerSupplier supplier = this.marshallerSupplier;
 
             if (supplier == null) {
@@ -401,19 +407,18 @@ public final class ClientMethodDescriptor {
             }
 
             if (requestType != null) {
-                descriptor.setRequestMarshaller(supplier.get(requestType));
+                descriptor.setRequestMarshaller((MethodDescriptor.Marshaller) supplier.get(requestType));
             }
 
             if (responseType != null) {
-                descriptor.setResponseMarshaller(supplier.get(responseType));
+                descriptor.setResponseMarshaller((MethodDescriptor.Marshaller) supplier.get(responseType));
             }
 
-            return new ClientMethodDescriptor(name,
+            return new GrpcClientMethodDescriptor(name,
                                               descriptor.build(),
                                               interceptors.stream().toList(),
                                               callCredentials,
                                               methodHandler);
         }
-
     }
 }

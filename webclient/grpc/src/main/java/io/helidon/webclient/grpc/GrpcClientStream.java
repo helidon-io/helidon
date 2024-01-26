@@ -16,60 +16,22 @@
 
 package io.helidon.webclient.grpc;
 
-import io.helidon.common.buffers.BufferData;
-import io.helidon.http.http2.Http2FrameHeader;
-import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2Priority;
-import io.helidon.http.http2.Http2RstStream;
-import io.helidon.http.http2.Http2Stream;
-import io.helidon.http.http2.Http2StreamState;
-import io.helidon.http.http2.Http2WindowUpdate;
-import io.helidon.http.http2.StreamFlowControl;
-import io.helidon.webclient.api.ReleasableResource;
+import io.helidon.common.socket.SocketContext;
+import io.helidon.http.http2.Http2Settings;
+import io.helidon.webclient.http2.Http2ClientConfig;
+import io.helidon.webclient.http2.Http2ClientConnection;
+import io.helidon.webclient.http2.Http2ClientStream;
+import io.helidon.webclient.http2.Http2StreamConfig;
+import io.helidon.webclient.http2.LockingStreamIdSequence;
 
-class GrpcClientStream implements Http2Stream, ReleasableResource {
-    @Override
-    public boolean rstStream(Http2RstStream rstStream) {
-        return false;
-    }
+class GrpcClientStream extends Http2ClientStream {
 
-    @Override
-    public void windowUpdate(Http2WindowUpdate windowUpdate) {
-
-    }
-
-    @Override
-    public void headers(Http2Headers headers, boolean endOfStream) {
-
-    }
-
-    @Override
-    public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
-
-    }
-
-    @Override
-    public void priority(Http2Priority http2Priority) {
-
-    }
-
-    @Override
-    public int streamId() {
-        return 0;
-    }
-
-    @Override
-    public Http2StreamState streamState() {
-        return null;
-    }
-
-    @Override
-    public StreamFlowControl flowControl() {
-        return null;
-    }
-
-    @Override
-    public void closeResource() {
-
+    GrpcClientStream(Http2ClientConnection connection,
+                      Http2Settings serverSettings,
+                      SocketContext ctx,
+                      Http2StreamConfig http2StreamConfig,
+                      Http2ClientConfig http2ClientConfig,
+                      LockingStreamIdSequence streamIdSeq) {
+        super(connection, serverSettings, ctx, http2StreamConfig, http2ClientConfig, streamIdSeq);
     }
 }

@@ -30,7 +30,7 @@ public class GrpcProtocolProvider implements ClientProtocolProvider<GrpcClient, 
 
     @Override
     public String protocolId() {
-        return "grpc";
+        return CONFIG_KEY;
     }
 
     @Override

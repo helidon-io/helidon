@@ -27,7 +27,7 @@ import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.HttpClientSpi;
 
-class Http2ClientImpl implements Http2Client, HttpClientSpi {
+public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final WebClient webClient;
     private final Http2ClientConfig clientConfig;
     private final Http2ClientProtocolConfig protocolConfig;

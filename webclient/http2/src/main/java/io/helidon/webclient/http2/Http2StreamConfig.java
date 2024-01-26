@@ -18,7 +18,7 @@ package io.helidon.webclient.http2;
 
 import java.time.Duration;
 
-interface Http2StreamConfig {
+public interface Http2StreamConfig {
     boolean priorKnowledge();
 
     int priority();
