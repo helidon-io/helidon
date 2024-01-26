@@ -140,6 +140,14 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-services-plugin</artifactId>
+                <version>${version.plugin.helidon-build-tools}</version>
+                <configuration>
+                    <mode>fail</mode>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

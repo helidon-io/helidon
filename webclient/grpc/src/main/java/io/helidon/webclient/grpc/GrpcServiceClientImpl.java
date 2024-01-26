@@ -19,7 +19,6 @@ package io.helidon.webclient.grpc;
 import java.util.Collection;
 
 import io.grpc.stub.StreamObserver;
-import io.helidon.webclient.http2.Http2Client;
 
 import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
@@ -27,16 +26,16 @@ import io.grpc.stub.ClientCalls;
 
 class GrpcServiceClientImpl implements GrpcServiceClient {
     private final GrpcServiceDescriptor descriptor;
-    private final Http2Client http2Client;
+    private final GrpcClientImpl grpcClient;
 
-    GrpcServiceClientImpl(GrpcServiceDescriptor descriptor, Http2Client http2Client) {
+    GrpcServiceClientImpl(GrpcServiceDescriptor descriptor, GrpcClientImpl grpcClient) {
         this.descriptor = descriptor;
-        this.http2Client = http2Client;
+        this.grpcClient = grpcClient;
     }
 
     @Override
     public String serviceName() {
-        return null;
+        return descriptor.serviceName();
     }
 
     @Override
@@ -57,7 +56,6 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
 
     @Override
     public <ReqT, RespT> void serverStream(String methodName, ReqT request, StreamObserver<RespT> responseObserver) {
-
     }
 
     @Override
@@ -81,17 +79,14 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     private <ReqT, RespT> ClientCall<ReqT, RespT> ensureMethod(String methodName, MethodDescriptor.MethodType methodType) {
-        ClientMethodDescriptor method = descriptor.method(methodName);
-
+        GrpcClientMethodDescriptor method = descriptor.method(methodName);
         if (!method.type().equals(methodType)) {
             throw new IllegalArgumentException("Method " + methodName + " is of type " + method.type() + ", yet " + methodType + " was requested.");
         }
-
         return createClientCall(method);
     }
 
-    private <ReqT, RespT> ClientCall<ReqT, RespT> createClientCall(ClientMethodDescriptor method) {
-
-        return new GrpcClientCall<>(http2Client, method);
+    private <ReqT, RespT> ClientCall<ReqT, RespT> createClientCall(GrpcClientMethodDescriptor method) {
+        return new GrpcClientCall<>(grpcClient, method);
     }
 }

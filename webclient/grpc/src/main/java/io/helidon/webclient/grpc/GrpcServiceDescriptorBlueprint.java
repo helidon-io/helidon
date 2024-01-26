@@ -13,30 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.webclient.grpc;
 
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import io.grpc.CallCredentials;
 import io.grpc.ClientInterceptor;
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
 
-/**
- * All required meta-data about a client side gRPC service.
- */
-public class GrpcServiceDescriptor {
-    private String serviceName;
-    private Map<String, ClientMethodDescriptor> methods;
-    private List<ClientInterceptor> interceptors;
-    private CallCredentials callCredentials;
+@Prototype.Blueprint
+interface GrpcServiceDescriptorBlueprint {
 
-    ClientMethodDescriptor method(String name) {
-        ClientMethodDescriptor clientMethodDescriptor = methods.get(name);
-        if (clientMethodDescriptor == null) {
+    String serviceName();
+
+    @Option.Singular
+    Map<String, GrpcClientMethodDescriptor> methods();
+
+    default GrpcClientMethodDescriptor method(String name) {
+        GrpcClientMethodDescriptor descriptor = methods().get(name);
+        if (descriptor == null) {
             throw new NoSuchElementException("There is no method " + name + " defined for service " + this);
         }
-        return clientMethodDescriptor;
+        return descriptor;
     }
+
+    @Option.Singular
+    List<ClientInterceptor> interceptors();
+
+    Optional<CallCredentials> callCredentials();
 }

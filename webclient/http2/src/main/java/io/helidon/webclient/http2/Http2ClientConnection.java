@@ -61,7 +61,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
-class Http2ClientConnection {
+public class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
@@ -103,7 +103,7 @@ class Http2ClientConnection {
         this.writer = new Http2ConnectionWriter(connection.helidonSocket(), connection.writer(), List.of());
     }
 
-    static Http2ClientConnection create(Http2ClientImpl http2Client,
+    public static Http2ClientConnection create(Http2ClientImpl http2Client,
                                         ClientConnection connection,
                                         boolean sendSettings) {
 
@@ -136,6 +136,10 @@ class Http2ClientConnection {
 
     }
 
+    public LockingStreamIdSequence streamIdSequence() {
+        return streamIdSeq;
+    }
+
     Http2ClientStream createStream(Http2StreamConfig config) {
         //FIXME: priority
         Http2ClientStream stream = new Http2ClientStream(this,
@@ -147,7 +151,7 @@ class Http2ClientConnection {
         return stream;
     }
 
-    void addStream(int streamId, Http2ClientStream stream) {
+    public void addStream(int streamId, Http2ClientStream stream) {
         Lock lock = streamsLock.writeLock();
         lock.lock();
         try {
@@ -157,7 +161,7 @@ class Http2ClientConnection {
         }
     }
 
-    void removeStream(int streamId) {
+    public void removeStream(int streamId) {
         Lock lock = streamsLock.writeLock();
         lock.lock();
         try {

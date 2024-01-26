@@ -30,6 +30,14 @@ class GrpcClientImpl implements GrpcClient {
         this.clientConfig = clientConfig;
     }
 
+    public WebClient webClient() {
+        return webClient;
+    }
+
+    public Http2Client http2Client() {
+        return http2Client;
+    }
+
     @Override
     public GrpcClientConfig prototype() {
         return clientConfig;
@@ -37,6 +45,6 @@ class GrpcClientImpl implements GrpcClient {
 
     @Override
     public GrpcServiceClient serviceClient(GrpcServiceDescriptor descriptor) {
-        throw new UnsupportedOperationException("Not implemented");
+        return new GrpcServiceClientImpl(descriptor, this);
     }
 }

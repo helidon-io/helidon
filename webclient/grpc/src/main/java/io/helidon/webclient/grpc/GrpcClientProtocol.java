@@ -29,6 +29,6 @@ class GrpcClientProtocol {
                                    int streamId,
                                    StreamFlowControl flowControl,
                                    Http2StreamState streamState) {
-        return new GrpcClientStream();
+        return null;
     }
 }

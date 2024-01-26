@@ -19,17 +19,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class LockingStreamIdSequence {
+public class LockingStreamIdSequence {
 
     private final AtomicInteger streamIdSeq = new AtomicInteger(0);
     private final Lock lock = new ReentrantLock();
 
     int lockAndNext() {
-            lock.lock();
-            return streamIdSeq.updateAndGet(o -> o % 2 == 0 ? o + 1 : o + 2);
+        lock.lock();
+        return streamIdSeq.updateAndGet(o -> o % 2 == 0 ? o + 1 : o + 2);
     }
 
-    void unlock(){
+    void unlock() {
         lock.unlock();
     }
 }

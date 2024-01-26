@@ -16,40 +16,81 @@
 
 package io.helidon.webclient.grpc;
 
+import java.time.Duration;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.helidon.http.Header;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.HeaderValues;
-import io.helidon.webclient.http2.Http2Client;
 
 import io.grpc.ClientCall;
 import io.grpc.Metadata;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.http2.Http2Settings;
+import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.ConnectionKey;
+import io.helidon.webclient.api.DefaultDnsResolver;
+import io.helidon.webclient.api.DnsAddressLookup;
+import io.helidon.webclient.api.TcpClientConnection;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.http2.Http2ClientConnection;
+import io.helidon.webclient.http2.Http2ClientImpl;
+import io.helidon.webclient.http2.Http2StreamConfig;
 
+/**
+ * A gRPC client call handler. The typical order of calls will be:
+ *
+ *      start request* sendMessage* halfClose
+ *
+ * @param <ReqT>
+ * @param <ResT>
+ */
 class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
 
     private final AtomicReference<Listener<ResT>> responseListener = new AtomicReference<>();
-    private final Http2Client http2Client;
-    private final ClientMethodDescriptor method;
+    private final GrpcClientImpl grpcClient;
+    private final GrpcClientMethodDescriptor method;
+    private final AtomicInteger messages = new AtomicInteger();
 
-    GrpcClientCall(Http2Client http2Client, ClientMethodDescriptor method) {
-        this.http2Client = http2Client;
+    GrpcClientCall(GrpcClientImpl grpcClient, GrpcClientMethodDescriptor method) {
+        this.grpcClient = grpcClient;
         this.method = method;
     }
 
     @Override
     public void start(Listener<ResT> responseListener, Metadata headers) {
-        // connect
-        // send headers
         if (this.responseListener.compareAndSet(null, responseListener)) {
-            /*
-            Http2ClientConnection http2ClientRequest = http2Client
-                    .post("") // must be post
-                    .header(GRPC_CONTENT_TYPE)
-                    .connect();
-             */
+            // obtain HTTP2 connection
+            Http2ClientConnection connection = Http2ClientConnection.create(
+                    (Http2ClientImpl) grpcClient.http2Client(), clientConnection(), true);
 
+            // create HTTP2 stream from connection
+            GrpcClientStream clientStream = new GrpcClientStream(
+                    connection,
+                    Http2Settings.create(),     // Http2Settings
+                    null,                       // SocketContext
+                    new Http2StreamConfig() {
+                        @Override
+                        public boolean priorKnowledge() {
+                            return true;
+                        }
+
+                        @Override
+                        public int priority() {
+                            return 0;
+                        }
+
+                        @Override
+                        public Duration readTimeout() {
+                            return grpcClient.prototype().readTimeout().orElse(null);
+                        }
+                    },
+                    null,       // Http2ClientConfig
+                    connection.streamIdSequence());
+
+            // send HEADERS frame
         } else {
             throw new IllegalStateException("Response listener was already set");
         }
@@ -57,21 +98,45 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     @Override
     public void request(int numMessages) {
-
+        messages.addAndGet(numMessages);
     }
 
     @Override
     public void cancel(String message, Throwable cause) {
-
+        // close the stream/connection via RST_STREAM
+        // can be closed even if halfClosed
     }
 
     @Override
     public void halfClose() {
-
+        // close the stream/connection
+        // GOAWAY frame
     }
 
     @Override
     public void sendMessage(ReqT message) {
+        // send a DATA frame
+    }
 
+    private ClientConnection clientConnection() {
+        GrpcClientConfig clientConfig = grpcClient.prototype();
+        ClientUri clientUri = clientConfig.baseUri().orElseThrow();
+        WebClient webClient = grpcClient.webClient();
+
+        ConnectionKey connectionKey = new ConnectionKey(
+                clientUri.scheme(),
+                clientUri.host(),
+                clientUri.port(),
+                clientConfig.readTimeout().orElse(null),
+                null,
+                DefaultDnsResolver.create(),
+                DnsAddressLookup.defaultLookup(),
+                null);
+
+        return TcpClientConnection.create(webClient,
+                connectionKey,
+                Collections.emptyList(),
+                connection -> false,
+                connection -> {}).connect();
     }
 }
