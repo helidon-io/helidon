@@ -201,6 +201,7 @@ endif::[]
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
+:http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
 :integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 :media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonp
 :media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonb
@@ -218,7 +219,7 @@ endif::[]
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
-:security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.security.integration.webserver
+:security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.webserver.security
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
 :webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent

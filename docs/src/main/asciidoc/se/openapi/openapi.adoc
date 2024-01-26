@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -61,8 +61,11 @@ To control the behavior of the OpenAPI feature programmatically, you can add and
 
 ==== Create and Register `OpenApiFeature` in your application
 
-Helidon SE provides the link:{openapi-javadoc-base-url}/OpenApiFeature.html[`OpenApiFeature`] class which your application uses to assemble the in-memory model and expose the `/openapi` endpoint to clients. You can create an instance either using a static `create` method or by instantiating its link:{openapi-javadoc-base-url}/OpenApiFeature.Builder.html[`Builder`]. The xref:#register_openapifeature[example below]  illustrates one way to do this.
-
+Helidon SE provides the link:{openapi-javadoc-base-url}/io/helidon/openapi/OpenApiFeature.html[`OpenApiFeature`] class
+which your application uses to assemble the in-memory model and expose the `/openapi` endpoint to clients. You can
+create an instance either using a static `create` method or by instantiating its
+link:{openapi-javadoc-base-url}/io/helidon/openapi/OpenApiFeatureConfig.Builder.html[`Builder`].
+The xref:#register_openapifeature[example below]  illustrates one way to do this.
 
 include::{incdir}/openapi.adoc[tag=furnish-openapi-info]
 
@@ -70,7 +73,7 @@ include::{incdir}/openapi.adoc[tag=usage-access-endpoint]
 
 == API
 
-Helidon {flavor-uc} provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients at the `/openapi` path. Use either static methods on link:{openapi-javadoc-base-url}/OpenApiFeature.html[`OpenApiFeature`]  or use its link:{openapi-javadoc-base-url}/OpenApiFeature.Builder.html[`Builder`]. Then add that instance or builder to your application's routing. The <<#register_openapifeature,example>> below shows how to do this.
+Helidon {flavor-uc} provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients at the `/openapi` path. Use either static methods on link:{openapi-javadoc-base-url}/io/helidon/openapi/OpenApiFeature.html[`OpenApiFeature`]  or use its link:{openapi-javadoc-base-url}/io/helidon/openapi/OpenApiFeatureConfig.Builder.html[`Builder`]. Then add that instance or builder to your application's routing. The <<#register_openapifeature,example>> below shows how to do this.
 
 [[config]]
 == Configuration

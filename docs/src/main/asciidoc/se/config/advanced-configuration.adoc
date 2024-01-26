@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -693,8 +693,8 @@ the override source above.
 === Retry Policy Custom Executor
 You can control which executor a retry policy should use for its work.
 The `RetryPolicies.repeat(int retries)` method returns
-a link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.Builder.html[RetryPolicies.Builder].
-Your application can invoke the retry policy builder's `executor` method to
+a link:{config-javadoc-base-url}/io/helidon/config/SimpleRetryPolicy.Builder.html[SimpleRetryPolicy.Builder].
+Your application can invoke the retry policy builder's `executorService` method to
 specify which `ScheduledExecutorService` instance it should use to schedule and
 execute delayed retries. By default, the config system uses a separate thread
 pool executor for each retry policy instance.
