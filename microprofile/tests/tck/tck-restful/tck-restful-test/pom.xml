@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>tck-restful</artifactId>
-        <version>4.0.4-SNAPSHOT</version>
+        <version>4.0.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-microprofile-tests-tck-restful-test</artifactId>
