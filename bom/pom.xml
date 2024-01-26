@@ -1350,6 +1350,18 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Service registry -->
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-core</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- Injection Core -->
             <dependency>
                 <groupId>io.helidon.inject</groupId>

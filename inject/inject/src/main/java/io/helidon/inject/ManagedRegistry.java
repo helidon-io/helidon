@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.service.ServiceRegistry;
 
 /**
  * A lifecycle manager for a {@link io.helidon.inject.service.ServiceRegistry}.

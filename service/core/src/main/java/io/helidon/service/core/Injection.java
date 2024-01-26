@@ -1,0 +1,308 @@
+package io.helidon.service.core;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import io.helidon.common.types.TypeName;
+
+/**
+ * Injection annotations. These annotations can extend support provided through
+ * {@link io.helidon.service.core.Service} annotations for injection.
+ * <p>
+ * This is the entry point for any annotation related to service definition with injection support in Helidon Service Registry.
+ * <p>
+ * Explore annotations in this type to find out how to enhance your service behavior.
+ * <p>
+ * Note that to utilize Helidon Inject and its service registry, you need to configure annotation processor to generate
+ * required source files.
+ *
+ * @see io.helidon.service.core.Service
+ */
+public final class Injection {
+    private Injection() {
+    }
+
+    /**
+     * Method, constructor, or field marked with this annotation is considered as injectable, and its injection points
+     * will be satisfied with services from the service registry. An injection point is a filed, or a single parameter.
+     * <p>
+     * An injection point may expect instance of a service, or a {@link java.util.function.Supplier} of the same.
+     * <p>
+     * Annotating an inaccessible component will always be marked as an error at compilation time
+     * (private fields, methods, constructors).
+     * <p>
+     * Annotating a final field will always be marked as an error at compilation time.
+     * <p>
+     * We recommend to use constructor injection, as field injection makes testing harder.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
+    @Documented
+    public @interface Inject {
+    }
+
+    /**
+     * Marks annotations that act as qualifiers.
+     * <p>
+     * A qualifier annotation restricts the eligible service instances that can be injected into an injection point to those
+     * qualified by the same qualifier.
+     */
+    @Target(ElementType.ANNOTATION_TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Qualifier {
+    }
+
+    /**
+     * A qualifier that can restrict injection to specifically named instances, or that qualifies services with that name.
+     */
+    @Qualifier
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, ElementType.TYPE})
+    public @interface Named {
+        /**
+         * Type name of this annotation.
+         */
+        TypeName TYPE_NAME = TypeName.create(Named.class);
+        /**
+         * Represents a wildcard name (i.e., matches anything).
+         */
+        String WILDCARD_NAME = "*";
+        /**
+         * Default name to identify a default instance.
+         */
+        String DEFAULT_NAME = "@default";
+
+        /**
+         * The name.
+         *
+         * @return name this injection point requires, or this service provides, or a supplier provider
+         */
+        String value();
+    }
+
+    /**
+     * Scope annotation.
+     * A scope defines the cardinality of instances. This is a meta-annotation used to define that an annotation is a scope.
+     * Note that a single service can only have one scope annotation, and that scopes are not inheritable.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.ANNOTATION_TYPE)
+    public @interface Scope {
+    }
+
+    /**
+     * Annotation to force generation of a service descriptor, even if it otherwise would not be created.
+     * <p>
+     * Helidon generates service descriptors for types that have the type, field, constructor, method, or a parameter annotated
+     * with any of the supported annotations (such as {@link Injection.Inject}).
+     * This annotation can be used if we want to use a POJO with an accessible no-args constructor and no other
+     * annotations as a service, as otherwise no descriptor would be generated.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
+    public @interface Service {
+        /**
+         * Type name of this interface.
+         */
+        TypeName TYPE_NAME = TypeName.create(Service.class);
+    }
+
+    /**
+     * A singleton service.
+     * The service registry will only contain a single instance of this service, and all injection points will be satisfied by
+     * the same instance.
+     * <p>
+     * A singleton instance is guaranteed to have its constructor, post-construct, and pre-destroy methods invoked once within
+     * the lifecycle of the service registry.
+     * <p>
+     * Alternative to this annotation is {@link Injection.Service} (or no annotation on a type
+     * that has {@link Injection.Inject} on its elements). Such a service would be injected
+     * every time its provider is invoked (each injection point, or on call to {@link java.util.function.Supplier#get()} if
+     * supplier is injected), and {@link Injection.RequestScope} for request bound instances.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Service
+    @Scope
+    @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+    public @interface Singleton {
+        /**
+         * Type name of this annotation.
+         */
+        TypeName TYPE_NAME = TypeName.create(Singleton.class);
+        /*
+        Implementation note: we currently do not support custom scopes, so there is no Scope meta annotation.
+        If we decide to support scopes, we may want to introduce such an annotation.
+        */
+    }
+
+    /**
+     * A service with an instance per request.
+     * Injections to different scopes are supported, but must be through a {@link java.util.function.Supplier},
+     * as we do not provide a proxy mechanism for instances.
+     * For example an HTTP request would most likely start a request scope.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Service
+    @Scope
+    @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.METHOD})
+    public @interface RequestScope {
+        /**
+         * This interface type.
+         */
+        TypeName TYPE_NAME = TypeName.create(RequestScope.class);
+    }
+
+    /**
+     * This annotation is effectively the same as {@link Injection.Named}
+     * where the {@link Injection.Named#value()} is a {@link Class}
+     * name instead of a {@link String}. The name that would be used is the fully qualified name of the class.
+     */
+    @Qualifier
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    public @interface ClassNamed {
+        /**
+         * Type name of this interface.
+         * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
+         */
+        TypeName TYPE_NAME = TypeName.create(ClassNamed.class);
+
+        /**
+         * The class used will function as the name.
+         *
+         * @return the class
+         */
+        Class<?> value();
+    }
+
+    /**
+     * A method annotated with this annotation will be invoked once all injection points are satisfied.
+     * The method must not have any parameters and must be accessible (not {@code private}).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.METHOD)
+    public @interface PostConstruct {
+    }
+
+    /**
+     * A method annotated with this annotation will be invoked once for instances within a scope
+     * (such as @{@link Injection.Singleton} service instances) that is being terminated.
+     * <p>
+     * The method must not have any parameters and must be accessible (not {@code private}).
+     * <p>
+     * Note that instances that are not created within a scope will not have this method invoked (as their lifecycle is not
+     * fully managed by the injector).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.METHOD)
+    public @interface PreDestroy {
+    }
+
+    /**
+     * Indicates the desired startup sequence for a service class. This is not used internally by Injection, but is available as a
+     * convenience to the caller in support for a specific startup sequence for service activations.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface RunLevel {
+
+        /**
+         * Represents an eager singleton that should be started at "startup". Note, however, that callers control the actual
+         * activation for these services, not the framework itself, as shown below:
+         * <pre>
+         * {@code
+         * List<ServiceProvider<Object>> startupServices = services
+         *               .lookup(ServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build());
+         *       startupServices.stream().forEach(ServiceProvider::get);
+         * }
+         * </pre>
+         */
+        int STARTUP = 10;
+
+        /**
+         * Anything > 0 is left to the underlying provider implementation's discretion for meaning; this is just a default for
+         * something that is deemed "other than startup".
+         */
+        int NORMAL = 100;
+
+        /**
+         * The service ranking applied when not declared explicitly.
+         *
+         * @return the startup int value, defaulting to {@link #NORMAL}
+         */
+        int value() default NORMAL;
+    }
+
+    /**
+     * An eager service will be instantiated automatically when the service registry scope it belongs to is activated.
+     * <p>
+     * Note that {@link Injection.Service} "scope" is not a real scope, and as such services without
+     * scope cannot be annotated with this annotation (as there is no lifecycle event to start them).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Eager {
+    }
+
+    /**
+     * A service that has instances created for each named instance of the service it is driven by.
+     * The instance created will have the same {@link Injection.Named} qualifier as the
+     * driving instance (in addition to all qualifiers defined on this service).
+     * <p>
+     * If there is a need to create an instance eagerly, annotate the service type with
+     * {@link Injection.Eager} as well.
+     * <p>
+     * There are a few restrictions on this type of services:
+     * <ul>
+     * <li>The service MUST NOT implement {@link java.util.function.Supplier}</li>
+     * <li>The service MUST NOT implement {@link InjectionPointProvider}</li>
+     * <li>The service MUST NOT implement {@link ServicesProvider}</li>
+     * <li>There MAY be an injection point of the type defined in {@link #value()}, without any qualifiers -
+     * this injection point will be satisfied by the driving instance</li>
+     * <li>There MAY be a {@link java.lang.String} injection point qualified with
+     * {@link DrivenByName} - this injection point will be satisfied by the
+     * name of the driving instance</li>
+     * </ul>
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface DrivenBy {
+        /**
+         * The service type driving this service. The service type MUST provide {@link Injection.Named}
+         * instances.
+         *
+         * @return type of the service driving instances of this service
+         */
+        Class<?> value();
+    }
+
+    /**
+     * For types that are {@link DrivenBy}, an injection point (field, parameter) can
+     * be annotated with this annotation to receive the name qualifier associated with this instance.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Qualifier
+    public @interface DrivenByName {
+        /**
+         * Type name of this interface.
+         * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
+         */
+        TypeName TYPE_NAME = TypeName.create(DrivenByName.class);
+    }
+}
