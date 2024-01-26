@@ -11,6 +11,38 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.4]
+
+This release contains bugfixes and ehancements and is recommended for all users of Helidon 4. In particular
+this release contains a fix for issue [8250](https://github.com/helidon-io/helidon/issues/8250) which can occur
+when running previous releases of Helidon 4 on Java 21.0.2 or newer.
+
+Java 21 is required to use Helidon 4.0.4.
+
+### CHANGES
+
+- JPA: Ensures that the enabled flag is honored in JpaExtension's observer methods [8235](https://github.com/helidon-io/helidon/pull/8235)
+- Media: JSON unicode detection without UTF-32 workaround [8253](https://github.com/helidon-io/helidon/pull/8253)
+- RestClient: TLS replace in HelidonConnector fix [8247](https://github.com/helidon-io/helidon/pull/8247)
+- Security: Authorized set to false fix [8295](https://github.com/helidon-io/helidon/pull/8295)
+- Security: Security propagation is now disabled with not configured [8239](https://github.com/helidon-io/helidon/pull/8239)
+- Tracing: Guard against NPE during early invocation of Span.current() [8257](https://github.com/helidon-io/helidon/pull/8257)
+- Tracing: Slight clean-up of recent baggage and span scope fix [8258](https://github.com/helidon-io/helidon/pull/8258)
+- WebClient: Cleans up and simplifies logic to determine which type of IP addresses to consider [8280](https://github.com/helidon-io/helidon/pull/8280)
+- WebClient: Http client protocol creation not honoring disabled service discovery [8284](https://github.com/helidon-io/helidon/pull/8284)
+- WebClient: Set weight for `WebClientTracing` provider greater than that for `WebClientSecurity` provider [8274](https://github.com/helidon-io/helidon/pull/8274)
+- WebServer: Fix for buffer data when created with an offset. [8251](https://github.com/helidon-io/helidon/pull/8251)
+- WebServer: Some minor optimizations in WebServer [8242](https://github.com/helidon-io/helidon/pull/8242)
+- Build: Change backport action to accept target versions for porting via checkboxes and select current issue's version from a list [8236](https://github.com/helidon-io/helidon/pull/8236)
+- Dependencies: Upgrade Yasson to 3.0.3 [8272](https://github.com/helidon-io/helidon/pull/8272)
+- Dependencies: Upgrading to latest Tyrus 2.1.5 [8278](https://github.com/helidon-io/helidon/pull/8278)
+- Docs: broken link fix [8259](https://github.com/helidon-io/helidon/pull/8259)
+- Docs: change WebServer.Builder to WebServerConfig.Builder. [8261](https://github.com/helidon-io/helidon/pull/8261)
+- Docs: fix broken documentation links Part 2 [8300](https://github.com/helidon-io/helidon/pull/8300)
+- Examples: Remove unnecessary GreetingProvider from example custom liveness health check [8184](https://github.com/helidon-io/helidon/pull/8184)
+- Tests: Add back span name test containing an explicit Application bean [8238](https://github.com/helidon-io/helidon/pull/8238)
+- Tests: Fix vault tests [8279](https://github.com/helidon-io/helidon/pull/8279)
+
 ## [4.0.3]
 
 This release contains bugfixes and ehancements and is recommended for all users of Helidon 4.
@@ -981,6 +1013,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.4]: https://github.com/oracle/helidon/compare/4.0.3...4.0.4
 [4.0.3]: https://github.com/oracle/helidon/compare/4.0.2...4.0.3
 [4.0.2]: https://github.com/oracle/helidon/compare/4.0.1...4.0.2
 [4.0.1]: https://github.com/oracle/helidon/compare/4.0.0...4.0.1
