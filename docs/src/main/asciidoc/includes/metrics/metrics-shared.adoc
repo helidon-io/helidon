@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -180,7 +180,7 @@ class Example {
 }
 ----
 --
-* Get a Helidon link:{metrics-mp-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`] instance and invoke its `getRegistry` method.
+* Get a Helidon link:{metrics-mp-javadoc-base-url}/io/helidon/microprofile/metrics/RegistryFactory.html[`RegistryFactory`] instance and invoke its `getRegistry` method.
 +
 --
 Obtain the `RegistryFactory` using either of the following techniques:

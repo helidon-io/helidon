@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -83,7 +83,9 @@ public void handleGetPetById(ServerRequest request, ServerResponse response, Lon
 include::{gen-inc}[tag=using-generated-code-client-intro]
 
 The generated Helidon SE client includes the class `ApiClient`. This class corresponds to
-the Helidon link:{webclient-javadoc-base-url}/io/helidon/webclient/WebClient.html[`WebClient`] and represents the connection between your code and the remote server. The generator also creates one or more `Api` interfaces and corresponding implementation classes. The examples below use the `PetApi` interface and the `PetApiImpl` class.
+the Helidon link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/WebClient.html[`WebClient`] and represents the
+connection between your code and the remote server. The generator also creates one or more `Api` interfaces and
+corresponding implementation classes. The examples below use the `PetApi` interface and the `PetApiImpl` class.
 
 To invoke the remote service your code must:
 
@@ -98,7 +100,8 @@ The Helidon SE client generator gives you as much flexibility as you need in con
 
 Internally, the `ApiClient` uses a Helidon `WebClient` object to contact the remote system.
 The `ApiClient.Builder` automatically prepares a Helidon
-link:{webclient-javadoc-base-url}/io/helidon/webclient/WebClient.Builder.html[`WebClient.Builder`] object using information from the OpenAPI document.
+link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/WebClientConfig.Builder.html[`WebClientConfig.Builder`]
+object using information from the OpenAPI document.
 
 The next sections describe, from simplest to most complicated, the ways your code can create an `ApiClient` instance, each involving increased involvement with the `WebClient.Builder` object.
 

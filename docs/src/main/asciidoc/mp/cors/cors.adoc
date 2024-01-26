@@ -77,7 +77,7 @@ For each resource class in your application:
 . Identify the resources and subresources--in other words, the paths--declared in the resource class which you want to support CORS.
 . For each of those resources and subresources which should support CORS:
 .. Find or create a Java method annotated with `@OPTIONS` and with the correct `@Path`.
-.. To that `@OPTIONS` Java method add a Helidon link:{mp-cors-javadoc-base-url}/io/helidon/microprofile/cors/CrossOrigin.html}[`@CrossOrigin`] annotation that describes the cross-origin sharing you want for that resource.
+.. To that `@OPTIONS` Java method add a Helidon link:{mp-cors-javadoc-base-url}/io/helidon/microprofile/cors/CrossOrigin.html[`@CrossOrigin`] annotation that describes the cross-origin sharing you want for that resource.
 
 [NOTE]
 .Using @CrossOrigin Correctly
@@ -122,7 +122,8 @@ The index `_i_` is an integer (0, 1, 2, etc.).
 
 The system uses the index `_i_`, not the position in the config file, to identify the settings for a particular resource.
 
-Path patterns can be any expression accepted by the link:{webserver-javadoc-base-url}/io/helidon/webserver/PathMatcher.html[`PathMatcher`] class.
+Path patterns can be any expression accepted by the
+link:{http-javadoc-base-url}/io/helidon/http/PathMatcher.html[`PathMatcher`] class.
 
 NOTE: Helidon scans the cross-origin entries in index order (0, 1, 2, etc.) until it finds an entry that
 matches an incoming request's path and HTTP method, so be sure to assign index values to the entries so Helidon will check them in the order you want. In particular, use lower index values for entries with more specific path patterns.
