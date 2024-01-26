@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.metrics</groupId>
         <artifactId>helidon-metrics-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.4-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics-prometheus</artifactId>
     <name>Helidon Metrics Prometheus</name>
