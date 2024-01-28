@@ -18,6 +18,7 @@
  * Core service registry, supporting {@link io.helidon.service.core.Service.Provider}.
  */
 module io.helidon.service.core {
+    exports io.helidon.service.core;
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.types;

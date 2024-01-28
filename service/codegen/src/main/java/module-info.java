@@ -26,8 +26,7 @@ module io.helidon.service.codegen {
     requires transitive io.helidon.codegen.classmodel;
     requires transitive io.helidon.codegen;
 
-    exports io.helidon.inject.codegen;
-    exports io.helidon.inject.codegen.spi;
+    exports io.helidon.service.codegen;
     exports io.helidon.service.codegen.spi;
 
     uses InjectCodegenObserverProvider;
@@ -35,13 +34,13 @@ module io.helidon.service.codegen {
     uses InjectAssignmentProvider;
 
     provides io.helidon.codegen.spi.CodegenExtensionProvider
-            with io.helidon.inject.codegen.InjectCodegenProvider;
+            with io.helidon.service.codegen.InjectCodegenProvider;
 
     provides InjectCodegenExtensionProvider
-            with io.helidon.inject.codegen.InjectionExtensionProvider,
-                    io.helidon.inject.codegen.ConfigBeanCodegenProvider;
+            with io.helidon.service.codegen.InjectionExtensionProvider,
+                    io.helidon.service.codegen.ConfigBeanCodegenProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
-            with io.helidon.inject.codegen.MapClassNamedProvider,
-                    io.helidon.inject.codegen.MapDrivenBy;
+            with io.helidon.service.codegen.MapClassNamedProvider,
+                    io.helidon.service.codegen.MapDrivenBy;
 }
