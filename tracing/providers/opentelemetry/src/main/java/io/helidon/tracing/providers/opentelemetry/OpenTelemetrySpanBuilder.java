@@ -99,7 +99,11 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
 
     @Override
     public <T> T unwrap(Class<T> type) {
-        return type.cast(spanBuilder);
+        if (type.isInstance(spanBuilder)) {
+            return type.cast(spanBuilder);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + type.getName()
+                                                   + ", span builder is: " + spanBuilder.getClass().getName());
     }
 
     // used to set open telemetry context as parent, to be equivalent in function to

@@ -113,7 +113,11 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public <T> T unwrap(Class<T> spanClass) {
-        return spanClass.cast(delegate);
+        if (spanClass.isInstance(delegate)) {
+            return spanClass.cast(delegate);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + spanClass.getName()
+                                                   + ", telemetry span is: " + delegate.getClass().getName());
     }
 
     // Check if OTEL Context is already available in Global Helidon Context.
