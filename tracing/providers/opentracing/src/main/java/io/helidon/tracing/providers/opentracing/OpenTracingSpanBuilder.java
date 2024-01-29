@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.tracing.providers.opentracing;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.tracing.Span;
@@ -27,6 +29,7 @@ import io.opentracing.tag.Tags;
 class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     private final Tracer.SpanBuilder delegate;
     private final Tracer tracer;
+    private Map<String, String> baggage;
 
     OpenTracingSpanBuilder(Tracer tracer, Tracer.SpanBuilder delegate) {
         this.tracer = tracer;
@@ -42,6 +45,13 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     public OpenTracingSpanBuilder parent(SpanContext spanContext) {
         if (spanContext instanceof OpenTracingContext otc) {
             delegate.asChildOf(otc.openTracing());
+            if (baggage == null) {
+                baggage = new HashMap<>();
+            } else {
+                baggage.clear();
+            }
+            ((OpenTracingContext) spanContext).openTracing().baggageItems().forEach(entry -> baggage.put(entry.getKey(),
+                                                                                                         entry.getValue()));
         }
         return this;
     }
@@ -83,6 +93,10 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     @Override
     public Span start(Instant instant) {
         long micro = TimeUnit.MILLISECONDS.toMicros(instant.toEpochMilli());
-        return new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start());
+        Span result = new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start());
+        if (baggage != null) {
+            baggage.forEach(result::baggage);
+        }
+        return result;
     }
 }
