@@ -116,6 +116,9 @@ class OpenTelemetrySpan implements Span {
         if (spanClass.isInstance(delegate)) {
             return spanClass.cast(delegate);
         }
+        if (spanClass.isInstance(this)) {
+            return spanClass.cast(this);
+        }
         throw new IllegalArgumentException("Cannot provide an instance of " + spanClass.getName()
                                                    + ", telemetry span is: " + delegate.getClass().getName());
     }

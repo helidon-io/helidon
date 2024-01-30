@@ -58,7 +58,11 @@ class NoOpTracer implements Tracer {
 
     @Override
     public <T> T unwrap(Class<T> tracerClass) {
-        return tracerClass.cast(this);
+        if (tracerClass.isInstance(this)) {
+            return tracerClass.cast(this);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
+                                                   + ",  tracer is: " + getClass().getName());
     }
 
     private static class Builder implements Span.Builder<Builder> {
