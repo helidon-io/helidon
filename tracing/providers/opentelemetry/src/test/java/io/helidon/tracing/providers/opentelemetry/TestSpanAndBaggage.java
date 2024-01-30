@@ -26,8 +26,6 @@ import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,27 +34,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 class TestSpanAndBaggage {
-
-    private static final String OTEL_AUTO_CONFIGURE_PROP = "otel.java.global-autoconfigure.enabled";
-    private static final String OTEL_SDK_DISABLED_PROP = "otel.sdk.disabled";
-    private static String originalOtelSdkAutoConfiguredSetting;
-    private static String originalOtelSdkDisabledSetting;
-
-    @BeforeAll
-    static void init() {
-        originalOtelSdkAutoConfiguredSetting = System.setProperty(OTEL_AUTO_CONFIGURE_PROP, "true");
-        originalOtelSdkDisabledSetting = System.setProperty(OTEL_SDK_DISABLED_PROP, "false");
-    }
-
-    @AfterAll
-    static void wrapup() {
-        if (originalOtelSdkAutoConfiguredSetting != null) {
-            System.setProperty(OTEL_AUTO_CONFIGURE_PROP, originalOtelSdkAutoConfiguredSetting);
-        }
-        if (originalOtelSdkDisabledSetting != null) {
-            System.setProperty(OTEL_SDK_DISABLED_PROP, originalOtelSdkDisabledSetting);
-        }
-    }
 
     @Test
     void testActiveSpanScopeWithoutBaggage() {

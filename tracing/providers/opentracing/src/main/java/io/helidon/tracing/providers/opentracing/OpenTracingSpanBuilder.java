@@ -99,4 +99,16 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
         }
         return result;
     }
+
+    @Override
+    public <T> T unwrap(Class<T> type) {
+        if (type.isInstance(delegate)) {
+            return type.cast(delegate);
+        }
+        if (type.isInstance(this)) {
+            return type.cast(this);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + type.getName()
+                                                   + ", span builder is: " + delegate.getClass().getName());
+    }
 }
