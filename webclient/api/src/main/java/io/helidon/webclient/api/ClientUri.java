@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,8 @@ public class ClientUri implements UriInfo {
     }
 
     /**
-     * Convert instance to {@link java.net.URI}.
+     * Convert instance to {@link java.net.URI}. Note that we must use raw here
+     * to make sure no illegal URL characters are passed to the create method.
      *
      * @return the converted URI
      */
@@ -111,7 +112,7 @@ public class ClientUri implements UriInfo {
         UriInfo info = uriBuilder.build();
         return URI.create(info.scheme() + "://"
                 + info.authority()
-                + pathWithQueryAndFragment());
+                + pathWithQueryAndFragment(false));     // URI needs encoded
     }
 
     /**
@@ -293,15 +294,20 @@ public class ClientUri implements UriInfo {
     }
 
     /**
-     * Encoded path with query and fragment.
+     * Path with query and fragment. Result is encoded or decoded depending on the
+     * value of {@link #skipUriEncoding}.
      *
-     * @return string containing encoded path with query
+     * @return string containing path with query
      */
     public String pathWithQueryAndFragment() {
+        return pathWithQueryAndFragment(skipUriEncoding);
+    }
+
+    private String pathWithQueryAndFragment(boolean decoded) {
         UriInfo info = uriBuilder.query(query).build();
 
-        String queryString = skipUriEncoding ? info.query().value() : info.query().rawValue();
-        String path = skipUriEncoding ? info.path().path() : info.path().rawPath();
+        String queryString = decoded ? info.query().value() : info.query().rawValue();
+        String path = decoded ? info.path().path() : info.path().rawPath();
 
         boolean hasQuery = !queryString.isEmpty();
 
@@ -314,7 +320,7 @@ public class ClientUri implements UriInfo {
         }
 
         if (info.fragment().hasValue()) {
-            String fragmentValue = skipUriEncoding ? info.fragment().value() : info.fragment().rawValue();
+            String fragmentValue = decoded ? info.fragment().value() : info.fragment().rawValue();
             path = path + '#' + fragmentValue;
         }
 
