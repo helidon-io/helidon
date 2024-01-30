@@ -38,7 +38,8 @@ class OpenTracingContext implements io.helidon.tracing.SpanContext {
 
     @Override
     public void asParent(Span.Builder<?> spanBuilder) {
-        ((OpenTracingSpanBuilder) spanBuilder).parent(this);
+        spanBuilder.unwrap(OpenTracingSpanBuilder.class)
+                .parent(this);
     }
 
     SpanContext openTracing() {

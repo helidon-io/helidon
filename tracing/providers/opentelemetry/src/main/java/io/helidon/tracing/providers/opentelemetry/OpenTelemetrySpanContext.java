@@ -39,7 +39,8 @@ class OpenTelemetrySpanContext implements SpanContext {
 
     @Override
     public void asParent(io.helidon.tracing.Span.Builder<?> spanBuilder) {
-        ((OpenTelemetrySpanBuilder) spanBuilder).parent(context);
+        spanBuilder.unwrap(OpenTelemetrySpanBuilder.class)
+                .parent(context);
     }
 
     Context openTelemetry() {

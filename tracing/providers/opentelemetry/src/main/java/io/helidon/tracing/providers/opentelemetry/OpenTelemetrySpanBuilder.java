@@ -102,6 +102,9 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
         if (type.isInstance(spanBuilder)) {
             return type.cast(spanBuilder);
         }
+        if (type.isInstance(this)) {
+            return type.cast(this);
+        }
         throw new IllegalArgumentException("Cannot provide an instance of " + type.getName()
                                                    + ", span builder is: " + spanBuilder.getClass().getName());
     }
