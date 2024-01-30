@@ -94,5 +94,11 @@ public interface Tracer {
      * @param <T> type of the tracer
      * @throws java.lang.IllegalArgumentException in case the tracer cannot provide the expected type
      */
-    <T> T unwrap(Class<T> tracerClass);
+    default <T> T unwrap(Class<T> tracerClass) {
+        try {
+            return tracerClass.cast(this);
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("This tracer is not compatible with " + tracerClass.getName());
+        }
+    }
 }
