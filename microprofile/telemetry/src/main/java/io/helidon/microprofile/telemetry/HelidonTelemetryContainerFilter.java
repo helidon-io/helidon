@@ -175,7 +175,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         Resource resource = extendedUriInfo.getMatchedModelResource();
         while (resource != null) {
             String resourcePath = resource.getPath();
-            if (!resourcePath.equals("/") && !resourcePath.isBlank()) {
+            if (resourcePath != null && !resourcePath.equals("/") && !resourcePath.isBlank()) {
                 derivedPath.push(resourcePath);
                 if (!resourcePath.startsWith("/")) {
                     derivedPath.push("/");
