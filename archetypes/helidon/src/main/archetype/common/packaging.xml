@@ -102,9 +102,46 @@ kubectl delete -f app.yaml
                     <templates engine="mustache" transformations="mustache,packaged">
                         <directory>files</directory>
                         <includes>
-                            <include>src/main/java/**/module-info.java.mustache</include>
+                            <include>src/main/java/module-info.java.mustache</include>
+                            <include if="${flavor} == 'mp'">src/**/Main.java.mustache</include>
                         </includes>
                     </templates>
+                    <model if="${flavor} == 'mp'">
+                        <value key="mainClass">${package}.Main</value>
+                        <value key="Main-class-javadoc"><![CDATA[
+/**
+ * Main entry point of the application.
+ * <p>
+ * Note that this class is required when using modules as the module main class must be in a package that is either exported
+ * or opened by the module, see {@link java.lang.module.ModuleDescriptor#read(java.io.InputStream, java.util.function.Supplier)}.
+ * <p>
+ * This class provides a proper module main class and calls the {@link io.helidon.Main#main(String[]) built-in main class}.
+ */]]>
+                        </value>
+                        <value key="Main-method-javadoc"><![CDATA[
+    /**
+     * Main method. Starts CDI (and the application).
+     *
+     * @param args ignored
+     */]]>
+                        </value>
+                        <list key="Main-class-fields">
+                            <value><![CDATA[
+    /**
+    * Cannot be instantiated.
+    */
+    private Main() {
+    }
+]]>
+                            </value>
+                        </list>
+                        <list key="Main-method-content">
+                            <value><![CDATA[io.helidon.microprofile.cdi.Main.main(args);]]></value>
+                        </list>
+                        <list key="modules">
+                            <value>io.helidon.microprofile.cdi</value>
+                        </list>
+                    </model>
                 </output>
             </boolean>
         </inputs>
