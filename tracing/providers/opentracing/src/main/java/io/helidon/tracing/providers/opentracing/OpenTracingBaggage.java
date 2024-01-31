@@ -29,7 +29,11 @@ import io.helidon.tracing.WritableBaggage;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 
-abstract class OpenTracingBaggage implements Baggage {
+/**
+ * Implements the read-only Helidon {@link io.helidon.tracing.Baggage} interface using a private map loaded from an
+ * OpenTracing {@code SpanContext} baggage contents.
+ */
+class OpenTracingBaggage implements Baggage {
 
     private final Map<String, String> baggage = new HashMap<>();
 
@@ -39,12 +43,12 @@ abstract class OpenTracingBaggage implements Baggage {
                 .forEach(entry -> baggage.put(entry.getKey(), entry.getValue()));
     }
 
-    static SpanBased create(OpenTracingContext context, Span openTracingSpan) {
-        return new SpanBased(context, openTracingSpan);
+    static Writable create(OpenTracingContext context, Span openTracingSpan) {
+        return new Writable(context, openTracingSpan);
     }
 
-    static SpanContextBased create(OpenTracingContext context) {
-        return new SpanContextBased(context);
+    static OpenTracingBaggage create(OpenTracingContext context) {
+        return new OpenTracingBaggage(context);
     }
 
     @Override
@@ -71,14 +75,14 @@ abstract class OpenTracingBaggage implements Baggage {
     }
 
     /**
-     * OpenTracing baggage implementation based on an OpenTracing {@link io.opentracing.Span} which propagates changes to the
-     * span's baggage.
+     * Implementation of Helidon's {@link io.helidon.tracing.WritableBaggage} interface based on OpenTracing baggage retrieved
+     * from an OpenTracing context and also linked to an existing OpenTracing {@link io.opentracing.Span}.
      */
-    static class SpanBased extends OpenTracingBaggage implements WritableBaggage {
+    static class Writable extends OpenTracingBaggage implements WritableBaggage {
 
         private final Span span;
 
-        SpanBased(OpenTracingContext context, Span openTracingSpan) {
+        Writable(OpenTracingContext context, Span openTracingSpan) {
             super(context);
             span = openTracingSpan;
         }
@@ -88,16 +92,6 @@ abstract class OpenTracingBaggage implements Baggage {
             super.setValue(key, value);
             span.setBaggageItem(key, value);
             return this;
-        }
-    }
-
-    /**
-     * OpenTracing baggage based on an OpenTracing {@link io.opentracing.SpanContext} only, for which the baggage is read-only.
-     */
-    static class SpanContextBased extends OpenTracingBaggage {
-
-        SpanContextBased(OpenTracingContext context) {
-            super(context);
         }
     }
 }

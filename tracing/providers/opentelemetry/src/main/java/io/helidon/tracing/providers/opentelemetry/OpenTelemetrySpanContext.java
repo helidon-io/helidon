@@ -27,7 +27,7 @@ class OpenTelemetrySpanContext implements SpanContext {
 
     OpenTelemetrySpanContext(Context context) {
         this.context = context;
-        baggage = new OpenTelemetryBaggage(io.opentelemetry.api.baggage.Baggage.fromContext(context));
+        baggage = MutableOpenTelemetryBaggage.fromContext(context);
     }
 
     @Override

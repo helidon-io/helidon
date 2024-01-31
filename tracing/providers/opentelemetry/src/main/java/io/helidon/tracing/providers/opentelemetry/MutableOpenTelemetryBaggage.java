@@ -30,14 +30,29 @@ import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageBuilder;
 import io.opentelemetry.api.baggage.BaggageEntry;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
+import io.opentelemetry.context.Context;
 
 /**
  * Implementation of the Helidon {@link io.helidon.tracing.WritableBaggage} interface as well as the OpenTelemetry
  * {@link io.opentelemetry.api.baggage.Baggage} interface so a single instance can be used in both roles.
+ * <p>
+ *     The various inner classes are for compliance with the OpenTelemetry API for baggage since this class implements that
+ *     interface. The Helidon code elsewhere in this module does not use any of them.
+ * <p>
+ *     Further, this one class implements both the Helidon {@link io.helidon.tracing.WritableBaggage} interface and by necessity
+ *     its read-only superinterface {@link io.helidon.tracing.Baggage}. The {@code set} method is hidden in read-only situations
+ *     (e.g., as returned from {@link OpenTelemetrySpanContext#baggage()}) because the return type there is {@code Baggage}.
+ * </p>
  */
 class MutableOpenTelemetryBaggage implements Baggage, WritableBaggage {
 
     private final Map<String, BaggageEntry> values = new LinkedHashMap<>();
+
+    static MutableOpenTelemetryBaggage fromContext(Context context) {
+        MutableOpenTelemetryBaggage result = new MutableOpenTelemetryBaggage();
+        result.values.putAll(Baggage.fromContext(context).asMap());
+        return result;
+    }
 
     MutableOpenTelemetryBaggage() {
     }
@@ -86,7 +101,7 @@ class MutableOpenTelemetryBaggage implements Baggage, WritableBaggage {
 
     @Override
     public Set<String> keys() {
-        return values.keySet();
+        return Collections.unmodifiableSet(values.keySet());
     }
 
     @Override
