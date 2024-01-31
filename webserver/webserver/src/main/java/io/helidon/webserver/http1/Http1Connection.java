@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
@@ -37,7 +36,6 @@ import io.helidon.http.BadRequestException;
 import io.helidon.http.DateTime;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
-import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
@@ -142,9 +140,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             // look for protocol data
             ProxyProtocolData proxyProtocolData = ctx.proxyProtocolData().orElse(null);
-            Optional<Header> xHelidonCn = ctx.remotePeer().tlsCertificates()
-                    .flatMap(TlsUtils::parseCn)
-                    .map(name -> HeaderValues.create(X_HELIDON_CN, name));
 
             // handle connection until an exception (or explicit connection close)
             while (canRun) {
@@ -158,8 +153,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 currentEntitySizeRead = 0;
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
-                xHelidonCn.ifPresent(headers::set);
-
+                ctx.remotePeer().tlsCertificates()
+                        .flatMap(TlsUtils::parseCn)
+                        .ifPresent(name -> headers.set(X_HELIDON_CN, name));
                 recvListener.headers(ctx, headers);
 
                 // proxy protocol related headers X-Forwarded-For and X-Forwarded-Port

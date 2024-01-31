@@ -68,8 +68,12 @@ public final class TlsSocket extends PlainSocket {
 
     @Override
     public PeerInfo remotePeer() {
-        if (remotePeer == null || renegotiated()) {
-            this.localPeer = null;
+        if (renegotiated()) {
+            remotePeer = null;
+            localPeer = null;
+        }
+
+        if (remotePeer == null) {
             this.remotePeer = PeerInfoImpl.createRemote(this);
         }
         return this.remotePeer;
@@ -77,8 +81,12 @@ public final class TlsSocket extends PlainSocket {
 
     @Override
     public PeerInfo localPeer() {
-        if (localPeer == null || renegotiated()) {
-            this.remotePeer = null;
+        if (renegotiated()) {
+            remotePeer = null;
+            localPeer = null;
+        }
+
+        if (localPeer == null) {
             this.localPeer = PeerInfoImpl.createLocal(this);
         }
         return this.localPeer;
