@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import io.helidon.tracing.Baggage;
 import io.helidon.tracing.SpanContext;
 
 import io.opentelemetry.api.trace.Span;
@@ -22,9 +23,11 @@ import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpanContext implements SpanContext {
     private final Context context;
+    private final Baggage baggage;
 
     OpenTelemetrySpanContext(Context context) {
         this.context = context;
+        baggage = new OpenTelemetryBaggage(io.opentelemetry.api.baggage.Baggage.fromContext(context));
     }
 
     @Override
@@ -45,5 +48,10 @@ class OpenTelemetrySpanContext implements SpanContext {
 
     Context openTelemetry() {
         return context;
+    }
+
+    @Override
+    public Baggage baggage() {
+        return baggage;
     }
 }

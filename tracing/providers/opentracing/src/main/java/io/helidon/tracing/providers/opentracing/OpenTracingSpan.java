@@ -23,6 +23,7 @@ import java.util.Optional;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.WritableBaggage;
 
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -31,11 +32,13 @@ class OpenTracingSpan implements Span {
     private final Tracer tracer;
     private final io.opentracing.Span delegate;
     private final OpenTracingContext context;
+    private final WritableBaggage baggage;
 
     OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate) {
         this.tracer = tracer;
         this.delegate = delegate;
         this.context = new OpenTracingContext(delegate.context());
+        baggage = OpenTracingBaggage.create(context, delegate);
     }
 
 
@@ -101,15 +104,19 @@ class OpenTracingSpan implements Span {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
         Objects.requireNonNull(value, "Baggage Value cannot be null");
 
-        delegate.setBaggageItem(key, value);
+        baggage.set(key, value);
         return this;
     }
 
     @Override
     public Optional<String> baggage(String key) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
+        return baggage.get(key);
+    }
 
-        return Optional.ofNullable(delegate.getBaggageItem(key));
+    @Override
+    public WritableBaggage baggage() {
+        return baggage;
     }
 
     @Override

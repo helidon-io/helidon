@@ -18,6 +18,7 @@ package io.helidon.tracing;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 class NoOpTracer implements Tracer {
     private static final NoOpTracer INSTANCE = new NoOpTracer();
@@ -26,6 +27,28 @@ class NoOpTracer implements Tracer {
     private static final Span SPAN = new Span();
 
     private static final Scope SCOPE = new Scope();
+
+    private static final WritableBaggage EMPTY_BAGGAGE = new WritableBaggage() {
+        @Override
+        public Optional<String> get(String key) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Set<String> keys() {
+            return Set.of();
+        }
+
+        @Override
+        public boolean containsKey(String key) {
+            return false;
+        }
+
+        @Override
+        public WritableBaggage set(String key, String value) {
+            return this;
+        }
+    };
 
     private NoOpTracer() {
     }
@@ -165,6 +188,11 @@ class NoOpTracer implements Tracer {
         public <T> T unwrap(Class<T> spanClass) {
             return spanClass.cast(this);
         }
+
+        @Override
+        public WritableBaggage baggage() {
+            return EMPTY_BAGGAGE;
+        }
     }
 
     private static class SpanContext implements io.helidon.tracing.SpanContext {
@@ -180,6 +208,11 @@ class NoOpTracer implements Tracer {
 
         @Override
         public void asParent(io.helidon.tracing.Span.Builder<?> spanBuilder) {
+        }
+
+        @Override
+        public Baggage baggage() {
+            return EMPTY_BAGGAGE;
         }
     }
 

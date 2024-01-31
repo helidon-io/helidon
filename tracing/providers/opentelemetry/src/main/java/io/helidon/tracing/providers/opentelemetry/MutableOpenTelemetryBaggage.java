@@ -20,14 +20,22 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
+
+import io.helidon.tracing.WritableBaggage;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageBuilder;
 import io.opentelemetry.api.baggage.BaggageEntry;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 
-class MutableOpenTelemetryBaggage implements Baggage {
+/**
+ * Implementation of the Helidon {@link io.helidon.tracing.WritableBaggage} interface as well as the OpenTelemetry
+ * {@link io.opentelemetry.api.baggage.Baggage} interface so a single instance can be used in both roles.
+ */
+class MutableOpenTelemetryBaggage implements Baggage, WritableBaggage {
 
     private final Map<String, BaggageEntry> values = new LinkedHashMap<>();
 
@@ -55,6 +63,7 @@ class MutableOpenTelemetryBaggage implements Baggage {
 
     @Override
     public String getEntryValue(String entryKey) {
+        Objects.requireNonNull(entryKey, "baggage key cannot be null");
         BaggageEntry entry = values.get(entryKey);
         return entry != null ? entry.getValue() : null;
     }
@@ -65,7 +74,31 @@ class MutableOpenTelemetryBaggage implements Baggage {
     }
 
     void baggage(String key, String value) {
+        Objects.requireNonNull(key, "baggage key cannot be null");
+        Objects.requireNonNull(value, "baggage value cannot be null");
         values.put(key, new HBaggageEntry(value, new HBaggageEntryMetadata("")));
+    }
+
+    @Override
+    public Optional<String> get(String key) {
+        return Optional.ofNullable(values.get(key).getValue());
+    }
+
+    @Override
+    public Set<String> keys() {
+        return values.keySet();
+    }
+
+    @Override
+    public boolean containsKey(String key) {
+        Objects.requireNonNull(key, "baggage key cannot be null");
+        return values.containsKey(key);
+    }
+
+    @Override
+    public WritableBaggage set(String key, String value) {
+        baggage(key, value);
+        return this;
     }
 
     static class HBaggageEntry implements BaggageEntry {
@@ -115,12 +148,15 @@ class MutableOpenTelemetryBaggage implements Baggage {
 
         @Override
         public BaggageBuilder put(String key, String value, BaggageEntryMetadata entryMetadata) {
+            Objects.requireNonNull(key, "baggage key cannot be null");
+            Objects.requireNonNull(value, "baggage value cannot be null");
             values.put(key, new HBaggageEntry(value, entryMetadata));
             return this;
         }
 
         @Override
         public BaggageBuilder remove(String key) {
+            Objects.requireNonNull(key, "baggage key cannot be null");
             values.remove(key);
             return this;
         }

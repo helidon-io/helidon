@@ -39,4 +39,11 @@ public interface SpanContext {
      * @param spanBuilder span builder to update, it will be a child of this span context
      */
     void asParent(Span.Builder<?> spanBuilder);
+
+    /**
+     * Returns the baggage extractable from the span context.
+     *
+     * @return {@link io.helidon.tracing.Baggage} instance; empty if no baggage is available from the span context
+     */
+    Baggage baggage();
 }

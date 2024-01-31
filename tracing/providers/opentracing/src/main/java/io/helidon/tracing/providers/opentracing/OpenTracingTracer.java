@@ -106,6 +106,9 @@ class OpenTracingTracer implements Tracer {
         if (tracerClass.isAssignableFrom(delegate.getClass())) {
             return tracerClass.cast(delegate);
         }
+        if (tracerClass.isInstance(this)) {
+            return tracerClass.cast(this);
+        }
         throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
                                                    + ", open tracing tracer is: " + delegate.getClass().getName());
     }
