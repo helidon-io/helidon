@@ -13,12 +13,12 @@ metrics.rest-request.enabled=false
 # Datasource properties
 javax.sql.DataSource.{{ds-name}}.dataSourceClassName={{jdbcDataSource}}
 javax.sql.DataSource.{{ds-name}}.dataSource.url={{databaseUrl}}
-javax.sql.DataSource.{{ds-name}}.dataSource.user=db_user
-javax.sql.DataSource.{{ds-name}}.dataSource.password=user_password
+javax.sql.DataSource.{{ds-name}}.dataSource.user={{dbUser}}
+javax.sql.DataSource.{{ds-name}}.dataSource.password={{userPassword}}
 {{/database-hikari}}
 {{#database-ucp}}
 oracle.ucp.jdbc.PoolDataSource.{{ds-name}}.URL={{databaseUrl}}
 oracle.ucp.jdbc.PoolDataSource.{{ds-name}}.connectionFactoryClassName={{jdbcDataSource}}
-oracle.ucp.jdbc.PoolDataSource.{{ds-name}}.user=db_user
-oracle.ucp.jdbc.PoolDataSource.{{ds-name}}.password=user_password
+oracle.ucp.jdbc.PoolDataSource.{{ds-name}}.user={{dbUser}}
+oracle.ucp.jdbc.PoolDataSource.{{ds-name}}.password={{userPassword}}
 {{/database-ucp}}

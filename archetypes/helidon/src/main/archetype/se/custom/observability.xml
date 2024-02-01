@@ -30,31 +30,30 @@
             <list key="application-yaml-entries">
                 <value if="${tracing.provider} == 'jaeger'"><![CDATA[
 tracing:
-    service: "helidon-full-http"
-    host: "localhost"     # JAEGER_ENDPOINT
-    port: 14250           # JAEGER_ENDPOINT
-    sampler-type: "ratio" # JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
-    sampler-param: 0.5    # JAEGER_SAMPLER_PARAM (number)
+  service: "helidon-full-http"
+  host: "localhost"     # JAEGER_ENDPOINT
+  port: 14250           # JAEGER_ENDPOINT
+  sampler-type: "ratio" # JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
+  sampler-param: 0.5    # JAEGER_SAMPLER_PARAM (number)
 ]]></value>
                 <value if="${tracing.provider} == 'zipkin'"><![CDATA[
 tracing:
-  zipkin:
-    service: "helidon-service"
-    protocol: "https"
-    host: "192.168.1.1"
-    port: 9987
-    api-version: 1
-    # this is the default path for API version 2
-    path: "/api/v2/spans"
-    tags:
-      tag1: "tag1-value"
-      tag2: "tag2-value"
-    boolean-tags:
-      tag3: true
-      tag4: false
-    int-tags:
-      tag5: 145
-      tag6: 741]]></value>
+  service: "helidon-service"
+  protocol: "http"
+  host: "localhost"
+  port: 9411
+  api-version: 1
+  # this is the default path for API version 2
+  path: "/api/v2/spans"
+  tags:
+    tag1: "tag1-value"
+    tag2: "tag2-value"
+  boolean-tags:
+    tag3: true
+    tag4: false
+  int-tags:
+    tag5: 145
+    tag6: 741]]></value>
             </list>
             <list key="config-test">
                 <value><![CDATA[

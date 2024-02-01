@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,23 +47,22 @@ The following is an example of a Zipkin configuration, specified in the YAML for
 [source,yaml]
 ----
 tracing:
-  zipkin:
-    service: "helidon-service"
-    protocol: "https"
-    host: "zipkin"
-    port: 9987
-    api-version: 1
-    # this is the default path for API version 2
-    path: "/api/v2/spans"
-    tags:
-      tag1: "tag1-value"
-      tag2: "tag2-value"
-    boolean-tags:
-      tag3: true
-      tag4: false
-    int-tags:
-      tag5: 145
-      tag6: 741
+  service: "helidon-service"
+  protocol: "https"
+  host: "zipkin"
+  port: 9987
+  api-version: 1
+  # this is the default path for API version 2
+  path: "/api/v2/spans"
+  tags:
+    tag1: "tag1-value"
+    tag2: "tag2-value"
+  boolean-tags:
+    tag3: true
+    tag4: false
+  int-tags:
+    tag5: 145
+    tag6: 741
 ----
 
 Example of Zipkin trace:

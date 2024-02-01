@@ -25,12 +25,17 @@
     <parent>
         <groupId>io.helidon.grpc</groupId>
         <artifactId>helidon-grpc-project</artifactId>
-        <version>3.2.4-SNAPSHOT</version>
+        <version>3.2.6-SNAPSHOT</version>
     </parent>
 
     <artifactId>io.grpc</artifactId>
     <name>Helidon grpc-java Bundle</name>
     <description>Bundle of grpc dependencies provided for backwards compatibility</description>
+
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -43,4 +48,30 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>empty-javadoc-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>javadoc</classifier>
+                                    <classesDirectory>${project.build.directory}/javadoc</classesDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

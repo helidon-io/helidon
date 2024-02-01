@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ This will mount `~/.oci` as a volume in the running docker container.
         <boolean path="docker.jlink-image">false</boolean>
         <boolean path="k8s">true</boolean>
         <boolean path="v8o">false</boolean>
+        <boolean path="jpms">false</boolean>
     </presets>
     <call method="pre-processed-models"/>
     <exec src="/common/common.xml"/>

@@ -4634,15 +4634,24 @@ jackson-databind  FasterXML, LLC
 Apache 2.0
 Used by: [helidon-media-jackson]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-------------------------------- Top-level license --------------------------
+com.fasterxml.jackson.core:jackson-databind
+
+Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
+
+----------------------------------------------------------------------
 See full text at the bottom of this document for license: Apache-2.0
-------------------------------- Copyright notices --------------------------
+== NOTICE
+
 # Jackson JSON processor
 
 Jackson is a high-performance, Free/Open Source JSON processing library.
 It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
 been in development since 2007.
 It is currently developed by a community of developers.
+
+## Copyright
+
+Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
 
 ## Licensing
 
@@ -4654,12 +4663,16 @@ To find the details that apply to this artifact see the accompanying LICENSE fil
 A list of contributors may be found from CREDITS(-2.x) file, which is included
 in some artifacts (usually source distributions); but is always available
 from the source code management (SCM) system project uses.
----------------------------- Fourth-party information ----------------------
-== jackson-core
-== License
-Apache 2.0
-== Copyright Notices
-Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+
+
+====================End of Apache License 2.0 of top level component===================
+
+FOURTH-PARTY DEPENDENCY
+
+----------------jackson-core -----------------------
+COPYRIGHT: Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
+LICENSE: Apache 2.0
+START NOTICE:
 
 # Jackson JSON processor
 
@@ -4667,6 +4680,10 @@ Jackson is a high-performance, Free/Open Source JSON processing library.
 It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
 been in development since 2007.
 It is currently developed by a community of developers.
+
+## Copyright
+
+Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
 
 ## Licensing
 
@@ -4678,23 +4695,92 @@ To find the details that apply to this artifact see the accompanying LICENSE fil
 A list of contributors may be found from CREDITS(-2.x) file, which is included
 in some artifacts (usually source distributions); but is always available
 from the source code management (SCM) system project uses.
---------------------------------(separator)---------------------------------
-== jackson-annotations
-== License
-Apache 2.0
-== Copyright Notices
-Copyright © 2007–2022 FasterXML. All rights reserved.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-     http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
---------------------------------(separator)---------------------------------
+## FastDoubleParser
+jackson-core bundles a shaded copy of FastDoubleParser <https://github.com/wrandelshofer/FastDoubleParser>.
+That code is available under an MIT license <https://github.com/wrandelshofer/FastDoubleParser/blob/main/LICENSE>
+under the following copyright.
+
+Copyright © 2023 Werner Randelshofer, Switzerland. MIT License.
+
+See FastDoubleParser-NOTICE for details of other source code included in FastDoubleParser
+and the licenses and copyrights that apply to that code.
+
+----- END NOTICE -----
+
+START FastDoubleParser-NOTICE:
+
+# FastDoubleParser
+
+This is a Java port of Daniel Lemire's fast_float project.
+This project provides parsers for double, float, BigDecimal and BigInteger values.
+
+## Copyright
+
+Copyright © 2023 Werner Randelshofer, Switzerland.
+
+## Licensing
+
+This code is licensed under MIT License.
+https://github.com/wrandelshofer/FastDoubleParser/blob/522be16e145f43308c43b23094e31d5efcaa580e/LICENSE
+(The file 'LICENSE' is included in the sources and classes Jar files that are released by this project -
+as is required by that license.)
+
+Some portions of the code have been derived from other projects.
+All these projects require that we include a copyright notice, and some require that we also
+include some text of their
+license file.
+
+fast_double_parser, Copyright (c) 2022 Daniel Lemire. Apache 2.0 License.
+https://github.com/fastfloat/fast_float
+https://github.com/fastfloat/fast_float/blob/dc88f6f882ac7eb8ec3765f633835cb76afa0ac2/LICENSE-APACHE
+
+fast_float, Copyright (c) 2021 The fast_float authors. Apache 2.0 License.
+https://github.com/fastfloat/fast_float
+https://github.com/lemire/fast_double_parser/blob/07d9189a8fb815fe800cb15ca022e7a07093236e/LICENSE
+
+bigint, Copyright 2020 Tim Buktu. 2-clause BSD License.
+https://github.com/tbuktu/bigint/tree/floatfft
+https://github.com/tbuktu/bigint/blob/617c8cd8a7c5e4fb4d919c6a4d11e2586107f029/LICENSE
+https://github.com/wrandelshofer/FastDoubleParser/blob/39e123b15b71f29a38a087d16a0bc620fc879aa6/bigint-LICENSE
+(We only use those portions of the bigint project that can be licensed under 2-clause BSD License.)
+(The file 'bigint-LICENSE' is included in the sources and classes Jar files that are released by this project
+- as is required by that license.)
+
+----- END FastDoubleParser-NOTICE -----
+
+bigint-LICENSE:
+
+Copyright 2022 Tim Buktu
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+----- END bigint-LICENSE -----
+
+-----------------jackson-annotations-----------------------
+COPYRIGHT: Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
+LICENSE: Apache 2.0
+NOTICE: same as jackson-databind
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jandex  Red Hat, Inc and Individual Contributors
 Apache 2.0
