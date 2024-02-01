@@ -1,0 +1,202 @@
+package io.helidon.service.inject;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.types.TypeName;
+import io.helidon.service.inject.api.ActivationRequest;
+import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
+import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
+import io.helidon.service.inject.api.InjectServiceInfo;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.registry.Dependency;
+import io.helidon.service.registry.ServiceInfo;
+import io.helidon.service.registry.ServiceRegistryException;
+
+/**
+ * Takes care of a single service descriptor.
+ *
+ * @param <T> type of the provided service
+ */
+class ServiceProvider<T> {
+    private final InjectServiceRegistry registry;
+    private final ServiceInfo serviceInfo;
+    private final Descriptor<T> descriptor;
+    private final TypeName scope;
+    private final ActivationRequest activationRequest;
+    private final InterceptionMetadata interceptionMetadata;
+    private final Contracts.ContractLookup contracts;
+    private volatile Map<Dependency, IpPlan<?>> injectionPlan = null;
+
+    /*
+    Service provider used for initial bindings in a scope, where we NEVER create instances
+     */
+    ServiceProvider(InjectServiceRegistry serviceRegistry,
+                    ServiceInfo serviceInfo,
+                    TypeName scope) {
+        this.registry = serviceRegistry;
+        this.interceptionMetadata = registry.interceptionMetadata();
+        this.activationRequest = registry.activationRequest();
+        this.serviceInfo = serviceInfo;
+        this.descriptor = null;
+        this.scope = scope;
+
+        this.contracts = Contracts.create(serviceInfo);
+    }
+
+    ServiceProvider(InjectServiceRegistry serviceRegistry,
+                    ServiceInfo serviceInfo,
+                    Descriptor<T> descriptor) {
+        this.registry = serviceRegistry;
+        this.interceptionMetadata = registry.interceptionMetadata();
+        this.activationRequest = registry.activationRequest();
+        this.serviceInfo = serviceInfo;
+        this.descriptor = descriptor;
+        this.scope = descriptor.scope();
+
+        this.contracts = Contracts.create(descriptor);
+    }
+
+    Descriptor<T> descriptor() {
+        return descriptor;
+    }
+
+    ServiceInjectionPlanBinder.Binder servicePlanBinder() {
+        return ServicePlanBinder.create(registry, descriptor, it -> this.injectionPlan = it);
+    }
+
+    Map<Dependency, IpPlan<?>> injectionPlan() {
+        Map<Dependency, IpPlan<?>> usedIp = injectionPlan;
+        if (usedIp == null) {
+            // no application, we have to create injection plan from current services
+            usedIp = createInjectionPlan();
+            this.injectionPlan = usedIp;
+        }
+        return usedIp;
+    }
+
+    InterceptionMetadata interceptionMetadata() {
+        return interceptionMetadata;
+    }
+
+    Set<TypeName> contracts(Lookup lookup) {
+        return contracts.contracts(lookup);
+    }
+
+    ActivationRequest activationRequest() {
+        return activationRequest;
+    }
+
+    private Map<Dependency, IpPlan<?>> createInjectionPlan() {
+        // TODO we must use whatever is provided by service info (it may be dependencies or IP depending on service type)
+
+        List<Dependency> dependencies;
+        if (descriptor.coreInfo() == descriptor) {
+            // inject based
+            dependencies = descriptor.dependencies();
+        } else {
+            // core service
+            dependencies = descriptor.coreInfo().dependencies();
+        }
+
+        if (dependencies.isEmpty()) {
+            return Map.of();
+        }
+
+        AtomicReference<Map<Dependency, IpPlan<?>>> injectionPlan = new AtomicReference<>();
+
+        ServiceInjectionPlanBinder.Binder binder = ServicePlanBinder.create(registry,
+                                                                            descriptor,
+                                                                            injectionPlan::set);
+        for (Dependency injectionPoint : dependencies) {
+            planForIp(binder, injectionPoint);
+        }
+
+        binder.commit();
+
+        return injectionPlan.get();
+    }
+
+    private void planForIp(ServiceInjectionPlanBinder.Binder injectionPlan,
+                           Dependency injectionPoint) {
+        /*
+         very similar code is used in ApplicationCreator.injectionPlan
+         make sure this is kept in sync!
+         */
+        Lookup lookup = Lookup.create(injectionPoint);
+
+        if (descriptor.contracts().containsAll(lookup.contracts())
+                && descriptor.qualifiers().equals(lookup.qualifiers())) {
+            // injection point lookup must have a single contract for each injection point
+            // if this service implements the contracts actually required, we must look for services with lower weight
+            // but only if we also have the same qualifiers
+            lookup = Lookup.builder(lookup)
+                    .weight(descriptor.weight())
+                    .build();
+        }
+
+        List<InjectServiceInfo> discovered = registry.lookupServices(lookup)
+                .stream()
+                .filter(it -> it != descriptor)
+                .toList();
+
+        /*
+        Very similar code is used for build time code generation in ApplicationCreator.buildTimeBinding
+        make sure this is kept in sync!
+         */
+        TypeName ipType = injectionPoint.typeName();
+
+        // now there are a few options - optional, list, and single instance
+        if (ipType.isList()) {
+            InjectServiceInfo[] descriptors = discovered.toArray(new InjectServiceInfo[0]);
+            TypeName typeOfList = ipType.typeArguments().getFirst();
+            if (typeOfList.isSupplier()) {
+                // inject List<Supplier<Contract>>
+                injectionPlan.bindListOfSuppliers(injectionPoint, descriptors);
+            } else {
+                // inject List<Contract>
+                injectionPlan.bindList(injectionPoint, descriptors);
+            }
+        } else if (ipType.isOptional()) {
+            // inject Optional<Contract>
+            if (discovered.isEmpty()) {
+                injectionPlan.bindOptional(injectionPoint);
+            } else {
+                TypeName typeOfOptional = ipType.typeArguments().getFirst();
+                if (typeOfOptional.isSupplier()) {
+                    injectionPlan.bindOptionalOfSupplier(injectionPoint, discovered.getFirst());
+                } else {
+                    injectionPlan.bindOptional(injectionPoint, discovered.getFirst());
+                }
+            }
+        } else if (ipType.isSupplier()) {
+            // one of the supplier options
+            TypeName typeOfSupplier = ipType.typeArguments().getFirst();
+            if (typeOfSupplier.isOptional()) {
+                // inject Supplier<Optional<Contract>>
+                injectionPlan.bindSupplierOfOptional(injectionPoint, discovered.toArray(new InjectServiceInfo[0]));
+            } else if (typeOfSupplier.isList()) {
+                // inject Supplier<List<Contract>>
+                injectionPlan.bindSupplierOfList(injectionPoint, discovered.toArray(new InjectServiceInfo[0]));
+            } else {
+                // inject Supplier<Contract>
+                if (discovered.isEmpty()) {
+                    // null binding is not supported at runtime
+                    throw new ServiceRegistryException("Expected to resolve a service matching injection point "
+                                                               + injectionPoint);
+                }
+                injectionPlan.bindSupplier(injectionPoint, discovered.getFirst());
+            }
+        } else {
+            // inject Contract
+            if (discovered.isEmpty()) {
+                // null binding is not supported at runtime
+                throw new ServiceRegistryException("Expected to resolve a service matching injection point "
+                                                           + injectionPoint);
+            }
+            injectionPlan.bind(injectionPoint, discovered.getFirst());
+        }
+    }
+}

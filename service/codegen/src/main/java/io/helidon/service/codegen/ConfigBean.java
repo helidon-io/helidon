@@ -20,8 +20,8 @@ import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.inject.codegen.InjectCodegenTypes.COMMON_CONFIG;
-import static io.helidon.inject.codegen.InjectCodegenTypes.PROTOTYPE_BLUEPRINT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.COMMON_CONFIG;
+import static io.helidon.service.codegen.ServiceCodegenTypes.PROTOTYPE_BLUEPRINT;
 
 record ConfigBean(TypeName configBeanType,
                   ConfigBeanAnnotation annotation) {

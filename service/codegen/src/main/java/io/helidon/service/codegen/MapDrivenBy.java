@@ -29,7 +29,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_DRIVEN_BY;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DRIVEN_BY;
 
 /**
  * A {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.codegen.spi.AnnotationMapperProvider}
@@ -38,7 +38,7 @@ import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_DRIVEN_BY;
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 public class MapDrivenBy implements AnnotationMapperProvider {
-    private static final Annotation SERVICE = Annotation.create(InjectCodegenTypes.INJECTION_SERVICE);
+    private static final Annotation SERVICE = Annotation.create(ServiceCodegenTypes.INJECTION_SERVICE);
 
     /**
      * Required default constructor.

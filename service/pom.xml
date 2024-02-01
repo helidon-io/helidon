@@ -43,7 +43,8 @@
 
     <modules>
         <module>codegen</module>
-        <module>core</module>
+        <module>registry</module>
+        <module>inject</module>
         <module>tests</module>
     </modules>
 

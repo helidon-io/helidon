@@ -81,7 +81,7 @@ class InterceptedTypeGenerator {
     }
 
     private static TypeName invokerType(TypeName type) {
-        return TypeName.builder(InjectCodegenTypes.INVOKER)
+        return TypeName.builder(ServiceCodegenTypes.INVOKER)
                 .addTypeArgument(type.boxed())
                 .build();
     }
@@ -149,7 +149,7 @@ class InterceptedTypeGenerator {
     private void generateConstructor(ClassModel.Builder classModel) {
         classModel.addConstructor(constructor -> constructor
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addParameter(interceptMeta -> interceptMeta.type(InjectCodegenTypes.INTERCEPTION_METADATA)
+                .addParameter(interceptMeta -> interceptMeta.type(ServiceCodegenTypes.INTERCEPTION_METADATA)
                         .name("helidonInject__interceptMeta"))
                 .addParameter(descriptor -> descriptor.type(descriptorType)
                         .name("helidonInject__serviceDescriptor"))

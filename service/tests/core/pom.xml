@@ -31,10 +31,25 @@
 
     <name>Helidon Service Tests Core</name>
 
+    <properties>
+        <helidon.services.skip>false</helidon.services.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-core</artifactId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

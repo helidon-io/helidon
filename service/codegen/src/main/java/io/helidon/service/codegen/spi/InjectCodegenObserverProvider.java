@@ -19,7 +19,7 @@ package io.helidon.service.codegen.spi;
 import java.util.Set;
 
 import io.helidon.codegen.Option;
-import io.helidon.inject.codegen.InjectionCodegenContext;
+import io.helidon.service.codegen.ServiceCodegenContext;
 
 /**
  * A {@link java.util.ServiceLoader} provider interface for observers that will be
@@ -41,5 +41,5 @@ public interface InjectCodegenObserverProvider {
      * @param context code generation context for this code generation session
      * @return a new observer
      */
-    InjectCodegenObserver create(InjectionCodegenContext context);
+    InjectCodegenObserver create(ServiceCodegenContext context);
 }

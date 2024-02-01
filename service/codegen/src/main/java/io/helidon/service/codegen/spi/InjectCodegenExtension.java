@@ -16,7 +16,7 @@
 
 package io.helidon.service.codegen.spi;
 
-import io.helidon.inject.codegen.RoundContext;
+import io.helidon.service.codegen.RoundContext;
 
 /**
  * Code generation extension for Helidon Inject.

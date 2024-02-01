@@ -58,7 +58,7 @@ public class InjectCodegenProvider implements CodegenExtensionProvider {
                                                                                      .flatMap(it -> it.supportedAnnotations()
                                                                                              .stream()),
                                                                              Stream.of(TypeNames.GENERATED,
-                                                                                       InjectCodegenTypes.INJECTION_DESCRIPTOR))
+                                                                                       ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR))
             .collect(Collectors.toUnmodifiableSet());
 
     private static final Set<String> SUPPORTED_ANNOTATION_PACKAGES =

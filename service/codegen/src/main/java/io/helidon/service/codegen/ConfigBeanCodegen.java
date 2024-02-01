@@ -30,13 +30,13 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.service.codegen.spi.InjectCodegenExtension;
 
 import static io.helidon.common.types.Annotations.OVERRIDE;
-import static io.helidon.inject.codegen.ConfigBeanAnnotation.CONFIG_BEAN_TYPE;
-import static io.helidon.inject.codegen.InjectCodegenTypes.COMMON_CONFIG;
-import static io.helidon.inject.codegen.InjectCodegenTypes.COMMON_CONFIG_EXCEPTION;
-import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_INJECT;
-import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
-import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
-import static io.helidon.inject.codegen.InjectCodegenTypes.QUALIFIED_INSTANCE;
+import static io.helidon.service.codegen.ConfigBeanAnnotation.CONFIG_BEAN_TYPE;
+import static io.helidon.service.codegen.ServiceCodegenTypes.COMMON_CONFIG;
+import static io.helidon.service.codegen.ServiceCodegenTypes.COMMON_CONFIG_EXCEPTION;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_INJECT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SINGLETON;
+import static io.helidon.service.codegen.ServiceCodegenTypes.QUALIFIED_INSTANCE;
 
 class ConfigBeanCodegen implements InjectCodegenExtension {
     private static final Annotation SINGLETON_ANNOTATION = Annotation.create(INJECTION_SINGLETON);
@@ -44,9 +44,9 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
     private static final Annotation CONFIG_BEAN_ANNOTATION = Annotation.create(CONFIG_BEAN_TYPE);
     private static final Annotation WILDCARD_NAME_ANNOTATION = Annotation.create(INJECTION_NAMED, "*");
 
-    private final InjectionCodegenContext ctx;
+    private final ServiceCodegenContext ctx;
 
-    ConfigBeanCodegen(InjectionCodegenContext ctx) {
+    ConfigBeanCodegen(ServiceCodegenContext ctx) {
         this.ctx = ctx;
     }
 
@@ -189,7 +189,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                 .addContent(QUALIFIED_INSTANCE)
                 .addContent(".create(instance, ")
                 .update(this::addConfigBeanQualifier)
-                .addContent(InjectCodegenTypes.QUALIFIER)
+                .addContent(ServiceCodegenTypes.QUALIFIER)
                 .addContentLine(".createNamed(name)));")
                 .addContentLine("}"); // and of for cycle going through config nodes
 
@@ -203,7 +203,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                     .addContent(QUALIFIED_INSTANCE)
                     .addContent(".create(instance, ")
                     .update(this::addConfigBeanQualifier)
-                    .addContent(InjectCodegenTypes.QUALIFIER)
+                    .addContent(ServiceCodegenTypes.QUALIFIER)
                     .addContentLine(".DEFAULT_NAMED));")
                     .addContentLine("}"); // end of if - want default and not added
         }
@@ -248,7 +248,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                     .addContent(QUALIFIED_INSTANCE)
                     .addContent(".create(instance, ")
                     .update(this::addConfigBeanQualifier)
-                    .addContent(InjectCodegenTypes.QUALIFIER)
+                    .addContent(ServiceCodegenTypes.QUALIFIER)
                     .addContentLine(".DEFAULT_NAMED));");
         } else {
             if (wantDefault) {
@@ -267,7 +267,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                         .addContent(QUALIFIED_INSTANCE)
                         .addContent(".create(instance, ")
                         .update(this::addConfigBeanQualifier)
-                        .addContent(InjectCodegenTypes.QUALIFIER)
+                        .addContent(ServiceCodegenTypes.QUALIFIER)
                         .addContentLine(".DEFAULT_NAMED));");
             }
         }
@@ -288,13 +288,13 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
     }
 
     private TypeName servicesProviderType(TypeName typeName) {
-        return TypeName.builder(InjectCodegenTypes.SERVICES_PROVIDER)
+        return TypeName.builder(ServiceCodegenTypes.SERVICES_PROVIDER)
                 .addTypeArgument(typeName)
                 .build();
     }
 
     private void addConfigBeanQualifier(ContentBuilder<?> builder) {
-        builder.addContent(InjectCodegenTypes.QUALIFIER)
+        builder.addContent(ServiceCodegenTypes.QUALIFIER)
                 .addContent(".CONFIG_BEAN, ");
     }
 }

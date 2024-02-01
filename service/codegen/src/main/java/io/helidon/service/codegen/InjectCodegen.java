@@ -26,16 +26,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
-import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.CodegenOptions;
+import io.helidon.codegen.CodegenUtil;
+import io.helidon.codegen.FilerTextResource;
 import io.helidon.codegen.ModuleInfo;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
+import io.helidon.common.Weighted;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -46,20 +50,24 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.spi.InjectCodegenExtension;
 import io.helidon.service.codegen.spi.InjectCodegenExtensionProvider;
 
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR;
+
 /**
  * Handles processing of all extensions, creates context and writes types.
  */
 class InjectCodegen implements CodegenExtension {
+    private static final TypeName TYPE = TypeName.create(InjectCodegen.class);
+
     private final Map<TypeName, List<InjectCodegenExtension>> typeToExtensions = new HashMap<>();
     private final Map<InjectCodegenExtension, Predicate<TypeName>> extensionPredicates = new IdentityHashMap<>();
-    private final Set<TypeName> generatedServiceDescriptors = new HashSet<>();
+    private final Set<DescriptorMeta> generatedServiceDescriptors = new HashSet<>();
     private final TypeName generator;
-    private final InjectionCodegenContext ctx;
+    private final ServiceCodegenContext ctx;
     private final List<InjectCodegenExtension> extensions;
     private final String module;
 
     private InjectCodegen(CodegenContext ctx, TypeName generator, List<InjectCodegenExtensionProvider> extensions) {
-        this.ctx = InjectionCodegenContext.create(ctx);
+        this.ctx = ServiceCodegenContext.create(ctx);
         this.generator = generator;
         this.module = ctx.moduleName().orElse(null);
 
@@ -106,9 +114,22 @@ class InjectCodegen implements CodegenExtension {
 
         writeNewTypes();
 
-        for (TypeInfo typeInfo : roundContext.annotatedTypes(InjectCodegenTypes.INJECTION_DESCRIPTOR)) {
+        for (TypeInfo typeInfo : roundContext.annotatedTypes(SERVICE_ANNOTATION_DESCRIPTOR)) {
             // add each declared descriptor in source code
-            generatedServiceDescriptors.add(typeInfo.typeName());
+            Annotation descriptorAnnot = typeInfo.annotation(SERVICE_ANNOTATION_DESCRIPTOR);
+
+            double weight = descriptorAnnot.doubleValue("weight").orElse(Weighted.DEFAULT_WEIGHT);
+            Set<TypeName> contracts = descriptorAnnot.typeValues("contracts")
+                    .map(Set::copyOf)
+                    .orElseGet(Set::of);
+
+            String registryType = descriptorAnnot.stringValue("registryType").orElse("core");
+
+            // predefined service descriptor
+            generatedServiceDescriptors.add(new DescriptorMeta(registryType,
+                                                               typeInfo.typeName(),
+                                                               weight,
+                                                               contracts));
         }
 
         if (roundContext.availableAnnotations().size() == 1 && roundContext.availableAnnotations()
@@ -166,80 +187,54 @@ class InjectCodegen implements CodegenExtension {
         if (!hasModule) {
             moduleName = "unnamed/" + packageName + (ctx.scope().isProduction() ? "" : "/" + ctx.scope().name());
         }
-        ClassCode moduleComponent = ModuleComponentHandler.createClassModel(ctx.scope(),
-                                                                            generatedServiceDescriptors,
-                                                                            moduleName,
-                                                                            packageName);
-        // first generate the module component, then validate the module-info
 
-        CodegenFiler filer = ctx.filer();
+        FilerTextResource services = ctx.filer().textResource("META-INF/helidon/services/services.txt");
+        List<String> lines = new ArrayList<>(services.lines());
+        Set<DescriptorMeta> existingServices = lines.stream()
+                .map(String::trim)
+                .filter(Predicate.not(it -> it.startsWith("#")))
+                .map(DescriptorMeta::parse)
+                .collect(Collectors.toSet());
 
-        ClassModel classModel = moduleComponent.classModel().build();
-        filer.writeSourceFile(classModel, moduleComponent.originatingElements());
+        if (lines.isEmpty()) {
+            // @Generated
+            lines.add("# Generated list of service descriptors in module " + moduleName);
+            lines.add("# " + toAnnotationText(CodegenUtil.generatedAnnotation(generator,
+                                                                              TYPE,
+                                                                              TypeName.create("io.helidon.services.ServicesMeta"),
+                                                                              "1",
+                                                                              "")));
+        }
 
-        if (!hasModule || CodegenOptions.CREATE_META_INF_SERVICES.value(ctx.options())) {
-            // only create meta-inf/services if we are not a JPMS module
-
-            try {
-                filer.services(generator,
-                               InjectCodegenTypes.MODULE_COMPONENT,
-                               List.of(classModel.typeName()),
-                               moduleComponent.originatingElements());
-            } catch (Exception e) {
-                // ignore this exception, as the resource probably exists and was done by the user
-                ctx.logger()
-                        .log(CodegenEvent.builder()
-                                     .level(System.Logger.Level.DEBUG)
-                                     .message("Failed to create services, probably already exists")
-                                     .throwable(e)
-                                     .build());
+        for (DescriptorMeta descriptor : generatedServiceDescriptors) {
+            if (existingServices.add(descriptor)) {
+                // only add the provider if it does not yet exist
+                lines.add(descriptor.toLine());
             }
         }
 
-        if (hasModule && currentModule.isPresent()) {
-            // check if we have `provider ModuleComponent with OurModuleComponent`
-            ModuleInfo moduleInfo = currentModule.get();
-            List<TypeName> typeNames = moduleInfo.provides()
-                    .get(InjectCodegenTypes.MODULE_COMPONENT);
-            boolean found = false;
-            if (typeNames != null) {
-                TypeName moduleComponentType = moduleComponent.newType();
-                found = typeNames.stream()
-                        .anyMatch(moduleComponentType::equals);
-            }
+        services.lines(lines);
+        services.write();
+    }
 
-            // now check if we provide an application from module info - if so, we need to generate a stub for it
-            // as we create it too late (in a Maven plugin)
-            List<TypeName> apps = moduleInfo.provides()
-                    .get(InjectCodegenTypes.APPLICATION);
-            if (apps != null && apps.size() == 1) {
-                // only expect one, ignore other cases, probably some user specific approach
-                TypeName appType = apps.getFirst();
-                if (ctx.typeInfo(appType).isEmpty()) {
-                    // application is declared in module-info.java, but not present on current classpath
-                    generateApplicationStub(appType);
-                }
-            }
-
-            if (!found) {
-                throw new CodegenException("Please add \"provides " + InjectCodegenTypes.MODULE_COMPONENT.fqName()
-                                                   + " with " + moduleComponent.newType().fqName() + ";\" "
-                                                   + "to your module-info.java");
-            }
-        }
+    private String toAnnotationText(Annotation annotation) {
+        List<String> valuePairs = new ArrayList<>();
+        Map<String, Object> annotationValues = annotation.values();
+        annotationValues.forEach((key, value) -> valuePairs.add(key + "=\"" + value + "\""));
+        return "@" + annotation.typeName().fqName() + "(" + String.join(", ", valuePairs) + ")";
     }
 
     private void generateApplicationStub(TypeName appType) {
         ClassModel application = ClassModel.builder()
                 .accessModifier(AccessModifier.PUBLIC)
                 .type(appType)
-                .addInterface(InjectCodegenTypes.APPLICATION)
+                .addInterface(ServiceCodegenTypes.APPLICATION)
                 .addMethod(configure -> configure
                         .addAnnotation(Annotations.OVERRIDE)
                         .accessModifier(AccessModifier.PUBLIC)
                         .name("configure")
                         .addParameter(binder -> binder
-                                .type(InjectCodegenTypes.SERVICE_INJECTION_PLAN_BINDER)
+                                .type(ServiceCodegenTypes.SERVICE_INJECTION_PLAN_BINDER)
                                 .name("binder")))
                 .addMethod(name -> name
                         .addAnnotation(Annotations.OVERRIDE)
@@ -259,20 +254,24 @@ class InjectCodegen implements CodegenExtension {
         CodegenFiler filer = ctx.filer();
 
         // generate all code
-        var builders = ctx.descriptors();
-        for (var classCode : builders) {
+        var descriptors = ctx.descriptors();
+        for (var descriptor : descriptors) {
+            ClassCode classCode = descriptor.classCode();
             ClassModel classModel = classCode.classModel().build();
-            generatedServiceDescriptors.add(classCode.newType());
+            generatedServiceDescriptors.add(new DescriptorMeta(descriptor.registryType(),
+                                                               classCode.newType(),
+                                                               descriptor.weight(),
+                                                               descriptor.contracts()));
             filer.writeSourceFile(classModel, classCode.originatingElements());
         }
-        builders.clear();
+        descriptors.clear();
 
-        builders = ctx.types();
-        for (var classCode : builders) {
+        var otherTypes = ctx.types();
+        for (var classCode : otherTypes) {
             ClassModel classModel = classCode.classModel().build();
             filer.writeSourceFile(classModel, classCode.originatingElements());
         }
-        builders.clear();
+        otherTypes.clear();
     }
 
     private List<TypeInfoAndAnnotations> annotatedTypes(Collection<TypeInfo> allTypes) {
@@ -352,11 +351,11 @@ class InjectCodegen implements CodegenExtension {
         return result;
     }
 
-    private String topLevelPackage(Set<TypeName> typeNames) {
-        String thePackage = typeNames.iterator().next().packageName();
+    private String topLevelPackage(Set<DescriptorMeta> typeNames) {
+        String thePackage = typeNames.iterator().next().descriptor().packageName();
 
-        for (TypeName typeName : typeNames) {
-            String nextPackage = typeName.packageName();
+        for (DescriptorMeta typeName : typeNames) {
+            String nextPackage = typeName.descriptor().packageName();
             if (nextPackage.length() < thePackage.length()) {
                 thePackage = nextPackage;
             }
@@ -366,5 +365,39 @@ class InjectCodegen implements CodegenExtension {
     }
 
     private record TypeInfoAndAnnotations(TypeInfo typeInfo, Set<TypeName> annotations) {
+    }
+
+    private record DescriptorMeta(String registryType, TypeName descriptor, double weight, Set<TypeName> contract) {
+
+        public static DescriptorMeta parse(String line) {
+            String[] elements = line.split(":");
+            if (elements.length < 4) {
+                throw new CodegenException("Failed to parse line from existing META-INF/helidon/services/services.txt: "
+                                                   + line + ", expecting registry-type:serviceDescriptor:weight:contracts");
+            }
+            Set<TypeName> contracts = Stream.of(elements[3].split(","))
+                    .map(String::trim)
+                    .map(TypeName::create)
+                    .collect(Collectors.toSet());
+
+            try {
+                return new DescriptorMeta(elements[0],
+                                          TypeName.create(elements[1]),
+                                          Double.parseDouble(elements[2]),
+                                          contracts);
+            } catch (NumberFormatException e) {
+                throw new CodegenException("Unexpected line structure in services.txt. Third element should be weight "
+                                                   + "(double). Got: " + line + ", message: " + e.getMessage(), e);
+            }
+        }
+
+        public String toLine() {
+            return registryType + ":"
+                    + descriptor.fqName() + ":"
+                    + weight + ":"
+                    + contract.stream()
+                    .map(TypeName::fqName)
+                    .collect(Collectors.joining(","));
+        }
     }
 }

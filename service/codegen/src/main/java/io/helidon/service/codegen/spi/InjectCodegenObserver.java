@@ -19,7 +19,7 @@ package io.helidon.service.codegen.spi;
 import java.util.Set;
 
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.codegen.RoundContext;
+import io.helidon.service.codegen.RoundContext;
 
 /**
  * Processes events from inject extension.

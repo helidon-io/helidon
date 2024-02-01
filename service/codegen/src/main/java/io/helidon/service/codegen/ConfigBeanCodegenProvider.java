@@ -46,7 +46,7 @@ public class ConfigBeanCodegenProvider implements InjectCodegenExtensionProvider
     }
 
     @Override
-    public InjectCodegenExtension create(InjectionCodegenContext codegenContext) {
+    public InjectCodegenExtension create(ServiceCodegenContext codegenContext) {
         return new ConfigBeanCodegen(codegenContext);
     }
 }

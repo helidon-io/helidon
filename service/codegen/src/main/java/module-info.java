@@ -38,6 +38,7 @@ module io.helidon.service.codegen {
 
     provides InjectCodegenExtensionProvider
             with io.helidon.service.codegen.InjectionExtensionProvider,
+                    io.helidon.service.codegen.ServiceExtensionProvider,
                     io.helidon.service.codegen.ConfigBeanCodegenProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider

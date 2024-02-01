@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
@@ -31,8 +32,8 @@ import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.spi.InjectAssignment;
 import io.helidon.service.codegen.spi.InjectAssignmentProvider;
 
-class InjectionCodegenContextImpl extends CodegenContextDelegate implements InjectionCodegenContext {
-    private final List<ClassCode> descriptors = new ArrayList<>();
+class InjectionCodegenContextImpl extends CodegenContextDelegate implements ServiceCodegenContext {
+    private final List<DescriptorClassCode> descriptors = new ArrayList<>();
     private final List<ClassCode> nonDescriptors = new ArrayList<>();
     private final List<InjectAssignment> providerSupports;
 
@@ -51,24 +52,34 @@ class InjectionCodegenContextImpl extends CodegenContextDelegate implements Inje
     public Optional<ClassModel.Builder> descriptor(TypeName serviceType) {
         Objects.requireNonNull(serviceType);
 
-        for (ClassCode classModel : descriptors) {
-            if (classModel.mainTrigger().equals(serviceType)) {
-                return Optional.of(classModel.classModel());
+        for (DescriptorClassCode descriptor : descriptors) {
+            ClassCode classCode = descriptor.classCode();
+            if (classCode.mainTrigger().equals(serviceType)) {
+                return Optional.of(classCode.classModel());
             }
         }
         return Optional.empty();
     }
 
     @Override
-    public void addDescriptor(TypeName serviceType,
+    public void addDescriptor(String registryType,
+                              TypeName serviceType,
                               TypeName descriptorType,
                               ClassModel.Builder descriptor,
+                              double weight,
+                              Set<TypeName> contracts,
                               Object... originatingElements) {
+        Objects.requireNonNull(registryType);
         Objects.requireNonNull(serviceType);
         Objects.requireNonNull(descriptorType);
         Objects.requireNonNull(descriptor);
+        Objects.requireNonNull(contracts);
+        Objects.requireNonNull(originatingElements);
 
-        descriptors.add(new ClassCode(descriptorType, descriptor, serviceType, originatingElements));
+        descriptors.add(new DescriptorClassCodeImpl(new ClassCode(descriptorType, descriptor, serviceType, originatingElements),
+                                                    registryType,
+                                                    weight,
+                                                    contracts));
     }
 
     @Override
@@ -83,7 +94,8 @@ class InjectionCodegenContextImpl extends CodegenContextDelegate implements Inje
                 return Optional.of(classCode.classModel());
             }
         }
-        for (ClassCode classCode : descriptors) {
+        for (DescriptorClassCode descriptor : descriptors) {
+            ClassCode classCode = descriptor.classCode();
             if (classCode.newType().equals(type)) {
                 return Optional.of(classCode.classModel());
             }
@@ -107,7 +119,7 @@ class InjectionCodegenContextImpl extends CodegenContextDelegate implements Inje
     }
 
     @Override
-    public List<ClassCode> descriptors() {
+    public List<DescriptorClassCode> descriptors() {
         return descriptors;
     }
 

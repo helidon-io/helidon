@@ -27,13 +27,6 @@ import io.helidon.common.types.TypeName;
  */
 public final class InjectOptions {
     /**
-     * Treat all super types as a contract for a given service type being added.
-     */
-    public static final Option<Boolean> AUTO_ADD_NON_CONTRACT_INTERFACES =
-            Option.create("helidon.inject.autoAddNonContractInterfaces",
-                          "Treat all super types as a contract for a given service type being added.",
-                          false);
-    /**
      * Which {@code io.helidon.inject.InterceptionStrategy} to use.
      */
     public static final Option<InterceptionStrategy> INTERCEPTION_STRATEGY =

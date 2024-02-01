@@ -19,8 +19,8 @@ package io.helidon.service.codegen;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.inject.codegen.InjectCodegenTypes.CONFIG_META_CONFIGURED;
-import static io.helidon.inject.codegen.InjectCodegenTypes.PROTOTYPE_CONFIGURED;
+import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_META_CONFIGURED;
+import static io.helidon.service.codegen.ServiceCodegenTypes.PROTOTYPE_CONFIGURED;
 
 record ConfigBeanAnnotation(String configKey,
                             boolean repeatable,

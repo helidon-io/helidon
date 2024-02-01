@@ -40,12 +40,12 @@ class ModuleComponentHandler {
                                       String packageName) {
         TypeName newType = TypeName.builder()
                 .packageName(packageName)
-                .className(scope.prefix() + InjectionCodegenContext.MODULE_NAME)
+                .className(scope.prefix() + ServiceCodegenContext.MODULE_NAME)
                 .build();
 
         ClassModel.Builder builder = ClassModel.builder()
                 .type(newType)
-                .addInterface(InjectCodegenTypes.MODULE_COMPONENT)
+                .addInterface(ServiceCodegenTypes.MODULE_COMPONENT)
                 .isFinal(true)
                 .description("Generated ModuleComponent, loaded by ServiceLoader.");
 
@@ -90,7 +90,7 @@ class ModuleComponentHandler {
         builder.addMethod(configure -> configure.name("configure")
                 .addAnnotation(Annotations.OVERRIDE)
                 .addParameter(binder -> binder.name("binder")
-                        .type(InjectCodegenTypes.SERVICE_BINDER))
+                        .type(ServiceCodegenTypes.SERVICE_BINDER))
                 .update(methodBody -> {
                     for (TypeName generatedServiceDescriptor : generatedServiceDescriptors) {
                         methodBody.addContent("binder.bind(")

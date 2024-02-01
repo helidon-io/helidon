@@ -40,23 +40,23 @@ public class InjectionExtensionProvider implements InjectCodegenExtensionProvide
 
     @Override
     public Set<Option<?>> supportedOptions() {
-        return Set.of(InjectOptions.AUTO_ADD_NON_CONTRACT_INTERFACES,
+        return Set.of(ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES,
                       InjectOptions.INTERCEPTION_STRATEGY,
                       InjectOptions.SCOPE_META_ANNOTATIONS);
     }
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(InjectCodegenTypes.INJECTION_SINGLETON,
-                      InjectCodegenTypes.INJECTION_PRE_DESTROY,
-                      InjectCodegenTypes.INJECTION_POST_CONSTRUCT,
-                      InjectCodegenTypes.INJECTION_INJECT,
-                      InjectCodegenTypes.INJECTION_SERVICE,
-                      InjectCodegenTypes.INJECTION_REQUEST_SCOPE);
+        return Set.of(ServiceCodegenTypes.INJECTION_SINGLETON,
+                      ServiceCodegenTypes.INJECTION_PRE_DESTROY,
+                      ServiceCodegenTypes.INJECTION_POST_CONSTRUCT,
+                      ServiceCodegenTypes.INJECTION_INJECT,
+                      ServiceCodegenTypes.INJECTION_SERVICE,
+                      ServiceCodegenTypes.INJECTION_REQUEST_SCOPE);
     }
 
     @Override
-    public InjectCodegenExtension create(InjectionCodegenContext codegenContext) {
+    public InjectCodegenExtension create(ServiceCodegenContext codegenContext) {
         return new InjectionExtension(codegenContext);
     }
 }
