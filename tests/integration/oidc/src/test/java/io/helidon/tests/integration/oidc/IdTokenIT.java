@@ -142,7 +142,6 @@ class IdTokenIT extends CommonLoginBase {
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             //We need to get form URI out of the HTML
             formUri = getRequestUri(response.readEntity(String.class));
-            System.out.println(formUri);
         }
 
         String redirectHelidonUrl;
@@ -174,11 +173,6 @@ class IdTokenIT extends CommonLoginBase {
         }
 
         return setCookies;
-    }
-
-    private String getRequestUri(String html) {
-        Document document = Jsoup.parse(html);
-        return document.getElementById("kc-form-login").attr("action");
     }
 
 }

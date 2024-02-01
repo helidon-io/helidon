@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,11 +160,6 @@ class CookieBasedLoginIT extends CommonLoginBase {
             //There should be not token present among the cookies since it was cleared by the previous call
             assertThat(response.getStatus(), is(Response.Status.FORBIDDEN.getStatusCode()));
         }
-    }
-
-    private String getRequestUri(String html) {
-        Document document = Jsoup.parse(html);
-        return document.getElementById("kc-form-login").attr("action");
     }
 
 }

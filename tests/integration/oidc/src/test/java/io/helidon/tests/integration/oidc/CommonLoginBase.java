@@ -27,6 +27,8 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,6 +71,12 @@ class CommonLoginBase {
     @AfterEach
     public void afterEach() {
         client.close();
+    }
+
+
+    String getRequestUri(String html) {
+        Document document = Jsoup.parse(html);
+        return document.getElementById("kc-form-login").attr("action");
     }
 
 }
