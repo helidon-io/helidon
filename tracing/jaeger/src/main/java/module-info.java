@@ -37,6 +37,7 @@ module io.helidon.tracing.jaeger {
     requires io.opentracing.noop;
     // need to explicitly require transitive dependency, as jaeger is not a module
     requires com.google.gson;
+    requires org.slf4j;
 
     exports io.helidon.tracing.jaeger;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,6 +155,7 @@ public class GrpcChannelsProvider {
         return channelConfigs;
     }
 
+    @SuppressWarnings("deprecation")
     private ManagedChannel createChannel(GrpcChannelDescriptor descriptor) {
         ManagedChannelBuilder<?> builder = descriptor.tlsDescriptor()
                 .map(tlsDescriptor -> createNettyChannelBuilder(descriptor, tlsDescriptor))
