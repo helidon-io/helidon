@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.net.URI;
 
+import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
@@ -103,8 +104,7 @@ public class ClientUri implements UriInfo {
     }
 
     /**
-     * Convert instance to {@link java.net.URI}. Note that we must use raw here
-     * to make sure no illegal URL characters are passed to the create method.
+     * Convert instance to {@link java.net.URI}.
      *
      * @return the converted URI
      */
@@ -112,7 +112,7 @@ public class ClientUri implements UriInfo {
         UriInfo info = uriBuilder.build();
         return URI.create(info.scheme() + "://"
                 + info.authority()
-                + pathWithQueryAndFragment(false));     // URI needs encoded
+                + pathWithQueryAndFragment());
     }
 
     /**
@@ -194,8 +194,11 @@ public class ClientUri implements UriInfo {
 
         uriBuilder.path(resolvePath(uriBuilder.path().path(), uri.getPath()));
 
-        if (uri.getQuery() != null) {
-            query.fromQueryString(uri.getQuery());
+        String queryString = uri.getQuery();
+        if (queryString != null) {
+            // class URI does not decode +'s, so we do it here
+            query.fromQueryString(queryString.indexOf('+') >= 0 ? UriEncoding.decodeUri(queryString)
+                    : queryString);
         }
 
         if (uri.getRawFragment() != null) {
@@ -294,20 +297,15 @@ public class ClientUri implements UriInfo {
     }
 
     /**
-     * Path with query and fragment. Result is encoded or decoded depending on the
-     * value of {@link #skipUriEncoding}.
+     * Encoded path with query and fragment.
      *
-     * @return string containing path with query
+     * @return string containing encoded path with query
      */
     public String pathWithQueryAndFragment() {
-        return pathWithQueryAndFragment(skipUriEncoding);
-    }
-
-    private String pathWithQueryAndFragment(boolean decoded) {
         UriInfo info = uriBuilder.query(query).build();
 
-        String queryString = decoded ? info.query().value() : info.query().rawValue();
-        String path = decoded ? info.path().path() : info.path().rawPath();
+        String queryString = skipUriEncoding ? info.query().value() : info.query().rawValue();
+        String path = skipUriEncoding ? info.path().path() : info.path().rawPath();
 
         boolean hasQuery = !queryString.isEmpty();
 
@@ -320,7 +318,7 @@ public class ClientUri implements UriInfo {
         }
 
         if (info.fragment().hasValue()) {
-            String fragmentValue = decoded ? info.fragment().value() : info.fragment().rawValue();
+            String fragmentValue = skipUriEncoding ? info.fragment().value() : info.fragment().rawValue();
             path = path + '#' + fragmentValue;
         }
 

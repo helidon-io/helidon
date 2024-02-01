@@ -151,7 +151,6 @@ class HelidonConnector implements Connector {
         HttpClientRequest httpRequest = webClient
                 .method(Method.create(request.getMethod()))
                 .proxy(requestProxy)
-                .skipUriEncoding(true)      // already encoded by Jersey
                 .uri(uri);
 
         // map request headers
