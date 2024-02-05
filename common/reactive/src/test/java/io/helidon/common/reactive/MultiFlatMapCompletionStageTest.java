@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofSeconds;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MultiFlatMapCompletionStageTest {
@@ -50,7 +52,7 @@ public class MultiFlatMapCompletionStageTest {
         List<Integer> result = Multi.just(1, 2, 3, 4)
                 .flatMapCompletionStage(CompletableFuture::completedFuture)
                 .collectList()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, Matchers.contains(1, 2, 3, 4));
     }
@@ -62,7 +64,7 @@ public class MultiFlatMapCompletionStageTest {
                 .map(Throwable.class::cast)
                 .onErrorResume(Function.identity())
                 .first()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, Matchers.instanceOf(NullPointerException.class));
     }
@@ -95,7 +97,7 @@ public class MultiFlatMapCompletionStageTest {
                     }
                 }, exec))
                 .collectList()
-                .await(2, TimeUnit.SECONDS);
+                .await(ofSeconds(2));
 
         assertThat(result, Matchers.contains(10, 0, 8, 1));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package io.helidon.common.reactive;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofSeconds;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SingleFlatMapCompletionStageTest {
@@ -46,7 +47,7 @@ public class SingleFlatMapCompletionStageTest {
     void singleThread() {
         Integer result = Single.just(1)
                 .flatMapCompletionStage(CompletableFuture::completedFuture)
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, Matchers.equalTo(1));
     }
@@ -75,7 +76,7 @@ public class SingleFlatMapCompletionStageTest {
                         throw new IllegalStateException(e);
                     }
                 }, exec))
-                .await(2, TimeUnit.SECONDS);
+                .await(ofSeconds(2));
 
         assertThat(result, Matchers.equalTo(10));
     }
