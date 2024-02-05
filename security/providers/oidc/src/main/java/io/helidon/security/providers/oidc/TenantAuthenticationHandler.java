@@ -18,8 +18,10 @@ package io.helidon.security.providers.oidc;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +39,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.SetCookie;
 import io.helidon.http.Status;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -65,6 +68,8 @@ import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
@@ -76,6 +81,8 @@ class TenantAuthenticationHandler {
     private static final System.Logger LOGGER = System.getLogger(TenantAuthenticationHandler.class.getName());
     private static final TokenHandler PARAM_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
     private static final TokenHandler PARAM_ID_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_ID_HEADER_NAME);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -322,11 +329,12 @@ class TenantAuthenticationHandler {
                                                  String tenantId) {
         if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
-            String state = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(state);
+            String origUri = origUri(providerRequest);
+            int redirectAttempt = redirectAttempt(origUri);
             if (redirectAttempt >= oidcConfig.maxRedirects()) {
                 return errorResponseNoRedirect(code, description, status);
             }
+            String state = generateRandomString();
 
             Set<String> expectedScopes = expectedScopes(providerRequest);
 
@@ -362,13 +370,23 @@ class TenantAuthenticationHandler {
                     + "redirect_uri=" + redirectUri + "&"
                     + "scope=" + scopeString + "&"
                     + "nonce=" + nonce + "&"
-                    + "state=" + encode(state);
+                    + "state=" + state;
+
+            JsonObject stateJson = JSON.createObjectBuilder()
+                    .add("originalUri", origUri)
+                    .add("state", state)
+                    .add("nonce", nonce)
+                    .build();
+
+            String stateBase64 = Base64.getEncoder().encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
+            SetCookie cookie = oidcConfig.stateCookieHandler().createCookie(stateBase64).build();
 
             // must redirect
             return AuthenticationResponse
                     .builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                     .statusCode(Status.TEMPORARY_REDIRECT_307.code())
+                    .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookie.toString())
                     .description("Redirecting to identity server: " + description)
                     .responseHeader("Location", authorizationEndpoint + queryString)
                     .build();
@@ -761,5 +779,18 @@ class TenantAuthenticationHandler {
         tokenToUse.fullName().ifPresent(value -> builder.addAttribute("full_name", value));
 
         return builder.build();
+    }
+
+    //Obtained from https://www.baeldung.com/java-random-string
+    private static String generateRandomString() {
+        int leftLimit = 48; // numeral '0'
+        int rightLimit = 122; // letter 'z'
+        int targetStringLength = 10;
+
+        return RANDOM.ints(leftLimit, rightLimit + 1)
+                .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+                .limit(targetStringLength)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
     }
 }
