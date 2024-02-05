@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.net.URI;
 
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQueryWriteable;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -104,5 +103,18 @@ class ClientUriTest {
         assertThat(helper.path(), is(UriPath.root()));
         assertThat(helper.port(), is(80));
         assertThat(helper.scheme(), is("https"));
+    }
+
+    /**
+     * Verifies that "+" is interpreted as a space character the query strings.
+     * Note that the {@link URI} class does not appear to handle this correctly.
+     */
+    @Test
+    void testResolveQuery() {
+        URI uri = URI.create("http://localhost:8080/greet?filter=a+b+c");
+        ClientUri clientUri = ClientUri.create();
+        clientUri.resolve(uri);
+        assertThat(clientUri.query().get("filter"), is("a b c"));
+        assertThat(clientUri.query().getRaw("filter"), is("a%20b%20c"));
     }
 }
