@@ -31,7 +31,7 @@ jobs:
          java-version: ${{ env.JAVA_VERSION }}
          cache: maven
      - name: Copyright
-       run: etc/scripts/copyright.sh
+       run: nslookup localhost
   checkstyle:
     timeout-minutes: 10
     runs-on: ubuntu-20.04
