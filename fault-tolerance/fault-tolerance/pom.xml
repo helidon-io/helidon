@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.fault-tolerance</groupId>
         <artifactId>helidon-fault-tolerance-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-fault-tolerance</artifactId>
