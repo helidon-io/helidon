@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-inject</artifactId>
-        <version>4.0.5-SNAPSHOT</version>
+        <version>4.0.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-microprofile-tests-tck-inject-test</artifactId>

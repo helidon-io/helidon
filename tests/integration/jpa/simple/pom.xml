@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.jpa</groupId>
         <artifactId>helidon-tests-integration-jpa-project</artifactId>
-        <version>4.0.5-SNAPSHOT</version>
+        <version>4.0.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
