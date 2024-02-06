@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.faulttolerance.codegen.FallbackExtensionProvider;
-
 /**
  * Code generation for Helidon Inject.
  */
@@ -24,10 +22,10 @@ module io.helidon.faulttolerance.codegen {
     requires transitive io.helidon.codegen.classmodel;
     requires transitive io.helidon.codegen;
 
-    requires io.helidon.inject.codegen;
+    requires io.helidon.service.codegen;
 
     exports io.helidon.faulttolerance.codegen;
 
-    provides io.helidon.inject.codegen.spi.InjectCodegenExtensionProvider
-            with FallbackExtensionProvider;
+    provides io.helidon.service.codegen.spi.InjectCodegenExtensionProvider
+            with io.helidon.faulttolerance.codegen.FallbackExtensionProvider;
 }

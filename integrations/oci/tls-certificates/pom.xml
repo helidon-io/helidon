@@ -158,8 +158,8 @@
                                     <version>${helidon.version}</version>
                                 </path>
                                 <path>
-                                    <groupId>io.helidon.inject</groupId>
-                                    <artifactId>helidon-inject-codegen</artifactId>
+                                    <groupId>io.helidon.service</groupId>
+                                    <artifactId>helidon-service-codegen</artifactId>
                                     <version>${helidon.version}</version>
                                 </path>
                             </annotationProcessorPaths>
@@ -179,8 +179,8 @@
                                     <version>${helidon.version}</version>
                                 </path>
                                 <dependency>
-                                    <groupId>io.helidon.inject</groupId>
-                                    <artifactId>helidon-inject-codegen</artifactId>
+                                    <groupId>io.helidon.service</groupId>
+                                    <artifactId>helidon-service-codegen</artifactId>
                                     <version>${helidon.version}</version>
                                 </dependency>
                                 <path>
@@ -214,8 +214,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-codegen</artifactId>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

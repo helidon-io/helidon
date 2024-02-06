@@ -51,17 +51,6 @@ interface IpBlueprint extends Dependency {
     Set<Qualifier> qualifiers();
 
     /**
-     * Field name that declares this ID in the {@link io.helidon.service.registry.Ip#descriptor()}. Can be used for code
-     * generation.
-     * This field is always a public constant.
-     *
-     * @return field that has the id on the descriptor
-     */
-    @Option.Redundant
-    // kind + service type + name is a unique identification already
-    String field();
-
-    /**
      * The access modifier on the injection point/receiver.
      * Defaults to {@link io.helidon.common.types.AccessModifier#PACKAGE_PRIVATE}.
      *

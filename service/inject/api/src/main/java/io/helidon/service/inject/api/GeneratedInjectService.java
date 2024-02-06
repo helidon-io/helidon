@@ -26,6 +26,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.GeneratedService;
 
@@ -34,66 +35,6 @@ import io.helidon.service.registry.GeneratedService;
  */
 public final class GeneratedInjectService {
     private GeneratedInjectService() {
-    }
-
-    public interface IpSupport {
-        /**
-         * Combine dependencies from this type with dependencies from supertype.
-         * This is a utility for code generated types.
-         *
-         * @param myType    this type's dependencies
-         * @param superType super type's dependencies
-         * @return a new list without constructor dependencies from super type
-         */
-        default List<Ip> combineDependencies(List<Ip> myType, List<Ip> superType) {
-            List<Ip> result = new ArrayList<>(myType);
-
-            // always inject all fields
-            result.addAll(superType.stream()
-                                  .filter(it -> it.elementKind() == ElementKind.FIELD)
-                                  .toList());
-            // ignore constructors, as we only need to inject constructor on the instantiated type
-
-            // and only add methods that are not already injected on existing type
-            Set<String> injectedMethods = myType.stream()
-                    .filter(it -> it.elementKind() == ElementKind.METHOD)
-                    .map(Ip::method)
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toSet());
-
-            result.addAll(superType.stream()
-                                  .filter(it -> it.elementKind() == ElementKind.METHOD)
-                                  .filter(it -> it.method().isPresent())
-                                  .filter(it -> injectedMethods.add(it.method().get())) // we check presence above
-                                  .toList());
-
-            return List.copyOf(result);
-        }
-    }
-
-    public interface QualifiedProviderDescriptor {
-        /**
-         * Type of qualifier a {@link io.helidon.inject.service.Injection.QualifiedProvider} provides. This method is only
-         * generated
-         * for a type that implements qualified provider.
-         *
-         * @return type name of the qualifier this qualified provider can provide instances for
-         */
-        TypeName qualifierType();
-    }
-
-    public interface DrivenByDescriptor {
-        /**
-         * A service may be driven by instances of another service.
-         * If a type is driven by another type, it inherits ALL qualifiers of the type that is driving it.
-         *
-         * @return driven by type
-         */
-        TypeName drivenBy();
-    }
-
-    public interface ScopeHandlerDescriptor {
-        TypeName scope();
     }
 
     /**
@@ -197,5 +138,66 @@ public final class GeneratedInjectService {
                                      TypedElementInfo element,
                                      Invoker<T> targetInvoker,
                                      Set<Class<? extends Throwable>> checkedExceptions);
+    }
+
+    public static final class IpSupport {
+        private IpSupport() {
+        }
+
+        /**
+         * Combine dependencies from this type with dependencies from supertype.
+         * This is a utility for code generated types.
+         *
+         * @param myType    this type's dependencies
+         * @param superType super type's dependencies
+         * @return a new list without constructor dependencies from super type
+         */
+        public static List<Ip> combineIps(List<Ip> myType, List<Ip> superType) {
+            List<Ip> result = new ArrayList<>(myType);
+
+            // always inject all fields
+            result.addAll(superType.stream()
+                                  .filter(it -> it.elementKind() == ElementKind.FIELD)
+                                  .toList());
+            // ignore constructors, as we only need to inject constructor on the instantiated type
+
+            // and only add methods that are not already injected on existing type
+            Set<String> injectedMethods = myType.stream()
+                    .filter(it -> it.elementKind() == ElementKind.METHOD)
+                    .map(Ip::method)
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toSet());
+
+            result.addAll(superType.stream()
+                                  .filter(it -> it.elementKind() == ElementKind.METHOD)
+                                  .filter(it -> it.method().isPresent())
+                                  .filter(it -> injectedMethods.add(it.method().get())) // we check presence above
+                                  .toList());
+
+            return List.copyOf(result);
+        }
+    }
+
+    public interface QualifiedProviderDescriptor {
+        /**
+         * Type of qualifier a {@link io.helidon.service.inject.api.Injection.QualifiedProvider} provides.
+         *
+         * @return type name of the qualifier this qualified provider can provide instances for
+         */
+        TypeName qualifierType();
+    }
+
+    public interface DrivenByDescriptor {
+        /**
+         * A service may be driven by instances of another service.
+         * If a type is driven by another type, it inherits ALL qualifiers of the type that is driving it.
+         *
+         * @return driven by type
+         */
+        TypeName drivenBy();
+    }
+
+    public interface ScopeHandlerDescriptor {
+        TypeName handledScope();
     }
 }

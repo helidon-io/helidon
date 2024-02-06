@@ -63,6 +63,10 @@ class GreetEndpoint {
     String greetNamed(@Http.PathParam("name") String name,
                       @Http.QueryParam(value = "throw") Optional<Boolean> shouldThrow,
                       @Http.HeaderParam(HeaderNames.HOST_STRING) String hostHeader) {
+        // try to generate this method with "request.headers()..." and still start reqeust scope to see perf impact
+        /*
+        Maybe request scope can be a switch by the user
+         */
         if (shouldThrow.orElse(false)) {
             throw new InjectionException("Failed on purpose");
         }

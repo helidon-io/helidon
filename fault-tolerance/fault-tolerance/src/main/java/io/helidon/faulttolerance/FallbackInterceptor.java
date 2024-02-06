@@ -22,10 +22,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.InvocationContext;
-import io.helidon.inject.service.ServiceRegistry;
-import io.helidon.inject.service.ServiceRegistryException;
+import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.InvocationContext;
+import io.helidon.service.registry.ServiceRegistryException;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Injection.ClassNamed(FaultTolerance.Fallback.class)
@@ -33,7 +33,7 @@ import io.helidon.inject.service.ServiceRegistryException;
 @Injection.Singleton
 class FallbackInterceptor extends InterceptorBase<Fallback> {
     @Injection.Inject
-    FallbackInterceptor(ServiceRegistry registry) {
+    FallbackInterceptor(InjectRegistry registry) {
         super(registry, Fallback.class, FaultTolerance.Fallback.class);
     }
 

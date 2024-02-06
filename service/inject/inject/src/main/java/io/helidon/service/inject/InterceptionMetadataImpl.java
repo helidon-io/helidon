@@ -18,13 +18,13 @@ import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
 
 class InterceptionMetadataImpl implements GeneratedInjectService.InterceptionMetadata {
-    private final InjectServiceRegistry registry;
+    private final InjectServiceRegistryImpl registry;
 
-    private InterceptionMetadataImpl(InjectServiceRegistry registry) {
+    private InterceptionMetadataImpl(InjectServiceRegistryImpl registry) {
         this.registry = registry;
     }
 
-    static GeneratedInjectService.InterceptionMetadata create(InjectServiceRegistry registry) {
+    static GeneratedInjectService.InterceptionMetadata create(InjectServiceRegistryImpl registry) {
         return new InterceptionMetadataImpl(registry);
     }
 

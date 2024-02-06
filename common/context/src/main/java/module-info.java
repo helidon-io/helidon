@@ -20,13 +20,12 @@
 module io.helidon.common.context {
 
     requires io.helidon.common;
-    requires io.helidon.inject.service;
+
+    requires static io.helidon.service.registry;
+    requires static io.helidon.service.inject.api;
 
     exports io.helidon.common.context;
     exports io.helidon.common.context.spi;
 
     uses io.helidon.common.context.spi.DataPropagationProvider;
-
-    provides io.helidon.inject.service.ModuleComponent
-            with io.helidon.common.context.Injection__Module;
 }

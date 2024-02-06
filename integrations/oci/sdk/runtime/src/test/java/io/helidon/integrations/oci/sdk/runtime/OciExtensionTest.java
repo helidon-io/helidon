@@ -24,9 +24,8 @@ import java.util.function.Supplier;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.inject.InjectionServiceProviderException;
-import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.registry.ServiceRegistryException;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
@@ -51,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests for {@link OciExtension} and {@link OciConfig}.
  */
 class OciExtensionTest {
-    private ManagedRegistry injectionServices;
+    private InjectRegistryManager registryManager;
 
     static Config createTestConfig(MapConfigSource.Builder... builders) {
         return Config.builder(builders)
@@ -118,13 +117,15 @@ class OciExtensionTest {
 
     @BeforeEach
     void setUp() {
-        injectionServices = ManagedRegistry.create();
+        registryManager = InjectRegistryManager.create();
     }
 
     @AfterEach
     void reset() {
         OciExtension.ociConfigFileName(null);
-        InjectionTestingSupport.shutdown(injectionServices);
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
     @Test
@@ -312,7 +313,7 @@ class OciExtensionTest {
                    optionalValue(equalTo("resource-principal")));
 
         // note that we can't actually instantiate these when there is no auth provider configured in the environment
-        IllegalArgumentException e = (IllegalArgumentException) assertThrows(InjectionServiceProviderException.class,
+        IllegalArgumentException e = (IllegalArgumentException) assertThrows(ServiceRegistryException.class,
                                                                              () -> OciExtension.ociAuthenticationProvider()
                                                                                      .get()).getCause();
         assertThat(e.getMessage(),
@@ -332,9 +333,9 @@ class OciExtensionTest {
                        equalTo(ConfigFileAuthenticationDetailsProvider.class));
             assertThat(OciExtension.configuredAuthenticationDetailsProvider(false),
                        equalTo(ConfigFileAuthenticationDetailsProvider.class));
-        } catch (InjectionServiceProviderException ispe) {
+        } catch (ServiceRegistryException ispe) {
             assertThat(ispe.getMessage(),
-                       equalTo("Failed to list instances in InjectionPointProvider: service provider: "
+                       equalTo("Failed to list instances in InjectionPointProvider: "
                                        + "io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider"));
             assertThat(ispe.getCause().getMessage(),
                        equalTo("No instances of com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider available for use. "

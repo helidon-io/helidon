@@ -85,6 +85,20 @@ final class LookupSupport {
         }
 
         /**
+         * Create service info criteria for lookup from a contract type.
+         *
+         * @param contract a single contract to base the criteria on
+         * @return criteria to lookup matching services
+         */
+        @Prototype.FactoryMethod
+        static Lookup create(TypeName contract) {
+            return Lookup.builder()
+                    .addContract(contract)
+                    .build();
+        }
+
+
+        /**
          * The managed services advertised types (i.e., typically its interfaces).
          *
          * @param builder  builder instance

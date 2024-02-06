@@ -27,15 +27,13 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
-import io.helidon.inject.Services;
-import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.InjectionPointProvider;
-import io.helidon.inject.service.Ip;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.QualifiedInstance;
-import io.helidon.inject.service.Qualifier;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Ip;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
@@ -57,7 +55,6 @@ import static io.helidon.common.types.Annotations.findFirst;
  * @see OciConfig
  */
 @Injection.Singleton
-@Weight(Services.INJECT_WEIGHT)
 class OciAuthenticationDetailsProvider implements InjectionPointProvider<AbstractAuthenticationDetailsProvider> {
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());
 

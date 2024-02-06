@@ -3,9 +3,9 @@ package io.helidon.faulttolerance.codegen;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.codegen.InjectionCodegenContext;
-import io.helidon.inject.codegen.spi.InjectCodegenExtension;
-import io.helidon.inject.codegen.spi.InjectCodegenExtensionProvider;
+import io.helidon.service.codegen.ServiceCodegenContext;
+import io.helidon.service.codegen.spi.InjectCodegenExtension;
+import io.helidon.service.codegen.spi.InjectCodegenExtensionProvider;
 
 public class FallbackExtensionProvider implements InjectCodegenExtensionProvider {
     static final TypeName FALLBACK_ANNOTATION = TypeName.create("io.helidon.faulttolerance.FaultTolerance.Fallback");
@@ -16,7 +16,7 @@ public class FallbackExtensionProvider implements InjectCodegenExtensionProvider
     }
 
     @Override
-    public InjectCodegenExtension create(InjectionCodegenContext codegenContext) {
+    public InjectCodegenExtension create(ServiceCodegenContext codegenContext) {
         return new FallbackExtension(codegenContext);
     }
 }

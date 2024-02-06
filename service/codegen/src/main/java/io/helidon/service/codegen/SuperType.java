@@ -28,8 +28,9 @@ import io.helidon.common.types.TypeName;
  */
 record SuperType(boolean hasSupertype,
                  TypeName superDescriptorType,
-                 TypeInfo superType) {
+                 TypeInfo superType,
+                 boolean superTypeIsCore) {
     static SuperType noSuperType() {
-        return new SuperType(false, null, null);
+        return new SuperType(false, null, null, false);
     }
 }

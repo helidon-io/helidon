@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
-import io.helidon.inject.service.Interception;
+import io.helidon.service.inject.api.Interception;
 
 import static java.lang.System.Logger.Level.ERROR;
 

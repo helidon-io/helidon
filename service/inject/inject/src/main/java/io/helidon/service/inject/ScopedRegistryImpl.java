@@ -27,10 +27,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator;
-import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.ScopedRegistry;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
@@ -53,7 +51,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
     private boolean active = false;
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    ScopedRegistryImpl(InjectServiceRegistry registry,
+    ScopedRegistryImpl(InjectServiceRegistryImpl registry,
                        TypeName scope,
                        String id,
                        Map<ServiceInfo, Object> initialBindings) {
@@ -141,9 +139,9 @@ class ScopedRegistryImpl implements ScopedRegistry {
         try {
             serviceProvidersLock.readLock().lock();
             checkActive();
-            Activator<?> serviceProvider = activators.get(descriptor);
-            if (serviceProvider != null) {
-                return (Activator<T>) serviceProvider;
+            Activator<?> activator = activators.get(descriptor);
+            if (activator != null) {
+                return (Activator<T>) activator;
             }
         } finally {
             serviceProvidersLock.readLock().unlock();
@@ -168,7 +166,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     private void checkActive() {
         if (!active) {
-            throw new ServiceRegistryException("Injection scope " + scope.fqName() + "[" + id + "] is no longer active.");
+            throw new ServiceRegistryException("Injection scope " + scope.fqName() + "[" + id + "] is not active.");
         }
     }
 }

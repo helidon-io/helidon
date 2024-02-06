@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.service.ConfigDriven;
+import io.helidon.service.inject.api.ConfigDriven;
 
 /**
  * {@link Bulkhead} configuration bean.

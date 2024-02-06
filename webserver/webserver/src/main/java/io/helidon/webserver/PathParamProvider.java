@@ -6,11 +6,11 @@ import io.helidon.common.GenericType;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.Http;
-import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.QualifiedInstance;
-import io.helidon.inject.service.QualifiedProvider;
-import io.helidon.inject.service.Qualifier;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Injection.QualifiedProvider;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
 import io.helidon.webserver.http.ServerRequest;
 
 @Injection.RequestScope

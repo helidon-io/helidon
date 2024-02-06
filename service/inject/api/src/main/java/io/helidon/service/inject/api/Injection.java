@@ -260,6 +260,7 @@ public final class Injection {
      * <li>The service MUST NOT implement {@link java.util.function.Supplier}</li>
      * <li>The service MUST NOT implement {@link Injection.InjectionPointProvider}</li>
      * <li>The service MUST NOT implement {@link Injection.ServicesProvider}</li>
+     * <li>All types that inherit from this service will also inherit the driven by</li>
      * <li>There MAY be an injection point of the type defined in {@link #value()}, without any qualifiers -
      * this injection point will be satisfied by the driving instance</li>
      * <li>There MAY be a {@link String} injection point qualified with
@@ -479,21 +480,16 @@ public final class Injection {
      * To support additional scope, a service implementing this interface must be available in the registry.
      * It should be accompanied by a way to start and stop the scope (such as {@link RequestScopeControl} for
      * request scope).
+     *
+     * @param <T> Type of the scope supported
      */
     @io.helidon.service.registry.Service.Contract
-    public interface ScopeHandler {
+    public interface ScopeHandler<T extends Annotation> {
         /**
          * Type name of this interface.
          * Service registry uses {@link io.helidon.common.types.TypeName} in its APIs.
          */
         TypeName TYPE_NAME = TypeName.create(ScopeHandler.class);
-
-        /**
-         * Scope this handle is capable of handling.
-         *
-         * @return scope type
-         */
-        TypeName supportedScope();
 
         /**
          * Get the current scope if available.

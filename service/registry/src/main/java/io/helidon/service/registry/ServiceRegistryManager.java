@@ -5,6 +5,7 @@ package io.helidon.service.registry;
  * and as a factory of service registries.
  */
 public interface ServiceRegistryManager {
+
     static ServiceRegistryManager create() {
         return create(ServiceRegistryConfig.create());
     }

@@ -22,9 +22,7 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import io.helidon.common.Weight;
-import io.helidon.inject.Services;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 import com.oracle.bmc.Region;
 
@@ -35,7 +33,6 @@ import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsP
  * available, will also perform a secondary check on {@link Region#getRegionFromImds()} to ensure it returns a non-null value.
  */
 @Injection.Singleton
-@Weight(Services.INJECT_WEIGHT)
 class OciAvailabilityDefault implements OciAvailability {
     private static final String OPC_PATH = getOpcPath(METADATA_SERVICE_BASE_URL);
 

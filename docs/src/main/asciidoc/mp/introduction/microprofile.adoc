@@ -49,7 +49,7 @@ Then declare the following dependency in your project:
 
 The above dependency adds all the features available in MicroProfile. If you
 want to start with a smaller core set of features then you can use the
-`core` bundle instead. This bundle includes the base feature in MicroProfile
+`registry` bundle instead. This bundle includes the base feature in MicroProfile
 (such as JAX-RS, CDI, JSON-P/B, and Config) and leaves out some of the
 additional features such as Metrics and Tracing. You can add those dependencies
 individually if you choose.

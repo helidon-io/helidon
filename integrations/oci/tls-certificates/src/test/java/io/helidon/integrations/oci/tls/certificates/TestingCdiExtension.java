@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import io.helidon.config.Config;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.microprofile.cdi.RuntimeStart;
 
 import jakarta.annotation.Priority;

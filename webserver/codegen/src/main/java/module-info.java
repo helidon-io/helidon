@@ -1,7 +1,7 @@
 module io.helidon.webserver.codegen {
     requires io.helidon.codegen;
     requires io.helidon.codegen.classmodel;
-    requires io.helidon.inject.codegen;
+    requires io.helidon.service.codegen;
 
     exports io.helidon.webserver.codegen;
 

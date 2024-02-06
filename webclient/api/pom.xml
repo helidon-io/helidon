@@ -78,6 +78,11 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -112,8 +117,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-codegen</artifactId>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -131,12 +136,6 @@
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
-
-                        <path>
-                            <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
                         <path>
                             <groupId>io.helidon.config</groupId>
                             <artifactId>helidon-config-metadata-processor</artifactId>
@@ -146,8 +145,8 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-codegen</artifactId>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

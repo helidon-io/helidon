@@ -16,7 +16,7 @@
 
 package io.helidon.faulttolerance;
 
-import io.helidon.inject.service.Injection;
+import io.helidon.service.registry.Service;
 
 /**
  * A generated service to support fallback without reflection.
@@ -24,7 +24,7 @@ import io.helidon.inject.service.Injection;
  * @param <T> type of the response of the method
  * @param <S> type of the service that hosts the method
  */
-@Injection.Contract
+@Service.Contract
 public interface FallbackMethod<T, S> extends FtMethod {
     /**
      * Fallback method generated based on the {@link io.helidon.faulttolerance.FaultTolerance.Fallback} annotation.

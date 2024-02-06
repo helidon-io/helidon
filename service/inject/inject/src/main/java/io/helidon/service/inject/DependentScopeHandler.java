@@ -3,29 +3,24 @@ package io.helidon.service.inject;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.types.TypeName;
-import io.helidon.service.inject.api.ActivationRequest;
-import io.helidon.service.inject.api.GeneratedInjectService;
-import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Scope;
 import io.helidon.service.inject.api.ScopedRegistry;
 
-class DependentScopeHandler implements Injection.ScopeHandler {
+class DependentScopeHandler implements Injection.ScopeHandler<Injection.Dependent> {
     private final Scope scope;
 
-    DependentScopeHandler(InjectServiceRegistry serviceRegistry) {
+    DependentScopeHandler(InjectServiceRegistryImpl serviceRegistry) {
         this.scope = new DependentScope(serviceRegistry);
-    }
-
-    @Override
-    public TypeName supportedScope() {
-        return Injection.Dependent.TYPE_NAME;
     }
 
     @Override
     public Optional<Scope> currentScope() {
         return Optional.of(scope);
+    }
+
+    void activate() {
+        scope.services().activate();
     }
 
     Scope scope() {
@@ -35,7 +30,7 @@ class DependentScopeHandler implements Injection.ScopeHandler {
     private static class DependentScope implements Scope {
         private final ScopedRegistry services;
 
-        DependentScope(InjectServiceRegistry serviceRegistry) {
+        DependentScope(InjectServiceRegistryImpl serviceRegistry) {
             this.services = new DependentScopeRegistry(serviceRegistry);
         }
 
@@ -54,7 +49,7 @@ class DependentScopeHandler implements Injection.ScopeHandler {
      * {@link io.helidon.service.inject.api.ScopedRegistry} for services that do not have a scope.
      */
     private static class DependentScopeRegistry extends ScopedRegistryImpl {
-        DependentScopeRegistry(InjectServiceRegistry serviceRegistry) {
+        DependentScopeRegistry(InjectServiceRegistryImpl serviceRegistry) {
             super(serviceRegistry, Injection.Dependent.TYPE_NAME, serviceRegistry.id(), Map.of());
         }
     }

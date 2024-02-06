@@ -28,24 +28,24 @@ import java.util.function.Supplier;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.InvocationException;
-import io.helidon.inject.service.Interception;
-import io.helidon.inject.service.InvocationContext;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.ServiceRegistry;
-import io.helidon.inject.service.ServiceRegistryException;
+import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.Interception;
+import io.helidon.service.inject.api.InvocationContext;
+import io.helidon.service.inject.api.InvocationException;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
+import io.helidon.service.registry.ServiceRegistryException;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 abstract class InterceptorBase<T> implements Interception.Interceptor {
     private final Map<CacheRecord, T> methodHandlerCache = new ConcurrentHashMap<>();
     private final Map<String, NamedResult<T>> namedHandlerCache = new ConcurrentHashMap<>();
 
-    private final ServiceRegistry services;
+    private final InjectRegistry services;
     private final Class<T> ftType;
     private final TypeName annotationTypeName;
 
-    InterceptorBase(ServiceRegistry services, Class<T> ftType, Class<? extends Annotation> annotationType) {
+    InterceptorBase(InjectRegistry services, Class<T> ftType, Class<? extends Annotation> annotationType) {
         this.services = services;
         this.ftType = ftType;
         this.annotationTypeName = TypeName.create(annotationType);
@@ -171,7 +171,7 @@ abstract class InterceptorBase<T> implements Interception.Interceptor {
                 .findAny();
     }
 
-    ServiceRegistry services() {
+    InjectRegistry services() {
         return services;
     }
 

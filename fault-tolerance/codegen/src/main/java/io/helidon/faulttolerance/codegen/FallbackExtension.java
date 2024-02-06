@@ -22,12 +22,12 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.codegen.InjectionCodegenContext;
-import io.helidon.inject.codegen.RoundContext;
-import io.helidon.inject.codegen.spi.InjectCodegenExtension;
+import io.helidon.service.codegen.RoundContext;
+import io.helidon.service.codegen.ServiceCodegenContext;
+import io.helidon.service.codegen.spi.InjectCodegenExtension;
 
-import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
-import static io.helidon.inject.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SINGLETON;
 
 class FallbackExtension implements InjectCodegenExtension {
     private static final Annotation SINGLETON_ANNOTATION = Annotation.create(INJECTION_SINGLETON);
@@ -45,9 +45,9 @@ class FallbackExtension implements InjectCodegenExtension {
                                      .build())
             .build();
 
-    private final InjectionCodegenContext ctx;
+    private final ServiceCodegenContext ctx;
 
-    FallbackExtension(InjectionCodegenContext ctx) {
+    FallbackExtension(ServiceCodegenContext ctx) {
         this.ctx = ctx;
     }
 
@@ -232,7 +232,7 @@ class FallbackExtension implements InjectCodegenExtension {
                         .name("throwable"))
                 .addParameter(paramsParam -> paramsParam
                         .type(Object.class) // should be vararg
-                        .optional(true)
+                        .vararg(true)
                         .name("params"))
                 .addThrows(it -> it.type(Throwable.class))
                 .addContentLine("if (ERROR_CHECKER.shouldSkip(throwable)) {")

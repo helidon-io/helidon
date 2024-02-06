@@ -42,19 +42,13 @@
             <artifactId>helidon-common-configurable</artifactId>
         </dependency>
         <dependency>
-            <!--
-            must be in compile & runtime dependencies
-            as we provide service from this module
-            -->
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-service</artifactId>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
-            <!--
-            we only use inject API when injecting, so it would be on the module path anyway
-            -->
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject</artifactId>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject-api</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -112,8 +106,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-codegen</artifactId>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -140,8 +134,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-codegen</artifactId>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

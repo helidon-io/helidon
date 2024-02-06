@@ -19,6 +19,6 @@ public class InjectRegistryManagerProvider implements ServiceRegistryManagerProv
                     .from(config)
                     .build();
         }
-        return new InjectServiceRegistryManager(injectConfig, serviceDiscovery);
+        return new InjectRegistryManager(injectConfig, serviceDiscovery);
     }
 }

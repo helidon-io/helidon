@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -207,7 +208,8 @@ final class ActivatorsPerLookup {
             try {
                 return Optional.of(ipProvider.list(lookup));
             } catch (RuntimeException e) {
-                throw new ServiceRegistryException("Failed to list instances in InjectionPointProvider", e);
+                throw new ServiceRegistryException("Failed to list instances in InjectionPointProvider: "
+                                                           + ipProvider.getClass().getName(), e);
             }
         }
     }
@@ -244,12 +246,12 @@ final class ActivatorsPerLookup {
      * Service annotated {@link io.helidon.service.inject.api.Injection.DrivenBy}.
      */
     static class DrivenByActivator<T> extends Activators.BaseActivator<T> {
-        private final InjectServiceRegistry registry;
+        private final InjectServiceRegistryImpl registry;
         private final TypeName drivenBy;
 
         private List<QualifiedOnDemandInstance<T>> serviceInstances;
 
-        DrivenByActivator(InjectServiceRegistry registry,
+        DrivenByActivator(InjectServiceRegistryImpl registry,
                           GeneratedInjectService.DrivenByDescriptor dbd,
                           ServiceProvider<T> provider) {
             super(provider);
@@ -317,6 +319,7 @@ final class ActivatorsPerLookup {
     }
 
     static class OnDemandInstance<T> {
+        private final ReentrantLock lock = new ReentrantLock();
         private final DependencyContext ctx;
         private final InterceptionMetadata interceptionMetadata;
         private final Descriptor<T> source;
@@ -331,16 +334,26 @@ final class ActivatorsPerLookup {
 
         @SuppressWarnings("unchecked")
         T get(Phase phase) {
-            if (phase.ordinal() >= Phase.CONSTRUCTING.ordinal()) {
-                T instance = (T) source.instantiate(ctx, interceptionMetadata);
-                if (phase.ordinal() >= Phase.INJECTING.ordinal()) {
-                    Set<String> injected = new LinkedHashSet<>();
-                    source.inject(ctx, interceptionMetadata, injected, instance);
+            if (lock.isHeldByCurrentThread()) {
+                throw new ServiceRegistryException("Cyclic dependency, attempting to obtain an instance of "
+                                                           + source.serviceType().fqName()
+                                                           + " while instantiating it");
+            }
+            try {
+                lock.lock();
+                if (phase.ordinal() >= Phase.CONSTRUCTING.ordinal()) {
+                    T instance = (T) source.instantiate(ctx, interceptionMetadata);
+                    if (phase.ordinal() >= Phase.INJECTING.ordinal()) {
+                        Set<String> injected = new LinkedHashSet<>();
+                        source.inject(ctx, interceptionMetadata, injected, instance);
+                    }
+                    if (phase.ordinal() >= Phase.POST_CONSTRUCTING.ordinal()) {
+                        source.postConstruct(instance);
+                    }
+                    return instance;
                 }
-                if (phase.ordinal() >= Phase.POST_CONSTRUCTING.ordinal()) {
-                    source.postConstruct(instance);
-                }
-                return instance;
+            } finally {
+                lock.unlock();
             }
             throw new ServiceRegistryException("An instance was requested even though lifecycle is limited to phase: " + phase);
         }

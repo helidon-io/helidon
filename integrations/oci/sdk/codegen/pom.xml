@@ -56,8 +56,8 @@
             <artifactId>helidon-codegen-helidon-copyright</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-codegen</artifactId>
+            <groupId>io.helidon.service</groupId>
+             <artifactId>helidon-service-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>

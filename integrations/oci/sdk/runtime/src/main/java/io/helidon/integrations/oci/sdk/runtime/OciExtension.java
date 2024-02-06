@@ -27,8 +27,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.registry.ServiceRegistry;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
@@ -132,7 +132,7 @@ public final class OciExtension {
             .build());
 
     // the field is not final (and volatile) so tests can replace the injection services used by this instance
-    private static volatile LazyValue<ManagedRegistry> injectionServices = LazyValue.create(ManagedRegistry::create);
+    private static volatile LazyValue<InjectRegistryManager> injectionServices = LazyValue.create(InjectRegistryManager::create);
     private static String overrideOciConfigFile;
     private static volatile Supplier<io.helidon.common.config.Config> ociConfigSupplier;
     private static volatile Supplier<io.helidon.common.config.Config> fallbackConfigSupplier;
@@ -196,9 +196,9 @@ public final class OciExtension {
      */
     public static Supplier<? extends AbstractAuthenticationDetailsProvider> ociAuthenticationProvider() {
         return () -> {
-            Services services = injectionServices.get().registry();
+            ServiceRegistry registry = injectionServices.get().registry();
             Supplier<AbstractAuthenticationDetailsProvider> authProvider =
-                    services.supply(AbstractAuthenticationDetailsProvider.class);
+                    registry.supply(AbstractAuthenticationDetailsProvider.class);
             return authProvider.get();
         };
     }
@@ -286,7 +286,7 @@ public final class OciExtension {
         return (overrideOciConfigFile == null) ? DEFAULT_OCI_GLOBAL_CONFIG_FILE : overrideOciConfigFile;
     }
 
-    static void injectionServices(ManagedRegistry services) {
+    static void serviceRegistry(InjectRegistryManager services) {
         OciExtension.injectionServices = LazyValue.create(services);
     }
 }

@@ -25,14 +25,13 @@ import io.helidon.builder.api.Option;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
-import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServiceProviderException;
-import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
-import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.Ip;
-import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.inject.InjectConfig;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.Ip;
+import io.helidon.service.inject.api.Qualifier;
+import io.helidon.service.registry.ServiceRegistryException;
 
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
@@ -51,8 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciAuthenticationDetailsProviderTest {
 
-    static ManagedRegistry injectionServices;
-    static Services services;
+    static InjectRegistryManager registryManager;
+    static InjectRegistry registry;
 
     @BeforeEach
     @AfterEach
@@ -62,14 +61,16 @@ class OciAuthenticationDetailsProviderTest {
 
     @AfterAll
     static void tearDown() {
-        InjectionTestingSupport.shutdown(injectionServices);
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
-    void resetWith(Config config, InjectionConfig injectionConfig) {
+    void resetWith(Config config, InjectConfig injectionConfig) {
         GlobalConfig.config(() -> config, true);
         tearDown();
-        injectionServices = ManagedRegistry.create(injectionConfig);
-        services = injectionServices.registry();
+        registryManager = InjectRegistryManager.create(injectionConfig);
+        registry = registryManager.registry();
     }
 
     @Test
@@ -162,13 +163,13 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void selectionWhenNoConfigIsSet() {
-        resetWith(Config.empty(), InjectionConfig.create());
+        resetWith(Config.empty(), InjectConfig.create());
 
         assertThat(OciExtension.isSufficientlyConfigured(Config.empty()),
                    is(false));
 
         Supplier<AbstractAuthenticationDetailsProvider> authServiceProvider =
-                services.supply(AbstractAuthenticationDetailsProvider.class);
+                registry.supply(AbstractAuthenticationDetailsProvider.class);
         Objects.requireNonNull(authServiceProvider);
 
         // this code is dependent upon whether and OCI config-file is present - so leaving this commented out intentionally
@@ -183,12 +184,12 @@ class OciAuthenticationDetailsProviderTest {
         Config config = OciExtensionTest.createTestConfig(
                 OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
                 OciExtensionTest.ociAuthConfigFile("./target", "profile"));
-        resetWith(config, InjectionConfig.create());
+        resetWith(config, InjectConfig.create());
 
         Supplier<AbstractAuthenticationDetailsProvider> authServiceProvider =
-                services.supply(AbstractAuthenticationDetailsProvider.class);
+                registry.supply(AbstractAuthenticationDetailsProvider.class);
 
-        InjectionServiceProviderException e = assertThrows(InjectionServiceProviderException.class, authServiceProvider::get);
+        ServiceRegistryException e = assertThrows(ServiceRegistryException.class, authServiceProvider::get);
         assertThat(e.getCause().getClass(),
                    equalTo(UncheckedIOException.class));
     }
@@ -198,10 +199,10 @@ class OciAuthenticationDetailsProviderTest {
         Config config = OciExtensionTest.createTestConfig(
                 OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
                 OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "passphrase", "fp", "privKey", null, "us-phoenix-1"));
-        resetWith(config, InjectionConfig.create());
+        resetWith(config, InjectConfig.create());
 
         Supplier<AbstractAuthenticationDetailsProvider> authServiceProvider =
-                services.supply(AbstractAuthenticationDetailsProvider.class);
+                registry.supply(AbstractAuthenticationDetailsProvider.class);
 
         AbstractAuthenticationDetailsProvider authProvider = authServiceProvider.get();
         assertThat(authProvider.getClass(),

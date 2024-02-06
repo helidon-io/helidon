@@ -199,7 +199,6 @@
         <module>helidon</module>
         <module>http</module>
         <module>service</module>
-        <module>inject</module>
         <module>integrations</module>
         <module>jersey</module>
         <module>licensing</module>

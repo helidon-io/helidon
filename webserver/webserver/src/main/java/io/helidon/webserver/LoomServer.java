@@ -39,16 +39,14 @@ import java.util.logging.Logger;
 
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.webserver.http.DirectHandlers;
-import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.spi.ServerFeature;
 
 @Injection.Singleton
@@ -201,11 +199,6 @@ class LoomServer implements WebServer {
         return context;
     }
 
-    @Injection.PostConstruct
-    void injectionPostConstruct() {
-        start();
-    }
-
     private void stopIt() {
         // We may be in a shutdown hook and new threads may not be created
         for (ServerListener listener : listeners.values()) {
@@ -323,7 +316,7 @@ class LoomServer implements WebServer {
         }
         if (!added) {
             // out handler must be first, so other handlers are not closed before we finish shutdown hook
-            newHandlers.add(0, new KeepLoggingActiveHandler(shutdownHook));
+            newHandlers.addFirst(new KeepLoggingActiveHandler(shutdownHook));
         }
 
         for (Handler handler : handlers) {

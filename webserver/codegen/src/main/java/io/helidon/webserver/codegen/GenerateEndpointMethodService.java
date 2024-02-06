@@ -14,7 +14,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.codegen.InjectCodegenTypes;
+import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.webserver.codegen.WebServerCodegenExtension.GENERATOR;
@@ -40,7 +40,7 @@ class GenerateEndpointMethodService {
                                                                ""))
                 .type(generatedType)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addAnnotation(Annotation.create(InjectCodegenTypes.INJECTION_REQUEST_SCOPE));
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.INJECTION_REQUEST_SCOPE));
 
         // the endpoint and method parameters
         addFields(methodService, endpoint, httpMethod);
@@ -143,7 +143,7 @@ class GenerateEndpointMethodService {
 
     private static void addConstructor(ClassModel.Builder methodService, TypeInfo endpoint, MethodDef httpMethod) {
         methodService.addConstructor(ctr -> ctr
-                .addAnnotation(Annotation.create(InjectCodegenTypes.INJECTION_INJECT))
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.INJECTION_INJECT))
                 .addParameter(param -> param
                         .type(endpoint.typeName())
                         .name("helidonInject__endpoint"))

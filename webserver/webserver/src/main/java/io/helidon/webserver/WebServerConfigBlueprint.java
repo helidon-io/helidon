@@ -23,8 +23,8 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
-import io.helidon.inject.service.ConfigDriven;
-import io.helidon.inject.service.ServiceRegistry;
+import io.helidon.service.inject.api.ConfigDriven;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 

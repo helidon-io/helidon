@@ -20,9 +20,7 @@ import java.util.Optional;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -35,23 +33,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ConfigProducerTest {
-    private ManagedRegistry injectionServices;
+    private ServiceRegistryManager registryManager;
 
     @AfterEach
     void shutdownServices() {
-        InjectionTestingSupport.shutdown(injectionServices);
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
     @Test
     @Order(0)
         // this must be first, as once we set global config, this method will always fail
     void testConfig() {
-        injectionServices = ManagedRegistry.create(InjectionConfig.builder()
-                                            .serviceLookupCaching(true)
-                                            .build());
+        registryManager = ServiceRegistryManager.create();
 
         // value should be overridden using our custom config source
-        Config config = injectionServices
+        Config config = registryManager
                 .registry()
                 .get(Config.class);
 
@@ -64,11 +62,9 @@ class ConfigProducerTest {
         // value should use the config as we provided it
         GlobalConfig.config(io.helidon.config.Config::create, true);
 
-        injectionServices = ManagedRegistry.create(InjectionConfig.builder()
-                                                             .serviceLookupCaching(true)
-                                                             .build());
+        registryManager = ServiceRegistryManager.create();
 
-        Config config = injectionServices
+        Config config = registryManager
                 .registry()
                 .get(Config.class);
 

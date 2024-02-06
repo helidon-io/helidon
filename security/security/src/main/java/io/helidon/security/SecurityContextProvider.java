@@ -4,7 +4,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 @Injection.RequestScope
 class SecurityContextProvider implements Supplier<SecurityContext> {

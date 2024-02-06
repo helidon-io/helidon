@@ -15,7 +15,7 @@ import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.inject.codegen.InjectCodegenTypes;
+import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.webserver.codegen.WebServerCodegenExtension.GENERATOR;
 import static io.helidon.webserver.codegen.WebServerCodegenTypes.COMMON_CONTEXT;
@@ -52,7 +52,7 @@ class GenerateEndpointService {
                                                                ""))
                 .type(generatedType)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addAnnotation(Annotation.create(InjectCodegenTypes.INJECTION_SINGLETON))
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.INJECTION_SINGLETON))
                 .addInterface(WebServerCodegenTypes.HTTP_FEATURE);
 
         // request scope control
@@ -79,7 +79,7 @@ class GenerateEndpointService {
 
     private static void addConstructor(ClassModel.Builder endpointService, List<MethodDef> httpMethods) {
         endpointService.addConstructor(ctr -> ctr
-                .addAnnotation(Annotation.create(InjectCodegenTypes.INJECTION_INJECT))
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.INJECTION_INJECT))
                 .addParameter(param -> param
                         .type(INJECT_REQUEST_SCOPE_CTRL)
                         .name("requestCtrl"))

@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.http.Method;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 import io.helidon.webclient.spi.HttpClientSpi;
 import io.helidon.webclient.spi.HttpClientSpiProvider;

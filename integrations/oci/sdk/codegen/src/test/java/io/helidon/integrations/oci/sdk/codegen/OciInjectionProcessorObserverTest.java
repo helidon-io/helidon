@@ -42,7 +42,8 @@ import io.helidon.codegen.spi.TypeMapper;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.codegen.InjectionCodegenContext;
+import io.helidon.service.codegen.DescriptorClassCode;
+import io.helidon.service.codegen.ServiceCodegenContext;
 
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.streaming.Stream;
@@ -76,6 +77,7 @@ class OciInjectionProcessorObserverTest {
         ClassModel classModel = observer.toBody(ociServiceType,
                                                 generatedOciServiceClientTypeName)
                 .build();
+
         StringWriter sw = new StringWriter();
         classModel.write(sw);
         String stringBody = sw.toString();
@@ -190,7 +192,7 @@ class OciInjectionProcessorObserverTest {
         }
     }
 
-    private static class TestCodegenContext implements InjectionCodegenContext {
+    private static class TestCodegenContext implements ServiceCodegenContext {
         private final Map<String, String> options;
 
         TestCodegenContext() {
@@ -272,11 +274,13 @@ class OciInjectionProcessorObserverTest {
         }
 
         @Override
-        public void addDescriptor(TypeName serviceType,
+        public void addDescriptor(String registryType,
+                                  TypeName serviceType,
                                   TypeName descriptorType,
                                   ClassModel.Builder descriptor,
+                                  double weight,
+                                  Set<TypeName> contracts,
                                   Object... originatingElements) {
-
         }
 
         @Override
@@ -300,7 +304,7 @@ class OciInjectionProcessorObserverTest {
         }
 
         @Override
-        public List<ClassCode> descriptors() {
+        public List<DescriptorClassCode> descriptors() {
             return null;
         }
 

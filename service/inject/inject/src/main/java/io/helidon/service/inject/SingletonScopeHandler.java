@@ -8,16 +8,11 @@ import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Scope;
 
-class SingletonScopeHandler implements Injection.ScopeHandler {
+class SingletonScopeHandler implements Injection.ScopeHandler<Injection.Singleton> {
     private final Scope scope;
 
-    SingletonScopeHandler(InjectServiceRegistry serviceRegistry) {
+    SingletonScopeHandler(InjectServiceRegistryImpl serviceRegistry) {
         this.scope = new SingletonScope(serviceRegistry);
-    }
-
-    @Override
-    public TypeName supportedScope() {
-        return Injection.Singleton.TYPE_NAME;
     }
 
     @Override
@@ -36,7 +31,7 @@ class SingletonScopeHandler implements Injection.ScopeHandler {
     private static class SingletonScope implements Scope {
         private final LazyValue<ScopedRegistryImpl> services;
 
-        SingletonScope(InjectServiceRegistry serviceRegistry) {
+        SingletonScope(InjectServiceRegistryImpl serviceRegistry) {
             this.services = LazyValue.create(() -> serviceRegistry.createForScope(Injection.Singleton.TYPE_NAME,
                                                                                   serviceRegistry.id(),
                                                                                   Map.of()));

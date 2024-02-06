@@ -31,14 +31,14 @@ public class ServiceRegistry__ServiceDescriptor implements GeneratedService.Desc
     public static final ServiceRegistry__ServiceDescriptor INSTANCE = new ServiceRegistry__ServiceDescriptor();
 
     private static final TypeName DESCRIPTOR_TYPE = TypeName.create(ServiceRegistry__ServiceDescriptor.class);
-    private static final Set<TypeName> CONTRACTS = Set.of(ServiceRegistry.TYPE_NAME);
+    private static final Set<TypeName> CONTRACTS = Set.of(ServiceRegistry.TYPE);
 
     private ServiceRegistry__ServiceDescriptor() {
     }
 
     @Override
     public TypeName serviceType() {
-        return ServiceRegistry.TYPE_NAME;
+        return ServiceRegistry.TYPE;
     }
 
     @Override

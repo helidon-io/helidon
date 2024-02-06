@@ -41,7 +41,7 @@ class ServiceManager<T> {
                                        instance);
     }
 
-    ServiceInjectionPlanBinder.Binder servicePlanBinder() {
+    InjectionPlanBinder.Binder servicePlanBinder() {
         return provider.servicePlanBinder();
     }
 

@@ -22,11 +22,11 @@ module io.helidon.integrations.oci.sdk.codegen {
     requires io.helidon.codegen.classmodel;
 
     requires transitive io.helidon.common.types;
-    requires transitive io.helidon.inject.codegen;
+    requires transitive io.helidon.service.codegen;
 
     exports io.helidon.integrations.oci.sdk.codegen;
 
-    provides io.helidon.inject.codegen.spi.InjectCodegenObserverProvider
+    provides io.helidon.service.codegen.spi.InjectCodegenObserverProvider
             with io.helidon.integrations.oci.sdk.codegen.OciInjectCodegenObserverProvider;
 
 }

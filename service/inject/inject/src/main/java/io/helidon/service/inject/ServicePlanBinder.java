@@ -19,14 +19,14 @@ import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 
-class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
+class ServicePlanBinder implements InjectionPlanBinder.Binder {
     private final Map<Dependency, IpPlan<?>> injectionPlan = new LinkedHashMap<>();
 
     private final Descriptor<?> self;
     private final Consumer<Map<Dependency, IpPlan<?>>> injectionPlanConsumer;
-    private final InjectServiceRegistry registry;
+    private final InjectServiceRegistryImpl registry;
 
-    private ServicePlanBinder(InjectServiceRegistry registry,
+    private ServicePlanBinder(InjectServiceRegistryImpl registry,
                               Descriptor<?> self,
                               Consumer<Map<Dependency, IpPlan<?>>> injectionPlanConsumer) {
         this.registry = registry;
@@ -34,14 +34,14 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
         this.injectionPlanConsumer = injectionPlanConsumer;
     }
 
-    static <T> ServiceInjectionPlanBinder.Binder create(InjectServiceRegistry registry,
-                                                        Descriptor<T> descriptor,
-                                                        Consumer<Map<Dependency, IpPlan<?>>> planConsumer) {
+    static <T> InjectionPlanBinder.Binder create(InjectServiceRegistryImpl registry,
+                                                 Descriptor<T> descriptor,
+                                                 Consumer<Map<Dependency, IpPlan<?>>> planConsumer) {
         return new ServicePlanBinder(registry, descriptor, planConsumer);
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bind(Dependency dependency, ServiceInfo descriptor) {
+    public InjectionPlanBinder.Binder bind(Dependency dependency, ServiceInfo descriptor) {
         if (descriptor == DrivenByName__ServiceDescriptor.INSTANCE) {
             injectionPlan.put(dependency, new IpPlan<>(new DrivenByNameFailingSupplier(dependency), descriptor));
         } else {
@@ -54,7 +54,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindOptional(Dependency dependency, ServiceInfo... descriptors) {
+    public InjectionPlanBinder.Binder bindOptional(Dependency dependency, ServiceInfo... descriptors) {
         ServiceSupplyOptional<?> supply = new ServiceSupplyOptional<>(Lookup.create(dependency),
                                                                       toManagers(descriptors));
 
@@ -63,7 +63,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindList(Dependency dependency, ServiceInfo... descriptors) {
+    public InjectionPlanBinder.Binder bindList(Dependency dependency, ServiceInfo... descriptors) {
         ServiceSupplyList<?> supply = new ServiceSupplyList<>(Lookup.create(dependency),
                                                               toManagers(descriptors));
 
@@ -72,7 +72,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindSupplier(Dependency dependency, ServiceInfo descriptor) {
+    public InjectionPlanBinder.Binder bindSupplier(Dependency dependency, ServiceInfo descriptor) {
         ServiceSupply<?> supply = new ServiceSupply<>(Lookup.create(dependency),
                                                       toManagers(descriptor));
 
@@ -81,7 +81,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindSupplierOfOptional(Dependency dependency, ServiceInfo... descriptors) {
+    public InjectionPlanBinder.Binder bindSupplierOfOptional(Dependency dependency, ServiceInfo... descriptors) {
         ServiceSupplyOptional<?> supply = new ServiceSupplyOptional<>(Lookup.create(dependency),
                                                                       toManagers(descriptors));
 
@@ -90,7 +90,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindSupplierOfList(Dependency dependency, ServiceInfo... descriptors) {
+    public InjectionPlanBinder.Binder bindSupplierOfList(Dependency dependency, ServiceInfo... descriptors) {
         ServiceSupplyList<?> supply = new ServiceSupplyList<>(Lookup.create(dependency),
                                                               toManagers(descriptors));
 
@@ -99,7 +99,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindOptionalOfSupplier(Dependency dependency, ServiceInfo... descriptors) {
+    public InjectionPlanBinder.Binder bindOptionalOfSupplier(Dependency dependency, ServiceInfo... descriptors) {
         // we must resolve this right now, so we just use the first descriptor, and hope the user did not inject
         // this in a wrong scope
         ServiceSupply<?> supply = new ServiceSupply<>(Lookup.create(dependency),
@@ -109,7 +109,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindListOfSuppliers(Dependency dependency, ServiceInfo... descriptors) {
+    public InjectionPlanBinder.Binder bindListOfSuppliers(Dependency dependency, ServiceInfo... descriptors) {
         Lookup lookup = Lookup.create(dependency);
         // we must resolve the list right now (one for each descriptor)
         List<ServiceSupply<Object>> supplies = Stream.of(descriptors)
@@ -122,7 +122,7 @@ class ServicePlanBinder implements ServiceInjectionPlanBinder.Binder {
     }
 
     @Override
-    public ServiceInjectionPlanBinder.Binder bindNull(Dependency dependency) {
+    public InjectionPlanBinder.Binder bindNull(Dependency dependency) {
         injectionPlan.put(dependency, new IpPlan<>(() -> null));
         return this;
     }

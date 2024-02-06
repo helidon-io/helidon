@@ -11,7 +11,7 @@ import io.helidon.http.encoding.ContentEncodingContextConfig;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
 import io.helidon.http.media.MediaSupport;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;

@@ -25,16 +25,15 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
-import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServiceProviderException;
-import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
-import io.helidon.inject.service.InjectionPointProvider;
-import io.helidon.inject.service.Ip;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.QualifiedInstance;
-import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.inject.InjectConfig;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Ip;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
+import io.helidon.service.registry.ServiceRegistryException;
 
 import com.oracle.bmc.Region;
 import org.junit.jupiter.api.AfterAll;
@@ -47,21 +46,25 @@ import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciRegionProviderTest {
-    static ManagedRegistry injectionServices;
-    static Services services;
+    static InjectRegistryManager registryManager;
+    static InjectRegistry registry;
 
     @AfterAll
     static void tearDown() {
-        InjectionTestingSupport.shutdown(injectionServices);
-        injectionServices = null;
-        services = null;
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
+        registryManager = null;
+        registry = null;
     }
 
-    void resetWith(Config config, InjectionConfig injectionConfig) {
-        InjectionTestingSupport.shutdown(injectionServices);
-        injectionServices = ManagedRegistry.create(injectionConfig);
-        OciExtension.injectionServices(injectionServices);
-        services = injectionServices.registry();
+    void resetWith(Config config, InjectConfig injectionConfig) {
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
+        registryManager = InjectRegistryManager.create(injectionConfig);
+        OciExtension.serviceRegistry(registryManager);
+        registry = registryManager.registry();
         GlobalConfig.config(() -> config, true);
     }
 
@@ -70,12 +73,12 @@ class OciRegionProviderTest {
         Config config = OciExtensionTest.createTestConfig(
                 OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
                 OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
-        resetWith(config, InjectionConfig.create());
+        resetWith(config, InjectConfig.create());
 
-        Supplier<Region> regionSupplier = injectionServices
+        Supplier<Region> regionSupplier = registryManager
                 .registry()
                 .supply(Lookup.builder().addContract(Region.class).build());
-        assertThrows(InjectionServiceProviderException.class,
+        assertThrows(ServiceRegistryException.class,
                      regionSupplier::get);
 
         TypeName regionType = TypeName.create(Region.class);
@@ -83,7 +86,7 @@ class OciRegionProviderTest {
         Lookup query = Lookup.create(
                 Ip.builder()
                         .contract(regionType)
-                        .field("TEST_ONLY")
+                        .descriptorConstant("TEST_ONLY")
                         .descriptor(TypeName.create("io.helidon.Whatever"))
                         .typeName(regionType)
                         .service(TypeName.create("io.helidon.Whatever"))
@@ -93,7 +96,7 @@ class OciRegionProviderTest {
                         .addQualifier(Qualifier.createNamed("us-phoenix-1"))
                         .build());
 
-        InjectionPointProvider<Region> regionProvider = injectionServices
+        InjectionPointProvider<Region> regionProvider = registryManager
                 .registry()
                 .get(Lookup.builder()
                              .addContract(InjectionPointProvider.class)

@@ -22,7 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 /**
  * Container for Helidon Declarative HTTP types.

@@ -39,5 +39,6 @@
     <modules>
         <module>api</module>
         <module>inject</module>
+        <module>request-scope</module>
     </modules>
 </project>

@@ -20,7 +20,15 @@ interface InjectConfigBlueprint extends ServiceRegistryConfig {
     @Option.Configured
     boolean lookupCacheEnabled();
 
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean interceptionEnabled();
 
+    @Option.Configured
+    @Option.Default("ACTIVE")
     Activator.Phase limitRuntimePhase();
+
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean useApplication();
 }

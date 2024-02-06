@@ -23,10 +23,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.ServiceRegistry;
+import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
 
 /**
  * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
@@ -41,7 +41,7 @@ class AsyncImpl implements Async {
 
     // this must only be invoked when within Inject, so we can use inject services
     @Injection.Inject
-    AsyncImpl(ServiceRegistry services, AsyncConfig config) {
+    AsyncImpl(InjectRegistry services, AsyncConfig config) {
         this.executor = config.executor()
                 .or(() -> config.executorName().flatMap(it -> executorService(services, it)))
                 .orElseGet(() -> FaultTolerance.executor().get());
@@ -96,7 +96,7 @@ class AsyncImpl implements Async {
         return result;
     }
 
-    private static Optional<ExecutorService> executorService(ServiceRegistry services, String name) {
+    private static Optional<ExecutorService> executorService(InjectRegistry services, String name) {
         return services.first(Lookup.builder()
                                       .addContract(ExecutorService.class)
                                       .addQualifier(Qualifier.createNamed(name))

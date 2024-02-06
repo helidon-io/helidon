@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 @Injection.DrivenBy(TimeoutConfigBlueprint.class)
 class TimeoutImpl implements Timeout {

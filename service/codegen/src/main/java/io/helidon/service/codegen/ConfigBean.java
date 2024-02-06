@@ -20,8 +20,8 @@ import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.service.codegen.ServiceCodegenTypes.COMMON_CONFIG;
-import static io.helidon.service.codegen.ServiceCodegenTypes.PROTOTYPE_BLUEPRINT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_COMMON_CONFIG;
+import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
 
 record ConfigBean(TypeName configBeanType,
                   ConfigBeanAnnotation annotation) {
@@ -52,7 +52,7 @@ record ConfigBean(TypeName configBeanType,
 
     private static TypeName configBeanType(TypeInfo configBeanTypeInfo, ConfigBeanAnnotation configBean) {
         // config bean may be the actual prototype, or its blueprint
-        if (configBeanTypeInfo.hasAnnotation(PROTOTYPE_BLUEPRINT)) {
+        if (configBeanTypeInfo.hasAnnotation(BUILDER_BLUEPRINT)) {
             String className = configBeanTypeInfo.typeName().className();
             if (className.endsWith("Blueprint")) {
                 className = className.substring(0, className.length() - 9);
@@ -70,7 +70,7 @@ record ConfigBean(TypeName configBeanType,
                     .filter(ElementInfoPredicates::isStatic)
                     .filter(ElementInfoPredicates.elementName("create"))
                     .filter(it -> it.typeName().equals(configBeanTypeInfo.typeName()))
-                    .noneMatch(ElementInfoPredicates.hasParams(COMMON_CONFIG))) {
+                    .noneMatch(ElementInfoPredicates.hasParams(CONFIG_COMMON_CONFIG))) {
                 throw new IllegalArgumentException("ConfigBean type must have a \"static "
                                                            + configBeanTypeInfo.typeName().resolvedName()
                                                            + " create(io.helidon.common.config.Config config)\" method");

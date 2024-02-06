@@ -21,13 +21,13 @@ import java.util.function.Function;
 
 import io.helidon.codegen.Option;
 import io.helidon.common.GenericType;
-import io.helidon.inject.codegen.InjectionCodegenContext;
-import io.helidon.inject.codegen.spi.InjectCodegenObserver;
-import io.helidon.inject.codegen.spi.InjectCodegenObserverProvider;
+import io.helidon.service.codegen.ServiceCodegenContext;
+import io.helidon.service.codegen.spi.InjectCodegenObserver;
+import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
 
 /**
  * A {@link java.util.ServiceLoader} provider implementation
- * for {@link io.helidon.inject.codegen.spi.InjectCodegenObserverProvider} that creates an observer watching for
+ * for {@link io.helidon.service.codegen.spi.InjectCodegenObserverProvider} that creates an observer watching for
  * injections of OCI types, and that generates appropriate services for them.
  */
 public class OciInjectCodegenObserverProvider implements InjectCodegenObserverProvider {
@@ -54,7 +54,7 @@ public class OciInjectCodegenObserverProvider implements InjectCodegenObserverPr
     }
 
     @Override
-    public InjectCodegenObserver create(InjectionCodegenContext context) {
+    public InjectCodegenObserver create(ServiceCodegenContext context) {
         return new OciInjectionCodegenObserver(context);
     }
 

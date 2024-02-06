@@ -47,6 +47,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.spi.InjectCodegenExtension;
 
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
 import static java.util.function.Predicate.not;
 
 class ServiceExtension implements InjectCodegenExtension {
@@ -58,7 +59,7 @@ class ServiceExtension implements InjectCodegenExtension {
             .addTypeArgument(ServiceCodegenTypes.SERVICE_DEPENDENCY)
             .build();
 
-    private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.GENERATED_SERVICE_DESCRIPTOR)
+    private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.SERVICE_DESCRIPTOR)
             .addTypeArgument(TypeName.create("T"))
             .build();
     private static final TypeName GENERATOR = TypeName.create(ServiceExtension.class);
@@ -187,14 +188,19 @@ class ServiceExtension implements InjectCodegenExtension {
         TypeName superTypeToExtend = TypeName.builder(expectedSuperDescriptor)
                 .addTypeArgument(TypeName.create("T"))
                 .build();
+        boolean isCore = superType.hasAnnotation(SERVICE_ANNOTATION_PROVIDER);
+        if (!isCore) {
+            throw new CodegenException("Service annotated with @Service.Provider cannot extend an injection service,"
+                                               + " the super type must also be a @Service.Provider");
+        }
         for (TypeInfo service : services) {
             if (service.typeName().equals(superType.typeName())) {
-                return new SuperType(true, superTypeToExtend, service);
+                return new SuperType(true, superTypeToExtend, service, true);
             }
         }
         // if not found in current list, try checking existing types
         return ctx.typeInfo(expectedSuperDescriptor)
-                .map(it -> new SuperType(true, superTypeToExtend, superType))
+                .map(it -> new SuperType(true, superTypeToExtend, superType, true))
                 .orElseGet(SuperType::noSuperType);
     }
 
@@ -682,7 +688,7 @@ class ServiceExtension implements InjectCodegenExtension {
         classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                 .returnType(serviceType)
                 .name("instantiate")
-                .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.DEPENDENCY_CONTEXT)
+                .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.SERVICE_DEPENDENCY_CONTEXT)
                         .name("ctx__helidonInject"))
                 .update(it -> createInstantiateBody(serviceType, it, params)));
     }

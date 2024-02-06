@@ -13,7 +13,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.codegen.InjectCodegenTypes;
+import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.webserver.codegen.WebServerCodegenTypes.HTTP_METHOD_ANNOTATION;
 import static io.helidon.webserver.codegen.WebServerCodegenTypes.HTTP_PATH_ANNOTATION;
@@ -84,7 +84,7 @@ class WebServerCodegenExtension implements CodegenExtension {
 
         List<Annotation> qualifiers = elementInfo.annotations()
                 .stream()
-                .filter(it -> endpoint.hasMetaAnnotation(it.typeName(), InjectCodegenTypes.INJECTION_QUALIFIER))
+                .filter(it -> endpoint.hasMetaAnnotation(it.typeName(), ServiceCodegenTypes.INJECTION_QUALIFIER))
                 .toList();
 
         return new ParamDef(type,

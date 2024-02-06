@@ -20,12 +20,12 @@ import java.time.Duration;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.registry.Service;
 
 /**
  * Timeout attempts to terminate execution after defined duration of time.
  */
-@Injection.Contract
+@Service.Contract
 @RuntimeType.PrototypedBy(TimeoutConfig.class)
 public interface Timeout extends FtHandler, RuntimeType.Api<TimeoutConfig> {
     /**

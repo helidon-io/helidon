@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -79,44 +80,44 @@ final class Activators {
         }
     }
 
-    static <T> Activator<T> create(InjectServiceRegistry registry, ServiceProvider<T> provider) {
+    static <T> Supplier<Activator<T>> create(InjectServiceRegistryImpl registry, ServiceProvider<T> provider) {
         Descriptor<T> descriptor = provider.descriptor();
         Set<TypeName> contracts = descriptor.contracts();
 
         if (descriptor.scope().equals(Injection.Dependent.TYPE_NAME)) {
             if (contracts.contains(ServicesProvider.TYPE_NAME)) {
-                return new ActivatorsPerLookup.ServicesProviderActivator<>(provider);
+                return () -> new ActivatorsPerLookup.ServicesProviderActivator<>(provider);
             }
             if (contracts.contains(InjectionPointProvider.TYPE_NAME)) {
-                return new ActivatorsPerLookup.IpProviderActivator<>(provider);
+                return () -> new ActivatorsPerLookup.IpProviderActivator<>(provider);
             }
             if (contracts.contains(TypeNames.SUPPLIER)) {
-                return new ActivatorsPerLookup.SupplierActivator<>(provider);
+                return () -> new ActivatorsPerLookup.SupplierActivator<>(provider);
             }
             if (descriptor instanceof DrivenByDescriptor dbd) {
-                return new ActivatorsPerLookup.DrivenByActivator<>(registry, dbd, provider);
+                return () -> new ActivatorsPerLookup.DrivenByActivator<>(registry, dbd, provider);
             }
-            if (contracts instanceof QualifiedProviderDescriptor qpd) {
-                return new ActivatorsPerLookup.QualifiedProviderActivator<>(provider, qpd);
+            if (descriptor instanceof QualifiedProviderDescriptor qpd) {
+                return () -> new ActivatorsPerLookup.QualifiedProviderActivator<>(provider, qpd);
             }
-            return new ActivatorsPerLookup.SingleServiceActivator<>(provider);
+            return () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider);
         } else {
             if (contracts.contains(ServicesProvider.TYPE_NAME)) {
-                return new Activators.ServicesProviderActivator<>(provider);
+                return () -> new Activators.ServicesProviderActivator<>(provider);
             }
             if (contracts.contains(InjectionPointProvider.TYPE_NAME)) {
-                return new Activators.IpProviderActivator<>(provider);
+                return () -> new Activators.IpProviderActivator<>(provider);
             }
             if (contracts.contains(TypeNames.SUPPLIER)) {
-                return new Activators.SupplierActivator<>(provider);
+                return () -> new Activators.SupplierActivator<>(provider);
             }
             if (descriptor instanceof DrivenByDescriptor dbd) {
-                return new Activators.DrivenByActivator<>(registry, provider, dbd);
+                return () -> new Activators.DrivenByActivator<>(registry, provider, dbd);
             }
-            if (contracts instanceof QualifiedProviderDescriptor qpd) {
-                return new Activators.QualifiedProviderActivator<>(provider, qpd);
+            if (descriptor instanceof QualifiedProviderDescriptor qpd) {
+                return () -> new Activators.QualifiedProviderActivator<>(provider, qpd);
             }
-            return new Activators.SingleServiceActivator<>(provider);
+            return () -> new Activators.SingleServiceActivator<>(provider);
         }
     }
 
@@ -378,6 +379,7 @@ final class Activators {
      * Created for a service within each scope.
      */
     static class SingleServiceActivator<T> extends BaseActivator<T> {
+        private final ReentrantLock lock = new ReentrantLock();
         protected InstanceHolder<T> serviceInstance;
         protected List<QualifiedInstance<T>> targetInstances;
 
@@ -392,8 +394,18 @@ final class Activators {
 
         @Override
         protected void construct(ActivationResult.Builder response) {
-            this.serviceInstance = InstanceHolder.create(provider, provider.injectionPlan());
-            this.serviceInstance.construct();
+            if (lock.isHeldByCurrentThread()) {
+                throw new ServiceRegistryException("Cyclic dependency, attempting to obtain an instance of "
+                                                           + provider.descriptor().serviceType().fqName()
+                                                           + " while instantiating it");
+            }
+            try {
+                lock.lock();
+                this.serviceInstance = InstanceHolder.create(provider, provider.injectionPlan());
+                this.serviceInstance.construct();
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
@@ -551,7 +563,8 @@ final class Activators {
             try {
                 return Optional.of(ipProvider.list(lookup));
             } catch (RuntimeException e) {
-                throw new ServiceRegistryException("Failed to list instances in InjectionPointProvider", e);
+                throw new ServiceRegistryException("Failed to list instances in InjectionPointProvider: "
+                                                           + ipProvider.getClass().getName(), e);
             }
         }
     }
@@ -606,12 +619,12 @@ final class Activators {
      * Service annotated {@link Injection.DrivenBy}.
      */
     static class DrivenByActivator<T> extends BaseActivator<T> {
-        private final InjectServiceRegistry registry;
+        private final InjectServiceRegistryImpl registry;
         private final TypeName drivenBy;
         private List<QualifiedServiceInstance<T>> serviceInstances;
         private List<QualifiedInstance<T>> targetInstances;
 
-        DrivenByActivator(InjectServiceRegistry registry, ServiceProvider<T> provider, DrivenByDescriptor dbd) {
+        DrivenByActivator(InjectServiceRegistryImpl registry, ServiceProvider<T> provider, DrivenByDescriptor dbd) {
             super(provider);
 
             this.registry = registry;
@@ -619,8 +632,8 @@ final class Activators {
         }
 
         static Map<Dependency, IpPlan<?>> updatePlan(Map<Dependency, IpPlan<?>> injectionPlan,
-                                             ServiceInstance<?> driver,
-                                             Qualifier name) {
+                                                     ServiceInstance<?> driver,
+                                                     Qualifier name) {
 
             Set<Dependency> ips = Set.copyOf(injectionPlan.keySet());
 
@@ -767,6 +780,7 @@ final class Activators {
     }
 
     static class InstanceHolder<T> {
+        private final ReentrantLock lock = new ReentrantLock();
         private final DependencyContext ctx;
         private final InterceptionMetadata interceptionMetadata;
         private final Descriptor<T> source;

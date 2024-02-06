@@ -16,14 +16,14 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
-import io.helidon.inject.service.Injection;
+import io.helidon.service.registry.Service;
 
 /**
  * Provides a convenient contract for checking whether the current runtime environment is running on/inside an OCI compute node.
  *
  * @see OciExtension
  */
-@Injection.Contract
+@Service.Contract
 public interface OciAvailability {
 
     /**

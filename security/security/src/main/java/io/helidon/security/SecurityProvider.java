@@ -5,9 +5,9 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.registry.Service;
 
-@Injection.Singleton
+@Service.Provider
 class SecurityProvider implements Supplier<Security> {
     private final LazyValue<Security> security;
 

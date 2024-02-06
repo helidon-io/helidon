@@ -19,28 +19,29 @@ package io.helidon.service.inject.api;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.service.registry.GeneratedService;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
- * Service descriptor to enable dependency on {@link ServiceRegistry}.
+ * Service descriptor to enable dependency on {@link InjectRegistry}.
  */
 @SuppressWarnings("checkstyle:TypeName") // matches pattern of generated descriptors
-public class ServiceRegistry__ServiceDescriptor implements GeneratedInjectService.Descriptor<ServiceRegistry> {
+public class ServiceRegistry__ServiceDescriptor implements GeneratedInjectService.Descriptor<InjectRegistry> {
     /**
      * Singleton instance to be referenced when building applications.
      */
     public static final ServiceRegistry__ServiceDescriptor INSTANCE = new ServiceRegistry__ServiceDescriptor();
 
     private static final TypeName DESCRIPTOR_TYPE = TypeName.create(ServiceRegistry__ServiceDescriptor.class);
-    private static final Set<TypeName> CONTRACTS = Set.of(ServiceRegistry.TYPE_NAME,
-                                                          io.helidon.service.registry.ServiceRegistry.TYPE_NAME);
+    private static final Set<TypeName> CONTRACTS = Set.of(InjectRegistry.TYPE,
+                                                          ServiceRegistry.TYPE,
+                                                          InjectRegistrySpi.TYPE);
 
     private ServiceRegistry__ServiceDescriptor() {
     }
 
     @Override
     public TypeName serviceType() {
-        return ServiceRegistry.TYPE_NAME;
+        return InjectRegistry.TYPE;
     }
 
     @Override

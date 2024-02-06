@@ -62,15 +62,19 @@ import io.helidon.service.codegen.spi.InjectCodegenObserver;
 import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
+import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DEPENDENT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DRIVEN_BY;
-import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_EAGER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_POINT_PROVIDER;
-import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SERVICE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SINGLETON;
-import static io.helidon.service.codegen.ServiceCodegenTypes.PROTOTYPE_BLUEPRINT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_IP_SUPPORT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_QUALIFIED_PROVIDER_DESCRIPTOR;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SCOPE_HANDLER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SCOPE_HANDLER_DESCRIPTOR;
 import static io.helidon.service.codegen.ServiceCodegenTypes.QUALIFIED_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICES_PROVIDER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
 import static java.util.function.Predicate.not;
 
 class InjectionExtension implements InjectCodegenExtension {
@@ -78,7 +82,7 @@ class InjectionExtension implements InjectCodegenExtension {
             .addTypeArgument(TypeNames.ANNOTATION)
             .build();
     static final TypeName SET_OF_QUALIFIERS = TypeName.builder(TypeNames.SET)
-            .addTypeArgument(ServiceCodegenTypes.QUALIFIER)
+            .addTypeArgument(ServiceCodegenTypes.INJECT_QUALIFIER)
             .build();
     static final TypeName SET_OF_TYPES = TypeName.builder(TypeNames.SET)
             .addTypeArgument(TypeNames.TYPE_NAME)
@@ -95,7 +99,7 @@ class InjectionExtension implements InjectCodegenExtension {
             .addTypeArgument(ServiceCodegenTypes.INJECTION_POINT)
             .build();
 
-    private static final TypeName SERVICE_SOURCE_TYPE = TypeName.builder(ServiceCodegenTypes.SERVICE_DESCRIPTOR)
+    private static final TypeName SERVICE_SOURCE_TYPE = TypeName.builder(ServiceCodegenTypes.INJECT_SERVICE_DESCRIPTOR)
             .addTypeArgument(TypeName.create("T"))
             .build();
     private static final TypeName GENERATOR = TypeName.create(InjectionExtension.class);
@@ -198,6 +202,8 @@ class InjectionExtension implements InjectCodegenExtension {
                 // we need to keep insertion order, as constants may depend on each other
                 .sortStaticFields(false);
 
+        singletonInstanceField(classModel, serviceType, descriptorType);
+
         Map<String, GenericTypeDeclaration> genericTypes = genericTypes(classModel, params, methods);
         Optional<TypeName> scope = scope(typeInfo);
         Set<TypeName> contracts = new HashSet<>();
@@ -212,12 +218,14 @@ class InjectionExtension implements InjectCodegenExtension {
 
         if (superType.hasSupertype()) {
             classModel.superType(superType.superDescriptorType());
+            if (superType.superTypeIsCore()) {
+                classModel.addInterface(SERVICE_SOURCE_TYPE);
+            }
         } else {
             classModel.addInterface(SERVICE_SOURCE_TYPE);
         }
 
-        // Fields
-        singletonInstanceField(classModel, serviceType, descriptorType);
+        // Additional fields
         serviceTypeFields(classModel, serviceType, descriptorType);
         methodFields(classModel, methods);
 
@@ -249,19 +257,19 @@ class InjectionExtension implements InjectCodegenExtension {
         serviceTypeMethod(classModel);
         descriptorTypeMethod(classModel);
         contractsMethod(classModel, contracts);
-        dependenciesMethod(classModel, params, superType);
+        injectionPointsMethod(classModel, params, superType);
         isAbstractMethod(classModel, superType, isAbstractClass);
         instantiateMethod(classModel, serviceType, params, isAbstractClass, constructorIntercepted, methodsIntercepted);
         injectMethod(classModel, params, superType, methods, canIntercept, maybeIntercepted);
         postConstructMethod(typeInfo, classModel, serviceType);
         preDestroyMethod(typeInfo, classModel, serviceType);
         qualifiersMethod(classModel, qualifiers, superType);
-        scopeMethod(classModel, scope.orElse(INJECTION_SERVICE));
+        scopeMethod(classModel, scope.orElse(INJECTION_DEPENDENT));
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
-        isEagerMethod(typeInfo, classModel, superType, scope);
         drivenByMethod(typeInfo, classModel, superType, contracts);
         qualifiedProvider(classModel, qualifiedProviderQualifier.get());
+        scopeHandler(typeInfo, classModel, contracts);
 
         // service type is an implicit contract
         Set<TypeName> allContracts = new HashSet<>(contracts);
@@ -301,25 +309,60 @@ class InjectionExtension implements InjectCodegenExtension {
             // QualifiedProvider
             return;
         }
+        classModel.addInterface(INJECT_QUALIFIED_PROVIDER_DESCRIPTOR);
+
         classModel.addField(qpField -> qpField
                 .accessModifier(AccessModifier.PRIVATE)
                 .isStatic(true)
                 .isFinal(true)
                 .name("QP_QUALIFIER")
-                .type(OPTIONAL_TYPE)
-                .addContent(TypeNames.OPTIONAL)
-                .addContent(".of(")
+                .type(TypeNames.TYPE_NAME)
                 .addContentCreate(typeName)
-                .addContent(")")
         );
         classModel.addMethod(qpMethod ->
                                      qpMethod
                                              .accessModifier(AccessModifier.PUBLIC)
-                                             .returnType(OPTIONAL_TYPE)
+                                             .returnType(TypeNames.TYPE_NAME)
                                              .name("qualifierType")
                                              .addAnnotation(Annotations.OVERRIDE)
                                              .addContentLine("return QP_QUALIFIER;")
         );
+    }
+
+    private void scopeHandler(TypeInfo typeInfo, ClassModel.Builder classModel, Set<TypeName> contracts) {
+        if (!contracts.contains(INJECT_SCOPE_HANDLER)) {
+            return;
+        }
+
+        TypeName handledScope = findHandledScope(typeInfo);
+
+        classModel.addInterface(INJECT_SCOPE_HANDLER_DESCRIPTOR);
+        classModel.addField(scopeField -> scopeField
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .name("SCOPE_HANDLER_SCOPE")
+                .type(TypeNames.TYPE_NAME)
+                .addContentCreate(handledScope));
+
+        classModel.addMethod(handledScopeMethod -> handledScopeMethod
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.TYPE_NAME)
+                .name("handledScope")
+                .addContentLine("return SCOPE_HANDLER_SCOPE;"));
+    }
+
+    private TypeName findHandledScope(TypeInfo typeInfo) {
+        for (TypeInfo info : typeInfo.interfaceTypeInfo()) {
+            // first level only
+            TypeName type = info.typeName();
+            if (type.equals(INJECT_SCOPE_HANDLER) && !type.typeArguments().isEmpty()) {
+                return type.typeArguments().getFirst();
+            }
+        }
+        throw new CodegenException("Type implementing ScopeHandler did not declare the scope type: " + typeInfo.typeName()
+                                           + ", ScopeHandler<Type> must be directly implemented by the service.");
     }
 
     private void drivenByMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType, Set<TypeName> contracts) {
@@ -328,17 +371,7 @@ class InjectionExtension implements InjectCodegenExtension {
             // this is the default
             return;
         }
-        if (drivenBy.isEmpty()) {
-            classModel.addMethod(drivenByMethod -> drivenByMethod
-                    .accessModifier(AccessModifier.PUBLIC)
-                    .addAnnotation(Annotations.OVERRIDE)
-                    .returnType(OPTIONAL_TYPE)
-                    .name("drivenBy")
-                    .addContent("return ")
-                    .addContent(Optional.class)
-                    .addContentLine(".empty();")
-            );
-        } else {
+        if (drivenBy.isPresent()) {
             // make sure that driven by does not implement providers
             if (contracts.contains(INJECTION_POINT_PROVIDER)
                     || contracts.contains(SERVICES_PROVIDER)
@@ -360,7 +393,7 @@ class InjectionExtension implements InjectCodegenExtension {
                 // this may be a config blueprint, use the config instance
                 Optional<TypeInfo> drivenByTypeInfo = ctx.typeInfo(drivenByType);
                 if (drivenByTypeInfo.isPresent()) {
-                    if (drivenByTypeInfo.get().hasAnnotation(PROTOTYPE_BLUEPRINT)) {
+                    if (drivenByTypeInfo.get().hasAnnotation(BUILDER_BLUEPRINT)) {
                         drivenByType = TypeName.builder(drivenByType)
                                 .className(drivenByClassName.substring(0, drivenByClassName.length() - "Blueprint".length()))
                                 .build();
@@ -376,47 +409,24 @@ class InjectionExtension implements InjectCodegenExtension {
 
             // used from lambda
             TypeName drivenByTypeFinal = drivenByType;
+            classModel.addInterface(ServiceCodegenTypes.INJECT_DRIVEN_BY_DESCRIPTOR);
+
             classModel.addField(drivenByField -> drivenByField
                     .accessModifier(AccessModifier.PRIVATE)
                     .isStatic(true)
                     .isFinal(true)
                     .name("DRIVEN_BY")
-                    .type(OPTIONAL_TYPE)
-                    .addContent(Optional.class)
-                    .addContent(".of(")
-                    .addContentCreate(drivenByTypeFinal)
-                    .addContentLine(")"));
+                    .type(TypeNames.TYPE_NAME)
+                    .addContentCreate(drivenByTypeFinal));
 
             classModel.addMethod(drivenByMethod -> drivenByMethod
                     .accessModifier(AccessModifier.PUBLIC)
                     .addAnnotation(Annotations.OVERRIDE)
-                    .returnType(OPTIONAL_TYPE)
+                    .returnType(TypeNames.TYPE_NAME)
                     .name("drivenBy")
                     .addContentLine("return DRIVEN_BY;"));
         }
 
-    }
-
-    private void isEagerMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType, Optional<TypeName> scope) {
-        boolean isEager = typeInfo.hasAnnotation(INJECTION_EAGER);
-        if (!superType.hasSupertype() && !isEager) {
-            // this is the default
-            return;
-        }
-        if (isEager && scope.isEmpty()) {
-            throw new CodegenException("Scope is not defined for service " + typeInfo.typeName().classNameWithEnclosingNames()
-                                               + ", yet it is annotated as @Eager. This combination is not allowed.",
-                                       typeInfo.originatingElement().orElseGet(() -> typeInfo.typeName().fqName()));
-        }
-        classModel.addMethod(isEagerMethod -> isEagerMethod
-                .accessModifier(AccessModifier.PUBLIC)
-                .addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.PRIMITIVE_BOOLEAN)
-                .name("isEager")
-                .addContent("return ")
-                .addContent(String.valueOf(isEager))
-                .addContentLine(";")
-        );
     }
 
     private SuperType superType(TypeInfo typeInfo, Collection<TypeInfo> services) {
@@ -428,18 +438,20 @@ class InjectionExtension implements InjectCodegenExtension {
             return SuperType.noSuperType();
         }
         TypeInfo superType = superTypeInfoOptional.get();
+        boolean isCore = superType.hasAnnotation(SERVICE_ANNOTATION_PROVIDER);
+
         TypeName expectedSuperDescriptor = ctx.descriptorType(superType.typeName());
         TypeName superTypeToExtend = TypeName.builder(expectedSuperDescriptor)
                 .addTypeArgument(TypeName.create("T"))
                 .build();
         for (TypeInfo service : services) {
             if (service.typeName().equals(superType.typeName())) {
-                return new SuperType(true, superTypeToExtend, service);
+                return new SuperType(true, superTypeToExtend, service, isCore);
             }
         }
         // if not found in current list, try checking existing types
         return ctx.typeInfo(expectedSuperDescriptor)
-                .map(it -> new SuperType(true, superTypeToExtend, superType))
+                .map(it -> new SuperType(true, superTypeToExtend, superType, isCore))
                 .orElseGet(SuperType::noSuperType);
     }
 
@@ -481,7 +493,7 @@ class InjectionExtension implements InjectCodegenExtension {
     private boolean hasInterceptTrigger(TypeInfo typeInfo, Annotated element) {
         for (Annotation annotation : element.annotations()) {
             if (interceptionStrategy.ordinal() >= InterceptionStrategy.EXPLICIT.ordinal()) {
-                if (typeInfo.hasMetaAnnotation(annotation.typeName(), ServiceCodegenTypes.INTERCEPTED_TRIGGER)) {
+                if (typeInfo.hasMetaAnnotation(annotation.typeName(), ServiceCodegenTypes.INTERCEPTION_TRIGGER)) {
                     return true;
                 }
             }
@@ -1141,16 +1153,16 @@ class InjectionExtension implements InjectCodegenExtension {
                 .isFinal(true)
                 .accessModifier(AccessModifier.PRIVATE)
                 .type(TypeNames.TYPE_NAME)
-                .name("SERVICE_TYPE")
-                .addContentCreate(serviceType.genericTypeName()));
+                .name("TYPE")
+                .addContentCreate(descriptorType.genericTypeName()));
 
         classModel.addField(field -> field
                 .isStatic(true)
                 .isFinal(true)
                 .accessModifier(AccessModifier.PRIVATE)
                 .type(TypeNames.TYPE_NAME)
-                .name("INFO_TYPE")
-                .addContentCreate(descriptorType.genericTypeName()));
+                .name("SERVICE_TYPE")
+                .addContentCreate(serviceType.genericTypeName()));
     }
 
     private void injectionPointFields(ClassModel.Builder classModel,
@@ -1195,8 +1207,8 @@ class InjectionExtension implements InjectCodegenExtension {
                                 .addContent(param.fieldId())
                                 .addContentLine("\")")
                                 .addContentLine(".service(SERVICE_TYPE)")
-                                .addContentLine(".descriptor(INFO_TYPE)")
-                                .addContent(".field(\"")
+                                .addContentLine(".descriptor(TYPE)")
+                                .addContent(".descriptorConstant(\"")
                                 .addContent(param.constantName())
                                 .addContentLine("\")")
                                 .addContent(".contract(")
@@ -1340,14 +1352,14 @@ class InjectionExtension implements InjectCodegenExtension {
 
     private void codeGenQualifier(Field.Builder field, Annotation qualifier) {
         if (qualifier.value().isPresent()) {
-            field.addContent(ServiceCodegenTypes.QUALIFIER)
+            field.addContent(ServiceCodegenTypes.INJECT_QUALIFIER)
                     .addContent(".create(")
                     .addContentCreate(qualifier.typeName())
                     .addContent(", \"" + qualifier.value().get() + "\")");
             return;
         }
 
-        field.addContent(ServiceCodegenTypes.QUALIFIER)
+        field.addContent(ServiceCodegenTypes.INJECT_QUALIFIER)
                 .addContent(".create(")
                 .addContentCreate(qualifier.typeName())
                 .addContent(")");
@@ -1432,8 +1444,8 @@ class InjectionExtension implements InjectCodegenExtension {
         // TypeName descriptorType()
         classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                 .returnType(TypeNames.TYPE_NAME)
-                .name("infoType")
-                .addContentLine("return INFO_TYPE;"));
+                .name("descriptorType")
+                .addContentLine("return TYPE;"));
     }
 
     private void contractsMethod(ClassModel.Builder classModel, Set<TypeName> contracts) {
@@ -1465,17 +1477,20 @@ class InjectionExtension implements InjectCodegenExtension {
                 .addContentLine("return CONTRACTS;"));
     }
 
-    private void dependenciesMethod(ClassModel.Builder classModel, List<ParamDefinition> params, SuperType superType) {
+    private void injectionPointsMethod(ClassModel.Builder classModel, List<ParamDefinition> params, SuperType superType) {
         // List<InjectionParameterId> dependencies()
         boolean hasSuperType = superType.hasSupertype();
         if (hasSuperType || !params.isEmpty()) {
             classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                     .returnType(LIST_OF_IP_IDS)
-                    .name("dependencies")
+                    .name("injectionPoints")
                     .update(it -> {
-                        if (hasSuperType) {
-                            it.addContentLine("return combineDependencies(DEPENDENCIES, super.dependencies());");
+                        if (hasSuperType && !superType.superTypeIsCore()) {
+                            it.addContent("return ")
+                                    .addContent(INJECT_IP_SUPPORT)
+                                    .addContentLine(".combineIps(DEPENDENCIES, super.injectionPoints());");
                         } else {
+                            // when super type is a core service, it only can have constructor dependencies - no need to combine
                             it.addContentLine("return DEPENDENCIES;");
                         }
                     }));
@@ -1500,7 +1515,7 @@ class InjectionExtension implements InjectCodegenExtension {
         classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                 .returnType(serviceType)
                 .name("instantiate")
-                .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.INJECTION_CONTEXT)
+                .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.SERVICE_DEPENDENCY_CONTEXT)
                         .name("ctx__helidonInject"))
                 .addParameter(interceptMeta -> interceptMeta.type(ServiceCodegenTypes.INTERCEPTION_METADATA)
                         .name("interceptMeta__helidonInject"))
@@ -1558,8 +1573,8 @@ class InjectionExtension implements InjectCodegenExtension {
 
     private List<ParamDefinition> declareCtrParamsAndGetThem(Method.Builder method, List<ParamDefinition> params) {
         /*
-            var ipParam1_serviceProviders = ctx__helidonInject.param(IP_PARAM_1);
-            var ipParam2_someOtherName = ctx__helidonInject.param(IP_PARAM_2);
+            var ipParam1_serviceProviders = ctx__helidonInject.dependency(IP_PARAM_1);
+            var ipParam2_someOtherName = ctx__helidonInject.dependency(IP_PARAM_2);
 
             return new ConfigProducer(ipParam1_serviceProviders, someOtherName);
          */
@@ -1684,7 +1699,7 @@ class InjectionExtension implements InjectCodegenExtension {
         }
         classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                 .name("inject")
-                .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.INJECTION_CONTEXT)
+                .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.SERVICE_DEPENDENCY_CONTEXT)
                         .name("ctx__helidonInject"))
                 .addParameter(interceptMeta -> interceptMeta.type(ServiceCodegenTypes.INTERCEPTION_METADATA)
                         .name("interceptMeta__helidonInject"))
@@ -1795,7 +1810,7 @@ class InjectionExtension implements InjectCodegenExtension {
         if (canIntercept && maybeIntercepted.contains(field.elementInfo())) {
             methodBuilder.addContentLine(field.declaredType().resolvedName() + " "
                                                  + field.ipParamName()
-                                                 + " = ctx__helidonInject.param(" + field.constantName() + ");");
+                                                 + " = ctx__helidonInject.dependency(" + field.constantName() + ");");
             String interceptorsName = field.ipParamName() + "__interceptors";
             String constantName = fieldElementConstantName(field.ipParamName());
             methodBuilder.addContent("var ")
@@ -1976,7 +1991,7 @@ class InjectionExtension implements InjectCodegenExtension {
     }
 
     private Optional<Integer> runLevel(TypeInfo typeInfo) {
-        return typeInfo.findAnnotation(ServiceCodegenTypes.RUN_LEVEL)
+        return typeInfo.findAnnotation(ServiceCodegenTypes.INJECTION_RUN_LEVEL)
                 .flatMap(Annotation::intValue);
     }
 
@@ -1991,7 +2006,7 @@ class InjectionExtension implements InjectCodegenExtension {
     }
 
     private ServiceCodegenContext.Assignment translateParameter(TypeName typeName, String constantName) {
-        return ctx.assignment(typeName, "ctx__helidonInject.param(" + constantName + ")");
+        return ctx.assignment(typeName, "ctx__helidonInject.dependency(" + constantName + ")");
     }
 
     private TypeName descriptorInstanceType(TypeName serviceType, TypeName descriptorType) {

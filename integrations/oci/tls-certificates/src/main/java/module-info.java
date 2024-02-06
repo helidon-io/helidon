@@ -26,8 +26,7 @@ module io.helidon.integrations.oci.tls.certificates {
     requires io.helidon.config;
     requires io.helidon.faulttolerance;
     requires io.helidon.integrations.oci.sdk.runtime;
-    requires io.helidon.inject.service;
-    requires io.helidon.inject;
+    requires io.helidon.service.registry;
     requires io.helidon.scheduling;
 
     requires oci.java.sdk.common;
@@ -43,6 +42,4 @@ module io.helidon.integrations.oci.tls.certificates {
 
     provides io.helidon.common.tls.spi.TlsManagerProvider
             with io.helidon.integrations.oci.tls.certificates.DefaultOciCertificatesTlsManagerProvider;
-    provides io.helidon.inject.service.ModuleComponent
-            with io.helidon.integrations.oci.tls.certificates.Injection__Module;
 }

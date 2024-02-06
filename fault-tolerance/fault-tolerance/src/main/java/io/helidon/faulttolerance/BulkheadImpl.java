@@ -32,7 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 @Injection.DrivenBy(BulkheadConfigBlueprint.class)
 class BulkheadImpl implements Bulkhead {

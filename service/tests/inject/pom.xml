@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
     limitations under the License.
 
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -27,81 +28,19 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-service-tests-inject</artifactId>
-
+    <groupId>io.helidon.service.tests.inject</groupId>
+    <artifactId>helidon-service-tests-inject-project</artifactId>
     <name>Helidon Service Tests Inject</name>
+    <description>Tests for injection operations</description>
 
-    <properties>
-        <helidon.services.skip>false</helidon.services.skip>
-    </properties>
+    <packaging>pom</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service.inject</groupId>
-            <artifactId>helidon-service-inject-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service.inject</groupId>
-            <artifactId>helidon-service-inject</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.service</groupId>
-                            <artifactId>helidon-service-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.service</groupId>
-                        <artifactId>helidon-service-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
-    </build>
+    <modules>
+        <module>inject</module>
+        <module>lookup</module>
+        <module>qualified-providers</module>
+        <module>scopes</module>
+        <module>service-lifecycle</module>
+        <module>config-driven</module>
+    </modules>
 </project>

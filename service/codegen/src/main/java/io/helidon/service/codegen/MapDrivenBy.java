@@ -38,7 +38,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DRIVEN_BY
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 public class MapDrivenBy implements AnnotationMapperProvider {
-    private static final Annotation SERVICE = Annotation.create(ServiceCodegenTypes.INJECTION_SERVICE);
+    private static final Annotation SERVICE = Annotation.create(ServiceCodegenTypes.INJECTION_DEPENDENT);
 
     /**
      * Required default constructor.

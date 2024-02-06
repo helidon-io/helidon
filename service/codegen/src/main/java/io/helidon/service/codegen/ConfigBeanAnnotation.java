@@ -20,16 +20,16 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_META_CONFIGURED;
-import static io.helidon.service.codegen.ServiceCodegenTypes.PROTOTYPE_CONFIGURED;
+import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_CONFIGURED;
 
 record ConfigBeanAnnotation(String configKey,
                             boolean repeatable,
                             boolean atLeastOne,
                             boolean wantDefault) {
-    static final TypeName CONFIG_BEAN_TYPE = TypeName.create("io.helidon.inject.service.ConfigDriven.ConfigBean");
-    static final TypeName AT_LEAST_ONE_TYPE = TypeName.create("io.helidon.inject.service.ConfigDriven.AtLeastOne");
-    static final TypeName REPEATABLE_TYPE = TypeName.create("io.helidon.inject.service.ConfigDriven.Repeatable");
-    static final TypeName WANT_DEFAULT_TYPE = TypeName.create("io.helidon.inject.service.ConfigDriven.WantDefault");
+    static final TypeName CONFIG_BEAN_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.ConfigBean");
+    static final TypeName AT_LEAST_ONE_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.AtLeastOne");
+    static final TypeName REPEATABLE_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.Repeatable");
+    static final TypeName WANT_DEFAULT_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.WantDefault");
 
     static ConfigBeanAnnotation create(TypeInfo typeInfo) {
         /*
@@ -42,8 +42,8 @@ record ConfigBeanAnnotation(String configKey,
         configKey = typeInfo.annotation(CONFIG_BEAN_TYPE)
                 .stringValue()
                 .orElse("");
-        if (configKey.isBlank() && typeInfo.hasAnnotation(PROTOTYPE_CONFIGURED)) {
-            configKey = typeInfo.annotation(PROTOTYPE_CONFIGURED)
+        if (configKey.isBlank() && typeInfo.hasAnnotation(BUILDER_CONFIGURED)) {
+            configKey = typeInfo.annotation(BUILDER_CONFIGURED)
                     .stringValue()
                     .orElse("");
         }

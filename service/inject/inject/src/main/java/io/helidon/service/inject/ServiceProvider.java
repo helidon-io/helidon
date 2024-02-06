@@ -21,7 +21,7 @@ import io.helidon.service.registry.ServiceRegistryException;
  * @param <T> type of the provided service
  */
 class ServiceProvider<T> {
-    private final InjectServiceRegistry registry;
+    private final InjectServiceRegistryImpl registry;
     private final ServiceInfo serviceInfo;
     private final Descriptor<T> descriptor;
     private final TypeName scope;
@@ -33,7 +33,7 @@ class ServiceProvider<T> {
     /*
     Service provider used for initial bindings in a scope, where we NEVER create instances
      */
-    ServiceProvider(InjectServiceRegistry serviceRegistry,
+    ServiceProvider(InjectServiceRegistryImpl serviceRegistry,
                     ServiceInfo serviceInfo,
                     TypeName scope) {
         this.registry = serviceRegistry;
@@ -46,7 +46,7 @@ class ServiceProvider<T> {
         this.contracts = Contracts.create(serviceInfo);
     }
 
-    ServiceProvider(InjectServiceRegistry serviceRegistry,
+    ServiceProvider(InjectServiceRegistryImpl serviceRegistry,
                     ServiceInfo serviceInfo,
                     Descriptor<T> descriptor) {
         this.registry = serviceRegistry;
@@ -63,7 +63,7 @@ class ServiceProvider<T> {
         return descriptor;
     }
 
-    ServiceInjectionPlanBinder.Binder servicePlanBinder() {
+    InjectionPlanBinder.Binder servicePlanBinder() {
         return ServicePlanBinder.create(registry, descriptor, it -> this.injectionPlan = it);
     }
 
@@ -107,9 +107,9 @@ class ServiceProvider<T> {
 
         AtomicReference<Map<Dependency, IpPlan<?>>> injectionPlan = new AtomicReference<>();
 
-        ServiceInjectionPlanBinder.Binder binder = ServicePlanBinder.create(registry,
-                                                                            descriptor,
-                                                                            injectionPlan::set);
+        InjectionPlanBinder.Binder binder = ServicePlanBinder.create(registry,
+                                                                     descriptor,
+                                                                     injectionPlan::set);
         for (Dependency injectionPoint : dependencies) {
             planForIp(binder, injectionPoint);
         }
@@ -119,7 +119,7 @@ class ServiceProvider<T> {
         return injectionPlan.get();
     }
 
-    private void planForIp(ServiceInjectionPlanBinder.Binder injectionPlan,
+    private void planForIp(InjectionPlanBinder.Binder injectionPlan,
                            Dependency injectionPoint) {
         /*
          very similar code is used in ApplicationCreator.injectionPlan
@@ -137,9 +137,10 @@ class ServiceProvider<T> {
                     .build();
         }
 
-        List<InjectServiceInfo> discovered = registry.lookupServices(lookup)
+        List<ServiceInfo> discovered = registry.lookupServices(lookup)
                 .stream()
                 .filter(it -> it != descriptor)
+                .map(InjectServiceInfo::coreInfo)
                 .toList();
 
         /*
@@ -150,7 +151,7 @@ class ServiceProvider<T> {
 
         // now there are a few options - optional, list, and single instance
         if (ipType.isList()) {
-            InjectServiceInfo[] descriptors = discovered.toArray(new InjectServiceInfo[0]);
+            ServiceInfo[] descriptors = discovered.toArray(new ServiceInfo[0]);
             TypeName typeOfList = ipType.typeArguments().getFirst();
             if (typeOfList.isSupplier()) {
                 // inject List<Supplier<Contract>>
@@ -176,10 +177,10 @@ class ServiceProvider<T> {
             TypeName typeOfSupplier = ipType.typeArguments().getFirst();
             if (typeOfSupplier.isOptional()) {
                 // inject Supplier<Optional<Contract>>
-                injectionPlan.bindSupplierOfOptional(injectionPoint, discovered.toArray(new InjectServiceInfo[0]));
+                injectionPlan.bindSupplierOfOptional(injectionPoint, discovered.toArray(new ServiceInfo[0]));
             } else if (typeOfSupplier.isList()) {
                 // inject Supplier<List<Contract>>
-                injectionPlan.bindSupplierOfList(injectionPoint, discovered.toArray(new InjectServiceInfo[0]));
+                injectionPlan.bindSupplierOfList(injectionPoint, discovered.toArray(new ServiceInfo[0]));
             } else {
                 // inject Supplier<Contract>
                 if (discovered.isEmpty()) {

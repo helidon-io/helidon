@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -83,7 +84,7 @@ class CoreServiceRegistry implements ServiceRegistry {
     public <T> T get(TypeName contract) {
         var provider = firstProvider(contract)
                 .orElseThrow(() -> new ServiceRegistryException("Contract " + contract.fqName()
-                                                                        + " is not supported, there are not service "
+                                                                        + " is not supported, there are no service "
                                                                         + "descriptors in this registry that can satisfy it."));
         return (T) provider.instance();
     }
@@ -201,10 +202,31 @@ class CoreServiceRegistry implements ServiceRegistry {
 
     private record BoundDescriptor(CoreServiceRegistry registry,
                                    Descriptor<?> descriptor,
-                                   LazyValue<Object> lazyInstance) implements ServiceProvider {
+                                   LazyValue<Object> lazyInstance,
+                                   ReentrantLock lock) implements ServiceProvider {
+
+        private BoundDescriptor(CoreServiceRegistry registry,
+                                Descriptor<?> descriptor,
+                                LazyValue<Object> lazyInstance) {
+            this(registry, descriptor, lazyInstance, new ReentrantLock());
+        }
+
         @Override
         public Object instance() {
-            return lazyInstance.get();
+            if (lazyInstance.isLoaded()) {
+                return lazyInstance.get();
+            }
+
+            if (lock.isHeldByCurrentThread()) {
+                throw new ServiceRegistryException("Cyclic dependency, attempting to obtain an instance of "
+                                                           + descriptor.serviceType().fqName() + " while instantiating it");
+            }
+            try {
+                lock.lock();
+                return lazyInstance.get();
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
@@ -220,7 +242,15 @@ class CoreServiceRegistry implements ServiceRegistry {
 
     private record DiscoveredDescriptor(CoreServiceRegistry registry,
                                         DescriptorMetadata metadata,
-                                        LazyValue<Object> lazyInstance) implements ServiceProvider {
+                                        LazyValue<Object> lazyInstance,
+                                        ReentrantLock lock) implements ServiceProvider {
+
+        private DiscoveredDescriptor(CoreServiceRegistry registry,
+                             DescriptorMetadata metadata,
+                             LazyValue<Object> lazyInstance) {
+            this(registry, metadata, lazyInstance, new ReentrantLock());
+        }
+
         @Override
         public Descriptor<?> descriptor() {
             return metadata.descriptor();
@@ -228,7 +258,20 @@ class CoreServiceRegistry implements ServiceRegistry {
 
         @Override
         public Object instance() {
-            return lazyInstance.get();
+            if (lazyInstance.isLoaded()) {
+                return lazyInstance.get();
+            }
+            if (lock.isHeldByCurrentThread()) {
+                throw new ServiceRegistryException("Cyclic dependency, attempting to obtain an instance of "
+                                                           + metadata.descriptor().serviceType().fqName()
+                                                           + " while instantiating it");
+            }
+            try {
+                lock.lock();
+                return lazyInstance.get();
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override

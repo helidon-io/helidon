@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.registry.Service;
 
 /**
  * {@link Source} of configuration.
@@ -63,7 +63,7 @@ import io.helidon.inject.service.Injection;
  * @see io.helidon.config.AbstractConfigSource
  * @see ConfigSources ConfigSources - access built-in implementations.
  */
-@Injection.Contract
+@Service.Contract
 public interface ConfigSource extends Supplier<ConfigSource>, Source {
     @Override
     default ConfigSource get() {

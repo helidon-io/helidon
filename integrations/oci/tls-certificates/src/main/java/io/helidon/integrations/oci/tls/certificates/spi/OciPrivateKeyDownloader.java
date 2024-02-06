@@ -19,12 +19,12 @@ package io.helidon.integrations.oci.tls.certificates.spi;
 import java.net.URI;
 import java.security.PrivateKey;
 
-import io.helidon.inject.service.Injection;
+import io.helidon.service.registry.Service;
 
 /**
  * The contract used for downloading private keys from OCI.
  */
-@Injection.Contract
+@Service.Contract
 public interface OciPrivateKeyDownloader {
 
     /**

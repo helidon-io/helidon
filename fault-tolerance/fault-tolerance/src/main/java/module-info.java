@@ -32,15 +32,11 @@ module io.helidon.faulttolerance {
     requires io.helidon.common.configurable;
     requires io.helidon.config;
     requires io.helidon.builder.api;
-    requires io.helidon.inject.service;
 
     requires static io.helidon.common.features.api;
     // used from our services, will be on module path if the services are used
-    requires static io.helidon.inject;
+    requires static io.helidon.service.registry;
+    requires static io.helidon.service.inject.api;
 
     exports io.helidon.faulttolerance;
-
-    // inject module
-    provides io.helidon.inject.service.ModuleComponent with io.helidon.faulttolerance.Injection__Module;
-
 }

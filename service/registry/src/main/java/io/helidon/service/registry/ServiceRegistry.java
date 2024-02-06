@@ -40,7 +40,7 @@ public interface ServiceRegistry {
     /**
      * Type name of this interface.
      */
-    TypeName TYPE_NAME = TypeName.create(ServiceRegistry.class);
+    TypeName TYPE = TypeName.create(ServiceRegistry.class);
 
     /**
      * Get the first service instance matching the contract with the expectation that there is a match available.

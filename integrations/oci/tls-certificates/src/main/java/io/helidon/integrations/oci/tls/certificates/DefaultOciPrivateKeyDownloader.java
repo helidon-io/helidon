@@ -34,9 +34,9 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
-import io.helidon.inject.service.Injection;
 import io.helidon.integrations.oci.sdk.runtime.OciExtension;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
+import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.keymanagement.KmsCryptoClient;
 import com.oracle.bmc.keymanagement.model.ExportKeyDetails;
@@ -46,7 +46,7 @@ import com.oracle.bmc.keymanagement.responses.ExportKeyResponse;
 /**
  * Implementation of the {@link OciPrivateKeyDownloader} that will use OCI's KMS to export a key.
  */
-@Injection.Singleton
+@Service.Provider
 class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
     private final PrivateKey wrappingPrivateKey;
     private final String wrappingPublicKeyPem;

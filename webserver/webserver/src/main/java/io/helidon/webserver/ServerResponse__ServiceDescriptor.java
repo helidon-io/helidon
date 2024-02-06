@@ -3,28 +3,30 @@ package io.helidon.webserver;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.InjectionContext;
-import io.helidon.inject.service.InterceptionMetadata;
-import io.helidon.inject.service.ServiceDescriptor;
+import io.helidon.service.inject.api.GeneratedInjectService;
+import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.DependencyContext;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.ServerResponse;
 
 /**
  * Service descriptor for types that provide injection providers for {@link io.helidon.webserver.http.ServerResponse}.
  */
 @SuppressWarnings("checkstyle:TypeName") // matches pattern of generated descriptors
-@Injection.Descriptor
-public class ServerResponse__ServiceDescriptor implements ServiceDescriptor<ServerResponse> {
+@Service.Descriptor(registryType = "inject",
+                    contracts = ServerResponse.class)
+public class ServerResponse__ServiceDescriptor implements Descriptor<ServerResponse> {
     /**
      * Singleton instance of this service descriptor.
      */
-    public static final ServiceDescriptor<ServerResponse> INSTANCE = new ServerResponse__ServiceDescriptor();
+    public static final Descriptor<ServerResponse> INSTANCE = new ServerResponse__ServiceDescriptor();
     private static final TypeName CONTRACT = TypeName.create(ServerResponse.class);
     private static final TypeName DESCRIPTOR_TYPE = TypeName.create(ServerResponse__ServiceDescriptor.class);
     private static final Set<TypeName> CONTRACTS = Set.of(CONTRACT);
 
     @Override
-    public Object instantiate(InjectionContext ctx, InterceptionMetadata interceptionMetadata) {
+    public Object instantiate(DependencyContext ctx, GeneratedInjectService.InterceptionMetadata interceptionMetadata) {
         throw new IllegalStateException("ServerResponse should be specified as initial binding when starting request context,"
                                                 + " if used in any service.");
     }
@@ -35,7 +37,7 @@ public class ServerResponse__ServiceDescriptor implements ServiceDescriptor<Serv
     }
 
     @Override
-    public TypeName infoType() {
+    public TypeName descriptorType() {
         return DESCRIPTOR_TYPE;
     }
 

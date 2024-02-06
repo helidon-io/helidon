@@ -86,8 +86,7 @@ class WebServerConfigSupport {
             if (target.serviceRegistry().isPresent()) {
                 target.serviceRegistry()
                         .get()
-                        .<WebServerService>supply(WebServerService__ServiceDescriptor.INSTANCE)
-                        .get()
+                        .get(WebServerService.class)
                         .updateServerBuilder(target);
             }
 

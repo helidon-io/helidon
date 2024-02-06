@@ -19,7 +19,7 @@
  */
 module io.helidon.common.tls {
     // only annotation, no generated code
-    requires static io.helidon.inject.service;
+    requires static io.helidon.service.registry;
 
     requires io.helidon.builder.api;
     requires io.helidon.common;

@@ -24,7 +24,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 @Injection.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 1)

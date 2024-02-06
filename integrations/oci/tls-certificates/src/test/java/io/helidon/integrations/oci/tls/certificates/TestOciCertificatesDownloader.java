@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 
 @Injection.Singleton

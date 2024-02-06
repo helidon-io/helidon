@@ -39,13 +39,13 @@
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <spotbugs.skip>true</spotbugs.skip>
         <dependency-check.skip>true</dependency-check.skip>
-        <helidon.services.skip>true</helidon.services.skip>
         <checkstyle.skip>true</checkstyle.skip>
         <dependency-plugin.skip>true</dependency-plugin.skip>
     </properties>
 
     <modules>
-        <module>core</module>
+        <module>codegen</module>
+        <module>registry</module>
         <module>inject</module>
     </modules>
 

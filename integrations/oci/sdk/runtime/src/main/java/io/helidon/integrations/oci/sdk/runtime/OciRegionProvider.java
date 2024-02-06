@@ -18,13 +18,11 @@ package io.helidon.integrations.oci.sdk.runtime;
 
 import java.util.Optional;
 
-import io.helidon.common.Weight;
-import io.helidon.inject.Services;
-import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.InjectionPointProvider;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.QualifiedInstance;
-import io.helidon.inject.service.Qualifier;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
 
 import com.oracle.bmc.Region;
 
@@ -32,7 +30,6 @@ import com.oracle.bmc.Region;
  * Can optionally be used to return a {@link Region} appropriate for the {@link io.helidon.inject.service.Ip} context.
  */
 @Injection.Singleton
-@Weight(Services.INJECT_WEIGHT)
 class OciRegionProvider implements InjectionPointProvider<Region> {
 
     OciRegionProvider() {

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 class RetryImpl implements Retry {
     private final ErrorChecker errorChecker;

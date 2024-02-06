@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
 import io.helidon.microprofile.server.Server;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -48,8 +48,9 @@ class OciCertificatesTlsManagerTest {
 
     @Test
     void serverRuntime() throws Exception {
-        Services services = ManagedRegistry.create().registry();
-        LifecycleHook lifecycleHook = services.get(LifecycleHook.class);
+        ServiceRegistryManager registryManager = ServiceRegistryManager.create();
+        ServiceRegistry registry = registryManager.registry();
+        LifecycleHook lifecycleHook = registry.get(LifecycleHook.class);
         CountDownLatch startup = new CountDownLatch(1);
 
         lifecycleHook.registerStartupConsumer(c -> startup.countDown());

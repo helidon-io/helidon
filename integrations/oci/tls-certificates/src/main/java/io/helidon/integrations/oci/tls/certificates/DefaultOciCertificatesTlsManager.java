@@ -38,10 +38,10 @@ import io.helidon.common.tls.ConfiguredTlsManager;
 import io.helidon.common.tls.TlsConfig;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.Async;
-import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * The default implementation (service loader and provider-driven) implementation of {@link OciCertificatesTlsManager}.
@@ -81,7 +81,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     @Override // TlsManager
     public void init(TlsConfig tls) {
         this.tlsConfig = tls;
-        Services services = ManagedRegistry.create().registry();
+        ServiceRegistry services = GlobalServiceRegistry.registry();
         this.pkDownloader = services.supply(OciPrivateKeyDownloader.class);
         this.certDownloader = services.supply(OciCertificatesDownloader.class);
         this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();

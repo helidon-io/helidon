@@ -18,6 +18,7 @@ package io.helidon.service.codegen;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -190,11 +192,16 @@ class InjectCodegen implements CodegenExtension {
 
         FilerTextResource services = ctx.filer().textResource("META-INF/helidon/services/services.txt");
         List<String> lines = new ArrayList<>(services.lines());
+        Set<DescriptorMeta> descriptors = new TreeSet<>(Comparator.comparing(DescriptorMeta::descriptor));
+
         Set<DescriptorMeta> existingServices = lines.stream()
                 .map(String::trim)
                 .filter(Predicate.not(it -> it.startsWith("#")))
                 .map(DescriptorMeta::parse)
                 .collect(Collectors.toSet());
+
+        // add all existing
+        descriptors.addAll(existingServices);
 
         if (lines.isEmpty()) {
             // @Generated
@@ -209,8 +216,13 @@ class InjectCodegen implements CodegenExtension {
         for (DescriptorMeta descriptor : generatedServiceDescriptors) {
             if (existingServices.add(descriptor)) {
                 // only add the provider if it does not yet exist
-                lines.add(descriptor.toLine());
+                descriptors.add(descriptor);
             }
+        }
+
+        // sorted by type name
+        for (DescriptorMeta descriptor : descriptors) {
+            lines.add(descriptor.toLine());
         }
 
         services.lines(lines);
@@ -228,13 +240,13 @@ class InjectCodegen implements CodegenExtension {
         ClassModel application = ClassModel.builder()
                 .accessModifier(AccessModifier.PUBLIC)
                 .type(appType)
-                .addInterface(ServiceCodegenTypes.APPLICATION)
+                .addInterface(ServiceCodegenTypes.INJECT_APPLICATION)
                 .addMethod(configure -> configure
                         .addAnnotation(Annotations.OVERRIDE)
                         .accessModifier(AccessModifier.PUBLIC)
                         .name("configure")
                         .addParameter(binder -> binder
-                                .type(ServiceCodegenTypes.SERVICE_INJECTION_PLAN_BINDER)
+                                .type(ServiceCodegenTypes.INJECTION_PLAN_BINDER)
                                 .name("binder")))
                 .addMethod(name -> name
                         .addAnnotation(Annotations.OVERRIDE)

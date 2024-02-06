@@ -31,8 +31,8 @@ import io.helidon.service.codegen.spi.InjectCodegenExtension;
 
 import static io.helidon.common.types.Annotations.OVERRIDE;
 import static io.helidon.service.codegen.ConfigBeanAnnotation.CONFIG_BEAN_TYPE;
-import static io.helidon.service.codegen.ServiceCodegenTypes.COMMON_CONFIG;
-import static io.helidon.service.codegen.ServiceCodegenTypes.COMMON_CONFIG_EXCEPTION;
+import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_COMMON_CONFIG;
+import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_EXCEPTION;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_INJECT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SINGLETON;
@@ -76,13 +76,13 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                             .accessModifier(AccessModifier.PRIVATE)
                             .isFinal(true)
                             .name("config")
-                            .type(COMMON_CONFIG))
+                            .type(CONFIG_COMMON_CONFIG))
                     .addConstructor(ctr -> ctr
                             .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                             .addAnnotation(INJECT_ANNOTATION)
                             .addParameter(configParam -> configParam
                                     .name("config")
-                                    .type(COMMON_CONFIG))
+                                    .type(CONFIG_COMMON_CONFIG))
                             .addContentLine("this.config = config;"))
                     .addMethod(servicesMethod -> servicesMethod
                             .accessModifier(AccessModifier.PUBLIC)
@@ -117,7 +117,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
         if (atLeastOne && !wantDefault) {
             method.addContentLine("if (!config.exists()) {")
                     .addContent("throw new ")
-                    .addContent(COMMON_CONFIG_EXCEPTION)
+                    .addContent(CONFIG_EXCEPTION)
                     .addContent("(\"Expecting configuration node at \\\"")
                     .addContent(configKey)
                     .addContentLine("\\\". Add @ConfigDriven.WantDefault if default instance should be used "
@@ -189,7 +189,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                 .addContent(QUALIFIED_INSTANCE)
                 .addContent(".create(instance, ")
                 .update(this::addConfigBeanQualifier)
-                .addContent(ServiceCodegenTypes.QUALIFIER)
+                .addContent(ServiceCodegenTypes.INJECT_QUALIFIER)
                 .addContentLine(".createNamed(name)));")
                 .addContentLine("}"); // and of for cycle going through config nodes
 
@@ -203,7 +203,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                     .addContent(QUALIFIED_INSTANCE)
                     .addContent(".create(instance, ")
                     .update(this::addConfigBeanQualifier)
-                    .addContent(ServiceCodegenTypes.QUALIFIER)
+                    .addContent(ServiceCodegenTypes.INJECT_QUALIFIER)
                     .addContentLine(".DEFAULT_NAMED));")
                     .addContentLine("}"); // end of if - want default and not added
         }
@@ -223,7 +223,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
         // if list and not repeatable, fail
         method.addContentLine("if (config.isList()) {")
                 .addContent("throw new ")
-                .addContent(COMMON_CONFIG_EXCEPTION)
+                .addContent(CONFIG_EXCEPTION)
                 .addContent("(\"Expecting a single node at \\\"")
                 .addContent(configKey)
                 .addContentLine("\\\", but got a list. Add @ConfigDriven.Repeatable to your config bean"
@@ -248,7 +248,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                     .addContent(QUALIFIED_INSTANCE)
                     .addContent(".create(instance, ")
                     .update(this::addConfigBeanQualifier)
-                    .addContent(ServiceCodegenTypes.QUALIFIER)
+                    .addContent(ServiceCodegenTypes.INJECT_QUALIFIER)
                     .addContentLine(".DEFAULT_NAMED));");
         } else {
             if (wantDefault) {
@@ -261,15 +261,15 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                         .addContent(" instance = ")
                         .addContent(cbType)
                         .addContentLine(".create(config);");
-                method.addContent("return ")
-                        .addContent(TypeNames.LIST)
-                        .addContent(".of(")
-                        .addContent(QUALIFIED_INSTANCE)
-                        .addContent(".create(instance, ")
-                        .update(this::addConfigBeanQualifier)
-                        .addContent(ServiceCodegenTypes.QUALIFIER)
-                        .addContentLine(".DEFAULT_NAMED));");
             }
+            method.addContent("return ")
+                    .addContent(TypeNames.LIST)
+                    .addContent(".of(")
+                    .addContent(QUALIFIED_INSTANCE)
+                    .addContent(".create(instance, ")
+                    .update(this::addConfigBeanQualifier)
+                    .addContent(ServiceCodegenTypes.INJECT_QUALIFIER)
+                    .addContentLine(".DEFAULT_NAMED));");
         }
     }
 
@@ -280,6 +280,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
                 .addContent("instance = ")
                 .addContent(cbType)
                 .addContentLine(".create(config);")
+                .decreaseContentPadding()
                 .addContentLine("} else {")
                 .addContent("instance = ")
                 .addContent(cbType)
@@ -294,7 +295,7 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
     }
 
     private void addConfigBeanQualifier(ContentBuilder<?> builder) {
-        builder.addContent(ServiceCodegenTypes.QUALIFIER)
+        builder.addContent(ServiceCodegenTypes.INJECT_QUALIFIER)
                 .addContent(".CONFIG_BEAN, ");
     }
 }
