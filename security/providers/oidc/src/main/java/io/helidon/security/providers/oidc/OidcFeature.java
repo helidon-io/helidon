@@ -518,7 +518,9 @@ public final class OidcFeature implements HttpFeature {
 
                 headers.addCookie(tenantCookieHandler.createCookie(tenantName).build()); //Add tenant name cookie
                 headers.addCookie(tokenCookieHandler.createCookie(accessToken).build());  //Add token cookie
-                headers.addCookie(refreshTokenCookieHandler.createCookie(refreshToken).build());  //Add refresh token cookie
+                if (refreshToken != null) {
+                    headers.addCookie(refreshTokenCookieHandler.createCookie(refreshToken).build());  //Add refresh token cookie
+                }
 
                 if (idToken != null) {
                     headers.addCookie(idTokenCookieHandler.createCookie(idToken).build());  //Add token id cookie
