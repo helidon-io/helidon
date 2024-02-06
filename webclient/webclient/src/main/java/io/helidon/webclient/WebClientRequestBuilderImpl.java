@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -646,8 +646,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     @SuppressWarnings(value = "unchecked")
     private void runInContext(Map<Class<?>, Object> data, Runnable command) {
-        PROPAGATION_PROVIDERS.forEach(provider -> provider.propagateData(data.get(provider.getClass())));
-        Contexts.runInContext(context, command);
+        try {
+            PROPAGATION_PROVIDERS.forEach(provider -> provider.propagateData(data.get(provider.getClass())));
+            Contexts.runInContext(context, command);
+        } finally {
+            PROPAGATION_PROVIDERS.forEach(provider -> provider.clearData(data.get(provider.getClass())));
+        }
     }
 
     /**
@@ -674,13 +678,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             }
 
             @Override
+            @SuppressWarnings("unchecked")
             public void onError(Throwable throwable) {
                 runInContext(contextProperties, () -> subscriber.onError(throwable));
+                PROPAGATION_PROVIDERS.forEach(provider -> provider.clearData(provider.getClass()));
             }
 
             @Override
+            @SuppressWarnings("unchecked")
             public void onComplete() {
                 runInContext(contextProperties, subscriber::onComplete);
+                PROPAGATION_PROVIDERS.forEach(provider -> provider.clearData(provider.getClass()));
             }
         }));
     }
