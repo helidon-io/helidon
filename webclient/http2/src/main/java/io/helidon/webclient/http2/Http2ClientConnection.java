@@ -206,7 +206,7 @@ public class Http2ClientConnection {
         this.lastStreamId = lastStreamId;
     }
 
-    void close() {
+    public void close() {
         this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
         if (state.getAndSet(State.CLOSED) != State.CLOSED) {
             try {

@@ -27,7 +27,10 @@ import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class GrpcTest {
@@ -53,7 +56,7 @@ class GrpcTest {
                 .build();
     }
 
-    @Test
+    @RepeatedTest(3)
     void testSimpleCall() {
         GrpcServiceDescriptor serviceDescriptor =
                 GrpcServiceDescriptor.builder()
@@ -65,7 +68,9 @@ class GrpcTest {
                                         .build())
                         .build();
 
-        String r = grpcClient.serviceClient(serviceDescriptor)
+        StringValue r = grpcClient.serviceClient(serviceDescriptor)
                 .unary("Upper", StringValue.of("hello"));
+        System.out.println("r = " + r.getValue());
+        assertThat(r.getValue(), is("HELLO"));
     }
 }
