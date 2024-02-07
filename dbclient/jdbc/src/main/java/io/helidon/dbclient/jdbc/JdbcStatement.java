@@ -15,14 +15,6 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import io.helidon.dbclient.DbClientException;
-import io.helidon.dbclient.DbClientServiceContext;
-import io.helidon.dbclient.DbIndexedStatementParameters;
-import io.helidon.dbclient.DbNamedStatementParameters;
-import io.helidon.dbclient.DbStatement;
-import io.helidon.dbclient.DbStatementBase;
-import io.helidon.dbclient.DbStatementParameters;
-
 import java.io.ByteArrayInputStream;
 import java.io.CharArrayReader;
 import java.lang.System.Logger.Level;
@@ -38,6 +30,14 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.dbclient.DbIndexedStatementParameters;
+import io.helidon.dbclient.DbNamedStatementParameters;
+import io.helidon.dbclient.DbStatement;
+import io.helidon.dbclient.DbStatementBase;
+import io.helidon.dbclient.DbStatementParameters;
 
 /**
  * JDBC statement base implementation.
