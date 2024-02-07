@@ -15,6 +15,14 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.dbclient.DbIndexedStatementParameters;
+import io.helidon.dbclient.DbNamedStatementParameters;
+import io.helidon.dbclient.DbStatement;
+import io.helidon.dbclient.DbStatementBase;
+import io.helidon.dbclient.DbStatementParameters;
+
 import java.io.ByteArrayInputStream;
 import java.io.CharArrayReader;
 import java.lang.System.Logger.Level;
@@ -30,14 +38,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import io.helidon.dbclient.DbClientException;
-import io.helidon.dbclient.DbClientServiceContext;
-import io.helidon.dbclient.DbIndexedStatementParameters;
-import io.helidon.dbclient.DbNamedStatementParameters;
-import io.helidon.dbclient.DbStatement;
-import io.helidon.dbclient.DbStatementBase;
-import io.helidon.dbclient.DbStatementParameters;
 
 /**
  * JDBC statement base implementation.
@@ -299,7 +299,7 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             statement.setBoolean(index, b);
         } else if (parameter == null) {
             // Normally null is passed as a DatabaseField so the type is included, but in some case may be passed directly.
-            statement.setNull(index, Types.VARCHAR);
+            statement.setNull(index, Types.NULL);
         } else if (parameter instanceof byte[] b) {
             if (jdbcContext().parametersConfig().useByteArrayBinding()) {
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(b);
