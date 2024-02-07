@@ -84,7 +84,7 @@ class RouterImpl implements Router {
         public Router.Builder addRouting(io.helidon.common.Builder<?, ? extends Routing> routing) {
             var previous = this.routings.put(routing.getClass(), routing);
             if (previous != null) {
-                Thread.dumpStack();
+                // Thread.dumpStack();
                 LOGGER.log(System.Logger.Level.WARNING, "Second routing of the same type is registered. "
                         + "The first instance will be ignored. Type: " + routing.getClass().getName());
             }

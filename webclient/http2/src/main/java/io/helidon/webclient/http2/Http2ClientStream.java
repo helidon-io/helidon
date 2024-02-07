@@ -190,7 +190,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return hasEntity;
     }
 
-    void cancel() {
+    public void cancel() {
         if (NON_CANCELABLE.contains(state)) {
             return;
         }
@@ -206,7 +206,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         }
     }
 
-    void close() {
+    public void close() {
         connection.removeStream(streamId);
     }
 
@@ -227,7 +227,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return read();
     }
 
-    BufferData read() {
+    public BufferData read() {
         while (state == Http2StreamState.HALF_CLOSED_LOCAL && readState != ReadState.END && hasEntity) {
             Http2FrameData frameData = readOne(timeout);
             if (frameData != null) {
@@ -258,7 +258,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return null;
     }
 
-    void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
+    public void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
         this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true);
         this.readState = readState.check(http2Headers.httpHeaders().contains(HeaderValues.EXPECT_100)
                                                  ? ReadState.CONTINUE_100_HEADERS
@@ -294,7 +294,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         }
     }
 
-    void writeData(BufferData entityBytes, boolean endOfStream) {
+    public void writeData(BufferData entityBytes, boolean endOfStream) {
         Http2FrameHeader frameHeader = Http2FrameHeader.create(entityBytes.available(),
                                                                Http2FrameTypes.DATA,
                                                                Http2Flag.DataFlags.create(endOfStream
@@ -305,7 +305,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         splitAndWrite(frameData);
     }
 
-    Http2Headers readHeaders() {
+    public Http2Headers readHeaders() {
         while (readState == ReadState.HEADERS) {
             Http2FrameData frameData = readOne(timeout);
             if (frameData != null) {
@@ -315,7 +315,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return currentHeaders;
     }
 
-    SocketContext ctx() {
+    public SocketContext ctx() {
         return ctx;
     }
 
