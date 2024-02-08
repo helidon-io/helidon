@@ -16,8 +16,11 @@
 version: 2
 updates:
   - package-ecosystem: "maven"
-    directory: "/dependencies/"
+    directory: "/dependencies"
     schedule:
       interval: "weekly"
     allow:
       - dependency-name: "com.oracle.oci.sdk:oci-java-sdk-bom"
+    labels:
+      - "build"
+      - "dependencies"
