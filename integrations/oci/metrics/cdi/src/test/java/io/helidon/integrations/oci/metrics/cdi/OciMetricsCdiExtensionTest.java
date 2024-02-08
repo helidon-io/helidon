@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,16 @@ package io.helidon.integrations.oci.metrics.cdi;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import com.oracle.bmc.monitoring.requests.CreateAlarmSuppressionRequest;
+import com.oracle.bmc.monitoring.requests.DeleteAlarmSuppressionRequest;
+import com.oracle.bmc.monitoring.requests.GetAlarmSuppressionRequest;
+import com.oracle.bmc.monitoring.requests.ListAlarmSuppressionsRequest;
+import com.oracle.bmc.monitoring.requests.SummarizeAlarmSuppressionHistoryRequest;
+import com.oracle.bmc.monitoring.responses.CreateAlarmSuppressionResponse;
+import com.oracle.bmc.monitoring.responses.DeleteAlarmSuppressionResponse;
+import com.oracle.bmc.monitoring.responses.GetAlarmSuppressionResponse;
+import com.oracle.bmc.monitoring.responses.ListAlarmSuppressionsResponse;
+import com.oracle.bmc.monitoring.responses.SummarizeAlarmSuppressionHistoryResponse;
 import io.helidon.config.Config;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
 import io.helidon.metrics.api.Counter;
@@ -210,7 +220,17 @@ class OciMetricsCdiExtensionTest {
         }
 
         @Override
+        public CreateAlarmSuppressionResponse createAlarmSuppression(CreateAlarmSuppressionRequest createAlarmSuppressionRequest) {
+            return null;
+        }
+
+        @Override
         public DeleteAlarmResponse deleteAlarm(DeleteAlarmRequest deleteAlarmRequest) {
+            return null;
+        }
+
+        @Override
+        public DeleteAlarmSuppressionResponse deleteAlarmSuppression(DeleteAlarmSuppressionRequest deleteAlarmSuppressionRequest) {
             return null;
         }
 
@@ -221,6 +241,16 @@ class OciMetricsCdiExtensionTest {
 
         @Override
         public GetAlarmHistoryResponse getAlarmHistory(GetAlarmHistoryRequest getAlarmHistoryRequest) {
+            return null;
+        }
+
+        @Override
+        public GetAlarmSuppressionResponse getAlarmSuppression(GetAlarmSuppressionRequest getAlarmSuppressionRequest) {
+            return null;
+        }
+
+        @Override
+        public ListAlarmSuppressionsResponse listAlarmSuppressions(ListAlarmSuppressionsRequest listAlarmSuppressionsRequest) {
             return null;
         }
 
@@ -257,6 +287,11 @@ class OciMetricsCdiExtensionTest {
 
         @Override
         public RetrieveDimensionStatesResponse retrieveDimensionStates(RetrieveDimensionStatesRequest retrieveDimensionStatesRequest) {
+            return null;
+        }
+
+        @Override
+        public SummarizeAlarmSuppressionHistoryResponse summarizeAlarmSuppressionHistory(SummarizeAlarmSuppressionHistoryRequest summarizeAlarmSuppressionHistoryRequest) {
             return null;
         }
 
