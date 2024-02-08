@@ -28,6 +28,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import static io.helidon.config.ConfigSources.classpath;
+
 @Testcontainers(disabledWithoutDocker = true)
 public class PokemonServiceOracleIT extends AbstractPokemonServiceTest {
 
@@ -43,9 +45,9 @@ public class PokemonServiceOracleIT extends AbstractPokemonServiceTest {
 
     @BeforeAll
     static void setup() {
-        Config.global(Config.builder().addSource(ConfigSources.create(
-                        Map.of("db.connection.url", container.getJdbcUrl())))
-                .addSource(ConfigSources.create(Config.create()))
+        Config.global(Config.builder()
+                .addSource(ConfigSources.create(Map.of("db.connection.url", container.getJdbcUrl())))
+                .addSource(classpath("application-oracle-test.yaml"))
                 .build());
         beforeAll();
     }

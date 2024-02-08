@@ -26,6 +26,8 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static io.helidon.config.ConfigSources.classpath;
+
 @Testcontainers(disabledWithoutDocker = true)
 public class PokemonServiceMySQLIT extends AbstractPokemonServiceTest {
 
@@ -39,12 +41,8 @@ public class PokemonServiceMySQLIT extends AbstractPokemonServiceTest {
     @BeforeAll
     static void start() {
         Config.global(Config.builder()
-                .addSource(ConfigSources.create(
-                        Map.of("db.connection.url", container.getJdbcUrl(),
-                                "db.connection.username", "user",
-                                "db.connection.password", "password",
-                                "db.connection.poolName", "mysql")))
-                .addSource(ConfigSources.create(Config.create()))
+                .addSource(ConfigSources.create(Map.of("db.connection.url", container.getJdbcUrl())))
+                .addSource(classpath("application-mysql-test.yaml"))
                 .build());
         beforeAll();
     }

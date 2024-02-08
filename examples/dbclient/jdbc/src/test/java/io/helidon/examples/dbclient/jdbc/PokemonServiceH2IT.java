@@ -29,6 +29,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import static io.helidon.config.ConfigSources.classpath;
+
 @Testcontainers(disabledWithoutDocker = true)
 class PokemonServiceH2IT extends AbstractPokemonServiceTest {
     private static final DockerImageName H2_IMAGE = DockerImageName.parse("nemerosa/h2");
@@ -41,12 +43,9 @@ class PokemonServiceH2IT extends AbstractPokemonServiceTest {
     @BeforeAll
     static void start() {
         String url = String.format("jdbc:h2:tcp://localhost:%s/~./test", container.getMappedPort(9082));
-        Config.global(Config.builder().addSource(ConfigSources.create(
-                        Map.of("db.connection.url", url,
-                                "db.connection.username", "sa",
-                                "db.connection.password", "",
-                                "db.connection.poolName", "h2")))
-                .addSource(ConfigSources.create(Config.create()))
+        Config.global(Config.builder()
+                .addSource(ConfigSources.create(Map.of("db.connection.url", url)))
+                .addSource(classpath("application-h2-test.yaml"))
                 .build());
         beforeAll();
     }

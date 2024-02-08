@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static io.helidon.config.ConfigSources.classpath;
+
 @Testcontainers(disabledWithoutDocker = true)
 public class PokemonServiceMongoIT extends AbstractPokemonServiceTest {
 
@@ -36,11 +38,9 @@ public class PokemonServiceMongoIT extends AbstractPokemonServiceTest {
     @BeforeAll
     static void start() {
         String url = String.format("mongodb://127.0.0.1:%s/pokemon", container.getMappedPort(27017));
-        //init-data is false because transactions are not supported
-        Config.global(Config.builder().addSource(ConfigSources.create(
-                        Map.of("db.connection.url", url,
-                                "db.init-data", "false")))
-                .addSource(ConfigSources.classpath("mongo.yaml"))
+        Config.global(Config.builder()
+                .addSource(ConfigSources.create(Map.of("db.connection.url", url)))
+                .addSource(classpath("application-mongo-test.yaml"))
                 .build());
         beforeAll();
     }
