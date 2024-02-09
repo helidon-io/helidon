@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,6 +105,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                BufferData buffer,
                                boolean keepAlive,
                                boolean validateHeaders) {
+
+        if (status != null && status.code() == Status.NO_CONTENT_204.code()) {
+            // https://www.rfc-editor.org/rfc/rfc9110#status.204
+            // A 204 response is terminated by the end of the header section; it cannot contain content or trailers
+            if (headers.contains(HeaderNames.CONTENT_LENGTH) || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                status = Status.INTERNAL_SERVER_ERROR_500;
+                LOGGER.log(System.Logger.Level.ERROR, "Attempt to send status 204 No-Content with entity. Server responded"
+                        + " with Internal Server Error. Please fix your routing, this is not allowed by HTTP specification.");
+            }
+        }
 
         // first write status
         if (status == null || status == Status.OK_200) {
