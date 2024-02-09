@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.grpc;
 
-import java.util.Collection;
+import java.util.Iterator;
 
 import io.grpc.stub.StreamObserver;
 
@@ -35,17 +35,17 @@ public interface GrpcServiceClient {
 
     <ReqT, RespT> RespT unary(String methodName, ReqT request);
 
-    <ReqT, RespT> StreamObserver<ReqT> unary(String methodName, StreamObserver<RespT> responseObserver);
+    <ReqT, RespT> StreamObserver<ReqT> unary(String methodName, StreamObserver<RespT> response);
 
-    <ReqT, RespT> Collection<RespT> serverStream(String methodName, ReqT request);
+    <ReqT, RespT> Iterator<RespT> serverStream(String methodName, ReqT request);
 
-    <ReqT, RespT> void serverStream(String methodName, ReqT request, StreamObserver<RespT> responseObserver);
+    <ReqT, RespT> void serverStream(String methodName, ReqT request, StreamObserver<RespT> response);
 
-    <ReqT, RespT> RespT clientStream(String methodName, Collection<ReqT> request);
+    <ReqT, RespT> RespT clientStream(String methodName, Iterator<ReqT> request);
 
-    <ReqT, RespT> StreamObserver<ReqT> clientStream(String methodName, StreamObserver<RespT> responseObserver);
+    <ReqT, RespT> StreamObserver<ReqT> clientStream(String methodName, StreamObserver<RespT> response);
 
-    <ReqT, RespT> Collection<RespT> bidi(String methodName, Collection<ReqT> responseObserver);
+    <ReqT, RespT> Iterator<RespT> bidi(String methodName, Iterator<ReqT> request);
 
-    <ReqT, RespT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<RespT> responseObserver);
+    <ReqT, RespT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<RespT> response);
 }

@@ -182,7 +182,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         trailers.complete(headers.httpHeaders());
     }
 
-    CompletableFuture<Headers> trailers() {
+    public CompletableFuture<Headers> trailers() {
         return trailers;
     }
 
@@ -319,7 +319,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return ctx;
     }
 
-    private Http2FrameData readOne(Duration pollTimeout) {
+    public Http2FrameData readOne(Duration pollTimeout) {
         Http2FrameData frameData = buffer.poll(pollTimeout);
 
         if (frameData != null) {
