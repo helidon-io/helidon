@@ -25,6 +25,7 @@ import oracle.ucp.admin.UniversalConnectionPoolManager;
 import oracle.ucp.admin.UniversalConnectionPoolManagerImpl;
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.ucp.jdbc.PoolDataSourceFactory.getPoolDataSource;
@@ -38,6 +39,14 @@ class TestUcpApi {
 
     TestUcpApi() {
         super();
+    }
+
+    @AfterEach
+    void destroyPools() throws SQLException, UniversalConnectionPoolException {
+        UniversalConnectionPoolManager ucpManager = UniversalConnectionPoolManagerImpl.getUniversalConnectionPoolManager();
+        for (String n : ucpManager.getConnectionPoolNames()) {
+            ucpManager.destroyConnectionPool(n);
+        }
     }
 
     @Test
