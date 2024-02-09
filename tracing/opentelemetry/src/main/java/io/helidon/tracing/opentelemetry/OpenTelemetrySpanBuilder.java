@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.time.Instant;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
@@ -27,6 +28,7 @@ import io.opentelemetry.context.Context;
 class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder> {
     private final SpanBuilder spanBuilder;
     private boolean parentSet;
+    private Baggage parentBaggage;
 
     OpenTelemetrySpanBuilder(SpanBuilder spanBuilder) {
         this.spanBuilder = spanBuilder;
@@ -41,6 +43,9 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
     public OpenTelemetrySpanBuilder parent(SpanContext spanContext) {
         this.parentSet = true;
         spanContext.asParent(this);
+        if (spanContext instanceof OpenTelemetrySpanContext otsc) {
+            parentBaggage = Baggage.fromContext(otsc.openTelemetry());
+        }
         return this;
     }
 
@@ -87,7 +92,11 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
         }
         spanBuilder.setStartTimestamp(instant);
         io.opentelemetry.api.trace.Span span = spanBuilder.startSpan();
-        return new OpenTelemetrySpan(span);
+        Span result = new OpenTelemetrySpan(span);
+        if (parentBaggage != null) {
+            parentBaggage.forEach((key, baggageEntry) -> result.baggage(key, baggageEntry.getValue()));
+        }
+        return result;
     }
 
     // used to set open telemetry context as parent, to be equivalent in function to

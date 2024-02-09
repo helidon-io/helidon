@@ -15,11 +15,15 @@
  */
 package io.helidon.tracing.opentelemetry;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -108,5 +112,18 @@ class TestSpanAndBaggage {
         assertThat("Current span just after try-resources block",
                    currentSpanAfterTryResourcesBlock.get().context().spanId(),
                    containsString("00000000"));
+    }
+
+
+    @Test
+    void testIncomingBaggage() {
+        Tracer tracer = Tracer.global();
+        HeaderProvider inboundHeaders = new MapHeaderProvider(Map.of("baggage", List.of("bag1=val1,bag2=val2")));
+        Optional<SpanContext> spanContextOpt = tracer.extract(inboundHeaders);
+        assertThat("Span context from inbound headers", spanContextOpt, OptionalMatcher.optionalPresent());
+        Span span = tracer.spanBuilder("inbound").parent(spanContextOpt.get()).start();
+        span.end();
+        assertThat("Inbound baggage bag1", span.baggage("bag1"), OptionalMatcher.optionalValue(is("val1")));
+        assertThat("Inbound baggage bag1", span.baggage("bag2"), OptionalMatcher.optionalValue(is("val2")));
     }
 }
