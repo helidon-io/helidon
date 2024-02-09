@@ -126,7 +126,7 @@
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
         <version.lib.netty>4.1.100.Final</version.lib.netty>
-        <version.lib.oci>3.31.1</version.lib.oci>
+        <version.lib.oci>3.34.0</version.lib.oci>
         <version.lib.ojdbc8>21.4.0.0</version.lib.ojdbc8>
         <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
         <version.lib.okio>3.4.0</version.lib.okio>
