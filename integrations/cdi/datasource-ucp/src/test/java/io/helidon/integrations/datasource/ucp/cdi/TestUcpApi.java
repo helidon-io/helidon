@@ -79,7 +79,7 @@ class TestUcpApi {
         // You can create the pool without a name...
         ucpManager.createConnectionPool((UniversalConnectionPoolAdapter)pds);
         String[] names = ucpManager.getConnectionPoolNames();
-        assertThat(names.length, is(1));
+        assertThat("Connection pool names: " + java.util.Arrays.asList(names), names.length, is(1));
         assertThat(names[0], is(not(nullValue())));
         // ...and the name will be auto-generated.
         UniversalConnectionPool ucp = ucpManager.getConnectionPool(names[0]);
