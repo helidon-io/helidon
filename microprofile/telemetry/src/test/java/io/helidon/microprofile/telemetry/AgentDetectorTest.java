@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,10 @@ import static org.hamcrest.Matchers.is;
 @AddExtension(ServerCdiExtension.class)
 class AgentDetectorTest {
 
-    public static final String OTEL_AGENT_PRESENT = "otel.agent.present";
     public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
 
     @Test
-    @AddConfig(key = OTEL_AGENT_PRESENT, value = "true")
+    @AddConfig(key = TelemetryCdiExtension.OTEL_AGENT_PRESENT, value = "true")
     void shouldBeNoOpTelemetry(){
         Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
@@ -48,7 +47,7 @@ class AgentDetectorTest {
     }
 
     @Test
-    @AddConfig(key = OTEL_AGENT_PRESENT, value = "false")
+    @AddConfig(key = TelemetryCdiExtension.OTEL_AGENT_PRESENT, value = "false")
     void shouldNotBeNoOpTelemetry(){
         Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);

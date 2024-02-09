@@ -99,6 +99,10 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     @Override
     public void filter(ContainerRequestContext requestContext) {
 
+        if (Boolean.getBoolean(TelemetryCdiExtension.OTEL_AGENT_PRESENT)) {
+            return;
+        }
+
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Starting Span in a Container Request");
         }
@@ -131,6 +135,10 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     @Override
     public void filter(final ContainerRequestContext request, final ContainerResponseContext response) {
+
+        if (Boolean.getBoolean(TelemetryCdiExtension.OTEL_AGENT_PRESENT)) {
+            return;
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Container Request");

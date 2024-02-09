@@ -28,7 +28,14 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
  */
 public class TelemetryCdiExtension implements Extension {
 
+    /**
+     * Property name indicating the presence of the OpenTelemetry Java agent.
+     */
+    static final String OTEL_AGENT_PRESENT = "otel.agent.present";
+
     private static final System.Logger LOGGER = System.getLogger(TelemetryCdiExtension.class.getName());
+
+    private boolean isAgentPresent;
 
     /**
      * Add {@code HelidonWithSpan} annotation with interceptor.
@@ -38,9 +45,15 @@ public class TelemetryCdiExtension implements Extension {
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(System.Logger.Level.TRACE, () -> "Before Telemetry bean discovery " + discovery);
 
+        isAgentPresent = Boolean.getBoolean(OTEL_AGENT_PRESENT);
+
         // Register annotations, interceptors and producers.
-        discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
-        discovery.addAnnotatedType(WithSpanInterceptor.class, WithSpanInterceptor.class.getName());
+        if (isAgentPresent) {
+            LOGGER.log(System.Logger.Level.TRACE, () -> "OpenTelemetry agent is present; Helidon will not process @WithSpan");
+        } else {
+            discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
+            discovery.addAnnotatedType(WithSpanInterceptor.class, WithSpanInterceptor.class.getName());
+        }
         discovery.addAnnotatedType(OpenTelemetryProducer.class, OpenTelemetryProducer.class.getName());
     }
 
@@ -50,6 +63,9 @@ public class TelemetryCdiExtension implements Extension {
      * @param pat ProcessAnnotatedType
      */
     void processAnnotations(@Observes @WithAnnotations(WithSpan.class) ProcessAnnotatedType<?> pat) {
+        if (isAgentPresent) {
+            return;
+        }
         LOGGER.log(System.Logger.Level.TRACE, () -> "Process WithSpan annotation and add binding" + pat);
 
         var configurator = pat.configureAnnotatedType();
@@ -61,6 +77,5 @@ public class TelemetryCdiExtension implements Extension {
                 method.add(HelidonWithSpan.Literal.INSTANCE);
             }
         }
-
     }
 }
