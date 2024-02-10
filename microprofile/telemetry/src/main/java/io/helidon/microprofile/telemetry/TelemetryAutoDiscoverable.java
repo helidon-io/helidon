@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
      */
     @Override
     public void configure(jakarta.ws.rs.core.FeatureContext ctx) {
-        ctx.register(HelidonTelemetryContainerFilter.class)
-                .register(HelidonTelemetryClientFilter.class);
+        if (!Boolean.getBoolean(TelemetryCdiExtension.OTEL_AGENT_PRESENT)) {
+            ctx.register(HelidonTelemetryContainerFilter.class)
+                    .register(HelidonTelemetryClientFilter.class);
+        }
     }
 }

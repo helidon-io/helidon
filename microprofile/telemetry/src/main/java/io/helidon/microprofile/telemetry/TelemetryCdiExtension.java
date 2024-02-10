@@ -49,7 +49,8 @@ public class TelemetryCdiExtension implements Extension {
 
         // Register annotations, interceptors and producers.
         if (isAgentPresent) {
-            LOGGER.log(System.Logger.Level.TRACE, () -> "OpenTelemetry agent is present; Helidon will not process @WithSpan");
+            LOGGER.log(System.Logger.Level.TRACE,
+                       () -> "OpenTelemetry agent is present; Helidon will not process @WithSpan or add REST endpoint spans");
         } else {
             discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
             discovery.addAnnotatedType(WithSpanInterceptor.class, WithSpanInterceptor.class.getName());
