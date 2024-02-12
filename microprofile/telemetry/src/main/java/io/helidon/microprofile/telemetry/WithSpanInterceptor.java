@@ -43,10 +43,12 @@ class WithSpanInterceptor {
     private static final System.Logger LOGGER = System.getLogger(WithSpanInterceptor.class.getName());
 
     private final Tracer tracer;
+    private final boolean isAgentPresent;
 
     @Inject
     WithSpanInterceptor(Tracer tracer) {
         this.tracer = tracer;
+        isAgentPresent = Boolean.getBoolean(TelemetryCdiExtension.OTEL_AGENT_PRESENT);
     }
 
     /**
@@ -58,6 +60,10 @@ class WithSpanInterceptor {
      */
     @AroundInvoke
     public Object interceptSpan(InvocationContext context) throws Exception {
+
+        if (isAgentPresent) {
+            return context.proceed();
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Starting new Span on WithSpan annotated method");
