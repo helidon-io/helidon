@@ -41,35 +41,38 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     @Override
-    public <ReqT, RespT> RespT unary(String methodName, ReqT request) {
-        ClientCall<ReqT, RespT> call = ensureMethod(methodName, MethodDescriptor.MethodType.UNARY);
+    public <ReqT, ResT> ResT unary(String methodName, ReqT request) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.UNARY);
         return ClientCalls.blockingUnaryCall(call, request);
     }
 
     @Override
-    public <ReqT, RespT> StreamObserver<ReqT> unary(String methodName, StreamObserver<RespT> response) {
-        return null;
+    public <ReqT, ResT> void unary(String methodName, ReqT request, StreamObserver<ResT> response) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.UNARY);
+        ClientCalls.asyncUnaryCall(call, request, response);
     }
 
     @Override
-    public <ReqT, RespT> Iterator<RespT> serverStream(String methodName, ReqT request) {
-        ClientCall<ReqT, RespT> call = ensureMethod(methodName, MethodDescriptor.MethodType.SERVER_STREAMING);
+    public <ReqT, ResT> Iterator<ResT> serverStream(String methodName, ReqT request) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.SERVER_STREAMING);
         return ClientCalls.blockingServerStreamingCall(call, request);
     }
 
     @Override
-    public <ReqT, RespT> void serverStream(String methodName, ReqT request, StreamObserver<RespT> response) {
+    public <ReqT, ResT> void serverStream(String methodName, ReqT request, StreamObserver<ResT> response) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.SERVER_STREAMING);
+        ClientCalls.asyncServerStreamingCall(call, request, response);
     }
 
     @Override
-    public <ReqT, RespT> RespT clientStream(String methodName, Iterator<ReqT> request) {
-        ClientCall<ReqT, RespT> call = ensureMethod(methodName, MethodDescriptor.MethodType.CLIENT_STREAMING);
-        CompletableFuture<RespT> future = new CompletableFuture<>();
+    public <ReqT, ResT> ResT clientStream(String methodName, Iterator<ReqT> request) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.CLIENT_STREAMING);
+        CompletableFuture<ResT> future = new CompletableFuture<>();
         StreamObserver<ReqT> observer = ClientCalls.asyncClientStreamingCall(call, new StreamObserver<>() {
-            private RespT value;
+            private ResT value;
 
             @Override
-            public void onNext(RespT value) {
+            public void onNext(ResT value) {
                 this.value = value;
             }
 
@@ -99,19 +102,20 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     @Override
-    public <ReqT, RespT> StreamObserver<ReqT> clientStream(String methodName, StreamObserver<RespT> response) {
-        return null;
+    public <ReqT, ResT> StreamObserver<ReqT> clientStream(String methodName, StreamObserver<ResT> response) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.CLIENT_STREAMING);
+        return ClientCalls.asyncClientStreamingCall(call, response);
     }
 
     @Override
-    public <ReqT, RespT> Iterator<RespT> bidi(String methodName, Iterator<ReqT> request) {
-        ClientCall<ReqT, RespT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
-        CompletableFuture<Iterator<RespT>> future = new CompletableFuture<>();
+    public <ReqT, ResT> Iterator<ResT> bidi(String methodName, Iterator<ReqT> request) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
+        CompletableFuture<Iterator<ResT>> future = new CompletableFuture<>();
         StreamObserver<ReqT> observer = ClientCalls.asyncBidiStreamingCall(call, new StreamObserver<>() {
-            private final List<RespT> values = new ArrayList<>();
+            private final List<ResT> values = new ArrayList<>();
 
             @Override
-            public void onNext(RespT value) {
+            public void onNext(ResT value) {
                 values.add(value);
             }
 
@@ -141,11 +145,12 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     @Override
-    public <ReqT, RespT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<RespT> response) {
-        return null;
+    public <ReqT, ResT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<ResT> response) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
+        return ClientCalls.asyncBidiStreamingCall(call, response);
     }
 
-    private <ReqT, RespT> ClientCall<ReqT, RespT> ensureMethod(String methodName, MethodDescriptor.MethodType methodType) {
+    private <ReqT, ResT> ClientCall<ReqT, ResT> ensureMethod(String methodName, MethodDescriptor.MethodType methodType) {
         GrpcClientMethodDescriptor method = descriptor.method(methodName);
         if (!method.type().equals(methodType)) {
             throw new IllegalArgumentException("Method " + methodName + " is of type " + method.type()

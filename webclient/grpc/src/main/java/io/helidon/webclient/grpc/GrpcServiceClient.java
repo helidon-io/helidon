@@ -33,19 +33,19 @@ public interface GrpcServiceClient {
      */
     String serviceName();
 
-    <ReqT, RespT> RespT unary(String methodName, ReqT request);
+    <ReqT, ResT> ResT unary(String methodName, ReqT request);
 
-    <ReqT, RespT> StreamObserver<ReqT> unary(String methodName, StreamObserver<RespT> response);
+    <ReqT, ResT> void unary(String methodName, ReqT request, StreamObserver<ResT> response);
 
-    <ReqT, RespT> Iterator<RespT> serverStream(String methodName, ReqT request);
+    <ReqT, ResT> Iterator<ResT> serverStream(String methodName, ReqT request);
 
-    <ReqT, RespT> void serverStream(String methodName, ReqT request, StreamObserver<RespT> response);
+    <ReqT, ResT> void serverStream(String methodName, ReqT request, StreamObserver<ResT> response);
 
-    <ReqT, RespT> RespT clientStream(String methodName, Iterator<ReqT> request);
+    <ReqT, ResT> ResT clientStream(String methodName, Iterator<ReqT> request);
 
-    <ReqT, RespT> StreamObserver<ReqT> clientStream(String methodName, StreamObserver<RespT> response);
+    <ReqT, ResT> StreamObserver<ReqT> clientStream(String methodName, StreamObserver<ResT> response);
 
-    <ReqT, RespT> Iterator<RespT> bidi(String methodName, Iterator<ReqT> request);
+    <ReqT, ResT> Iterator<ResT> bidi(String methodName, Iterator<ReqT> request);
 
-    <ReqT, RespT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<RespT> response);
+    <ReqT, ResT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<ResT> response);
 }

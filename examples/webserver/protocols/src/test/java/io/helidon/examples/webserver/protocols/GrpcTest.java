@@ -16,9 +16,14 @@
 
 package io.helidon.examples.webserver.protocols;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.google.protobuf.StringValue;
 import io.grpc.stub.StreamObserver;
@@ -37,11 +42,36 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class GrpcTest {
+    private static final long TIMEOUT_SECONDS = 10;
 
     private final GrpcClient grpcClient;
+    private final GrpcServiceDescriptor serviceDescriptor;
 
     private GrpcTest(GrpcClient grpcClient) {
         this.grpcClient = grpcClient;
+        this.serviceDescriptor = GrpcServiceDescriptor.builder()
+                .serviceName("StringService")
+                .putMethod("Upper",
+                        GrpcClientMethodDescriptor.unary("StringService", "Upper")
+                                .requestType(StringValue.class)
+                                .responseType(StringValue.class)
+                                .build())
+                .putMethod("Split",
+                        GrpcClientMethodDescriptor.serverStreaming("StringService", "Split")
+                                .requestType(StringValue.class)
+                                .responseType(StringValue.class)
+                                .build())
+                .putMethod("Join",
+                        GrpcClientMethodDescriptor.clientStreaming("StringService", "Join")
+                                .requestType(StringValue.class)
+                                .responseType(StringValue.class)
+                                .build())
+                .putMethod("Echo",
+                        GrpcClientMethodDescriptor.bidirectional("StringService", "Echo")
+                                .requestType(StringValue.class)
+                                .responseType(StringValue.class)
+                                .build())
+                .build();
     }
 
     @SetUpServer
@@ -64,6 +94,8 @@ class GrpcTest {
                         "Echo",
                         GrpcTest::echo));
     }
+
+    // -- gRPC server methods --
 
     private static Strings.StringMessage upper(Strings.StringMessage reqT) {
         return Strings.StringMessage.newBuilder()
@@ -114,8 +146,6 @@ class GrpcTest {
 
     private static StreamObserver<Strings.StringMessage> echo(StreamObserver<Strings.StringMessage> streamObserver) {
         return new StreamObserver<>() {
-            private StringBuilder builder;
-
             @Override
             public void onNext(Strings.StringMessage value) {
                 streamObserver.onNext(value);
@@ -133,77 +163,134 @@ class GrpcTest {
         };
     }
 
+    // -- Tests --
+
     @Test
     void testUnaryUpper() {
-        GrpcServiceDescriptor serviceDescriptor =
-                GrpcServiceDescriptor.builder()
-                        .serviceName("StringService")
-                        .putMethod("Upper",
-                                GrpcClientMethodDescriptor.unary("StringService", "Upper")
-                                        .requestType(StringValue.class)
-                                        .responseType(StringValue.class)
-                                        .build())
-                        .build();
-
-        StringValue r = grpcClient.serviceClient(serviceDescriptor)
+        StringValue res = grpcClient.serviceClient(serviceDescriptor)
                 .unary("Upper", StringValue.of("hello"));
-        assertThat(r.getValue(), is("HELLO"));
+        assertThat(res.getValue(), is("HELLO"));
+    }
+
+    @Test
+    void testUnaryUpperAsync() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<StringValue> future = new CompletableFuture<>();
+        grpcClient.serviceClient(serviceDescriptor)
+                .unary("Upper",
+                        StringValue.of("hello"),
+                        singleStreamObserver(future));
+        StringValue res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertThat(res.getValue(), is("HELLO"));
     }
 
     @Test
     void testServerStreamingSplit() {
-        GrpcServiceDescriptor serviceDescriptor =
-                GrpcServiceDescriptor.builder()
-                        .serviceName("StringService")
-                        .putMethod("Split",
-                                GrpcClientMethodDescriptor.serverStreaming("StringService", "Split")
-                                        .requestType(StringValue.class)
-                                        .responseType(StringValue.class)
-                                        .build())
-                        .build();
+        Iterator<StringValue> res = grpcClient.serviceClient(serviceDescriptor)
+                .serverStream("Split",
+                               StringValue.of("hello world"));
+        assertThat(res.next().getValue(), is("hello"));
+        assertThat(res.next().getValue(), is("world"));
+        assertThat(res.hasNext(), is(false));
+    }
 
-        Iterator<StringValue> r = grpcClient.serviceClient(serviceDescriptor)
-                .serverStream("Split", StringValue.of("hello world"));
-        assertThat(r.next().getValue(), is("hello"));
-        assertThat(r.next().getValue(), is("world"));
-        assertThat(r.hasNext(), is(false));
+    @Test
+    void testServerStreamingSplitAsync() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<Iterator<StringValue>> future = new CompletableFuture<>();
+        grpcClient.serviceClient(serviceDescriptor)
+                .serverStream("Split",
+                        StringValue.of("hello world"),
+                        multiStreamObserver(future));
+        Iterator<StringValue> res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertThat(res.next().getValue(), is("hello"));
+        assertThat(res.next().getValue(), is("world"));
+        assertThat(res.hasNext(), is(false));
     }
 
     @Test
     void testClientStreamingJoin() {
-        GrpcServiceDescriptor serviceDescriptor =
-                GrpcServiceDescriptor.builder()
-                        .serviceName("StringService")
-                        .putMethod("Join",
-                                GrpcClientMethodDescriptor.clientStreaming("StringService", "Join")
-                                        .requestType(StringValue.class)
-                                        .responseType(StringValue.class)
-                                        .build())
-                        .build();
-
-        StringValue r = grpcClient.serviceClient(serviceDescriptor)
+        StringValue res = grpcClient.serviceClient(serviceDescriptor)
                 .clientStream("Join", List.of(StringValue.of("hello"),
-                                                          StringValue.of("world")).iterator());
-        assertThat(r.getValue(), is("hello world"));
+                        StringValue.of("world")).iterator());
+        assertThat(res.getValue(), is("hello world"));
+    }
+
+    @Test
+    void testClientStreamingJoinAsync() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<StringValue> future = new CompletableFuture<>();
+        StreamObserver<StringValue> req = grpcClient.serviceClient(serviceDescriptor)
+                .clientStream("Join", singleStreamObserver(future));
+        req.onNext(StringValue.of("hello"));
+        req.onNext(StringValue.of("world"));
+        req.onCompleted();
+        StringValue res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertThat(res.getValue(), is("hello world"));
     }
 
     @Test
     void testBidirectionalEcho() {
-        GrpcServiceDescriptor serviceDescriptor =
-                GrpcServiceDescriptor.builder()
-                        .serviceName("StringService")
-                        .putMethod("Echo",
-                                GrpcClientMethodDescriptor.bidirectional("StringService", "Echo")
-                                        .requestType(StringValue.class)
-                                        .responseType(StringValue.class)
-                                        .build())
-                        .build();
-
-        Iterator<StringValue> r = grpcClient.serviceClient(serviceDescriptor)
+        Iterator<StringValue> res = grpcClient.serviceClient(serviceDescriptor)
                 .bidi("Echo", List.of(StringValue.of("hello"),
-                                                  StringValue.of("world")).iterator());
-        assertThat(r.next().getValue(), is("hello"));
-        assertThat(r.next().getValue(), is("world"));
-        assertThat(r.hasNext(), is(false));
+                        StringValue.of("world")).iterator());
+        assertThat(res.next().getValue(), is("hello"));
+        assertThat(res.next().getValue(), is("world"));
+        assertThat(res.hasNext(), is(false));
+    }
+
+    @Test
+    void testBidirectionalEchoAsync() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<Iterator<StringValue>> future = new CompletableFuture<>();
+        StreamObserver<StringValue> req = grpcClient.serviceClient(serviceDescriptor)
+                .bidi("Echo", multiStreamObserver(future));
+        req.onNext(StringValue.of("hello"));
+        req.onNext(StringValue.of("world"));
+        req.onCompleted();
+        Iterator<StringValue> res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertThat(res.next().getValue(), is("hello"));
+        assertThat(res.next().getValue(), is("world"));
+        assertThat(res.hasNext(), is(false));
+    }
+
+    // -- Utility methods --
+
+    private static <ReqT> StreamObserver<ReqT> singleStreamObserver(CompletableFuture<ReqT> future) {
+        return new StreamObserver<>() {
+            private ReqT value;
+
+            @Override
+            public void onNext(ReqT value) {
+                this.value = value;
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                future.completeExceptionally(t);
+            }
+
+            @Override
+            public void onCompleted() {
+                future.complete(value);
+            }
+        };
+    }
+
+    private static <ResT> StreamObserver<ResT> multiStreamObserver(CompletableFuture<Iterator<ResT>> future) {
+        return new StreamObserver<>() {
+            private final List<ResT> value = new ArrayList<>();
+
+            @Override
+            public void onNext(ResT value) {
+                this.value.add(value);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                future.completeExceptionally(t);
+            }
+
+            @Override
+            public void onCompleted() {
+                future.complete(value.iterator());
+            }
+        };
     }
 }
