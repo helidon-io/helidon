@@ -83,6 +83,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     private final Tracer tracer;
     private final OpenTelemetry openTelemetry;
+    private final boolean isAgentPresent;
 
 
     @jakarta.ws.rs.core.Context
@@ -92,12 +93,17 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     HelidonTelemetryContainerFilter(Tracer tracer, OpenTelemetry openTelemetry, org.eclipse.microprofile.config.Config mpConfig) {
         this.tracer = tracer;
         this.openTelemetry = openTelemetry;
+        isAgentPresent = Boolean.getBoolean(TelemetryCdiExtension.OTEL_AGENT_PRESENT);
 
         mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
+
+        if (isAgentPresent) {
+            return;
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Starting Span in a Container Request");
@@ -131,6 +137,10 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     @Override
     public void filter(final ContainerRequestContext request, final ContainerResponseContext response) {
+
+        if (isAgentPresent) {
+            return;
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Container Request");

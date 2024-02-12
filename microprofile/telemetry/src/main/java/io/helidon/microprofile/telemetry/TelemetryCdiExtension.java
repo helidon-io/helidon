@@ -48,13 +48,8 @@ public class TelemetryCdiExtension implements Extension {
         isAgentPresent = Boolean.getBoolean(OTEL_AGENT_PRESENT);
 
         // Register annotations, interceptors and producers.
-        if (isAgentPresent) {
-            LOGGER.log(System.Logger.Level.TRACE,
-                       () -> "OpenTelemetry agent is present; Helidon will not process @WithSpan or add REST endpoint spans");
-        } else {
-            discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
-            discovery.addAnnotatedType(WithSpanInterceptor.class, WithSpanInterceptor.class.getName());
-        }
+        discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
+        discovery.addAnnotatedType(WithSpanInterceptor.class, WithSpanInterceptor.class.getName());
         discovery.addAnnotatedType(OpenTelemetryProducer.class, OpenTelemetryProducer.class.getName());
     }
 
@@ -64,9 +59,6 @@ public class TelemetryCdiExtension implements Extension {
      * @param pat ProcessAnnotatedType
      */
     void processAnnotations(@Observes @WithAnnotations(WithSpan.class) ProcessAnnotatedType<?> pat) {
-        if (isAgentPresent) {
-            return;
-        }
         LOGGER.log(System.Logger.Level.TRACE, () -> "Process WithSpan annotation and add binding" + pat);
 
         var configurator = pat.configureAnnotatedType();

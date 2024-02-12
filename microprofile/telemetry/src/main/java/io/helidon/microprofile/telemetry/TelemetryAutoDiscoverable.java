@@ -30,9 +30,7 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
      */
     @Override
     public void configure(jakarta.ws.rs.core.FeatureContext ctx) {
-        if (!Boolean.getBoolean(TelemetryCdiExtension.OTEL_AGENT_PRESENT)) {
-            ctx.register(HelidonTelemetryContainerFilter.class)
-                    .register(HelidonTelemetryClientFilter.class);
-        }
+        ctx.register(HelidonTelemetryContainerFilter.class)
+                .register(HelidonTelemetryClientFilter.class);
     }
 }
