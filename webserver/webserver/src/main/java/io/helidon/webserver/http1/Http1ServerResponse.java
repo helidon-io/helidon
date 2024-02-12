@@ -106,19 +106,25 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                boolean keepAlive,
                                boolean validateHeaders) {
 
-        if (status != null && status.code() == Status.NO_CONTENT_204.code()) {
+        status = status == null ? Status.OK_200 : status;
+
+        if (status.code() == Status.NO_CONTENT_204.code()
+            || status.code() == Status.RESET_CONTENT_205.code()
+            || status.code() == Status.NOT_MODIFIED_304.code()) {
             // https://www.rfc-editor.org/rfc/rfc9110#status.204
             // A 204 response is terminated by the end of the header section; it cannot contain content or trailers
+            // ditto for 205, and 304
             if ((headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO))
                          || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                 status = Status.INTERNAL_SERVER_ERROR_500;
-                LOGGER.log(System.Logger.Level.ERROR, "Attempt to send status 204 No-Content with entity. Server responded"
-                        + " with Internal Server Error. Please fix your routing, this is not allowed by HTTP specification.");
+                LOGGER.log(System.Logger.Level.ERROR, "Attempt to send status " + status.text() + " with entity."
+                        + " Server responded with Internal Server Error. Please fix your routing, this is not allowed "
+                        + "by HTTP specification, such responses MUST NOT contain an entity.");
             }
         }
 
         // first write status
-        if (status == null || status == Status.OK_200) {
+        if (status == Status.OK_200) {
             buffer.write(OK_200);
         } else {
             buffer.write(HTTP_BYTES);
