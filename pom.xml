@@ -65,7 +65,7 @@
         <version.lib.sigtest>1.4</version.lib.sigtest>
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.0.12</version.lib.microprofile-cdi-tck>
-        <version.lib.microprofile-restful-tck>3.1.4</version.lib.microprofile-restful-tck>
+        <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.jsoup>1.15.3</version.lib.jsoup>

@@ -127,10 +127,6 @@
                     <includes>
                         <include>*IT.java</include>
                     </includes>
-                    <excludes>
-                        <!-- TCK Challenge: https://github.com/jakartaee/rest/issues/1199 -->
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/container/responsecontext/JAXRSClientIT.java</exclude>
-                    </excludes>
                     <systemPropertyVariables>
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>
