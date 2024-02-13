@@ -57,7 +57,9 @@ include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=accessing-endpoin
 
 Helidon provides no special API for dealing with Micrometer meters and meter registries beyond what Micrometer offers itself.
 
-Helidon _does_ give you an easy way to expose a REST endpoint to report the meters stored in the Micrometer meter registry. The link:{micrometer-javadoc-base-url}/io/helidon/integrations/micrometer/MicrometerSupport.html[`MicrometerSupport`] interface exposes static methods to directly create an instance of `MicrometerSupport` and to return a link:{micrometer-javadoc-base-url}/io/helidon/integrations/micrometer/MicrometerSupport.Builder.html[`Builder`] instance so your code can fine-tune how the REST service behaves.
+Helidon _does_ give you an easy way to expose a REST endpoint to report the meters stored in the Micrometer meter registry. The link:{micrometer-javadoc-base-url}/io/helidon/integrations/micrometer/MicrometerSupport.html[`MicrometerSupport`] interface
+exposes static methods to directly create an instance of `MicrometerSupport` and to return a link:{micrometer-javadoc-base-url}/io/helidon/integrations/micrometer/MicrometerSupport.Builder.html[`Builder`] instance so your
+code can fine-tune how the REST service behaves.
 
 // Configuration
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=configuring-endpoint]
