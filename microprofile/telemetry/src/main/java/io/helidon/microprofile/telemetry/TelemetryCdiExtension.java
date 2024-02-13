@@ -28,11 +28,6 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
  */
 public class TelemetryCdiExtension implements Extension {
 
-    /**
-     * Property name indicating the presence of the OpenTelemetry Java agent.
-     */
-    static final String OTEL_AGENT_PRESENT = "otel.agent.present";
-
     private static final System.Logger LOGGER = System.getLogger(TelemetryCdiExtension.class.getName());
 
     /**

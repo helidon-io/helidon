@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,17 @@ import static io.opentelemetry.context.Context.current;
  */
 public final class HelidonOpenTelemetry {
 
+    /**
+     * OpenTelemetry property for indicating if the Java agent is present.
+     */
+    public static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
+
+    /**
+     * OpenTelemetry property for the Java agent.
+     */
+    public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
+
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
-    private static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
-    private static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
     private HelidonOpenTelemetry() {
     }
     /**
