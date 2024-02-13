@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-= Oracle Cloud Infrastructure Integration
+= Oracle Cloud Infrastructure
 :description: Helidon OCI Integration
-:keywords: oci, cdi
+:keywords: oci, cdi, Oracle Cloud Infrastructure
 :feature-name: OCI Integration
 :rootdir: {docdir}/../..
 
@@ -35,7 +35,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.`
+Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
 
 include::{rootdir}/includes/dependencies.adoc[]
 

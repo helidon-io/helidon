@@ -89,14 +89,7 @@ Here is one of the endpoints, annotated for OpenAPI, from the example mentioned 
 
 [source,java]
 ----
-@GET
-@Operation(summary = "Returns a generic greeting", // <1>
-        description = "Greets the user generically")
-@APIResponse(description = "Simple JSON containing the greeting", // <2>
-        content = @Content(mediaType = "application/json",
-                           schema = @Schema(implementation = GreetingMessage.class)))
-@Produces(MediaType.APPLICATION_JSON)
-public JsonObject getDefaultMessage() {...}
+include::{sourcedir}/includes/openapi/OpenapiSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> `@Operation` gives information about this endpoint.
 <2> `@APIResponse` describes the HTTP response and declares its media type and contents.

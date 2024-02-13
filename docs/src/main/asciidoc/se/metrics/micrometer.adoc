@@ -36,7 +36,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Register an Instance of MicrometerSupport with the Web Server, Register an Instance of MicrometerSupport with the Web Server>>
 ** <<Create and Update Meters in Your Application Service, Create and Update Meters in Your Application Service>>
  - <<Additional Information, Additional Information>>
-
+`
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=intro]
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=prereq]
 

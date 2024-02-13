@@ -16,9 +16,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Oracle Cloud Infrastructure Integration
+= Oracle Cloud Infrastructure
 :description: Helidon OCI Integration
-:keywords: oci
+:keywords: oci, Oracle Cloud Infrastructure
 :feature-name: OCI Integration
 :rootdir: {docdir}/../..
 
@@ -75,7 +75,7 @@ ODI SDK clients you will use.
 
 This example describes how to access OCI Object Storage.
 
-As mentioned above in <<_accessing_oci_services>>, you need to add a dependency on the OCI SDK
+As mentioned above in <<Accessing OCI Services>>, you need to add a dependency on the OCI SDK
 Object Storage API:
 
 [source,xml]

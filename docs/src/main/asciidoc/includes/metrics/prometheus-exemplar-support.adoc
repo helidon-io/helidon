@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ ifndef::se-flavor[:metrics-endpoint: /metrics]
 A meter typically reflects the usage of a _single_ point in your service which processes _multiple_ requests over time.
 A value such as the total time consumed by a given REST endpoint which can be invoked multiple times underscores the aggregate nature of meter values; Helidon accumulates the time from all requests in the total duration.
 
+// suppress inspection "GrazieInspection"
 Tracing, on the other hand, captures the usage of _multiple_ parts of your code as your service responds to a _single_ request.
 
 Metrics and tracing come together in Helidon's support for exemplars.
