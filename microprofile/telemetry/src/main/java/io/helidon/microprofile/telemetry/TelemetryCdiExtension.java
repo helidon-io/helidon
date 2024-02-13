@@ -28,14 +28,7 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
  */
 public class TelemetryCdiExtension implements Extension {
 
-    /**
-     * Property name indicating the presence of the OpenTelemetry Java agent.
-     */
-    static final String OTEL_AGENT_PRESENT = "otel.agent.present";
-
     private static final System.Logger LOGGER = System.getLogger(TelemetryCdiExtension.class.getName());
-
-    private boolean isAgentPresent;
 
     /**
      * Add {@code HelidonWithSpan} annotation with interceptor.
@@ -44,8 +37,6 @@ public class TelemetryCdiExtension implements Extension {
      */
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(System.Logger.Level.TRACE, () -> "Before Telemetry bean discovery " + discovery);
-
-        isAgentPresent = Boolean.getBoolean(OTEL_AGENT_PRESENT);
 
         // Register annotations, interceptors and producers.
         discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());

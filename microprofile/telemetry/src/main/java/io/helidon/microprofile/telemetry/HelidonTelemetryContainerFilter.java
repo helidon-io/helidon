@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.context.Contexts;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
@@ -93,7 +95,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     HelidonTelemetryContainerFilter(Tracer tracer, OpenTelemetry openTelemetry, org.eclipse.microprofile.config.Config mpConfig) {
         this.tracer = tracer;
         this.openTelemetry = openTelemetry;
-        isAgentPresent = Boolean.getBoolean(TelemetryCdiExtension.OTEL_AGENT_PRESENT);
+        isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
 
         mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
     }
