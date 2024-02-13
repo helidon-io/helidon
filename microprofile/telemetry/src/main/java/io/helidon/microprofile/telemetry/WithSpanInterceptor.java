@@ -18,6 +18,9 @@ package io.helidon.microprofile.telemetry;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
+import io.helidon.config.Config;
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
+
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
@@ -46,9 +49,9 @@ class WithSpanInterceptor {
     private final boolean isAgentPresent;
 
     @Inject
-    WithSpanInterceptor(Tracer tracer) {
+    WithSpanInterceptor(Tracer tracer, Config config) {
         this.tracer = tracer;
-        isAgentPresent = Boolean.getBoolean(TelemetryCdiExtension.OTEL_AGENT_PRESENT);
+        isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
     }
 
     /**
