@@ -37,7 +37,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.inject.CreationException;
 import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import jakarta.enterprise.util.TypeLiteral;
 import jakarta.inject.Named;
@@ -48,16 +47,20 @@ import oracle.ucp.jdbc.PoolXADataSource;
 import oracle.ucp.jdbc.PoolXADataSourceImpl;
 
 /**
- * An {@link Extension} that arranges for named {@link DataSource} injection points to be satisfied by the <a
- * href="https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/index.html">Oracle Universal Connection
- * Pool</a>.
+ * An {@link AbstractDataSourceExtension} that arranges for named {@link DataSource} injection points to be satisfied by
+ * the <a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html">Oracle Universal
+ * Connection Pool</a>.
  *
  * <p>In accordance with the CDI specification, instances of this class are not necessarily safe for concurrent use by
  * multiple threads.</p>
  */
 public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
 
-    private static final Pattern DATASOURCE_NAME_PATTERN =
+    /**
+     * A {@link Pattern} capable of producing {@link Matcher} instances that identify certain portions of a
+     * configuration property name.
+     */
+    static final Pattern DATASOURCE_NAME_PATTERN =
         Pattern.compile("^(?:javax\\.sql\\.|oracle\\.ucp\\.jdbc\\.Pool)(XA)?DataSource\\.([^.]+)\\.(.*)$");
     // Capturing groups:                                               (1 )              (2    )   (3 )
     //                                                                 Are we XA?        DS name   DS Property
@@ -66,7 +69,10 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
 
     /**
      * Creates a new {@link UCPBackedDataSourceExtension}.
+     *
+     * @deprecated For use by CDI only.
      */
+    @Deprecated // For use by CDI only
     public UCPBackedDataSourceExtension() {
         super();
         this.xa = new HashMap<>();

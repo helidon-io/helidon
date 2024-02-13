@@ -30,6 +30,7 @@
     <name>Helidon CDI Integrations Common</name>
 
     <modules>
+        <module>configurable</module>
         <module>delegates</module>
         <module>reference-counted-context</module>
     </modules>
