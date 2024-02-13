@@ -39,6 +39,49 @@ import oracle.ucp.jdbc.PoolDataSource;
  * An {@link AbstractConfigurableExtension} that provides injection support for {@link UniversalConnectionPoolManager}
  * and {@link UniversalConnectionPool} instances.
  *
+ * <p>As with all portable extensions, to begin to make use of the features enabled by this class, ensure its containing
+ * artifact (normally a jar file) is on the classpath of your CDI-enabled application.</p>
+ *
+ * <p>To support injection of the {@link UniversalConnectionPoolManager}, use normal CDI injection idioms:</p>
+ *
+ * {@snippet :
+ *   // Inject the UniversalConnectionPoolManager into a private field named ucpManager:
+ *   @jakarta.inject.Inject
+ *   private oracle.ucp.admin.UniversalConnectionPoolManager ucpManager;
+ *   }
+ *
+ * <p>To support injection of a {@link UniversalConnectionPool} named {@code test}, first ensure that enough MicroProfile
+ * Config configuration is present to create a valid {@link PoolDataSource}. For example, the following sample system
+ * properties are sufficient for a {@link PoolDataSource} named {@code test} to be created:</p>
+ *
+ * {@snippet lang="properties" :
+ *   # @link substring="oracle.ucp.jdbc.PoolDataSource" target="PoolDataSource" @link substring="oracle.jdbc.pool.OracleDataSource" target="oracle.jdbc.pool.OracleDataSource" :
+ *   oracle.ucp.jdbc.PoolDataSource.test.connectionFactoryClassName=oracle.jdbc.pool.OracleDataSource
+ *   oracle.ucp.jdbc.PoolDataSource.test.URL=jdbc:oracle:thin://@localhost:1521/XE
+ *   oracle.ucp.jdbc.PoolDataSource.test.user=scott
+ *   oracle.ucp.jdbc.PoolDataSource.test.password=tiger
+ *   }
+ *
+ * <p>See the {@link UCPBackedDataSourceExtension} documentation for more information about how {@link PoolDataSource}
+ * instances are made eligible for injection from configuration such as this.</p>
+ *
+ * <p>With configuration such as the above, you can now inject the implicit {@link UniversalConnectionPool} it also
+ * defines:</p>
+ *
+ * {@snippet :
+ *   // Inject a UniversalConnectionPool whose getName() method returns test into a private field named ucp:
+ *   @jakarta.inject.Inject
+ *   @jakarta.inject.Named("test")
+ *   private oracle.ucp.UniversalConnectionPool ucp; // assert "test".equals(ucp.getName());
+ *   }
+ *
+ * <p><strong>Note:</strong> Working directly with a {@link UniversalConnectionPool} is for advanced use cases
+ * only. Injecting and working with {@link PoolDataSource} instances is much more common, and {@link PoolDataSource} is
+ * the interface recommended by Oracle's documentation for users to interact with. See {@link
+ * UCPBackedDataSourceExtension}'s documentation for more details.</p>
+ *
+ * @see UniversalConnectionPool
+ *
  * @see UCPBackedDataSourceExtension
  */
 public class UniversalConnectionPoolExtension extends AbstractConfigurableExtension<UniversalConnectionPool> {

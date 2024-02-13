@@ -165,6 +165,8 @@
         <javadoc.link.narayana>https://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
         <javadoc.link.hibernate>https://docs.jboss.org/hibernate/orm/${version.lib.hibernate.family}/javadocs/</javadoc.link.hibernate>
+        <javadoc.link.ojdbc>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jajdb/</javadoc.link.ojdbc>
+        <javadoc.link.ucp>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jjuar/</javadoc.link.ucp>
 
         <javadoc.jackson.version>2.14</javadoc.jackson.version>
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
@@ -398,6 +400,14 @@
                             <offlineLink>
                                 <url>${javadoc.link.hibernate}</url>
                                 <location>${javadoc.pkg.dir}/hibernate</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.ojdbc}</url>
+                                <location>${javadoc.pkg.dir}/ojdbc</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.ucp}</url>
+                                <location>${javadoc.pkg.dir}/ucp</location>
                             </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">

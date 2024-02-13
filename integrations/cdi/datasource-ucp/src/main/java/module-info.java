@@ -26,6 +26,7 @@
 @SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.datasource.ucp.cdi {
 
+    requires com.oracle.database.jdbc; // com.oracle.database.ucp needs this (!)
     requires com.oracle.database.ucp;
     requires java.desktop; // For java.beans
     requires java.naming; // PoolDataSourceImpl implements javax.naming.Referenceable
