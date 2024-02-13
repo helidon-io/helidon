@@ -16,24 +16,17 @@
 
 package io.helidon.service.inject.tests.lookup;
 
-import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionServices;
-import io.helidon.inject.RequestScopeControl;
-import io.helidon.inject.Scope;
-import io.helidon.inject.Services;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.ServiceInfo;
-import io.helidon.inject.service.ServiceInstance;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.InjectServiceInfo;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.RequestScopeControl;
+import io.helidon.service.inject.api.Scope;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -44,8 +37,6 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -56,28 +47,29 @@ import static org.hamcrest.Matchers.hasSize;
 class AllScopesLookupTest {
     private static final Lookup LOOKUP = Lookup.create(ContractCommon.class);
     private static final Class<ContractCommon> CONTRACT = ContractCommon.class;
-    private static final Lookup LOOKUP_NO_IP_PROVIDER = Lookup.builder()
-            .addContract(ContractNoIpProvider.class)
-            .build();
-    private static InjectionServices injectionServices;
-    private static Services services;
+
+    private static InjectRegistryManager registryManager;
+    private static InjectRegistry registry;
+
     private Scope requestScope;
 
     @BeforeAll
     static void init() {
-        injectionServices = InjectionServices.create();
-        services = injectionServices.services();
+        registryManager = InjectRegistryManager.create();
+        registry = registryManager.registry();
     }
 
     @AfterAll
     static void shutdown() {
-        InjectionTestingSupport.shutdown(injectionServices);
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
     @BeforeEach
     void startRequestScope() {
         // we need to have request scope active, so we can access providers from everywhere
-        requestScope = services.get(RequestScopeControl.class)
+        requestScope = registry.get(RequestScopeControl.class)
                 .startRequestScope("unit-test", Map.of());
     }
 
@@ -90,59 +82,59 @@ class AllScopesLookupTest {
 
     @Test
     void getLookupTest() {
-        ContractCommon first = services.get(LOOKUP);
+        ContractCommon first = registry.get(LOOKUP);
         assertThat(first, instanceOf(SingletonSupplierExample.First.class));
     }
 
     @Test
     void getTypeTest() {
-        ContractCommon first = services.get(CONTRACT);
+        ContractCommon first = registry.get(CONTRACT);
         assertThat(first, instanceOf(SingletonSupplierExample.First.class));
     }
 
     @Test
     void firstLookupTest() {
-        Optional<ContractCommon> first = services.first(LOOKUP);
+        Optional<ContractCommon> first = registry.first(LOOKUP);
         checkOptional(first, SingletonSupplierExample.First.class);
     }
 
     @Test
     void firstTypeTest() {
-        Optional<ContractCommon> first = services.first(CONTRACT);
+        Optional<ContractCommon> first = registry.first(CONTRACT);
         checkOptional(first, SingletonSupplierExample.First.class);
     }
 
     @Test
     void allLookupTest() {
-        List<ContractCommon> all = services.all(LOOKUP);
+        List<ContractCommon> all = registry.all(LOOKUP);
 
         assertThat(all, hasSize(12));
     }
 
     @Test
     void allTypeTest() {
-        List<ContractCommon> all = services.all(CONTRACT);
+        List<ContractCommon> all = registry.all(CONTRACT);
 
         assertThat(all, hasSize(12));
     }
 
     @Test
     void supplyLookupTest() {
-        Supplier<ContractCommon> supply = services.supply(LOOKUP);
+        Supplier<ContractCommon> supply = registry.supply(LOOKUP);
         ContractCommon first = supply.get();
         assertThat(first, instanceOf(SingletonSupplierExample.First.class));
     }
 
     @Test
     void supplyTypeTest() {
-        Supplier<ContractCommon> supply = services.supply(CONTRACT);
+        Supplier<ContractCommon> supply = registry.supply(CONTRACT);
         ContractCommon first = supply.get();
         assertThat(first, instanceOf(SingletonSupplierExample.First.class));
     }
 
     @Test
     void supplyFirstLookupTest() {
-        Supplier<Optional<ContractCommon>> supply = services.supplyFirst(LOOKUP);
+        Supplier<Optional<ContractCommon>> supply = registry.supplyFirst(LOOKUP);
 
         Optional<ContractCommon> first = supply.get();
         checkOptional(first, SingletonSupplierExample.First.class);
@@ -150,7 +142,7 @@ class AllScopesLookupTest {
 
     @Test
     void supplyFirstTypeTest() {
-        Supplier<Optional<ContractCommon>> supply = services.supplyFirst(CONTRACT);
+        Supplier<Optional<ContractCommon>> supply = registry.supplyFirst(CONTRACT);
 
         Optional<ContractCommon> first = supply.get();
         checkOptional(first, SingletonSupplierExample.First.class);
@@ -158,7 +150,7 @@ class AllScopesLookupTest {
 
     @Test
     void supplyAllLookupTest() {
-        List<ContractCommon> all = services.<ContractCommon>supplyAll(LOOKUP)
+        List<ContractCommon> all = registry.<ContractCommon>supplyAll(LOOKUP)
                 .get();
 
         assertThat(all, hasSize(12));
@@ -166,30 +158,15 @@ class AllScopesLookupTest {
 
     @Test
     void supplyAllTypeTest() {
-        List<ContractCommon> all = services.supplyAll(CONTRACT)
+        List<ContractCommon> all = registry.supplyAll(CONTRACT)
                 .get();
 
         assertThat(all, hasSize(12));
     }
 
     @Test
-    void lookupInstancesTest() {
-        List<ServiceInstance<ContractCommon>> serviceInstances = services.lookupInstances(LOOKUP);
-        Set<Class<?>> contracts = Set.of(ContractNoIpProvider.class,
-                                         ContractCommon.class);
-        /*
-        Order:
-        1. SingletonSupplierExample (highest weight)
-        2. SingletonDirectExample (alphabet...)
-        3. SingletonInjectionPointExample - no instance, as we do not have a qualifier
-        4. SingletonServicesProviderExample - two qualified instances
-         */
-        assertThat(serviceInstances, hasSize(12));
-    }
-
-    @Test
     void lookupServicesTest() {
-        List<ServiceInfo> serviceDescriptors = services.lookupServices(LOOKUP);
+        List<InjectServiceInfo> serviceDescriptors = registry.lookupServices(LOOKUP);
 
         /*
         Order:
@@ -241,10 +218,10 @@ class AllScopesLookupTest {
                 .addQualifier(SingletonServicesProviderExample.SECOND_QUALI)
                 .build();
 
-        ContractCommon first = services.get(lookup);
+        ContractCommon first = registry.get(lookup);
         assertThat(first, instanceOf(SingletonServicesProviderExample.SecondClass.class));
 
-        ContractCommon second = services.get(lookup);
+        ContractCommon second = registry.get(lookup);
         assertThat(second, sameInstance(first));
     }
 
@@ -255,44 +232,13 @@ class AllScopesLookupTest {
                 .addQualifier(SingletonInjectionPointProviderExample.SECOND_QUALI)
                 .build();
 
-        ContractCommon instance = services.get(lookup);
+        ContractCommon instance = registry.get(lookup);
         assertThat(instance, instanceOf(SingletonInjectionPointProviderExample.SecondClass.class));
-    }
-
-    private void checkInstance(ServiceInstance<ContractCommon> serviceInstance,
-                               Class<? extends ContractCommon> instanceType,
-                               Class<?> serviceType,
-                               Set<Class<?>> contracts,
-                               Set<Class<? extends Annotation>> qualifiers,
-                               double weight) {
-
-        assertThat(serviceInstance, notNullValue());
-        assertThat(serviceInstance.get(), instanceOf(instanceType));
-        assertThat(serviceInstance.serviceType(), is(typeName(serviceType)));
-        assertThat(serviceInstance.contracts(), is(typeNames(contracts)));
-        assertThat(serviceInstance.qualifiers(), is(qualifiers(qualifiers)));
-        assertThat(serviceInstance.weight(), is(weight));
     }
 
     private ContractCommon checkOptional(Optional<ContractCommon> first, Class<?> expectedType) {
         assertThat(first, optionalPresent());
         assertThat(first, optionalValue(instanceOf(expectedType)));
         return first.get();
-    }
-
-    private TypeName typeName(Class<?> type) {
-        return TypeName.create(type);
-    }
-
-    private Set<TypeName> typeNames(Set<Class<?>> types) {
-        return types.stream()
-                .map(TypeName::create)
-                .collect(Collectors.toSet());
-    }
-
-    private Set<Qualifier> qualifiers(Set<Class<? extends Annotation>> qualifiers) {
-        return qualifiers.stream()
-                .map(Qualifier::create)
-                .collect(Collectors.toSet());
     }
 }

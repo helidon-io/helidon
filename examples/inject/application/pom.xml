@@ -68,47 +68,42 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-testing</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-maven-plugin</artifactId>
-                <version>${helidon.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>application-create</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>testCompile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>test-application-create</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <!-- choice of NAMED, NONE, ALL - see PermittedProviderType -->
-                    <permittedProviderType>NAMED</permittedProviderType>
-                    <permittedProviderTypeNames>
-                        <permittedProviderTypeName>io.helidon.examples.inject.providers.BladeProvider</permittedProviderTypeName>
-                    </permittedProviderTypeNames>
-                    <permittedProviderQualifierTypeNames>
-                        <typeName>io.helidon.inject.service.ConfigDriven.ConfigBean</typeName>
-                        <typeName>io.helidon.http.Http.HttpQualified</typeName>
-                    </permittedProviderQualifierTypeNames>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>io.helidon.inject</groupId>-->
+<!--                <artifactId>helidon-inject-maven-plugin</artifactId>-->
+<!--                <version>${helidon.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>compile</id>-->
+<!--                        <phase>compile</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>application-create</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                    <execution>-->
+<!--                        <id>testCompile</id>-->
+<!--                        <phase>test-compile</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>test-application-create</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    &lt;!&ndash; choice of NAMED, NONE, ALL - see PermittedProviderType &ndash;&gt;-->
+<!--                    <permittedProviderType>NAMED</permittedProviderType>-->
+<!--                    <permittedProviderTypeNames>-->
+<!--                        <permittedProviderTypeName>io.helidon.examples.inject.providers.BladeProvider</permittedProviderTypeName>-->
+<!--                    </permittedProviderTypeNames>-->
+<!--                    <permittedProviderQualifierTypeNames>-->
+<!--                        <typeName>io.helidon.inject.service.ConfigDriven.ConfigBean</typeName>-->
+<!--                        <typeName>io.helidon.http.Http.HttpQualified</typeName>-->
+<!--                    </permittedProviderQualifierTypeNames>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>

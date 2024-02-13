@@ -97,7 +97,6 @@ final class LookupSupport {
                     .build();
         }
 
-
         /**
          * The managed services advertised types (i.e., typically its interfaces).
          *

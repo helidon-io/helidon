@@ -44,8 +44,8 @@
             <artifactId>helidon</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject</artifactId>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

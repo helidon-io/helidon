@@ -1371,6 +1371,16 @@
                 <artifactId>helidon-service-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.declarative</groupId>
+                <artifactId>helidon-declarative-webserver-request-scope</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.declarative</groupId>
+                <artifactId>helidon-declarative-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Injection Integrations related -->
             <dependency>

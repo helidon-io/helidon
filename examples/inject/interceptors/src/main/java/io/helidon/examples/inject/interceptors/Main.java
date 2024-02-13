@@ -17,7 +17,7 @@
 package io.helidon.examples.inject.interceptors;
 
 import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
+import io.helidon.service.inject.api.InjectRegistry;
 
 /**
  * Interceptors example.

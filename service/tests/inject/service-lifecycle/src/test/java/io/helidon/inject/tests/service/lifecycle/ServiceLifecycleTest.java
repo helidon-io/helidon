@@ -18,9 +18,8 @@ package io.helidon.inject.tests.service.lifecycle;
 
 import java.util.function.Supplier;
 
-import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Services;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.api.InjectRegistry;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,8 +32,8 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ServiceLifecycleTest {
-    private static InjectionServices injectionServices;
-    private static Services services;
+    private static InjectRegistryManager registryManager;
+    private static InjectRegistry registry;
 
     @BeforeAll
     static void initClass() {
@@ -43,15 +42,17 @@ class ServiceLifecycleTest {
         AServiceContractImpl.INJECTIONS.set(0);
         AServiceContractImpl.INSTANCES.set(0);
 
-        injectionServices = InjectionServices.create();
-        services = injectionServices.services();
+        registryManager = InjectRegistryManager.create();
+        registry = registryManager.registry();
 
-        assertThat(services, notNullValue());
+        assertThat(registry, notNullValue());
     }
 
     @AfterAll
     static void destroyClass() {
-        InjectionTestingSupport.shutdown(injectionServices);
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
     @Test
@@ -59,7 +60,7 @@ class ServiceLifecycleTest {
         // there should be no instances "just" created when registry starts
         assertThat(ASingletonContractImpl.INSTANCES.get(), is(0));
 
-        Supplier<ASingletonContract> supplier = services.supply(ASingletonContract.class);
+        Supplier<ASingletonContract> supplier = registry.supply(ASingletonContract.class);
 
         // there should be no instances created even when I lookup a supplier
         assertThat(ASingletonContractImpl.INSTANCES.get(), is(0));
@@ -74,7 +75,7 @@ class ServiceLifecycleTest {
         assertThat(ASingletonContractImpl.INJECTIONS.get(), is(1));
 
         // now on the next lookup, I should get the same instance
-        supplier = services.supply(ASingletonContract.class);
+        supplier = registry.supply(ASingletonContract.class);
         ASingletonContract secondInstance = supplier.get();
 
         // must be the same
@@ -95,7 +96,7 @@ class ServiceLifecycleTest {
         // there should be no instances "just" created when registry starts
         assertThat(AServiceContractImpl.INSTANCES.get(), is(0));
 
-        Supplier<AServiceContract> supplier = services.supply(AServiceContract.class);
+        Supplier<AServiceContract> supplier = registry.supply(AServiceContract.class);
 
         // there should be no instances created even when I lookup a supplier
         assertThat(AServiceContractImpl.INSTANCES.get(), is(0));
@@ -119,7 +120,7 @@ class ServiceLifecycleTest {
         assertThat(secondInstance, not(sameInstance(instance)));
 
         // now on the next lookup, we should get another instance
-        supplier = services.supply(AServiceContract.class);
+        supplier = registry.supply(AServiceContract.class);
         AServiceContract thirdInstance = supplier.get();
 
         // and another instance created

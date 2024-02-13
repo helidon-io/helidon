@@ -17,9 +17,9 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.service.tests.inject</groupId>
         <artifactId>helidon-service-tests-inject-project</artifactId>
@@ -28,8 +28,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-service-inject-tests-scopes</artifactId>
-    <name>Helidon Service Inject Tests Scopes</name>
+    <artifactId>helidon-service-tests-inject-scopes</artifactId>
+    <name>Helidon Service Tests Inject Scopes</name>
     <description>Tets for injection scopes (Request scope, singleton, dependent)</description>
 
     <dependencies>
@@ -104,20 +104,20 @@
                     </dependency>
                 </dependencies>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>io.helidon.inject</groupId>-->
-<!--                <artifactId>helidon-inject-maven-plugin</artifactId>-->
-<!--                <version>${helidon.version}</version>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>compile</id>-->
-<!--                        <phase>compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>application-create</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>io.helidon.inject</groupId>-->
+            <!--                <artifactId>helidon-inject-maven-plugin</artifactId>-->
+            <!--                <version>${helidon.version}</version>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>compile</id>-->
+            <!--                        <phase>compile</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>application-create</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
         </plugins>
     </build>
 </project>

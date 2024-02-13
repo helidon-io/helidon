@@ -26,7 +26,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.inject.InjectionException;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.inject.service.ServiceRegistry;
 
 @Http.Path("/greet")

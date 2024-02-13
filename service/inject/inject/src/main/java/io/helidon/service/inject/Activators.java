@@ -344,7 +344,7 @@ final class Activators {
         FixedActivator(ServiceProvider<T> provider, T instance) {
             super(provider);
 
-            List<QualifiedInstance<T>> values = List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers()));
+            List<QualifiedInstance<T>> values = List.of(QualifiedInstance.create(instance, provider.serviceInfo().qualifiers()));
             this.instances = Optional.of(values);
         }
 
@@ -621,6 +621,7 @@ final class Activators {
     static class DrivenByActivator<T> extends BaseActivator<T> {
         private final InjectServiceRegistryImpl registry;
         private final TypeName drivenBy;
+        private final Lookup drivenByLookup;
         private List<QualifiedServiceInstance<T>> serviceInstances;
         private List<QualifiedInstance<T>> targetInstances;
 
@@ -629,6 +630,9 @@ final class Activators {
 
             this.registry = registry;
             this.drivenBy = dbd.drivenBy();
+            this.drivenByLookup = Lookup.builder()
+                    .addContract(drivenBy)
+                    .build();
         }
 
         static Map<Dependency, IpPlan<?>> updatePlan(Map<Dependency, IpPlan<?>> injectionPlan,
@@ -679,10 +683,10 @@ final class Activators {
                     .stream()
                     .map(registry::serviceManager)
                     .flatMap(it -> it.activator()
-                            .instances(Lookup.EMPTY)
+                            .instances(drivenByLookup)
                             .stream()
                             .flatMap(List::stream)
-                            .map(qi -> it.registryInstance(Lookup.EMPTY, qi)))
+                            .map(qi -> it.registryInstance(drivenByLookup, qi)))
                     .toList();
 
             serviceInstances = drivingInstances.stream()

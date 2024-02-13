@@ -61,8 +61,8 @@ class ScopedRegistryImpl implements ScopedRegistry {
         for (Map.Entry<ServiceInfo, Object> entry : initialBindings.entrySet()) {
             ServiceInfo key = entry.getKey();
             ServiceProvider provider = new ServiceProvider<>(registry,
-                                                             key,
-                                                             scope);
+                                                             key
+            );
             Object value = entry.getValue();
             Activator<?> fixedService;
 

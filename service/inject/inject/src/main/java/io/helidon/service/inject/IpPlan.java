@@ -24,8 +24,8 @@ import io.helidon.service.registry.ServiceInfo;
  * Injection point plan of injection.
  *
  * @param valueSupplier supplier of the value
- * @param descriptors descriptor(s) used to obtain the value(s) in the supplier
- * @param <T> type of the value
+ * @param descriptors   descriptor(s) used to obtain the value(s) in the supplier
+ * @param <T>           type of the value
  */
 record IpPlan<T>(Supplier<T> valueSupplier,
                  ServiceInfo... descriptors) implements Supplier<T> {

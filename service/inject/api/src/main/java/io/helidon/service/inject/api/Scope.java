@@ -16,7 +16,6 @@
 
 package io.helidon.service.inject.api;
 
-
 /**
  * A scope, such as request scope.
  */

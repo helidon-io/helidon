@@ -19,7 +19,6 @@ package io.helidon.service.tests.inject.qualified.providers;
 import io.helidon.service.inject.InjectConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.tests.inject.qualified.providers.TheService;
 
 import org.junit.jupiter.api.Test;
 

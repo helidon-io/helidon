@@ -53,7 +53,6 @@ public class Status {
     public static final Status CREATED_201 = new Status(201, "Created", true);
     /**
      * 202 Accepted, see <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.3">HTTP/1.1 documentation</a>
-     * .
      */
     public static final Status ACCEPTED_202 = new Status(202, "Accepted", true);
     /**

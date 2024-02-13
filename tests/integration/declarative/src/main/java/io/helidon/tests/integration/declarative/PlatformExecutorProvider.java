@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 /**
  * Injection provider that provides a "platform" executor.

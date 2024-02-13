@@ -4,7 +4,7 @@ import java.util.List;
 
 import io.helidon.config.Config;
 import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
+import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpFeature;
 

@@ -17,7 +17,7 @@
 package io.helidon.tests.integration.declarative;
 
 import io.helidon.http.Http;
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 
 @Injection.Singleton
 @Http.Path("/admin")

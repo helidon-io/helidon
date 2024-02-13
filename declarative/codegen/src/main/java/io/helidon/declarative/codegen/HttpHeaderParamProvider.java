@@ -1,0 +1,87 @@
+package io.helidon.declarative.codegen;
+
+import java.util.List;
+import java.util.Optional;
+
+import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeName;
+import io.helidon.declarative.codegen.spi.HttpParameterCodegenProvider;
+
+import static io.helidon.codegen.CodegenUtil.toConstantName;
+import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_HEADER_NAME;
+import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_HEADER_NAMES;
+import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_HEADER_PARAM_ANNOTATION;
+
+class HttpHeaderParamProvider extends AbstractParametersProvider implements HttpParameterCodegenProvider {
+    @Override
+    public boolean codegen(List<Annotation> parameterAnnotations,
+                           TypeName parameterType,
+                           ClassModel.Builder classBuilder,
+                           ContentBuilder<?> contentBuilder,
+                           String serverRequestParamName,
+                           String serverResponseParamName,
+                           int methodIndex,
+                           int paramIndex) {
+
+        Optional<Annotation> first = parameterAnnotations.stream()
+                .filter(it -> HTTP_HEADER_PARAM_ANNOTATION.equals(it.typeName()))
+                .findFirst();
+
+        if (first.isEmpty()) {
+            return false;
+        }
+        Annotation headerParam = first.get();
+        String headerParamName = headerParam.value()
+                .orElseThrow(() -> new CodegenException("@HeaderParam annotation must have a value."));
+
+        String headerConstantName = toConstantName("header_" + headerParamName + "_" + methodIndex + "_" + paramIndex);
+
+        // add the header name constant
+        classBuilder.addField(header -> header
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .type(HTTP_HEADER_NAME)
+                .name(headerConstantName)
+                .addContent(HTTP_HEADER_NAMES)
+                .addContent(".create(\"")
+                .addContent(headerParamName)
+                .addContent("\")"));
+
+        contentBuilder.addContent(serverRequestParamName)
+                .addContent(".headers()");
+
+        // add generated code to obtain the header from request
+        if (parameterType.isOptional()) {
+            TypeName realType = parameterType.typeArguments().getFirst();
+            contentBuilder.addContent(".contains(")
+                    .addContent(headerConstantName)
+                    .addContentLine(")")
+                    .addContent("? ")
+                    .addContent(Optional.class)
+                    .addContent(".of(")
+                    .addContent(serverRequestParamName)
+                    .addContent(".headers().get(")
+                    .addContent(headerConstantName)
+                    .addContent(").");
+            getMethod(contentBuilder, realType);
+            contentBuilder.addContentLine(")")
+                    .addContent(":")
+                    .addContent(Optional.class)
+                    .addContent(".empty();");
+        } else {
+            contentBuilder.addContent(".get(")
+                    .addContent(headerConstantName)
+                    .addContent(").");
+            getMethod(contentBuilder, parameterType);
+            contentBuilder.addContent(";");
+        }
+
+        return true;
+    }
+
+}

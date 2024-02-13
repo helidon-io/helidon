@@ -7,6 +7,8 @@ import io.helidon.service.registry.GeneratedService.Descriptor;
 
 interface ServiceMetadata {
     double weight();
+
     Set<TypeName> contracts();
+
     Descriptor<?> descriptor();
 }

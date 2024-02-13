@@ -211,6 +211,11 @@ class LoomServer implements WebServer {
         deregisterShutdownHook();
     }
 
+    @Injection.PostConstruct
+    void postConstruct() {
+        start();
+    }
+
     private void startIt() {
         long now = System.currentTimeMillis();
         // make sure we do not allow runtime without JEP-290 enforcement

@@ -7,7 +7,10 @@ import io.helidon.common.types.TypeName;
 
 public interface DescriptorClassCode {
     ClassCode classCode();
+
     String registryType();
+
     double weight();
+
     Set<TypeName> contracts();
 }

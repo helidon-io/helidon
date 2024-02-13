@@ -15,5 +15,6 @@ public interface ServiceRegistryManager {
     }
 
     ServiceRegistry registry();
+
     void shutdown();
 }

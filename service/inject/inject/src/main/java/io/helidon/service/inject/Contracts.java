@@ -24,7 +24,6 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.ServiceInfo;
 
 /*

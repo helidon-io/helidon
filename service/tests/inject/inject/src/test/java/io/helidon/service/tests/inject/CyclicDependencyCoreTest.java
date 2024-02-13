@@ -30,10 +30,10 @@ public class CyclicDependencyCoreTest {
     @Test
     public void testCyclicDependency() {
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
-                                                                                              .discoverServices(false)
-                                                                                              .addServiceDescriptor(new Descriptor1())
-                                                                                              .addServiceDescriptor(new Descriptor2())
-                                                                                              .build());
+                                                                               .discoverServices(false)
+                                                                               .addServiceDescriptor(new Descriptor1())
+                                                                               .addServiceDescriptor(new Descriptor2())
+                                                                               .build());
 
         try {
             ServiceRegistry registry = manager.registry();

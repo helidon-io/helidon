@@ -16,7 +16,7 @@
 
 package io.helidon.inject.tests.service.lifecycle;
 
-import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.Service;
 
 @Service.Contract
 interface ASingletonContract {

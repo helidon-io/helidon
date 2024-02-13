@@ -17,9 +17,9 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.service.tests</groupId>
         <artifactId>helidon-service-tests-project</artifactId>
@@ -36,11 +36,14 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>inject</module>
+        <module>service-lifecycle</module>
         <module>lookup</module>
+        <module>inject</module>
+        <module>interception</module>
         <module>qualified-providers</module>
         <module>scopes</module>
-        <module>service-lifecycle</module>
+        <module>stacking</module>
+        <module>toolbox</module>
         <module>config-driven</module>
     </modules>
 </project>

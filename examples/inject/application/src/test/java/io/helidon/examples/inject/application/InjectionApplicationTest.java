@@ -20,8 +20,8 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.inject.InjectionConfig;
 import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.inject.api.InjectRegistry;
+
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -29,16 +29,18 @@ import org.junit.jupiter.api.Test;
 class InjectionApplicationTest {
 
     protected static ManagedRegistry injectionServices;
-    protected static Services services;
+    protected static InjectRegistry registry;
 
     @AfterAll
     static void tearDown() {
-        InjectionTestingSupport.shutdown(injectionServices);
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
     protected void resetWith(Config config) {
         tearDown();
-        injectionServices = ManagedRegistry.create(InjectionConfig.builder()
+        injectionServices = ManagedRegistry.create(InjectConfig.builder()
                                                           .serviceConfig(config)
                                                           .build());
         services = injectionServices.registry();

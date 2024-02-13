@@ -10,7 +10,7 @@ import io.helidon.common.types.TypeNames;
  * service.
  * <p>
  * Not intended for direct use by users, implementation detail of the service registry, must be public,
- *  as it may be used in generated applications
+ * as it may be used in generated applications
  */
 @SuppressWarnings({"checkstyle:TypeName"}) // matches pattern of generated descriptors
 public class DrivenByName__ServiceDescriptor implements GeneratedInjectService.Descriptor<String> {

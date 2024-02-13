@@ -34,7 +34,7 @@ interface InvocationContextBlueprint {
      * This always returns the underlying instance.
      *
      * @return instance being intercepted, or empty optional if the intercepted method is not done on an instance
-     *          (i.e. a constructor interception)
+     *         (i.e. a constructor interception)
      */
     Optional<Object> serviceInstance();
 

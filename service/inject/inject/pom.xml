@@ -17,9 +17,9 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.service.inject</groupId>
         <artifactId>helidon-service-inject-project</artifactId>
@@ -87,6 +87,11 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -102,6 +107,11 @@
                     <dependency>
                         <groupId>io.helidon.builder</groupId>
                         <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

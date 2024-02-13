@@ -34,6 +34,7 @@ public interface DependencyContext {
     static DependencyContext create(Map<Dependency, Object> dependencies) {
         return new DependencyContextImpl(dependencies);
     }
+
     /**
      * Obtain a parameter for a specific dependency.
      * The dependency must be known in advance and provided through

@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.ServiceInstance;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
@@ -143,6 +144,15 @@ final class ServiceSupplies {
 
             if (p2.qualifiers().isEmpty() && !p1.qualifiers().isEmpty()) {
                 return 1;
+            }
+
+            // @default name before any other name
+            if (p1.qualifiers().contains(Qualifier.DEFAULT_NAMED) && !p2.qualifiers().contains(Qualifier.DEFAULT_NAMED)) {
+                return -1;
+            }
+
+            if (p2.qualifiers().contains(Qualifier.DEFAULT_NAMED) && !p1.qualifiers().contains(Qualifier.DEFAULT_NAMED)) {
+                return -1;
             }
 
             // weights

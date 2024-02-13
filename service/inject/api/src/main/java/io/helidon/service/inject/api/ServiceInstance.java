@@ -41,17 +41,17 @@ public interface ServiceInstance<T> extends Injection.QualifiedInstance<T> {
 
     /**
      * Scope this instance was created in. Always the same as the scope of the associated service descriptor
-     * ({@link ServiceDescriptor#scope()}.
-     * This method may return {@link Injection.Service} in case no scope is defined ("Service" scope
-     * is not a real scope, as the instances cannot be managed, so each time an instance is injected, it is constructed,
-     * injected, post constructed, and then forgotten by the registry).
+     * ({@link io.helidon.service.inject.api.GeneratedInjectService.Descriptor#scope()}.
+     * This method may return {@link io.helidon.service.inject.api.Injection.Dependent} in case no scope is
+     * defined ("Dependent" scope is not a real scope, as the instances cannot be managed, so each time an instance is injected,
+     * it is constructed, injected, post constructed, and then forgotten by the registry).
      *
      * @return scope of this service instance
      */
     TypeName scope();
 
     /**
-     * Weight of this instance, inherited from {@link ServiceDescriptor#weight()}.
+     * Weight of this instance, inherited from {@link io.helidon.service.registry.GeneratedService.Descriptor#weight()}.
      *
      * @return weight
      */
@@ -59,7 +59,7 @@ public interface ServiceInstance<T> extends Injection.QualifiedInstance<T> {
 
     /**
      * Service type responsible for creating this value, inherited from
-     * {@link ServiceDescriptor#serviceType()}.
+     * {@link io.helidon.service.registry.GeneratedService.Descriptor#serviceType()}.
      *
      * @return service type
      */

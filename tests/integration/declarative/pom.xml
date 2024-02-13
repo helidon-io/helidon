@@ -39,8 +39,8 @@
             <artifactId>helidon</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject</artifactId>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
@@ -93,8 +93,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-codegen</artifactId>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -116,8 +116,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-codegen</artifactId>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
@@ -132,20 +132,20 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            <plugin>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-maven-plugin</artifactId>
-                <version>${helidon.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>application-create</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>io.helidon.inject</groupId>-->
+<!--                <artifactId>helidon-inject-maven-plugin</artifactId>-->
+<!--                <version>${helidon.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>compile</id>-->
+<!--                        <phase>compile</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>application-create</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 </project>

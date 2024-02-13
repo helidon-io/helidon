@@ -16,15 +16,12 @@
 
 package io.helidon.inject.tests.service.lifecycle;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
-import io.helidon.common.types.TypeName;
-import io.helidon.inject.ActivationResult;
-import io.helidon.inject.InjectionConfig;
-import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Phase;
-import io.helidon.inject.Services;
+import io.helidon.service.inject.InjectConfig;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.api.Activator.Phase;
+import io.helidon.service.inject.api.InjectRegistry;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,11 +33,10 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class ServiceLifecycleLimitPhaseTest {
-    private static InjectionServices injectionServices;
-    private static Services services;
+    private static InjectRegistryManager registryManager;
+    private static InjectRegistry registry;
 
     @BeforeAll
     static void initClass() {
@@ -49,27 +45,21 @@ class ServiceLifecycleLimitPhaseTest {
         AServiceContractImpl.INJECTIONS.set(0);
         AServiceContractImpl.INSTANCES.set(0);
 
-        injectionServices = InjectionServices.create(InjectionConfig.builder()
+        registryManager = InjectRegistryManager.create(InjectConfig.builder()
                                                              .limitRuntimePhase(Phase.CONSTRUCTING)
                                                              .build());
-        services = injectionServices.services();
+        registry = registryManager.registry();
 
-        assertThat(services, notNullValue());
+        assertThat(registry, notNullValue());
     }
 
     @AfterAll
     static void destroyClass() {
-        if (injectionServices != null) {
-            Map<TypeName, ActivationResult> shutdown = injectionServices.shutdown();
-            shutdown.values()
-                    .forEach(it -> {
-                        if (it.failure()) {
-                            fail(it.toString(), it.error().orElse(null));
-                        }
-                    });
+        if (registryManager != null) {
+            registryManager.shutdown();
         }
-        injectionServices = null;
-        services = null;
+        registryManager = null;
+        registry = null;
     }
 
     @Test
@@ -77,7 +67,7 @@ class ServiceLifecycleLimitPhaseTest {
         // there should be no instances "just" created when registry starts
         assertThat(ASingletonContractImpl.INSTANCES.get(), is(0));
 
-        Supplier<ASingletonContract> supplier = services.supply(ASingletonContract.class);
+        Supplier<ASingletonContract> supplier = registry.supply(ASingletonContract.class);
 
         // there should be no instances created even when I lookup a supplier
         assertThat(ASingletonContractImpl.INSTANCES.get(), is(0));
@@ -92,7 +82,7 @@ class ServiceLifecycleLimitPhaseTest {
         assertThat(ASingletonContractImpl.INJECTIONS.get(), is(0));
 
         // now on the next lookup, I should get the same instance
-        supplier = services.supply(ASingletonContract.class);
+        supplier = registry.supply(ASingletonContract.class);
         ASingletonContract secondInstance = supplier.get();
 
         // must be the same
@@ -112,7 +102,7 @@ class ServiceLifecycleLimitPhaseTest {
         // there should be no instances "just" created when registry starts
         assertThat(AServiceContractImpl.INSTANCES.get(), is(0));
 
-        Supplier<AServiceContract> supplier = services.supply(AServiceContract.class);
+        Supplier<AServiceContract> supplier = registry.supply(AServiceContract.class);
 
         // there should be no instances created even when I lookup a supplier
         assertThat(AServiceContractImpl.INSTANCES.get(), is(0));
@@ -136,7 +126,7 @@ class ServiceLifecycleLimitPhaseTest {
         assertThat(secondInstance, not(sameInstance(instance)));
 
         // now on the next lookup, we should get another instance
-        supplier = services.supply(AServiceContract.class);
+        supplier = registry.supply(AServiceContract.class);
         AServiceContract thirdInstance = supplier.get();
 
         // and another instance created

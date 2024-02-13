@@ -216,6 +216,7 @@
         <module>webserver</module>
         <module>websocket</module>
         <module>codegen</module>
+        <module>declarative</module>
     </modules>
 
     <build>

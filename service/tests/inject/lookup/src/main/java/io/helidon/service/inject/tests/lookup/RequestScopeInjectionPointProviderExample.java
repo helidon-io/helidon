@@ -19,10 +19,10 @@ package io.helidon.service.inject.tests.lookup;
 import java.util.Optional;
 
 import io.helidon.service.inject.api.Injection;
-import io.helidon.inject.service.InjectionPointProvider;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.QualifiedInstance;
-import io.helidon.inject.service.Qualifier;
+import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
 
 @Injection.RequestScope
 @RequestScopeInjectionPointProviderExample.FirstQuali
@@ -30,9 +30,12 @@ import io.helidon.inject.service.Qualifier;
 class RequestScopeInjectionPointProviderExample implements InjectionPointProvider<ContractRequestScope> {
     static final Qualifier FIRST_QUALI = Qualifier.create(RequestScopeInjectionPointProviderExample.FirstQuali.class);
     static final Qualifier SECOND_QUALI = Qualifier.create(RequestScopeInjectionPointProviderExample.SecondQuali.class);
-    static final QualifiedInstance<ContractRequestScope> FIRST = QualifiedInstance.create(new RequestScopeInjectionPointProviderExample.FirstClass(), FIRST_QUALI);
-    static final QualifiedInstance<ContractRequestScope> SECOND = QualifiedInstance.create(new RequestScopeInjectionPointProviderExample.SecondClass(), SECOND_QUALI);
-
+    static final QualifiedInstance<ContractRequestScope> FIRST =
+            QualifiedInstance.create(new RequestScopeInjectionPointProviderExample.FirstClass(),
+                                                                                          FIRST_QUALI);
+    static final QualifiedInstance<ContractRequestScope> SECOND =
+            QualifiedInstance.create(new RequestScopeInjectionPointProviderExample.SecondClass(),
+                                                                                           SECOND_QUALI);
 
     @Override
     public Optional<QualifiedInstance<ContractRequestScope>> first(Lookup query) {

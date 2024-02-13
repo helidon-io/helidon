@@ -10,6 +10,7 @@ import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
 import io.helidon.service.inject.api.InjectServiceInfo;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.ServiceInfo;
@@ -22,9 +23,9 @@ import io.helidon.service.registry.ServiceRegistryException;
  */
 class ServiceProvider<T> {
     private final InjectServiceRegistryImpl registry;
-    private final ServiceInfo serviceInfo;
+    private final InjectServiceInfo serviceInfo;
     private final Descriptor<T> descriptor;
-    private final TypeName scope;
+
     private final ActivationRequest activationRequest;
     private final InterceptionMetadata interceptionMetadata;
     private final Contracts.ContractLookup contracts;
@@ -34,29 +35,29 @@ class ServiceProvider<T> {
     Service provider used for initial bindings in a scope, where we NEVER create instances
      */
     ServiceProvider(InjectServiceRegistryImpl serviceRegistry,
-                    ServiceInfo serviceInfo,
-                    TypeName scope) {
+                    ServiceInfo serviceInfo) {
         this.registry = serviceRegistry;
         this.interceptionMetadata = registry.interceptionMetadata();
         this.activationRequest = registry.activationRequest();
-        this.serviceInfo = serviceInfo;
+        this.serviceInfo = WrapServiceInfo.create(serviceInfo);
         this.descriptor = null;
-        this.scope = scope;
 
         this.contracts = Contracts.create(serviceInfo);
     }
 
     ServiceProvider(InjectServiceRegistryImpl serviceRegistry,
-                    ServiceInfo serviceInfo,
                     Descriptor<T> descriptor) {
         this.registry = serviceRegistry;
         this.interceptionMetadata = registry.interceptionMetadata();
         this.activationRequest = registry.activationRequest();
-        this.serviceInfo = serviceInfo;
+        this.serviceInfo = descriptor;
         this.descriptor = descriptor;
-        this.scope = descriptor.scope();
 
         this.contracts = Contracts.create(descriptor);
+    }
+
+    InjectServiceInfo serviceInfo() {
+        return serviceInfo;
     }
 
     Descriptor<T> descriptor() {
@@ -198,6 +199,51 @@ class ServiceProvider<T> {
                                                            + injectionPoint);
             }
             injectionPlan.bind(injectionPoint, discovered.getFirst());
+        }
+    }
+
+    private static class WrapServiceInfo implements InjectServiceInfo {
+        private final ServiceInfo delegate;
+
+        private WrapServiceInfo(ServiceInfo delegate) {
+            this.delegate = delegate;
+        }
+
+        static InjectServiceInfo create(ServiceInfo serviceInfo) {
+            if (serviceInfo instanceof InjectServiceInfo inj) {
+                return inj;
+            }
+            return new WrapServiceInfo(serviceInfo);
+        }
+
+        @Override
+        public double weight() {
+            return delegate.weight();
+        }
+
+        @Override
+        public TypeName scope() {
+            return Injection.Singleton.TYPE_NAME;
+        }
+
+        @Override
+        public TypeName serviceType() {
+            return delegate.serviceType();
+        }
+
+        @Override
+        public TypeName descriptorType() {
+            return delegate.descriptorType();
+        }
+
+        @Override
+        public Set<TypeName> contracts() {
+            return delegate.contracts();
+        }
+
+        @Override
+        public boolean isAbstract() {
+            return delegate.isAbstract();
         }
     }
 }

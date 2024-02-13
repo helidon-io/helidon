@@ -19,11 +19,11 @@ package io.helidon.service.inject.tests.lookup;
 import java.util.List;
 
 import io.helidon.service.inject.api.Injection;
-import io.helidon.inject.service.QualifiedInstance;
-import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.ServicesProvider;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Injection.ServicesProvider;
+import io.helidon.service.inject.api.Qualifier;
 
-@Injection.Service
+@Injection.Dependent
 @NoScopeServicesProviderExample.FirstQuali
 @NoScopeServicesProviderExample.SecondQuali
 class NoScopeServicesProviderExample implements ServicesProvider<ContractNoScopeNoIpProvider> {

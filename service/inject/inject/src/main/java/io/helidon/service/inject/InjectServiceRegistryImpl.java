@@ -33,6 +33,7 @@ import io.helidon.service.inject.api.DrivenByName__ServiceDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
 import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.InjectRegistrySpi;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
@@ -53,7 +54,7 @@ import static io.helidon.service.inject.InjectRegistryManager.SERVICE_INFO_COMPA
  * This implementation re-implements even the core registry, as we want the services to be capable of interoperating
  * (i.e. core services can receive inject services and vice-versa).
  */
-class InjectServiceRegistryImpl implements InjectRegistry {
+class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     private static final System.Logger LOGGER = System.getLogger(InjectServiceRegistryImpl.class.getName());
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
@@ -162,7 +163,6 @@ class InjectServiceRegistryImpl implements InjectRegistry {
 
             Object instance = explicitInstances.get(descriptor);
             ServiceProvider<Object> provider = new ServiceProvider<>(this,
-                                                                     descriptor,
                                                                      (Descriptor<Object>) described.injectDescriptor());
 
             if (instance != null) {
@@ -256,52 +256,16 @@ class InjectServiceRegistryImpl implements InjectRegistry {
         return supplyAll(Lookup.create(contract));
     }
 
-    void close() {
-        singletonScopeHandler.currentScope()
-                .map(Scope::services)
-                .ifPresent(ScopedRegistry::deactivate);
-    }
-
-    List<ServiceInfo> servicesByContract(TypeName contract) {
-        Set<InjectServiceInfo> serviceInfos = servicesByContract.get(contract);
-        if (serviceInfos == null) {
-            return List.of();
-        }
-        return serviceInfos.stream()
-                .map(InjectServiceInfo::coreInfo)
-                .collect(Collectors.toList());
-    }
-
-    String id() {
-        return id;
-    }
-
-    ScopedRegistryImpl createForScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings) {
+    @Override
+    public ScopedRegistryImpl createForScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings) {
         return new ScopedRegistryImpl(this,
                                       scope,
                                       id,
                                       initialBindings);
     }
 
-    <T> List<ServiceManager<T>> lookupManagers(Lookup lookup) {
-        List<ServiceManager<T>> result = new ArrayList<>();
-
-        for (InjectServiceInfo service : lookupServices(lookup)) {
-            result.add(serviceManager(service.coreInfo()));
-        }
-
-        return result;
-    }
-
-    InterceptionMetadata interceptionMetadata() {
-        return interceptionMetadata;
-    }
-
-    ActivationRequest activationRequest() {
-        return activationRequest;
-    }
-
-    List<InjectServiceInfo> lookupServices(Lookup lookup) {
+    @Override
+    public List<InjectServiceInfo> lookupServices(Lookup lookup) {
         try {
             stateReadLock.lock();
             // a very special lookup
@@ -397,6 +361,44 @@ class InjectServiceRegistryImpl implements InjectRegistry {
         } finally {
             stateReadLock.unlock();
         }
+    }
+
+    void close() {
+        singletonScopeHandler.currentScope()
+                .map(Scope::services)
+                .ifPresent(ScopedRegistry::deactivate);
+    }
+
+    List<ServiceInfo> servicesByContract(TypeName contract) {
+        Set<InjectServiceInfo> serviceInfos = servicesByContract.get(contract);
+        if (serviceInfos == null) {
+            return List.of();
+        }
+        return serviceInfos.stream()
+                .map(InjectServiceInfo::coreInfo)
+                .collect(Collectors.toList());
+    }
+
+    String id() {
+        return id;
+    }
+
+    <T> List<ServiceManager<T>> lookupManagers(Lookup lookup) {
+        List<ServiceManager<T>> result = new ArrayList<>();
+
+        for (InjectServiceInfo service : lookupServices(lookup)) {
+            result.add(serviceManager(service.coreInfo()));
+        }
+
+        return result;
+    }
+
+    InterceptionMetadata interceptionMetadata() {
+        return interceptionMetadata;
+    }
+
+    ActivationRequest activationRequest() {
+        return activationRequest;
     }
 
     @SuppressWarnings("unchecked")

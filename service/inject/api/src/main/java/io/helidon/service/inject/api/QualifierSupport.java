@@ -54,7 +54,6 @@ class QualifierSupport {
         @Prototype.Constant
         static final Qualifier CONFIG_BEAN = create(ConfigDriven.ConfigBean.class);
 
-
         private CustomMethods() {
         }
 

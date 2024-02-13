@@ -26,7 +26,6 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.GeneratedService;
 
@@ -93,8 +92,10 @@ public final class GeneratedInjectService {
      * whether to, and how to intercept elements.
      * <p>
      * Used by generated code (passed as a parameter to
-     * {@link io.helidon.inject.service.ServiceDescriptor#inject(InjectionContext, GeneratedInjectService.InterceptionMetadata, java.util.Set, Object)}, and
-     * {@link io.helidon.inject.service.ServiceDescriptor#instantiate(InjectionContext, GeneratedInjectService.InterceptionMetadata)}).
+     * {@link io.helidon.inject.service.ServiceDescriptor#inject(InjectionContext, GeneratedInjectService.InterceptionMetadata,
+     * java.util.Set, Object)}, and
+     * {@link io.helidon.inject.service.ServiceDescriptor#instantiate(InjectionContext,
+     * GeneratedInjectService.InterceptionMetadata)}).
      */
     public interface InterceptionMetadata {
         /**
@@ -107,7 +108,8 @@ public final class GeneratedInjectService {
          * @param targetInvoker     invoker of the element
          * @param checkedExceptions expected checked exceptions that can be thrown by the invoker
          * @param <T>               type of the result of the invoker
-         * @return an invoker that handles interception if enabled and if there are matching interceptors, any checkedException will
+         * @return an invoker that handles interception if enabled and if there are matching interceptors, any checkedException
+         *         will
          *         be re-thrown, any runtime exception will be re-thrown
          */
         <T> Invoker<T> createInvoker(InjectServiceInfo descriptor,
@@ -128,7 +130,8 @@ public final class GeneratedInjectService {
          * @param targetInvoker     invoker of the element
          * @param checkedExceptions expected checked exceptions that can be thrown by the invoker
          * @param <T>               type of the result of the invoker
-         * @return an invoker that handles interception if enabled and if there are matching interceptors, any checkedException will
+         * @return an invoker that handles interception if enabled and if there are matching interceptors, any checkedException
+         *         will
          *         be re-thrown, any runtime exception will be re-thrown
          */
         <T> Invoker<T> createInvoker(Object serviceInstance,
@@ -138,6 +141,29 @@ public final class GeneratedInjectService {
                                      TypedElementInfo element,
                                      Invoker<T> targetInvoker,
                                      Set<Class<? extends Throwable>> checkedExceptions);
+    }
+
+    public interface QualifiedProviderDescriptor {
+        /**
+         * Type of qualifier a {@link io.helidon.service.inject.api.Injection.QualifiedProvider} provides.
+         *
+         * @return type name of the qualifier this qualified provider can provide instances for
+         */
+        TypeName qualifierType();
+    }
+
+    public interface DrivenByDescriptor {
+        /**
+         * A service may be driven by instances of another service.
+         * If a type is driven by another type, it inherits ALL qualifiers of the type that is driving it.
+         *
+         * @return driven by type
+         */
+        TypeName drivenBy();
+    }
+
+    public interface ScopeHandlerDescriptor {
+        TypeName handledScope();
     }
 
     public static final class IpSupport {
@@ -176,28 +202,5 @@ public final class GeneratedInjectService {
 
             return List.copyOf(result);
         }
-    }
-
-    public interface QualifiedProviderDescriptor {
-        /**
-         * Type of qualifier a {@link io.helidon.service.inject.api.Injection.QualifiedProvider} provides.
-         *
-         * @return type name of the qualifier this qualified provider can provide instances for
-         */
-        TypeName qualifierType();
-    }
-
-    public interface DrivenByDescriptor {
-        /**
-         * A service may be driven by instances of another service.
-         * If a type is driven by another type, it inherits ALL qualifiers of the type that is driving it.
-         *
-         * @return driven by type
-         */
-        TypeName drivenBy();
-    }
-
-    public interface ScopeHandlerDescriptor {
-        TypeName handledScope();
     }
 }

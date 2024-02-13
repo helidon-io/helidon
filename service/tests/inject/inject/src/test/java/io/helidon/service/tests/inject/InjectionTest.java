@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -145,5 +146,13 @@ class InjectionTest {
         NonSingletonService first = instance.nonSingletonService();
         NonSingletonService second = instance.nonSingletonService();
         assertThat(first, not(sameInstance(second)));
+    }
+
+    @Test
+    @Order(6)
+    void testInnerTypes() {
+        InnerTypes.InnerContract innerContract = registry.get(InnerTypes.InnerContract.class);
+        assertThat(innerContract, instanceOf(InnerTypes.InnerService.class));
+        assertThat(InnerTypes.InnerService.postConstructCount.get(), is(1));
     }
 }

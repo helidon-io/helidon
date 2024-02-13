@@ -31,14 +31,14 @@ class ASingletonContractImpl implements ASingletonContract {
         INSTANCES.incrementAndGet();
     }
 
+    @Override
+    public InjectedService service() {
+        return injectedService;
+    }
+
     @Injection.Inject
     void setInjectedService(InjectedService injectedService) {
         this.injectedService = injectedService;
         INJECTIONS.incrementAndGet();
-    }
-
-    @Override
-    public InjectedService service() {
-        return injectedService;
     }
 }

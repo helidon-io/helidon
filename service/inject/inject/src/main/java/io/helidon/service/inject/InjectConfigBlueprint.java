@@ -7,8 +7,8 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.service.inject.api.Activator;
-import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.InjectServiceInfo;
+import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.registry.ServiceRegistryConfig;
 
 @Prototype.Blueprint

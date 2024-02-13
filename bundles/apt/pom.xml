@@ -62,8 +62,8 @@
              <artifactId>helidon-service-codegen</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-codegen</artifactId>
+            <groupId>io.helidon.declarative</groupId>
+            <artifactId>helidon-declarative-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.fault-tolerance</groupId>

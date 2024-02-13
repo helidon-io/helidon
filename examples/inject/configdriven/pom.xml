@@ -45,8 +45,8 @@
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-service</artifactId>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

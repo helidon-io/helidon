@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
+import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.Lookup;
+import io.helidon.service.inject.api.Lookup;
 
 /**
  * Providers example.

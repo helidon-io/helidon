@@ -85,9 +85,7 @@ public final class ConfigDriven {
     }
 
     /**
-     * At least one instance is required.
-     * If {@link ConfigDriven.WantDefault} is not configured,
-     * the instance must be configured in config.
+     * At least one instance is required in configuration.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
@@ -97,9 +95,9 @@ public final class ConfigDriven {
     }
 
     /**
-     * Determines whether there can be more than one bean instance of this type.
+     * Determines whether there can be more than one bean instance of this type configured.
      * <p>
-     * If not defined on a config bean, there can be only up to one instance.
+     * If not defined on a config bean, there can be only up to one configured instance.
      * If defined, one instance will be created for each list value, or child node of the config tree.
      * <p>
      * Note: this is dynamic in nature, and therefore cannot be validated at compile time. All violations found to this
@@ -114,15 +112,6 @@ public final class ConfigDriven {
 
     /**
      * There will always be an instance created with defaults.
-     * <p>
-     * If combined with {@link ConfigDriven.AtLeastOne}:
-     * <ul>
-     *     <li>If there is no configuration in config, default instance is created</li>
-     *     <li>If there is a configuration in config with {@code @default} name, that instance is created</li>
-     *     <li>If there is one ore more configurations in config, all of those would be create, plus the default instance;
-     *          in case this is not {@link ConfigDriven.Repeatable}, default instance
-     *          WOULD NOT be created</li>
-     * </ul>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)

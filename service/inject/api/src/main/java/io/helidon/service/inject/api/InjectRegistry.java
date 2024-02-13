@@ -18,11 +18,9 @@ package io.helidon.service.inject.api;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceInfo;
 
@@ -114,4 +112,21 @@ public interface InjectRegistry extends io.helidon.service.registry.ServiceRegis
      * @return supplier of list of services ordered, may be empty if there is no match
      */
     <T> Supplier<List<T>> supplyAll(Lookup lookup);
+
+    /**
+     * A lookup method operating on the service descriptors, rather than service instances.
+     * This is useful for tools that need to analyze the structure of the registry,
+     * for testing etc.
+     * The returned instances are either the actual instances registered with the registry, or an inject
+     * based wrapper if the service is from core registry. Use {@link InjectServiceInfo#coreInfo()} to get the actual instance
+     * if instance equality is required.
+     * <p>
+     * The registry is optimized for look-ups based on service type and service contracts, all other
+     * lookups trigger a full registry scan.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @return a list of service descriptors that match the lookup criteria
+     */
+    List<InjectServiceInfo> lookupServices(Lookup lookup);
+
 }

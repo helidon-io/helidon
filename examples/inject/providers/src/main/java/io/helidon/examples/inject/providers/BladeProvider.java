@@ -24,11 +24,11 @@ import io.helidon.common.LazyValue;
 import io.helidon.examples.inject.basics.Big;
 import io.helidon.examples.inject.basics.Little;
 import io.helidon.inject.service.Injection;
-import io.helidon.inject.service.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.InjectionPointProvider;
 import io.helidon.inject.service.Ip;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.QualifiedInstance;
-import io.helidon.inject.service.Qualifier;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Qualifier;
 
 import static io.helidon.common.LazyValue.create;
 

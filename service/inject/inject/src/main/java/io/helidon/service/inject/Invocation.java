@@ -7,11 +7,11 @@ import java.util.function.Supplier;
 
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Interception;
 import io.helidon.service.inject.api.InvocationContext;
 import io.helidon.service.inject.api.InvocationException;
 import io.helidon.service.inject.api.Invoker;
-import io.helidon.service.inject.api.InjectServiceInfo;
 
 /**
  * Handles the invocation of {@link io.helidon.inject.service.Interception.Interceptor} methods.

@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Scope;
 

@@ -1,6 +1,6 @@
 package io.helidon.examples.webserver.serviceregistry;
 
-import io.helidon.inject.service.Injection;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 

@@ -19,10 +19,10 @@ package io.helidon.service.inject.tests.lookup;
 import java.util.Optional;
 
 import io.helidon.service.inject.api.Injection;
-import io.helidon.inject.service.InjectionPointProvider;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.QualifiedInstance;
-import io.helidon.inject.service.Qualifier;
+import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
 
 @Injection.Singleton
 @SingletonInjectionPointProviderExample.FirstQuali

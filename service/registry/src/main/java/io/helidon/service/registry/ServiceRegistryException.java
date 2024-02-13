@@ -33,7 +33,7 @@ public class ServiceRegistryException extends RuntimeException {
      * Create an exception with a descriptive message and a cause.
      *
      * @param message the message
-     * @param cause throwable causing this exception
+     * @param cause   throwable causing this exception
      */
     public ServiceRegistryException(String message, Throwable cause) {
         super(message, cause);

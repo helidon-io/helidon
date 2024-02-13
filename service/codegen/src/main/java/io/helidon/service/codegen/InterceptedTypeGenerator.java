@@ -58,8 +58,8 @@ class InterceptedTypeGenerator {
     ClassModel.Builder generate() {
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(GENERATOR,
-                                                   serviceType,
-                                                   interceptedType))
+                                                 serviceType,
+                                                 interceptedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
                                                                serviceType,
                                                                interceptedType,

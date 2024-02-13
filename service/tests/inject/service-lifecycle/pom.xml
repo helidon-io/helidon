@@ -17,8 +17,8 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.service.tests.inject</groupId>
@@ -31,10 +31,9 @@
     <artifactId>helidon-service-inject-tests-service-lifecycle</artifactId>
     <name>Helidon Service Inject Tests Service Lifecycle</name>
     <description>
-        Tests for service lifecycle.
-        This test validates that singletons are instantiated and injected just once, and at the right time.
-        This test validates that non-scoped services are instantiated for each lookup, and at the right time.
-        This test validates that when we limit phase to CONSTRUCTING, injection is not done
+        Tests for service lifecycle. This test validates that singletons are instantiated and injected just once, and at the right
+        time. This test validates that non-scoped services are instantiated for each lookup, and at the right time. This test
+        validates that when we limit phase to CONSTRUCTING, injection is not done
     </description>
 
     <dependencies>

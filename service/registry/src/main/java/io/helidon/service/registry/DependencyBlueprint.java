@@ -16,15 +16,9 @@
 
 package io.helidon.service.registry;
 
-import java.util.Optional;
-import java.util.Set;
-
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.GenericType;
-import io.helidon.common.types.AccessModifier;
-import io.helidon.common.types.Annotation;
-import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
 /**

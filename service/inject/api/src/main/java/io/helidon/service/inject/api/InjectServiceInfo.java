@@ -1,12 +1,10 @@
 package io.helidon.service.inject.api;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Dependency;
-import io.helidon.service.registry.ServiceInfo;
 
 /**
  * Service metadata.

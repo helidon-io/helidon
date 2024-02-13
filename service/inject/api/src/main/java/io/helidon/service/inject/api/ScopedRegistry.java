@@ -12,6 +12,7 @@ public interface ScopedRegistry {
      * Activate this registry instance. This method will prepare this registry for use.
      */
     void activate();
+
     /**
      * Deactivate this registry instance. This method will deactivate all active instances
      *
@@ -22,10 +23,10 @@ public interface ScopedRegistry {
     /**
      * Provides either an existing activator, if one is already available in this scope, or adds a new activator instance.
      *
-     * @param descriptor service descriptor
+     * @param descriptor        service descriptor
      * @param activatorSupplier supplier of new activators to manage service instances
+     * @param <T>               type of the instances supported by the descriptor
      * @return activator for the service, either an existing one, or a new one created from the supplier
-     * @param <T> type of the instances supported by the descriptor
      */
     <T> Activator<T> activator(ServiceInfo descriptor,
                                Supplier<Activator<T>> activatorSupplier);

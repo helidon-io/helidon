@@ -40,12 +40,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-service</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject</artifactId>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject</artifactId>
         </dependency>
     </dependencies>
 

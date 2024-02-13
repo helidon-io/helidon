@@ -246,8 +246,8 @@ class CoreServiceRegistry implements ServiceRegistry {
                                         ReentrantLock lock) implements ServiceProvider {
 
         private DiscoveredDescriptor(CoreServiceRegistry registry,
-                             DescriptorMetadata metadata,
-                             LazyValue<Object> lazyInstance) {
+                                     DescriptorMetadata metadata,
+                                     LazyValue<Object> lazyInstance) {
             this(registry, metadata, lazyInstance, new ReentrantLock());
         }
 

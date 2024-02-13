@@ -16,22 +16,14 @@
 
 package io.helidon.service.inject.tests.lookup;
 
-import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import io.helidon.common.Weighted;
-import io.helidon.common.types.TypeName;
-import io.helidon.inject.InjectionServices;
-import io.helidon.inject.Services;
-import io.helidon.inject.service.Lookup;
-import io.helidon.inject.service.Qualifier;
-import io.helidon.inject.service.ServiceInfo;
-import io.helidon.inject.service.ServiceInstance;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.InjectServiceInfo;
+import io.helidon.service.inject.api.Lookup;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,9 +32,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -53,45 +43,44 @@ import static org.hamcrest.Matchers.hasSize;
 class NoScopeLookupTest {
     private static final Lookup LOOKUP = Lookup.create(ContractNoScope.class);
     private static final Class<ContractNoScope> CONTRACT = ContractNoScope.class;
-    private static final Lookup LOOKUP_NO_IP_PROVIDER = Lookup.builder()
-            .addContract(ContractNoScopeNoIpProvider.class)
-            .build();
-    private static InjectionServices injectionServices;
-    private static Services services;
+    private static InjectRegistryManager registryManager;
+    private static InjectRegistry registry;
 
     @BeforeAll
     static void init() {
-        injectionServices = InjectionServices.create();
-        services = injectionServices.services();
+        registryManager = InjectRegistryManager.create();
+        registry = registryManager.registry();
     }
 
     @AfterAll
     static void shutdown() {
-        InjectionTestingSupport.shutdown(injectionServices);
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
     @Test
     void getLookupTest() {
-        ContractNoScope first = services.get(LOOKUP);
+        ContractNoScope first = registry.get(LOOKUP);
         assertThat(first, instanceOf(NoScopeSupplierExample.First.class));
-        ContractNoScope second = services.get(LOOKUP);
+        ContractNoScope second = registry.get(LOOKUP);
         assertThat(first, not(sameInstance(second)));
     }
 
     @Test
     void getTypeTest() {
-        ContractNoScope first = services.get(CONTRACT);
+        ContractNoScope first = registry.get(CONTRACT);
         assertThat(first, instanceOf(NoScopeSupplierExample.First.class));
-        ContractNoScope second = services.get(CONTRACT);
+        ContractNoScope second = registry.get(CONTRACT);
         assertThat(first, not(sameInstance(second)));
     }
 
     @Test
     void firstLookupTest() {
-        Optional<ContractNoScope> first = services.first(LOOKUP);
+        Optional<ContractNoScope> first = registry.first(LOOKUP);
         ContractNoScope firstValue = checkOptional(first, NoScopeSupplierExample.First.class);
 
-        Optional<ContractNoScope> second = services.first(LOOKUP);
+        Optional<ContractNoScope> second = registry.first(LOOKUP);
         ContractNoScope secondValue = checkOptional(second, NoScopeSupplierExample.First.class);
 
         assertThat(firstValue, not(sameInstance(secondValue)));
@@ -99,10 +88,10 @@ class NoScopeLookupTest {
 
     @Test
     void firstTypeTest() {
-        Optional<ContractNoScope> first = services.first(CONTRACT);
+        Optional<ContractNoScope> first = registry.first(CONTRACT);
         ContractNoScope firstValue = checkOptional(first, NoScopeSupplierExample.First.class);
 
-        Optional<ContractNoScope> second = services.first(CONTRACT);
+        Optional<ContractNoScope> second = registry.first(CONTRACT);
         ContractNoScope secondValue = checkOptional(second, NoScopeSupplierExample.First.class);
 
         assertThat(firstValue, not(sameInstance(secondValue)));
@@ -110,25 +99,25 @@ class NoScopeLookupTest {
 
     @Test
     void allLookupTest() {
-        List<ContractNoScope> all = services.all(LOOKUP);
+        List<ContractNoScope> all = registry.all(LOOKUP);
 
         checkAll(all, 4);
     }
 
     @Test
     void allTypeTest() {
-        List<ContractNoScope> all = services.all(CONTRACT);
+        List<ContractNoScope> all = registry.all(CONTRACT);
 
         checkAll(all, 4);
     }
 
     @Test
     void supplyLookupTest() {
-        Supplier<ContractNoScope> supply = services.supply(LOOKUP);
+        Supplier<ContractNoScope> supply = registry.supply(LOOKUP);
         ContractNoScope first = supply.get();
         assertThat(first, instanceOf(NoScopeSupplierExample.First.class));
 
-        supply = services.supply(LOOKUP);
+        supply = registry.supply(LOOKUP);
         ContractNoScope second = supply.get();
 
         assertThat(first, not(sameInstance(second)));
@@ -136,11 +125,11 @@ class NoScopeLookupTest {
 
     @Test
     void supplyTypeTest() {
-        Supplier<ContractNoScope> supply = services.supply(CONTRACT);
+        Supplier<ContractNoScope> supply = registry.supply(CONTRACT);
         ContractNoScope first = supply.get();
         assertThat(first, instanceOf(NoScopeSupplierExample.First.class));
 
-        supply = services.supply(CONTRACT);
+        supply = registry.supply(CONTRACT);
         ContractNoScope second = supply.get();
 
         assertThat(first, not(sameInstance(second)));
@@ -148,12 +137,12 @@ class NoScopeLookupTest {
 
     @Test
     void supplyFirstLookupTest() {
-        Supplier<Optional<ContractNoScope>> supply = services.supplyFirst(LOOKUP);
+        Supplier<Optional<ContractNoScope>> supply = registry.supplyFirst(LOOKUP);
 
         Optional<ContractNoScope> first = supply.get();
         ContractNoScope firstValue = checkOptional(first, NoScopeSupplierExample.First.class);
 
-        supply = services.supplyFirst(LOOKUP);
+        supply = registry.supplyFirst(LOOKUP);
         Optional<ContractNoScope> second = supply.get();
         ContractNoScope secondValue = checkOptional(second, NoScopeSupplierExample.First.class);
 
@@ -162,12 +151,12 @@ class NoScopeLookupTest {
 
     @Test
     void supplyFirstTypeTest() {
-        Supplier<Optional<ContractNoScope>> supply = services.supplyFirst(CONTRACT);
+        Supplier<Optional<ContractNoScope>> supply = registry.supplyFirst(CONTRACT);
 
         Optional<ContractNoScope> first = supply.get();
         ContractNoScope firstValue = checkOptional(first, NoScopeSupplierExample.First.class);
 
-        supply = services.supplyFirst(CONTRACT);
+        supply = registry.supplyFirst(CONTRACT);
         Optional<ContractNoScope> second = supply.get();
         ContractNoScope secondValue = checkOptional(second, NoScopeSupplierExample.First.class);
 
@@ -176,7 +165,7 @@ class NoScopeLookupTest {
 
     @Test
     void supplyAllLookupTest() {
-        List<ContractNoScope> all = services.<ContractNoScope>supplyAll(LOOKUP)
+        List<ContractNoScope> all = registry.<ContractNoScope>supplyAll(LOOKUP)
                 .get();
 
         checkAll(all, 4);
@@ -184,7 +173,7 @@ class NoScopeLookupTest {
 
     @Test
     void supplyAllTypeTest() {
-        List<ContractNoScope> all = services.supplyAll(CONTRACT)
+        List<ContractNoScope> all = registry.supplyAll(CONTRACT)
                 .get();
 
         checkAll(all, 4);
@@ -192,66 +181,20 @@ class NoScopeLookupTest {
 
     @Test
     void supplyFromDescriptorTest() {
-        Supplier<ContractNoScope> supply = services.supply(NoScopeDirectExample__ServiceDescriptor.INSTANCE);
+        Supplier<NoScopeDirectExample> supply = registry.supply(NoScopeDirectExample.class);
 
         ContractNoScope first = supply.get();
         assertThat(first, instanceOf(NoScopeDirectExample.class));
 
-        supply = services.supply(NoScopeDirectExample__ServiceDescriptor.INSTANCE);
+        supply = registry.supply(NoScopeDirectExample.class);
         ContractNoScope second = supply.get();
 
         assertThat(first, not(sameInstance(second)));
     }
 
     @Test
-    void lookupInstancesTest() {
-        List<ServiceInstance<ContractNoScope>> serviceInstances = services.lookupInstances(LOOKUP);
-        Set<Class<?>> contracts = Set.of(ContractNoScopeNoIpProvider.class,
-                                         ContractNoScope.class,
-                                         ContractCommon.class,
-                                         ContractNoIpProvider.class);
-        /*
-        Order:
-        1. NoScopeSupplierExample (highest weight)
-        2. NoScopeDirectExample (alphabet...)
-        3. NoScopeInjectionPointExample - no instance, as we do not have a qualifier
-        4. NoScopeServicesProviderExample - two qualified instances
-         */
-        assertThat(serviceInstances, hasSize(4));
-
-        checkInstance(serviceInstances.getFirst(),
-                      NoScopeSupplierExample.First.class, // instance type
-                      NoScopeSupplierExample.class, // service type
-                      contracts,
-                      Set.of(), // qualifiers
-                      Weighted.DEFAULT_WEIGHT + 1); // weight
-
-        checkInstance(serviceInstances.get(1),
-                      NoScopeDirectExample.class,
-                      NoScopeDirectExample.class,
-                      contracts,
-                      Set.of(),
-                      Weighted.DEFAULT_WEIGHT);
-
-        checkInstance(serviceInstances.get(2),
-                      NoScopeServicesProviderExample.FirstClass.class,
-                      NoScopeServicesProviderExample.class,
-                      contracts,
-                      Set.of(NoScopeServicesProviderExample.FirstQuali.class),
-                      Weighted.DEFAULT_WEIGHT);
-
-        checkInstance(serviceInstances.get(3),
-                      NoScopeServicesProviderExample.SecondClass.class,
-                      NoScopeServicesProviderExample.class,
-                      contracts,
-                      Set.of(NoScopeServicesProviderExample.SecondQuali.class),
-                      Weighted.DEFAULT_WEIGHT);
-
-    }
-
-    @Test
     void lookupServicesTest() {
-        List<ServiceInfo> serviceDescriptors = services.lookupServices(LOOKUP);
+        List<InjectServiceInfo> serviceDescriptors = registry.lookupServices(LOOKUP);
 
         /*
         Order:
@@ -276,10 +219,10 @@ class NoScopeLookupTest {
                 .addQualifier(NoScopeServicesProviderExample.SECOND_QUALI)
                 .build();
 
-        ContractNoScope first = services.get(lookup);
+        ContractNoScope first = registry.get(lookup);
         assertThat(first, instanceOf(NoScopeServicesProviderExample.SecondClass.class));
 
-        ContractNoScope second = services.get(lookup);
+        ContractNoScope second = registry.get(lookup);
         assertThat(second, not(sameInstance(first)));
     }
 
@@ -290,23 +233,8 @@ class NoScopeLookupTest {
                 .addQualifier(NoScopeInjectionPointProviderExample.SECOND_QUALI)
                 .build();
 
-        ContractNoScope instance = services.get(lookup);
+        ContractNoScope instance = registry.get(lookup);
         assertThat(instance, instanceOf(NoScopeInjectionPointProviderExample.SecondClass.class));
-    }
-
-    private void checkInstance(ServiceInstance<ContractNoScope> serviceInstance,
-                               Class<? extends ContractNoScope> instanceType,
-                               Class<?> serviceType,
-                               Set<Class<?>> contracts,
-                               Set<Class<? extends Annotation>> qualifiers,
-                               double weight) {
-
-        assertThat(serviceInstance, notNullValue());
-        assertThat(serviceInstance.get(), instanceOf(instanceType));
-        assertThat(serviceInstance.serviceType(), is(typeName(serviceType)));
-        assertThat(serviceInstance.contracts(), is(typeNames(contracts)));
-        assertThat(serviceInstance.qualifiers(), is(qualifiers(qualifiers)));
-        assertThat(serviceInstance.weight(), is(weight));
     }
 
     private void checkAll(List<ContractNoScope> all, int size) {
@@ -331,21 +259,5 @@ class NoScopeLookupTest {
         assertThat(first, optionalPresent());
         assertThat(first, optionalValue(instanceOf(expectedType)));
         return first.get();
-    }
-
-    private TypeName typeName(Class<?> type) {
-        return TypeName.create(type);
-    }
-
-    private Set<TypeName> typeNames(Set<Class<?>> types) {
-        return types.stream()
-                .map(TypeName::create)
-                .collect(Collectors.toSet());
-    }
-
-    private Set<Qualifier> qualifiers(Set<Class<? extends Annotation>> qualifiers) {
-        return qualifiers.stream()
-                .map(Qualifier::create)
-                .collect(Collectors.toSet());
     }
 }

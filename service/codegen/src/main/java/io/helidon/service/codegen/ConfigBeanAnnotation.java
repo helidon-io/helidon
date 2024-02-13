@@ -19,8 +19,8 @@ package io.helidon.service.codegen;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_META_CONFIGURED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_CONFIGURED;
+import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_META_CONFIGURED;
 
 record ConfigBeanAnnotation(String configKey,
                             boolean repeatable,
@@ -47,7 +47,7 @@ record ConfigBeanAnnotation(String configKey,
                     .stringValue()
                     .orElse("");
         }
-        if (configKey.isBlank() &&  typeInfo.hasAnnotation(CONFIG_META_CONFIGURED)) {
+        if (configKey.isBlank() && typeInfo.hasAnnotation(CONFIG_META_CONFIGURED)) {
             configKey = typeInfo.annotation(CONFIG_META_CONFIGURED)
                     .stringValue("prefix")
                     .orElse("");

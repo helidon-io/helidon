@@ -18,7 +18,7 @@ package io.helidon.examples.inject.configdriven;
 
 import io.helidon.examples.inject.basics.ToolBox;
 import io.helidon.inject.ManagedRegistry;
-import io.helidon.inject.Services;
+import io.helidon.service.inject.api.InjectRegistry;
 
 /**
  * Config-driven example.

@@ -20,11 +20,11 @@ import io.helidon.service.inject.api.Injection;
 
 @Injection.DrivenBy(BConfigBlueprint.class)
 class BService implements TheContract {
-    private final AConfig config;
+    private final BConfig config;
     private final String name;
 
     @Injection.Inject
-    BService(AConfig config, @Injection.DrivenByName String name) {
+    BService(BConfig config, @Injection.DrivenByName String name) {
         this.config = config;
         this.name = name;
     }

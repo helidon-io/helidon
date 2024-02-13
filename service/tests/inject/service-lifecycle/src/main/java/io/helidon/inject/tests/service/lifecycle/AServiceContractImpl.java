@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.Service
+@Injection.Dependent
 class AServiceContractImpl implements AServiceContract {
     static final AtomicInteger INSTANCES = new AtomicInteger();
     static final AtomicInteger INJECTIONS = new AtomicInteger();
@@ -31,14 +31,14 @@ class AServiceContractImpl implements AServiceContract {
         INSTANCES.incrementAndGet();
     }
 
+    @Override
+    public InjectedService service() {
+        return injectedService;
+    }
+
     @Injection.Inject
     void setInjectedService(InjectedService injectedService) {
         this.injectedService = injectedService;
         INJECTIONS.incrementAndGet();
-    }
-
-    @Override
-    public InjectedService service() {
-        return injectedService;
     }
 }
