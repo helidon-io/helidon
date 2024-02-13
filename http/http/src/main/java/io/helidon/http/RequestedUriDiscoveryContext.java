@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ public interface RequestedUriDiscoveryContext {
         private Boolean enabled;
         private final List<RequestedUriDiscoveryType> discoveryTypes = new ArrayList<>();
         private AllowList trustedProxies;
-        private String socketId;
+        private String socketId = "@default";
 
         private Builder() {
         }
@@ -115,7 +115,12 @@ public interface RequestedUriDiscoveryContext {
             requestedUriDiscoveryConfig.get("enabled")
                     .as(Boolean.class)
                     .ifPresent(this::enabled);
+            // TODO - discoveryTypes as a key was never documented but was hand-coded this way. Keep for compatibility
+            // in case existing apps happen to use it. Remove as soon as practical.
             requestedUriDiscoveryConfig.get("discoveryTypes")
+                    .asList(RequestedUriDiscoveryType.class)
+                    .ifPresent(this::discoveryTypes);
+            requestedUriDiscoveryConfig.get("types")
                     .asList(RequestedUriDiscoveryType.class)
                     .ifPresent(this::discoveryTypes);
             requestedUriDiscoveryConfig.get("trusted-proxies")
@@ -130,7 +135,7 @@ public interface RequestedUriDiscoveryContext {
          * @param value new enabled state
          * @return updated builder
          */
-        @ConfiguredOption(value = "true if 'discoveryTypes' or 'trusted-proxies' is set; false otherwise")
+        @ConfiguredOption(value = "true if 'types' or 'trusted-proxies' is set; false otherwise")
         public Builder enabled(boolean value) {
             enabled = value;
             return this;
@@ -154,7 +159,7 @@ public interface RequestedUriDiscoveryContext {
          * @param discoveryTypes discovery types to use
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(key = "types")
         public Builder discoveryTypes(List<RequestedUriDiscoveryType> discoveryTypes) {
             this.discoveryTypes.clear();
             this.discoveryTypes.addAll(discoveryTypes);
@@ -202,9 +207,6 @@ public interface RequestedUriDiscoveryContext {
          * </p>
          */
         private void prepareAndCheckRequestedUriSettings() {
-            if (socketId == null) {
-                throw new IllegalArgumentException("Required socket ID not specified");
-            }
             boolean isDiscoveryEnabledDefaulted = (enabled == null);
             if (enabled == null) {
                 enabled = !discoveryTypes.isEmpty() || trustedProxies != null;
