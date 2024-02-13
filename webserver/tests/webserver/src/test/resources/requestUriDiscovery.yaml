@@ -1,0 +1,104 @@
+#
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# The "valid" config section sets up a properly-configured server with different sockets, each
+# with different requested URI discovery behavior. The other sections contain illegal configuration
+# settings which should prevent the server from starting.
+
+valid:
+  server:
+    sockets:
+      - name: "test-enabled-choose-host"
+        port: 0
+        bind-address: "localhost"
+        requested-uri-discovery:
+          types: host,forwarded
+          trusted-proxies:
+            allow:
+              exact: trust.com
+            deny:
+              exact: otherBadProxy.com
+      # Should be OK - trusted-proxies is set with non-HOST discovery type.
+      - name: "test-defaulted-discovery-type"
+        port: 0
+        bind-address: "localhost"
+        requested-uri-discovery:
+          trusted-proxies:
+            allow:
+              exact: trust.com
+      # Should reflect only the Forwarded header, not the X-Forwarded family.
+      - name: "test-forwarded-only"
+        port: 0
+        bind-address: "localhost"
+        requested-uri-discovery:
+          types: forwarded
+          trusted-proxies:
+            allow:
+              all: true
+            deny:
+              exact: otherUntrustedProxy.com,untrustedProxy.com
+      # Should reflect only the X-Forwarded headers, not Forwarded.
+      - name: "test-x-forwarded-only"
+        port: 0
+        bind-address: "localhost"
+        requested-uri-discovery:
+          types: x-forwarded
+          trusted-proxies:
+            allow:
+              all: true
+            deny:
+              exact: otherUntrustedProxy.com,untrustedProxy.com
+      # Should reflect both X-Forwarded headers and Forwarded with X-Forwarded first.
+      - name: "test-both-x-forwarded-first"
+        port: 0
+        bind-address: "localhost"
+        requested-uri-discovery:
+          types: x-forwarded,forwarded
+          trusted-proxies:
+            allow:
+              all: true
+            deny:
+              exact: otherUntrustedProxy.com,untrustedProxy.com
+      # Should reflect both X-Forwarded headers and Forwarded with Forwarded first.
+      - name: "test-both-forwarded-first"
+        port: 0
+        bind-address: "localhost"
+        requested-uri-discovery:
+          types: forwarded,x-forwarded
+          trusted-proxies:
+            allow:
+              all: true
+            deny:
+              exact: otherUntrustedProxy.com,untrustedProxy.com
+      # Should reflect the Host header by default.
+      - name: "test-default-discovery"
+        port: 0
+        bind-address: "localhost"
+
+
+# Should throw unsafe exception - defaulted non-HOST type without trusted proxy settings.
+test-enabled-no-details:
+  server:
+    port: 0
+    requested-uri-discovery:
+      enabled: true
+
+# Should throw unsafe exception - non-HOST type without trusted proxy settings.
+test-explicit-types-no-details:
+  server:
+    port: 0
+    requested-uri-discovery:
+      types: forwarded,x-forwarded
