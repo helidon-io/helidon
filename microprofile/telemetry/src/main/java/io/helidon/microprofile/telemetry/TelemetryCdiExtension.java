@@ -35,8 +35,6 @@ public class TelemetryCdiExtension implements Extension {
 
     private static final System.Logger LOGGER = System.getLogger(TelemetryCdiExtension.class.getName());
 
-    private boolean isAgentPresent;
-
     /**
      * Add {@code HelidonWithSpan} annotation with interceptor.
      *
@@ -44,8 +42,6 @@ public class TelemetryCdiExtension implements Extension {
      */
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(System.Logger.Level.TRACE, () -> "Before Telemetry bean discovery " + discovery);
-
-        isAgentPresent = Boolean.getBoolean(OTEL_AGENT_PRESENT);
 
         // Register annotations, interceptors and producers.
         discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
