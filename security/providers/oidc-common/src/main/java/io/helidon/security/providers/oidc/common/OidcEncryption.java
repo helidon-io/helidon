@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,9 @@ final class OidcEncryption {
             String password = UUID.randomUUID().toString();
             try {
                 Files.writeString(path, password, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
-                Files.setPosixFilePermissions(path, Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+                if (path.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+                    Files.setPosixFilePermissions(path, Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+                }
             } catch (IOException e) {
                 throw new SecurityException("Failed to create OIDC secret " + path.toAbsolutePath(), e);
             }
