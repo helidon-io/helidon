@@ -92,20 +92,24 @@ class WebsocketSnippets {
     // end::snippet_1[]
 
     // tag::snippet_2[]
-    @ServerEndpoint(value = "/websocket",
-                    encoders = {
-                            UppercaseEncoder.class
-                    })
+    @ServerEndpoint(
+            value = "/websocket",
+            encoders = {
+                    UppercaseEncoder.class
+            })
     public class MessageBoardEndpoint {
 
         @Inject
         private MessageQueue messageQueue;
 
         @OnMessage
-        public void onMessage(Session session, String message) throws EncodeException, IOException {
+        public void onMessage(Session session, String message)
+                throws EncodeException, IOException {
+
             if (message.equals("SEND")) {
                 while (!messageQueue.isEmpty()) {
-                    session.getBasicRemote().sendObject(messageQueue.pop());
+                    session.getBasicRemote()
+                            .sendObject(messageQueue.pop());
                 }
             }
         }
@@ -126,7 +130,7 @@ class WebsocketSnippets {
 
             @Override
             public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> endpoints) {
-                return endpoints;       // Returned scanned endpoints
+                return endpoints; // Returned scanned endpoints
             }
         }
         // end::snippet_3[]

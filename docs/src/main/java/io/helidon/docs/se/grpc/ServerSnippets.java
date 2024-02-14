@@ -83,7 +83,7 @@ class ServerSnippets {
 
     // stub
     static class Main {
-        static void grpcUpper(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
+        static void grpcUpper(Strings.StringMessage msg, StreamObserver<Strings.StringMessage> stream) {
         }
     }
 

@@ -36,6 +36,13 @@ import org.glassfish.jersey.server.Uri;
 @SuppressWarnings("ALL")
 class TracingSnippets {
 
+    // stub
+    static class GreetingProvider {
+        String getMessage() {
+            return "";
+        }
+    }
+
     class Snippet1 {
 
         AtomicReference<String> message  = new AtomicReference<>();
@@ -93,12 +100,6 @@ class TracingSnippets {
             }
         }
         // end::snippet_3[]
-    }
-
-    static class GreetingProvider {
-        String getMessage() {
-            return "";
-        }
     }
 
     class Snippet4 {

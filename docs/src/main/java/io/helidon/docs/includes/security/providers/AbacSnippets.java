@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 @SuppressWarnings("ALL")
 class AbacSnippets {
 
+    // stub
     record SomeResource(String user) {
     }
 

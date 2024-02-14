@@ -15,25 +15,20 @@
  */
 package io.helidon.docs.se.metrics;
 
-// tag::micrometer_feature_import[]
-
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.integrations.micrometer.MeterRegistryFactory;
 import io.helidon.integrations.micrometer.MeterRegistryFactory.BuiltInRegistryType;
 import io.helidon.integrations.micrometer.MicrometerFeature;
-// end::micrometer_feature_import[]
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-// tag::micrometer_counter_import[]
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-// end::micrometer_counter_import[]
 
 @SuppressWarnings("ALL")
 class MicrometerSnippets {

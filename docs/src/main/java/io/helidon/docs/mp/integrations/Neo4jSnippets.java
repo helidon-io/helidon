@@ -40,6 +40,13 @@ class Neo4jSnippets {
     record Movie(String title, String tagline, int released, List<Person> directors, List<Actor> actors) {
     }
 
+    // stub
+    class MovieRepository {
+        List<Movie> findAll() {
+            return List.of();
+        }
+    }
+
     class Snippet1 {
 
         class MovieRepository {
@@ -71,11 +78,11 @@ class Neo4jSnippets {
             List<Movie> findAll() { // <2>
                 try (var session = driver.session()) {
                     var query = """
-                            match (m:Movie)
-                            match (m) <- [:DIRECTED] - (d:Person)
-                            match (m) <- [r:ACTED_IN] - (a:Person)
-                            return m, collect(d) as directors, collect({name:a.name, roles: r.roles}) as actors
-                            """;
+                                match (m:Movie)
+                                match (m) <- [:DIRECTED] - (d:Person)
+                                match (m) <- [r:ACTED_IN] - (a:Person)
+                                return m, collect(d) as directors, collect({name:a.name, roles: r.roles}) as actors
+                                """;
 
                     return session.readTransaction(tx -> tx.run(query).list(r -> {
                         var movieNode = r.get("m").asNode();
@@ -101,14 +108,6 @@ class Neo4jSnippets {
             }
         }
         // end::snippet_2[]
-    }
-
-    // stub
-    class MovieRepository {
-
-        List<Movie> findAll() {
-            return List.of();
-        }
     }
 
     class Snippet3 {

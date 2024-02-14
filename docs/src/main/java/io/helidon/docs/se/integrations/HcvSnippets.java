@@ -347,11 +347,10 @@ class HcvSnippets {
         }
 
         public String run() { // <1>
-        /*
-         The following tasks must be run before we authenticate
-         */
+            // The following tasks must be run before we authenticate
             enableK8sAuth();
-            // Now we can login using k8s - must run within a k8s cluster (or you need the k8s configuration files locally)
+            // Now we can login using k8s - must run within a k8s cluster
+            // (or you need the k8s configuration files locally)
             workWithSecrets();
             // Now back to token based Vault, as we will clean up
             disableK8sAuth();
@@ -361,8 +360,9 @@ class HcvSnippets {
         private void workWithSecrets() { // <2>
             Kv2Secrets secrets = k8sVault.secrets(Kv2Secrets.ENGINE);
 
-            secrets.create(SECRET_PATH, Map.of("secret-key", "secretValue",
-                                               "secret-user", "username"));
+            secrets.create(SECRET_PATH, Map.of(
+                    "secret-key", "secretValue",
+                    "secret-user", "username"));
 
             Optional<Kv2Secret> secret = secrets.get(SECRET_PATH);
             if (secret.isPresent()) {

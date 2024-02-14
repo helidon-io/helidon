@@ -359,15 +359,14 @@ class ReactiveMessagingSnippets {
         // end::snippet_16[]
     }
 
-    void snippet_17() throws SQLException {
+    void snippet_17(String jdbcUrl) throws SQLException {
         // tag::snippet_17[]
         PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource(); // <1>
         pds.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
-        pds.setURL(
-                "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=192.168.0.123)(Port=1521))(CONNECT_DATA=(SID=XE)))");
+        pds.setURL(jdbcUrl);
         pds.setUser("frank");
         pds.setPassword("frank");
-        AqConnector seConn = AqConnector.builder() // <2>
+        AqConnector connector = AqConnector.builder() // <2>
                 .dataSource("test-ds", pds)
                 .build();
         Channel<String> toAq = Channel.<String>builder() // <3>
@@ -387,8 +386,10 @@ class ReactiveMessagingSnippets {
                 .build();
 
         Messaging.builder() // <5>
-                .connector(seConn)
-                .publisher(toAq, Multi.just("Hello", "world", "from", "Oracle", "DB!").map(Message::of)) // <6>
+                .connector(connector)
+                .publisher(toAq,
+                           Multi.just("Hello", "world", "from", "Oracle", "DB!")
+                                   .map(Message::of)) // <6>
                 .listener(fromAq, s -> System.out.println("Message received: " + s)) // <7>
                 .build()
                 .start();

@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings("ALL")
 class MockSnippets {
 
+    // stub
     static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     // tag::snippet_1[]

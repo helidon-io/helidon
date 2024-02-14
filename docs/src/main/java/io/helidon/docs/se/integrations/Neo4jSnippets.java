@@ -35,13 +35,6 @@ import org.neo4j.driver.Value;
 @SuppressWarnings("ALL")
 class Neo4jSnippets {
 
-    void snippet_1(Config config) {
-        // tag::snippet_1[]
-        Neo4j neo4j = Neo4j.create(config.get("neo4j"));
-        Driver neo4jDriver = neo4j.driver();
-        // end::snippet_1[]
-    }
-
     // stub
     record Person(int born, String name) {
     }
@@ -52,6 +45,13 @@ class Neo4jSnippets {
 
     // stub
     record Movie(String title, String tagline, int released, List<Person> directors, List<Actor> actors) {
+    }
+
+    void snippet_1(Config config) {
+        // tag::snippet_1[]
+        Neo4j neo4j = Neo4j.create(config.get("neo4j"));
+        Driver neo4jDriver = neo4j.driver();
+        // end::snippet_1[]
     }
 
     // tag::snippet_2[]
@@ -95,10 +95,10 @@ class Neo4jSnippets {
 
         @Override
         public void routing(HttpRules rules) {
-            rules.get("/api/movies", this::findMoviesHandler);
+            rules.get("/api/movies", this::findMovies);
         }
 
-        void findMoviesHandler(ServerRequest request, ServerResponse response) {
+        void findMovies(ServerRequest request, ServerResponse response) {
             response.send(this.movieRepository.findAll());
         }
     }

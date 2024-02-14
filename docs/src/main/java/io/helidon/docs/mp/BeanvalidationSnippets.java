@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.MediaType;
 @SuppressWarnings("ALL")
 class BeanvalidationSnippets {
 
+    // stub
     static class Greeting {
     }
 

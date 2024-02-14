@@ -39,6 +39,7 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 @SuppressWarnings("ALL")
 class JmsSnippets {
 
+    // stub
     static final Config config = Config.global();
 
     class Snippet1 {

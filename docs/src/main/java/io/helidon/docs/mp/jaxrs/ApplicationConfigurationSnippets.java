@@ -26,7 +26,7 @@ class ApplicationConfigurationSnippets {
 
         class MyResource {
 
-            String applicationName;
+            private String applicationName;
 
             // tag::snippet_1[]
             @Inject
@@ -41,7 +41,7 @@ class ApplicationConfigurationSnippets {
 
         class MyResource {
 
-            Config config;
+            private final Config config;
 
             // tag::snippet_2[]
             @Inject

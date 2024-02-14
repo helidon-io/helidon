@@ -18,6 +18,9 @@ package io.helidon.docs.se.guides;
 @SuppressWarnings("ALL")
 class UpgradeSnippets {
 
+    // snippets are for previous Helidon versions
+    // and can't compile with the current class-path.
+
     /*
     void snippet_1(ServerRequest serverRequest) {
         // tag::snippet_1[]

@@ -76,9 +76,12 @@ class TracingSnippets {
         // end::snippet_2[]
     }
 
-    // tag::snippet_3[]
-    private WebClient webClient;
-    // end::snippet_3[]
+    class Snippet3 {
+
+        // tag::snippet_3[]
+        private WebClient webClient;
+        // end::snippet_3[]
+    }
 
     void snippet_4(WebClient webClient) {
         // tag::snippet_4[]
@@ -89,9 +92,11 @@ class TracingSnippets {
         // end::snippet_4[]
     }
 
-    class Snippet5_6 {
+    class Snippet5 {
 
-        WebClient webClient;
+        // stub
+        void outboundMessageHandler(ServerRequest req, ServerResponse res) {
+        }
 
         void snippet_5(HttpRules rules) {
             rules
@@ -99,6 +104,11 @@ class TracingSnippets {
                     .get("/outbound", this::outboundMessageHandler);
             // end::snippet_5[]
         }
+    }
+
+    class Snippet6 {
+
+        WebClient webClient;
 
         // tag::snippet_6[]
         private void outboundMessageHandler(ServerRequest request,

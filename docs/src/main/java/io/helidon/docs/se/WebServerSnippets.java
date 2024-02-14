@@ -55,6 +55,15 @@ import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscovery
 @SuppressWarnings("ALL")
 class WebServerSnippets {
 
+    // stub
+    boolean userParametersOk() {
+        return true;
+    }
+
+    // stub
+    static final class MyException extends RuntimeException {
+    }
+
     void snippet_1() {
         // tag::snippet_1[]
         WebServer.builder()
@@ -137,11 +146,6 @@ class WebServerSnippets {
         // end::snippet_9[]
     }
 
-    // stub
-    boolean userParametersOk() {
-        return true;
-    }
-
     void snippet_10(HttpRules rules) {
         // tag::snippet_10[]
         rules.any("/hello", (req, res) -> { // <1>
@@ -192,12 +196,9 @@ class WebServerSnippets {
         // tag::snippet_17[]
         rules.get((req, res) -> {
             UriInfo uriInfo = req.requestedUri();
+            // ...
         });
         // end::snippet_17[]
-    }
-
-    // stub
-    static final class MyException extends RuntimeException {
     }
 
     void snippet_18(HttpRouting.Builder routing) {

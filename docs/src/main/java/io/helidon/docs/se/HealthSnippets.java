@@ -30,6 +30,19 @@ import io.helidon.webserver.observe.health.HealthObserver;
 @SuppressWarnings("ALL")
 class HealthSnippets {
 
+    // stub
+    class Main {
+
+        static HealthCheckResponse slowStartLivenessResponse() {
+            return HealthCheckResponse.builder()
+                    .build();
+        }
+
+        static void routing(HttpRouting.Builder routing) {
+        }
+    }
+
+    // stub
     static long serverStartTime = 0;
 
     class Snippet1 {
@@ -43,18 +56,6 @@ class HealthSnippets {
                     .build();
         }
         // end::snippet_1[]
-    }
-
-    // stub
-    class Main {
-
-        static HealthCheckResponse slowStartLivenessResponse() {
-            return HealthCheckResponse.builder()
-                    .build();
-        }
-
-        static void routing(HttpRouting.Builder routing) {
-        }
     }
 
     void snippet_2(Config config) {

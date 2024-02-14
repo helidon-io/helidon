@@ -36,6 +36,7 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 @SuppressWarnings("ALL")
 class AqSnippets {
 
+    // stub
     static final Config config = Config.global();
 
     // tag::snippet_1[]

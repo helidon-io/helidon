@@ -28,6 +28,7 @@ import io.helidon.websocket.WsSession;
 
 @SuppressWarnings("ALL")
 class WebSocketSnippets {
+
     // tag::snippet_1[]
     record MessageQueueService(Queue<String> messageQueue) implements HttpService {
         @Override

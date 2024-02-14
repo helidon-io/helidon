@@ -48,9 +48,12 @@ class LraSnippets {
 
         // tag::snippet_1[]
         @PUT
-        @LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 500, timeUnit = ChronoUnit.MILLIS)
+        @LRA(value = LRA.Type.REQUIRES_NEW,
+             timeLimit = 500,
+             timeUnit = ChronoUnit.MILLIS)
         @Path("start-example")
-        public Response startLra(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId, String data) {
+        public Response startLra(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
+                                 String data) {
             return Response.ok().build();
         }
         // end::snippet_1[]
@@ -151,7 +154,8 @@ class LraSnippets {
         // tag::snippet_10[]
         @Status
         public Response reportStatus(URI lraId) {
-            return Response.ok(ParticipantStatus.FailedToCompensate).build();
+            return Response.ok(ParticipantStatus.FailedToCompensate)
+                    .build();
         }
         // end::snippet_10[]
     }

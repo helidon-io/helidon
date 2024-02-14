@@ -41,6 +41,14 @@ class MetricsSnippets {
         }
     }
 
+    // stub
+    class MyService implements HttpService {
+
+        @Override
+        public void routing(HttpRules rules) {
+        }
+    }
+
     void snippet_1(Config config) {
         // tag::snippet_1[]
         ObserveFeature observe = ObserveFeature.builder()
@@ -97,14 +105,6 @@ class MetricsSnippets {
         }
     }
     // end::snippet_3[]
-
-    // stub
-    class MyService implements HttpService {
-
-        @Override
-        public void routing(HttpRules rules) {
-        }
-    }
 
     void snippet_5(HttpRouting.Builder routing) {
         // tag::snippet_5[]

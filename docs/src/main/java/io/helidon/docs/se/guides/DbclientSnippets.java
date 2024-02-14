@@ -36,6 +36,20 @@ import jakarta.json.JsonObject;
 @SuppressWarnings("ALL")
 class DbclientSnippets {
 
+    // stub
+    static class GreetService implements HttpService {
+        @Override
+        public void routing(HttpRules rules) {
+        }
+    }
+
+    // stub
+    static class LibraryService implements HttpService {
+        @Override
+        public void routing(HttpRules rules) {
+        }
+    }
+
     class Main {
 
         // tag::snippet_1[]
@@ -183,22 +197,6 @@ class DbclientSnippets {
             response.status(Status.NO_CONTENT_204).send(); // <2>
         }
         // end::snippet_7[]
-    }
-
-    // stub
-    static class GreetService implements HttpService {
-        @Override
-        public void routing(HttpRules rules) {
-
-        }
-    }
-
-    // stub
-    static class LibraryService implements HttpService {
-        @Override
-        public void routing(HttpRules rules) {
-
-        }
     }
 
     // tag::snippet_8[]
