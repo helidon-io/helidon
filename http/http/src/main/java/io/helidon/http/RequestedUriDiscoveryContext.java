@@ -122,7 +122,7 @@ public interface RequestedUriDiscoveryContext {
                     .ifPresent(this::discoveryTypes);
             requestedUriDiscoveryConfig.get("types")
                     .asList(RequestedUriDiscoveryType.class)
-                    .ifPresent(this::discoveryTypes);
+                    .ifPresent(this::types);
             requestedUriDiscoveryConfig.get("trusted-proxies")
                     .map(AllowList::create)
                     .ifPresent(this::trustedProxies);
@@ -159,11 +159,23 @@ public interface RequestedUriDiscoveryContext {
          * @param discoveryTypes discovery types to use
          * @return updated builder
          */
-        @ConfiguredOption(key = "types")
-        public Builder discoveryTypes(List<RequestedUriDiscoveryType> discoveryTypes) {
+        @ConfiguredOption()
+        public Builder types(List<RequestedUriDiscoveryType> discoveryTypes) {
             this.discoveryTypes.clear();
             this.discoveryTypes.addAll(discoveryTypes);
             return this;
+        }
+
+        /**
+         * Sets the discovery types for requested URI discovery for requests arriving on the socket.
+         *
+         * @param discoveryTypes discovery types to use
+         * @return updated builder
+         * @deprecated Use {@link #types(java.util.List)} instead
+         */
+        @Deprecated(since = "4.0.6", forRemoval = true)
+        public Builder discoveryTypes(List<RequestedUriDiscoveryType> discoveryTypes) {
+            return types(discoveryTypes);
         }
 
         /**
