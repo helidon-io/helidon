@@ -26,6 +26,8 @@ import io.helidon.integrations.cdi.configurable.AbstractConfigurableExtension;
 
 import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import jakarta.inject.Named;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * An {@link AbstractConfigurableExtension} whose subclasses arrange for {@link DataSource} instances to be added as CDI
@@ -38,34 +40,54 @@ import jakarta.inject.Named;
  */
 public abstract class AbstractDataSourceExtension extends AbstractConfigurableExtension<DataSource> {
 
+    private final Config config;
+
     /**
      * Creates a new {@link AbstractDataSourceExtension}.
      */
     protected AbstractDataSourceExtension() {
         super();
+        this.config = ConfigProvider.getConfig();
     }
 
     /**
-     * Calls the {@link #getConfigPropertyNames()} method and returns its return value.
+     * Returns the {@link Config} instance used to {@linkplain #configPropertyValue(String) acquire configuration
+     * property values}.
      *
      * <p>This method never returns {@code null}.</p>
      *
-     * <p>This method exists for backwards compatibility only and the {@link #getConfigPropertyNames()} method is
+     * <p>This method exists for backwards compatibility only and its usage is discouraged.</p>
+     *
+     * @return a non-{@code null} {@link Config} instance
+     *
+     * @deprecated This method exists for backwards compatibility only and has no replacement.
+     */
+    @Deprecated // For backwards compatibility only.
+    protected final Config getConfig() {
+        return this.config;
+    }
+
+    /**
+     * Calls the {@link #configPropertyNames()} method and returns its return value.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * <p>This method exists for backwards compatibility only and the {@link #configPropertyNames()} method is
      * preferred.</p>
      *
-     * @return the return value of an invocation of the {@link #getConfigPropertyNames()} method
+     * @return the return value of an invocation of the {@link #configPropertyNames()} method
      *
-     * @see #getConfigPropertyNames()
+     * @see #configPropertyNames()
      *
-     * @deprecated Please use the {@link #getConfigPropertyNames()} method instead.
+     * @deprecated This method exists for backwards compatibility only. Please use the {@link #configPropertyNames()} method instead.
      */
     @Deprecated
     protected final Set<String> getPropertyNames() {
-        return this.getConfigPropertyNames();
+        return this.configPropertyNames();
     }
 
     @Override
-    protected final Matcher getPropertyPatternMatcher(String configPropertyName) {
+    protected final Matcher matcher(String configPropertyName) {
         return this.getDataSourcePropertyPatternMatcher(configPropertyName);
     }
 
@@ -74,8 +96,8 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      *
      * <p>Implementations of this method must not return {@code null}.</p>
      *
-     * <p>Implementations of this method must not invoke the {@link #getPropertyPatternMatcher(String)} method or an
-     * infinite loop may result.</p>
+     * <p>Implementations of this method must not invoke the {@link #matcher(String)} method or an infinite loop may
+     * result.</p>
      *
      * <p>Given a {@link String} like
      * <code>javax.sql.DataSource.<em>dataSourceName</em>.<em>dataSourcePropertyName</em></code>, any implementation of
@@ -94,7 +116,7 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
     protected abstract Matcher getDataSourcePropertyPatternMatcher(String configPropertyName);
 
     @Override
-    protected final String getName(Matcher propertyPatternMatcher) {
+    protected final String name(Matcher propertyPatternMatcher) {
         return this.getDataSourceName(propertyPatternMatcher);
     }
 
@@ -104,7 +126,7 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      *
      * <p>Implementations of this method may return {@code null}.</p>
      *
-     * <p>Implementations of this method must not invoke the {@link #getName(Matcher)} method or an infinite loop may
+     * <p>Implementations of this method must not invoke the {@link #name(Matcher)} method or an infinite loop may
      * result.</p>
      *
      * @param dataSourcePropertyPatternMatcher a {@link Matcher} produced by the {@link
@@ -117,7 +139,7 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
     protected abstract String getDataSourceName(Matcher dataSourcePropertyPatternMatcher);
 
     @Override
-    protected final String getPropertyName(Matcher propertyPatternMatcher) {
+    protected final String propertyName(Matcher propertyPatternMatcher) {
         return this.getDataSourcePropertyName(propertyPatternMatcher);
     }
 
@@ -127,8 +149,8 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      *
      * <p>Implementations of this method may return {@code null}.</p>
      *
-     * <p>Implementations of this method must not invoke the {@link #getPropertyName(Matcher)} method or an infinite
-     * loop may result.</p>
+     * <p>Implementations of this method must not invoke the {@link #propertyName(Matcher)} method or an infinite loop
+     * may result.</p>
      *
      * @param dataSourcePropertyPatternMatcher a {@link Matcher} produced by the {@link
      * #getDataSourcePropertyPatternMatcher(String)} method; must not be {@code null}
@@ -149,12 +171,12 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      * @return a non-{@code null}, {@linkplain Collections#unmodifiableSet(Set) unmodifiable <code>Set</code>} of known
      * data source names
      *
-     * @deprecated This method exists for backwards compatibility only. Please use the {@link #getNames()} method
+     * @deprecated This method exists for backwards compatibility only. Please use the {@link #names()} method
      * instead.
      */
     @Deprecated // for backwards compatibility only
     protected final Set<String> getDataSourceNames() {
-        return this.getNames();
+        return this.names();
     }
 
     /**
@@ -172,11 +194,12 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      *
      * @exception NullPointerException if {@code properties} is {@code null}
      *
-     * @deprecated Please use the {@link #putProperties(String, Properties)} method instead.
+     * @deprecated This method exists for backwards compatibility only. Please use the {@link #put(String, Properties)}
+     * method instead.
      */
     @Deprecated // for backwards compatibility only
     protected final Properties putDataSourceProperties(final String dataSourceName, final Properties properties) {
-        return this.putProperties(dataSourceName, properties);
+        return this.put(dataSourceName, properties);
     }
 
     /**

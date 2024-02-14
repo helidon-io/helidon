@@ -35,6 +35,8 @@ import oracle.ucp.admin.UniversalConnectionPoolManager;
 import oracle.ucp.admin.UniversalConnectionPoolManagerImpl;
 import oracle.ucp.jdbc.PoolDataSource;
 
+import static io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension.DATASOURCE_NAME_PATTERN;
+
 /**
  * An {@link AbstractConfigurableExtension} that provides injection support for {@link UniversalConnectionPoolManager}
  * and {@linkplain Named named} {@link UniversalConnectionPool} instances.
@@ -97,19 +99,18 @@ public class UniversalConnectionPoolExtension extends AbstractConfigurableExtens
     }
 
     @Override
-    protected final Matcher getPropertyPatternMatcher(String configPropertyName) {
-        return
-            configPropertyName == null ? null : UCPBackedDataSourceExtension.DATASOURCE_NAME_PATTERN.matcher(configPropertyName);
+    protected final Matcher matcher(String configPropertyName) {
+        return configPropertyName == null ? null : DATASOURCE_NAME_PATTERN.matcher(configPropertyName);
     }
 
     @Override
-    protected final String getName(Matcher propertyPatternMatcher) {
-        return propertyPatternMatcher == null ? null : propertyPatternMatcher.group(2);
+    protected final String name(Matcher configPropertyNameMatcher) {
+        return configPropertyNameMatcher == null ? null : configPropertyNameMatcher.group(2);
     }
 
     @Override
-    protected final String getPropertyName(Matcher propertyPatternMatcher) {
-        return propertyPatternMatcher == null ? null : propertyPatternMatcher.group(3);
+    protected final String propertyName(Matcher configPropertyNameMatcher) {
+        return configPropertyNameMatcher == null ? null : configPropertyNameMatcher.group(3);
     }
 
     private void installManager(@Observes AfterBeanDiscovery event) {

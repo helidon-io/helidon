@@ -37,7 +37,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * A convenient, abstract {@link Extension} whose subclasses arrange for instances of a particular type to be configured
- * via MicroProfile Config and added as CDI beans.
+ * and added as CDI beans.
  *
  * <p>There are four kinds of names defined by this extension:</p>
  *
@@ -51,8 +51,8 @@ import org.eclipse.microprofile.config.ConfigProvider;
  * <li><strong>Property name</strong>: a name of a property of the kind of object this extension manages. Example:
  * {@code user}</li>
  *
- * <li><strong>Configuration property name</strong>: a name of a MicroProfile Config configuration property that
- * logically contains at least the other three kinds of names. Example: {@code javax.sql.DataSource.prod.user}</li>
+ * <li><strong>Configuration property name</strong>: a name of a configuration property that logically contains at least
+ * the other three kinds of names. Example: {@code javax.sql.DataSource.prod.user}</li>
  *
  * </ol>
  *
@@ -65,11 +65,26 @@ import org.eclipse.microprofile.config.ConfigProvider;
  */
 public abstract class AbstractConfigurableExtension<T> implements Extension {
 
+
+    /*
+     * Instance fields.
+     */
+
+
+    // clear()ed after bean discovery
     private final Map<String, Properties> namedProperties;
 
+    // clear()ed after bean discovery
     private final Map<String, Properties> explicitlySetProperties;
 
+    // Implementation detail.
     private final Config config;
+
+
+    /*
+     * Constructors.
+     */
+
 
     /**
      * Creates a new {@link AbstractConfigurableExtension}.
@@ -81,6 +96,12 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
         this.config = ConfigProvider.getConfig();
     }
 
+
+    /*
+     * Instance methods.
+     */
+
+
     /**
      * Returns a {@link Matcher} given a <em>configuration property name</em> that can logically identify and provide
      * access to at least its three component names.
@@ -89,8 +110,8 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      *
      * <p>Given a {@link String} that is a configuration property name, like
      * <code>com.foo.Bar.<em>name</em>.<em>propertyName</em></code>, any implementation of this method must return a
-     * non-{@code null} {@link Matcher} that is capable of being supplied to the {@link #getName(Matcher)} and {@link
-     * #getPropertyName(Matcher)} methods.</p>
+     * non-{@code null} {@link Matcher} that is capable of being supplied to the {@link #name(Matcher)} and {@link
+     * #propertyName(Matcher)} methods.</p>
      *
      * @param configPropertyName a <em>configuration property name</em> that logically contains a <em>type name</em>, a
      * <em>name</em> and a <em>property name</em>; must not be {@code null}
@@ -99,48 +120,47 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      *
      * @exception NullPointerException if {@code configPropertyName} is {@code null}
      *
-     * @see #getName(Matcher)
+     * @see #name(Matcher)
      *
-     * @see #getPropertyName(Matcher)
+     * @see #propertyName(Matcher)
      */
-    protected abstract Matcher getPropertyPatternMatcher(String configPropertyName);
+    protected abstract Matcher matcher(String configPropertyName);
 
     /**
-     * Given a {@link Matcher} that has been produced by the {@link #getPropertyPatternMatcher(String)} method, returns
-     * the relevant name.
+     * Given a {@link Matcher} that has been produced by the {@link #matcher(String)} method, returns the relevant name.
      *
      * <p>Implementations of this method may return {@code null}.</p>
      *
-     * @param propertyPatternMatcher a {@link Matcher} produced by the {@link #getPropertyPatternMatcher(String)}
-     * method; must not be {@code null}
+     * @param configPropertyNameMatcher a {@link Matcher} produced by the {@link #matcher(String)} method; must not be
+     * {@code null}
      *
      * @return a name, or {@code null}
      *
-     * @exception NullPointerException if {@code propertyPatternMatcher} is {@code null}
+     * @exception NullPointerException if {@code configPropertyNameMatcher} is {@code null}
      *
-     * @see #getPropertyPatternMatcher(String)
+     * @see #matcher(String)
      */
-    protected abstract String getName(Matcher propertyPatternMatcher);
+    protected abstract String name(Matcher configPropertyNameMatcher);
 
     /**
-     * Given a {@link Matcher} that has been produced by the {@link #getPropertyPatternMatcher(String)} method, returns
-     * the relevant <em>property name</em>, or {@code null} if there is no such property name.
+     * Given a {@link Matcher} that has been produced by the {@link #matcher(String)} method, returns the relevant
+     * <em>property name</em>, or {@code null} if there is no such property name.
      *
      * <p>Most implementations of this method will use the {@link Matcher#group(int)} method to produce the required
      * property name.</p>
      *
      * <p>Implementations of this method may return {@code null}.</p>
      *
-     * @param propertyPatternMatcher a {@link Matcher} produced by the {@link #getPropertyPatternMatcher(String)}
-     * method; must not be {@code null}
+     * @param configPropertyNameMatcher a {@link Matcher} produced by the {@link #matcher(String)} method; must not be
+     * {@code null}
      *
      * @return a property name, or {@code null}
      *
-     * @exception NullPointerException if {@code propertyPatternMatcher} is {@code null}
+     * @exception NullPointerException if {@code configPropertyNameMatcher} is {@code null}
      *
-     * @see #getPropertyPatternMatcher(String)
+     * @see #matcher(String)
      */
-    protected abstract String getPropertyName(Matcher propertyPatternMatcher);
+    protected abstract String propertyName(Matcher configPropertyNameMatcher);
 
     /**
      * Called internally to permit subclasses to add a {@code T}-typed bean, qualified with at least the supplied {@link
@@ -161,21 +181,25 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      *
      * @see AfterBeanDiscovery
      */
-    protected abstract void addBean(BeanConfigurator<T> beanConfigurator,
-                                    Named name,
-                                    Properties properties);
+    protected abstract void addBean(BeanConfigurator<T> beanConfigurator, Named name, Properties properties);
 
     /**
-     * Returns the {@link Config} instance used to acquire MicroProfile Config configuration property values.
+     * Given a <em>configuration property name</em>, returns an {@link Optional Optional&lt;String&gt;} containing its
+     * value, or an {@linkplain Optional#empty() empty <code>Optional</code>} if no such configuration property value
+     * exists.
      *
      * <p>This method never returns {@code null}.</p>
      *
-     * @return a non-{@code null} {@link Config} instance
+     * <p>Overrides of this method must not return {@code null}.</p>
      *
-     * @see Config
+     * @param configPropertyName a configuration property name; must not be {@code null}
+     *
+     * @return a non-{@code null} {@link Optional}
+     *
+     * @exception NullPointerException if {@code configPropertyName} is {@code null}
      */
-    protected final Config getConfig() {
-        return this.config;
+    protected Optional<String> configPropertyValue(String configPropertyName) {
+        return this.config.getOptionalValue(configPropertyName, String.class);
     }
 
     /**
@@ -188,7 +212,7 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      * @return a non-{@code null}, {@linkplain Collections#unmodifiableSet(Set) unmodifiable <code>Set</code>} of known
      * names
      */
-    protected final Set<String> getNames() {
+    protected final Set<String> names() {
         if (this.namedProperties.isEmpty()) {
             if (this.explicitlySetProperties.isEmpty()) {
                 return Set.of();
@@ -215,7 +239,7 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      *
      * @exception NullPointerException if {@code properties} is {@code null}
      */
-    protected final Properties putProperties(String name, Properties properties) {
+    protected final Properties put(String name, Properties properties) {
         return this.explicitlySetProperties.put(name, Objects.requireNonNull(properties, "properties"));
     }
 
@@ -233,14 +257,16 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      */
     protected final void initializeNamedProperties() {
         this.namedProperties.clear();
-        Set<? extends String> allConfigPropertyNames = this.getConfigPropertyNames();
-        for (String configPropertyName : allConfigPropertyNames) {
-            Optional<String> propertyValue = this.config.getOptionalValue(configPropertyName, String.class);
-            if (propertyValue.isPresent()) {
-                Matcher matcher = this.getPropertyPatternMatcher(configPropertyName);
-                if (matcher != null && matcher.matches()) {
-                    this.namedProperties.computeIfAbsent(this.getName(matcher), n -> new Properties())
-                        .setProperty(this.getPropertyName(matcher), propertyValue.get());
+        Set<? extends String> allConfigPropertyNames = this.configPropertyNames();
+        if (!allConfigPropertyNames.isEmpty()) {
+            for (String configPropertyName : allConfigPropertyNames) {
+                Optional<String> propertyValue = this.configPropertyValue(configPropertyName);
+                if (propertyValue.isPresent()) {
+                    Matcher matcher = this.matcher(configPropertyName);
+                    if (matcher != null && matcher.matches()) {
+                        this.namedProperties.computeIfAbsent(this.name(matcher), n -> new Properties())
+                            .setProperty(this.propertyName(matcher), propertyValue.get());
+                    }
                 }
             }
         }
@@ -264,20 +290,17 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      * <p>Overrides of this method may return {@link Set} instances that are not safe for concurrent use by multiple
      * threads.</p>
      *
-     * <p>Any other semantics of the {@link Set} returned by this method or any overrides of it are and must be governed
-     * by the <a href="https://github.com/eclipse/microprofile-config" target="_parent">MicroProfile Config</a>
-     * specification.</p>
+     * <p>The {@link Set} returned by this method and its overrides may be {@linkplain Set#isEmpty() empty}.</p>
+     *
+     * <p>The ordering of the elements contained by the {@link Set} returned by this method and its overrides is
+     * indeterminate.</p>
      *
      * @return a non-{@code null}, {@linkplain Collections#unmodifiableSet(Set) unmodifiable <code>Set</code>} of all
      * known configuration property names
-     *
-     * @see Config#getConfigSources()
-     *
-     * @see org.eclipse.microprofile.config.spi.ConfigSource#getPropertyNames()
      */
-    protected Set<String> getConfigPropertyNames() {
+    protected Set<String> configPropertyNames() {
         Iterable<String> propertyNames = this.config.getPropertyNames();
-        if (propertyNames == null) { // MicroProfile Config specification allows this
+        if (propertyNames == null) {
             return Set.of();
         }
         Set<String> set = new HashSet<>();

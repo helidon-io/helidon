@@ -21,7 +21,7 @@
 module io.helidon.integrations.cdi.configurable {
 
     requires transitive jakarta.cdi;
-    requires transitive microprofile.config.api;
+    requires microprofile.config.api;
 
     exports io.helidon.integrations.cdi.configurable;
 
