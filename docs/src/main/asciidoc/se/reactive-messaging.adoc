@@ -83,7 +83,7 @@ to generate the `Publisher` or `Subscriber`.
 [source,java]
 .Example of simple channel:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_1, indent=0]
 ----
 
 === Processor
@@ -95,7 +95,7 @@ reactive stream.
 [source,java]
 .Example of processor usage:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_2, indent=0]
 ----
 
 === Message
@@ -134,7 +134,7 @@ Channels in Reactive Messaging. Messaging connector is just an implementation of
 [source,java]
 .Example connector `example-connector`:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_3, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_3, indent=0]
 ----
 
 [source,yaml]
@@ -147,13 +147,13 @@ mp.messaging.incoming.from-connector-channel.connector: example-connector
 [source,java]
 .Example producing to connector:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_4, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_4, indent=0]
 ----
 
 [source,java]
 .Example consuming from connector:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_5, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_5, indent=0]
 ----
 
 ===== Configuration for Messaging Connector
@@ -170,7 +170,7 @@ two mandatory attributes:
 [source,java]
 .Example connector accessing configuration:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_6, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Config context is merged from channel and connector contexts
 
@@ -184,7 +184,7 @@ the mandatory attributes and any implicit configuration found. The resulting con
 [source,java]
 .Example consuming from Kafka connector with explicit config:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_7, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Prepare channel for connecting kafka connector with specific publisher configuration -> listener,
 <2> Channel -> connector mapping is automatic when using `KafkaConnector.configBuilder()`
@@ -208,10 +208,10 @@ mp.messaging.connector.example-connector.second-test-prop: bar<3>
 [source,java]
 .Example consuming from connector:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_8, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_8, indent=0]
 ----
 
-==== Reusability in MP Messaging
+==== Re-usability in MP Messaging
 
 As the API is the same for xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging]
 connectors, all that is needed to make connector work in both ways is annotating it with
@@ -240,7 +240,7 @@ Connecting streams to Kafka with Reactive Messaging couldn't be easier.
 [source,java]
 .Example of consuming from Kafka:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_9, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_9, indent=0]
 ----
 <1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
@@ -249,7 +249,7 @@ include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_9, indent=0]
 [source,java]
 .Example of producing to Kafka:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_10, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_10, indent=0]
 ----
 <1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
@@ -288,14 +288,14 @@ mp.messaging:
 [source,java]
 .Example of consuming from Kafka:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_11, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_11, indent=0]
 ----
 <1> Prepare Kafka connector, can be used by any channel
 
 [source,java]
 .Example of producing to Kafka:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_12, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_12, indent=0]
 ----
 <1> Prepare Kafka connector, can be used by any channel
 
@@ -323,7 +323,7 @@ Connecting streams to JMS with Reactive Messaging couldn't be easier.
 [source,java]
 .Example of consuming from JMS:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_13, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_13, indent=0]
 ----
 <1> Prepare a channel for connecting jms connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using JmsConnector.configBuilder()
@@ -332,7 +332,7 @@ include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_13, indent=0]
 [source,java]
 .Example of producing to JMS:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_14, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_14, indent=0]
 ----
 <1> Prepare a channel for connecting jms connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using JmsConnector.configBuilder()
@@ -369,14 +369,14 @@ mp.messaging:
 [source,java]
 .Example of consuming from JMS:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_15, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_15, indent=0]
 ----
 <1> Prepare JMS connector, can be used by any channel
 
 [source,java]
 .Example of producing to JMS:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_16, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_16, indent=0]
 ----
 <1> Prepare JMS connector, can be used by any channel
 
@@ -402,7 +402,7 @@ Don't forget to check out the examples with pre-configured ActiveMQ docker image
 [source,java]
 .Example of producing to and consuming from Oracle AQ:
 ----
-include::{sourcedir}/se/MessagingSnippets.java[tag=snippet_17, indent=0]
+include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_17, indent=0]
 ----
 <1> Prepare Oracle UCP
 <2> Setup AQ connector and provide datasource with an identifier `test-ds`
