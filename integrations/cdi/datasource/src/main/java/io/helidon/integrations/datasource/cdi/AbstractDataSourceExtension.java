@@ -74,6 +74,9 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      *
      * <p>Implementations of this method must not return {@code null}.</p>
      *
+     * <p>Implementations of this method must not invoke the {@link #getPropertyPatternMatcher(String)} method or an
+     * infinite loop may result.</p>
+     *
      * <p>Given a {@link String} like
      * <code>javax.sql.DataSource.<em>dataSourceName</em>.<em>dataSourcePropertyName</em></code>, any implementation of
      * this method should return a non-{@code null} {@link Matcher} that is capable of being supplied to the {@link
@@ -101,6 +104,9 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      *
      * <p>Implementations of this method may return {@code null}.</p>
      *
+     * <p>Implementations of this method must not invoke the {@link #getName(Matcher)} method or an infinite loop may
+     * result.</p>
+     *
      * @param dataSourcePropertyPatternMatcher a {@link Matcher} produced by the {@link
      * #getDataSourcePropertyPatternMatcher(String)} method; must not be {@code null}
      *
@@ -121,6 +127,9 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      *
      * <p>Implementations of this method may return {@code null}.</p>
      *
+     * <p>Implementations of this method must not invoke the {@link #getPropertyName(Matcher)} method or an infinite
+     * loop may result.</p>
+     *
      * @param dataSourcePropertyPatternMatcher a {@link Matcher} produced by the {@link
      * #getDataSourcePropertyPatternMatcher(String)} method; must not be {@code null}
      *
@@ -140,7 +149,8 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
      * @return a non-{@code null}, {@linkplain Collections#unmodifiableSet(Set) unmodifiable <code>Set</code>} of known
      * data source names
      *
-     * @deprecated Please use the {@link #getNames()} method instead.
+     * @deprecated This method exists for backwards compatibility only. Please use the {@link #getNames()} method
+     * instead.
      */
     @Deprecated // for backwards compatibility only
     protected final Set<String> getDataSourceNames() {
@@ -167,6 +177,17 @@ public abstract class AbstractDataSourceExtension extends AbstractConfigurableEx
     @Deprecated // for backwards compatibility only
     protected final Properties putDataSourceProperties(final String dataSourceName, final Properties properties) {
         return this.putProperties(dataSourceName, properties);
+    }
+
+    /**
+     * Calls the {@link #initializeNamedProperties()} method.
+     *
+     * @deprecated This method exists for backwards compatibility only. Please use the {@link
+     * #initializeNamedProperties()} method instead.
+     */
+    @Deprecated // for backwards compatibility only
+    protected final void initializeMasterProperties() {
+        this.initializeNamedProperties();
     }
 
 }

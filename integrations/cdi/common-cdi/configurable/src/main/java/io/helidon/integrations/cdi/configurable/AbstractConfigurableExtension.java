@@ -65,7 +65,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
  */
 public abstract class AbstractConfigurableExtension<T> implements Extension {
 
-    private final Map<String, Properties> masterProperties;
+    private final Map<String, Properties> namedProperties;
 
     private final Map<String, Properties> explicitlySetProperties;
 
@@ -76,7 +76,7 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      */
     protected AbstractConfigurableExtension() {
         super();
-        this.masterProperties = new HashMap<>();
+        this.namedProperties = new HashMap<>();
         this.explicitlySetProperties = new HashMap<>();
         this.config = ConfigProvider.getConfig();
     }
@@ -189,13 +189,13 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      * names
      */
     protected final Set<String> getNames() {
-        if (this.masterProperties.isEmpty()) {
+        if (this.namedProperties.isEmpty()) {
             if (this.explicitlySetProperties.isEmpty()) {
                 return Set.of();
             }
             return Collections.unmodifiableSet(this.explicitlySetProperties.keySet());
         }
-        return Collections.unmodifiableSet(this.masterProperties.keySet());
+        return Collections.unmodifiableSet(this.namedProperties.keySet());
     }
 
     /**
@@ -220,38 +220,31 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
     }
 
     /**
-     * <strong>{@linkplain Map#clear() Clears}</strong>, and then builds or rebuilds, an internal map of properties
+     * <strong>{@linkplain Map#clear() Clears}</strong>, and then builds or rebuilds, an internal set of properties
      * whose contents will be processed eventually by the {@link #addBean(BeanConfigurator, Named, Properties)} method.
      *
-     * <p>If no subclass explicitly calls this method, it will be called by the {@link #addBean(BeanConfigurator, Named,
-     * Properties)} method just prior to its other activities.</p>
+     * <p>If no subclass explicitly calls this method, as is common, it will be called by the {@link
+     * #addBean(BeanConfigurator, Named, Properties)} method just prior to its other activities.</p>
      *
      * <p>Once the {@link #addBean(BeanConfigurator, Named, Properties)} method has run to completion, while this method
      * may be called freely, its use is discouraged and its effects will no longer be used.</p>
      *
      * @see #addBean(BeanConfigurator, Named, Properties)
      */
-    protected final void initializeMasterProperties() {
-        this.masterProperties.clear();
+    protected final void initializeNamedProperties() {
+        this.namedProperties.clear();
         Set<? extends String> allConfigPropertyNames = this.getConfigPropertyNames();
-        if (allConfigPropertyNames != null && !allConfigPropertyNames.isEmpty()) {
-            for (String configPropertyName : allConfigPropertyNames) {
-                Optional<String> propertyValue = this.config.getOptionalValue(configPropertyName, String.class);
-                if (propertyValue.isPresent()) {
-                    Matcher matcher = this.getPropertyPatternMatcher(configPropertyName);
-                    if (matcher != null && matcher.matches()) {
-                        this.masterProperties.computeIfAbsent(this.getName(matcher), n -> new Properties())
-                            .setProperty(this.getPropertyName(matcher), propertyValue.get());
-                        /*
-                        String name = this.getName(matcher);
-                        Properties properties = this.masterProperties.computeIfAbsent(name, n -> new Properties());
-                        properties.setProperty(this.getPropertyName(matcher), propertyValue.get());
-                        */
-                    }
+        for (String configPropertyName : allConfigPropertyNames) {
+            Optional<String> propertyValue = this.config.getOptionalValue(configPropertyName, String.class);
+            if (propertyValue.isPresent()) {
+                Matcher matcher = this.getPropertyPatternMatcher(configPropertyName);
+                if (matcher != null && matcher.matches()) {
+                    this.namedProperties.computeIfAbsent(this.getName(matcher), n -> new Properties())
+                        .setProperty(this.getPropertyName(matcher), propertyValue.get());
                 }
             }
         }
-        this.masterProperties.putAll(this.explicitlySetProperties);
+        this.namedProperties.putAll(this.explicitlySetProperties);
     }
 
     /**
@@ -259,12 +252,21 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      *
      * <p>This method never returns {@code null}.</p>
      *
+     * <p>Overrides of this method must not return {@code null}.</p>
+     *
      * <p>The {@link Set} returned by this method is {@linkplain Collections#unmodifiableSet(Set) unmodifiable}.</p>
+     *
+     * <p>Overrides of this method must ensure that the returned {@link Set} is {@linkplain
+     * Collections#unmodifiableSet(Set) unmodifiable}.</p>
      *
      * <p>The {@link Set} returned by this method is not safe for concurrent use by multiple threads.</p>
      *
-     * <p>Any other semantics of the {@link Set} returned by this method are governed by the <a
-     * href="https://github.com/eclipse/microprofile-config" target="_parent">MicroProfile Config</a> specification.</p>
+     * <p>Overrides of this method may return {@link Set} instances that are not safe for concurrent use by multiple
+     * threads.</p>
+     *
+     * <p>Any other semantics of the {@link Set} returned by this method or any overrides of it are and must be governed
+     * by the <a href="https://github.com/eclipse/microprofile-config" target="_parent">MicroProfile Config</a>
+     * specification.</p>
      *
      * @return a non-{@code null}, {@linkplain Collections#unmodifiableSet(Set) unmodifiable <code>Set</code>} of all
      * known configuration property names
@@ -273,32 +275,26 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      *
      * @see org.eclipse.microprofile.config.spi.ConfigSource#getPropertyNames()
      */
-    protected final Set<String> getConfigPropertyNames() {
+    protected Set<String> getConfigPropertyNames() {
         Iterable<String> propertyNames = this.config.getPropertyNames();
-        if (propertyNames == null) {
+        if (propertyNames == null) { // MicroProfile Config specification allows this
             return Set.of();
         }
         Set<String> set = new HashSet<>();
-        propertyNames.iterator().forEachRemaining(n -> set.add(n));
+        propertyNames.iterator().forEachRemaining(pn -> set.add(pn));
         return Set.copyOf(set);
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
         if (event != null) {
-            if (this.masterProperties.isEmpty()) {
-                this.initializeMasterProperties();
+            if (this.namedProperties.isEmpty()) {
+                this.initializeNamedProperties();
             }
-            Set<? extends Entry<? extends String, ? extends Properties>> masterPropertiesEntries =
-                this.masterProperties.entrySet();
-            if (masterPropertiesEntries != null && !masterPropertiesEntries.isEmpty()) {
-                for (Entry<? extends String, ? extends Properties> entry : masterPropertiesEntries) {
-                    if (entry != null) {
-                        this.addBean(event.addBean(), NamedLiteral.of(entry.getKey()), entry.getValue());
-                    }
-                }
+            for (Entry<? extends String, ? extends Properties> entry : this.namedProperties.entrySet()) {
+                this.addBean(event.addBean(), NamedLiteral.of(entry.getKey()), entry.getValue());
             }
         }
-        this.masterProperties.clear();
+        this.namedProperties.clear();
         this.explicitlySetProperties.clear();
     }
 

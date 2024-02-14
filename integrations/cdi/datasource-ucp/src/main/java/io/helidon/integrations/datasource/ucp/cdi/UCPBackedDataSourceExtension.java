@@ -47,12 +47,40 @@ import oracle.ucp.jdbc.PoolXADataSource;
 import oracle.ucp.jdbc.PoolXADataSourceImpl;
 
 /**
- * An {@link AbstractDataSourceExtension} that arranges for named {@link DataSource} injection points to be satisfied by
- * the <a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html">Oracle Universal
- * Connection Pool</a>.
+ * An {@link AbstractDataSourceExtension} that arranges for {@linkplain Named named} {@link DataSource} injection points
+ * to be satisfied by the <a
+ * href="https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html">Oracle Universal Connection
+ * Pool</a>.
+ *
+ * <p>As with all portable extensions, to begin to make use of the features enabled by this class, ensure its containing
+ * artifact (normally a jar file) is on the runtime classpath of your CDI-enabled application.</p>
  *
  * <p>In accordance with the CDI specification, instances of this class are not necessarily safe for concurrent use by
  * multiple threads.</p>
+ *
+ * <p>To support injection of a {@linkplain PoolDataSource Universal Connection Pool-backed <code>PoolDataSource</code>}
+ * named {@code test}, first ensure that enough MicroProfile Config configuration is present to create a valid {@link
+ * PoolDataSource}. For example, the following sample system properties are sufficient for a {@link PoolDataSource}
+ * named {@code test} to be created:</p>
+ *
+ * {@snippet lang="properties" :
+ *   # (Note that "oracle.ucp.jdbc.PoolDataSource" below could be "javax.sql.DataSource" instead if you prefer
+ *   # that your configuration not refer directly to Oracle-specific classnames in its keys.)
+ *   # @link substring="oracle.ucp.jdbc.PoolDataSource" target="PoolDataSource" @link substring="oracle.jdbc.pool.OracleDataSource" target="oracle.jdbc.pool.OracleDataSource" :
+ *   oracle.ucp.jdbc.PoolDataSource.test.connectionFactoryClassName=oracle.jdbc.pool.OracleDataSource
+ *   oracle.ucp.jdbc.PoolDataSource.test.URL=jdbc:oracle:thin://@localhost:1521/XE
+ *   oracle.ucp.jdbc.PoolDataSource.test.user=scott
+ *   oracle.ucp.jdbc.PoolDataSource.test.password=tiger
+ *   }
+ *
+ * <p>With configuration such as the above, you can now inject the implicit {@link PoolDataSource} it defines:</p>
+ *
+ * {@snippet :
+ *   // Inject a PoolDataSource qualified with the name test into a private javax.sql.DataSource-typed field named ds:
+ *   @jakarta.inject.Inject // @link substring="jakarta.inject.Inject" target="jakarta.inject.Inject"
+ *   @jakarta.inject.Named("test") // @link substring="jakarta.inject.Named" target="jakarta.inject.Named"
+ *   private javax.sql.DataSource ds; // @link substring="javax.sql.DataSource" target="DataSource"
+ *   }
  */
 public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
 
@@ -63,7 +91,7 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
     static final Pattern DATASOURCE_NAME_PATTERN =
         Pattern.compile("^(?:javax\\.sql\\.|oracle\\.ucp\\.jdbc\\.Pool)(XA)?DataSource\\.([^.]+)\\.(.*)$");
     // Capturing groups:                                               (1 )              (2    )   (3 )
-    //                                                                 Are we XA?        DS name   DS Property
+    //                                                                 Are we XA?        DS name   DS property name
 
     private final Map<String, Boolean> xa;
 

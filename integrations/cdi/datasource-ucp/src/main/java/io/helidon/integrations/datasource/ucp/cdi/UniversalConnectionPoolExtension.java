@@ -37,16 +37,16 @@ import oracle.ucp.jdbc.PoolDataSource;
 
 /**
  * An {@link AbstractConfigurableExtension} that provides injection support for {@link UniversalConnectionPoolManager}
- * and {@link UniversalConnectionPool} instances.
+ * and {@linkplain Named named} {@link UniversalConnectionPool} instances.
  *
  * <p>As with all portable extensions, to begin to make use of the features enabled by this class, ensure its containing
- * artifact (normally a jar file) is on the classpath of your CDI-enabled application.</p>
+ * artifact (normally a jar file) is on the runtime classpath of your CDI-enabled application.</p>
  *
  * <p>To support injection of the {@link UniversalConnectionPoolManager}, use normal CDI injection idioms:</p>
  *
  * {@snippet :
  *   // Inject the UniversalConnectionPoolManager into a private field named ucpManager:
- *   @jakarta.inject.Inject
+ *   @jakarta.inject.Inject // @link substring="jakarta.inject.Inject" target="jakarta.inject.Inject"
  *   private oracle.ucp.admin.UniversalConnectionPoolManager ucpManager;
  *   }
  *
@@ -70,8 +70,8 @@ import oracle.ucp.jdbc.PoolDataSource;
  *
  * {@snippet :
  *   // Inject a UniversalConnectionPool whose getName() method returns test into a private field named ucp:
- *   @jakarta.inject.Inject
- *   @jakarta.inject.Named("test")
+ *   @jakarta.inject.Inject // @link substring="jakarta.inject.Inject" target="jakarta.inject.Inject"
+ *   @jakarta.inject.Named("test") // @link substring="jakarta.inject.Named" target="jakarta.inject.Named"
  *   private oracle.ucp.UniversalConnectionPool ucp; // assert "test".equals(ucp.getName());
  *   }
  *
