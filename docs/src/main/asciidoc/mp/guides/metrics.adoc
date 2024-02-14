@@ -233,7 +233,7 @@ curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?sco
 ----
 {
   "anyCard": 1,
-  "specialEventCard": 2  // <1>
+  "specialEventCard": 2 // <1>
 }
 ----
 <1> Notice that `specialEventCard` count is two, since you accessed `/cards/wedding` and `/cards/birthday`.
@@ -267,7 +267,7 @@ curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?sco
 {
   "anyCard": 1,
   "birthdayCard": 1,
-  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2  // <1>
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2 // <1>
 }
 ----
 <1> The `totalCards` count is a total of all the method-level `Counter` metrics.  Class level metric names are always

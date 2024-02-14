@@ -390,7 +390,7 @@ The example below will change the root path.
 .Create a file named `application.yaml` in the `resources` directory with the following contents:
 ----
 health:
-  endpoint: "/myhealth"  # <1>
+  endpoint: "/myhealth" # <1>
 ----
 <1> The `endpoint` settings specifies the root path for the health endpoint.
 
@@ -409,16 +409,15 @@ The following example will change the root path and the health port.
 .Update application.yaml to use a different port and root path for the health endpoint:
 ----
 server:
-  port: 8080            # <1>
+  port: 8080 # <1>
   sockets:
-    - name: "admin"     # <2>
-      port: 8081        # <3>
+    - name: "admin" # <2>
+      port: 8081 # <3>
   features:
     observe:
-      sockets: "admin"  # <4>
+      sockets: "admin" # <4>
 health:
   endpoint: "/myhealth" # <5>
-
 ----
 <1> The default port for the application.
 <2> The name of the new socket, it can be any name, this example uses `admin`.

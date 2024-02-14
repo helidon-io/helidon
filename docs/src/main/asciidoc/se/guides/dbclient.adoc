@@ -231,12 +231,12 @@ file and is located here: `src/main/resources`.
 .Copy these properties into application.yaml
 ----
 db:
-  source: jdbc  # <1>
-  connection:   # <2>
+  source: jdbc # <1>
+  connection: # <2>
     url: "jdbc:h2:tcp://localhost:9092/~/test"
     username: "sa"
     password:
-  statements:   # <3>
+  statements: # <3>
     health-check: "SELECT 0"
     create-table: "CREATE TABLE IF NOT EXISTS LIBRARY (NAME VARCHAR NOT NULL, INFO VARCHAR NOT NULL)"
     insert-book: "INSERT INTO LIBRARY (NAME, INFO) VALUES (:name, :info)"

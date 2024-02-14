@@ -20,10 +20,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.helidon.microprofile.cdi.RuntimeStart;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.Extension;
 import jakarta.inject.Inject;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -33,6 +36,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
@@ -208,5 +212,17 @@ class MetricsSnippets {
             }
         }
         // end::snippet_6[]
+    }
+
+    class Snippet7 {
+
+        // tag::snippet_7[]
+        public class MyExtension implements Extension {
+            void startup(@Observes @RuntimeStart Object event,  // <1>
+                         MetricRegistry metricRegistry) {       // <2>
+                metricRegistry.counter("myCounter");         // <3>
+            }
+        }
+        // end::snippet_7[]
     }
 }

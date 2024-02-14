@@ -247,9 +247,13 @@ even though it is considered a default source.
 .Build and run the application (without the system property).  Invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,hocon]
+.JSON response
+----
 {
-  "message": "HelloFrom-config.properties World!" # <1>
+  "message": "HelloFrom-config.properties World!" // <1>
 }
 ----
 <1> The greeting was picked up from `config.properties`, overriding the value in `application.yaml`.
@@ -271,7 +275,11 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_3, indent=0]
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,hocon]
+.JSON response
+----
 {
   "message": "HelloFrom-application.yaml World!" // <1>
 }
@@ -307,9 +315,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_4, indent=0]
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,hocon]
+.JSON response
+----
 {
-  "message": "HelloFrom-config-file.properties World!" # <1>
+  "message": "HelloFrom-config-file.properties World!" // <1>
 }
 ----
 <1> The configuration property from the file `config-file.properties` takes precedence.
@@ -334,9 +346,7 @@ Exception in thread "main" io.helidon.config.ConfigException: Cannot load data f
 To fix this, use the `optional` method as shown below, then rerun the test.
 
 ----
-...
-    file("missing-file").optional(), // <1>
-
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> The `missing-file` configuration file is now optional.
 
@@ -354,7 +364,7 @@ HelloFromFileInDirectoryConf
 [source,java]
 .Update the `Main` class; 1) Add new import and 2) Replace the `buildConfig` method:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_6, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Add a mandatory configuration directory.
 
@@ -362,9 +372,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_6, indent=0]
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,hocon]
+.JSON response
+----
 {
-  "message": "HelloFromFileInDirectoryConf World!" # <1>
+  "message": "HelloFromFileInDirectoryConf World!" // <1>
 }
 ----
 <1> The greeting was fetched from the file named `app.greeting`.
@@ -376,7 +390,7 @@ If you have more than three sources, you can use the `addSource` method as shown
 [source,java]
 .Update the `Main` class and replace the `buildConfig` method:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_7, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_8, indent=0]
 ----
 <1> Add each config source using the `addSource` method.
 
@@ -384,8 +398,11 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_7, indent=0]
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
 
+[source,hocon]
+.JSON response
+----
 {
   "message": "HelloFromFileInDirectoryConf World!"
 }
@@ -406,9 +423,9 @@ Profile file can use any supported format, following example is using `YAML`.
 .Create a file named `config-profile.yaml` in the `helidon-quickstart-se` directory with the following contents:
 ----
 sources:
-  - type: "classpath" // <1>
+  - type: "classpath" # <1>
     properties:
-      resource: "application.yaml" // <2>
+      resource: "application.yaml" # <2>
 ----
 <1> The source type.
 <2> The name of the mandatory configuration resource.
@@ -417,7 +434,7 @@ sources:
 [source,java]
 .Update the `Main` class and replace the `buildConfig` method:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_8, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_9, indent=0]
 ----
 <1> Will use `config-profile.yaml` by default
 
@@ -425,7 +442,11 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_8, indent=0]
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,hocon]
+.JSON response
+----
 {
   "message": "HelloFrom-application.yaml World!" // <1>
 }
@@ -439,16 +460,16 @@ This is demonstrated below where the `config-file.properties` has the highest or
 .Replace the contents of the `config-profile.yaml` file:
 ----
 sources:
-  - type: "file" // <1>
+  - type: "file" # <1>
     properties:
-      path: "./config-file.properties" // <2>
+      path: "./config-file.properties" # <2>
   - type: "classpath"
     properties:
       resource: "application.yaml"
   - type: "file"
     properties:
       path: "optional-config-file"
-      optional: true  // <3>
+      optional: true # <3>
 ----
 <1> The source type specifies a file.
 <2> The name of the mandatory configuration file.
@@ -458,7 +479,11 @@ sources:
 .Restart the application, then invoke the endpoint below and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,hocon]
+.JSON response
+----
 {
   "message": "HelloFrom-config-file.properties World!" // <1>
 }
@@ -468,12 +493,12 @@ curl http://localhost:8080/greet
 When using a profile file, you need to explicitly include both environment variables and system properties as
 a source if you want to use them.
 
-[source,bash]
+[source,yaml]
 .Replace the contents of the `config-profile.yaml` file:
 ----
 sources:
-  - type: "environment-variables" // <1>
-  - type: "system-properties" // <2>
+  - type: "environment-variables" # <1>
+  - type: "system-properties" # <2>
   - type: "classpath"
     properties:
       resource: "application.yaml"
@@ -507,7 +532,7 @@ key can be composite as shown below:
 [source,java]
 .View the `GreetService` constructor:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_9, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_10, indent=0]
 ----
 <1> Get the `app.greeting` node using a composite key.
 
@@ -516,7 +541,7 @@ You can also access the same greeting by navigating the nodes.
 [source,java]
 .Replace the `GreetService` constructor with the following code:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_10, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_11, indent=0]
 ----
 <1> Get the `app` node, then get the child node, `greeting`.
 
@@ -524,7 +549,11 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_10, indent=0]
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,json]
+.JSON response
+----
 {
   "message": "HelloFrom-application.yaml World!"
 }
@@ -560,7 +589,7 @@ app:
 [source,java]
 .Update the `GreetService.java` file; 1) Add new imports and 2) Replace the `GreetService` constructor with the following:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_11, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_12, indent=0]
 ----
 <1> Traverse the entire subtree of the `app` node.
 <2> Include only nodes that have the name `greeting`.
@@ -570,7 +599,11 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_11, indent=0]
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,json]
+.JSON response
+----
 {
   "message": "HelloFrom-application.yaml under child2a World!"
 }
@@ -602,7 +635,7 @@ sources:
 [source,java]
 .Update the `GreetService` class; 1) Add new import and 2) Replace the `GreetService` constructor:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_12, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_13, indent=0]
 ----
 <1> Get the greeting `Config` node.
 <2> Register a listener that will get called by Helidon when the configuration changes.  The listener will
@@ -612,8 +645,11 @@ update the greeting with the new value.
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
 
+[source,json]
+.JSON response
+----
 {
   "message": "HelloFrom-config-file.properties World!"
 }
@@ -630,8 +666,11 @@ app.greeting=Updated HelloFrom-config-file.properties
 .After a few seconds, check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
 
+[source,hocon]
+.JSON response
+----
 {
   "message": "Updated HelloFrom-config-file.properties World!" // <1>
 }
@@ -655,7 +694,7 @@ app:
 [source,java]
 .Update the `Main` class and replace the `buildConfig` method:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_13, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_14, indent=0]
 ----
 <1> The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
 <2> The server port is specified in `application.yaml` within the `helidon-quickstart-se.jar`.
@@ -663,14 +702,18 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_13, indent=0]
 [source,java]
 .Replace the `GreetService` constructor with the following code:
 ----
-include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_14, indent=0]
+include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_15, indent=0]
 ----
 
 [source,bash]
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,hocon]
+.JSON response
+----
 {
   "message": "Hello World!" // <1>
 }
@@ -693,13 +736,17 @@ kubectl create configmap helidon-configmap --from-file config-file.properties
 .View the contents of the ConfigMap:
 ----
 kubectl get configmap helidon-configmap -o yaml
-...
+----
+
+[source,yaml]
+.Output (partial)
+----
 apiVersion: v1
 data:
-  config-file.properties: |   # <1>
-    app.greeting=Updated HelloFrom-config-file.properties   # <2>
+  config-file.properties: |   # <1> <2>
+    app.greeting=Updated HelloFrom-config-file.properties
 kind: ConfigMap
-...
+# ...
 ----
 <1> The file `config-file.properties` will be created within the Kubernetes container.
 <2> The `config-file.properties` file will have this single property defined.
@@ -783,9 +830,13 @@ helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1
 .Verify the configuration endpoint using port `31143`, your port will likely be different:
 ----
 curl http://localhost:31143/greet
-...
+----
+
+[source,hocon]
+.JSON response
+----
 {
-  "message": "Updated HelloFrom-config-file.properties World!" # <1>
+  "message": "Updated HelloFrom-config-file.properties World!" // <1>
 }
 ----
 <1> The greeting value from `/etc/config/config-file.properties` within the container was used.

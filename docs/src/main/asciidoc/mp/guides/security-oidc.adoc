@@ -254,11 +254,11 @@ security:
     - oidc:
         redirect-uri: "/oidc/redirect"
         audience: "account"
-        client-id: "myClientID"   // <1>
+        client-id: "myClientID" # <1>
         header-use: true
-        client-secret: "Client secret generated into Keycloak client credential"  // <2>
-        identity-uri: "http://localhost:8080/auth/realms/myRealm"   // <3>
-        frontend-uri: "http://localhost:7987"   // <4>
+        client-secret: "Client secret generated into Keycloak client credential" # <2>
+        identity-uri: "http://localhost:8080/auth/realms/myRealm" # <3>
+        frontend-uri: "http://localhost:7987" # <4>
 ----
 <1> `client-id` must be the same as the one configure in keycloak.
 <2> The client secret generate by Keycloak during `Create a client` section.

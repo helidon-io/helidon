@@ -140,8 +140,8 @@ This time the `curl` output shows not only the HTTP status--as 200 instead of 20
 .Health check details
 ----
 {
-  "status": "UP",              // <1>
-  "checks": [                  // <2>
+  "status": "UP", // <1>
+  "checks": [ // <2>
     {
       "name": "diskSpace",
       "status": "UP",

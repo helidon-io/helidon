@@ -260,7 +260,7 @@ server:
   features:
     security:
         # protected paths on the web server
-        paths:  // <1>
+        paths: # <1>
           - path: "/greet"
             methods: ["get"]
             authenticate: true
@@ -269,14 +269,14 @@ security:
   - abac:
       # Adds ABAC Provider - it does not require any configuration
   - oidc:
-      client-id: "myClientID" // <2>
-      client-secret: "Client secret generated into Keycloak client credential" // <3>
-      identity-uri: "http://localhost:8080/auth/realms/myRealm" // <4>
+      client-id: "myClientID" # <2>
+      client-secret: "Client secret generated into Keycloak client credential" # <3>
+      identity-uri: "http://localhost:8080/auth/realms/myRealm" # <4>
       audience: "account"
       header-use: "true"
       # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
       proxy-host: ""
-      frontend-uri: "http://localhost:7987" // <5>
+      frontend-uri: "http://localhost:7987" # <5>
       server-type: "oidc"
 ----
 <1> `paths` section defines the protected application's path.
@@ -462,8 +462,8 @@ security:
           - login: "jack"
             password: "jackIsGreat"
     - oidc:
-        client-id: "myClientID"  // <1>
-        client-secret: "Your client secret" // <2>
+        client-id: "myClientID" # <1>
+        client-secret: "Your client secret" # <2>
         identity-uri: "http://localhost:8080/auth/realms/myRealm"
         audience: "account"
         frontend-uri: "http://localhost:7987"

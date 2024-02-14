@@ -151,24 +151,15 @@ Exercise the application:
 [source,bash]
 ----
 curl -X GET http://localhost:8080/movies
-{. . .}
 
-# Try health and metrics
-
+# Try health
 curl -s -X GET http://localhost:8080/health
-{"outcome":"UP",...
-. . .
 
-# Prometheus Format
+# Try metrics in Prometheus Format
 curl -s -X GET http://localhost:8080/metrics
-# TYPE base:gc_g1_young_generation_count gauge
-. . .
 
-# JSON Format
+# Try metrics in JSON Format
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
-{"base":...
-. . .
-
 ----
 
 Full example code is available in link:https://github.com/oracle/helidon/tree/master/examples/integrations/neo4j/neo4j-mp[Helidon GitHub Repository].
@@ -178,7 +169,7 @@ Full example code is available in link:https://github.com/oracle/helidon/tree/ma
 
 === Neo4j Metrics propagation
 
-Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
+Neo4j's metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
 
 [source,xml]
 ----

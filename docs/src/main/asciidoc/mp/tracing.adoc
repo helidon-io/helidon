@@ -283,7 +283,7 @@ curl -i http://localhost:8080/greet/outbound # <1>
 ----
 <1> The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
 
-[source, json]
+[source, hocon]
 .Response body
 ----
 {
@@ -359,7 +359,7 @@ kubectl apply -f ./jaeger.yaml
 [source,bash]
 .Create a Jaeger external server and expose it on port 9142:
 ----
-kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer // <1>
+kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer # <1>
 ----
 <1> Create a service so that you can access the Jaeger UI.
 
@@ -374,7 +374,7 @@ take a few seconds before it is ready.
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-tracing // <1>
+  name: helidon-tracing # <1>
   labels:
     app: helidon-tracing
 spec:
@@ -391,7 +391,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-tracing
 spec:
-  replicas: 1 // <2>
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-tracing
@@ -428,7 +428,7 @@ kubectl get service/helidon-tracing
 [source,bash]
 ----
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <1>
+helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `31143`.
 

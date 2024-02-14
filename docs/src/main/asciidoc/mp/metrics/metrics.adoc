@@ -120,7 +120,7 @@ include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 
 == Examples
 
-Helidon MP includes a prewritten example application illustrating
+Helidon MP includes a pre-written example application illustrating
 link:{helidon-github-tree-url}/examples/metrics/filtering/mp[enabling/disabling metrics] using configuration.
 
 The rest of this section contains other examples of working with metrics:
@@ -144,7 +144,7 @@ include::{sourcedir}/mp/metrics/MetricsSnippets.java[tag=snippet_1, indent=0]
 as `/cards`.
 <2> The `@RequestScoped` annotation defines that this bean is
 request scoped.  The request scope is active only for the duration of
-one web service invocation and it is destroyed at the end of that
+one web service invocation, and it is destroyed at the end of that
 invocation.
 <3> The annotation `@Counted` will register a `Counter` metric for this method, creating it if needed.
 The counter is incremented each time the anyCards method is called.  The `name` attribute is optional.
@@ -172,11 +172,11 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 // end::build-and-access-cards-example[]
 
-[source,json]
+[source,hocon]
 .JSON response:
 ----
 {
-  "io.helidon.examples.quickstart.mp.GreetingCards.any-card": 2,   //  <1>
+  "io.helidon.examples.quickstart.mp.GreetingCards.any-card": 2, //  <1>
   "personalizedGets": 0,
   "allGets": {
     "count": 0,
@@ -197,7 +197,7 @@ You can also use the @Timed` annotation with a method.  For the following exampl
 you can just annotate the same method with `@Timed`. Timers  significant
 information about the measured methods, but at a cost of some overhead and more complicated output.
 
-Note that when using multiple annotations on a method, you *must* give the metrics different names as shown below (although they do not have to be absolute).
+Note that when using multiple annotations on a method, you *must* give the metrics different names as shown below, although they do not have to be absolute.
 
 [source,java]
 .Update the `GreetingCards` class with the following code:
@@ -254,7 +254,7 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ----
 
-[source,json]
+[source,hocon]
 .JSON response from `/metrics?scope=application`:
 ----
 {
@@ -267,7 +267,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
     "mean": 0
   },
   "anyCard": 1,
-  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2    // <1>
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2 // <1>
 }
 
 ----
@@ -303,7 +303,7 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ----
 
-[source,json]
+[source,hocon]
 .JSON response from `/metrics/application`:
 ----
 {
@@ -316,7 +316,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
     "mean": 0
   },
   "anyCard": 2,
-  "cacheHits": 2,    // <1>
+  "cacheHits": 2, // <1>
   "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 5
 }
 ----
@@ -324,7 +324,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 ==== Gauge Metric
 
-The metrics you have tested so far are updated in response to an application REST request, i.e GET `/cards`.  These
+The metrics you have tested so far are updated in response to an application REST request, i.e. GET `/cards`.  These
 metrics can be declared in a request scoped class and Helidon will store the metric in the `MetricRegistry`, so the value persists
 across requests. When GET `/metrics?scope=application` is invoked, Helidon will return the current value of the metric stored in the `MetricRegistry`.
 
@@ -356,7 +356,7 @@ include::{sourcedir}/mp/metrics/MetricsSnippets.java[tag=snippet_6, indent=0]
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ----
 
-[source,json]
+[source,hocon]
 .JSON response from `/metrics/application`:
 ----
 {
@@ -367,7 +367,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
     "max": 0,
     "mean": 0
   },
-  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 23,    // <1>
+  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 23, // <1>
   "cardCount": 0
 }
 
@@ -380,17 +380,7 @@ You can work with metrics from your own CDI extension by observing the `RuntimeS
 [source,java]
 .CDI Extension that works correctly with metrics
 ----
-import io.helidon.microprofile.cdi.RuntimeStart;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.Extension;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-public class MyExtension implements Extension {
-    void startup(@Observes @RuntimeStart Object event,  // <1>
-                 MetricRegistry metricRegistry) {       // <2>
-        metricRegistry.counter("myCounter");         // <3>
-        }
-}
+include::{sourcedir}/mp/metrics/MetricsSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Declares that your observer method responds to the `RuntimeStart` event. By this time, Helidon has initialized the metrics system.
 <2> Injects a `MetricRegistry` (the application registry by default).

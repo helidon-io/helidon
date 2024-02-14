@@ -227,7 +227,11 @@ java -jar target/helidon-quickstart-se.jar
 .Run the `curl` command in a new terminal window and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,json]
+.JSON response
+----
 {
   "message": "Hello World!"
 }
@@ -346,7 +350,11 @@ java -jar target/helidon-quickstart-se-2.jar
 .Run the curl command in a new terminal window and check the response (*notice the port is 8081*) :
 ----
 curl http://localhost:8081/greet
-...
+----
+
+[source,json]
+.JSON response
+----
 {
   "message": "Hello From SE-2 World!"
 }
@@ -418,14 +426,18 @@ Stop the application if it is still running, rebuild and run it, then invoke the
 ----
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
-curl -i http://localhost:8080/greet/outbound // <1>
-...
-{
-  "message": "Hello From SE-2 World!" // <2>
-}
+curl -i http://localhost:8080/greet/outbound # <1>
 ----
 <1> The request goes to the service on `8080`, which then invokes the service at `8081` to get the greeting.
-<2> Notice the greeting came from the second service.
+
+[source,hocon]
+.JSON response
+----
+{
+  "message": "Hello From SE-2 World!" // <1>
+}
+----
+<1> Notice the greeting came from the second service.
 
 Refresh the Jaeger UI trace listing page and notice that there is a trace across two services. Click on that trace to see its details.
 
@@ -517,7 +529,7 @@ take a few seconds before it is ready.
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-tracing // <1>
+  name: helidon-tracing # <1>
   labels:
     app: helidon-tracing
 spec:
@@ -579,7 +591,11 @@ helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <
 .Verify the tracing endpoint using port `31143`, your port will likely be different:
 ----
 curl http://localhost:31143/greet
-...
+----
+
+[source,json]
+.JSON response
+----
 {
   "message": "Hello World!"
 }

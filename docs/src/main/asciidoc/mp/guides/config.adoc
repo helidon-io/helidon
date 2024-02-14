@@ -400,7 +400,7 @@ kubectl get configmap helidon-configmap -o yaml
 ----
 apiVersion: v1
 data:
-  config-file.properties: |   # <1> <2>
+  config-file.properties: | # <1> <2>
     app.greeting=HelloFromConfigFile
 kind: ConfigMap
 ----

@@ -486,7 +486,7 @@ kubectl get service/helidon-metrics
 [source,bash]
 ----
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <1>
+helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `31143`.
 

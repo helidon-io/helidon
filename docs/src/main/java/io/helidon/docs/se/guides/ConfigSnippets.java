@@ -19,7 +19,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
+
+import static io.helidon.config.ConfigSources.classpath;
+import static io.helidon.config.ConfigSources.directory;
+import static io.helidon.config.ConfigSources.file;
 
 @SuppressWarnings("ALL")
 class ConfigSnippets {
@@ -37,8 +40,8 @@ class ConfigSnippets {
             return Config.builder()
                     .disableEnvironmentVariablesSource() // <1>
                     .sources(
-                            ConfigSources.classpath("config.properties"), // <2>
-                            ConfigSources.classpath("application.yaml")) // <3>
+                            classpath("config.properties"), // <2>
+                            classpath("application.yaml")) // <3>
                     .build();
         }
         // end::snippet_2[]
@@ -49,8 +52,8 @@ class ConfigSnippets {
         return Config.builder()
                 .disableEnvironmentVariablesSource()
                 .sources(
-                        ConfigSources.classpath("application.yaml"), // <1>
-                        ConfigSources.classpath("config.properties"))
+                        classpath("application.yaml"), // <1>
+                        classpath("config.properties"))
                 .build();
         // end::snippet_3[]
     }
@@ -59,8 +62,8 @@ class ConfigSnippets {
         // tag::snippet_4[]
         return Config.builder()
                 .sources(
-                        ConfigSources.file("config-file.properties"), // <1>
-                        ConfigSources.classpath("application.yaml"))
+                        file("config-file.properties"), // <1>
+                        classpath("application.yaml"))
                 .build();
         // end::snippet_4[]
     }
@@ -69,54 +72,64 @@ class ConfigSnippets {
         // tag::snippet_5[]
         return Config.builder()
                 .sources(
-                        ConfigSources.file("missing-file"), // <1>
-                        ConfigSources.classpath("application.yaml"))
+                        file("missing-file"), // <1>
+                        classpath("application.yaml"))
                 .build();
         // end::snippet_5[]
     }
 
     Config snippet_6() {
-        // tag::snippet_6[]
         return Config.builder()
                 .sources(
-                        ConfigSources.directory("conf"), // <1>
-                        ConfigSources.classpath("config.properties").optional(),
-                        ConfigSources.classpath("application.yaml"))
+                        // tag::snippet_6[]
+                        file("missing-file").optional(), // <1>
+                        // end::snippet_6[]
+                        classpath("application.yaml"))
                 .build();
-        // end::snippet_6[]
     }
 
     Config snippet_7() {
         // tag::snippet_7[]
         return Config.builder()
-                .addSource(ConfigSources.directory("conf"))  // <1>
-                .addSource(ConfigSources.file("config-file.properties"))
-                .addSource(ConfigSources.classpath("config.properties").optional())
-                .addSource(ConfigSources.classpath("application.yaml"))
+                .sources(
+                        directory("conf"), // <1>
+                        classpath("config.properties").optional(),
+                        classpath("application.yaml"))
                 .build();
         // end::snippet_7[]
     }
 
     Config snippet_8() {
         // tag::snippet_8[]
-        return Config.create(); // <1>
+        return Config.builder()
+                .addSource(directory("conf"))  // <1>
+                .addSource(file("config-file.properties"))
+                .addSource(classpath("config.properties").optional())
+                .addSource(classpath("application.yaml"))
+                .build();
         // end::snippet_8[]
     }
 
-    void snippet_9(AtomicReference<String> greeting) {
+    Config snippet_9() {
         // tag::snippet_9[]
-        greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao")); // <1>
+        return Config.create(); // <1>
         // end::snippet_9[]
     }
 
     void snippet_10(AtomicReference<String> greeting) {
         // tag::snippet_10[]
-        greeting.set(Config.global().get("app").get("greeting").asString().orElse("Ciao")); // <1>
+        greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao")); // <1>
         // end::snippet_10[]
     }
 
     void snippet_11(AtomicReference<String> greeting) {
         // tag::snippet_11[]
+        greeting.set(Config.global().get("app").get("greeting").asString().orElse("Ciao")); // <1>
+        // end::snippet_11[]
+    }
+
+    void snippet_12(AtomicReference<String> greeting) {
+        // tag::snippet_12[]
         List<Config> appGreetings = Config.global()
                 .get("app")
                 .traverse()  // <1>
@@ -124,31 +137,31 @@ class ConfigSnippets {
                 .toList(); // <3>
 
         greeting.set(appGreetings.get(0).asString().get());
-        // end::snippet_11[]
-    }
-
-    void snippet_12(AtomicReference<String> greeting) {
-        // tag::snippet_12[]
-        Config greetingConfig = Config.global().get("app.greeting"); // <1>
-        greeting.set(greetingConfig.asString().orElse("Ciao"));
-        greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao"))); // <2>
         // end::snippet_12[]
     }
 
-    Config snippet_13() {
+    void snippet_13(AtomicReference<String> greeting) {
         // tag::snippet_13[]
-        return Config.builder()
-                .sources(
-                        ConfigSources.file("/etc/config/config-file.properties").optional(), // <1>
-                        ConfigSources.classpath("application.yaml")) // <2>
-                .build();
+        Config greetingConfig = Config.global().get("app.greeting"); // <1>
+        greeting.set(greetingConfig.asString().orElse("Ciao"));
+        greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao"))); // <2>
         // end::snippet_13[]
     }
 
-    void snippet_14(AtomicReference<String> greeting) {
+    Config snippet_14() {
         // tag::snippet_14[]
-        greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao"));
+        return Config.builder()
+                .sources(
+                        file("/etc/config/config-file.properties").optional(), // <1>
+                        classpath("application.yaml")) // <2>
+                .build();
         // end::snippet_14[]
+    }
+
+    void snippet_15(AtomicReference<String> greeting) {
+        // tag::snippet_15[]
+        greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao"));
+        // end::snippet_15[]
     }
 
 }
