@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.docs.se;
+package io.helidon.docs.se.metrics;
 
 import io.helidon.config.Config;
 // tag::snippet_2[]

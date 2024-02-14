@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.docs.se;
+package io.helidon.docs.se.openapi;
 
 import io.helidon.config.Config;
 import io.helidon.integrations.openapi.ui.OpenApiUi;
@@ -22,7 +22,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 
 @SuppressWarnings("ALL")
-class OpenApiSnippets {
+class OpenApiUiSnippets {
 
     // stub
     class Main {

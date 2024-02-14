@@ -42,7 +42,7 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 
 @SuppressWarnings("ALL")
-class MessagingSnippets {
+class ReactiveMessagingSnippets {
 
     void snippet_1() {
         // tag::snippet_1[]

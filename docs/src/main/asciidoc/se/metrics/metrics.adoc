@@ -125,7 +125,7 @@ If you disable auto-discovery, you can add the metrics observer explicitly.
 
 [source,java]
 ----
-include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_1, indent=0]
 ----
 
 
@@ -164,7 +164,7 @@ The following table summarizes the {metric} types.
 
 |====
 
-Each {metric} type has its own set of methods for updating and retrieving the metric's value.
+Each {metric} type has its own set of methods for updating and retrieving the value.
 
 === The `MeterRegistry` API
 To register or look up {meters} programmatically, your service code uses the global `MeterRegistry`.
@@ -178,7 +178,7 @@ To locate an existing meter or register a new one, your code:
 The meter registry returns a reference to a previously-registered meter with the specified name and tags or, if none exists, a newly-registered meter.
 Your code can then operate on the returned meter as needed to record new measurements or retrieve existing data.
 
-The example code in the <<_examples,Examples>> section below illustrates how to register, retrieve, and update meters.
+The example code in the <<Examples>> section below illustrates how to register, retrieve, and update meters.
 
 // Here's Configuration.
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
@@ -197,9 +197,9 @@ The following example, based on the Helidon SE QuickStart application, shows how
 .Define and use a `Counter`
 [source,java]
 ----
-include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_2, indent=0]
 
-include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_3, indent=0]
+include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Get the global meter registry.
 <2> Create (or find) a counter named "accessctr" in the global registry.
@@ -288,9 +288,9 @@ Your code creates a link:{prometheus-javadoc-base-url}/io/helidon/metrics/promet
 
 [source,java]
 ----
-include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_4, indent=0]
+include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_4, indent=0]
 
-include::{sourcedir}/se/MetricsSnippets.java[tag=snippet_5, indent=0]
+include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_5, indent=0]
 ----
 
 This example uses the default Prometheus `CollectorRegistry`. By default, the `PrometheusSupport` and exposes its REST endpoint at the path

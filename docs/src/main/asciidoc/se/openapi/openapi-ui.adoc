@@ -52,7 +52,7 @@ If your `pom.xml` includes a dependency on the OpenAPI UI component, then any `O
 [source,java]
 .Create `OpenApiFeature` with automatic UI
 ----
-include::{sourcedir}/se/OpenApiSnippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/se/openapi/OpenApiUiSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Add the OpenAPI feature to the server, configured using the `openapi` section of the configuration.
 
@@ -69,7 +69,7 @@ The following example illustrates these steps, combining configuration with expl
 [source,java]
 .Create `OpenApiUi` and `OpenAPISupport` instances
 ----
-include::{sourcedir}/se/OpenApiSnippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/se/openapi/OpenApiUiSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Extract the `openapi` config.
 <2> Begin setting up the `OpenApiFeature` builder.

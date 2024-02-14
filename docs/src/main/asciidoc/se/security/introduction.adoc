@@ -90,7 +90,7 @@ Once a security instance is built, it can be used to initialize an
 [source,java]
 .Security direct usage
 ----
-include::{sourcedir}/se/SecuritySnippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Create a security context
 <2> Use the context to authenticate a request
@@ -100,7 +100,7 @@ include::{sourcedir}/se/SecuritySnippets.java[tag=snippet_2, indent=0]
 [source,java]
 .Security through a builder
 ----
-include::{sourcedir}/se/SecuritySnippets.java[tag=snippet_3, indent=0]
+include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Create a provider instance based on the provider documentation
 
@@ -112,7 +112,7 @@ See xref:tools.adoc[Secure config] for details about encrypting passwords in
 [source,java]
 .Security from configuration
 ----
-include::{sourcedir}/se/SecuritySnippets.java[tag=snippet_4, indent=0]
+include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Uses `io.helidon.Config`
 
@@ -155,7 +155,7 @@ Would explicitly override the second provider (`http-basic-auth` in example abov
 [source,java]
 .Security from configuration and builder
 ----
-include::{sourcedir}/se/SecuritySnippets.java[tag=snippet_5, indent=0]
+include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Uses io.helidon.Config
 <2> Or reverse order

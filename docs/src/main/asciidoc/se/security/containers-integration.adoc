@@ -47,7 +47,7 @@ There are two steps to configure security with WebServer:
 [source,java]
 .Example using builders
 ----
-include::{sourcedir}/se/SecuritySnippets.java[tag=snippet_6, indent=0]
+include::{sourcedir}/se/security/ContainersIntegrationSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Register the security feature in the web server, enforce authentication by default
 <2> Protect this route with authentication (from defaults) and role "user"
@@ -55,7 +55,7 @@ include::{sourcedir}/se/SecuritySnippets.java[tag=snippet_6, indent=0]
 [source,java]
 .Example using configuration
 ----
-include::{sourcedir}/se/SecuritySnippets.java[tag=snippet_7, indent=0]
+include::{sourcedir}/se/security/ContainersIntegrationSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Helper method to load both security and web server security from configuration
 <2> Security for this route is defined in the configuration

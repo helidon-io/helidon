@@ -103,7 +103,7 @@ automatically. The example below shows how to create and register `OpenApiFeatur
 .Java Code to Create and Register `OpenApiFeature`
 [source,java]
 ----
-include::{sourcedir}/se/OpenApiSnippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/se/openapi/OpenApiSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Adds the `OpenApiFeature` service to your server using the `openapi` section from configuration.
 
