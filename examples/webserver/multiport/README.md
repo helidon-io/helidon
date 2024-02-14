@@ -20,7 +20,7 @@ Separate routing is defined for each named socket in `Main.java`
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-webserver-multiport.jar
 ```

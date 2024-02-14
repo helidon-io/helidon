@@ -5,11 +5,8 @@ that combines REST resources and WebSocket endpoints.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-microprofile-websocket.jar
 ```
-
-```
-http://localhost:7001/web/index.html
-```
+[Open In browser](http://localhost:7001/web/index.html)

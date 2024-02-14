@@ -79,12 +79,14 @@ Optional:
 ### Prepare keys and certificates
 Make sure you are in the directory [./etc/unsupported-cert-tools/](etc/unsupported-cert-tools/).
 ```shell
+cd etc/unsupported-cert-tools/
 bash create-keys.sh
 ```
 
 ## Rotating mTLS certificates
 Make sure you are in the directory [./etc/unsupported-cert-tools/](etc/unsupported-cert-tools/).
 ```shell
+cd etc/unsupported-cert-tools
 bash rotate-keys.sh
 ```
 ⚠️ Keep in mind that rotation creates new [versions](https://docs.oracle.com/en-us/iaas/Content/certificates/rotation-states.htm), OCIDs of the keys and certificates stays the same, and you don't need to change your configuration.

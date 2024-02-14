@@ -7,7 +7,7 @@ This example shows how interceptors can be leveraged to develop using Helidon In
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-inject-interceptors.jar
 ```

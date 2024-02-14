@@ -28,14 +28,14 @@ The following classes are pure Micronaut beans (and cannot have CDI injected int
 
 Start the application:
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-integrations-micronaut-data.jar
 ```
 
 Access endpoints
 
-```bash
+```shell
 # Get all pets
 curl -i http://localhost:8080/pets
 # Get all owners

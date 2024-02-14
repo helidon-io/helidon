@@ -1,18 +1,22 @@
 # JPA Pokemons Example
 
 With Java:
-```bash
+```shell
 mvn package
-java -jar target/helidon-integrations-examples-pokemons-jpa.jar
+java -jar target/helidon-integrations-examples-pokemons.jar
 ```
 
 ## Exercise the application
 
-```
+```shell
 curl -X GET http://localhost:8080/pokemon
-[{"id":1,"type":12,"name":"Bulbasaur"}, ...]
+#Output: [{"id":1,"type":12,"name":"Bulbasaur"}, ...]
+```
+```shell
 curl -X GET http://localhost:8080/type
-[{"id":1,"name":"Normal"}, ...]
+#Output: [{"id":1,"name":"Normal"}, ...]
+```
+```shell
 curl -H "Content-Type: application/json" --request POST --data '{"id":100, "type":1, "name":"Test"}' http://localhost:8080/pokemon
 ```
 

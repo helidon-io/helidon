@@ -19,19 +19,19 @@ small, pocket size and pre-configured testing Kafka server Docker image is avail
 
 ### Test JMS server
 * Start ActiveMQ server locally: 
-```bash
+```shell
 docker run --name='activemq' --rm -p 61616:61616 -p 8161:8161 rmohr/activemq
 ```
 
 ### Test Oracle database
 * Start ActiveMQ server locally: 
-```bash
+```shell
 cd ./docker/oracle-aq-18-xe
 ./buildAndRun.sh
 ```
 
 For stopping Oracle database container use:
-```bash
+```shell
 cd ./docker/oracle-aq-18-xe
 ./stopAndClean.sh
 ```
