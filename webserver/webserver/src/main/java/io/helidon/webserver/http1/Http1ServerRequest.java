@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.WritableHeaders;
@@ -45,6 +46,11 @@ import io.helidon.webserver.http.RoutingRequest;
  * Http 1 server request base.
  */
 abstract class Http1ServerRequest implements RoutingRequest {
+
+    private static final RequestedUriDiscoveryContext DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT =
+            RequestedUriDiscoveryContext.builder()
+            .build();
+
     private final ServerRequestHeaders headers;
     private final ConnectionContext ctx;
     private final HttpSecurity security;
@@ -215,11 +221,13 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     private UriInfo createUriInfo() {
-        return ctx.listenerContext().config().requestedUriDiscoveryContext().uriInfo(remotePeer().address().toString(),
-                                                                                     localPeer().address().toString(),
-                                                                                     path.path(),
-                                                                                     headers,
-                                                                                     query(),
-                                                                                     isSecure());
+        return ctx.listenerContext().config().requestedUriDiscoveryContext()
+                .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
+                .uriInfo(remotePeer().address().toString(),
+                         localPeer().address().toString(),
+                         path.path(),
+                         headers,
+                         query(),
+                         isSecure());
     }
 }
