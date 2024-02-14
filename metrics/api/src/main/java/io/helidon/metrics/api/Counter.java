@@ -50,8 +50,7 @@ public interface Counter extends Meter {
     long count();
 
     /**
-     * Builder for a new counter. The actually building of the counter
-     * is performed by the registry.
+     * Builder for a new counter.
      *
      * @see MeterRegistry#getOrCreate(Meter.Builder)
      */
