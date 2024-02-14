@@ -261,6 +261,11 @@ At this stage, the application is a very simple "Hello World" greeting service.
 .Try the Application
 ----
 curl -X GET http://localhost:7001/greet
+----
+
+[source, json]
+.JSON response
+----
 {"message":"Hello World!"}
 ----
 
@@ -887,7 +892,7 @@ This Kubernetes YAML file can be used to deploy the application to Kubernetes:
 .Deploy the application to Kubernetes
 ----
 kubectl create -f app.yaml
-kubectl get pods                    # Wait for quickstart pod to be RUNNING
+kubectl get pods # Wait for quickstart pod to be RUNNING
 ----
 
 TIP: Remember, if Kubernetes is running on a different machine, or inside

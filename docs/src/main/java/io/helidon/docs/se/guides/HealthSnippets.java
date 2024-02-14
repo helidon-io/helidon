@@ -70,7 +70,6 @@ class HealthSnippets {
         // tag::snippet_2[]
         HealthObserver.builder()
                 .useSystemServices(false)
-                //...
                 .build();
         // end::snippet_2[]
     }
@@ -79,7 +78,6 @@ class HealthSnippets {
         // tag::snippet_3[]
         HealthObserver healthObserver = HealthObserver.builder()
                 .endpoint("/myhealth") // <1>
-                // ...
                 .build();
         // end::snippet_3[]
     }
@@ -87,7 +85,6 @@ class HealthSnippets {
     void snippet4(Config config) {
         // tag::snippet_4[]
         HealthObserver healthObserver = HealthObserver.builder()
-                // ...
                 .config(config.get("server.features.observe.observers.health")) // <1>
                 .build();
         // end::snippet_4[]

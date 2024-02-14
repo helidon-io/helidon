@@ -48,7 +48,7 @@ class TracingSnippets {
         AtomicReference<String> message  = new AtomicReference<>();
 
         // tag::snippet_1[]
-        class MyClass {
+        class GreetingProvider {
             @Traced // <1>
             String getMessage() {
                 return message.get();

@@ -197,7 +197,7 @@ So far in this tutorial, you have used tracing with JAX-RS without needing to an
 To trace at the method level, you just annotate a method with @Traced.
 
 [source,java]
-.Update the `GreetingProvider` class; 1) Add a new import and 2) Add the @Traced annotation to the `getMessage` method:
+.Add the @Traced annotation to the `getMessage` method:
 ----
 include::{sourcedir}/mp/guides/TracingSnippets.java[tag=snippet_1, indent=0]
 ----
@@ -219,7 +219,7 @@ To trace at the class level, annotate the class with @Traced. This will enable t
 except for the constructor and private methods.
 
 [source,java]
-.Update the `GreetingProvider` class; 1) Add @Traced to the `GreetingProvider` class and 2) Remove @Traced from the `getMessage` method:
+.Add @Traced to the `GreetingProvider` class and remove @Traced from the `getMessage` method:
 ----
 include::{sourcedir}/mp/guides/TracingSnippets.java[tag=snippet_2, indent=0]
 ----

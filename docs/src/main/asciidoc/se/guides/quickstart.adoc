@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ kubectl get nodes
 .Deploy the application to Kubernetes
 ----
 kubectl create -f app.yaml
-kubectl get pods                    # Wait for quickstart pod to be RUNNING
+kubectl get pods # Wait for quickstart pod to be RUNNING
 ----
 
 The step above created a service that is exposed into any node port. Lookup

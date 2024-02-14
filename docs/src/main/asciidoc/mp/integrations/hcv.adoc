@@ -52,42 +52,44 @@ The following is a list of maven coordinates of all Vault modules available:
 
 [source,xml]
 ----
-<dependency>
-    <groupId>io.helidon.integrations.vault.auths</groupId>
-    <artifactId>helidon-integrations-vault-auths-token</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.vault.auths</groupId>
-    <artifactId>helidon-integrations-vault-auths-approle</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.vault.auths</groupId>
-    <artifactId>helidon-integrations-vault-auths-k8s</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.vault.secrets</groupId>
-    <artifactId>helidon-integrations-vault-secrets-kv1</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.vault.secrets</groupId>
-    <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.vault.secrets</groupId>
-    <artifactId>helidon-integrations-vault-secrets-cubbyhole</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.vault.secrets</groupId>
-    <artifactId>helidon-integrations-vault-secrets-transit</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.vault.secrets</groupId>
-    <artifactId>helidon-integrations-vault-secrets-database</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.vault.sys</groupId>
-    <artifactId>helidon-integrations-vault-sys</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.auths</groupId>
+        <artifactId>helidon-integrations-vault-auths-token</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.auths</groupId>
+        <artifactId>helidon-integrations-vault-auths-approle</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.auths</groupId>
+        <artifactId>helidon-integrations-vault-auths-k8s</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.secrets</groupId>
+        <artifactId>helidon-integrations-vault-secrets-kv1</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.secrets</groupId>
+        <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.secrets</groupId>
+        <artifactId>helidon-integrations-vault-secrets-cubbyhole</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.secrets</groupId>
+        <artifactId>helidon-integrations-vault-secrets-transit</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.secrets</groupId>
+        <artifactId>helidon-integrations-vault-secrets-database</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.vault.sys</groupId>
+        <artifactId>helidon-integrations-vault-sys</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 == Usage
@@ -167,7 +169,7 @@ Cubbyhole example:
 include::{sourcedir}/mp/integrations/HcvSnippets.java[tag=snippet_2, indent=0]
 ----
 
-<1> Create a secret from request entity, the name of the value is {@code secret}.
+<1> Create a secret from request entity, the name of the value is `secret`.
 <2> Delete the secret on a specified path.
 <3> Get the secret on a specified path.
 

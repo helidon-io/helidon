@@ -162,7 +162,7 @@ It will also register the `HelidonExecutorServiceProvider` which is actually rel
 For our example we need something quite small, like a `FixedTheadPool` with 2 threads.
 This provider is used to tell our JBatch engine exactly which ExecutorService to use.
 
-[source, java]
+[source,java]
 .HelidonExecutorServiceProvider
 
 ----

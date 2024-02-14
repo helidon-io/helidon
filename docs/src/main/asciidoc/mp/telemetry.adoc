@@ -81,7 +81,7 @@ Helidon provides full access to OpenTelemetry Tracing API:
 Accessing and using these objects can be done as follows. For span:
 
 .Span sample
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_1, indent=0]
 ----
@@ -94,7 +94,7 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_1, indent=0]
 You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star and stop spans.
 
 .SpanBuilder usage
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_2, indent=0]
 ----
@@ -104,7 +104,7 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_2, indent=0]
 Helidon Microprofile Telemetry is integrated with xref:tracing.adoc[Helidon Tracing API]. This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
 
 .Inject Helidon Tracer
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_3, indent=0]
 ----
@@ -116,7 +116,7 @@ The span is then started and ended manually. Span parent relations will be prese
 Another option is to use the Global Tracer:
 
 .Obtain the Global tracer
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_4, indent=0]
 ----
@@ -131,7 +131,7 @@ The span is then started and ended manually. Span parent relations will be prese
 To obtain the current span, it can be injected by CDI. The current span can also be obtained using the static method `Span.current()`.
 
 .Inject the current span
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_5, indent=0]
 ----
@@ -144,7 +144,7 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_5, indent=0]
 The same functionality is available for the `Baggage` API:
 
 .Inject the current baggage
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_6, indent=0]
 ----
@@ -254,7 +254,7 @@ For this example, you will use Jaeger to manage data tracing. If you prefer to u
 
 To create simple services, use `@WithSpan` and `Tracer` to create span and let MicroProfile OpenTelemetry handle them.
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_7, indent=0]
 ----
@@ -307,7 +307,7 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_9, indent=0]
 The secondary service is basic; it has only one method, which is also annotated with `@WithSpan`.
 
 .Secondary service
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_10, indent=0]
 ----

@@ -46,7 +46,7 @@ Currently, there is no compatibility API available
 
 In Helidon 1.x-3.x you started a server like this:
 
-[source, java]
+[source,java]
 .Start Helidon SE 3.x Server
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_1, indent=0]
@@ -61,7 +61,7 @@ The exception handling should also be done in reactive way using the correspondi
 
 In Helidon 4.x asynchronous programming is no longer required so the server startup is much simpler:
 
-[source, java]
+[source,java]
 .Start Helidon SE 4.x Server
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_2, indent=0]
@@ -90,7 +90,7 @@ For more information see:
 
 In Helidon 1.x-3.x the routing config was done the following way:
 
-[source, java]
+[source,java]
 .Routing in Helidon SE 3.x Server
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_3, indent=0]
@@ -104,7 +104,7 @@ Services are created and assigned to the desired path. Observability and other f
 
 In Helidon 4, the routing is configured the following way:
 
-[source, java]
+[source,java]
 .Start Helidon SE 4.x Server
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_4, indent=0]
@@ -128,7 +128,7 @@ There are also significant changes in Helidon `Service`.
 
 In prior versions, a service looks this way:
 
-[source, java]
+[source,java]
 .Helidon SE 3.x Service
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_5, indent=0]
@@ -138,7 +138,7 @@ include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_5, indent=0]
 
 In Helidon 4, the same service:
 
-[source, java]
+[source,java]
 .Helidon SE 4.x Service
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_6, indent=0]
@@ -267,14 +267,14 @@ The global configuration represents a single instance of the `Config` class, whi
 
 It is recommended that you explicitly initialize global configuration before using any Helidon components:
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_7, indent=0]
 ----
 
 You can then utilize the global configuration for easy retrieval of your application's configuration:
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_8, indent=0]
 ----

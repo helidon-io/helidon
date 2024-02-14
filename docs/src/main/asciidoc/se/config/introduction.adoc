@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -85,8 +85,8 @@ When it reads configuration text from sources, the config system uses config par
 to translate that text into the in-memory data structures representing that
 configuration.
 
-The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See xref:#built-in-formats[this section] for
-how to change your `pom.xml` to make parsers for those formats available to your
+The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats.
+See xref:#built-in-formats[this section] for how to change your `pom.xml` to make parsers for those formats available to your
 application. Then your application can invoke the
 link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-[config builder's `addParser`] method
 so that builder will use the parsers you choose.
@@ -102,29 +102,30 @@ Helidon has an internal configuration, so you are not required to provide any co
 
 In your application code, when you create a default `Config` object, Helidon uses the default configuration .
 
-[source,Java]
+[source,java]
 ----
-Config config = Config.create(); // <1>
+include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> The `Config` object is created with default settings.
 
 === Global Configuration
 
 Global configuration is a singleton instance of `Config` that is implicitly used by some components of Helidon, plus it provides a convenient mechanism for your application to retrieve configuration from anywhere in your code.
-By default global configuration is initialized to the default `Config` object (as returned by `Config.create()`). But it is recommended that you initialize it explicitly. This is especially important if you define custom config sources.
+By default, global configuration is initialized to the default `Config` object (as returned by `Config.create()`). But it is recommended that you initialize it explicitly. This is especially important if you define custom config sources.
 
-```
-Config config = Config.create(); // <1>
-Config.global(config); // <2>
-```
+[source,java]
+----
+include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_2, indent=0]
+----
 <1> Create configuration. This shows creating the default config, but it could be created from custom config sources.
 <2> Assign it to the application's global configuration
 
 You can use global configuration to conveniently retrieve the application's configuration:
 
-```
-Config config = Config.global();
-```
+[source,java]
+----
+include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_3, indent=0]
+----
 
 === Custom Config Sources
 
@@ -136,6 +137,7 @@ link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`Config.Bui
 
 See the xref:{rootdir}/se/guides/config.adoc#_custom_configuration_sources[Custom Configuration Sources] and xref:advanced-configuration.adoc#_advanced_config_sources[advanced config sources] sections for detailed examples and further information.
 
+[[_accessing_config_values]]
 === Accessing Config Values
 
 You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, `Config` system reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values.
@@ -165,19 +167,13 @@ JavaDoc for complete details.
 
 [source,java]
 ----
-int pageSize = config.get("web.page-size")
-        .asInt()
-        .orElse(20);
+include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_4, indent=0]
 ----
 
 Or using the tree node approach:
 [source,java]
 ----
-int pageSize = config
-                .get("web")
-                .get("page-size")
-                .asInt()
-                .orElse(20);
+include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_5, indent=0]
 ----
 
 For this first example we can see the basic features of `Config`:

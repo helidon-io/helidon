@@ -16,9 +16,9 @@
 package io.helidon.docs.se.guides;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
@@ -37,6 +37,7 @@ import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.metrics.MetricsObserver;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
@@ -64,8 +65,8 @@ class MetricsSnippets {
                 .routing(Main::routing)
                 .build()
                 .start();
+        // end::snippet_1[]
     }
-    // end::snippet_1[]
 
     void snippet_2(Config config) {
         // tag::snippet_2[]
@@ -86,7 +87,7 @@ class MetricsSnippets {
                 .build();
 
         WebServer server = WebServer.builder() // <7>
-                .config(Config.global().get("server"))
+                .config(config.get("server"))
                 .addFeature(observe)
                 .routing(Main::routing)
                 .build()
@@ -99,7 +100,7 @@ class MetricsSnippets {
         // tag::snippet_3[]
         public class GreetingCards implements HttpService {
 
-            private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+            private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
             private final Counter cardCounter; // <1>
 
@@ -145,8 +146,6 @@ class MetricsSnippets {
 
     // tag::snippet_4[]
     static void routing(HttpRouting.Builder routing) {
-        Config config = Config.global();
-
         routing
                 .register("/greet", new GreetService())
                 .register("/cards", new GreetingCards()) // <1>
@@ -159,7 +158,7 @@ class MetricsSnippets {
         // tag::snippet_5[]
         public class GreetingCards implements HttpService {
 
-            private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+            private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
             private final Timer cardTimer; // <1>
 
             GreetingCards() {

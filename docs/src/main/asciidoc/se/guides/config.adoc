@@ -195,6 +195,7 @@ curl http://localhost:8080/greet
 }
 ----
 
+[[_custom_configuration_sources]]
 == Custom Configuration Sources
 
 To use custom configuration sources, your application needs to specify the sources when it creates `Config` object. By doing this,
@@ -305,7 +306,7 @@ app.greeting=HelloFrom-config-file.properties
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the `buildConfig` method:
+.Update the `Main` class and replace the `buildConfig` method:
 ----
 include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_4, indent=0]
 ----
@@ -362,7 +363,7 @@ HelloFromFileInDirectoryConf
 ----
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the `buildConfig` method:
+.Update the `Main` class and replace the `buildConfig` method:
 ----
 include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_7, indent=0]
 ----
@@ -587,7 +588,7 @@ app:
 
 
 [source,java]
-.Update the `GreetService.java` file; 1) Add new imports and 2) Replace the `GreetService` constructor with the following:
+.Update the `GreetService.java` file and replace the `GreetService` constructor with the following:
 ----
 include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_12, indent=0]
 ----
@@ -633,7 +634,7 @@ sources:
 ----
 
 [source,java]
-.Update the `GreetService` class; 1) Add new import and 2) Replace the `GreetService` constructor:
+.Update the `GreetService` class and replace the `GreetService` constructor:
 ----
 include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_13, indent=0]
 ----

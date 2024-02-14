@@ -136,22 +136,22 @@ For full control you can override the plugin's configuration using `pluginManage
 [source,xml]
 .Turn off generation of the CDS Archive when generating a custom Java runtime image
 ----
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>io.helidon.build-tools</groupId>
-                    <artifactId>helidon-maven-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>jlink-image</id>
-                            <configuration>
-                                <addClassDataSharingArchive>false</addClassDataSharingArchive>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
+<build>
+  <pluginManagement>
+      <plugins>
+          <plugin>
+              <groupId>io.helidon.build-tools</groupId>
+              <artifactId>helidon-maven-plugin</artifactId>
+              <executions>
+                  <execution>
+                      <id>jlink-image</id>
+                      <configuration>
+                          <addClassDataSharingArchive>false</addClassDataSharingArchive>
+                      </configuration>
+                  </execution>
+              </executions>
+          </plugin>
+      </plugins>
+  </pluginManagement>
+</build>
 ----

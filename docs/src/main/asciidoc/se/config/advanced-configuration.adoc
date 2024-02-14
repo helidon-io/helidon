@@ -37,6 +37,7 @@ include::{rootdir}/includes/se.adoc[]
 
 This section discusses several advanced topics related to Helidon configuration.
 
+[[_advanced_config_sources]]
 == Advanced Config Sources
 === Environment Variables Config Source
 
@@ -55,8 +56,7 @@ environment variables directly or via Kubernetes Secrets/ConfigMaps is common.
 Scripts that solve the mapping problem by explicitly converting variables to
 system properties can also be simplified.
 
-Aliases are produced for any environment variable name that matches _all_ of
-the following:
+Aliases are produced for any environment variable name that matches _all_ the following:
 
 . does not begin or end with a `'_'` character
 . does not contain `"__"`
@@ -103,22 +103,8 @@ your application can load this as configuration as follows:
 [source,java]
 .Using `directory` config source
 ----
-Config secrets = Config.builder(
-        ConfigSources.directory("conf/secrets")) // <1>
-        .disableEnvironmentVariablesSource()     // <2>
-        .disableSystemPropertiesSource()         // <2>
-        .build();
-
-assert secrets.get("username")                   // <3>
-        .asString()
-        .get()
-        .equals("jose");
-assert secrets.get("password")                   // <4>
-        .asString()
-        .get()
-        .equals("^ery$ecretP&ssword");
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_1, indent=0]
 ----
-
 <1> Loads all files from the `conf/secrets` directory.
 <2> No need to use environment variables or system properties as sources in building
  the `Config`.
@@ -137,43 +123,38 @@ for further details. The numerous variants of the `from` method construct
 `ConfigSource` or `Builder<ConfigSource>` instances.
 
 ==== Subtree of Another `Config`
-[source,java]
-----
-Config anotherConfig = Config.create(classpath("application.conf"));
 
-Config config = Config.create(
-        ConfigSources.create(anotherConfig.get("data")));
-----
-==== `Properties` Object
 [source,java]
 ----
-Config config = Config.create(
-        ConfigSources.create(System.getProperties()).build());                // <1>
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_2, indent=0]
+----
+
+==== `Properties` Object
+
+[source,java]
+----
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_3, indent=0]
 ----
 
 ==== `String` of a Given Media Type
+
 [source,java]
 ----
-Config config = Config.create(
-        ConfigSources.create("app.greeting = Hi", MediaTypes.create("text/x-java-properties")));
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_4, indent=0]
 ----
+
 ==== `Map`
+
 [source,java]
 ----
-Config config = Config.crate(
-        ConfigSources.create(Map.of("app.page-size", "20"))
-            .build());         // <1>
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_5, indent=0]
 ----
+
 ==== _ad hoc_ Config Nodes
+
 [source,java]
 ----
-Config config = Config.create(
-        ConfigSources.create(ObjectNode.builder()
-                                   .addList("app.basic-range", ListNode.builder()
-                                           .addValue("-20")
-                                           .addValue("20")
-                                           .build())
-                                   .build()));
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> `ConfigSources.create` variants for `Properties` or `Map` arguments return a
  `MapConfigSource.Builder` instance.
@@ -216,29 +197,13 @@ providers: [
         class = "this.is.my.Provider2"
     }
 ]
-
 ----
 
 [source,java]
 .Using `prefixed` config source
 ----
-Config config = Config.create(
-        ConfigSources.prefixed("app",                    // <1>
-                               classpath("app.conf")),   // <2>
-        ConfigSources.prefixed("data",                   // <3>
-                               classpath("data.conf"))); // <4>
-
-assert config.get("app.greeting")                        // <5>
-        .asString()
-        .get()
-        .equals("Hello");
-
-assert config.get("data.providers.0.name")               // <6>
-        .asString()
-        .get()
-        .equals("Provider1");
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_7, indent=0]
 ----
-
 <1> Specifies the prefix `app` for the associated source.
 <2> `Supplier<ConfigSource>` for the file
  `app.conf` loaded from the current `classpath`.
@@ -268,16 +233,12 @@ and use it instead to provide a different algorithm.
 [source,java]
 .Composite config source example
 ----
-Config config = Config.builder()
-                .addSource(file("config-file.properties"))
-                .addSource(classpath("application.yaml"))
-                .mergingStrategy(MergingStrategy.fallback())  // <1>
-                .build();
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_8, indent=0]
 ----
-
 <1> Specifies the merging strategy. This example uses the default fallback
  merging strategy.
 
+[[_advanced_config_parsers]]
 == Advanced Config Parsers
 Config sources and parsers work together to read and translate configuration data from some
 external form into the corresponding in-memory config tree.
@@ -313,10 +274,8 @@ because there might be more than one inferred media type.
 [source,java]
 .Specify `mediaType` for config source
 ----
-Config config = Config.create(classpath("props")                             // <1>
-                                    .mediaType(MediaTypes.create("text/x-java-properties"))); // <2>
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_9, indent=0]
 ----
-
 <1> The config system cannot infer the media type because there is no file
 type in the path `props`.
 <2> The developer knows the file is in Java Properties format so specifies the
@@ -339,7 +298,7 @@ config sources associated with that builder, but does not directly tie a given
 parser to a given source. The builder uses media-type matching to select one of
 the parsers registered with the builder for each source.
 
-If the config system cannot locate a parser that matches the media type of a source, it throws
+If the config system cannot locate a parser that matches the media-type of a source, it throws
 a `ConfigException` when trying to prepare the configuration.
 
 ===== By Application Directive
@@ -358,10 +317,8 @@ media type.
 [source,java]
 .Specify `parser` for config source
 ----
-Config config = Config.create(classpath("props")                            // <1>
-                                    .parser(ConfigParsers.properties())); // <2>
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_10, indent=0]
 ----
-
 <1> The config system cannot infer the media type because there is no file
 type in the path `props`.
 <2> The developer knows the file is in Java Properties format so specifies the
@@ -383,7 +340,7 @@ secrets:
     username: "jose"
     password: "^ery$ecretP&ssword"
 
-app: >                             # <1>
+app: > # <1>
     {
         "greeting": "Hello",
         "page-size": 20,
@@ -391,37 +348,14 @@ app: >                             # <1>
     }
 
 ----
-
 <1> The property `app` is itself formatted as a JSON document.
 
 ==== Specify Key-to-media-type Mapping
 [source,java]
 .Specify JSON as media type for node
 ----
-Config config = Config.create(
-        classpath("application.yaml")
-                .mediaTypeMapping(                          // <1>
-                        key -> "app".equals(key.toString()) // <2>
-                                        ? Optional.of(MediaTypes.APPLICATION_JSON)
-                                        : Optional.empty()));
-
-assert config.get("secrets.username").asString()            // <3>
-        .get().equals("jose");
-assert config.get("secrets.password").asString()            // <3>
-        .get().equals("^ery$ecretP&ssword");
-
-assert config.get("app").type() == Config.Type.OBJECT;      // <4>
-
-assert config.get("app.greeting")                           // <3>
-        .asString().get().equals("Hello");
-assert config.get("app.page-size")                          // <3>
-        .asInt().get() == 20;
-assert config.get("app.basic-range.0")                      // <3>
-        .asInt().get() == -20;
-assert config.get("app.basic-range.1")                      // <3>
-        .asInt().get() == 20;
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_11, indent=0]
 ----
-
 <1> The source builder's `mediaTypeMapping` method accepts a function
 which returns the appropriate media types (if any) for config keys.
 <2> The function says to treat the `app` property value as a JSON document and
@@ -443,14 +377,8 @@ you want to use for parsing those keys' values.
 [source,java]
 .Specify JSON formatted property' parser instance
 ----
-Config config = Config.create(
-        classpath("application.yaml")
-                .parserMapping(                                           // <1>
-                        key -> "app".equals(key.toString())               // <2>
-                                ? Optional.of(HoconConfigParser.create())
-                                : Optional.empty()));
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_12, indent=0]
 ----
-
 <1> Uses the `parserMapping` method to map keys to parser instances.
 <2> Tells the config system to use the HOCON parser for translating the `String`
 value of the `app` key. (HOCON is a superset of JSON.)
@@ -491,21 +419,8 @@ names `oracle` and `oracle.com`.
 [source,java]
 .Working with configuration with dot character in node name
 ----
-Config config = Config.create(classpath("application.json"));
-
-// node `oracle`
-assert config.get("oracle.com").asBoolean().get() == true;                   // <1>
-assert config.get("oracle").get("com").asBoolean().get() == true;            // <1>
-assert config.get("oracle.com").type() == Type.VALUE;                        // <2>
-assert config.get("oracle.com").name().equals("com");                        // <3>
-// node `oracle.com`
-assert config.get("oracle~1com.secured").asBoolean().get() == true;          // <4>
-assert config.get(Key.escapeName("oracle.com"))                              // <5>
-        .get("secured").asBoolean().get() == true;
-assert config.get(Key.escapeName("oracle.com")).type() == Type.OBJECT;       // <6>
-assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // <7>
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_13, indent=0]
 ----
-
 <1> Work with the first `oracle` object as usual.
 As always you can use the fully-qualified key `oracle.com` or chain `get(key)`
 calls to access the `com` property value.
@@ -572,7 +487,7 @@ for more detail.
 
 === Tokens
 A token reference is a key token starting with `$`, optionally enclosed between
- `{` and `}`, i.e. `$ref`, `${ref}`. Even a key composed of more than one token
+ `{` and `}`, i.e. `$ref`, `pass:[${ref}]`. Even a key composed of more than one token
  can be referenced in another key, i.e. `${env.ref}`.
 
 As an example use case, you can use token references to declare the default values (see
@@ -585,13 +500,8 @@ using wildcards (see `overrides.properties` below).
 [source,java]
 .Initialize `Config` with Override Definition from `overrides.properties` file
 ----
-Config config = Config.builder()
-        .overrides(OverrideSources.file("conf/overrides.properties")) // <1>
-        .sources(file("conf/env.yaml"),                               // <2>
-                 classpath("resolving-tokens.yaml"))                  // <3>
-        .build();
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_14, indent=0]
 ----
-
 <1> Loads _overrides_ from the specified file.
 <2> A deployment-specific environment configuration file.
 <3> A default configuration containing token references that are resolved
@@ -602,12 +512,7 @@ You can disable key and value token replacement separately as the following exam
 [source,java]
 .Disabling Key and Value Token Replacement
 ----
-Config config = Config.builder()
-        .disableKeyResolving()
-        .disableValueResolving()
-        // other Config builder settings
-        .build();
-
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_15, indent=0]
 ----
 
 == Executors for Asynchronous Config Activity
@@ -634,19 +539,8 @@ strategy instances.
 [source,java]
 .Customize polling strategy executors
 ----
-ScheduledExecutorService executor = Executors.newScheduledThreadPool(2); // <1>
-
-Config config = Config.create(
-        ConfigSources.file("conf/dev.properties")
-                .pollingStrategy(
-                        PollingStrategies.regular(Duration.ofSeconds(2)) // <2>
-                                .executor(executor)),                    // <3>
-        ConfigSources.file("conf/config.properties")
-                .pollingStrategy(
-                        PollingStrategies.regular(Duration.ofSeconds(5)) // <2>
-                                .executor(executor)));                   // <4>
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_16, indent=0]
 ----
-
 <1> Prepares a thread pool executor with core pool size set `2`.
 <2> Selects the built-in periodic polling strategy.
 <3> Tells the config system to use the specific executor to poll the
@@ -667,22 +561,8 @@ tell the builder to use a different `Executor`.
 [source,java]
 .Customize config and override sources' executors
 ----
-ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);// <1>
-
-Config config = Config.builder()
-        .overrides(
-                OverrideSources.file("conf/overrides.properties")
-                        .changeWatcher(FileSystemWatcher.builder()
-                                               .executor(executor)      // <2>
-                                               .build()))
-        .sources(
-                ConfigSources.file("conf/env.yaml")
-                        .changeWatcher(FileSystemWatcher.builder()
-                                               .executor(executor)      // <3>
-                                               .build()))
-        .build();
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_17, indent=0]
 ----
-
 <1> Prepares a thread pool executor to be shared by selected sources.
 <2> Tells the builder that the resulting overrides source should use the specified
 `Executor` for notifying interested parties of changes and for reloading the
@@ -702,15 +582,8 @@ pool executor for each retry policy instance.
 [source,java]
 .Customize retry policy executors
 ----
-ScheduledExecutorService executor = Executors.newScheduledThreadPool(2, myThreadFactory); // <1>
-
-Config config = Config.create(
-        ConfigSources.file("conf/dev.properties")
-                .optional()                                                               // <2>
-                .retryPolicy(RetryPolicies.repeat(2)                                      // <3>
-                        .executor(executor)));                                            // <4>
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_18, indent=0]
 ----
-
 <1> Prepares a thread pool executor with core pool size set to `2` and a custom
  `java.util.concurrent.ThreadFactory`.
 <2> When the source is flagged as `optional()`, the loading attempt will be

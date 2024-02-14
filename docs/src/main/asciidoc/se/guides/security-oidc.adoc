@@ -381,10 +381,12 @@ In the body of the request, select `x-www-form-urlencoded` type. Add the followi
 [source,json]
 .Enter the key:value
 ----
-[{"key":"grant_type","value":"authorization_code"},
-{"key":"client_id","value":"myClientID"},
-{"key":"client_secret","value":"client secret"},
-{"key":"code","value":"authorization code"}]
+[
+  {"key":"grant_type","value":"authorization_code"},
+  {"key":"client_id","value":"myClientID"},
+  {"key":"client_secret","value":"client secret"},
+  {"key":"code","value":"authorization code"}
+]
 ----
 
 Do not forget to replace the `client secret` by its value (generated during Create a Client), and `authorization code`
@@ -404,15 +406,17 @@ Make sure your Helidon application is running. If it is not, please start it.
 [source,json]
 .Enter the following information:
 ----
-[{"key":"Header Prefix","value":"bearer"},
-{"key":"Grant type","value":"Password  Credentials"},
-{"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
-{"key":"Client ID","value":"myClientID"},
-{"key":"Client Secret","value":"client secret"},
-{"key":"Username","value":"myuser"},
-{"key":"Password","value":"password"},
-{"key":"Scope","value":"openid"},
-{"key":"Client Authentication","value":"Send as Basic Auth Header"}]
+[
+  {"key":"Header Prefix","value":"bearer"},
+  {"key":"Grant type","value":"Password  Credentials"},
+  {"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
+  {"key":"Client ID","value":"myClientID"},
+  {"key":"Client Secret","value":"client secret"},
+  {"key":"Username","value":"myuser"},
+  {"key":"Password","value":"password"},
+  {"key":"Scope","value":"openid"},
+  {"key":"Client Authentication","value":"Send as Basic Auth Header"}
+]
 ----
 
 Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A popup
@@ -539,7 +543,9 @@ to the protected path and method.
 .Add `admin` role
 ----
 web-server:
-    # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
+    # protected paths on the web server
+    # do not include paths served by Jersey
+    # as those are protected directly
     paths:
       - path: "/greet"
         methods: ["get"]

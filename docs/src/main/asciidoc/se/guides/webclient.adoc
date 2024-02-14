@@ -154,8 +154,8 @@ Open a new command prompt or terminal and run the ClientExample class you just c
 java -cp target/helidon-quickstart-se.jar io.helidon.examples.quickstart.se.ClientExample
 ----
 
-[source,bash]
-.Output:
+[source,json]
+.JSON response:
 ----
 {"message":"Hello World!"}
 ----
@@ -180,7 +180,7 @@ Once the dependency is added, the feature will be automatically loaded as a serv
 easily parse the JSON object.
 
 [source,java]
-.Replace String by JsonObject:
+.Replace String with JsonObject:
 ----
 include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_4, indent=0]
 ----

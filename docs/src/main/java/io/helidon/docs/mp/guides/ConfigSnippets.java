@@ -53,8 +53,16 @@ class ConfigSnippets {
     }
 
     class Snippet2 {
-
         // tag::snippet_2[]
+        static Server startServer() {
+            return Server.create().start(); // <1>
+        }
+        // end::snippet_2[]
+    }
+
+    class Snippet3 {
+
+        // tag::snippet_3[]
         @ApplicationScoped // <1>
         public class GreetingProvider {
             private final AtomicReference<String> message = new AtomicReference<>(); // <2>
@@ -72,12 +80,12 @@ class ConfigSnippets {
                 this.message.set(message);
             }
         }
-        // end::snippet_2[]
+        // end::snippet_3[]
     }
 
-    class Snippet3 {
+    class Snippet4 {
 
-        // tag::snippet_3[]
+        // tag::snippet_4[]
         @ApplicationScoped
         public class GreetingProvider {
 
@@ -93,12 +101,12 @@ class ConfigSnippets {
                 this.message = message;
             }
         }
-        // end::snippet_3[]
+        // end::snippet_4[]
     }
 
-    class Snippet4 {
+    class Snippet5 {
 
-        // tag::snippet_4[]
+        // tag::snippet_5[]
         @ApplicationScoped
         public class GreetingProvider {
             private final AtomicReference<String> message = new AtomicReference<>();
@@ -117,12 +125,12 @@ class ConfigSnippets {
                 this.message.set(message);
             }
         }
-        // end::snippet_4[]
+        // end::snippet_5[]
     }
 
-    class Snippet5 {
+    class Snippet6 {
 
-        // tag::snippet_5[]
+        // tag::snippet_6[]
         @ApplicationScoped
         public class GreetingProvider {
             private final AtomicReference<String> message = new AtomicReference<>();
@@ -145,12 +153,12 @@ class ConfigSnippets {
                 this.message.set(message);
             }
         }
-        // end::snippet_5[]
+        // end::snippet_6[]
     }
 
-    class Snippet6 {
+    class Snippet7 {
 
-        // tag::snippet_6[]
+        // tag::snippet_7[]
         private static Config buildConfig() {
             return Config.builder()
                     .sources(
@@ -158,12 +166,12 @@ class ConfigSnippets {
                             classpath("META-INF/microprofile-config.properties")) // <2>
                     .build();
         }
-        // end::snippet_6[]
+        // end::snippet_7[]
     }
 
-    class Snippet7 {
+    class Snippet8 {
 
-        // tag::snippet_7[]
+        // tag::snippet_8[]
         @ApplicationScoped
         public class GreetingProvider {
 
@@ -179,7 +187,7 @@ class ConfigSnippets {
                 this.message = message;
             }
         }
-        // end::snippet_7[]
+        // end::snippet_8[]
     }
 
 }

@@ -51,15 +51,17 @@ Unlike well known XA protocol, LRA is asynchronous and therefore much more scala
 include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
-<dependency>
-  <groupId>io.helidon.microprofile.lra</groupId>
-  <artifactId>helidon-microprofile-lra</artifactId>
-</dependency>
-<!-- Support for Narayana coordinator -->
-<dependency>
-  <groupId>io.helidon.lra</groupId>
-  <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+      <groupId>io.helidon.microprofile.lra</groupId>
+      <artifactId>helidon-microprofile-lra</artifactId>
+    </dependency>
+    <!-- Support for Narayana coordinator -->
+    <dependency>
+      <groupId>io.helidon.lra</groupId>
+      <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 == Usage
@@ -352,7 +354,7 @@ docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git#:l
 docker run --name lra-coordinator --network="host" helidon/lra-coordinator
 ----
 
-Helidon LRA coordinator is compatible with Narayana clients, you need to add an additional dependency for Narayana client:
+Helidon LRA coordinator is compatible with Narayana clients, you need to add a dependency for Narayana client:
 [source,xml]
 .Dependency needed for using Helidon LRA with Narayana compatible coordinator
 ----
@@ -364,7 +366,7 @@ Helidon LRA coordinator is compatible with Narayana clients, you need to add an 
 
 === Narayana
 https://narayana.io[Narayana] is a transaction manager supporting LRA.
-To use Narayana LRA coordinator with Helidon LRA client you need to add an additional dependency for Narayana client:
+To use Narayana LRA coordinator with Helidon LRA client you need to add a dependency for Narayana client:
 
 [source,xml]
 .Dependency needed for using Helidon LRA with Narayana coordinator

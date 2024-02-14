@@ -142,7 +142,7 @@ include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_3, indent=
 
 By default, the bean is added to the container with scope set to `ApplicationScoped`. You can customize scope either by annotating the bean class with another scope or through the annotation:
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_4, indent=0]
 ----
@@ -156,7 +156,7 @@ When a custom bean is not enough, you may want to extend the CDI with a test-onl
 
 For this purpose, we provide the following annotation which adds the extension to the container and allows you to modify its behavior as a usual CDI Portable Extension:
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_5, indent=0]
 ----
@@ -166,7 +166,7 @@ include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_5, indent=
 
 If you want to disable discovery and only add custom extensions and beans, then use the following annotation:
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_6, indent=0]
 ----
@@ -178,7 +178,7 @@ NOTE: This annotation is typically used in conjunction with `@AddBeans` and/or `
 
 If you want just the basic test features enabled, then you only have to add a few required extensions and classes to your test. The following example uses only those extensions and classes required to run a bean that injects configuration value:
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_7, indent=0]
 ----

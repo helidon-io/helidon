@@ -88,14 +88,14 @@ mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
 
 == Examples
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/JwtSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Do not forget to annotate the `HelloApplication` class to enable JWT:
 
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/mp/JwtSnippets.java[tag=snippet_3, indent=0]
 ----

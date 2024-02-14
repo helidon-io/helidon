@@ -83,9 +83,10 @@ This example implements a simple Neo4j REST service using MicroProfile. For this
 
 Bring up a Neo4j instance via Docker
 
-```bash
+[source,bash]
+----
 docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:latest
-```
+----
 
 Go to the Neo4j browser and play the first step of the movies graph: link:http://localhost:7474/browser/?cmd=play&arg=movies[`:play movies`]
 
@@ -93,18 +94,20 @@ Now go to the `pom.xml` and add the following dependencies:
 
 [source,xml]
 ----
- <dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j-health</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j-health</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 Next add the connection configuration properties for Neo4j:

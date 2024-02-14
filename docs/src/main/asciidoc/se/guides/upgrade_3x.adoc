@@ -111,7 +111,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as additional service:
 
 .Helidon 2 WebSocket route registering
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/se/guides/Upgrade3xSnippets.java[tag=snippet_1, indent=0]
 ----
@@ -121,7 +121,7 @@ include::{sourcedir}/se/guides/Upgrade3xSnippets.java[tag=snippet_1, indent=0]
 In Helidon 3, WebSocket routing is defined by adding another routing:
 
 .Helidon 3 WebSocket route registering
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/se/guides/Upgrade3xSnippets.java[tag=snippet_2, indent=0]
 ----

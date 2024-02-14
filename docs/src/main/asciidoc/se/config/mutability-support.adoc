@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,11 +46,12 @@ value for a key.
 == Using Config Metadata
 === Loading Time
 The config system records when it loads each configuration into memory.
-Your application can retrieve it by invoking the link:{config-javadoc-base-url}/io/helidon/config/Config.html#timestamp--[timestamp method]:
-[source,java]
-java.time.Instance loadTime = myConfig.timestamp();
+Your application can retrieve it by invoking the link:{config-javadoc-base-url}/io/helidon/config/Config.html#timestamp--[timestamp method] on any config node:
 
-on any config node.
+[source,java]
+----
+include::{sourcedir}/se/config/MutabilitySupportSnippets.java[tag=snippet_1, indent=0]
+----
 
 === Config Context
 The config system maintains a link:{config-javadoc-base-url}/io/helidon/config/Config.Context.html[`Config.Context`]
@@ -111,17 +112,8 @@ different polling strategy:
 [source,java]
 .Build a `Config` with a different `PollingStrategy` for each config source
 ----
-Config config = Config.create(
-        ConfigSources.file("conf/dev.properties")
-                .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2))) // <1>
-                .optional(),
-        ConfigSources.file("conf/config.properties")
-                .changeWatcher(FileSystemWatcher.create())                         // <2>
-                .optional(),
-        ConfigSources.file("my.properties")
-                .pollingStrategy(PollingStrategies::nop));                         // <3>
+include::{sourcedir}/se/config/MutabilitySupportSnippets.java[tag=snippet_2, indent=0]
 ----
-
 <1> Optional `file` source `conf/dev.properties` will be checked for changes every
  `2` seconds.
 <2> Optional `file` source `conf/config.properties` will be watched by the Java
@@ -143,27 +135,20 @@ then the config system notifies your code of changes anywhere in the config tree
 
 ==== Registering Actions
 
-You register a function that runs when when a change occurs by using the
+You register a function that runs when a change occurs by using the
 link:{config-javadoc-base-url}/io/helidon/config/Config.html#onChange(java.util.function.Consumer)[`Config.onChange()`]
 method on the node of interest.
 
 [source,java]
 .Subscribe on `greeting` property changes via `onChange` method
 ----
-config.get("greeting")                                                         // <1>
-        .onChange((changedNode) -> {                                           // <2>
-            System.out.println("Node " + changedNode.key() + " has changed!");
-            return true;                                                       // <3>
-        });
+include::{sourcedir}/se/config/MutabilitySupportSnippets.java[tag=snippet_3, indent=0]
 ----
-
 <1> Navigate to the `Config` node on which you want to register.
 <2> Invoke the `onChange` method, passing a function (`Function<Config, Boolean>`).
 The config system invokes that function each time the subtree rooted at the
 `greeting` node changes. The `changedNode` is a new instance of `Config`
 representing the updated subtree rooted at `greeting`.
-<3> The function should return `true` to continue being run on subsequent changes, `false`
-to stop.
 
 == Accessing Always-current Values
 Some applications do not need to respond to change as they happen. Instead, it's
@@ -178,12 +163,7 @@ as stored in the config source.
 [source,java]
 .Access `greeting` property as `Supplier<String>`
 ----
-// Construct a Config with the appropriate PollingStrategy on each config source.
-
-Supplier<String> greetingSupplier = config.get("greeting")                     // <1>
-        .asString().supplier();                                                   // <2>
-
-System.out.println("Always actual greeting value: " + greetingSupplier.get()); // <3>
+include::{sourcedir}/se/config/MutabilitySupportSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Navigate to the `Config` node for which you want access to the always-current
 value.

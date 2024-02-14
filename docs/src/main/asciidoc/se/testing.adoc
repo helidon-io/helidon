@@ -166,7 +166,7 @@ Extensions can enhance the features for the module `helidon-testing-junit5-webse
 You can create the following test to validate that the server returns the correct response:
 
 .Basic Helidon test framework usage.
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/se/TestingSnippets.java[tag=snippet_1, indent=0]
 ----
@@ -190,7 +190,7 @@ As everything above is performed by the testing framework, regular unit tests ca
 If there is no need to set up and run a server, a `DirectClient` client can be used. It is a testing client that bypasses HTTP transport and directly invokes the router.
 
 .Routing test using `@RoutingTest` and `DirectClient`.
-[source, java]
+[source,java]
 ----
 include::{sourcedir}/se/TestingSnippets.java[tag=snippet_2, indent=0]
 ----

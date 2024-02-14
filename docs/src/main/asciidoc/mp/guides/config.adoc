@@ -94,9 +94,9 @@ Next change the project's `pom.xml` to use your main class:
 [source,xml]
 .pom.xml
 ----
-    <properties>
-        <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
-    </properties>
+<properties>
+    <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
+</properties>
 ----
 
 This property will be used to set the `Main-Class` attribute in the application jar's MANIFEST.
@@ -104,12 +104,10 @@ This property will be used to set the `Main-Class` attribute in the application 
 In your application code, Helidon uses the default configuration when you create a `Server` object without a custom `Config` object.
 See the following code from the project you created.
 
-[source,Java]
-.View `Main.startServer`:
+[source,java]
+.View `Main#startServer`:
 ----
-    static Server startServer() {
-        return Server.create().start(); // <1>
-    }
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> There is no `Config` object being used during server creation, so the default configuration is used.
 
@@ -225,7 +223,7 @@ The generated project already accesses configuration data in the `GreetingProvid
 [source,java]
 .View the following code from `GreetingProvider.java`:
 ----
-include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> This class is application scoped so a single instance of `GreetingProvider` will be shared across the entire application.
 <2> Define a thread-safe reference that will refer to the message member variable.
@@ -251,7 +249,7 @@ sources:
 [source,java]
 .Update the following code from `GreetingProvider.java`:
 ----
-include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_3, indent=0]
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Inject the value of `app.greeting` into the `GreetingProvider` object.
 <2> Define a class member variable to hold the greeting.
@@ -274,9 +272,9 @@ curl http://localhost:8080/greet
 You can inject the `Config` object into the class and access it directly as shown below.
 
 [source,java]
-.Update the `GreetingProvider.java` file; 1) Add new imports and 2) Replace the `GreetingProvider` class:
+.Replace the `GreetingProvider` class:
 ----
-include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_4, indent=0]
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_5, indent=0]
 ----
 <1> Inject the `Config` object into the `GreetingProvider` object.
 <2> Get the `app.greeting` value from the `Config` object and set the member variable.
@@ -326,7 +324,7 @@ sources:
 [source,java]
 .Replace `GreetingProvider` class with the following code:
 ----
-include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_5, indent=0]
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Get the configuration subtree where the `app.greeting` node is the root.
 <2> Get the value from the `message` `Config` node.
@@ -354,7 +352,7 @@ configuration file used for the ConfigMap.  This example will create the file at
 [source,java]
 .Update the `Main` class and replace the `buildConfig` method:
 ----
-include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_6, indent=0]
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
 <2> The server port is specified in `META-INF/microprofile-config.properties` within the `helidon-quickstart-mp.jar`.
@@ -362,7 +360,7 @@ include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_6, indent=0]
 [source,java]
 .Update the following code from `GreetingProvider.java`:
 ----
-include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_7, indent=0]
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_8, indent=0]
 ----
 
 [source,bash]
