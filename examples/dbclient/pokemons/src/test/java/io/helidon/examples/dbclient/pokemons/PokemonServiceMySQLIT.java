@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,25 +22,27 @@ import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static io.helidon.config.ConfigSources.classpath;
 
 @Testcontainers(disabledWithoutDocker = true)
-public class PokemonServiceMongoIT extends AbstractPokemonServiceTest {
+public class PokemonServiceMySQLIT extends AbstractPokemonServiceTest {
 
     @Container
-    static final MongoDBContainer container = new MongoDBContainer("mongo")
-            .withExposedPorts(27017);
+    static MySQLContainer<?> container = new MySQLContainer<>("mysql:8.0.36")
+            .withUsername("user")
+            .withPassword("password")
+            .withNetworkAliases("mysql")
+            .withDatabaseName("pokemon");
 
     @BeforeAll
     static void start() {
-        String url = String.format("mongodb://127.0.0.1:%s/pokemon", container.getMappedPort(27017));
         Config.global(Config.builder()
-                .addSource(ConfigSources.create(Map.of("db.connection.url", url)))
-                .addSource(classpath("application-mongo-test.yaml"))
+                .addSource(ConfigSources.create(Map.of("db.connection.url", container.getJdbcUrl())))
+                .addSource(classpath("application-mysql-test.yaml"))
                 .build());
         beforeAll();
     }
@@ -48,22 +50,6 @@ public class PokemonServiceMongoIT extends AbstractPokemonServiceTest {
     @AfterAll
     static void stop() {
         afterAll();
-    }
-
-    void testListAllPokemons() {
-        //Skip this test - Transactions are not supported
-    }
-
-    void testListAllPokemonTypes() {
-        //Skip this test - Transactions are not supported
-    }
-
-    void testGetPokemonById() {
-        //Skip this test - Transactions are not supported
-    }
-
-    void testGetPokemonByName() {
-        //Skip this test - Transactions are not supported
     }
 
 }

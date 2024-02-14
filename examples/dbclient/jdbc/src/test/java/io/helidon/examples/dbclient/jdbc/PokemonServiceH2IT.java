@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.dbclient.pokemons;
+
+package io.helidon.examples.dbclient.jdbc;
 
 import java.util.Map;
 
@@ -22,25 +23,29 @@ import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import static io.helidon.config.ConfigSources.classpath;
 
 @Testcontainers(disabledWithoutDocker = true)
-public class PokemonServiceMongoIT extends AbstractPokemonServiceTest {
+class PokemonServiceH2IT extends AbstractPokemonServiceTest {
+    private static final DockerImageName H2_IMAGE = DockerImageName.parse("nemerosa/h2");
 
     @Container
-    static final MongoDBContainer container = new MongoDBContainer("mongo")
-            .withExposedPorts(27017);
+    static GenericContainer<?> container = new GenericContainer<>(H2_IMAGE)
+            .withExposedPorts(9082)
+            .waitingFor(Wait.forLogMessage("(.*)Web Console server running at(.*)", 1));
 
     @BeforeAll
     static void start() {
-        String url = String.format("mongodb://127.0.0.1:%s/pokemon", container.getMappedPort(27017));
+        String url = String.format("jdbc:h2:tcp://localhost:%s/~./test", container.getMappedPort(9082));
         Config.global(Config.builder()
                 .addSource(ConfigSources.create(Map.of("db.connection.url", url)))
-                .addSource(classpath("application-mongo-test.yaml"))
+                .addSource(classpath("application-h2-test.yaml"))
                 .build());
         beforeAll();
     }
@@ -49,21 +54,4 @@ public class PokemonServiceMongoIT extends AbstractPokemonServiceTest {
     static void stop() {
         afterAll();
     }
-
-    void testListAllPokemons() {
-        //Skip this test - Transactions are not supported
-    }
-
-    void testListAllPokemonTypes() {
-        //Skip this test - Transactions are not supported
-    }
-
-    void testGetPokemonById() {
-        //Skip this test - Transactions are not supported
-    }
-
-    void testGetPokemonByName() {
-        //Skip this test - Transactions are not supported
-    }
-
 }

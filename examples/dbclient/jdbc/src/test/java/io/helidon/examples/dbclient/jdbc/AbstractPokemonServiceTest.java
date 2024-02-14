@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,11 @@ package io.helidon.examples.dbclient.jdbc;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.Config;
-import io.helidon.dbclient.DbClient;
 import io.helidon.http.Status;
+import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.WebServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -37,19 +34,22 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@ServerTest
-public class MainTest {
+abstract class AbstractPokemonServiceTest {
     private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
-    private final Http1Client client;
+    private static WebServer server;
+    private static WebClient client;
 
-    MainTest(Http1Client client) {
-        this.client = client;
+    static void beforeAll() {
+        server = JdbcExampleMain.setupServer(WebServer.builder());
+        client = WebClient.create(config -> config.baseUri("http://localhost:" + server.port())
+                .addMediaSupport(JsonpSupport.create()));
     }
 
-    @SetUpRoute
-    static void routing(HttpRouting.Builder routing) {
-        JdbcExampleMain.routing(routing, DbClient.create(Config.global().get("db")));
+    static void afterAll() {
+        if (server != null && server.isRunning()) {
+            server.stop();
+        }
     }
 
     @Test
@@ -88,8 +88,8 @@ public class MainTest {
         // Get the new pokemon added
         jsonResponse = client.get("/db/Raticate").request(JsonObject.class);
         assertThat(jsonResponse.status(), is(Status.OK_200));
-        assertThat(jsonResponse.entity().getString("NAME"), is("Raticate"));
-        assertThat(jsonResponse.entity().getString("TYPE"), is("1"));
+        assertThat(getName(jsonResponse.entity()), is("Raticate"));
+        assertThat(getType(jsonResponse.entity()), is("1"));
 
         // Update pokemon
         response = client.put("/db/Raticate/type/2").request(String.class);
@@ -98,8 +98,8 @@ public class MainTest {
         // Verify updated pokemon
         jsonResponse = client.get("/db/Raticate").request(JsonObject.class);
         assertThat(jsonResponse.status(), is(Status.OK_200));
-        assertThat(jsonResponse.entity().getString("NAME"), is("Raticate"));
-        assertThat(jsonResponse.entity().getString("TYPE"), is("2"));
+        assertThat(getName(jsonResponse.entity()), is("Raticate"));
+        assertThat(getType(jsonResponse.entity()), is("2"));
 
         // Delete Pokemon
         response = client.delete("/db/Raticate").request(String.class);
@@ -113,6 +113,18 @@ public class MainTest {
     private List<String> listAllPokemons() {
         ClientResponseTyped<JsonArray> response = client.get("/db").request(JsonArray.class);
         assertThat(response.status(), is(Status.OK_200));
-        return response.entity().stream().map(e -> e.asJsonObject().getString("NAME")).toList();
+        return response.entity().stream().map(e -> getName(e.asJsonObject())).toList();
+    }
+
+    private String getName(JsonObject json) {
+        return json.containsKey("name")
+                ? json.getString("name")
+                : json.getString("NAME");
+    }
+
+    private String getType(JsonObject json) {
+        return json.containsKey("type")
+                ? json.getString("type")
+                : json.getString("TYPE");
     }
 }
