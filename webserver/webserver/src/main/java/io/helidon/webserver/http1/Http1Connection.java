@@ -420,7 +420,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
         routing.route(ctx, request, response);
 
-        consumeEntity(request, response);
+        consumeEntity(request, response, entityReadLatch);
         try {
             entityReadLatch.await();
         } catch (InterruptedException e) {
@@ -433,9 +433,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
-    private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response) {
+    private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response, CountDownLatch entityReadLatch) {
         if (response.headers().contains(HeaderValues.CONNECTION_CLOSE) || request.content().consumed()) {
             // we do not care about request entity if connection is getting closed
+            entityReadLatch.countDown();
             return;
         }
         // consume the entity if not consumed by routing
