@@ -122,7 +122,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
         // create a new response
         AuthenticationResponse.Builder builder = AuthenticationResponse.builder()
-                .requestHeaders(previousResponse.requestHeaders());
+                .requestHeaders(previousResponse.requestHeaders())
+                .responseHeaders(previousResponse.responseHeaders());
         previousResponse.description().ifPresent(builder::description);
 
         if (maybeUser.isPresent()) {

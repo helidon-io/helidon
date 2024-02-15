@@ -210,7 +210,7 @@ import io.helidon.webclient.api.WebClientConfig;
  *     <td>URI of an authorization endpoint used to redirect users to for logging-in.</td>
  * </tr>
  * <tr>
- *     <td>validate-with-jwk</td>
+ *     <td>validate-jwt-with-jwk</td>
  *     <td>true</td>
  *     <td>When true  - validate against jwk defined by "sign-jwk", when false
  *          validate JWT through OIDC Server endpoint "validation-endpoint-uri"</td>
@@ -225,7 +225,7 @@ import io.helidon.webclient.api.WebClientConfig;
  * <tr>
  *     <td>introspect-endpoint-uri</td>
  *     <td>"introspection_endpoint" in OIDC metadata, or identity-uri/oauth2/v1/introspect</td>
- *     <td>When validate-with-jwk is set to "false", this is the endpoint used</td>
+ *     <td>When validate-jwt-with-jwk is set to "false", this is the endpoint used</td>
  * </tr>
  * <tr>
  *     <td>base-scopes</td>

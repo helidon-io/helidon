@@ -67,6 +67,7 @@ import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.security.SecurityHttpFeature;
 
 import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReaderFactory;
 
@@ -151,7 +152,8 @@ public final class OidcFeature implements HttpFeature {
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
     private static final String DEFAULT_REDIRECT = "/index.html";
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Map.of());
+    static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Map.of());
+    static final JsonBuilderFactory JSON_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
 
     private final List<TenantConfigFinder> oidcConfigFinders;
     private final LruCache<String, Tenant> tenants = LruCache.create();
@@ -391,7 +393,7 @@ public final class OidcFeature implements HttpFeature {
             return;
         }
         String stateBase64 = new String(Base64.getDecoder().decode(maybeStateCookie.get()), StandardCharsets.UTF_8);
-        JsonObject stateCookie = JSON.createReader(new StringReader(stateBase64)).readObject();
+        JsonObject stateCookie = JSON_READER_FACTORY.createReader(new StringReader(stateBase64)).readObject();
         //Remove state cookie
         res.headers().addCookie(stateCookieHandler.removeCookie().build());
         String state = stateCookie.getString("state");
@@ -422,7 +424,7 @@ public final class OidcFeature implements HttpFeature {
             if (response.status().family() == Status.Family.SUCCESSFUL) {
                 try {
                     JsonObject jsonObject = response.as(JsonObject.class);
-                    processJsonResponse(res, jsonObject, tenantName, stateCookie);
+                    processJsonResponse(req, res, jsonObject, tenantName, stateCookie);
                 } catch (Exception e) {
                     processError(res, e, "Failed to read JSON from response");
                 }
@@ -478,7 +480,8 @@ public final class OidcFeature implements HttpFeature {
         return uri;
     }
 
-    private String processJsonResponse(ServerResponse res,
+    private String processJsonResponse(ServerRequest req,
+                                       ServerResponse res,
                                        JsonObject json,
                                        String tenantName,
                                        JsonObject stateCookie) {
@@ -486,12 +489,12 @@ public final class OidcFeature implements HttpFeature {
         String idToken = json.getString("id_token", null);
         String refreshToken = json.getString("refresh_token", null);
 
-        Jwt accessTokenJwt = SignedJwt.parseToken(accessToken).getJwt();
+        Jwt idTokenJwt = SignedJwt.parseToken(idToken).getJwt();
         String nonceOriginal = stateCookie.getString("nonce");
-        String nonceAccess = accessTokenJwt.nonce()
-                .orElseThrow(() -> new IllegalStateException("Nonce is required to be present in the access token"));
+        String nonceAccess = idTokenJwt.nonce()
+                .orElseThrow(() -> new IllegalStateException("Nonce is required to be present in the id token"));
         if (!nonceAccess.equals(nonceOriginal)) {
-            throw new IllegalStateException("Original nonce and the one obtained from access token does not match");
+            throw new IllegalStateException("Original nonce and the one obtained from id token does not match");
         }
 
         //redirect to "originalUri"
@@ -512,12 +515,19 @@ public final class OidcFeature implements HttpFeature {
 
         if (oidcConfig.useCookie()) {
             try {
+                JsonObject accessTokenJson = JSON_BUILDER_FACTORY.createObjectBuilder()
+                        .add("accessToken", accessToken)
+                        .add("remotePeer", req.remotePeer().host())
+                        .build();
+                String encodedAccessToken = Base64.getEncoder()
+                        .encodeToString(accessTokenJson.toString().getBytes(StandardCharsets.UTF_8));
+
                 ServerResponseHeaders headers = res.headers();
 
                 OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
 
                 headers.addCookie(tenantCookieHandler.createCookie(tenantName).build()); //Add tenant name cookie
-                headers.addCookie(tokenCookieHandler.createCookie(accessToken).build());  //Add token cookie
+                headers.addCookie(tokenCookieHandler.createCookie(encodedAccessToken).build());  //Add token cookie
                 if (refreshToken != null) {
                     headers.addCookie(refreshTokenCookieHandler.createCookie(refreshToken).build());  //Add refresh token cookie
                 }
