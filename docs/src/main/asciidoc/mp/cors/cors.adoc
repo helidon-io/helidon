@@ -74,8 +74,8 @@ Adding CORS behavior to your Helidon MP application involves just a few simple s
 
 For each resource class in your application:
 
-. Identify the resources and subresources--in other words, the paths--declared in the resource class which you want to support CORS.
-. For each of those resources and subresources which should support CORS:
+. Identify the resources and sub-resources--in other words, the paths--declared in the resource class which you want to support CORS.
+. For each of those resources and sub-resources which should support CORS:
 .. Find or create a Java method annotated with `@OPTIONS` and with the correct `@Path`.
 .. To that `@OPTIONS` Java method add a Helidon link:{mp-cors-javadoc-base-url}/io/helidon/microprofile/cors/CrossOrigin.html[`@CrossOrigin`] annotation that describes the cross-origin sharing you want for that resource.
 
@@ -103,7 +103,7 @@ For each resource you want to configure, add a section to `META-INF/microprofile
 [source,properties,subs="verbatim,quotes"]
 ----
 cors.enabled= # <1>
-#
+
 # <2>
 cors.paths._i_.path-pattern= # <3>
 cors.paths._i_.allow-headers=
@@ -116,7 +116,7 @@ cors.paths._i_.enabled= # <4>
 ----
 <1> You can disable CORS processing for all resources by setting `cors.enabled` to `false`. Defaults to `true`.
 <2> Add a block for each resource you want to configure.
-The index `_i_` is an integer (0, 1, 2, etc.).
+The index `_i_` is an integer (0, 1, 2, etc).
 <3> Specify the settings as needed to define the CORS behavior you want for that resource.
 <4> The `enabled` setting lets you control whether the system uses that set of CORS configuration. Defaults to `true`.
 
@@ -169,7 +169,7 @@ You could use the following configuration in place of using annotations to set u
 cors.paths.0.path-pattern=/greet # <1>
 
 cors.paths.1.path-pattern=/greet/greeting # <2>
-cors.paths.1.allow-origins=http://foo.com,http://there.com
+cors.paths.1.allow-origins=https://foo.com,https://there.com
 cors.paths.1.allow-methods=PUT
 ----
 <1> Enables default CORS settings for the `/greet` resource.
@@ -182,11 +182,11 @@ Or, alternatively, the following configuration example augments the settings fro
 ----
 cors.paths.0.path-pattern=/greet # <1>
 cors.paths.0.allow-methods=GET
-cors.paths.0.allow-origins=http://here.com,http://foo.com,http://there.com
+cors.paths.0.allow-origins=https://here.com,https://foo.com,https://there.com
 
-cors.paths.1.path-patterh=/greet/greeting # <2>
+cors.paths.1.path-pattern=/greet/greeting # <2>
 cors.paths.1.allow-methods=PUT
-cors.paths.1.allow-origins=http://foo.com
+cors.paths.1.allow-origins=https://foo.com
 ----
 <1> Changes the declared settings to restrict cross-origin use of `/greet` to only `GET` and only from `foo.com` and `there.com`.
 <2> Changes the settings for `/greet/greeting` from what they were declared; with this configuration, only the origin `foo.com` is permitted. (The declared setting also allowed `there.com`).
@@ -208,16 +208,16 @@ include::{rootdir}/includes/cors.adoc[tags=configuring-cors-for-builtin-services
 
 The following example restricts sharing of
 
-* the `/health` resource, provided by the health built-in service, to only the origin `\http://there.com`, and
-* the `/metrics` resource, provided by the metrics built-in service, to only the origin `\http://foo.com`.
+* the `/health` resource, provided by the health built-in service, to only the origin `\https://there.com`, and
+* the `/metrics` resource, provided by the metrics built-in service, to only the origin `\https://foo.com`.
 
 .Configuration which restricts sharing of the health and metrics resources
 [source,properties]
 ----
 cors.paths.0.path-pattern=/health
-cors.paths.0.allow-origins=http://there.com
+cors.paths.0.allow-origins=https://there.com
 cors.paths.1.path-pattern=/metrics
-cors.paths.1.allow-origins=http://foo.com
+cors.paths.1.allow-origins=https://foo.com
 ----
 
 include::{rootdir}/includes/cors.adoc[tag=accessing-shared-resources-intro]
@@ -228,6 +228,7 @@ java -jar target/helidon-quickstart-mp.jar
 ----
 
 [listing,bash]
+.Console output
 ----
  ...
  2020.05.12 05:44:08 INFO io.helidon.microprofile.server.ServerCdiExtension Thread[main,5,main]: Server started on http://localhost:8080 (and all other host addresses) in 5280 milliseconds (since JVM startup).

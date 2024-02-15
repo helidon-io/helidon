@@ -130,7 +130,7 @@ include::{sourcedir}/mp/guides/HealthSnippets.java[tag=snippet_1, indent=0]
 <3> Build the HealthCheckResponse with status `UP` and the current time.
 
 [source,bash]
-.Build and run the application, then verify the custom liveness health endpoint:
+.Build and run the application, then verify the custom liveness health endpoint
 ----
 curl http://localhost:8080/health/live
 ----

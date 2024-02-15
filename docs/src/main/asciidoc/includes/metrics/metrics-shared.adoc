@@ -119,26 +119,26 @@ Further, clients can narrow down to a specific metric name by adding the name as
 curl -s -H 'Accept: text/plain' -X GET http://localhost:8080{metrics-endpoint}
 ----
 
-[listing]
+[source,text]
 ----
 # TYPE base:classloader_total_loaded_class_count counter
 # HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
 base:classloader_total_loaded_class_count 3157
 ----
 
-
-.Example Reporting: JSON format
 [source,bash,subs="attributes+"]
+.Example Reporting: JSON format
 ----
 curl -s -H 'Accept: application/json' -X GET http://localhost:8080{metrics-endpoint}
 ----
 
-[listing]
+[source,json]
+.JSON response:
 ----
 {
    "base" : {
       "memory.maxHeap" : 3817865216,
-      "memory.committedHeap" : 335544320,
+      "memory.committedHeap" : 335544320
     }
 }
 ----

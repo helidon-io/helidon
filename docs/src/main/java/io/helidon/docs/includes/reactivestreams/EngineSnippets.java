@@ -69,7 +69,7 @@ class EngineSnippets {
 
         // > Item received: FOO
         // > Item received: BAR
+        // end::snippet_3[]
     }
-    // end::snippet_3[]
 
 }

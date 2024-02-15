@@ -47,14 +47,12 @@ class TelemetrySnippets {
     @ApplicationScoped
     class HelidonBean {
 
-        @WithSpan
-            // <1>
+        @WithSpan // <1>
         void doSomethingWithinSpan() {
             // do something here
         }
 
-        @WithSpan("name")
-            // <2>
+        @WithSpan("name") // <2>
         void complexSpan(@SpanAttribute(value = "arg") String arg) {
             // do something here
         }

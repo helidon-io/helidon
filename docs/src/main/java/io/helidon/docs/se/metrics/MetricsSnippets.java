@@ -16,10 +16,8 @@
 package io.helidon.docs.se.metrics;
 
 import io.helidon.config.Config;
-// tag::snippet_2[]
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Metrics;
-// end::snippet_2[]
 // tag::snippet_4[]
 import io.helidon.metrics.prometheus.PrometheusSupport;
 // end::snippet_4[]
@@ -66,7 +64,7 @@ class MetricsSnippets {
         // end::snippet_1[]
     }
 
-    // tag::snippet_3[]
+    // tag::snippet_2[]
     public class GreetService implements HttpService {
 
         private final Counter accessCtr = Metrics.globalRegistry() // <1>
@@ -104,13 +102,13 @@ class MetricsSnippets {
             // ...
         }
     }
-    // end::snippet_3[]
+    // end::snippet_2[]
 
     void snippet_5(HttpRouting.Builder routing) {
-        // tag::snippet_5[]
+        // tag::snippet_3[]
         routing
                 .addFeature(PrometheusSupport.create())
                 .register("/myapp", new MyService());
-        // end::snippet_5[]
+        // end::snippet_3[]
     }
 }

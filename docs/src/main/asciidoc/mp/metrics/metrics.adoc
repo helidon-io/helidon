@@ -162,7 +162,7 @@ java -jar target/helidon-quickstart-mp.jar
 
 // tag::access-cards-example[]
 .Access the application endpoints
-[source,base]
+[source,bash]
 ----
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards

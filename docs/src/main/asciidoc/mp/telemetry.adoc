@@ -58,7 +58,7 @@ In a distributed tracing system, *traces* are used to capture a series of reques
 
 Finally, *exporters* are responsible for transmitting the collected trace data to a backend service for monitoring and visualization. This enables developers to gain a comprehensive understanding of the system's behavior and detect any issues or bottlenecks that may arise.
 
-image::telemetry/telemetry-general.png[General understanding of OpenTelemetry Tracing]
+image::telemetry/telemetry-general.png[General understanding of OpenTelemetry Tracing,role="fit"]
 
 There are two ways to work with Telemetry, using:
 
@@ -210,14 +210,16 @@ Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency
 
 [source,xml]
 ----
-<dependency>
-    <groupId>io.helidon.microprofile.telemetry</groupId>
-    <artifactId>helidon-microprofile-telemetry</artifactId> <1>
-</dependency>
-<dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-exporter-jaeger</artifactId>  <2>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.microprofile.telemetry</groupId>
+        <artifactId>helidon-microprofile-telemetry</artifactId> <!--1-->
+    </dependency>
+    <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-exporter-jaeger</artifactId>  <!--2-->
+    </dependency>
+</dependencies>
 ----
 <1> Helidon Telemetry dependency.
 <2> OpenTelemetry Jaeger exporter.
@@ -270,14 +272,14 @@ Hello World
 
 Next, launch the Jaeger UI at link:http://localhost:16686/[]. The expected output is:
 
-image::telemetry/telemetry-greeting-jaeger.png[Greeting service tracing output]
+image::telemetry/telemetry-greeting-jaeger.png[Greeting service tracing output,role="fit"]
 
 .Custom method
 [source,java]
 ----
 include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_8, indent=0]
 ----
-<1> Inject Opentelemetry `Tracer`.
+<1> Inject OpenTelemetry `Tracer`.
 <2> Create a span around the method `useCustomSpan()`.
 <3> Create a custom `INTERNAL` span and start it.
 <4> End the custom span.
@@ -291,7 +293,7 @@ curl localhost:8080/greeting/custom
 
 Again you can launch the Jaeger UI at link:http://localhost:16686/[]. The expected output is:
 
-image::telemetry/telemetry-custom-jaeger.png[Custom span usage]
+image::telemetry/telemetry-custom-jaeger.png[Custom span usage,role="fit"]
 
 Now let us use multiple services calls. In the example below our main service will call the `secondary` services. Each method in each service will be annotated with `@WithSpan` annotation.
 
@@ -326,7 +328,7 @@ The `greeting-service` call `secondary-service`. Each service will create spans 
 
 Launch the Jaeger UI at link:http://localhost:16686/[] to see the expected output (shown below).
 
-image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call]
+image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call,role="fit"]
 
 This example is available at the link:{helidon-github-tree-url}/examples/microprofile/telemetry[Helidon official GitHub repository].
 

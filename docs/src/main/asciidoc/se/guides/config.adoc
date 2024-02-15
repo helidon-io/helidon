@@ -245,13 +245,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_2, indent=0]
 even though it is considered a default source.
 
 [source,bash]
-.Build and run the application (without the system property).  Invoke the endpoint and check the response:
+.Build and run the application (without the system property).  Invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFrom-config.properties World!" // <1>
@@ -273,13 +273,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_3, indent=0]
 <1> Swap the source order, putting `application.yaml` first.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFrom-application.yaml World!" // <1>
@@ -313,13 +313,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_4, indent=0]
 <1> Add a mandatory configuration file.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFrom-config-file.properties World!" // <1>
@@ -376,7 +376,7 @@ curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFromFileInDirectoryConf World!" // <1>
@@ -396,13 +396,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_8, indent=0]
 <1> Add each config source using the `addSource` method.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFromFileInDirectoryConf World!"
@@ -440,13 +440,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_9, indent=0]
 <1> Will use `config-profile.yaml` by default
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFrom-application.yaml World!" // <1>
@@ -477,13 +477,13 @@ sources:
 <3> Specify that the `optional-config-file` file is optional.
 
 [source,bash]
-.Restart the application, then invoke the endpoint below and check the response:
+.Restart the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFrom-config-file.properties World!" // <1>
@@ -547,13 +547,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_11, indent=0]
 <1> Get the `app` node, then get the child node, `greeting`.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFrom-application.yaml World!"
@@ -597,13 +597,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_12, indent=0]
 <3> Add the `greeting` node to the collection.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFrom-application.yaml under child2a World!"
@@ -643,13 +643,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_13, indent=0]
 update the greeting with the new value.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 {
   "message": "HelloFrom-config-file.properties World!"
@@ -670,7 +670,7 @@ curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "Updated HelloFrom-config-file.properties World!" // <1>
@@ -707,13 +707,13 @@ include::{sourcedir}/se/guides/ConfigSnippets.java[tag=snippet_15, indent=0]
 ----
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint:
 ----
 curl http://localhost:8080/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "Hello World!" // <1>
@@ -834,7 +834,7 @@ curl http://localhost:31143/greet
 ----
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "Updated HelloFrom-config-file.properties World!" // <1>

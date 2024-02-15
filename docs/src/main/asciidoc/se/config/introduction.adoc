@@ -236,6 +236,7 @@ See xref:advanced-configuration.adoc#filters-and-overrides[Filter, Overrides, an
 The `Config` object lets your application retrieve config data as a typed ConfigValue.
 
 You can retrieve a `ConfigValue<T>` using the following `as` methods in `Config`:
+
 * `asString()` - to get a string config value
 * `asBoolean()` and other accessors for primitive types
 * `as(Class)` - to get a value for a type that has a mapper configured
@@ -245,6 +246,7 @@ You can retrieve a `ConfigValue<T>` using the following `as` methods in `Config`
 * `as(Function<Config,T>)` - to get a typed value providing a mapper function
 
 ConfigValue<T> can be used to obtain:
+
 * an `Optional<T>` value _from a single node_,
 * the `T` value _from a single node_ interpreted as a basic Java type (primitive or simple object) already known to the config system (such as a `boolean` or a `Double`), or
 * a complex Java type _from a subtree_ of the config tree.

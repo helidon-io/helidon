@@ -86,24 +86,7 @@ The test is only useful if it invokes the server and verifies the result. To sup
 [source,java]
 .Updated Class with webTarget
 ----
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@HelidonTest
-class GreetTest {
-    @Inject
-    WebTarget webTarget;
-
-    @Test
-    void testDefaultGreeting() {
-        JsonObject jsonObject = webTarget.path("/greet")
-                .request()
-                .get(JsonObject.class);
-
-        String expected = "Hello World!";
-        String actual = jsonObject.getString("message");
-        assertEquals(expected, actual, "Message in JSON");
-    }
-}
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_2, indent=0]
 ----
 
 The test is now complete and verifies the message.
@@ -128,7 +111,7 @@ Here's an example showing how these approaches are used to execute the same endp
 
 [source,java]
 ----
-include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_3, indent=0]
 ----
 
 === Use Beans for Testing
@@ -137,14 +120,14 @@ If you prefer to use only beans for testing, and want to add a different bean fo
 
 [source,java]
 ----
-include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_3, indent=0]
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_4, indent=0]
 ----
 
 By default, the bean is added to the container with scope set to `ApplicationScoped`. You can customize scope either by annotating the bean class with another scope or through the annotation:
 
 [source,java]
 ----
-include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_4, indent=0]
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_5, indent=0]
 ----
 
 
@@ -158,7 +141,7 @@ For this purpose, we provide the following annotation which adds the extension t
 
 [source,java]
 ----
-include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_5, indent=0]
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_6, indent=0]
 ----
 
 
@@ -168,7 +151,7 @@ If you want to disable discovery and only add custom extensions and beans, then 
 
 [source,java]
 ----
-include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_6, indent=0]
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_7, indent=0]
 ----
 
 NOTE: This annotation is typically used in conjunction with `@AddBeans` and/or `@AddExtension`. As you have seen in standard test output, by default Helidon starts with the dependencies defined in pom.xml.
@@ -180,7 +163,7 @@ If you want just the basic test features enabled, then you only have to add a fe
 
 [source,java]
 ----
-include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_7, indent=0]
+include::{sourcedir}/mp/guides/TestingJunit5Snippets.java[tag=snippet_8, indent=0]
 ----
 
 == Summary

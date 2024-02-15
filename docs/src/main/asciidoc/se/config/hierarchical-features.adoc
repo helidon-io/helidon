@@ -228,7 +228,6 @@ or `MISSING`
 ----
 include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_3, indent=0]
 ----
-
 <1> Get the ConfigValue with child `Config` instances.
 <2> Map the node list to names using the Java Stream API (if present)
 <3> Use an empty list if the "app" node does not exist
@@ -239,7 +238,6 @@ include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_3, 
 ----
 include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_4, indent=0]
 ----
-
 <1> Get child nodes of the `data.providers` _list_ node as a `List` of `Config` instances.
 <2> Check that the list contains the expected child nodes with keys
 `data.providers.0` and `data.providers.1`.
@@ -254,19 +252,18 @@ Depending on the structure of the loaded configuration the stream contains a mix
 ----
 include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_5, indent=0]
 ----
-
 <1> Visit the subtree rooted at the `data.providers` _list_ node.
 <2> Prints out following list of nodes (type and key):
 
-====
-[listing]
+[source,text]
+----
 OBJECT 	data.providers.0
 VALUE 	data.providers.0.name
 VALUE 	data.providers.0.class
 OBJECT 	data.providers.1
 VALUE 	data.providers.1.name
 VALUE 	data.providers.1.class
-====
+----
 
 The optional `Predicate<Config>` argument to the `traverse` methods allows the
 application to prune the traversal of a subtree at any point.
@@ -276,20 +273,19 @@ application to prune the traversal of a subtree at any point.
 ----
 include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_6, indent=0]
 ----
-
 <1> Visit all _root_ sub-nodes, excluding whole `data` tree structure but including
 others.
 <2> Prints out following list of nodes (type and key):
 
-====
-[listing]
+[source,listing]
+----
 OBJECT 	app
 VALUE 	app.page-size
 VALUE 	app.greeting
 LIST 	app.basic-range
 VALUE 	app.basic-range.0
 VALUE 	app.basic-range.1
-====
+----
 
 == Detaching a Config Subtree
 Sometimes it can be convenient to write part of your application to deal with

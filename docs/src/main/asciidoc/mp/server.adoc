@@ -357,6 +357,7 @@ io.helidon.examples.AdminApplication:
     path: "/management"
 ----
 
+[[_using_requested_uri_discovery]]
 === Using Requested URI Discovery
 include::{requested-uri-discovery-inc}[tag=intro]
 

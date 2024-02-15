@@ -230,7 +230,7 @@ The WebSocket Testing extension adds support for routing configuration and injec
 .WebSocket sample test.
 [source,java]
 ----
-include::{sourcedir}/se/TestingSnippets.java[tag=snippet_4, indent=0]
+include::{sourcedir}/se/TestingSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Declare `WsClient` and later inject it in the constructor.
 <2> Using @SetUpRoute, create WebSocket routing and assign a serverside listener.

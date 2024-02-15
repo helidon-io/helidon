@@ -77,8 +77,8 @@ turn off redirects, you can add the following lines to your `microprofile-config
 
 [source, properties]
 ----
-  jersey.connector.helidon.config.cookie-manager.automatic-store-enabled=true
-  jersey.connector.helidon.config.follow-redirects=false
+jersey.connector.helidon.config.cookie-manager.automatic-store-enabled=true
+jersey.connector.helidon.config.follow-redirects=false
 ----
 
 Alternatively, assuming the root of the `WebClient` configuration is located at

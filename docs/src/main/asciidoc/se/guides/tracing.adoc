@@ -230,7 +230,7 @@ curl http://localhost:8080/greet
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 {
   "message": "Hello World!"
@@ -347,13 +347,13 @@ java -jar target/helidon-quickstart-se-2.jar
 ----
 
 [source,bash]
-.Run the curl command in a new terminal window and check the response (*notice the port is 8081*) :
+.Run the curl command in a new terminal window (*notice the port is 8081*) :
 ----
 curl http://localhost:8081/greet
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 {
   "message": "Hello From SE-2 World!"
@@ -431,7 +431,7 @@ curl -i http://localhost:8080/greet/outbound # <1>
 <1> The request goes to the service on `8080`, which then invokes the service at `8081` to get the greeting.
 
 [source,hocon]
-.JSON response
+.JSON response:
 ----
 {
   "message": "Hello From SE-2 World!" // <1>
@@ -594,7 +594,7 @@ curl http://localhost:31143/greet
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 {
   "message": "Hello World!"

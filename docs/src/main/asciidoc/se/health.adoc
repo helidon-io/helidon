@@ -442,7 +442,7 @@ Accessing the Helidon-provided `/observe/health` endpoint reports the health of 
 as shown below:
 
 [source,json]
-.JSON response.
+.JSON response:
 ----
 {
     "status": "UP",

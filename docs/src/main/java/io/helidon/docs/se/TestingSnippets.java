@@ -97,17 +97,30 @@ class TestingSnippets {
     }
     // end::snippet_2[]
 
-    // tag::snippet_5[]
-    static class ServerSideListener implements WsListener {
-        volatile String message;
+    // tag::snippet_3[]
+    @ServerTest
+    class WsSocketTest {
 
-        @Override
-        public void onMessage(WsSession session, String text, boolean last) { // <1>
-            message = text;
-            session.send("ws", true);
+        static final ServerSideListener WS_LISTENER = new ServerSideListener();
+        final WsClient wsClient; // <1>
+
+        WsSocketTest(WsClient wsClient) {
+            this.wsClient = wsClient;
+        }
+
+        @SetUpRoute
+        static void routing(WsRouting.Builder ws) { // <2>
+            ws.endpoint("/testWs", WS_LISTENER);
+        }
+
+        @Test
+        void testWsEndpoint() { // <3>
+            ClientSideListener clientListener = new ClientSideListener();
+            wsClient.connect("/testWs", clientListener); // <4>
+            assertThat(clientListener.message, is("ws")); // <5>
         }
     }
-    // end::snippet_5[]
+    // end::snippet_3[]
 
     // tag::snippet_4[]
     static class ClientSideListener implements WsListener {
@@ -132,28 +145,15 @@ class TestingSnippets {
     }
     // end::snippet_4[]
 
-    // tag::snippet_4[]
-    @ServerTest
-    class WsSocketTest {
+    // tag::snippet_5[]
+    static class ServerSideListener implements WsListener {
+        volatile String message;
 
-        static final ServerSideListener WS_LISTENER = new ServerSideListener();
-        final WsClient wsClient; // <1>
-
-        WsSocketTest(WsClient wsClient) {
-            this.wsClient = wsClient;
-        }
-
-        @SetUpRoute
-        static void routing(WsRouting.Builder ws) { // <2>
-            ws.endpoint("/testWs", WS_LISTENER);
-        }
-
-        @Test
-        void testWsEndpoint() { // <3>
-            ClientSideListener clientListener = new ClientSideListener();
-            wsClient.connect("/testWs", clientListener); // <4>
-            assertThat(clientListener.message, is("ws")); // <5>
+        @Override
+        public void onMessage(WsSession session, String text, boolean last) { // <1>
+            message = text;
+            session.send("ws", true);
         }
     }
-    // end::snippet_4[]
+    // end::snippet_5[]
 }

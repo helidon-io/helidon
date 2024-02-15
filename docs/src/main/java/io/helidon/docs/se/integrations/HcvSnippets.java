@@ -50,6 +50,11 @@ import io.helidon.webserver.http.ServerResponse;
 @SuppressWarnings("ALL")
 class HcvSnippets {
 
+    // stub
+    final class VaultPolicy {
+        static final String POLICY = "";
+    }
+
     void kv2Secrets(Config config) {
         // tag::snippet_1[]
         Vault vault = Vault.builder()
@@ -93,7 +98,7 @@ class HcvSnippets {
 
     record CubbyholeService(Sys sys, CubbyholeSecrets secrets) implements HttpService {
 
-        // tag::snippet_4[]
+        // tag::snippet_5[]
         @Override
         public void routing(HttpRules rules) {
             rules.get("/create", this::createSecrets)
@@ -116,12 +121,12 @@ class HcvSnippets {
                 res.send();
             }
         }
-        // end::snippet_4[]
+        // end::snippet_5[]
     }
 
     record Kv1Service(Sys sys, Kv1Secrets secrets) implements HttpService {
 
-        // tag::snippet_5[]
+        // tag::snippet_6[]
         @Override
         public void routing(HttpRules rules) {
             rules.get("/enable", this::enableEngine)
@@ -164,12 +169,12 @@ class HcvSnippets {
                 res.send();
             }
         }
-        // end::snippet_5[]
+        // end::snippet_6[]
     }
 
     record Kv2Service(Sys sys, Kv2Secrets secrets) implements HttpService {
 
-        // tag::snippet_6[]
+        // tag::snippet_7[]
         @Override
         public void routing(HttpRules rules) {
             rules.get("/create", this::createSecrets)
@@ -201,7 +206,7 @@ class HcvSnippets {
                 res.send();
             }
         }
-        // end::snippet_6[]
+        // end::snippet_7[]
     }
 
     record TransitService(Sys sys, TransitSecrets secrets) implements HttpService {
@@ -210,7 +215,7 @@ class HcvSnippets {
         static final String SIGNATURE_KEY = "";
         static final Base64Value SECRET_STRING = Base64Value.create("");
 
-        // tag::snippet_7[]
+        // tag::snippet_8[]
         @Override
         public void routing(HttpRules rules) {
             rules.get("/enable", this::enableEngine)
@@ -316,18 +321,14 @@ class HcvSnippets {
 
             res.send("Valid: " + verifyResponse.isValid());
         }
-        // end::snippet_7[]
+        // end::snippet_8[]
 
         void batch(ServerRequest req, ServerResponse res) {
             // stub
         }
     }
 
-    final class VaultPolicy {
-        static final String POLICY = "";
-    }
-
-    // tag::snippet_8[]
+    // tag::snippet_9[]
     class K8sExample {
         private static final String SECRET_PATH = "k8s/example/secret";
         private static final String POLICY_NAME = "k8s_policy";
@@ -397,6 +398,6 @@ class HcvSnippets {
             k8sVault = Vault.create(config);
         }
     }
-    // end::snippet_8[]
+    // end::snippet_9[]
 
 }

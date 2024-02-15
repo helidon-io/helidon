@@ -413,7 +413,6 @@ names `oracle` and `oracle.com`.
         "secured" : true
     }
 }
-
 ----
 
 [source,java]

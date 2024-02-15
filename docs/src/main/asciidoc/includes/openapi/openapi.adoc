@@ -56,11 +56,11 @@ endif::[]
 // end::overview[]
 
 // tag::mp-depc[]
-    <dependency>
-        <groupId>io.helidon.microprofile.openapi</groupId>
-        <artifactId>helidon-microprofile-openapi</artifactId>
-        <scope>runtime</scope>
-    </dependency>
+<dependency>
+    <groupId>io.helidon.microprofile.openapi</groupId>
+    <artifactId>helidon-microprofile-openapi</artifactId>
+    <scope>runtime</scope>
+</dependency>
 // end::mp-depc[]
 
 // tag::furnish-openapi-info[]

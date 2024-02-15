@@ -305,7 +305,7 @@ curl -v  http://localhost:8080/health/ready
 <1> The HTTP status is `503` since the application is not ready.
 
 [source,json]
-.JSON response body:
+.JSON response:
 ----
 {
   "status": "DOWN",
@@ -335,7 +335,7 @@ curl -v http://localhost:8080/health/ready
 <1> The HTTP status is `200` indicating that the application is ready.
 
 [source,json]
-.JSON response body:
+.JSON response:
 ----
 {
   "status": "UP",
@@ -383,7 +383,7 @@ curl -v  http://localhost:8080/health/started
 
 
 [source,json]
-.JSON response body:
+.JSON response:
 ----
 {
   "status": "DOWN",
@@ -413,7 +413,7 @@ curl -v http://localhost:8080/health/started
 <1> The HTTP status is `200` indicating that the application is started.
 
 [source,json]
-.JSON response body:
+.JSON response:
 ----
 {
   "status": "UP",

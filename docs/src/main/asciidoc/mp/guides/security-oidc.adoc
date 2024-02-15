@@ -36,8 +36,9 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
-This guide describes the steps required to protect your whole application or a specific area with Open ID Connect
-(OIDC) security. OIDC is a secure mechanism for an application to contact an identity service.
+This guide describes the steps required to protect your whole application or a specific area with Open ID Connect (OIDC) security.
+
+OIDC is a secure mechanism for an application to contact an identity service.
 It's built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
 
 == Install Keycloak
@@ -478,10 +479,12 @@ In the body of the request, select `x-www-form-urlencoded` type. Add the followi
 [source,json]
 .Enter the key:value
 ----
-[{"key":"grant_type","value":"authorization_code"},
-{"key":"client_id","value":"myClientID"},
-{"key":"client_secret","value":"client secret"},
-{"key":"code","value":"authorization code"}]
+[
+    {"key":"grant_type","value":"authorization_code"},
+    {"key":"client_id","value":"myClientID"},
+    {"key":"client_secret","value":"client secret"},
+    {"key":"code","value":"authorization code"}
+]
 ----
 
 Do not forget to replace the `client secret` by its value (generated during Create a Client), and `authorization code`
@@ -498,15 +501,17 @@ sentence  `Add authorization data to` with `Request Headers`, and complete the r
 [source,json]
 .Enter the following information:
 ----
-[{"key":"Header Prefix","value":"bearer"},
-{"key":"Grant type","value":"Password  Credentials"},
-{"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
-{"key":"Client ID","value":"myClientID"},
-{"key":"Client Secret","value":"client secret"},
-{"key":"Username","value":"myuser"},
-{"key":"Password","value":"password"},
-{"key":"Scope","value":"openid"},
-{"key":"Client Authentication","value":"Send as Basic Auth Header"}]
+[
+    {"key":"Header Prefix","value":"bearer"},
+    {"key":"Grant type","value":"Password  Credentials"},
+    {"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
+    {"key":"Client ID","value":"myClientID"},
+    {"key":"Client Secret","value":"client secret"},
+    {"key":"Username","value":"myuser"},
+    {"key":"Password","value":"password"},
+    {"key":"Scope","value":"openid"},
+    {"key":"Client Authentication","value":"Send as Basic Auth Header"}
+]
 ----
 
 Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A popup

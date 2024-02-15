@@ -295,7 +295,7 @@ curl -i http://localhost:8080/greet/outbound # <1>
 Refresh the Jaeger UI trace listing page and notice that there is a trace across two services.
 
 .Tracing across multiple services detail view
-image::guides/12_tracing_detail_2_services.png[Traces]
+image::guides/12_tracing_detail_2_services.png[Traces,role="fit"]
 
 In the image above, you can see that the trace includes spans from two services. You will notice there is a gap before the sixth span, which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
 see that the delay no longer exists.

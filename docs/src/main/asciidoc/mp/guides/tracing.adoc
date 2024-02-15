@@ -159,6 +159,7 @@ curl http://localhost:8080/greet
 ----
 
 [source, json]
+.JSON response:
 ----
 {
   "message": "Hello World!"
@@ -172,17 +173,17 @@ The tracing output data is verbose and can be difficult to interpret using the R
 Click on the UI Find traces button (the search icon) as shown in the image below.
 
 .Jaeger UI
-image::guides/12_tracing_refresh.png[Trace Refresh]
+image::guides/12_tracing_refresh.png[Trace Refresh,role="fit"]
 
 The image below shows the trace summary, including start time and duration of each trace. There are several traces, each one generated in response to a `curl http://localhost:8080/greet` invocation. The oldest trace will have a much longer duration since there is one-time initialization that occurs.
 
 .Tracing list view
-image::guides/12_tracing_top.png[Traces]
+image::guides/12_tracing_top.png[Traces,role="fit"]
 
 Click on a trace, and you will see the trace detail page where the spans are listed.  You can clearly see the root span and the relationship among all the spans in the trace, along with timing information.
 
 .Trace detail page
-image::guides/12_tracing_detail.png[Trace Detail]
+image::guides/12_tracing_detail.png[Trace Detail,role="fit"]
 
 NOTE: A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see https://github.com/opentracing/specification/blob/master/specification.md[Open Tracing Semantic Spec].  Note that the last span that writes the response after the root span ends falls into this category.
 
@@ -314,6 +315,7 @@ curl http://localhost:8081/greet
 ----
 
 [source, json]
+.JSON response:
 ----
 {
   "message": "Hello From MP-2 World!"
@@ -352,7 +354,7 @@ curl -i http://localhost:8080/greet/outbound # <1>
 Refresh the Jaeger UI trace listing page and notice that there is a trace across two services.
 
 .Tracing across multiple services detail view
-image::guides/12_tracing_detail_2_services.png[Traces]
+image::guides/12_tracing_detail_2_services.png[Traces,role="fit"]
 
 In the image above, you can see that the trace includes spans from two services. You will notice there is a gap before the sixth span, which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
 see that the delay no longer exists.
@@ -496,6 +498,7 @@ curl http://localhost:31143/greet
 ----
 
 [source, json]
+.JSON response:
 ----
 {
   "message": "Hello World!"

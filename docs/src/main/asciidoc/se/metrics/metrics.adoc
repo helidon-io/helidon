@@ -198,8 +198,6 @@ The following example, based on the Helidon SE QuickStart application, shows how
 [source,java]
 ----
 include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_2, indent=0]
-
-include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Get the global meter registry.
 <2> Create (or find) a counter named "accessctr" in the global registry.
@@ -219,7 +217,11 @@ java -jar target/helidon-quickstart-se.jar
 [source, bash]
 ----
 curl 'http://localhost:8080/observe/metrics?scope=application' # <1>
+----
 
+[source,text]
+.Response
+----
 # HELP accessctr_total
 # TYPE accessctr_total counter
 accessctr_total{scope="application",} 0.0 # <2>
@@ -231,7 +233,11 @@ accessctr_total{scope="application",} 0.0 # <2>
 [source,bash]
 ----
 curl http://localhost:8080/greet
+----
 
+[source,json]
+.JSON response:
+----
 {"message":"Hello World"}
 ----
 
@@ -239,7 +245,11 @@ curl http://localhost:8080/greet
 [source,bash]
 ----
 curl 'http://localhost:8080/observe/metrics?scope=application'
+----
 
+[source,text]
+.Response
+----
 # HELP accessctr_total
 # TYPE accessctr_total counter
 accessctr_total{scope="application",} 1.0 # <1>
@@ -288,9 +298,7 @@ Your code creates a link:{prometheus-javadoc-base-url}/io/helidon/metrics/promet
 
 [source,java]
 ----
-include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_4, indent=0]
-
-include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_5, indent=0]
+include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_3, indent=0]
 ----
 
 This example uses the default Prometheus `CollectorRegistry`. By default, the `PrometheusSupport` and exposes its REST endpoint at the path

@@ -229,7 +229,7 @@ curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?sco
 ----
 
 [source,hocon]
-.JSON response (partial)`:
+.JSON response (partial):
 ----
 {
   "anyCard": 1,

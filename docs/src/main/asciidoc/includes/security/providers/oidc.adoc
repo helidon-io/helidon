@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,11 +36,11 @@ security:
   - oidc:
       client-id: "client-id-of-this-service"
       client-secret: "${CLEAR=client-secret-of-this-service}"
-      identity-uri: "http://your-tenant.identity-server.com"
+      identity-uri: "https://your-tenant.identity-server.com"
       frontend-uri: "http://my-service:8080"
       audience: "http://my-service"
       cors:
-        allow-origins: ["http://foo.com", "http://there.com"]
+        allow-origins: ["https://foo.com", "https://there.com"]
         allow-methods: ["PUT", "DELETE"]
       outbound:
         - name: "internal-services"
@@ -94,7 +94,7 @@ the `tenant-id-style` configuration option. For more information, see the table 
 ----
 tenants:
    - name: "example-tenant"
-     ... tenant configuration options
+     # ... tenant configuration options
 ----
 
 There are four ways to provide the required tenant information to Helidon by default.
@@ -141,7 +141,7 @@ and the custom tenant configuration discovery can be provided by implementing SP
 include::{rootdir}/config/io_helidon_security_providers_oidc_common_TenantConfig.adoc[leveloffset=+3,tag=config]
 
 ==== How does that work?
-Multitenant support requires to obtain tenant name from the incoming request. OIDC configuration is selected
+Multi-tenant support requires to obtain tenant name from the incoming request. OIDC configuration is selected
 based on the received tenant name. The way this tenant name has to be provided is configured via `tenant-id-style`
 configuration. See <<tenant-enable, How to enable tenants>> for more information. After matching tenant configuration
 with the received name, the rest of the OIDC flow if exactly the same as in <<oidc-workflow, How does OIDC work>>.

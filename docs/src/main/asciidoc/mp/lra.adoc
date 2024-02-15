@@ -382,9 +382,9 @@ The simplest way to run Narayana LRA coordinator locally:
 [source,bash]
 .Downloading and running Narayana LRA coordinator
 ----
-wget https://search.maven.org/remotecontent?filepath=org/jboss/narayana/rts/lra-coordinator-quarkus/5.11.1.Final/lra-coordinator-quarkus-5.11.1.Final-runner.jar \
--O narayana-coordinator.jar \
-&& java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar
+curl https://repo1.maven.org/maven2/org/jboss/narayana/rts/lra-coordinator-quarkus/5.11.1.Final/lra-coordinator-quarkus-5.11.1.Final-runner.jar \
+-o narayana-coordinator.jar
+java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar
 ----
 
 Narayana LRA coordinator is running by default under `lra-coordinator` context,

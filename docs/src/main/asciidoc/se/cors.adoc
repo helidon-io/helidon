@@ -181,7 +181,7 @@ To use this automatic support, make sure your configuration contains a `cors` se
 cors:
   paths:
     - path-pattern: /greeting
-      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
+      allow-origins: ["https://foo.com", "https://there.com", "https://other.com"]
       allow-methods: ["PUT", "DELETE"]
     - path-pattern: /
       allow-methods: ["GET", "HEAD", "OPTIONS", "POST"]

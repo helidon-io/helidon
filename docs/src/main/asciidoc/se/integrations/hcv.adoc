@@ -194,7 +194,7 @@ Cubbyhole secrets engine operations:
 
 [source,java]
 ----
-include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_4, indent=0]
+include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_5, indent=0]
 ----
 
 <1> Create a secret from request entity.
@@ -206,7 +206,7 @@ Key/Value version 1 secrets engine operations:
 
 [source,java]
 ----
-include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_5, indent=0]
+include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_6, indent=0]
 ----
 
 <1> Disable the secrets engine on the default path.
@@ -221,7 +221,7 @@ Key/Value version 2 secrets engine operations:
 
 [source,java]
 ----
-include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_6, indent=0]
+include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_7, indent=0]
 ----
 
 <1> Create a secret from request entity.
@@ -234,7 +234,7 @@ Transit secrets engine operations:
 
 [source,java]
 ----
-include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_7, indent=0]
+include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_8, indent=0]
 ----
 
 <1> Enable the secrets engine on the default path.
@@ -254,7 +254,7 @@ In order to use Kubernetes authentication:
 
 [source,java]
 ----
-include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_8, indent=0]
+include::{sourcedir}/se/integrations/HcvSnippets.java[tag=snippet_9, indent=0]
 ----
 
 <1> Run the Kubernetes Authentication by enabling it.

@@ -33,8 +33,8 @@ class MutabilitySupportSnippets {
         // end::snippet_1[]
     }
 
-    // tag::snippet_2[]
     void snippet_2() {
+        // tag::snippet_2[]
         Config config = Config.create(
                 ConfigSources.file("conf/dev.properties")
                         .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2))) // <1>
@@ -47,8 +47,8 @@ class MutabilitySupportSnippets {
         // end::snippet_2[]
     }
 
-    // tag::snippet_3[]
     void snippet_3(Config config) {
+        // tag::snippet_3[]
         config.get("greeting") // <1>
                 .onChange((changedNode) -> { // <2>
                     System.out.println("Node " + changedNode.key() + " has changed!");

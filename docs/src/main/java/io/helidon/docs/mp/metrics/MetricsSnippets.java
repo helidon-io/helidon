@@ -90,9 +90,8 @@ class MetricsSnippets {
                 return JSON.createObjectBuilder().add("message", msg).build();
             }
         }
+        // end::snippet_2[]
     }
-
-    // end::snippet_2[]
 
     class Snippet3 {
 

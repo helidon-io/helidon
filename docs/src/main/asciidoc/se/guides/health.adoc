@@ -96,7 +96,7 @@ curl -v http://localhost:8080/observe/health
 ----
 
 The verbose `curl` output reports the HTTP status:
-[listing]
+[source,text]
 ----
 < HTTP/1.1 204 No Content
 ----

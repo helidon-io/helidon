@@ -60,8 +60,8 @@ First describe Neo4j connection properties:
 # Neo4j settings
 neo4j.uri=bolt://localhost:7687
 neo4j.authentication.username=neo4j
-neo4j.authentication.password: secret
-neo4j.pool.metricsEnabled: true
+neo4j.authentication.password=secret
+neo4j.pool.metricsEnabled=true
 ----
 
 Then just inject the driver:
@@ -75,7 +75,7 @@ The driver can be used according to the link:https://neo4j.com/developer/java/[N
 
 == Configuration
 
-/include::{rootdir}/config/io_helidon_integrations_neo4j_Neo4j.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_integrations_neo4j_Neo4j.adoc[leveloffset=+1,tag=config]
 
 == Examples
 
@@ -117,8 +117,8 @@ Next add the connection configuration properties for Neo4j:
 # Neo4j settings
 neo4j.uri=bolt://localhost:7687
 neo4j.authentication.username=neo4j
-neo4j.authentication.password: secret
-neo4j.pool.metricsEnabled: true
+neo4j.authentication.password=secret
+neo4j.pool.metricsEnabled=true
 
 # Enable the optional MicroProfile Metrics REST.request metrics
 metrics.rest-request.enabled=true

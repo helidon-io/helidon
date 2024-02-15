@@ -59,6 +59,26 @@ class TestingJunit5Snippets {
     class Snippet2 {
 
         // tag::snippet_2[]
+        @HelidonTest
+        class GreetTest {
+            @Inject
+            WebTarget webTarget;
+
+            @Test
+            void testDefaultGreeting() {
+                JsonObject jsonObject = webTarget.path("/greet")
+                        .request()
+                        .get(JsonObject.class);
+
+                assertThat(jsonObject.getString("message"), is("Hello World!"));
+            }
+        }
+        // end::snippet_2[]
+    }
+
+    class Snippet3 {
+
+        // tag::snippet_3[]
         @HelidonTest(resetPerTest = true)
         class GreetTest {
             @Test
@@ -84,48 +104,48 @@ class TestingJunit5Snippets {
                 assertThat(message, is("Message in JSON"));
             }
         }
-        // end::snippet_2[]
+        // end::snippet_3[]
     }
 
     class Snippet4 {
 
-        // tag::snippet_3[]
-        @AddBean(TestBean.class)
-        class GreetTest {
-        }
-        // end::snippet_3[]
-    }
-
-    class Snippet5 {
-
         // tag::snippet_4[]
-        @AddBean(value = TestBean.class, scope = Dependent.class)
+        @AddBean(TestBean.class)
         class GreetTest {
         }
         // end::snippet_4[]
     }
 
-    class Snippet6 {
+    class Snippet5 {
 
         // tag::snippet_5[]
-        @AddExtension(TestExtension.class)
+        @AddBean(value = TestBean.class, scope = Dependent.class)
         class GreetTest {
         }
         // end::snippet_5[]
     }
 
-    class Snippet7 {
+    class Snippet6 {
 
         // tag::snippet_6[]
-        @DisableDiscovery
+        @AddExtension(TestExtension.class)
         class GreetTest {
         }
         // end::snippet_6[]
     }
 
-    class Snippet8 {
+    class Snippet7 {
 
         // tag::snippet_7[]
+        @DisableDiscovery
+        class GreetTest {
+        }
+        // end::snippet_7[]
+    }
+
+    class Snippet8 {
+
+        // tag::snippet_8[]
         @HelidonTest
         @DisableDiscovery
         @AddExtension(ConfigCdiExtension.class)
@@ -150,7 +170,7 @@ class TestingJunit5Snippets {
                 }
             }
         }
-        // end::snippet_7[]
+        // end::snippet_8[]
     }
 
 }

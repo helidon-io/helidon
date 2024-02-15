@@ -49,14 +49,16 @@ include::{rootdir}/includes/dependencies.adoc[]
 // tag::tracing-dependency[]
 [source,xml]
 ----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>    <!--1-->
-</dependency>
-<dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-tracing</artifactId> <!--2-->
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.tracing</groupId>
+        <artifactId>helidon-tracing</artifactId>    <!--1-->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webserver.observe</groupId>
+        <artifactId>helidon-webserver-observe-tracing</artifactId> <!--2-->
+    </dependency>
+</dependencies>
 ----
 <1> Helidon tracing dependency.
 <2> Observability dependencies for tracing.
@@ -268,14 +270,16 @@ Tracing propagation is automatic as long as the current span context is availabl
 
 [source,xml]
 ----
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-tracing</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient-tracing</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 [source,java]
