@@ -41,7 +41,7 @@
         </dependency>
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
+            <artifactId>ojdbc11-production</artifactId>
             <type>pom</type>
             <exclusions>
                 <exclusion>
@@ -59,7 +59,7 @@
             <!-- Include version without JAXP impl -->
             <groupId>com.oracle.database.xml</groupId>
             <artifactId>xmlparserv2_sans_jaxp_services</artifactId>
-            <version>${version.lib.ojdbc8}</version>
+            <version>${version.lib.ojdbc}</version>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

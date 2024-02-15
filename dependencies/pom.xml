@@ -127,7 +127,12 @@
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
         <version.lib.netty>4.1.100.Final</version.lib.netty>
         <version.lib.oci>3.34.0</version.lib.oci>
-        <version.lib.ojdbc8>21.4.0.0</version.lib.ojdbc8>
+        <!--
+            UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.
+            Until this bug is fixed do not upgrade past version 21.9.0.0.
+        -->
+        <version.lib.ojdbc>21.9.0.0</version.lib.ojdbc>
+        <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
         <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
         <version.lib.okio>3.4.0</version.lib.okio>
         <!-- Force upgrade okhttp3 for CVE-2023-0833 -->
@@ -1389,7 +1394,7 @@
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc-bom</artifactId>
-                <version>${version.lib.ojdbc8}</version>
+                <version>${version.lib.ojdbc}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
