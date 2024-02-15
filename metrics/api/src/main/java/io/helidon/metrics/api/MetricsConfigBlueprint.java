@@ -202,6 +202,7 @@ interface MetricsConfigBlueprint {
      *
      * @return metrics configuration
      */
+    @Option.Redundant
     Config config();
 
     /**
