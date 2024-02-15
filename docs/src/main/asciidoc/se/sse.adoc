@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 :description: Helidon SSE Support
 :keywords: helidon, sse
 :feature-name: SSE
-:rootdir: {docdir}/../..
+:rootdir: {docdir}/..
 
 
 include::{rootdir}/includes/se.adoc[]
@@ -78,12 +78,7 @@ messages and then closes the connection.
 
 [source,java]
 ----
-void sseString(ServerRequest req, ServerResponse res) {
-    try (SseSink sseSink = res.sink(SseSink.TYPE)) {
-        sseSink.emit(SseEvent.create("hello"))
-                .emit(SseEvent.create("world"));
-    }
-}
+include::{sourcedir}/se/SseSnippets.java[tag=snippet_1, indent=0]
 ----
 
 Once an `SseSink` is obtained from a `ServerResponse`, the latter is no longer usable to send additional
@@ -93,7 +88,7 @@ Note that an `SseSink` is auto closeable, so it can be part of a try-with-resour
 Events can be created using any of the static `create` methods in `SseEvent` as well as via a builder obtained by
 calling `SseEvent.builder()`. For more information see the Javadocs for those classes. In the example
 above, a simple create method with a string param is used to showcase a very common use case. The
-API supports integration with Helidon's media type providers, so the event data may actually be of any
+API supports integration with media type providers, so the event data may actually be of any
 type as long as it is possible to convert it to a string value.
 
 === Integration with Media Types
@@ -104,14 +99,7 @@ converter and serialize the event data on your behalf.
 
 [source,java]
 ----
-void sseJsonp(ServerRequest req, ServerResponse res) {
-    JsonObject json = Json.createObjectBuilder()
-            .add("hello", "world")
-            .build();
-    try (SseSink sseSink = res.sink(SseSink.TYPE)) {
-        sseSink.emit(SseEvent.create(json));
-    }
-}
+include::{sourcedir}/se/SseSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Similarly, if JSON-B support is available in your class path, an event can be created from an arbitrary
@@ -119,26 +107,7 @@ Java class and serialized as shown next:
 
 [source,java]
 ----
-class HelloWorld {
-
-    private String hello;
-
-    public String getHello() {
-        return hello;
-    }
-
-    public void setHello(String hello) {
-        this.hello = hello;
-    }
-}
-
-void sseJsonb(ServerRequest req, ServerResponse res) {
-    HelloWorld json = new HelloWorld();
-    json.setHello("world");
-    try (SseSink sseSink = res.sink(SseSink.TYPE)) {
-        sseSink.emit(SseEvent.create(json));
-    }
-}
+include::{sourcedir}/se/SseSnippets.java[tag=snippet_3, indent=0]
 ----
 
 An optional media type can be specified alongside the event's data, in case a different type
@@ -170,15 +139,7 @@ and registers an `SseSource` to process a single event.
 
 [source,java]
 ----
-try (Http1ClientResponse r = client.get("/sseJson")
-                                    .header(ACCEPT_EVENT_STREAM)
-                                    .request()) {
-    CountDownLatch latch = new CountDownLatch(1);
-    r.source(SseSource.TYPE, event -> {
-        // ...
-        latch.countDown();
-    });
-}
+include::{sourcedir}/se/SseSnippets.java[tag=snippet_4, indent=0]
 ----
 
 The `SseSource` type defines other methods such as `onOpen`, `onClose` and `onError`. The following example
@@ -187,28 +148,12 @@ way to asynchronously wait until all the events are received.
 
 [source,java]
 ----
-try (Http1ClientResponse r = client.get("/sseString")
-                                    .header(ACCEPT_EVENT_STREAM)
-                                    .request()) {
-    CountDownLatch latch = new CountDownLatch(1);
-    r.source(SseSource.TYPE, new SseSource() {
-        @Override
-        public void onEvent(SseEvent event) {
-            // ...
-        }
-
-        @Override
-        public void onClose() {
-            latch.countDown();
-        }
-    });
-    assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
-}
+include::{sourcedir}/se/SseSnippets.java[tag=snippet_5, indent=0]
 ----
 
 === Integration with Media Types
 
-The Client API is also integrated with Helidon's media type support. The data received as part of an
+The Client API is also integrated with media type support. The data received as part of an
 event can be deserialized using any of the media converters available in your class path. There are
 special methods in `SseEvent` for this purpose. Without a parameter, the method `data()` in `SseEvent` will
 always return a string. Other types can be requested using `data(Class<T>)`
@@ -222,16 +167,7 @@ sufficient information to select the appropriate converter for the event's data 
 
 [source,java]
 ----
-try (Http1ClientResponse r = client.get("/sseJson")
-                                    .header(ACCEPT_EVENT_STREAM)
-                                    .request()) {
-    CountDownLatch latch = new CountDownLatch(1);
-    r.source(SseSource.TYPE, event -> {
-        HelloWorld json = event.data(HelloWorld.class, MediaTypes.APPLICATION_JSON);
-        // ...
-        latch.countDown();
-    });
-}
+include::{sourcedir}/se/SseSnippets.java[tag=snippet_6, indent=0]
 ----
 
 == Additional Information

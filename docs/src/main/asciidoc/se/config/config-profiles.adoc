@@ -206,39 +206,14 @@ Profiles can be used to set up custom config sources as well as the built-in one
 Implement the `ConfigSourceProvider`
 [source,java]
 ----
-public class MyConfigSourceProvider implements ConfigSourceProvider {
-    private static final String TYPE = "my-type";
-
-    @Override
-    public boolean supports(String type) {
-        return TYPE.equals(type);
-    }
-
-    @Override
-    public ConfigSource create(String type, Config metaConfig) {
-        // as we only support one in this implementation, we can just return it
-        return MyConfigSource.create(metaConfig);
-    }
-
-    @Override
-    public Set<String> supported() {
-        return Collections.singleton(TYPE);
-    }
-}
+include::{sourcedir}/se/config/ConfigProfilesSnippets.java[tag=snippet_1, indent=0]
 ----
 
 Register it as a java service loader service
-[source]
+[source, text]
 .File `META-INF/services/io.helidon.config.spi.ConfigSourceProvider`
 ----
 io.helidon.examples.MyConfigSourceProvider
-----
-
-And in `module-info.java` if using JPMS:
-[source,java]
-.File `module-info.java`
-----
-provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.examples.MyConfigSourceProvider
 ----
 
 Now you can use the following profile:

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ built the tree.
 If your application attempts to access a non-existent node, for example using
 [source,java]
 ----
-config.get("key.does.not.exist")
+include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_1, indent=0]
 ----
 the config system returns a `Config` node object with
 type `MISSING`. The in-memory config tree contains nodes only of types `OBJECT`, `LIST`,
@@ -174,12 +174,7 @@ All the following lines retrieve the same `Config` node.
 [source,java]
 .Equivalent Config Retrievals
 ----
-assert config.get("") == config;
-Config provName1 = config.get("data.providers.0.name"); // <1>
-Config provName2 = config.get("data.providers.0").get("name"); // <2>
-Config provName3 = config.get("data.providers").get("0.name");
-Config provName4 = config.get("data").get("providers.0").get("name");
-Config provName5 = config.get("data").get("providers").get("0").get("name"); // <3>
+include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> using a single key
 <2> mixed style (composite key and single key)
@@ -231,23 +226,8 @@ or `MISSING`
 [source,java]
 .List names of child nodes of an _object_ node
 ----
-List<String> appNodeNames = config.get("app")
-            .asNodeList()                              // <1>
-            .map(nodes -> {                            // <2>
-                return nodes
-                        .stream()
-                        .map(Config::name)
-                        .sorted()
-                        .collect(Collectors.toList());
-            })
-            .orElse(Collections.emptyList());          // <3>
-
-
-assert appNodeNames.get(0).equals("basic-range"); // <4>
-assert appNodeNames.get(1).equals("greeting");    // <4>
-assert appNodeNames.get(2).equals("page-size");   // <4>
+include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_3, indent=0]
 ----
-
 <1> Get the ConfigValue with child `Config` instances.
 <2> Map the node list to names using the Java Stream API (if present)
 <3> Use an empty list if the "app" node does not exist
@@ -256,13 +236,8 @@ assert appNodeNames.get(2).equals("page-size");   // <4>
 [source,java]
 .List child nodes of a _list_ node
 ----
-List<Config> providers = config.get("data.providers")
-        .asNodeList().orElse(Collections.emptyList());               // <1>
-
-assert providers.get(0).key().toString().equals("data.providers.0"); // <2>
-assert providers.get(1).key().toString().equals("data.providers.1"); // <2>
+include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_4, indent=0]
 ----
-
 <1> Get child nodes of the `data.providers` _list_ node as a `List` of `Config` instances.
 <2> Check that the list contains the expected child nodes with keys
 `data.providers.0` and `data.providers.1`.
@@ -275,23 +250,20 @@ Depending on the structure of the loaded configuration the stream contains a mix
 [source,java]
 .Traverse subtree below a _list_ node
 ----
-config.get("data.providers")
-        .traverse()                                                             // <1>
-        .forEach(node -> System.out.println(node.type() + " \t" + node.key())); // <2>
+include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_5, indent=0]
 ----
-
 <1> Visit the subtree rooted at the `data.providers` _list_ node.
 <2> Prints out following list of nodes (type and key):
 
-====
-[listing]
+[source,text]
+----
 OBJECT 	data.providers.0
 VALUE 	data.providers.0.name
 VALUE 	data.providers.0.class
 OBJECT 	data.providers.1
 VALUE 	data.providers.1.name
 VALUE 	data.providers.1.class
-====
+----
 
 The optional `Predicate<Config>` argument to the `traverse` methods allows the
 application to prune the traversal of a subtree at any point.
@@ -299,23 +271,21 @@ application to prune the traversal of a subtree at any point.
 [source,java]
 .Traverse _root_ (_object_) node, skipping the entire `data` subtree
 ----
-config.traverse(node -> !node.name().equals("data"))                            // <1>
-        .forEach(node -> System.out.println(node.type() + " \t" + node.key())); // <2>
+include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_6, indent=0]
 ----
-
 <1> Visit all _root_ sub-nodes, excluding whole `data` tree structure but including
 others.
 <2> Prints out following list of nodes (type and key):
 
-====
-[listing]
+[source,listing]
+----
 OBJECT 	app
 VALUE 	app.page-size
 VALUE 	app.greeting
 LIST 	app.basic-range
 VALUE 	app.basic-range.0
 VALUE 	app.basic-range.1
-====
+----
 
 == Detaching a Config Subtree
 Sometimes it can be convenient to write part of your application to deal with
@@ -343,20 +313,11 @@ link:{config-javadoc-base-url}/io/helidon/config/Config.html#detach--[`Config.de
 a _copy_ of the config node but with no parent. The copy and the original node both
 point to the same objects for their child nodes (if any). The original node is
 unchanged.
+
 [source,java]
 .Detaching a Subtree
 ----
-Config originalRoot = // from the original example `.conf` file
-Config alternateRoot = // from the alternate structure above
-
-Config detachedFromOriginal = originalRoot.get("web").detach();
-Config detachedFromAlternate = alternateRoot.get("server.web").detach();
-
-assert originalRoot.get("web.debug").equals("true");          // <1>
-assert alternateRoot.get("server.web.debug").equals("true");  // <1>
-
-assert detachedFromOriginal.get("debug").equals("true");      // <2>
-assert detachedFromAlternate.get("debug").equals("true");     // <2>
+include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Navigation depends on knowing the full structure of the config
 and so is different for the two cases.

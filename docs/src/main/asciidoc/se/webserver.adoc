@@ -70,10 +70,7 @@ application code.
 
 [source,java]
 ----
-WebServer webServer = WebServer.builder()
-      .address(InetAddress.getLocalHost())
-      .port(8080)
-      .build();
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_1, indent=0]
 ----
 
 === Configuring the WebServer in a Configuration File
@@ -93,10 +90,8 @@ Then, in your application code, load the configuration from that file.
 [source,java]
 .WebServer initialization using the `application.yaml` file located on the classpath
 ----
-Config config = Config.create(); // <1>
-WebServer webServer = WebServer.create(routing, config.get("server")); // <2>
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_2, indent=0]
 ----
-
 <1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can
 just use `Config.create()`
 <2> Server expects the configuration tree located on the node of `server`
@@ -122,10 +117,7 @@ Configure HTTP request routing using `HttpRouting.Builder`.
 [source,java]
 .Using HttpRouting.Builder to specify how HTTP requests are handled
 ----
-
-WebServer webServer = WebServer.builder()
-        .routing(routing -> routing.get("/hello", (req, res) -> res.send("Hello World!"))) // <1>
-        .build(); // <2>
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Handle all GETs to `/hello` path. Send the `Hello World!` string.
 <2> Create a server instance with the provided routing
@@ -138,18 +130,16 @@ WebServer webServer = WebServer.builder()
 |===
 |HTTP Method|HttpRouting.Builder example
 
-|*GET*|`+.get((req, res) -> { /* handler */ })+`
-|*PUT*| `+.put((req, res) -> { /* handler */ })+`
-|*POST*| `+.post((req, res) -> { /* handler */ })+`
-|*HEAD*| `+.head((req, res) -> { /* handler */ })+`
-|*DELETE*| `+.delete((req, res) -> { /* handler */ })+`
-|*TRACE*| `+.trace((req, res) -> { /* handler */ })+`
-|*OPTIONS*| `+.options((req, res) -> { /* handler */ })+`
-|_any method_|`+.any((req, res) -> { /* handler */ })+`
-|_multiple methods_|``+.route(Method.predicate(Method.GET, Method.POST),
-                        PathMatchers.any(),
-                        (req, res) -> { /* handler */ })`
-|_custom method_|`+.route(Method.create("CUSTOM"), (req, res) -> { /* handler */ })`
+|*GET*|`+.get(handler)+`
+|*PUT*| `+.put(handler)+`
+|*POST*| `+.post(handler)+`
+|*HEAD*| `+.head(handler)+`
+|*DELETE*| `+.delete(handler)+`
+|*TRACE*| `+.trace(handler)+`
+|*OPTIONS*| `+.options(handler)+`
+|_any method_|`+.any(handler)+`
+|_multiple methods_|`+.route(Method.predicate(Method.GET, Method.POST), path, handler)+`
+|_custom method_|`+.route(Method.create("CUSTOM"), handler)+`
 |===
 
 === Path Matcher Routing
@@ -157,8 +147,7 @@ You can combine HTTP method routing with request path matching.
 
 [source,java]
 ----
-HttpRouting.builder()
-       .post("/some/path", (req, res) -> { /* handler */ })
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_4, indent=0]
 ----
 
 You can use *path pattern* instead of _path_ with the following syntax:
@@ -169,8 +158,8 @@ You can use *path pattern* instead of _path_ with the following syntax:
 * `/foo/{var}/baz` - Named regular expression segment `([^/]+)`
 * `/foo/{var:\d+}` - Named regular expression segment with a specified expression
 * `/foo/{:\d+}` - Unnamed regular expression segment with a specified expression
-* `/foo/{+var}` - Convenience shortcut for {var:.+}. A matcher is not a true URI template (as defined by RFC) but this convenience is in sync with the Apiary templates
-* `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression {:.+}
+* `/foo/{+var}` - Convenience shortcut for `{var:.+}`
+* `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression `{:.+}`
 * `/foo[/bar]` - An optional block, which translates to the `/foo(/bar)?` regular expression
 * `/*` or `/foo*` - `*` Wildcard character can be matched with any number of characters.
 
@@ -185,14 +174,15 @@ and register using `HttpRouting.Builder.route(Predicate<Method>, PathMatcher, Ha
 === Using full `HttpRoute`
 
 To have more control over selecting which requests should be handled by a specific route,
-you can use the `io.helidon.webserver.http.HttpRoute` interface, and either setup a route using its `Builder`, or implement the interface directly.
-
-The `HttpRoute` is queried base on the request `io.helidon.http.HttpPrologue`.
+ you can use the `io.helidon.webserver.http.HttpRoute` interface using its `Builder`.
 
 [source,java]
 ----
-.route(new MyCustomRoute());
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_5, indent=0]
 ----
+<1> The route is specified for `GET` and `POST` requests
+<2> The handler consumes the request payload and echoes it back
+
 
 === Organizing Code into Services
 
@@ -202,23 +192,13 @@ or more services, each with its own path prefix and set of handlers.
 [source,java]
 .Use `HttpRouting.Builder.register` to register your service
 ----
-.register("/hello", new HelloService())
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_6, indent=0]
 ----
 
 [source,java]
 .Service implementation
 ----
-public class HelloService implements HttpService {
-    @Override
-    public void routing(HttpRules rules) {
-        rules.get("/subpath", this::getHandler);
-    }
-
-    private void getHandler(ServerRequest request,
-                            ServerResponse response) {
-        // Some logic
-    }
-}
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_7, indent=0]
 ----
 In this example, the `GET` handler matches requests to `/hello/subpath`.
 
@@ -250,13 +230,7 @@ filtering in interception style.
 A simple filter example:
 [source,java]
 ----
-routing.addFilter((chain, req, res) -> {
-   try {
-       chain.proceed();
-   } finally {
-       // do something for any finished request
-   }
-})
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_8, indent=0]
 ----
 
 ==== Routes
@@ -268,28 +242,17 @@ _nexting_. There are two options:
 +
 [source,java]
 ----
-.any("/hello", (req, res) -> { // <1>
-    // filtering logic  // <2>
-    res.next(); // <3>
-})
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_9, indent=0]
 ----
 <1> handler for any HTTP method using the `/hello` path
 <2> business logic implementation
 <3> forward the current request to the downstream handler
 
-* throw an exception to forward to error handling
-<<Error Handling,error handling>>
+* throw an exception to forward to <<Error Handling, error handling>>
 +
 [source,java]
 ----
-.any("/hello", (req, res) -> { // <1>
-    // filtering logic (e.g., validating parameters) // <2>
-    if (userParametersOk()) {
-        res.next(); // <3>
-    } else {
-        throw new IllegalArgumentException("Invalid parameters."); // <4>
-    }
-})
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_10, indent=0]
 ----
 <1> handler for any HTTP method using the `/hello` path
 <2> custom logic
@@ -304,11 +267,7 @@ IMPORTANT: one of the variants of `send` method MUST be invoked in the same thre
 
 [source,java]
 ----
-.get("/hello", (req, res) -> { // <1>
-    // terminating logic
-    res.status(Status.ACCEPTED_202)
-       .send("Saved!"); // <2>
-})
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_11, indent=0]
 ----
 <1> handler that terminates the request handling for any HTTP method using the `/hello` path
 <2> send the response
@@ -320,11 +279,7 @@ on routing builder.
 [source,java]
 .Routing based on HTTP version
 ----
-.routing(r -> r
-        .get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion())) // <1>
-        .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route"))) // <2>
-        .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route"))) // <3>
-)
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_12, indent=0]
 ----
 
 <1> An HTTP route registered on `/any-version` path that prints the version of HTTP protocol
@@ -333,6 +288,7 @@ on routing builder.
 
 While `Http1Route` for Http/1 is always available with Helidon webserver, other routes like `Http2Route` for <<HTTP/2 Support, HTTP/2>> needs to be added as additional dependency.
 
+[[_requested_uri_discovery]]
 == Requested URI Discovery
 include::{requested-uri-discovery-inc}[tag=intro]
 
@@ -341,25 +297,14 @@ To set up requested URI discovery on the default socket for your server, use the
 [source,java]
 .Requested URI set-up for the default server socket
 ----
-import io.helidon.common.configurable.AllowList;
-import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscoveryType.FORWARDED;
-import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscoveryType.X_FORWARDED;
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_13, indent=0]
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_14, indent=0]
 
-AllowList trustedProxies = AllowList.builder()
-        .addAllowedPattern(Pattern.compile("lb.+\\.mycorp\\.com"))
-        .addDenied("lbtest.mycorp.com")
-        .build(); // <1>
-
-WebServer.Builder builder = WebServer.builder()
-        .host("localhost")
-        .requestedUriDiscoveryContext(it -> it.addDiscoveryType(FORWARDED) // <2>
-                        .addDiscoveryType(X_FORWARDED)
-                        .trustedProxies(trustedProxies)) // <3>
-        .routing(Main::routing)
-        .config(serverConfig);
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_15, indent=0]
 ----
-<1> Create the `AllowList` describing the intermediate networks nodes to trust and not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`, and no other nodes are trusted.
-`AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact matches.
+<1> Create the `AllowList` describing the intermediate networks nodes to trust and not trust.
+Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`,
+and no other nodes are trusted. `AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact matches.
 See the link:{configurable-javadoc-base-url}/io/helidon/common/configurable/AllowList.html[`AllowList`] JavaDoc for complete information.
 <2> Use `Forwarded` first, then try `X-Forwarded-*` on each request.
 <3> Set the `AllowList` for trusted intermediaries.
@@ -389,16 +334,9 @@ Your code obtains the requested URI information from the Helidon server request 
 [source,java]
 .Retrieving Requested URI Information
 ----
-import io.helidon.common.uri.UriInfo;
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_16, indent=0]
 
-public class MyHandler implements Handler {
-
-    @Override
-    public void accept(ServerRequest req, ServerResponse res) {
-        UriInfo uriInfo = req.requestedUri();
-        // ...
-    }
-}
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_17, indent=0]
 ----
 See the link:{uri-javadoc-base-url}/io/helidon/common/uri/UriInfo.html[`UriInfo`] JavaDoc for more information.
 
@@ -410,14 +348,9 @@ You may register an error handler for a specific `Throwable` in a
 `HttpRouting.Builder` method.
 [source,java]
 ----
-HttpRouting.Builder routing = HttpRouting.builder()
-                        .error(MyException.class, (req, res, ex) -> { // <1>
-                            // handle the error, set the HTTP status code
-                            res.send(errorDescriptionObject); // <2>
-                        });
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_18, indent=0]
 ----
-<1> Registers an error handler that handles `MyException` that are thrown from the
-upstream handlers
+<1> Registers an error handler that handles `MyException` that are thrown from the upstream handlers
 <2> Finishes the request handling by sending a response
 
 Error handlers are called when
@@ -430,22 +363,16 @@ As with the standard handlers, the error handler must either
 +
 [source,java]
 ----
-.error(MyException.class, (req, res, ex) -> {
-    res.status(Http.Status.BAD_REQUEST_400);
-    res.send("Unable to parse request. Message: " + ex.getMessage());
-})
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_19, indent=0]
 ----
 * or throw an exception
 +
 [source,java]
 ----
-.error(Throwable.class, (req, res, ex) -> {
-    // some logic
-    throw ex;
-})
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_20, indent=0]
 ----
 
-Exceptions thrown from error handlers are not error handled, and will end up in an InternalServerError.
+Exceptions thrown from error handlers are not error handled, and will end up in an `InternalServerError`.
 
 === Default Error Handling
 If no user-defined error handler is matched, or if the error handler of the
@@ -456,7 +383,7 @@ exception threw an exception, then the exception is translated to an HTTP respon
 [source,java]
 .Reply with the `406` HTTP error code by throwing an exception
 ----
-(req, res) -> throw new HttpException("Amount of money must be greater than 0.", Http.Status.NOT_ACCEPTABLE_406) // <1>
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_21, indent=0]
 ----
 
 * Otherwise, the exceptions are translated to an Internal Server Error HTTP
@@ -507,11 +434,7 @@ To register static content based on a file system (`/pictures`), and classpath (
 
 [source,java]
 ----
-HttpRouting.builder()
-       .register("/pictures", StaticContentService.create(Paths.get("/some/WEB/pics"))) // <1>
-       .register("/", StaticContentService.builder("/static-content") // <2>
-                                   .welcomeFileName("index.html") // <3>
-                                   .build());
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_22, indent=0]
 ----
 <1> Create a new `StaticContentService` object to serve data from the file system,
 and associate it with the `"/pictures"` context path.
@@ -532,13 +455,7 @@ Programmatic support is of course enabled as well through `MediaContext`.
 Customized media support for WebServer
 [source,java]
 ----
-WebServer server = WebServer.builder()
-                .routing(Main::routing)
-                .mediaContext(MediaContext.builder()
-                                      .mediaSupportsDiscoverServices(false)
-                                      .addMediaSupport(JsonpSupport.create())
-                                      .build())
-                .build();
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_23, indent=0]
 ----
 
 Each registered (or discovered) media support adds support for writing and reading entities of a specific type.
@@ -577,19 +494,14 @@ To enable JSON Support add the following dependency to your project's `pom.xml`.
 [source,java]
 .Handler that receives and returns JSON objects
 ----
-private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Collections.emptyMap()); // <1>
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_24, indent=0]
 
-private void sayHello(ServerRequest req, ServerResponse res, JsonObject json) { // <2>
-        JsonObject msg = JSON_FACTORY.createObjectBuilder()   // <3>
-          .add("message", "Hello " + json.getString("name"))
-          .build();
-        res.send(msg);                            // <4>
-}
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_25, indent=0]
 ----
 <1> Using a `JsonBuilderFactory` is more efficient than `Json.createObjectBuilder()`
-<2> JsonObject is passed to handler
-<3> Create a JsonObject using JSON-P to hold return data
-<4> Send JsonObject in response
+<2> Get the request entity as `JsonObject`
+<3> Create a new `JsonObject` for the response entity
+<4> Send `JsonObject` in response
 
 [source,bash]
 .Example of posting JSON to sayHello endpoint
@@ -636,22 +548,7 @@ Suppose you have a `Person` class that looks like this:
 [source,java]
 .Hypothetical `Person` class
 ----
-public class Person {
-
-    private String name;
-
-    public Person() {
-        super();
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-}
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_26, indent=0]
 ----
 
 Then you can set up a `Handler` like this:
@@ -659,10 +556,9 @@ Then you can set up a `Handler` like this:
 [source,java]
 .A `Handler` that works with Java objects instead of raw JSON
 ----
-HttpRouting.Builder routing =
-    routingBuilder.post("/echo", (req, res) -> res.send(req.content().as(Person.class))); // <1>
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_27, indent=0]
 ----
-<1> This handler consumes a `Person` instance and simply echoes it back.  Note that there is no working with raw JSON here.
+<1> This handler consumes a `Person` instance and simply echoes it back.  Note that there is not working with raw JSON here.
 
 [source,bash]
 .Example of posting JSON to the `/echo` endpoint
@@ -703,22 +599,7 @@ Suppose you have a `Person` class that looks like this:
 [source,java]
 .Hypothetical `Person` class
 ----
-public class Person {
-
-    private String name;
-
-    public Person() {
-        super();
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(final String name) {
-        this.name = name;
-    }
-}
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_26, indent=0]
 ----
 
 Then you can set up a `Handler` like this:
@@ -726,8 +607,7 @@ Then you can set up a `Handler` like this:
 [source,java]
 .A `Handler` that works with Java objects instead of raw JSON
 ----
-HttpRouting.Builder routing =
-routingBuilder.post("/echo", (req, res) -> res.send(req.content().as(Person.class))); // <1>
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_28, indent=0]
 ----
 <1> This handler consumes a `Person` instance and simply echoes it back.  Note that there is no working with raw JSON here.
 
@@ -771,10 +651,7 @@ You can also configure this feature in code by registering it with WebServer (wh
 
 [source,java]
 ----
-WebServer.builder()
-         .addFeature(AccessLogFeature.builder()
-             .commonLogFormat()
-             .build());
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_29, indent=0]
 ----
 
 === Configuring Access Log in a Configuration File
@@ -805,15 +682,7 @@ To configure TLS in WebServer programmatically create your keystore configuratio
 
 [source,java]
 ----
-Tls tls = Tls.builder()
-                .privateKey(pk -> pk.keystore(pkKeystore -> pkKeystore.keystore(Resource.create("private-key.p12"))
-                        .passphrase("password".toCharArray())))
-                .trust(trust -> trust.keystore(trustStore -> trustStore.keystore(Resource.create("trust.p12"))))
-                .build();
-
-WebServer.builder()
-         .tls(tls)
-         .build();
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_30, indent=0]
 ----
 
 
@@ -833,7 +702,7 @@ server:
         trust-store: true
         resource:
           resource-path: "keystore.p12"
-    #Keystore with private key and server certificate
+    # Keystore with private key and server certificate
     private-key:
       keystore:
         passphrase: "password"
@@ -845,18 +714,18 @@ Then, in your application code, load the configuration from that file.
 [source,java]
 .WebServer initialization using the `application.yaml` file located on the classpath
 ----
-Config config = Config.create();
-WebServer webClient = WebServer.create(routing, config.get("server"));
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_2, indent=0]
 ----
+<1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can
+just use `Config.create()`
+<2> Server expects the configuration tree located on the node of `server`
+
 Or you can only create WebServerTls instance based on the config file.
 
 [source,java]
 .WebServerTls instance based on `application.yaml` file located on the classpath
 ----
-Config config = Config.create();
-WebServerTls.builder()
-    .config(config.get("server.tls"))
-    .build();
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_31, indent=0]
 ----
 
 This can alternatively be configured with paths to PKCS#8 PEM files rather than KeyStores:
@@ -908,11 +777,7 @@ Encoding can be configured per socket.
 Disabling discovery and registering a Gzip encoding support:
 [source,java]
 ----
-WebServer.builder()
-         .contentEncoding(ContentEncodingContextConfig.builder()
-            .contentEncodingsDiscoverServices(false)
-            .addContentEncoding(GzipEncoding.create())
-            .build());
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_32, indent=0]
 ----
 
 Or use a config file using the following options:
@@ -961,11 +826,7 @@ never optional.
 Programmatically, support for the Proxy Protocol is enabled as follows:
 [source,java]
 ----
-WebServer server = WebServer.builder()
-    .enableProxyProtocol(true)
-    .routing(...)
-    .build()
-    .start();
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_33, indent=0]
 ----
 
 Declaratively, support for the Proxy Protocol is enabled as follows:
@@ -985,18 +846,7 @@ next:
 
 [source,java]
 ----
-routing.get("/", (req, res) -> {
-    ProxyProtocolData data = req.proxyProtocolData().orElse(null);
-    if (data != null
-            && data.family() == ProxyProtocolData.Family.IPv4
-            && data.protocol() == ProxyProtocolData.Protocol.TCP
-            && data.sourceAddress().equals("192.168.0.1")
-            && data.destAddress().equals("192.168.0.11")
-            && data.sourcePort() == 56324
-            && data.destPort() == 443) {
-        // ...
-    }
-});
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_34, indent=0]
 ----
 
 NOTE: Every request associated with a certain connection shall have
@@ -1014,18 +864,11 @@ Here is the code for a minimalist web application that runs on a random free por
 
 [source,java]
 ----
-public static void main(String[] args) {
-    WebServer webServer = WebServer.builder()
-                .routing(routing -> routing.any((req, res) -> res.send("It works!"))) // <1>
-                .build() // <2>
-                .start(); // <3>
-
-    System.out.println("Server started at: http://localhost:" + webServer.port()); // <4>
-}
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_35, indent=0]
 ----
 
 <1> For any kind of request, at any path, respond with `It works!`.
-<2> Build the server with the provided configuraiton
+<2> Build the server with the provided configuration
 <3> Start the server (and wait for it to open the port).
 <4> The server is bound to a random free port.
 

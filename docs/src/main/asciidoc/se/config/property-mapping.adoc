@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ use the built-in mappings and your own custom ones to convert to simple and
 complex types.
 
 == Converting Configuration to Simple Types
+
 The link:{config-javadoc-base-url}/io/helidon/config/Config.html[`Config`] class itself provides many
 conversions to Java types. See the JavaDoc for the complete list.
 
@@ -54,12 +55,10 @@ common pattern. The examples in the table below deal with conversion to a boolea
 Assume a local variable has been assigned something like
 [source,java]
 ----
-Config config = Config.get("someKey");
-// shortcut method
-ConfigValue<Boolean> value = config.asBoolean();
-// generic method (for any type)
-ConfigValue<Boolean> value2 = config.as(Boolean.class);
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_1, indent=0]
 ----
+<1> Shorthand method
+<2> Generic method (for any type)
 
 .Built-in Conversions to Simple Types (e.g., boolean)
 |===
@@ -77,55 +76,58 @@ ConfigValue<Boolean> value2 = config.as(Boolean.class);
 `Boolean b = value.optionalSupplier().get().orElse(Boolean.TRUE);`
 |===
 
-
-Notes on Built-in Conversions to Simple Types
+[NOTE]
+.Built-in Conversions to Simple Types
 ====
-^1^ All conversions can throw `MissingValueException` (if no value exists at the
+1. All conversions can throw `MissingValueException` (if no value exists at the
 requested key and no default is provided) and
 `ConfigMappingException` (if some error occurred while performing the data mapping).
 
-^2^ The `Config.asXXX` methods internally use the Java-provided `XXX.parseXXX` methods, so here
+2. The `Config.asXXX` methods internally use the Java-provided `XXX.parseXXX` methods, so here
 a missing or un-parseable string gives `false` because that is how `Boolean.parseBoolean`
 behaves.
 
-^3^ User code defaults the value to `true`.
+3. User code defaults the value to `true`.
 
-^4^ User code defaults the value to `Boolean.TRUE` if absent; otherwise parses
+4. User code defaults the value to `Boolean.TRUE` if absent; otherwise parses
 the value using `Boolean.parseBoolean`.
 ====
 
 The numerous conversions defined on the `Config` class for other types (integers,
-doubles, etc.) will satisfy
-many of your application's needs. The link:{config-javadoc-base-url}/io/helidon/config/ConfigMappers.html[`ConfigMappers`] class
+doubles, etc.) will satisfy many of your application's needs.
+The link:{config-javadoc-base-url}/io/helidon/config/ConfigMappers.html[`ConfigMappers`] class
 includes other related mappings from `String` (rather than from `Config`) to
 Java types (described in the JavaDoc).
 
 For additional type mapping, you can use these methods defined on `Config`:
 [source,java]
-T as(Class<? extends T> type);
-T as(Function<Config, T> mapper);
-T as(GenericType<T> genericType);
+----
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_2, indent=0]
+----
 
 which maps the current node to a type.
 
 The next example, and later ones below showing complex type mapping, use the example
 xref:introduction.adoc#built-in-formats[`application.properties`] configuration
 from the config introduction. Part of that example includes this line:
-[source]
+[source,properties]
 ----
 bl.initial-id = 10000000000
 ----
+
 Your application can use `Config.as` to interpret the value as a `BigDecimal`:
 [source,java]
 BigDecimal initialId = config.get("bl.initial-id").as(BigDecimal.class);
 
 == Converting Configuration to `enum` Values
+
 Configuration can automatically map `Config` nodes to most `enum` types.
 
 Your application code simply passes the enum class type to `config.as(Class<? extends T> type)`.
 The built-in `enum` converter attempts to match the string value in the config node to the name of one of the values declared for that specific `enum` in the Java code.
 
 === Matching `enum` Names
+
 The conversion applies the following algorithm to match config values to `enum` names, stopping as soon as it finds a match:
 
 1. Select an exact match if one exists.
@@ -134,30 +136,14 @@ The conversion applies the following algorithm to match config values to `enum` 
 4. Finding no match or multiple case-insensitive matches, throw a `ConfigMappingException`.
 
 === Example
+
 The following example illustrates how to use the built-in `enum` conversion feature. The example code builds a simple `Config` tree itself which contains simple test data; normally your application would load the config from a file or some other location.
 
 [source,java]
 ----
-class Example {
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_3, indent=0]
 
-    enum Color {RED, YELLOW, BLUE_GREEN};
-
-    void convert() {
-        Config config = Config.just(ConfigSources.create(Map.of("house.tint", "blue-green",
-                                                                "car.color", "Red",
-                                                                "warning", "YELLOW")));
-
-        Color house = config.get("house.tint") // <1>
-                            .as(Color.class)   // <2>
-                            .get();            // <3>
-        Color car = config.get("car.color")
-                          .as(Color.class)
-                          .get();              // <4>
-        Color warning = config.get("warning")
-                              .as(Color.class)
-                              .get();          // <5>
-    }
-}
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Retrieve the `Config` object corresponding to the key `house.tint`.
 <2> Indicate that, when the value in that `Config` object is converted, Helidon should convert it to a `Color` `enum` value.
@@ -168,6 +154,7 @@ The conversion triggered by invoking `get()` matches the string `blue-green`--ex
 <5> The config key `warning` locates `YELLOW` which the  converter matches exactly to `Color.YELLOW`.
 
 === Why use heuristics in matching strings to `enum` values?
+
 Short answer: ease-of-use.
 
 Users composing config sources often adopt a style with hyphens within words to improve readability and lower-case keys and values.
@@ -181,7 +168,7 @@ Remember:
 In our `Color` example the text `BLUE_GREEN` always maps to `Color.BLUE_GREEN`.
 * Because hyphens cannot appear in a valid Java `enum` value name, interpreting them as underscores during `enum` conversion introduces no ambiguity.
 
-Only in the following unusual sitatuation are the heuristics unable to unambiguously match a string to an `enum` value:
+Only in the following unusual situation are the heuristics unable to unambiguously match a string to an `enum` value:
 
 * The `enum` has values which differ _only_ in their case (such as `Red` and `RED`), _and_
 * The string in the config source is not an exact match with an `enum` value name (such as `red`).
@@ -196,6 +183,7 @@ the tree structure used to represent config data. The config system can map subt
 of a config tree to complex Java types.
 
 === Built-in Conversions to `List` and `Map`
+
 The `Config` class exposes several methods for mapping a structured config node
 to a Java `List` or `Map`. The link:{config-javadoc-base-url}/io/helidon/config/Config.html[JavaDoc]
 contains complete details, but briefly your application can convert a structured `Config` node into:
@@ -225,12 +213,13 @@ The difference is in how your application triggers the use of that mapper.
 
 [[customConfigAs]]
 ==== Use Custom Mapper Explicitly: `Config.as` method
+
 Any time your application has a `Config` instance to map to the target class
 it invokes `Config.as` passing an instance of the corresponding conversion function:
+
 [source,java]
 ----
-Config config = Config.get("web");
-ConfigValue<WebConfig> web = config.as(WebConfigMapper::map);
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_5, indent=0]
 ----
 You do not necessarily need a new instance of the mapper every time you want to use
 it.
@@ -264,6 +253,7 @@ changing only the _registration_ of the mapper, not each use of it.
 
 [[WebConfig]]
 ==== Continuing the `Web` Example
+
 The following examples build on the example configuration from the
 xref:introduction.adoc#built-in-formats[`application.properties`]
 example file in the introduction.
@@ -272,72 +262,31 @@ example file in the introduction.
 [source,java]
 .Java POJO to Hold `web` Properties Config
 ----
-public class WebConfig {
-    private boolean debug;
-    private int pageSize;
-    private double ratio;
-
-    public WebConfig(boolean debug, int pageSize, double ratio) {
-        this.debug = debug;
-        this.pageSize = pageSize;
-        this.ratio = ratio;
-    }
-
-    public boolean isDebug() {
-        return debug;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public double getRatio() {
-        return ratio;
-    }
-}
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_6, indent=0]
 ----
 
 [source,java]
 .Custom Mapper Class
 ----
-public class WebConfigMapper implements Function<Config, WebConfig> {
-
-        @Override
-        public WebConfig apply(Config config) {
-            return new WebConfig(
-                    config.get("debug").asBoolean().orElse(false),
-                    config.get("page-size").asInt().orElse(10),
-                    config.get("ratio").asDouble().orElse(1.0)
-            );
-        }
-    }
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_7, indent=0]
 ----
 
 [source,java]
 .Explicitly Using the Mapper
 ----
-Config config = Config.create(classpath("application.properties"));
-
-WebConfig web = config.get("web")
-    .as(new WebConfigMapper())
-    .get();
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_8, indent=0]
 ----
 
 [source,java]
 .Registering and Implicitly Using the Mapper
 ----
-Config config = Config.builder(classpath("application.properties"))
-    .addMapper(WebConfig.class, new WebConfigMapper())
-    .build();
-
-WebConfig web = config.get("web")
-    .as(WebConfig.class)
-    .get();
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_9, indent=0]
 ----
 Either of the two approaches just described will _always_ work without requiring you to change
 the POJO class.
 
 == Advanced Conversions using Explicit Mapping Logic
+
 If the target Java class you want to use meets certain conditions -- or if you can change
 it to meet one of those conditions -- you might not need to write a separate mapper
 class. Instead, you add the mapping logic to the POJO itself in one of
@@ -355,12 +304,10 @@ uses reflection to invoke the methods and to map configuration values to fields/
 [source,xml]
 .Config object mapping Dependency in `pom.xml`
 ----
-<dependencies>
-    <dependency>
-        <groupId>io.helidon.config</groupId>
-        <artifactId>helidon-config-object-mapping</artifactId>
-    </dependency>
-</dependencies>
+<dependency>
+    <groupId>io.helidon.config</groupId>
+    <artifactId>helidon-config-object-mapping</artifactId>
+</dependency>
 ----
 
 === Adding the Mapping to the POJO
@@ -402,17 +349,13 @@ write a separate class to do the mapping or register it with the `Config.Builder
 for the config instance.
 
 
-
 === Writing a Builder Method and Class for the POJO
+
 You can limit the changes to the POJO class by adding a single
 `builder` method to the POJO which returns a builder class for the POJO:
 [source,java]
 ----
-public class WebConfig {
-    static WebConfigBuilder builder() {
-        return new WebConfigBuilder();
-    }
-}
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_10, indent=0]
 ----
 
 The builder class `WebConfigBuilder` is expected to be a Java Bean with
@@ -467,15 +410,15 @@ mechanism. This is no longer part of core Config module, as it depends on reflec
 [source,xml]
 .Config object mapping Dependency in `pom.xml`
 ----
-<dependencies>
-    <dependency>
-        <groupId>io.helidon.config</groupId>
-        <artifactId>helidon-config-object-mapping</artifactId>
-    </dependency>
-</dependencies>
+<dependency>
+    <groupId>io.helidon.config</groupId>
+    <artifactId>helidon-config-object-mapping</artifactId>
+</dependency>
 ----
 
-=== POJO as JavaBean [[pojoAsJavaBean]]
+[[pojoAsJavaBean]]
+=== POJO as JavaBean
+
 If your POJO target class is already a JavaBean -- or you can modify it
 to become one -- you might be able to avoid writing any explicit
 mapping code yourself.
@@ -489,7 +432,8 @@ object from the config data.
 By default, the system matches potential JavaBean property names with
 config keys in the configuration.
 
-Use the link:{config-mapping-javadoc-base-url}/io/helidon/config/objectmapping/Value.html[`Value`] annotation to control some of JavaBean processing for a given property.
+Use the link:{config-mapping-javadoc-base-url}/io/helidon/config/objectmapping/Value.html[`Value`] annotation to control some of
+JavaBean processing for a given property.
 
 .`Value` Annotation
 |===
@@ -509,58 +453,8 @@ introduction.
 [source,java]
 .Java bean to load `app` properties into via setters
 ----
-public class AppConfig {
-    private Instant timestamp;
-    private String greeting;
-    private int pageSize;
-    private List<Integer> basicRange;
-
-    public AppConfig() {                                          // <1>
-    }
-
-    public void setGreeting(String greeting) {                    // <2>
-        this.greeting = greeting;
-    }
-    public String getGreeting() {
-        return greeting;
-    }
-
-    @Value(key = "page-size",                              // <3>
-                  withDefault = "10")                             // <4>
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    @Value(key = "basic-range",                            // <5>
-                  withDefaultSupplier = BasicRangeSupplier.class) // <6>
-    public void setBasicRange(List<Integer> basicRange) {
-        this.basicRange = basicRange;
-    }
-    public List<Integer> getBasicRange() {
-        return basicRange;
-    }
-
-    @Transient                                             // <7>
-    public void setTimestamp(Instant timestamp) {
-        this.timestamp = timestamp;
-    }
-    public Instant getTimestamp() {
-        return timestamp;
-    }
-
-    public static class BasicRangeSupplier
-            implements Supplier<List<Integer>> {                  // <8>
-        @Override
-        public List<Integer> get() {
-            return List.of(-10, 10);
-        }
-    }
-}
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_11, indent=0]
 ----
-
 <1> Public no-parameter constructor.
 <2> Property `greeting` is not customized and will be set from the config node with
  the key `greeting`, if present in the config.
@@ -579,30 +473,16 @@ bean above.
 [source,java]
 .Map `app` config node into `AppConfig` class
 ----
-Config config = Config.create(classpath("application.conf"));
-
-AppConfig app = config.get("app")
-        .as(AppConfig.class)
-        .get();                               // <1>
-
-//assert that all values are loaded from file
-assert app.getGreeting().equals("Hello");
-assert app.getPageSize() == 20;
-assert app.getBasicRange().size() == 2
-        && app.getBasicRange().get(0) == -20
-        && app.getBasicRange().get(1) == 20;
-
-//assert that Transient property is not set
-assert app.getTimestamp() == null;                          // <2>
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_12, indent=0]
 ----
-
 <1> The config system finds no registered `ConfigMapper` for `AppConfig` and so
 applies the JavaBean pattern to convert the config to an `AppConfig` instance.
 <2> Because the bean property `timestamp` was marked as transient, the
 config system did not set it.
 
+[[builderAsJavaBean]]
+=== Builder as JavaBean
 
-=== Builder as JavaBean [[builderAsJavaBean]]
 If the target class includes the public static method `builder()` that returns any object,
 then the config system will make sure that the return type has a method `build()`
 which returns an instance of the target class. If so, the config system treats
@@ -618,81 +498,19 @@ You can augment the target class with the public static `builder()` method:
 [source,java]
 .JavaBean for `app` properties, via a `Builder`
 ----
-public class AppConfig {
-    private String greeting;
-    private int pageSize;
-    private List<Integer> basicRange;
-
-    private AppConfig(String greeting, int pageSize, List<Integer> basicRange) { // <1>
-        this.greeting = greeting;
-        this.pageSize = pageSize;
-        this.basicRange = basicRange;
-    }
-
-    public String getGreeting() {
-        return greeting;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public List<Integer> getBasicRange() {
-        return basicRange;
-    }
-
-    public static Builder builder() {                                            // <2>
-        return new Builder();
-    }
-
-    public static class Builder {                                                // <3>
-        private String greeting;
-        private int pageSize;
-        private List<Integer> basicRange;
-
-        private Builder() {
-        }
-
-        public void setGreeting(String greeting) {                               // <4>
-            this.greeting = greeting;
-        }
-
-        @Value(key = "page-size",
-                      withDefault = "10")
-        public void setPageSize(int pageSize) {                                  // <5>
-            this.pageSize = pageSize;
-        }
-
-        @Value(key = "basic-range",
-                      withDefaultSupplier = BasicRangeSupplier.class)
-        public void setBasicRange(List<Integer> basicRange) {                    // <6>
-            this.basicRange = basicRange;
-        }
-
-        public AppConfig build() {                                               // <7>
-            return new AppConfig(greeting, pageSize, basicRange);
-        }
-    }
-}
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_13, indent=0]
 ----
-
-<1> The target class's constructor can be `private` in this case because new instances are created
-from the inner class `Builder` which has access to `AppConfig`'s private members.
-<2> The target class contains `public static` method `builder()` which returns
-an object that itself exposes the method `AppConfig build()`, so the config system
-recognizes it.
-<3> The config system treats the `AppConfig.Builder` (not the enclosing
-target class) as a JavaBean.
-<4> The builder's property `greeting` is not customized and is set from config node with
+<1> The builder's property `greeting` is not customized and is set from config node with
  `greeting` key, if one exists.
-<5> The builder's property `pageSize` maps to the config key `page-size` and
+<2> The builder's property `pageSize` maps to the config key `page-size` and
 defaults to `10` if absent.
-<6> The builder's property `basicRange` maps to the config key `basic-range`
+<3> The builder's property `basicRange` maps to the config key `basic-range`
 and uses a `BasicRangeSupplier` instance to get a default value if needed.
-<7> Finally, the config system invokes the builder's public method `build()`,
+<4> Finally, the config system invokes the builder's public method `build()`,
 creating the new instance of `AppConfig` for use by the application.
 
-=== Target Class with Annotated Factory Method or Constructor [[pojoWithFactoryMethodOrConstructor]]
+[[pojoWithFactoryMethodOrConstructor]]
+=== Target Class with Annotated Factory Method or Constructor
 
 Another option is to annotate the parameters to a _factory method_ or to a constructor
 on the target class. You can add a _factory method_ to the target class, a `public static`
@@ -711,50 +529,13 @@ are not always available at runtime to map to config keys. (They might be `arg0`
 [source,java]
 .Target Class with Factory Method `from`
 ----
-public class AppConfig {
-    private final String greeting;
-    private final int pageSize;
-    private final List<Integer> basicRange;
-
-    private AppConfig(String greeting, int pageSize, List<Integer> basicRange) { // <1>
-        this.greeting = greeting;
-        this.pageSize = pageSize;
-        this.basicRange = basicRange;
-    }
-
-    public String getGreeting() {
-        return greeting;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public List<Integer> getBasicRange() {
-        return basicRange;
-    }
-
-    public static AppConfig from(                                                // <2>
-            @Value(key = "greeting")
-                    String greeting,                                             // <3>
-            @Value(key = "page-size",
-                          withDefault = "10")
-                    int pageSize,
-            @Value(key = "basic-range",
-                          withDefaultSupplier = BasicRangeSupplier.class)
-                    List<Integer> basicRange) {
-        return new AppConfig(greeting, pageSize, basicRange);
-    }
-}
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_14, indent=0]
 ----
-
-<1> The target class constructor can be `private` because the factory method on
-the same class has access to it.
-<2> The config system invokes the factory method `from(...)`, passing
+<1> The config system invokes the factory method `from(...)`, passing
 arguments it has fetched from the correspondingly-named config subtrees.
 The factory method returns the new initialized `AppConfig` instance.
 Note the consistent use of `@Value(key = "...")` on each parameter.
-<3> Because the property `greeting` does not specify a default value
+<2> Because the property `greeting` does not specify a default value
 the property is **mandatory** and must appear in the configuration source.
 Otherwise, the config system throws a `ConfigMappingException`.
 
@@ -765,21 +546,7 @@ parameters, and remove the now-unneeded `from` factory method.
 [source,java]
 .Target Class with Annotated Public Constructor
 ----
-public class AppConfig {
-    public AppConfig( // <1>
-        @Value(key = "greeting") // <2>
-                String greeting,
-        @Value(key = "page-size",
-                          withDefault = "10")
-                int pageSize,
-        @Value(key = "basic-range",
-                          withDefaultSupplier = BasicRangeSupplier.class)
-                List<Integer> basicRange) {
-        this.greeting = greeting;
-        this.pageSize = pageSize;
-        this.basicRange = basicRange;
-    }
-}
+include::{sourcedir}/se/config/PropertyMappingSnippets.java[tag=snippet_15, indent=0]
 ----
 <1> Constructor is `public`.
 <2> Each parameter has the `ConfigValue` annotation to at least specify the

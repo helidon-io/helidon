@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -62,11 +62,7 @@ Helidon WebServer.
 
 [source,java]
 ----
-    WebServer server = WebServer.builder()
-            .routing(Routing.builder()
-                            .register(GraphQlSupport.create(buildSchema()))
-                            .build())
-            .build();
+include::{sourcedir}/se/GraphQlSnippets.java[tag=snippet_1, indent=0]
 ----
 
 By default, `GraphQlSupport` will reserve  `/graphql` as the URI path to process queries.
@@ -75,28 +71,7 @@ application:
 
 [source,java]
 ----
-private static GraphQLSchema buildSchema() {
-    String schema = "type Query{\n"    <1>
-            + "hello: String \n"
-            + "helloInDifferentLanguages: [String] \n"
-            + "\n}";
-
-    SchemaParser schemaParser = new SchemaParser();
-    TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
-
-    // DataFetcher to return various hellos in difference languages  <2>
-    DataFetcher<List<String>> hellosDataFetcher = (DataFetcher<List<String>>) environment ->
-            List.of("Bonjour", "Hola", "Zdravstvuyte", "Nǐn hǎo", "Salve", "Gudday",
-                    "Konnichiwa", "Guten Tag");
-
-    RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()  <3>
-            .type("Query", builder -> builder.dataFetcher("hello", new StaticDataFetcher("world")))
-            .type("Query", builder -> builder.dataFetcher("helloInDifferentLanguages", hellosDataFetcher))
-            .build();
-
-    SchemaGenerator schemaGenerator = new SchemaGenerator();
-    return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);  <4>
-}
+include::{sourcedir}/se/GraphQlSnippets.java[tag=snippet_2, indent=0]
 ----
 
 The following is a description of each of these steps:

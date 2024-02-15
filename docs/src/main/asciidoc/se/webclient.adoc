@@ -85,9 +85,7 @@ additional services, you can use simple builder that allows you to customize the
 .Create a WebClient with simple builder:
 [source,java]
 ----
-WebClient client = WebClient.builder()
-        .baseUri("http://localhost")
-        .build();
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_1, indent=0]
 ----
 
 === Creating the Request
@@ -99,7 +97,8 @@ WebClient offers a set of request methods that are used to specify the type of a
 * `put()`
 * `method(String methodName)`
 
-Check out link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClient.html[HttpClient] API to learn more about request methods. These methods will create a new instance of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest] which can then be configured to add optional settings that will customize the behavior of the request.
+Check out link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClient.html[HttpClient] API to learn more about
+request methods. These methods will create a new instance of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest] which can then be configured to add optional settings that will customize the behavior of the request.
 
 === Customizing the Request
 
@@ -141,10 +140,7 @@ Each of the methods will provide a way to allow response to be retrieved in a pa
 .Execute a simple GET request to endpoint and receive a String response:
 [source,java]
 ----
-ClientResponseTyped<String> response = webClient.get()
-                .path("/endpoint")
-                .request(String.class);
-String entityString = response.entity();
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_2, indent=0]
 ----
 
 === Protocol Used
@@ -155,9 +151,7 @@ WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the ru
 * A specific protocol can be explicitly selected by calling `HttpClientRequest#protocolId(String)`.
 [source,java]
 ----
-String result = webClient.get()
-                         .protocolId("http/1.1")
-                         .requestEntity(String.class);
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_3, indent=0]
 ----
 * If `HTTP/2` is used, an upgrade attempt will be performed. If it fails, the client falls-back to `HTTP/1.1`.
 * The parameter `prior-knowledge` can be defined using `HTTP/2` protocol configuration. Please refer to <<Setting Protocol configuration>> on how to customize `HTTP/2`. In such a case, `prior-knowledge` will be used and fail if it is unable to switch to `HTTP/2`.
@@ -204,11 +198,7 @@ Users can also create their own Custom Media Support library and make them work 
 
 [source,java]
 ----
-WebClient webclient = WebClient.builder()
-        .mediaContext(MediaContext.builder()
-                .addMediaSupport(CustomMediaSupport.create())   <1>
-                .build())
-        .build()
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Register CustomMedia support from the WebClient.
 
@@ -260,30 +250,26 @@ include::{rootdir}/config/io_helidon_webclient_http2_Http2ClientProtocolConfig.a
 
 [source,java]
 ----
-Config config = Config.create();
-WebClient client = WebClient.builder()
-        .baseUri("http://localhost")
-        .config(config.get("client"))
-        .build();
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_5, indent=0]
 ----
 
 === Example of a WebClient YAML Configuration
 
-[source, java]
+[source, yaml]
 ----
 client:
   connect-timeout-millis: 2000
   read-timeout-millis: 2000
-  follow-redirects: true <1>
+  follow-redirects: true # <1>
   max-redirects: 5
-  cookie-manager: <2>
+  cookie-manager: # <2>
     automatic-store-enabled: true
     default-cookies:
       flavor3: strawberry
       flavor4: raspberry
-  default-headers: <3>
-    Accept: '"application/json","text/plain"'
-  services: <4>
+  default-headers: # <3>
+    Accept: '"application/json", "text/plain"'
+  services: # <4>
     metrics:
       - methods: ["PUT", "POST", "DELETE"]
         type: METER
@@ -302,17 +288,17 @@ client:
         name-format: "wc.counter.%1$s.error"
         description: "Counter of failed PUT, POST and DELETE requests"
     tracing:
-  protocol-configs: <5>
+  protocol-configs: # <5>
     http_1_1:
       max-header-size: 20000
       validate-request-headers: true
     h2:
       prior-knowledge: true
-  proxy: <6>
+  proxy: # <6>
     host: "hostName"
     port: 80
     no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"]
-  tls: <7>
+  tls: # <7>
     trust:
       keystore:
         passphrase: "password"
@@ -338,27 +324,18 @@ Configure Proxy setup either programmatically or via the Helidon configuration f
 Proxy can be set directly from WebClient builder.
 [source,java]
 ----
-Proxy proxy = Proxy.builder()
-                .type(Proxy.ProxyType.HTTP)
-                .host(PROXY_HOST)
-                .port(PROXY_PORT)
-                .build();
-WebClient webClient = WebClient.builder()
-         .proxy(proxy)
-         .build();
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_6, indent=0]
 ----
 
 Alternative is to set proxy directly from the request via  `HttpClientRequest`.
 
 [source,java]
 ----
-// Using System Proxy
-Proxy proxy = Proxy.create();
-System.setProperty("http.proxyHost", PROXY_HOST);
-System.setProperty("http.proxyPort", PROXY_PORT);
-System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1|10.*.*.*|*.example.com|etc|" + TARGET_HOST);
-webClient.get("/proxiedresource").proxy(proxy).request()
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_7,indent=0]
 ----
+
+<1> Proxy instance configured using system settings (environment variables and system properties)
+<2> Configure the proxy per client request
 
 ==== Configuring Proxy in the config file
 
@@ -367,7 +344,7 @@ Proxy can also be configured in WebClient through the `application.yaml` configu
 [source,yaml]
 .WebClient Proxy configuration in `application.yaml`
 ----
-webclient:
+client:
   proxy:
     host: "hostName"
     port: 80
@@ -378,9 +355,10 @@ Then, in your application code, load the configuration from that file.
 [source,java]
 .WebClient initialization using the `application.yaml` file located on the classpath
 ----
-Config config = Config.create();
-WebClient webClient = WebClient.create(config.get("webclient"));
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_8,indent=0]
 ----
+<1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
+<2> Passing the client configuration node
 
 === WebClient TLS Setup
 
@@ -392,15 +370,7 @@ One way to configure TLS in WebClient is in your application code as shown below
 
 [source,java]
 ----
-WebClient.builder()
-         .tls(Tls.builder()
-                     .trust(trust -> trust
-                             .keystore(store -> store
-                                     .passphrase("password")
-                                     .trustStore(true)
-                                     .keystore(Resource.create("client.p12"))))
-                     .build())
-         .build();
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_9,indent=0]
 ----
 
 ==== Configuring TLS in the config file
@@ -410,7 +380,7 @@ Another way to configure TLS in WebClient is through the `application.yaml` conf
 [source,yaml]
 .WebClient TLS configuration in `application.yaml`
 ----
-webclient:
+client:
   tls:
     trust:
       keystore:
@@ -427,9 +397,10 @@ In the application code, load the settings from the configuration file.
 [source,java]
 .WebClient initialization using the `application.yaml` file located on the classpath
 ----
-Config config = Config.create();
-WebClient webClient = WebClient.create(config.get("webclient"));
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_8,indent=0]
 ----
+<1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
+<2> Passing the client configuration node
 
 === Adding Service to WebClient
 
@@ -470,19 +441,10 @@ Services can be added in WebClient as shown in the code below.
 
 [source,java]
 ----
-//Creates new metric which will count all GET requests and has format of example.metric.GET.<host-name>
-WebClientService clientService = WebClientMetrics.counter()
-        .methods(Method.GET)
-        .nameFormat("example.metric.%1$s.%2$s")
-        .build();
-
-//This newly created metric now needs to be registered to WebClient.
-WebClient client = WebClient.builder()
-        .baseUri(url)
-        .config(config)
-        .addService(clientService)
-        .build();
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_10,indent=0]
 ----
+<1> Creates new metric which will count all GET requests and has format of `example.metric.GET.<host-name>`
+<2> Register the service in the client instance
 
 ==== Adding service in the config file
 
@@ -511,9 +473,11 @@ Then, in your application code, load the configuration from that file.
 [source,java]
 .WebClient initialization using the `application.yaml` file located on the classpath
 ----
-Config config = Config.create();
-WebClient webClient = WebClient.create(config.get("webclient"));
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_8,indent=0]
 ----
+
+<1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
+<2> Passing the client configuration node
 
 === Setting Protocol configuration
 Individual protocols can be customized using the `protocol-config` parameter.
@@ -524,15 +488,7 @@ Below is an example of customizing `HTTP/1.1` protocol in the application code.
 
 [source,java]
 ----
-WebClient client = WebClient.builder()
-    .baseUri(url)
-    .config(config.get("client"))
-    .addProtocolConfig(Http1ClientProtocolConfig.builder()
-                    .defaultKeepAlive(false)
-                    .validateRequestHeaders(true)
-                    .validateResponseHeaders(false)
-                    .build())
-    .build();
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_11,indent=0]
 ----
 
 ==== Setting up protocol configuration in the config file
@@ -555,11 +511,11 @@ Then, in your application code, load the configuration from that file.
 [source,java]
 .WebClient initialization using the `application.yaml` file located on the classpath
 ----
-Config config = Config.create();
-WebClient webClient = WebClient.create(config.get("webclient"));
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_8,indent=0]
 ----
 
-
+<1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
+<2> Passing the client configuration node
 
 == Reference
 

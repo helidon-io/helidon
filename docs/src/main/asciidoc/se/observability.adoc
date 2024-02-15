@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -308,7 +308,7 @@ Feature is similar to `HttpService` but gives more freedom in setup.
 Main difference is that a feature can add `Filter` filters and it cannot be  registered on a path (that is left to the discretion of the feature developer).
 
 * Features are not registered immediately - each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher weighted features are registered first.
-* This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
+* This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc).
 
 
 == Reference

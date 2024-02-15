@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
+
 :metric: meter
 :metrics: meters
 :metric_uc: Meter
@@ -42,15 +43,17 @@ The generated source code is already configured for both metrics and health chec
 [source,xml]
 .Metrics dependencies in the generated `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-metrics</artifactId> <!--1-->
-</dependency>
-<dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-system-meters</artifactId>     <!--2-->
-    <scope>runtime</scope>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.webserver.observe</groupId>
+        <artifactId>helidon-webserver-observe-metrics</artifactId> <!--1-->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.metrics</groupId>
+        <artifactId>helidon-metrics-system-meters</artifactId>     <!--2-->
+        <scope>runtime</scope>
+    </dependency>
+</dependencies>
 ----
 <1> Includes the Helidon observability component for metrics and, as transitive dependencies, the Helidon neutral metrics API and a full-featured implementation of the API.
 <2> Includes the built-in meters.
@@ -92,7 +95,7 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=built-in-metrics-discussion]
 ////
 Controlling Metrics section
 
-For the SE guide, we stitch in the shared content about controlling metrics around SE-specific content that is not shared. It makes for a bit choppy-looking source here but it renders just fine and lets us easily share the content that's common between SE and MP.
+For the SE guide, we stitch in the shared content about controlling metrics around SE-specific content that is not shared. It makes for a bit choppy-looking source here, but it renders just fine and lets us easily share the content that's common between SE and MP.
 
 ////
 include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-intro]
@@ -105,18 +108,7 @@ A Helidon SE application can disable metrics processing programmatically.
 [source,java]
 .Disable all metrics behavior
 ----
-    ObserveFeature observe = ObserveFeature.builder()   // <1>
-        .addObserver(metricsObserer.builder()           // <2>
-                .enabled(false)                         // <3>
-                .build())                               // <4>
-        .build();                                       // <5>
-
-    WebServer server = WebServer.builder()              // <6>
-        .config(Config.global().get("server"))
-        .addFeature(observe)
-        .routing(Main::routing)
-        .build()
-        .start();
+include::{rootdir}/../java/io/helidon/docs/se/guides/MetricsSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Begin preparing the `ObserveFeature`.
 <2> Begin preparing the `MetricsObserver`.
@@ -136,28 +128,7 @@ Your Helidon SE application can also control the KPI settings programmatically.
 [source,java]
 .Assign KPI metrics behavior from code
 ----
-    KeyPerformanceIndicatorMetricsConfig kpiConfig =
-        KeyPerformanceIndicatorMetricsConfig.builder()              // <1>
-                .extended(true)                                     // <2>
-                .longRunningRequestThreshold(Duration.ofSeconds(4)) // <3>
-                .build();
-
-    MetricsObserver metrics = MetricsObserver.builder()
-                .metricsConfig(MetricsConfig.builder()              // <4>
-                                       .keyPerformanceIndicatorMetricsConfig(kpiConfig)) // <5>
-                .build();
-
-    ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(metrics)                                       // <6>
-        .build();
-
-    WebServer server = WebServer.builder()                          // <7>
-        .config(Config.global().get("server"))
-        .addFeature(observe)
-        .routing(Main::routing)
-        .build()
-        .start();
+include::{rootdir}/../java/io/helidon/docs/se/guides/MetricsSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Create a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html[`KeyPerformanceIndicatorMetricsConfig]` instance (via its link:{metrics-javadoc-base-url}/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html[`Builder`]) with non-default values.
 <2> Enabled extended KPI {metrics}.
@@ -188,66 +159,17 @@ The `Counter` {metric} is a monotonically increasing number. The following examp
 [source,java]
 .Create a new class named `GreetingCards` with the following code:
 ----
-package io.helidon.examples.quickstart.se;
-
-import java.util.Collections;
-
-import io.helidon.metrics.api.Counter;                      // <1>
-import io.helidon.metrics.api.Metrics;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-
-public class GreetingCards implements HttpService {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    private final Counter cardCounter;                      // <2>
-
-    GreetingCards() {
-        cardCounter = Metrics.globalRegistry()
-                .getOrCreate(Counter.builder("cardCount")
-                        .description("Counts card retrievals")); // <3>
-    }
-
-    @Override
-    public void routing(HttpRules rules) {
-        rules.get("/", this::getDefaultMessageHandler);
-    }
-
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-        cardCounter.increment();                            // <4>
-        sendResponse(response, "Here are some cards ...");
-    }
-
-    private void sendResponse(ServerResponse response, String msg) {
-        JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
-        response.send(returnObject);
-    }
-}
+include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_3, indent=0]
 ----
-<1> Import metrics types.
-<2> Declare a `Counter` member field.
-<3> Create and register the `Counter` {metric} in the global meter registry`.  This `Counter` will exist for the lifetime of
+<1> Declare a `Counter` member field.
+<2> Create and register the `Counter` {metric} in the global meter registry`.  This `Counter` will exist for the lifetime of
 the application.
-<4> Increment the count.
+<3> Increment the count.
 
 [source,java]
-.Update the `Main.routing` method as follows:
+.Update the `routing` method in the main class as follows:
 ----
-    static void routing(HttpRouting.Builder routing) {
-            Config config = Config.global();
-
-            routing
-                   .register("/greet", new GreetService())
-                   .register("/cards", new GreetingCards())                     // <1>
-                   .get("/simple-greet", (req, res) -> res.send("Hello World!"));
-        }
+include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Add the `GreetingCards` service to the routing.  Helidon routes any REST requests with
 the `/cards` root path to the `GreetingCards` service.
@@ -259,7 +181,7 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json" 'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
-[source,json]
+[source,hocon]
 .JSON response:
 ----
 {
@@ -280,54 +202,12 @@ endpoint is called, the code updates the `Timer` with additional timing informat
 [source,java]
 .Replace the `GreetingCards` class with the following code:
 ----
-package io.helidon.examples.quickstart.se;
-
-import java.util.Collections;
-
-import io.helidon.metrics.api.Metrics;                      // <1>
-import io.helidon.metrics.api.Timer;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-
-public class GreetingCards implements HttpService {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private final Timer cardTimer;                          // <2>
-
-    GreetingCards() {
-        cardTimer = Metrics.globalRegistry()
-                .getOrCreate(Timer.builder("cardTimer")     // <3>
-                                     .description("Times card retrievals"));
-    }
-
-    @Override
-    public void routing(HttpRules rules) {
-        rules.get("/", this::getDefaultMessageHandler);
-    }
-
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-        Timer.Sample timerSample = Timer.start();           // <4>
-        sendResponse(response, "Here are some cards ...");
-        response.whenSent(() -> timerSample.stop(cardTimer)); // <5>
-    }
-
-    private void sendResponse(ServerResponse response, String msg) {
-        JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
-        response.send(returnObject);
-    }
-}
+include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_5, indent=0]
 ----
-<1> Import relevant metrics classes.
-<2> Declare a `Timer` member field.
-<3> Create and register the `Timer` metric in the global meter registry.
-<4> Create a timer sample which, among other things, automatically records the starting time.
-<5> Arrange for the timer sample to be stopped and applied to the `cardTimer` once Helidon sends the response to the client.
+<1> Declare a `Timer` member field.
+<2> Create and register the `Timer` metric in the global meter registry.
+<3> Create a timer sample which, among other things, automatically records the starting time.
+<4> Arrange for the timer sample to be stopped and applied to the `cardTimer` once Helidon sends the response to the client.
 
 
 [source,bash,subs="attributes+"]
@@ -369,57 +249,11 @@ the `/cards` endpoint is invoked.
 [source,java]
 .Replace the `GreetingCards` class with the following code:
 ----
-package io.helidon.examples.quickstart.se;
-
-import java.util.Collections;
-import java.util.Random;
-
-import io.helidon.metrics.api.DistributionSummary;          // <1>
-import io.helidon.metrics.api.Metrics;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-
-public class GreetingCards implements HttpService {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private final DistributionSummary cardSummary;          // <2>
-
-    GreetingCards() {
-        cardSummary = Metrics.globalRegistry()
-                .getOrCreate(DistributionSummary.builder("cardDist")
-                                     .description("random card distribution")); // <3>
-    }
-
-    @Override
-    public void routing(HttpRules rules) {
-        rules.get("/", this::getDefaultMessageHandler);
-    }
-
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-        Random r = new Random();                            // <4>
-        for (int i = 0; i < 1000; i++) {
-            cardSummary.record(1 + r.nextDouble());
-        }
-        sendResponse(response, "Here are some cards ...");
-
-    }
-
-    private void sendResponse(ServerResponse response, String msg) {
-        JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
-        response.send(returnObject);
-    }
-}
+include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_6, indent=0]
 ----
-<1> Import relevant metrics classes.
-<2> Declare a `DistributionSummary` member field.
-<3> Create and register the `DistributionSummary` {metric} in the global meter registry
-<4> Update the distribution summary with a random number multiple times for each request.
+<1> Declare a `DistributionSummary` member field.
+<2> Create and register the `DistributionSummary` {metric} in the global meter registry
+<3> Update the distribution summary with a random number multiple times for each request.
 
 
 [source,bash,subs="attributes+"]
@@ -459,48 +293,7 @@ how a `Gauge` is used to get the current temperature.
 [source,java]
 .Replace the `GreetingCards` class with the following code:
 ----
-package io.helidon.examples.quickstart.se;
-
-import java.util.Collections;
-import java.util.Random;
-
-import io.helidon.metrics.api.Gauge;
-import io.helidon.metrics.api.Metrics;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-
-public class GreetingCards implements HttpService {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    GreetingCards() {
-        Random r = new Random();
-        Metrics.globalRegistry()
-                .getOrCreate(Gauge.builder("temperature",
-                                           () -> r.nextDouble(100.0))
-                                     .description("Ambient temperature"));      // <1>
-    }
-
-    @Override
-    public void routing(HttpRules rules) {
-        rules.get("/", this::getDefaultMessageHandler);
-    }
-
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-        sendResponse(response, "Here are some cards ...");
-    }
-
-    private void sendResponse(ServerResponse response, String msg) {
-        JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
-        response.send(returnObject);
-    }
-}
+include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Register the `Gauge`, passing a `Supplier<Double>` which furnishes a random temperature from 0 to 100.0 each time the metrics system interrogates the gauge.
 
@@ -511,13 +304,12 @@ public class GreetingCards implements HttpService {
 curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application
 ----
 
-[source,json]
+[source,hocon]
 .JSON response:
 ----
 {
-  "temperature": 46.582132737739066        // <1>
+  "temperature": 46.582132737739066 // <1>
 }
-
 ----
 <1> The current (random) temperature. Accessing the endpoint again returns a different value.
 

@@ -26,6 +26,8 @@ ifndef::attributes-included[]
 :helidon-version: 4.0.0-SNAPSHOT
 :helidon-version-is-release: false
 
+:sourcedir: {rootdir}/../java/io/helidon/docs
+
 ifeval::["{helidon-version-is-release}" != "true"]
 :helidon-github-tree-url: https://github.com/oracle/helidon/tree/main
 endif::[]
@@ -51,7 +53,7 @@ endif::[]
 :version-lib-microprofile-reactive-messaging-api: 3.0
 :version-lib-microprofile-rs-operators-api: 3.0
 :version-lib-microprofile-rest-client: 3.0
-:version.lib.microprofile-telemetry-tck: 1.0
+:version-lib-microprofile-telemetry-tck: 1.0
 :version-lib-microprofile-telemetry: 1.0
 :version-lib-microprofile-tracing: 3.0
 
@@ -212,6 +214,7 @@ endif::[]
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
 :prometheus-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.prometheus
 :mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
+:mp-server-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.server
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
 :mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi

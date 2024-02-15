@@ -60,18 +60,22 @@ Helidon has a set of built-in health checks:
 The following example shows how to use the built-in health checks.  These examples are all executed
 from the root directory of your project (helidon-quickstart-se).
 
-Notice that the `pom.xml` file in the generated project already contains dependencies for Helidon's health component and for the built-in health checks.
+Notice that the `pom.xml` file in the generated project already contains dependencies for Helidon's health component and for the
+ built-in health checks.
+
 [source,xml]
 .Generated dependencies related to health
 ----
-<dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-health</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health-checks</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.webserver.observe</groupId>
+        <artifactId>helidon-webserver-observe-health</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.health</groupId>
+        <artifactId>helidon-health-checks</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 Handling health checks is part of Helidon's observability support.
@@ -92,14 +96,17 @@ curl -v http://localhost:8080/observe/health
 ----
 
 The verbose `curl` output reports the HTTP status:
-[listing]
+[source,text]
 ----
 < HTTP/1.1 204 No Content
 ----
 
 The successful status means all health checks reported `UP`.
 
-To see the details about each health check, add the following `features` configuration fragment in the `server` section of the `application.yaml`. Make sure the `features` key is at the same level as `port` and `host` that are already in the file.
+To see the details about each health check, add the following `features` configuration fragment in the `server` section of the
+ `application.yaml`.
+Make sure the `features` key is at the same level as `port` and `host` that are already in the file.
+
 [source,yaml]
 .Configuration fragment to include details in the health output (nested under `server`)
 ----
@@ -129,12 +136,12 @@ In the other window access the health endpoint again.
 curl -v http://localhost:8080/observe/health
 ----
 This time the `curl` output shows not only the HTTP status--as 200 instead of 204 because the response now contains data--but also the detailed output for all health checks.
-[source,json]
+[source,hocon]
 .Health check details
 ----
 {
-  "status": "UP",              # <1>
-  "checks": [                  # <2>
+  "status": "UP", // <1>
+  "checks": [ // <2>
     {
       "name": "diskSpace",
       "status": "UP",
@@ -180,43 +187,20 @@ The following trivial but illustrative example adds a custom start-up check that
 
 
 [source,java]
-.Updated `Main.main`, augmenting the creation of `WebServer` instance with a custom health check
+.Updated `Main#main`, augmenting the creation of `WebServer` instance with a custom health check
 ----
-AtomicLong serverStartTime = new AtomicLong();  // <1>
-
-ObserveFeature o = ObserveFeature.builder()
-        .config(config.get("server.features.observe")) // <2>
-        .addObserver(HealthObserver.builder() // <3>
-                             .details(true) // <4>
-                             .addCheck(() -> HealthCheckResponse.builder() // <5>
-                                         .status(System.currentTimeMillis() - serverStartTime.get() >= 8000)
-                                         .detail("time", System.currentTimeMillis())
-                                         .build(),
-                                       HealthCheckType.STARTUP,
-                                       "warmedUp")
-                             .build()) // <6>
-        .build();
-
-    WebServer server = WebServer.builder()
-            .config(config.get("server"))
-            .addFeature(observe)            // <7>
-            .routing(Main::routing)
-            .build()
-            .start();
-
-    serverStartTime.set(System.currentTimeMillis()); // <8>
-
+include::{sourcedir}/se/guides/HealthSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Declare a variable for holding the server start-up time. (This is set later in the code.)
-<2> Find and apply configuration for observability observers _other_ than health (because we are about to create our own custom `HealthObserver`).
-<3> Begin preparing the custom `HealthObserver` according to this app's specific needs.
-<4> Turn on detailed output in HTTP responses to the health endpoint.
-<5> Add a custom start-up health check:
+<2> Begin preparing the custom `HealthObserver` according to this app's specific needs.
+<3> Turn on detailed output in HTTP responses to the health endpoint.
+<4> Add a custom start-up health check:
    * Compute the status for the response according to whether the server has been up for at least eight seconds.
    * Add a detail to the response reporting the time at which the health check was queried.
    * Set the health check type as `STARTUP`.
    * Set the health check name to `"warmedUp"`.
-<6> Build the `HealthObserver` for addition to the `ObserveFeature`.
+<5> Find and apply configuration for observability observers _other_ than health (because we are about to create our own custom `HealthObserver`).
+<6> Add the `HealthObserver` to the `ObserveFeature`.
 <7> Add the `ObserveFeature` instance as a feature to the webserver.
 <8> Record when the server has actually started.
 
@@ -252,9 +236,9 @@ If you access the health endpoint before the server has been up for eight second
       "data": {
         "time": 1702068978353
       }
-    },
-...
-
+    }
+  ]
+}
 ----
 The built-in health checks (not shown in the example output) all report `UP` but the new custom start-up health check reports `DOWN` because the server has been up only a short time.
 
@@ -277,14 +261,16 @@ This time, `curl` reports `200 OK` for the response status and displays differen
       "data": {
         "time": 1702069379717
       }
-    },
+    }
+  ]
+}
 ----
 
 The example code includes the built-in health checks in Helidon's overall health assessment of the application. To exclude them invoke the `HealthObserver.Builder` `useSystemServices` method (for example, just after invoking `details` on the builder).
 [source,java]
 .Disable all built-in health checks
 ----
-         .useSystemServices(false)
+include::{sourcedir}/se/guides/HealthSnippets.java[tag=snippet_2, indent=0]
 ----
 Alternatively, you could instead remove the dependency on the `helidon-health-checks` component from the `pom.xml` file.
 
@@ -334,15 +320,7 @@ Customize the URL path for health checks by invoking the `endpoint` method on th
 [source,java]
 .Set a custom endpoint path
 ----
-ObserveFeature observe = ObserveFeature.builder()
-     .config(config.get("server.features.observe"))
-     .addObserver(HealthObserver.builder()
-         .endpoint("/myhealth") // <1>
-         .details(true)
-         ...
-         .build()
-     ...
-...
+include::{sourcedir}/se/guides/HealthSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Changes the health endpoint path to `/myhealth`.
 
@@ -360,24 +338,10 @@ In addition to preparing the health observer builder with hard-coded settings, y
 
 The generated `Main` class in the application already creates a `Config` object for the top-level config node. Using the following code to create the observe feature also applies any health-related configuration settings to the custom health observer. Notice the added line just before the `HealthObserver.Build` `build()` invocation near the end of the example code.
 
-[source.java]
+[source,java]
 .Apply health configuration to your custom health observer
 ----
-ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(HealthObserver.builder()
-                             .endpoint("/myhealth")
-                             .details(true)
-                             .addCheck(() -> HealthCheckResponse.builder()
-                                         .status(System.currentTimeMillis() - serverStartTime.get() >= 8000)
-                                         .detail("time", System.currentTimeMillis())
-                                         .build(),
-                                       HealthCheckType.STARTUP,
-                                       "warmedUp")
-                             .config(config.get("server.features.observe.observers.health")) // <1>
-                             .build()
-        )
-        .build();
+include::{sourcedir}/se/guides/HealthSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Find and apply any health-related settings from configuration at the `server.features.observe.observers.health` config key.
 
@@ -395,34 +359,13 @@ health endpoints for the Kubernetes liveness, readiness, and startup probes.
 [source,java]
 .Add a `readyTime` variable to the `Main` class:
 ----
-private static AtomicLong readyTime = new AtomicLong(0);
+include::{sourcedir}/se/guides/HealthSnippets.java[tag=snippet_5, indent=0]
 ----
 
 [source,java]
-.Change the `HealthObserver` builder in the `Main.main` method to use new built-in liveness checks and custom liveness, readiness, and startup checks:
+.Change the `HealthObserver` builder in the `Main#main` method to use new built-in liveness checks and custom liveness, readiness, and startup checks:
 ----
-ObserveFeature observe = ObserveFeature.builder()
-    .config(config.get("server.features.observe"))
-    .addObserver(HealthObserver.builder()
-    .useSystemServices(true)                      // <1>
-    .addCheck(() -> HealthCheckResponse.builder()
-             .status(readyTime.get() != 0)
-             .detail("time", readyTime.get())
-             .build(), HealthCheckType.READINESS) // <2>
-    .addCheck(() -> HealthCheckResponse.builder()
-             .status(readyTime.get() != 0
-                     && Duration.ofMillis(System.currentTimeMillis()
-                                             - readyTime.get())
-                                 .getSeconds() >= 3)
-             .detail("time", readyTime.get())
-             .build(), HealthCheckType.STARTUP)   // <3>
-    .addCheck(() -> HealthCheckResponse.builder()
-            .status(HealthCheckResponse.Status.UP)
-            .detail("time", System.currentTimeMillis())
-            .build(), HealthCheckType.LIVENESS)   // <4>
-    .build())
-.build();
-
+include::{sourcedir}/se/guides/HealthSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Add built-in health checks.
 <2> Add a custom readiness check.
@@ -451,7 +394,7 @@ docker build -t helidon-quickstart-se .
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-health // <1>
+  name: helidon-health # <1>
   labels:
     app: helidon-health
 spec:
@@ -466,7 +409,7 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: helidon-health // <2>
+  name: helidon-health # <2>
 spec:
   replicas: 1
   selector:
@@ -486,24 +429,24 @@ spec:
             - containerPort: 8080
           livenessProbe:
             httpGet:
-              path: /health/live // <3>
+              path: /health/live # <3>
               port: 8080
-            initialDelaySeconds: 5 // <4>
+            initialDelaySeconds: 5 # <4>
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health/ready // <5>
+              path: /health/ready # <5>
               port: 8080
-            initialDelaySeconds: 5 // <6>
+            initialDelaySeconds: 5 # <6>
             periodSeconds: 2
             timeoutSeconds: 3
           startupProbe:
             httpGet:
-              path: /health/started // <7>
+              path: /health/started # <7>
               port: 8080
-            initialDelaySeconds: 8 // <8>
+            initialDelaySeconds: 8 # <8>
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
@@ -534,7 +477,7 @@ kubectl get service/helidon-health
 [source,bash]
 ----
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s // <1>
+helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s # <1>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `30116`.
 

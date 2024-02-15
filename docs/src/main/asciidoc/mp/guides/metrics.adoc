@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -129,42 +129,13 @@ the `/cards` endpoint is called.
 [source,java]
 .Create a new class `GreetingCards` with the following code:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import java.util.Collections;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-
-@Path("/cards") //<1>
-@RequestScoped // <2>
-public class GreetingCards {
-
-  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "any-card")  // <3>
-  public JsonObject anyCard() throws InterruptedException {
-    return createResponse("Here are some random cards ...");
-  }
-
-  private JsonObject createResponse(String msg) {
-    return JSON.createObjectBuilder().add("message", msg).build();
-  }
-}
+include::{sourcedir}/mp/guides/MetricsSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> This class is annotated with `Path` which sets the path for this resource
 as `/cards`.
 <2> The `@RequestScoped` annotation defines that this bean is
 request scoped.  The request scope is active only for the duration of
-one web service invocation and it is destroyed at the end of that
+one web service invocation, and it is destroyed at the end of that
 invocation.
 <3> The annotation `@Counted` will register a `Counter` metric for this method, creating it if needed.
 The counter is incremented each time the anyCards method is called.  The `name` attribute is optional.
@@ -177,7 +148,7 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
-[source,json]
+[source,hocon]
 .JSON response (partial):
 ----
 {
@@ -200,40 +171,7 @@ Note that when using multiple annotations on a method, you *must* give the metri
 [source,java]
 .Replace the `GreetingCards` class with the following code:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import java.util.Collections;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Timed;
-
-@Path("/cards")
-@RequestScoped
-public class GreetingCards {
-
-  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "cardCount", absolute = true) //<1>
-  @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) //<2>
-  public JsonObject anyCard() {
-    return createResponse("Here are some random cards ...");
-  }
-
-  private JsonObject createResponse(String msg) {
-    return JSON.createObjectBuilder().add("message", msg).build();
-  }
-}
-
+include::{sourcedir}/mp/guides/MetricsSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Specify a custom name for the `Counter` metric and set `absolute=true` to remove the path prefix from the name.
 <2> Add the `@Timed` annotation to get a `Timer` metric.
@@ -262,7 +200,7 @@ curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?sco
     "p0.98": 0.003014144,
     "p0.99": 0.003014144,
     "p0.999": 0.003014144
-  }
+  },
   "cardCount": 2
 }
 ----
@@ -275,52 +213,7 @@ demonstrated below.
 [source,java]
 .Replace the `GreetingCards` class with the following code:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import java.util.Collections;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-
-@Path("/cards")
-@RequestScoped
-public class GreetingCards {
-
-  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "anyCard", absolute = true)
-  public JsonObject anyCard() throws InterruptedException {
-    return createResponse("Here are some cards ...");
-  }
-
-  @GET
-  @Path("/birthday")
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "specialEventCard", absolute = true)  // <1>
-  public JsonObject birthdayCard() throws InterruptedException {
-    return createResponse("Here are some birthday cards ...");
-  }
-
-  @GET
-  @Path("/wedding")
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "specialEventCard", absolute = true)  // <2>
-  public JsonObject weddingCard() throws InterruptedException {
-    return createResponse("Here are some wedding cards ...");
-  }
-
-  private JsonObject createResponse(String msg) {
-    return JSON.createObjectBuilder().add("message", msg).build();
-  }
-}
+include::{sourcedir}/mp/guides/MetricsSnippets.java[tag=snippet_3, indent=0]
 ----
 <1>  The `/birthday` endpoint uses a `Counter` metric, named `specialEventCard`.
 <2>  The `/wedding` endpoint uses the same `Counter` metric, named `specialEventCard`.
@@ -335,12 +228,12 @@ curl  http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
-[source,json]
-.JSON response (partial)`:
+[source,hocon]
+.JSON response (partial):
 ----
 {
   "anyCard": 1,
-  "specialEventCard": 2  // <1>
+  "specialEventCard": 2 // <1>
 }
 ----
 <1> Notice that `specialEventCard` count is two, since you accessed `/cards/wedding` and `/cards/birthday`.
@@ -354,45 +247,7 @@ needed to aggregate the counts, but they are left in the example to demonstrate 
 [source,java]
 .Replace the `GreetingCards` class with the following code:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import java.util.Collections;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-
-@Path("/cards")
-@RequestScoped
-@Counted(name = "totalCards") // <1>
-public class GreetingCards {
-
-  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(absolute = true) // <2>
-  public JsonObject anyCard() throws InterruptedException {
-    return createResponse("Here are some random cards ...");
-  }
-
-  @Path("/birthday")
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(absolute = true) // <3>
-  public JsonObject birthdayCard() throws InterruptedException {
-    return createResponse("Here are some birthday cards ...");
-  }
-
-  private JsonObject createResponse(String msg) {
-    return JSON.createObjectBuilder().add("message", msg).build();
-  }
-}
+include::{sourcedir}/mp/guides/MetricsSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> This class is annotated with `@Counted`, which aggregates count data from all the method that have a `Count` annotation.
 <2> Use `absolute=true` to remove path prefix for method-level annotations.
@@ -406,13 +261,13 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
-[source,json]
+[source,hocon]
 .JSON response (partial):
 ----
 {
   "anyCard": 1,
   "birthdayCard": 1,
-  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2  // <1>
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2 // <1>
 }
 ----
 <1> The `totalCards` count is a total of all the method-level `Counter` metrics.  Class level metric names are always
@@ -429,61 +284,7 @@ The following example shows how to use a field-level `Counter` metric to track c
 [source,java]
 .Replace the `GreetingCards` class with the following code:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import java.util.Collections;
-import java.util.Random;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Metric;
-
-@Path("/cards")
-@RequestScoped
-@Counted(name = "totalCards")
-public class GreetingCards {
-
-  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-  @Inject
-  @Metric(name = "cacheHits", absolute = true) // <1>
-  private Counter cacheHits;
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(absolute = true)
-  public JsonObject anyCard() throws InterruptedException {
-    updateStats(); // <2>
-    return createResponse("Here are some random cards ...");
-  }
-
-  @Path("/birthday")
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(absolute = true)
-  public JsonObject birthdayCard() throws InterruptedException {
-    updateStats();  // <3>
-    return createResponse("Here are some birthday cards ...");
-  }
-
-  private JsonObject createResponse(String msg) {
-    return JSON.createObjectBuilder().add("message", msg).build();
-  }
-
-  private void updateStats() {
-    if (new Random().nextInt(3) == 1) {
-      cacheHits.inc(); // <4>
-    }
-  }
-}
+include::{sourcedir}/mp/guides/MetricsSnippets.java[tag=snippet_5, indent=0]
 ----
 <1> A `Counter` metric field, `cacheHits`, is automatically injected by Helidon.
 <2> Call `updateStats()` to update the cache hits.
@@ -501,7 +302,7 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080{metrics-endpoint}?scope=application'
 ----
 
-[source,json]
+[source,hocon]
 .JSON response (partial):
 ----
 {
@@ -523,29 +324,7 @@ The following example demonstrates how to use a `Gauge` to track application up-
 [source,java]
 .Create a new `GreetingCardsAppMetrics` class with the following code:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import java.time.Duration;
-import java.util.concurrent.atomic.AtomicLong;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.event.Observes;
-import org.eclipse.microprofile.metrics.annotation.Gauge;
-
-@ApplicationScoped // <1>
-public class GreetingCardsAppMetrics {
-
-  private AtomicLong startTime = new AtomicLong(0); // <2>
-
-  public void onStartUp(@Observes @Initialized(ApplicationScoped.class) Object init) {
-    startTime = new AtomicLong(System.currentTimeMillis()); // <3>
-  }
-
-  @Gauge(unit = "TimeSeconds")
-  public long appUpTimeSeconds() {
-    return Duration.ofMillis(System.currentTimeMillis() - startTime.get()).getSeconds();  // <4>
-  }
-}
+include::{sourcedir}/mp/guides/MetricsSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> This managed object must be application scoped to properly register and use the `Gauge` metric.
 <2> Declare an `AtomicLong` field to hold the start time of the application.
@@ -556,36 +335,7 @@ public class GreetingCardsAppMetrics {
 [source,java]
 .Update the `GreetingCards` class with the following code to simplify the metrics output:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import java.util.Collections;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-
-@Path("/cards")
-@RequestScoped
-public class GreetingCards {
-
-  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "cardCount", absolute = true)
-  public JsonObject anyCard() throws InterruptedException {
-    return createResponse("Here are some random cards ...");
-  }
-
-  private JsonObject createResponse(String msg) {
-    return JSON.createObjectBuilder().add("message", msg).build();
-  }
-}
+include::{sourcedir}/mp/guides/MetricsSnippets.java[tag=snippet_7, indent=0]
 ----
 
 [source,bash]
@@ -594,7 +344,7 @@ public class GreetingCards {
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ----
 
-[source,json]
+[source,hocon]
 .JSON response from `/metrics/application`:
 ----
 {

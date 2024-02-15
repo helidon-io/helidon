@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -136,21 +136,7 @@ In the current example, Helidon container will be launched prior test. The _Bean
 [source,java]
 .Code sample
 ----
-@HelidonTest    <1>
-@DisableDiscovery   <2>
-@AddBean(MyBean.class)  <3>
-@AddExtension(ConfigCdiExtension.class) <4>
-@AddConfig(key = "app.greeting", value = "TestHello")   <5>
-class TestExample {
-    @Inject
-    private MyBean myBean;  <6>
-
-    @Test
-    void testGreeting() {   <7>
-        assertThat(myBean, notNullValue());
-        assertThat(myBean.greeting(), is("TestHello"));
-    }
-}
+include::{sourcedir}/mp/TestingSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Start the Helidon container.
 <2> Set disabled Bean Discovery for the current test class.
@@ -165,34 +151,7 @@ To test `@RequestScoped` bean with JaxRs support:
 [source,java]
 .Test `RequestScoped` bean
 ----
-
-@HelidonTest    <1>
-@DisableDiscovery <2>
-
-@AddJaxRs <3>
-@AddBean(TestReqScopeDisabledDiscovery.MyController.class)
-public class TestReqScopeDisabledDiscovery {
-
-    @Inject
-    private WebTarget target;
-
-    @Test
-    void testGet() {
-        assertEquals("Hallo!", target
-                .path("/greeting")
-                .request()
-                .get(String.class));
-    }
-
-    @Path("/greeting")
-    @RequestScoped  <4>
-    public static class MyController {
-        @GET
-        public Response get() {
-            return Response.ok("Hallo!").build();
-        }
-    }
-}
+include::{sourcedir}/mp/TestingSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Start the Helidon container.
 <2> Set disabled Bean discovery.

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -79,25 +79,7 @@ more control over the server initialization. First define your own `Main`:
 [source,java]
 .src/main/java/io/helidon/examples/quickstart/mp/Main.java
 ----
-package io.helidon.examples.quickstart.mp;
-
-import io.helidon.microprofile.server.Server;
-import java.io.IOException;
-
-public final class Main {
-
-    private Main() { } // <1>
-
-    public static void main(final String[] args) {
-        Server server = startServer();
-        System.out.println("http://localhost:" + server.port() + "/greet");
-    }
-
-    static Server startServer() {
-        return Server.create().start(); // <2>
-    }
-
-}
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_1, indent=0]
 ----
 In this class, a `main` method is defined which starts the Helidon MP
 server and prints out a message with the listen address.
@@ -112,9 +94,9 @@ Next change the project's `pom.xml` to use your main class:
 [source,xml]
 .pom.xml
 ----
-    <properties>
-        <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
-    </properties>
+<properties>
+    <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
+</properties>
 ----
 
 This property will be used to set the `Main-Class` attribute in the application jar's MANIFEST.
@@ -122,12 +104,10 @@ This property will be used to set the `Main-Class` attribute in the application 
 In your application code, Helidon uses the default configuration when you create a `Server` object without a custom `Config` object.
 See the following code from the project you created.
 
-[source,Java]
-.View `Main.startServer`:
+[source,java]
+.View `Main#startServer`:
 ----
-    static Server startServer() {
-        return Server.create().start(); // <1>
-    }
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> There is no `Config` object being used during server creation, so the default configuration is used.
 
@@ -176,7 +156,7 @@ java -jar target/helidon-quickstart-mp.jar
 curl http://localhost:8080/greet
 ----
 
-[source, json]
+[source, hocon]
 ----
 {
   "message": "HelloFromMPConfig World!" // <1>
@@ -196,12 +176,13 @@ java -jar target/helidon-quickstart-mp.jar
 ----
 
 [source,bash]
-.Invoke the endpoint below and check the response:
+.Invoke the endpoint
 ----
 curl http://localhost:8080/greet
 ----
 
-[source, json]
+[source, hocon]
+.JSON response:
 ----
 {
   "message": "HelloFromEnvironment World!" // <1>
@@ -220,12 +201,13 @@ java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-mp
 ----
 
 [source,bash]
-.Invoke the endpoint below and check the response:
+.Invoke the endpoint
 ----
 curl http://localhost:8080/greet
 ----
 
-[source, json]
+[source, hocon]
+.JSON response:
 ----
 {
   "message": "HelloFromSystemProperty World!" // <1>
@@ -243,23 +225,7 @@ The generated project already accesses configuration data in the `GreetingProvid
 [source,java]
 .View the following code from `GreetingProvider.java`:
 ----
-@ApplicationScoped // <1>
-public class GreetingProvider {
-    private final AtomicReference<String> message = new AtomicReference<>(); // <2>
-
-    @Inject
-    public GreetingProvider(@ConfigProperty(name = "app.greeting") String message) {   // <3>
-        this.message.set(message);
-    }
-
-    String getMessage() {
-        return message.get();
-    }
-
-    void setMessage(String message) {
-        this.message.set(message);
-    }
-}
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> This class is application scoped so a single instance of `GreetingProvider` will be shared across the entire application.
 <2> Define a thread-safe reference that will refer to the message member variable.
@@ -285,32 +251,19 @@ sources:
 [source,java]
 .Update the following code from `GreetingProvider.java`:
 ----
-@ApplicationScoped
-public class GreetingProvider {
-
-    @Inject
-    @ConfigProperty(name = "app.greeting") // <1>
-    private volatile String message; // <2>
-
-    String getMessage() {
-        return message;
-    }
-
-    void setMessage(String message) {
-        this.message = message;
-    }
-}
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Inject the value of `app.greeting` into the `GreetingProvider` object.
 <2> Define a class member variable to hold the greeting.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint
 ----
 curl http://localhost:8080/greet
 ----
 
 [source, json]
+.JSON response:
 ----
 {
   "message": "HelloFromMPConfig World!"
@@ -322,43 +275,21 @@ curl http://localhost:8080/greet
 You can inject the `Config` object into the class and access it directly as shown below.
 
 [source,java]
-.Update the `GreetingProvider.java` file; 1) Add new imports and 2) Replace the `GreetingProvider` class:
+.Replace the `GreetingProvider` class:
 ----
- // <1>
-import io.helidon.config.Config;
-import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.event.Observes;
-
-@ApplicationScoped
-public class GreetingProvider {
-    private final AtomicReference<String> message = new AtomicReference<>();
-
-    @Inject // <2>
-    public GreetingProvider(Config config) {
-        String message = config.get("app.greeting").asString().get(); // <3>
-        this.message.set(message);
-    }
-
-    String getMessage() {
-        return message.get();
-    }
-
-    void setMessage(String message) {
-        this.message.set(message);
-    }
-}
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_5, indent=0]
 ----
-<1> Add three new imports.
-<2> Inject the `Config` object into the `GreetingProvider` object.
-<3> Get the `app.greeting` value from the `Config` object and set the member variable.
+<1> Inject the `Config` object into the `GreetingProvider` object.
+<2> Get the `app.greeting` value from the `Config` object and set the member variable.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint
 ----
 curl http://localhost:8080/greet
 ----
 
 [source, json]
+.JSON response:
 ----
 {
   "message": "HelloFromMPConfig World!"
@@ -397,40 +328,20 @@ sources:
 [source,java]
 .Replace `GreetingProvider` class with the following code:
 ----
-@ApplicationScoped
-public class GreetingProvider {
-    private final AtomicReference<String> message = new AtomicReference<>();
-    private final AtomicReference<String> sender = new AtomicReference<>();
-
-    @Inject
-    Config config;
-
-    public void onStartUp(@Observes @Initialized(ApplicationScoped.class) Object init) {
-        Config appNode = config.get("app.greeting"); // <1>
-        message.set(appNode.get("message").asString().get());  // <2>
-        sender.set(appNode.get("sender").asString().get());   // <3>
-    }
-
-    String getMessage() {
-        return sender.get() + " says " + message.get();
-    }
-
-    void setMessage(String message) {
-        this.message.set(message);
-    }
-}
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Get the configuration subtree where the `app.greeting` node is the root.
 <2> Get the value from the `message` `Config` node.
 <3> Get the value from the `sender` `Config` node.
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint
 ----
 curl http://localhost:8080/greet
 ----
 
 [source, json]
+.JSON response:
 ----
 {
   "message": "Joe says Hello-from-config-file.yaml World!"
@@ -446,13 +357,7 @@ configuration file used for the ConfigMap.  This example will create the file at
 [source,java]
 .Update the `Main` class and replace the `buildConfig` method:
 ----
-private static Config buildConfig() {
-  return Config.builder()
-      .sources(
-          file("/etc/config/config-file.properties").optional(), // <1>
-          classpath("META-INF/microprofile-config.properties")) // <2>
-      .build();
-}
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
 <2> The server port is specified in `META-INF/microprofile-config.properties` within the `helidon-quickstart-mp.jar`.
@@ -460,30 +365,17 @@ private static Config buildConfig() {
 [source,java]
 .Update the following code from `GreetingProvider.java`:
 ----
-@ApplicationScoped
-public class GreetingProvider {
-
-    @Inject
-    @ConfigProperty(name = "app.greeting") // <1>
-    private volatile String message; // <2>
-
-    String getMessage() {
-        return message;
-    }
-
-    void setMessage(String message) {
-        this.message = message;
-    }
-}
+include::{sourcedir}/mp/guides/ConfigSnippets.java[tag=snippet_8, indent=0]
 ----
 
 [source,bash]
-.Build and run the application, then invoke the endpoint and check the response:
+.Build and run the application, then invoke the endpoint
 ----
 curl http://localhost:8080/greet
 ----
 
 [source, json]
+.JSON response:
 ----
 {
   "message": "HelloFromConfigFile World!"
@@ -512,13 +404,12 @@ kubectl get configmap helidon-configmap -o yaml
 ----
 apiVersion: v1
 data:
-  config-file.properties: |   // <1>
-    app.greeting=HelloFromConfigFile   // <2>
+  config-file.properties: | # <1> <2>
+    app.greeting=HelloFromConfigFile
 kind: ConfigMap
 ----
 <1> The file `config-file.properties` will be created within the Kubernetes container.
 <2> The `config-file.properties` file will have this single property defined.
-
 
 [source,yaml]
 .Create the Kubernetes YAML specification, named `k8s-config.yaml`, with the following contents:
@@ -526,7 +417,7 @@ kind: ConfigMap
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-config // <1>
+  name: helidon-config # <1>
   labels:
     app: helidon-config
 spec:
@@ -543,7 +434,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-config
 spec:
-  replicas: 1 // <2>
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-config
@@ -561,13 +452,13 @@ spec:
             - containerPort: 8080
           volumeMounts:
             - name: config-volume
-              mountPath: /etc/config // <3>
+              mountPath: /etc/config # <3>
       volumes:
         - name: config-volume
           configMap:
             # Provide the name of the ConfigMap containing the files you want
             # to add to the container
-            name:  helidon-configmap // <4>
+            name:  helidon-configmap # <4>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `8080`.
 <2> A deployment with one replica of a pod.
@@ -590,7 +481,7 @@ kubectl get service/helidon-config
 [source,bash]
 ----
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <1>
+helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `31143`.
 
@@ -600,7 +491,8 @@ helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <
 curl http://localhost:31143/greet
 ----
 
-[source, json]
+[source, hocon]
+.JSON response:
 ----
 {
   "message": "HelloFromConfigFile World!" // <1>

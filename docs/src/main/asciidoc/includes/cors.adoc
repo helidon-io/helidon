@@ -106,14 +106,14 @@ ifdef::se-flavor[]
 [source,yaml]
 ----
 restrictive-cors:
-  allow-origins: ["http://foo.com", "http://there.com"]
+  allow-origins: ["https://foo.com", "https://there.com"]
   allow-methods: ["PUT", "DELETE"]
 ----
 endif::[]
 ifndef::se-flavor[]
 [source,yaml]
 ----
-allow-origins: ["http://foo.com", "http://there.com"]
+allow-origins: ["https://foo.com", "https://there.com"]
 allow-methods: ["PUT", "DELETE"]
 ----
 endif::[]
@@ -207,15 +207,15 @@ You can use mapped configuration to your advantage if you want to specify all CO
 
 The following example illustrates the mapped cross-origin configuration format.
 
-[source,hocon,subs="attributes+"]
+[source,yaml,subs="attributes+"]
 ----
-{mapped-config-top-key}: // <1>
+{mapped-config-top-key}: # <1>
   paths: <2>
     - path-pattern: /greeting // <3>
-      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"] // <4>
+      allow-origins: ["https://foo.com", "https://there.com", "https://other.com"] # <4>
       allow-methods: ["PUT", "DELETE"]
-    - path-pattern: / // <5>
-      allow-methods: ["GET", "HEAD", "OPTIONS", "POST"] // <6>
+    - path-pattern: / # <5>
+      allow-methods: ["GET", "HEAD", "OPTIONS", "POST"] # <6>
 ----
 // We want to use the following to insert the SE or MP callout 1 text; we need to use the blank, plus,
 // and subs because the MP attribute value contains backticks, and this is the only way we've found
@@ -337,15 +337,15 @@ CORS configuration section.
 // Tag the following example so we can exclude it from MP which supplies its own complete example.
 // tag::se-config-example[]
 The following example restricts sharing of the
-`{built-in-service-prefix}/health` resource, provided by the health built-in service, to only the origin `\http://there.com`.
+`{built-in-service-prefix}/health` resource, provided by the health built-in service, to only the origin `\https://there.com`.
 [source,hocon,subs="attributes+"]
 ----
 cors:
   paths:
     - path-pattern: "{built-in-service-prefix}/health"
-      allow-origins: [http://there.com]
+      allow-origins: [https://there.com]
     - path-pattern: "{built-in-service-prefix}/metrics"
-      allow-origins: [http://foo.com]
+      allow-origins: [https://foo.com]
 ----
 
 // end::se-config-example[]
@@ -368,10 +368,11 @@ Build and run the QuickStart application as usual.
 The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
 [source,bash,subs="attributes+"]
 ----
-curl -i -H "Origin: http://other.com" http://localhost:8080{built-in-service-prefix}/metrics
+curl -i -H "Origin: https://other.com" http://localhost:8080{built-in-service-prefix}/metrics
 ----
 
 [source, listing]
+.Curl output
 ----
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 11:08:09 -0500
@@ -382,13 +383,14 @@ connection: keep-alive
 But accesses from `foo.com` succeed.
 [source,bash,subs="attributes+"]
 ----
-curl -i -H "Origin: http://foo.com" http://localhost:8080{built-in-service-prefix}/metrics
+curl -i -H "Origin: https://foo.com" http://localhost:8080{built-in-service-prefix}/metrics
 ----
 
 [source, listing]
+.Curl output
 ----
 HTTP/1.1 200 OK
-Access-Control-Allow-Origin: http://foo.com
+Access-Control-Allow-Origin: https://foo.com
 Content-Type: text/plain
 Date: Mon, 11 May 2020 11:08:16 -0500
 Vary: Origin
@@ -405,7 +407,7 @@ The health service rejects requests from origins not specifically approved.
 
 [source,bash,subs="attributes+"]
 ----
-curl -i -H "Origin: http://foo.com" http://localhost:8080{built-in-service-prefix}/health
+curl -i -H "Origin: https://foo.com" http://localhost:8080{built-in-service-prefix}/health
 ----
 
 [source, listing]
@@ -416,17 +418,17 @@ transfer-encoding: chunked
 connection: keep-alive
 ----
 
-And responds successfully only to cross-origin requests from `\http://there.com`.
+And responds successfully only to cross-origin requests from `\https://there.com`.
 
 [source,bash,subs="attributes+"]
 ----
-curl -i -H "Origin: http://there.com" http://localhost:8080{built-in-service-prefix}/health
+curl -i -H "Origin: https://there.com" http://localhost:8080{built-in-service-prefix}/health
 ----
 
 [source, listing]
 ----
 HTTP/1.1 200 OK
-Access-Control-Allow-Origin: http://there.com
+Access-Control-Allow-Origin: https://there.com
 Content-Type: application/json
 Date: Mon, 11 May 2020 12:07:32 -0500
 Vary: Origin

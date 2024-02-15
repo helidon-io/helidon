@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 :keywords: helidon, security, serialization, java, JEP-290
 :metainf: META-INF/helidon/serial-config.properties
 
-= JEP-290
+include::{rootdir}/includes/attributes.adoc[]
 
 == Contents
 
@@ -88,13 +88,7 @@ Custom `SerializationConfig` may be registered, but it *must* be done before Hel
 [source,java]
 .Configure custom Helidon serialization config
 ----
-SerializationConfig.builder()
-  .traceSerialization(SerializationConfig.TraceOption.BASIC) <1>
-  .filterPattern(MyType.class.getName())                     <2>
-  .ignoreFiles(true)                                         <3>
-  .onWrongConfig(SerializationConfig.Action.IGNORE)          <4>
-  .build()
-  .configure();                                              <5>
+include::{sourcedir}/includes/security/Jep290Snippets.java[tag=snippet_1, indent=0]
 ----
 <1> Trace first instance of each class that is deserialized
 <2> Configure a single class filter pattern (only allows deserialization of class `MyType`

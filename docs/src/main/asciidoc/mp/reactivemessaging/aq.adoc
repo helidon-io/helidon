@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -146,16 +146,7 @@ If you need more advanced configurations, connector can work with injected `AQjm
 [source,java]
 .Inject:
 ----
-    @Produces
-    @ApplicationScoped
-    @Named("aq-orderdb-factory")
-    public AQjmsConnectionFactory connectionFactory() throws JMSException {
-        AQjmsQueueConnectionFactory fact = new AQjmsQueueConnectionFactory();
-        fact.setJdbcURL(config.get("jdbc.url").asString().get());
-        fact.setUsername(config.get("jdbc.user").asString().get());
-        fact.setPassword(config.get("jdbc.pass").asString().get());
-        return fact;
-    }
+include::{sourcedir}/mp/reactivemessaging/AqSnippets.java[tag=snippet_1, indent=0]
 ----
 
 [source,yaml]
@@ -192,24 +183,13 @@ mp:
 [source,java]
 .Consuming one by one unwrapped value:
 ----
-@Incoming("from-aq")
-public void consumeAq(String msg) {
-    System.out.println("Oracle AQ says: " + msg);
-}
+include::{sourcedir}/mp/reactivemessaging/AqSnippets.java[tag=snippet_2, indent=0]
 ----
 
 [source,java]
 .Consuming one by one, manual ack:
 ----
-@Incoming("from-aq")
-@Acknowledgment(Acknowledgment.Strategy.MANUAL)
-public CompletionStage<?> consumeAq(AqMessage<String> msg) {
-    // direct commit
-    //msg.getDbConnection().commit();
-    System.out.println("Oracle AQ says: " + msg.getPayload());
-    // ack commits only in non-transacted mode
-    return msg.ack();
-}
+include::{sourcedir}/mp/reactivemessaging/AqSnippets.java[tag=snippet_3, indent=0]
 ----
 
 === Producing
@@ -217,8 +197,5 @@ public CompletionStage<?> consumeAq(AqMessage<String> msg) {
 [source,java]
 .Producing to AQ:
 ----
-@Outgoing("to-aq")
-public PublisherBuilder<String> produceToAq() {
-    return ReactiveStreams.of("test1", "test2");
-}
+include::{sourcedir}/mp/reactivemessaging/AqSnippets.java[tag=snippet_4, indent=0]
 ----

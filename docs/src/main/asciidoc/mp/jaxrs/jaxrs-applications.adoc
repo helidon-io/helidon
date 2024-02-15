@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -75,16 +75,7 @@ is provided via the `ServerRequest` 's context object as shown next.
 
 [source,java]
 ----
-import io.helidon.webserver.ServerRequest;
-
-@Path("myresource")
-public class MyResource {
-
-    @GET
-    public void get(@Context ServerRequest serverRequest) {
-        Application app = serverRequest.context().get(Application.class).get();
-    }
-}
+include::{sourcedir}/mp/jaxrs/JaxrsApplicationsSnippets.java[tag=snippet_1, indent=0]
 ----
 
 This approach effectively moves the scope of `Application` subclass instances to

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ Helidon Security provides authentication, authorization, and auditing for your H
 . Authentication - support for authenticating incoming requests, creating a
  security Subject with Principal and Grants. Principal represents current user/service.
  Grant may represent a Role, Scope etc.
- Responsibility to create Principals and Grants lies with with AuthenticationProvider
+ Responsibility to create Principals and Grants lies with AuthenticationProvider
  SPI. The following Principals are expected and supported by default:
 .. UserPrincipal - the party is an end-user (e.g. a person) - there can be zero to
  one user principals in a subject
@@ -60,7 +60,7 @@ Security module is quite HTTP centric (as most common use cases are related to
  HTTP REST), though it is not HTTP specific (the security module may be used to
  secure even other transports, such as JMS, Kafka messages etc. if an appropriate
  integration module is developed, as all APIs can be mapped to a non-HTTP
- protocol). Nevertheless there may be security providers that only make sense with
+ protocol). Nevertheless, there may be security providers that only make sense with
  HTTP (such as HTTP digest authentication).
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -90,36 +90,19 @@ Once a security instance is built, it can be used to initialize an
 [source,java]
 .Security direct usage
 ----
-// create a security context
-SecurityContext context = security.contextBuilder(UUID.randomUUID().toString())
-        .env(SecurityEnvironment.builder()
-                     .method("get")
-                     .path("/test")
-                     .transport("http")
-                     .header("Authorization", "Bearer abcdefgh")
-                     .build())
-        .build();
-
-// use the context to authenticate a request
-AuthenticationResponse response = context.atnClientBuilder().submit();
-if (response.status().isSuccess()) {
-    System.out.println(response.user());
-    System.out.println(response.service());
-} else {
-    System.out.println("Authentication failed: " + response.description());
-}
+include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_1, indent=0]
 ----
+<1> Create a security context
+<2> Use the context to authenticate a request
 
 === Builder Pattern
 
 [source,java]
 .Security through a builder
 ----
-Security security = Security.builder()
-        // create a provider instance based on the provider documentation
-        .addProvider(...)
-        .build();
+include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_2, indent=0]
 ----
+<1> Create a provider instance based on the provider documentation
 
 === Configuration Pattern
 
@@ -129,9 +112,9 @@ See xref:tools.adoc[Secure config] for details about encrypting passwords in
 [source,java]
 .Security from configuration
 ----
-// uses io.helidon.Config
-Security security = Security.create(config);
+include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_3, indent=0]
 ----
+<1> Uses `io.helidon.Config`
 
 [source,yaml]
 .Security from configuration - application.yaml
@@ -155,7 +138,7 @@ security:
 
 When a configuration needs to be overridden, we may have problems with the list
 type of the `providers` configuration. To simplify overrides using properties,
-you can explicitly setup a type of provider using a `type` key.
+you can explicitly set up a type of provider using a `type` key.
 
 Example:
 [source,properties]
@@ -172,14 +155,7 @@ Would explicitly override the second provider (`http-basic-auth` in example abov
 [source,java]
 .Security from configuration and builder
 ----
-// uses io.helidon.Config
-Security security = Security.builder(config)
-                .addProvider(...)
-                .build();
-
-// or reverse order:
-Security security = Security.builder()
-                .addProvider()
-                .config(config)
-                .build();
+include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_4, indent=0]
 ----
+<1> Uses io.helidon.Config
+<2> Or reverse order

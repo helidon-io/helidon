@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -63,11 +63,7 @@ create multiple `Invocation` s.
 
 [source,java]
 ----
-Client client = ClientBuilder.newClient();
-Response res = client
-    .target("http://localhost:8080/greet")
-    .request("text/plain")
-    .get();
+include::{sourcedir}/mp/jaxrs/JaxrsClientSnippets.java[tag=snippet_1, indent=0]
 ----
 
 In the snippet above, the call to `target` returns a `WebTarget`, and the call to
@@ -80,11 +76,7 @@ possible to request the response body be provided after conversion to a Java typ
 
 [source,java]
 ----
-Client client = ClientBuilder.newClient();
-String res = client
-    .target("http://localhost:8080/greet")
-    .request("text/plain")
-    .get(String.class);
+include::{sourcedir}/mp/jaxrs/JaxrsClientSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Alternatively, there are also methods in `Response` that can trigger similar conversions.
@@ -96,13 +88,7 @@ configure providers such as filters and exception mappers.
 
 [source,java]
 ----
-Client client = ClientBuilder.newClient();
-client.register(GreetFilter.class);
-String res = client
-    .target("http://localhost:8080/greet")
-    .register(GreetExceptionMapper.class)
-    .request("text/plain")
-    .get(String.class);
+include::{sourcedir}/mp/jaxrs/JaxrsClientSnippets.java[tag=snippet_3, indent=0]
 ----
 
 The example above shows registration of `GreetFilter.class` for all targets and
@@ -119,24 +105,14 @@ Using `Future`:
 
 [source,java]
 ----
-Client client = ClientBuilder.newClient();
-Future<String> res = client
-    .target("http://localhost:8080/greet")
-    .request("text/plain")
-    .async()        // now asynchronous
-    .get(String.class);
+include::{sourcedir}/mp/jaxrs/JaxrsClientSnippets.java[tag=snippet_4, indent=0]
 ----
 
 Or using a more modern, reactive style:
 
 [source,java]
 ----
-Client client = ClientBuilder.newClient();
-CompletionStage<String> res = client
-    .target("http://localhost:8080/greet")
-    .request("text/plain")
-    .rx()           // now reactive
-    .get(String.class);
+include::{sourcedir}/mp/jaxrs/JaxrsClientSnippets.java[tag=snippet_5, indent=0]
 ----
 
 In either case, the implementation will ensure the calling thread is not blocked

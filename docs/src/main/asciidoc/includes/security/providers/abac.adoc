@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/../../..]
+
+include::{rootdir}/includes/attributes.adoc[]
 
 === ABAC Provider
 :description: Helidon Security ABAC Provider
@@ -96,27 +98,7 @@ in a JAX-RS resource:
 [source,java]
 .Example of using an object
 ----
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-  @GET
-  @Authorized(explicit = true)
-  @PolicyStatement("${env.time.year >= 2017 && object.owner == subject.principal.id}")
-  public Response process(@Context SecurityContext context) {
-      // probably looked up from a database
-      SomeResource res = new SomeResource("user");
-      AuthorizationResponse atzResponse = context.authorize(res);
-
-      if (atzResponse.isPermitted()) {
-          //do the update
-          return Response.ok().entity("fine, sir").build();
-      } else {
-          return Response.status(Response.Status.FORBIDDEN)
-                  .entity(atzResponse.description().orElse("Access not granted"))
-                  .build();
-      }
-  }
-}
+include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_1, indent=0]
 ----
 
 
@@ -145,12 +127,7 @@ security:
 [source,java]
 .JAX-RS example
 ----
-@RolesAllowed("user")
-@RoleValidator.Roles(value = "service_role", subjectType = SubjectType.SERVICE)
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-}
+include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_2, indent=0]
 ----
 
 ===== Interaction with JAX-RS sub-resource locators
@@ -192,12 +169,7 @@ security:
 [source,java]
 .JAX-RS example
 ----
-@Scope("calendar_read")
-@Scope("calendar_edit")
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-}
+include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_3, indent=0]
 ----
 
 ==== Expression Language Policy Validator
@@ -222,9 +194,5 @@ security:
 [source,java]
 .JAX-RS example
 ----
-@PolicyStatement("${env.time.year >= 2017}")
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-}
+include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_4, indent=0]
 ----

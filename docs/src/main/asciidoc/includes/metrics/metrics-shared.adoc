@@ -119,26 +119,26 @@ Further, clients can narrow down to a specific metric name by adding the name as
 curl -s -H 'Accept: text/plain' -X GET http://localhost:8080{metrics-endpoint}
 ----
 
-[listing]
+[source,text]
 ----
 # TYPE base:classloader_total_loaded_class_count counter
 # HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
 base:classloader_total_loaded_class_count 3157
 ----
 
-
-.Example Reporting: JSON format
 [source,bash,subs="attributes+"]
+.Example Reporting: JSON format
 ----
 curl -s -H 'Accept: application/json' -X GET http://localhost:8080{metrics-endpoint}
 ----
 
-[listing]
+[source,json]
+.JSON response:
 ----
 {
    "base" : {
       "memory.maxHeap" : 3817865216,
-      "memory.committedHeap" : 335544320,
+      "memory.committedHeap" : 335544320
     }
 }
 ----
@@ -162,22 +162,13 @@ Remember that injection works only if the class is a bean so CDI can inject into
 [source,java]
 .Injecting the default `MetricRegistry` (for the application scope)
 ----
-class Example {
-
-    @Inject
-    private MetricRegistry applicationRegistry;
-}
+include::{sourcedir}/includes/metrics/MetricsSharedSnippets.java[tag=snippet_1, indent=0]
 ----
 
 [source,java]
 .Injecting a non-default `MetricRegistry`
 ----
-class Example {
-
-    @RegistryScope("myCustomScope")
-    @Inject
-    private MetricRegistry myCustomRegistry;
-}
+include::{sourcedir}/includes/metrics/MetricsSharedSnippets.java[tag=snippet_2, indent=0]
 ----
 --
 * Get a Helidon link:{metrics-mp-javadoc-base-url}/io/helidon/microprofile/metrics/RegistryFactory.html[`RegistryFactory`] instance and invoke its `getRegistry` method.
@@ -190,15 +181,7 @@ Obtain the `RegistryFactory` using either of the following techniques:
 [source,java]
 .Getting the `RegistryFactory` using injection
 ----
-class InjectExample {
-
-    @Inject
-    private RegistryFactory registryFactory;
-
-    private MetricRegistry findRegistry(String scope) {
-        return registryFactory.getRegistry(scope);
-    }
-}
+include::{sourcedir}/includes/metrics/MetricsSharedSnippets.java[tag=snippet_3, indent=0]
 ----
 +
 ** Invoke the static `getInstance()` method on the `RegistryFactory` class.
@@ -206,12 +189,7 @@ class InjectExample {
 [source,java]
 .Getting the `RegistryFactory` programmatically
 ----
-class Example {
-
-    private MetricRegistry findRegistry(String scope) {
-        return RegistryFactory.getInstance().getRegistry(scope);
-    }
-}
+include::{sourcedir}/includes/metrics/MetricsSharedSnippets.java[tag=snippet_4, indent=0]
 ----
 --
 endif::[]
@@ -220,7 +198,7 @@ Once it has a reference to a `MetricRegistry` your code can use the reference to
 // end::metric-registry-api[]
 
 // tag::example-apps[]
-Helidon {flavor-uc} includes several prewritten example applications illustrating aspects of metrics:
+Helidon {flavor-uc} includes several pre-written example applications illustrating aspects of metrics:
 
 * link:{helidon-github-tree-url}/examples/metrics/filtering/{flavor-lc}[Enabling/disabling {metrics}] using
 ifdef::se-flavor[`MetricsObserver` and `MetricsConfig`]

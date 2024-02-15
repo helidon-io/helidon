@@ -50,7 +50,7 @@ Create a new Maven POM file (called `pom.xml`) and add the following
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent> <1>
+    <parent> <!--1-->
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
         <version>{helidon-version}</version>
@@ -58,21 +58,21 @@ Create a new Maven POM file (called `pom.xml`) and add the following
     </parent>
 
     <groupId>io.helidon.examples</groupId>
-    <artifactId>helidon-mp-tutorial</artifactId>  <2>
+    <artifactId>helidon-mp-tutorial</artifactId> <!--2-->
     <name>${project.artifactId}</name>
 
     <properties>
-        <mainClass>io.helidon.examples.Main</mainClass> <3>
+        <mainClass>io.helidon.examples.Main</mainClass> <!--3-->
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId> <4>
+            <artifactId>helidon-microprofile</artifactId> <!--4-->
         </dependency>
     </dependencies>
 
-    <build> <5>
+    <build> <!--5-->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -113,7 +113,7 @@ The POM file contains the basic project information and configurations
     parent pom includes dependency management, so you don't need to
     include a version number here. You will automatically use the
     version of Helidon that matches the version of the parent pom
-    ({helidon.version} in this case).
+    ({helidon-version} in this case).
 <5> Adds plugins to be executed during the build. The `maven-dependency-plugin`
     is used to copy the runtime dependencies into your target directory. The
     `jandex-maven-plugin` builds an index of your class files for faster
@@ -166,40 +166,14 @@ below:
 [source,java]
 .src/main/java/io/helidon/examples/GreetResource.java
 ----
-package io.helidon.examples;
-
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import java.util.Collections;
-
-@Path("/greet") <1>
-@RequestScoped <2>
-public class GreetResource {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getDefaultMessage() { <3>
-        return JSON.createObjectBuilder()
-                .add("message", "Hello World")
-                .build(); <4>
-    }
-
-}
+include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_1, indent=0]
 ----
 
 <1> This class is annotated with `Path` which sets the path for this resource
  as `/greet`.
 <2> The `RequestScoped` annotation defines that this bean is
  request scoped.  The request scope is active only for the duration of
- one web service invocation and it is destroyed at the end of that
+ one web service invocation, and it is destroyed at the end of that
  invocation. You can learn more about scopes and contexts, and how they are used
 from the link:{jakarta-cdi-spec-url}[Specification].
 <3> A `public JsonObject getDefaultMessage()` method is defined
@@ -222,25 +196,7 @@ define your own:
 [source,java]
 .src/main/java/io/helidon/examples/Main.java
 ----
-package io.helidon.examples;
-
-import io.helidon.microprofile.server.Server;
-import java.io.IOException;
-
-public final class Main {
-
-    private Main() { } <1>
-
-    public static void main(final String[] args) throws IOException {
-        Server server = startServer();
-        System.out.println("http://localhost:" + server.port() + "/greet");
-    }
-
-    static Server startServer() {
-        return Server.create().start(); <2>
-    }
-
-}
+include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_2, indent=0]
 ----
 
 In this class, a `main` method is defined which starts the Helidon MP
@@ -267,10 +223,9 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory
        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
                            http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
        version="2.0"
-       bean-discovery-mode="annotated"> <1>
+       bean-discovery-mode="annotated"> <!--1-->
 </beans>
 ----
-
 <1> The `bean-discovery-mode` tells Helidon to look for the annotations
  to discover Java beans in the application.
 
@@ -303,9 +258,14 @@ At this stage, the application is a very simple "Hello World" greeting service.
  For example:
 
 [source,bash]
-.Try the Application
+.Try the Application:
 ----
 curl -X GET http://localhost:7001/greet
+----
+
+[source, json]
+.JSON response:
+----
 {"message":"Hello World!"}
 ----
 
@@ -357,31 +317,7 @@ Add a new "provider" class to read this property and make it available
 [source,java]
 .src/main/java/io/helidon/examples/GreetingProvider.java
 ----
-package io.helidon.examples;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import java.util.concurrent.atomic.AtomicReference;
-
-@ApplicationScoped <1>
-public class GreetingProvider {
-  private final AtomicReference<String> message = new AtomicReference<>(); <2>
-
-  @Inject <3>
-  public GreetingProvider(@ConfigProperty(name = "app.greeting") String message) {
-    this.message.set(message);
-  }
-
-  String getMessage() {
-    return message.get();
-  }
-
-  void setMessage(String message) {
-    this.message.set(message);
-  }
-}
+include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_3, indent=0]
 ----
 
 <1> This class also has the `ApplicationScoped` annotation, so it will persist
@@ -403,46 +339,7 @@ The `GreetResource` must be updated to use this value instead of the
 [source,java]
 .Updated GreetResource class
 ----
-package io.helidon.examples;
-
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import java.util.Collections;
-
-@Path("/greet")
-@RequestScoped
-public class GreetResource {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private final GreetingProvider greetingProvider;
-
-    @Inject <1>
-    public GreetResource(GreetingProvider greetingConfig) {
-        this.greetingProvider = greetingConfig;
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getDefaultMessage() {
-        return createResponse("World"); <2>
-    }
-
-    private JsonObject createResponse(String who) { <3>
-        String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
-
-        return JSON.createObjectBuilder()
-                .add("message", msg)
-                .build();
-    }
-
-}
+include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_4, indent=0]
 ----
 
 <1> This updated class adds a `GreetingProvider` and uses constructor injection
@@ -466,48 +363,11 @@ Helidon also allows applications to consume configuration from multiple
 [source,java]
 .Updated main class
 ----
-package io.helidon.examples;
-
-import io.helidon.config.Config;
-import io.helidon.config.PollingStrategies;
-import io.helidon.microprofile.server.Server;
-
-import java.io.IOException;
-
-import static io.helidon.config.ConfigSources.classpath;
-import static io.helidon.config.ConfigSources.file;
-
-public final class Main {
-
-    private Main() { }
-
-    public static void main(final String[] args) throws IOException {
-        Server server = startServer();
-        System.out.println("http://localhost:" + server.port() + "/greet");
-    }
-
-    private static Config buildConfig() {
-        return Config.builder()
-                .sources(
-                        file("conf/mp.yaml") <1>
-                            .pollingStrategy(PollingStrategies::watch)
-                            .optional(),
-                        classpath("META-INF/microprofile-config.properties"))
-                .build();
-    }
-
-    static Server startServer() {
-        return Server.builder()
-                     .config(buildConfig()) <2>
-                     .build()
-                     .start();
-    }
-
-}
+include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_5, indent=0]
 ----
 
 These updates introduce a new configuration file `conf/mp.yaml` which
- can be kept outside of the JAR file, and which can be used to provide
+ can be kept outside the JAR file, and which can be used to provide
  additional configuration data and/or to override the data in the
  `microprofile-config.properties` which will be packaged in the JAR file.
 
@@ -528,8 +388,8 @@ app:
 ----
 
 <1> The new `buildConfig()` method defines two sources for configuration information, first the
- new `mp.yaml` file, and this is marked as optional, and has a "polling
- strategy" of "watch".  The polling strategy tells Helidon to watch for
+ new `mp.yaml` file, and this is marked as optional, and has a "polling strategy" of "watch".
+ The polling strategy tells Helidon to watch for
  any updates to this file and to dynamically update the configuration.
  The second entry is the `microprofile-config.properties` file from the
  classpath.
@@ -556,42 +416,11 @@ Here are the two new methods to add to `GreetResource.java`:
 [source,java]
 .New methods for GreetResource.java
 ----
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.core.Response;
-
-    // some lines omitted
-
-    @Path("/{name}")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getMessage(@PathParam("name") String name) { <1>
-        return createResponse(name);
-    }
-
-    @Path("/greeting")
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response updateGreeting(JsonObject jsonObject) { <2>
-
-        if (!jsonObject.containsKey("greeting")) {
-            JsonObject entity = JSON.createObjectBuilder()
-                    .add("error", "No greeting provided")
-                    .build();
-            return Response.status(Response.Status.BAD_REQUEST).entity(entity).build();
-        }
-
-        String newGreeting = jsonObject.getString("greeting");
-
-        greetingProvider.setMessage(newGreeting);
-        return Response.status(Response.Status.NO_CONTENT).build();
-    }
+include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_6, indent=0]
 ----
 
 <1> The first of these two methods implements a new HTTP GET service
- that returns JSON and it has a path parameter.  The `Path` annotation
+ that returns JSON, and it has a path parameter.  The `Path` annotation
  defines the next part of the path to be a parameter named `name`.
  In the method arguments the `PathParam("name")` annotation on
  `String name` has the effect of passing the parameter from the
@@ -727,16 +556,7 @@ link:{microprofile-metrics-spec-url}[MicroProfile Metrics Specification]
 [source,java]
 .Updated GreetResource.java with custom metrics
 ----
-import org.eclipse.microprofile.metrics.annotation.Timed;
-
-    // some lines omitted
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Timed <1>
-    public JsonObject getDefaultMessage() {
-        return createResponse("World");
-    }
+include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_7, indent=0]
 ----
 
 <1> The `Timed` annotation is added to the `getDefaultMessage()` method.
@@ -840,34 +660,7 @@ Helidon allows the addition of custom health checks to applications.
 [source,java]
 .src/main/java/io/helidon/examples/GreetHealthcheck.java
 ----
-package io.helidon.examples;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.Liveness;
-
-@Liveness <1>
-@ApplicationScoped <2>
-public class GreetHealthcheck implements HealthCheck {
-  private GreetingProvider provider;
-
-  @Inject <3>
-  public GreetHealthcheck(GreetingProvider provider) {
-    this.provider = provider;
-  }
-
-  @Override
-  public HealthCheckResponse call() { <4>
-    String message = provider.getMessage();
-    return HealthCheckResponse.named("greeting") <5>
-        .state("Hello".equals(message))
-        .withData("greeting", message)
-        .build();
-  }
-}
+include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_8, indent=0]
 ----
 
 <1> This class has the MicroProfile `Liveness` annotation which tells
@@ -930,8 +723,8 @@ content-length: 536
 {"outcome":"UP","status":"UP","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409179811840,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"UP","status":"UP","data":{"greeting":"Hello"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"237.25 MB","freeBytes":248769720,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.40%","total":"294.00 MB","totalBytes":308281344}}]} <3>
 ----
 
-<1> The PUT returns a HTTP 204.
-<2> The health check now returns a HTTP 200.
+<1> The PUT returns an HTTP 204.
+<2> The health check now returns an HTTP 200.
 <3> The status is now reported as "UP" and the details are provided in the
  checks.
 
@@ -982,7 +775,7 @@ EXPOSE 8080
  the build tools needed to build the application.  These are not required
  to run the application, so the second stage uses a smaller container.
 <2> Add the `pom.xml` and running an "empty" maven build will download
- all of the dependencies and plugins in this layer.  This will make future
+ all the dependencies and plugins in this layer.  This will make future
  builds faster because they will use this cached layer rather than downloading
  everything again.
 <3> Add the source code and do the real build.
@@ -1043,14 +836,14 @@ Create a file called `app.yaml` in the project's root directory with
 .Kubernetes YAML file
 ----
 ---
-kind: Service <1>
+kind: Service # <1>
 apiVersion: v1
 metadata:
   name: helidon-mp-tutorial
   labels:
     app: helidon-mp-tutorial
 spec:
-  type: NodePort <2>
+  type: NodePort # <2>
   selector:
     app: helidon-mp-tutorial
   ports:
@@ -1058,12 +851,12 @@ spec:
       targetPort: 8080
       name: http
 ---
-kind: Deployment <3>
+kind: Deployment # <3>
 apiVersion: apps/v1
 metadata:
   name: helidon-mp-tutorial
 spec:
-  replicas: 1 <4>
+  replicas: 1 # <4>
   selector:
     matchLabels:
       app: helidon-mp-tutorial
@@ -1075,7 +868,7 @@ spec:
     spec:
       containers:
         - name: helidon-mp-tutorial
-          image: helidon-mp-tutorial <5>
+          image: helidon-mp-tutorial # <5>
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -1099,7 +892,7 @@ This Kubernetes YAML file can be used to deploy the application to Kubernetes:
 .Deploy the application to Kubernetes
 ----
 kubectl create -f app.yaml
-kubectl get pods                    # Wait for quickstart pod to be RUNNING
+kubectl get pods # Wait for quickstart pod to be RUNNING
 ----
 
 TIP: Remember, if Kubernetes is running on a different machine, or inside

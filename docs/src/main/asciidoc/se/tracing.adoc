@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
+Distributed tracing is a critical feature of microservice based applications, since it traces workflow both
 within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work,
 which helps you identify performance and operational issues.
 Helidon includes support for distributed tracing through its own API, backed by either
@@ -49,14 +49,16 @@ include::{rootdir}/includes/dependencies.adoc[]
 // tag::tracing-dependency[]
 [source,xml]
 ----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>    <1>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.tracing</groupId>
+        <artifactId>helidon-tracing</artifactId>    <!--1-->
+    </dependency>
     <dependency>
         <groupId>io.helidon.webserver.observe</groupId>
-        <artifactId>helidon-webserver-observe-tracing</artifactId> <2>
+        <artifactId>helidon-webserver-observe-tracing</artifactId> <!--2-->
     </dependency>
+</dependencies>
 ----
 <1> Helidon tracing dependency.
 <2> Observability dependencies for tracing.
@@ -127,16 +129,7 @@ Helidon provides such an implementation for:
 [source,java]
 .Configuring `Tracer`
 ----
-Tracer tracer = TracerBuilder.create("helidon") <1>
-                .build();
-
-WebServer.builder()
-        .addFeature(ObserveFeature.builder()
-                            .addObserver(TracingObserver.create(tracer)) <2>
-                            .build())
-        ...
-        .build()
-        .start();
+include::{sourcedir}/se/TracingSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Create a `Tracer`.
 <2> Add an observability feature using the created `Tracer`.
@@ -147,16 +140,7 @@ To create a custom span from tracer:
 
 [source,java]
 ----
-Span span = tracer.spanBuilder("name")  <1>
-        .tag("key", "value")
-        .start();
-
-try (...){                              <2>
-    //do some work
-    span.end();
-} catch (Throwable t) {                 <3>
-    span.end(t);
-}
+include::{sourcedir}/se/TracingSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Create span from tracer.
 <2> Do some work and end span.
@@ -194,13 +178,7 @@ Builder approach, example that disables a single span log event:
 [source,java]
 .Configure tracing using a builder
 ----
-TracingConfig.builder()
-     .addComponent(ComponentTracingConfig.builder("web-server")
-             .addSpan(SpanTracingConfig.builder("HTTP Request")
-                     .addSpanLog(SpanLogTracingConfig.builder("content-write").enabled(false).build())
-                     .build())
-             .build())
-     .build()
+include::{sourcedir}/se/TracingSnippets.java[tag=snippet_3, indent=0]
 ----
 
 ==== Configuration using Helidon Config
@@ -223,11 +201,7 @@ tracing:
 [source,java]
 .Use the configuration in web server
 ----
-Tracer tracer = TracerBuilder.create(config.get("tracing")).build();    <1>
-
-server.addFeature(ObserveFeature.builder()
-                            .addObserver(TracingObserver.create(tracer)) <2>
-                            .build())
+include::{sourcedir}/se/TracingSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Create `Tracer` using `TracerBuilder` from configuration.
 <2> Add the `Tracer` as an observability feature.
@@ -261,18 +235,6 @@ tracing:
             new-name: "read"
             enabled: false
 ----
-
-[source,java]
-.Configuration with Web Server
-----
-Tracer tracer = TracerBuilder.create(config.get("tracing")).build();    <1>
-
-server.addFeature(ObserveFeature.builder()
-                            .addObserver(TracingObserver.create(tracer)) <2>
-                            .build())
-----
-<1> Create `Tracer` using `TracerBuilder` from configuration.
-<2> Add the `Tracer` as an observability feature.
 
 ==== Renaming top level span using request properties
 
@@ -308,27 +270,22 @@ Tracing propagation is automatic as long as the current span context is availabl
 
 [source,xml]
 ----
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-tracing</artifactId>
-</dependency>
-
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient-tracing</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 [source,java]
 .Tracing propagation with Helidon WebClient
 ----
-WebClient client = WebClient.builder()
-    .addService(WebClientTracing.create())
-    .build();
-
-String response = client.get()
-    .uri(uri)
-    .request(String.class);
+include::{sourcedir}/se/TracingSnippets.java[tag=snippet_5, indent=0]
 ----
 
 === Jaeger Tracing [[jaeger-tracing]]
