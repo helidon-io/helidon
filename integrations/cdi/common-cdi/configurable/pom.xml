@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,17 +22,27 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
-        <artifactId>helidon-integrations-cdi-project</artifactId>
+        <artifactId>helidon-integrations-cdi-common-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-integrations-cdi-common-project</artifactId>
-    <packaging>pom</packaging>
-    <name>Helidon CDI Integrations Common</name>
+    <artifactId>helidon-integrations-cdi-configurable</artifactId>
+    <name>Helidon CDI Integrations Common Configurable</name>
 
-    <modules>
-        <module>configurable</module>
-        <module>delegates</module>
-        <module>reference-counted-context</module>
-    </modules>
+    <dependencies>
 
+        <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Provided-scoped dependencies. -->
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
 </project>

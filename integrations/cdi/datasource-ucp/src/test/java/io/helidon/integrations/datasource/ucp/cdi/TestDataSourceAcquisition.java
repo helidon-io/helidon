@@ -27,6 +27,7 @@ import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import oracle.ucp.UniversalConnectionPool;
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceImpl;
 import oracle.ucp.jdbc.PoolXADataSource;
@@ -48,6 +49,10 @@ class TestDataSourceAcquisition {
     @Named("test")
     private DataSource test;
 
+    @Inject
+    @Named("test")
+    private UniversalConnectionPool testUcp;
+  
     private Server server;
 
     TestDataSourceAcquisition() {
@@ -81,6 +86,8 @@ class TestDataSourceAcquisition {
     private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event) throws SQLException {
         assertThat(this.test, notNullValue());
         assertThat(this.test.toString(), notNullValue());
+        assertThat(this.testUcp, notNullValue());
+        assertThat(this.testUcp.getName(), is("test"));
         final PoolDataSourceImpl contextualInstance =
             (PoolDataSourceImpl) ((WeldClientProxy) this.test).getMetadata().getContextualInstance();
         assertThat(contextualInstance.getDescription(), is("A test datasource"));

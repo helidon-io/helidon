@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import jakarta.enterprise.util.TypeLiteral;
 import jakarta.inject.Named;
-import org.eclipse.microprofile.config.Config;
 
 /**
  * An {@link Extension} that arranges for named {@link DataSource}
@@ -160,13 +159,13 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                 if (dataSourceDefinitions != null && !dataSourceDefinitions.isEmpty()) {
                     for (final DataSourceDefinition dsd : dataSourceDefinitions) {
                         assert dsd != null;
-                        final Set<String> knownDataSourceNames = this.getDataSourceNames();
+                        final Set<String> knownDataSourceNames = this.names();
                         assert knownDataSourceNames != null;
                         final String dataSourceName = dsd.name();
                         if (!knownDataSourceNames.contains(dataSourceName)) {
                             final Entry<? extends String, ? extends Properties> entry = toProperties(dsd);
                             if (entry != null) {
-                                this.putDataSourceProperties(dataSourceName, entry.getValue());
+                                this.put(dataSourceName, entry.getValue());
                             }
                         }
                     }
@@ -183,8 +182,6 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                 if (type instanceof Class && DataSource.class.isAssignableFrom((Class<?>) type)) {
                     final Set<? extends Annotation> qualifiers = injectionPoint.getQualifiers();
                     if (qualifiers != null && !qualifiers.isEmpty()) {
-                        final Config config = this.getConfig();
-                        assert config != null;
                         for (final Annotation qualifier : qualifiers) {
                             if (qualifier instanceof Named) {
                                 final String dataSourceName = ((Named) qualifier).value();
@@ -202,10 +199,9 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                                     // bootstrap here by issuing a
                                     // request for a commonly present
                                     // data source property value.
-                                    config.getOptionalValue("javax.sql.DataSource."
-                                                            + dataSourceName
-                                                            + ".dataSourceClassName",
-                                                            String.class);
+                                    configPropertyValue("javax.sql.DataSource."
+                                                        + dataSourceName
+                                                        + ".dataSourceClassName");
                                 }
                             }
                         }

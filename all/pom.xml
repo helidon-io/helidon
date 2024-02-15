@@ -571,6 +571,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-configurable</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-delegates</artifactId>
         </dependency>
         <dependency>
