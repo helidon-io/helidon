@@ -15,12 +15,16 @@
  */
 package io.helidon.webclient.api;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class DefaultDnsResolverTest {
 
@@ -32,9 +36,19 @@ class DefaultDnsResolverTest {
     }
 
     @Test
+    @EnabledIf("isIPv6Configured")
     void testIpv6Resolution() {
         DefaultDnsResolver resolver = DefaultDnsResolver.create();
         InetAddress inetAddress = resolver.resolveAddress("localhost", DnsAddressLookup.IPV6_PREFERRED);
         assertThat(inetAddress.getHostAddress(), is("0:0:0:0:0:0:0:1"));
+    }
+
+    private boolean isIPv6Configured() {
+        try {
+            InetAddress[] address = InetAddress.getAllByName("localhost");
+            return Stream.of(address).anyMatch(a -> a instanceof Inet6Address);
+        } catch (UnknownHostException e) {
+            return false;
+        }
     }
 }
