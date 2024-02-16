@@ -75,7 +75,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     private final ExecutorService executor;
     private final GrpcClientImpl grpcClient;
-    private final GrpcClientMethodDescriptor method;
+    private final MethodDescriptor<ReqT, ResT> methodDescriptor;
     private final AtomicInteger messageRequest = new AtomicInteger();
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
@@ -93,12 +93,11 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private volatile Future<?> readStreamFuture;
     private volatile Future<?> writeStreamFuture;
 
-    @SuppressWarnings("unchecked")
-    GrpcClientCall(GrpcClientImpl grpcClient, GrpcClientMethodDescriptor method) {
+    GrpcClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor) {
         this.grpcClient = grpcClient;
-        this.method = method;
-        this.requestMarshaller = (MethodDescriptor.Marshaller<ReqT>) method.descriptor().getRequestMarshaller();
-        this.responseMarshaller = (MethodDescriptor.Marshaller<ResT>) method.descriptor().getResponseMarshaller();
+        this.methodDescriptor = methodDescriptor;
+        this.requestMarshaller = methodDescriptor.getRequestMarshaller();
+        this.responseMarshaller = methodDescriptor.getResponseMarshaller();
         this.executor = grpcClient.webClient().executor();
     }
 
@@ -145,7 +144,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(Http2Headers.AUTHORITY_NAME, clientUri.authority());
         headers.add(Http2Headers.METHOD_NAME, "POST");
-        headers.add(Http2Headers.PATH_NAME, "/" + method.descriptor().getFullMethodName());
+        headers.add(Http2Headers.PATH_NAME, "/" + methodDescriptor.getFullMethodName());
         headers.add(Http2Headers.SCHEME_NAME, "http");
         headers.add(GRPC_CONTENT_TYPE);
         headers.add(GRPC_ACCEPT_ENCODING);

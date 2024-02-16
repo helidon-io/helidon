@@ -156,6 +156,6 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
             throw new IllegalArgumentException("Method " + methodName + " is of type " + method.type()
                     + ", yet " + methodType + " was requested.");
         }
-        return new GrpcClientCall<>(grpcClient, method);
+        return new GrpcClientCall<>(grpcClient, method.descriptor());
     }
 }
