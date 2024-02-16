@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 import io.grpc.ClientCall;
 import io.grpc.Metadata;
@@ -53,8 +54,6 @@ import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
-import static java.lang.System.Logger.Level.DEBUG;
-
 /**
  * A gRPC client call handler. The typical order of calls will be:
  *
@@ -64,7 +63,7 @@ import static java.lang.System.Logger.Level.DEBUG;
  * @param <ResT>
  */
 class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
-    private static final System.Logger LOGGER = System.getLogger(GrpcClientCall.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(GrpcClientCall.class.getName());
 
     private static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
     private static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
@@ -105,17 +104,20 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     @Override
     public void start(Listener<ResT> responseListener, Metadata metadata) {
+        LOGGER.finest("start called");
+
         this.responseListener = responseListener;
 
         // obtain HTTP2 connection
+        ClientConnection clientConnection = clientConnection();
         connection = Http2ClientConnection.create((Http2ClientImpl) grpcClient.http2Client(),
-                clientConnection(), true);
+                clientConnection, true);
 
         // create HTTP2 stream from connection
         clientStream = new GrpcClientStream(
                 connection,
-                Http2Settings.create(),     // Http2Settings
-                null,                       // SocketContext
+                Http2Settings.create(),                 // Http2Settings
+                clientConnection.helidonSocket(),       // SocketContext
                 new Http2StreamConfig() {
                     @Override
                     public boolean priorKnowledge() {
@@ -129,7 +131,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
                     @Override
                     public Duration readTimeout() {
-                        return grpcClient.prototype().readTimeout().orElse(Duration.ofSeconds(60));
+                        return grpcClient.prototype().readTimeout().orElse(Duration.ofSeconds(10));
                     }
                 },
                 null,       // Http2ClientConfig
@@ -152,25 +154,27 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     @Override
     public void request(int numMessages) {
+        LOGGER.finest(() -> "request called " + numMessages);
         messageRequest.addAndGet(numMessages);
-        LOGGER.log(DEBUG, () -> "Messages requested " + numMessages);
         startReadBarrier.countDown();
     }
 
     @Override
     public void cancel(String message, Throwable cause) {
+        LOGGER.finest(() -> "cancel called " + message);
         responseListener.onClose(Status.CANCELLED, new Metadata());
         close();
     }
 
     @Override
     public void halfClose() {
+        LOGGER.finest("halfClose called");
         sendingQueue.add(EMPTY_BUFFER_DATA);       // end marker
     }
 
     @Override
     public void sendMessage(ReqT message) {
-        // queue a message
+        LOGGER.finest("sendMessage called");
         BufferData messageData = BufferData.growing(512);
         messageData.readFrom(requestMarshaller.stream(message));
         BufferData headerData = BufferData.create(5);
@@ -185,70 +189,80 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         writeStreamFuture = executor.submit(() -> {
             try {
                 startWriteBarrier.await();
-                LOGGER.log(DEBUG, "[Writing thread] started");
+                LOGGER.fine("[Writing thread] started");
 
+                boolean endOfStream = false;
                 while (isRemoteOpen()) {
-                    LOGGER.log(DEBUG, "[Writing thread] polling sending queue");
+                    LOGGER.finest("[Writing thread] polling sending queue");
                     BufferData bufferData = sendingQueue.poll(WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS);
                     if (bufferData != null) {
                         if (bufferData == EMPTY_BUFFER_DATA) {     // end marker
-                            LOGGER.log(DEBUG, "[Writing thread] sending queue end marker found");
+                            LOGGER.finest("[Writing thread] sending queue end marker found");
+                            if (!endOfStream) {
+                                LOGGER.finest("[Writing thread] sending empty buffer to end stream");
+                                clientStream.writeData(EMPTY_BUFFER_DATA, true);
+                            }
                             break;
                         }
-                        boolean endOfStream = (sendingQueue.peek() == EMPTY_BUFFER_DATA);
-                        LOGGER.log(DEBUG, () -> "[Writing thread] writing bufferData " + endOfStream);
+                        endOfStream = (sendingQueue.peek() == EMPTY_BUFFER_DATA);
+                        boolean lastEndOfStream = endOfStream;
+                        LOGGER.finest(() -> "[Writing thread] writing bufferData " + lastEndOfStream);
                         clientStream.writeData(bufferData, endOfStream);
                     }
                 }
-            } catch (InterruptedException e) {
-                // falls through
+            } catch (Throwable e) {
+                LOGGER.finest(e.getMessage());
             }
-            LOGGER.log(DEBUG, "[Writing thread] exiting");
+            LOGGER.fine("[Writing thread] exiting");
         });
 
         // read streaming thread
         readStreamFuture = executor.submit(() -> {
             try {
                 startReadBarrier.await();
-                LOGGER.log(DEBUG, "[Reading thread] started");
+                LOGGER.fine("[Reading thread] started");
 
                 // read response headers
                 clientStream.readHeaders();
 
                 while (isRemoteOpen()) {
-                    // attempt to send queued messages
+                    // drain queue
                     drainReceivingQueue();
+
+                    // trailers received?
+                    if (clientStream.trailers().isDone()) {
+                        LOGGER.finest("[Reading thread] trailers received");
+                        break;
+                    }
 
                     // attempt to read and queue
                     Http2FrameData frameData;
                     try {
                         frameData = clientStream.readOne(WAIT_TIME_MILLIS_DURATION);
                     } catch (StreamTimeoutException e) {
-                        LOGGER.log(DEBUG, "[Reading thread] read timeout");
+                        LOGGER.fine("[Reading thread] read timeout");
                         continue;
                     }
                     if (frameData != null) {
                         receivingQueue.add(frameData.data());
-                        LOGGER.log(DEBUG, "[Reading thread] adding bufferData to receiving queue");
-                    }
-
-                    // trailers received?
-                    if (clientStream.trailers().isDone()) {
-                        drainReceivingQueue();      // one more attempt
-                        break;
+                        LOGGER.finest("[Reading thread] adding bufferData to receiving queue");
                     }
                 }
 
+                LOGGER.finest("[Reading thread] closing listener");
                 responseListener.onClose(Status.OK, new Metadata());
+            } catch (Throwable e) {
+                LOGGER.finest(e.getMessage());
+                responseListener.onClose(Status.UNKNOWN, new Metadata());
+            } finally {
                 close();
-            } catch (InterruptedException e) {
-                // falls through
             }
-            LOGGER.log(DEBUG, "[Reading thread] exiting");
+            LOGGER.fine("[Reading thread] exiting");
         });
     }
 
     private void close() {
+        LOGGER.finest("closing client call");
         readStreamFuture.cancel(true);
         writeStreamFuture.cancel(true);
         sendingQueue.clear();
@@ -297,10 +311,11 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     private void drainReceivingQueue() {
+        LOGGER.finest("[Reading thread] draining receiving queue");
         while (messageRequest.get() > 0 && !receivingQueue.isEmpty()) {
             messageRequest.getAndDecrement();
             ResT res = toResponse(receivingQueue.remove());
-            LOGGER.log(DEBUG, "[Reading thread] sending response to listener");
+            LOGGER.finest("[Reading thread] sending response to listener");
             responseListener.onMessage(res);
         }
     }

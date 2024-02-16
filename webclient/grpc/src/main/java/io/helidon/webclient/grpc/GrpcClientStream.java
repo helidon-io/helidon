@@ -16,10 +16,7 @@
 
 package io.helidon.webclient.grpc;
 
-import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
-import io.helidon.http.http2.Http2FrameHeader;
-import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.webclient.http2.Http2ClientConfig;
 import io.helidon.webclient.http2.Http2ClientConnection;
@@ -36,25 +33,5 @@ class GrpcClientStream extends Http2ClientStream {
                       Http2ClientConfig http2ClientConfig,
                       LockingStreamIdSequence streamIdSeq) {
         super(connection, serverSettings, ctx, http2StreamConfig, http2ClientConfig, streamIdSeq);
-    }
-
-    @Override
-    public void headers(Http2Headers headers, boolean endOfStream) {
-        super.headers(headers, endOfStream);
-    }
-
-    @Override
-    public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
-        super.data(header, data, endOfStream);
-    }
-
-    @Override
-    public void cancel() {
-        super.cancel();
-    }
-
-    @Override
-    public void close() {
-        super.close();
     }
 }

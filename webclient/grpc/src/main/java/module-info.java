@@ -37,6 +37,7 @@ module io.helidon.webclient.grpc {
     requires transitive io.helidon.webclient;
 
     requires io.helidon.grpc.core;
+    requires java.logging;
 
     exports io.helidon.webclient.grpc;
 
