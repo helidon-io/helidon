@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.builder.test;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.helidon.builder.test.testsubjects.CustomNamed;
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
@@ -50,8 +51,9 @@ class CustomNamedTest {
                    customNamed.toString(),
                    equalTo("CustomNamed{stringSet=[b, a, y],stringList=[b, a, b, y],stringToIntegerMap={b=1, e=2, a=3}}"));
 
-        ObjectMapper mapper = new ObjectMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-                .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+        ObjectMapper mapper = JsonMapper.builder().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+                .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
+                .build();
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter();
         String json = mapper.writer(printer).writeValueAsString(customNamed);
         assertThat(json, equalTo("{\n" + "  \"stringSet\" : [ \"b\", \"a\", \"y\" ]\n" + "}"));
