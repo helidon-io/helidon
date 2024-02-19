@@ -339,7 +339,7 @@ public final class Injection {
      * The service registry does not make any assumptions about qualifiers of the instances being created, though they should
      * be either the same as the injection point provider itself, or a subset of it, so the service can be discovered through
      * one of the lookup methods (i.e. the injection point provider may be annotated with a
-     * {@link io.helidon.inject.service.Injection.Named} with {@link io.helidon.inject.service.Injection.Named#WILDCARD_NAME}
+     * {@link io.helidon.service.inject.api.Injection.Named} with {@link io.helidon.inject.service.Injection.Named#WILDCARD_NAME}
      * value,
      * and each instance provided may use a more specific name qualifier).
      *

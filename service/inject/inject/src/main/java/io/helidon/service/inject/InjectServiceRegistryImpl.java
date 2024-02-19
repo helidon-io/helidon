@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -80,19 +81,20 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     private final SingletonScopeHandler singletonScopeHandler;
     private final DependentScopeHandler dependentScopeHandler;
     private final Map<TypeName, Injection.ScopeHandler<?>> scopeHandlerInstances;
+    private final boolean interceptionEnabled;
     private final InterceptionMetadata interceptionMetadata;
 
     // runtime fields (to obtain actual service instances)
     // service descriptor to its manager
-    private final Map<io.helidon.service.registry.ServiceInfo, ServiceManager<?>> servicesByDescriptor = new IdentityHashMap<>();
+    private final Map<ServiceInfo, ServiceManager<?>> servicesByDescriptor = new IdentityHashMap<>();
     private final ActivationRequest activationRequest;
-    private Map<io.helidon.service.registry.ServiceInfo, ServiceManager<Interception.Interceptor>> interceptors;
+    private Map<ServiceInfo, ServiceManager<Interception.Interceptor>> interceptors;
 
     @SuppressWarnings("unchecked")
     InjectServiceRegistryImpl(InjectConfig config,
-                              Map<io.helidon.service.registry.ServiceInfo, InjectRegistryManager.Described> descriptorToDescribed,
+                              Map<ServiceInfo, InjectRegistryManager.Described> descriptorToDescribed,
                               Map<TypeName, InjectServiceInfo> scopeHandlers,
-                              Map<io.helidon.service.registry.ServiceInfo, Object> explicitInstances,
+                              Map<ServiceInfo, Object> explicitInstances,
                               Map<TypeName, InjectServiceInfo> servicesByType,
                               Map<TypeName, Set<InjectServiceInfo>> servicesByContract,
                               Map<TypeName, Set<InjectServiceInfo>> qualifiedProvidersByQualifier,
@@ -109,7 +111,8 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         this.qualifiedProvidersByQualifier = qualifiedProvidersByQualifier;
         this.typedQualifiedProviders = typedQualifiedProviders;
 
-        this.interceptionMetadata = config.interceptionEnabled()
+        this.interceptionEnabled = config.interceptionEnabled();
+        this.interceptionMetadata = interceptionEnabled
                 ? InterceptionMetadataImpl.create(this)
                 : InterceptionMetadataImpl.noop();
         this.activationRequest = ActivationRequest.builder()
@@ -408,6 +411,31 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
             throw new ServiceRegistryException("Attempt to use service info not managed by this registry: " + info);
         }
         return result;
+    }
+
+    void interceptors(ServiceInfo... serviceInfos) {
+        if (!interceptionEnabled) {
+            return;
+        }
+        try {
+            stateWriteLock.lock();
+            if (this.interceptors == null) {
+                this.interceptors = new LinkedHashMap<>();
+            }
+            Set<InjectServiceInfo> ordered = new TreeSet<>(SERVICE_INFO_COMPARATOR);
+            for (ServiceInfo serviceInfo : serviceInfos) {
+                ServiceManager<Object> serviceManager = this.serviceManager(serviceInfo);
+                ordered.add(serviceManager.injectDescriptor());
+            }
+
+            // there may be more than one application, we need to add to existing
+            for (InjectServiceInfo injectServiceInfo : ordered) {
+                this.interceptors.computeIfAbsent(injectServiceInfo.coreInfo(),
+                                                  this::serviceManager);
+            }
+        } finally {
+            stateWriteLock.unlock();
+        }
     }
 
     List<ServiceManager<Interception.Interceptor>> interceptors() {

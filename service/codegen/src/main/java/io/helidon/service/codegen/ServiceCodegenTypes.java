@@ -183,9 +183,9 @@ public final class ServiceCodegenTypes {
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Application}.
      */
-    public static final TypeName INJECT_APPLICATION = TypeName.create("io.helidon.service.inject.api.Application");
+    public static final TypeName INJECT_APPLICATION = TypeName.create("io.helidon.service.inject.Application");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.inject.InvocationException}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InvocationException}.
      */
     public static final TypeName INVOCATION_EXCEPTION = TypeName.create("io.helidon.service.inject.api.InvocationException");
     /**

@@ -27,7 +27,7 @@ import io.helidon.service.inject.api.Qualifier;
 import com.oracle.bmc.Region;
 
 /**
- * Can optionally be used to return a {@link Region} appropriate for the {@link io.helidon.inject.service.Ip} context.
+ * Can optionally be used to return a {@link Region} appropriate for the {@link io.helidon.service.inject.api.Ip} context.
  */
 @Injection.Singleton
 class OciRegionProvider implements InjectionPointProvider<Region> {

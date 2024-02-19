@@ -34,7 +34,7 @@ class HttpEntityParamProvider extends AbstractParametersProvider implements Http
         contentBuilder.addContent(serverRequestParamName)
                 .addContent(".content().as(")
                 .addContent(parameterType)
-                .addContent(".class)");
+                .addContent(".class);");
 
         return true;
     }

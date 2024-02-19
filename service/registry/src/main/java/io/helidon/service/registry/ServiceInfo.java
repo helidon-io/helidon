@@ -40,7 +40,7 @@ public interface ServiceInfo extends Weighted {
      *
      * @return required dependencies
      */
-    default List<Dependency> dependencies() {
+    default List<? extends Dependency> dependencies() {
         return List.of();
     }
 

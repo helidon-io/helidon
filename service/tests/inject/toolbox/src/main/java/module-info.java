@@ -17,4 +17,11 @@
 module io.helidon.service.tests.inject.toolbox {
     requires io.helidon.service.registry;
     requires io.helidon.service.inject.api;
+
+    // we use Application
+    requires io.helidon.service.inject;
+    requires io.helidon.config;
+    requires io.helidon.http;
+
+    exports io.helidon.service.tests.inject.toolbox;
 }

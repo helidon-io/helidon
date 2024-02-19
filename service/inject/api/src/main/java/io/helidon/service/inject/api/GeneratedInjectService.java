@@ -92,10 +92,12 @@ public final class GeneratedInjectService {
      * whether to, and how to intercept elements.
      * <p>
      * Used by generated code (passed as a parameter to
-     * {@link io.helidon.inject.service.ServiceDescriptor#inject(InjectionContext, GeneratedInjectService.InterceptionMetadata,
-     * java.util.Set, Object)}, and
-     * {@link io.helidon.inject.service.ServiceDescriptor#instantiate(InjectionContext,
-     * GeneratedInjectService.InterceptionMetadata)}).
+     * {@link
+     * io.helidon.service.inject.api.GeneratedInjectService.Descriptor#inject(io.helidon.service.registry.DependencyContext,
+     * io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata, java.util.Set, Object)}, and
+     * {@link
+     * io.helidon.service.inject.api.GeneratedInjectService.Descriptor#instantiate(io.helidon.service.registry.DependencyContext,
+     * io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata)}).
      */
     public interface InterceptionMetadata {
         /**

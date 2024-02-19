@@ -27,7 +27,7 @@ import io.helidon.common.types.TypeName;
  */
 public final class InjectOptions {
     /**
-     * Which {@code io.helidon.inject.InterceptionStrategy} to use.
+     * Which {@code InterceptionStrategy} to use.
      */
     public static final Option<InterceptionStrategy> INTERCEPTION_STRATEGY =
             Option.create("helidon.inject.interceptionStrategy",

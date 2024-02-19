@@ -107,7 +107,8 @@ public final class Service {
      * The service descriptor will be added as any other service descriptor that is generated, only it is expected
      * as a source.
      * The descriptor MUST follow the approach of Helidon service descriptor, and must be public,
-     * provide a public constant called {@code INSTANCE}, and all its injection points ({@link io.helidon.inject.service.Ip}
+     * provide a public constant called {@code INSTANCE}, and all its dependencies
+     * ({@link io.helidon.service.registry.Dependency}
      * must be available as public constants (and correctly described in each Ip instance).
      */
     @Documented

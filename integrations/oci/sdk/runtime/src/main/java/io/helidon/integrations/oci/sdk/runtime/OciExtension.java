@@ -51,7 +51,7 @@ import static java.util.function.Predicate.not;
  * terminology and general approach before continuing further.
  * <p>
  * This module enables the
- * {@linkplain io.helidon.inject.service.Injection.Inject injection} of any <em>service
+ * {@linkplain io.helidon.service.inject.api.Injection.Inject injection} of any <em>service
  * interface</em>, <em>service client</em>, <em>service client
  * builder</em>, <em>asynchronous service interface</em>,
  * <em>asynchronous service client</em>, or <em>asynchronous service
@@ -59,7 +59,7 @@ import static java.util.function.Predicate.not;
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>.
  * <p>
- * Additionally, this module enables the {@linkplain io.helidon.inject.service.Injection.Inject injection}
+ * Additionally, this module enables the {@linkplain io.helidon.service.inject.api.Injection.Inject injection}
  * of the {@link com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider},
  * which allows the corresponding service client to authenticate with the service.
  * <p>In all cases, user-supplied configuration will be preferred over any
@@ -69,7 +69,7 @@ import static java.util.function.Predicate.not;
  *
  * To use this extension, make sure it is on your project's runtime
  * classpath. Also be sure the <em>helidon-integrations-oci-processor</em> is
- * on your APT/compile-time classpath. To {@linkplain io.helidon.inject.service.Injection.Inject inject} a service
+ * on your APT/compile-time classpath. To {@linkplain io.helidon.service.inject.api.Injection.Inject inject} a service
  * interface named
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.CloudExample</code>
  * (or an analogous asynchronous service interface), you will also
@@ -82,7 +82,7 @@ import static java.util.function.Predicate.not;
  *
  * <h2>Advanced Usage</h2>
  *
- * <p>In the course of providing {@linkplain io.helidon.inject.service.Injection.Inject
+ * <p>In the course of providing {@linkplain io.helidon.service.inject.api.Injection.Inject
  * injection support} for a service interface or an asynchronous
  * service interface, this {@linkplain java.security.cert.Extension extension} will
  * create service client builder and asynchronous service client

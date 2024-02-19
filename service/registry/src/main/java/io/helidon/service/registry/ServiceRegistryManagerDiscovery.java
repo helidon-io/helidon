@@ -15,7 +15,7 @@ class ServiceRegistryManagerDiscovery {
 
     static ServiceRegistryManager create(ServiceRegistryConfig config) {
         ServiceDiscovery discovery = config.discoverServices()
-                ? CoreServiceDiscovery.instance()
+                ? CoreServiceDiscovery.create()
                 : CoreServiceDiscovery.noop();
 
         ServiceRegistryManager coreRegistryManager = new CoreServiceRegistryManager(config, discovery);

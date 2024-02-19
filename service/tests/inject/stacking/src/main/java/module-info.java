@@ -17,4 +17,10 @@
 module io.helidon.service.tests.inject.stacking {
     requires io.helidon.service.registry;
     requires io.helidon.service.inject.api;
+
+    // we use Application
+    requires io.helidon.service.inject;
+    requires io.helidon.http;
+
+    exports io.helidon.service.tests.inject.stacking;
 }

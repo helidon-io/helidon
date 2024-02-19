@@ -82,8 +82,8 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-maven-plugin</artifactId>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-maven-plugin</artifactId>
                 <version>${helidon.version}</version>
                 <executions>
                     <execution>
@@ -119,7 +119,7 @@
                             <serviceTypeName>org.atinject.tck.auto.accessories.SpareTire</serviceTypeName>
                             <qualifiers>
                                 <qualifier>
-                                    <qualifierTypeName>io.helidon.inject.service.Injection.Named</qualifierTypeName>
+                                    <qualifierTypeName>io.helidon.service.inject.api.Injection.Named</qualifierTypeName>
                                     <value>spare</value>
                                 </qualifier>
                             </qualifiers>
@@ -146,8 +146,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.service.inject</groupId>
-                        <artifactId>helidon-service-inject-codegen-jakarta</artifactId>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen-jakarta</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

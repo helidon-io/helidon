@@ -25,7 +25,7 @@ import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Invocation context provides metadata about the invoked element to an interceptor.
- * Used by {@link io.helidon.inject.service.Interception.Interceptor}.
+ * Used by {@link io.helidon.service.inject.api.Interception.Interceptor}.
  */
 @Prototype.Blueprint
 interface InvocationContextBlueprint {

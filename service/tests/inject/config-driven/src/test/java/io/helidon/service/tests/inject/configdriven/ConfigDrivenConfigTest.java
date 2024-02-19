@@ -5,12 +5,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.ConfigException;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigProvider__ServiceDescriptor;
 import io.helidon.config.ConfigSources;
-import io.helidon.service.inject.InjectConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.Lookup;
@@ -21,14 +18,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ConfigDrivenConfigTest {
     private static InjectRegistryManager registryManager;

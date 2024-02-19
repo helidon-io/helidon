@@ -65,7 +65,7 @@ public class InjectCodegenProvider implements CodegenExtensionProvider {
             Stream.concat(EXTENSIONS.stream()
                                   .flatMap(it -> it.supportedAnnotationPackages()
                                           .stream()),
-                          Stream.of("io.helidon.inject.service."))
+                          Stream.of("io.helidon.service.inject.api."))
                     .collect(Collectors.toUnmodifiableSet());
 
     /**

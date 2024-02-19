@@ -7,6 +7,12 @@ import java.util.function.Supplier;
 
 import io.helidon.common.config.GlobalConfig;
 
+/**
+ * A global singleton manager for a service registry.
+ * <p>
+ * Note that when using this registry, testing is a bit more complicated, as the registry is shared
+ * statically.
+ */
 public final class GlobalServiceRegistry {
     private static final AtomicReference<ServiceRegistry> INSTANCE = new AtomicReference<>();
     private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
@@ -14,6 +20,11 @@ public final class GlobalServiceRegistry {
     private GlobalServiceRegistry() {
     }
 
+    /**
+     * Whether a service registry instance is configured.
+     *
+     * @return {@code true} if a registry instance was already created
+     */
     public static boolean configured() {
         return INSTANCE.get() != null;
     }

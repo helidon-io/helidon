@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.service.registry.Dependency;
 
 /**
  * Service metadata.
@@ -17,13 +16,9 @@ public interface InjectServiceInfo extends io.helidon.service.registry.ServiceIn
      *
      * @return required dependencies
      */
-    default List<Ip> injectionPoints() {
-        return List.of();
-    }
-
     @Override
-    default List<Dependency> dependencies() {
-        return List.copyOf(injectionPoints());
+    default List<Ip> dependencies() {
+        return List.of();
     }
 
     /**

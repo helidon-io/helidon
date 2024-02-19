@@ -1,5 +1,6 @@
 package io.helidon.service.inject;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -22,11 +23,11 @@ import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Ip;
 import io.helidon.service.inject.api.ServiceRegistry__ServiceDescriptor;
-import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.DescriptorMetadata;
 import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.ServiceDiscovery;
+import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -67,10 +68,11 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         // we provide the service, this
         return new InjectRegistryManager(config,
                                          config.discoverServices()
-                                                 ? ServiceDiscovery.instance()
+                                                 ? ServiceDiscovery.create()
                                                  : ServiceDiscovery.noop());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public InjectRegistry registry() {
         Lock readLock = lifecycleLock.readLock();
@@ -129,6 +131,8 @@ public class InjectRegistryManager implements ServiceRegistryManager {
 
             boolean logUnsupported = LOGGER.isLoggable(System.Logger.Level.TRACE);
 
+            List<GeneratedService.Descriptor<Application>> applications = new ArrayList<>();
+
             for (var descriptorMeta : discovery.allMetadata()) {
                 String registryType = descriptorMeta.registryType();
                 if (!(DescriptorMetadata.REGISTRY_TYPE_CORE.equals(registryType) || "inject".equals(registryType))) {
@@ -141,17 +145,22 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 }
 
                 GeneratedService.Descriptor<?> descriptor = descriptorMeta.descriptor();
-                Described described = toDescribed(descriptorToDescribed, descriptor);
+                if (descriptor.contracts().contains(Application.TYPE)) {
+                    applications.add((GeneratedService.Descriptor<Application>) descriptor);
+                    // applications are not bound to the registry
+                } else {
+                    Described described = toDescribed(descriptorToDescribed, descriptor);
 
-                bind(scopeHandlers,
-                     servicesByType,
-                     servicesByContract,
-                     qualifiedProvidersByQualifier,
-                     typedQualifiedProviders,
-                     described);
+                    bind(scopeHandlers,
+                         servicesByType,
+                         servicesByContract,
+                         qualifiedProvidersByQualifier,
+                         typedQualifiedProviders,
+                         described);
+                }
             }
 
-            // and as the last step, add service registry information (service registry cannot be overridden in any way)
+            // add service registry information (service registry cannot be overridden in any way)
             Descriptor<?> myDescriptor = ServiceRegistry__ServiceDescriptor.INSTANCE;
             Described described = new Described(myDescriptor, myDescriptor, false);
             descriptorToDescribed.put(myDescriptor, described);
@@ -170,6 +179,13 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                                                      servicesByContract,
                                                      qualifiedProvidersByQualifier,
                                                      typedQualifiedProviders);
+
+            // now check if we have an application, and if so, apply it
+            for (GeneratedService.Descriptor<Application> application : applications) {
+                // applications cannot have dependencies
+                Application appInstance = (Application) application.instantiate(DependencyContext.create(Map.of()));
+                appInstance.configure(new ApplicationPlanBinder(appInstance, registry));
+            }
 
             return registry;
         } finally {
@@ -306,11 +322,6 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         }
 
         @Override
-        public List<Ip> injectionPoints() {
-            return injectionPoints;
-        }
-
-        @Override
         public TypeName scope() {
             // core services are equal in functionality to singletons
             return Injection.Singleton.TYPE_NAME;
@@ -332,8 +343,8 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         }
 
         @Override
-        public List<Dependency> dependencies() {
-            return delegate.dependencies();
+        public List<Ip> dependencies() {
+            return injectionPoints;
         }
 
         @Override
@@ -359,6 +370,39 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         @Override
         public io.helidon.service.registry.ServiceInfo coreInfo() {
             return delegate;
+        }
+    }
+
+    private static class ApplicationPlanBinder implements InjectionPlanBinder {
+        private static final System.Logger LOGGER = System.getLogger(ApplicationPlanBinder.class.getName());
+
+        private final Application appInstance;
+        private final InjectServiceRegistryImpl registry;
+
+        private ApplicationPlanBinder(Application appInstance, InjectServiceRegistryImpl registry) {
+            this.appInstance = appInstance;
+            this.registry = registry;
+        }
+
+        @Override
+        public Binder bindTo(ServiceInfo descriptor) {
+            ServiceManager<Object> serviceManager = registry.serviceManager(descriptor);
+
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG, "binding injection plan to " + serviceManager);
+            }
+
+            return serviceManager.servicePlanBinder();
+        }
+
+        @Override
+        public void interceptors(ServiceInfo... descriptors) {
+            registry.interceptors(descriptors);
+        }
+
+        @Override
+        public String toString() {
+            return "Service binder for application: " + appInstance.name();
         }
     }
 }

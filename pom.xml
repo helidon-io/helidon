@@ -136,6 +136,7 @@
 
         <version.helidon-cli>3.0.0</version.helidon-cli>
 
+        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
         <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
         <javadoc.link.jakarta-jaxrs>https://jakarta.ee/specifications/restful-ws/3.1/apidocs/</javadoc.link.jakarta-jaxrs>
         <javadoc.link.jakarta-cdi>https://jakarta.ee/specifications/cdi/4.0/apidocs/</javadoc.link.jakarta-cdi>
@@ -263,6 +264,7 @@
                     <configuration>
                         <source>${version.java}</source>
                         <failOnError>true</failOnError>
+                        <failOnWarnings>${javadoc.fail-on-warnings}</failOnWarnings>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <offline>true</offline>

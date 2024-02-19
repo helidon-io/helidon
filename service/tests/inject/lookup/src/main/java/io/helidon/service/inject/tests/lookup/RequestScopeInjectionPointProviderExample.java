@@ -32,10 +32,10 @@ class RequestScopeInjectionPointProviderExample implements InjectionPointProvide
     static final Qualifier SECOND_QUALI = Qualifier.create(RequestScopeInjectionPointProviderExample.SecondQuali.class);
     static final QualifiedInstance<ContractRequestScope> FIRST =
             QualifiedInstance.create(new RequestScopeInjectionPointProviderExample.FirstClass(),
-                                                                                          FIRST_QUALI);
+                                     FIRST_QUALI);
     static final QualifiedInstance<ContractRequestScope> SECOND =
             QualifiedInstance.create(new RequestScopeInjectionPointProviderExample.SecondClass(),
-                                                                                           SECOND_QUALI);
+                                     SECOND_QUALI);
 
     @Override
     public Optional<QualifiedInstance<ContractRequestScope>> first(Lookup query) {

@@ -30,7 +30,7 @@
 
     <groupId>io.helidon.service.tests.inject</groupId>
     <artifactId>helidon-service-tests-inject-project</artifactId>
-    <name>Helidon Service Tests Inject</name>
+    <name>Helidon Service Tests Inject Project</name>
     <description>Tests for injection operations</description>
 
     <packaging>pom</packaging>
@@ -45,5 +45,8 @@
         <module>stacking</module>
         <module>toolbox</module>
         <module>config-driven</module>
+        <module>jakarta</module>
+        <module>javax</module>
+        <module>tck-jsr330</module>
     </modules>
 </project>

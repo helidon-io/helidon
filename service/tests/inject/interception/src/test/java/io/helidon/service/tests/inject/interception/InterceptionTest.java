@@ -165,8 +165,11 @@ class InterceptionTest {
     void testModify() {
         String response = service.intercepted("hello", true, false, false);
 
+        // weight + 100
         Invocation returning = ReturningInterceptor.lastCall();
+        // weight + 50
         Invocation modifying = ModifyingInterceptor.lastCall();
+        // default weight
         Invocation repeating = RepeatingInterceptor.lastCall();
 
         // first make sure the interceptors were/were not called

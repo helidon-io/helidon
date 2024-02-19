@@ -257,7 +257,7 @@ class InjectionExtension implements InjectCodegenExtension {
         serviceTypeMethod(classModel);
         descriptorTypeMethod(classModel);
         contractsMethod(classModel, contracts);
-        injectionPointsMethod(classModel, params, superType);
+        dependenciesMethod(classModel, params, superType);
         isAbstractMethod(classModel, superType, isAbstractClass);
         instantiateMethod(classModel, serviceType, params, isAbstractClass, constructorIntercepted, methodsIntercepted);
         injectMethod(classModel, params, superType, methods, canIntercept, maybeIntercepted);
@@ -1477,18 +1477,18 @@ class InjectionExtension implements InjectCodegenExtension {
                 .addContentLine("return CONTRACTS;"));
     }
 
-    private void injectionPointsMethod(ClassModel.Builder classModel, List<ParamDefinition> params, SuperType superType) {
-        // List<InjectionParameterId> dependencies()
+    private void dependenciesMethod(ClassModel.Builder classModel, List<ParamDefinition> params, SuperType superType) {
+        // List<Ip> dependencies()
         boolean hasSuperType = superType.hasSupertype();
         if (hasSuperType || !params.isEmpty()) {
             classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                     .returnType(LIST_OF_IP_IDS)
-                    .name("injectionPoints")
+                    .name("dependencies")
                     .update(it -> {
                         if (hasSuperType && !superType.superTypeIsCore()) {
                             it.addContent("return ")
                                     .addContent(INJECT_IP_SUPPORT)
-                                    .addContentLine(".combineIps(DEPENDENCIES, super.injectionPoints());");
+                                    .addContentLine(".combineIps(DEPENDENCIES, super.dependencies());");
                         } else {
                             // when super type is a core service, it only can have constructor dependencies - no need to combine
                             it.addContentLine("return DEPENDENCIES;");

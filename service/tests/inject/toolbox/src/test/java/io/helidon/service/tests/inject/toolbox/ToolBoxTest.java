@@ -35,7 +35,6 @@ import io.helidon.service.tests.inject.toolbox.impl.MainToolBox;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
@@ -150,28 +149,29 @@ class ToolBoxTest {
      * This assumes the presence of module(s) + application(s) to handle all bindings, with effectively no lookups!
      */
     @Test
-    @Disabled("Until we re-introduce Application support")
     void noServiceActivationRequiresLookupWhenApplicationIsPresent() {
         Counter counter = lookupCounter();
         long initialCount = counter.count();
 
         List<InjectServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
-
-        // from this point, there should be no additional lookups
+        // one lookup on previous line
         long postLookupCount = counter.count();
         assertThat((postLookupCount - initialCount), is(1L));
-        allServices.forEach(sp -> {
+
+        // now lookup of each service should increase the counter by exactly one (i.e. no lookups for injection points)
+        for (InjectServiceInfo service : allServices) {
+            postLookupCount++;
             try {
-                registry.supply(sp.serviceType())
+                registry.supply(service.serviceType())
                         .get();
             } catch (Exception ignored) {
                 // injection point providers will throw an exception, as they cannot resolve injection point
                 // still should not lookup
             }
             assertThat("Activation should not have triggered any lookups (for singletons): "
-                               + sp + " triggered lookups", counter.count(),
+                               + service.descriptorType().fqName() + " triggered lookups", counter.count(),
                        equalTo(postLookupCount));
-        });
+        }
     }
 
     @Test

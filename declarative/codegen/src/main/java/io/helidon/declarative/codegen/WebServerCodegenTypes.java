@@ -25,6 +25,6 @@ class WebServerCodegenTypes {
     static final TypeName SERVICE_HEADERS = TypeName.create("io.helidon.http.Headers__ServiceDescriptor");
     static final TypeName SERVICE_SERVER_REQUEST = TypeName.create("io.helidon.webserver.ServerRequest__ServiceDescriptor");
     static final TypeName SERVICE_SERVER_RESPONSE = TypeName.create("io.helidon.webserver.ServerResponse__ServiceDescriptor");
-    static final TypeName INJECT_SCOPE = TypeName.create("io.helidon.inject.Scope");
-    static final TypeName INJECT_REQUEST_SCOPE_CTRL = TypeName.create("io.helidon.inject.RequestScopeControl");
+    static final TypeName INJECT_SCOPE = TypeName.create("io.helidon.service.inject.api.Scope");
+    static final TypeName INJECT_REQUEST_SCOPE_CTRL = TypeName.create("io.helidon.service.inject.api.RequestScopeControl");
 }

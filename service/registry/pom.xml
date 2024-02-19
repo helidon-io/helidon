@@ -34,6 +34,10 @@
         Service registry (a replacement for service loader), and API necessary to declare services.
     </description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

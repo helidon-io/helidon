@@ -42,7 +42,7 @@ class QualifierSupport {
         static final Qualifier DEFAULT_NAMED = createNamed(Injection.Named.DEFAULT_NAME);
 
         /**
-         * Represents a qualifier used for injecting name of {@link io.helidon.inject.service.Injection.DrivenBy}
+         * Represents a qualifier used for injecting name of {@link io.helidon.service.inject.api.Injection.DrivenBy}
          * instances.
          */
         @Prototype.Constant

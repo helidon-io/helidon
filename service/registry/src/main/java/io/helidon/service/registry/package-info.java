@@ -15,14 +15,9 @@
  */
 
 /**
- * API required to define services, and to compile the code generated sources for Helidon Inject,
+ * API required to define services, and to compile the code generated sources for Helidon Service Registry,
  * with a core service registry implementation (replacement for {@link java.util.ServiceLoader}).
  * <p>
- * The following main entry points for declaring services are available:
- * <ul>
- *     <li>{@link io.helidon.service.registry.Service} - for core registry</li>
- *     <li>{@link io.helidon.service.registry.Injection} - for injection support</li>
- *     <li>{@link io.helidon.service.registry.ConfigDriven} - for config beans and config driven</li>
- * </ul>
+ * The following main entry point for declaring services is {@link io.helidon.service.registry.Service}.
  */
 package io.helidon.service.registry;

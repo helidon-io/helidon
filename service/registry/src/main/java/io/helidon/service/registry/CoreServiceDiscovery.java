@@ -21,14 +21,12 @@ import io.helidon.service.registry.GeneratedService.Descriptor;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 class CoreServiceDiscovery implements ServiceDiscovery {
-    static final ServiceDiscovery INSTANCE = new CoreServiceDiscovery();
-
     private static final System.Logger LOGGER = System.getLogger(CoreServiceDiscovery.class.getName());
     private static final String SERVICES_RESOURCE = "META-INF/helidon/services/services.txt";
 
-    private static final List<DescriptorMetadata> ALL_DESCRIPTORS;
+    private final List<DescriptorMetadata> allDescriptors;
 
-    static {
+    private CoreServiceDiscovery() {
         Map<TypeName, DescriptorMetadata> allDescriptors = new LinkedHashMap<>();
 
         classLoader().resources(SERVICES_RESOURCE)
@@ -40,11 +38,11 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                     allDescriptors.putIfAbsent(it.descriptorType(), it);
                 });
 
-        ALL_DESCRIPTORS = List.copyOf(allDescriptors.values());
+        this.allDescriptors = List.copyOf(allDescriptors.values());
     }
 
-    static ServiceDiscovery instance() {
-        return CoreServiceDiscovery.INSTANCE;
+    static ServiceDiscovery create() {
+        return new CoreServiceDiscovery();
     }
 
     static ServiceDiscovery noop() {
@@ -53,7 +51,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public List<DescriptorMetadata> allMetadata() {
-        return ALL_DESCRIPTORS;
+        return allDescriptors;
     }
 
     private static ClassLoader classLoader() {
@@ -141,7 +139,10 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         @SuppressWarnings({"unchecked", "rawtypes"})
         private static <T> Class<? extends T> toClass(TypeName descriptorType) {
             try {
-                return (Class) Class.forName(descriptorType.fqName());
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                cl = (cl == null) ? CoreServiceDiscovery.class.getClassLoader() : cl;
+
+                return (Class) cl.loadClass(descriptorType.fqName());
             } catch (ClassNotFoundException e) {
                 throw new ServiceRegistryException("Resolution of service descriptor \"" + descriptorType.fqName()
                                                            + "\" to class failed.",
@@ -157,7 +158,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                 Field field = clazz.getField("INSTANCE");
                 return (Descriptor<?>) field.get(null);
             } catch (ReflectiveOperationException e) {
-                throw new ServiceRegistryException("Could not obtain the singleton instance of service descriptor "
+                throw new ServiceRegistryException("Could not obtain the instance of service descriptor "
                                                            + descriptorType.fqName(),
                                                    e);
             }

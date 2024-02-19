@@ -16,4 +16,10 @@
 
 module io.helidon.service.inject.tests.scopes {
     requires io.helidon.service.inject.api;
+
+    // we use Application
+    requires io.helidon.service.inject;
+    requires io.helidon.http;
+
+    exports io.helidon.service.tests.inject.scopes;
 }

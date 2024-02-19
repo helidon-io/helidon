@@ -22,7 +22,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceInfo;
 
 /**
  * Entry point to services with injection support in Helidon.

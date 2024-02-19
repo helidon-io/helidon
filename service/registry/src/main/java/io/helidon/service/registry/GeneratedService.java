@@ -25,15 +25,15 @@ public final class GeneratedService {
 
     /**
      * A descriptor of a service. In addition to providing service metadata, this also allows instantiation
-     * and injection to the service instance.
-     * <p>
-     * All types in this class are used from generated code.
+     * of the service instance, with dependent services as parameters.
+     *
+     * @param <T> type of the described service
      */
     public interface Descriptor<T> extends ServiceInfo {
         /**
          * Create a new service instance.
          *
-         * @param ctx injection context with all injection points data
+         * @param ctx dependency context with all dependencies of this service
          * @return a new instance, must be of the type T or a subclass
          */
         // we cannot return T, as it does not allow us to correctly handle inheritance

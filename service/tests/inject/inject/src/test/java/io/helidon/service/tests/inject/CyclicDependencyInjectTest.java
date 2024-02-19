@@ -84,7 +84,7 @@ public class CyclicDependencyInjectTest {
         }
 
         @Override
-        public List<Ip> injectionPoints() {
+        public List<Ip> dependencies() {
             return List.of(DEP);
         }
 
@@ -129,7 +129,7 @@ public class CyclicDependencyInjectTest {
         }
 
         @Override
-        public List<Ip> injectionPoints() {
+        public List<Ip> dependencies() {
             return List.of(DEP);
         }
 

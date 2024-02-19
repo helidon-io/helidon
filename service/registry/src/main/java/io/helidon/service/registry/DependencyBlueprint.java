@@ -44,10 +44,10 @@ interface DependencyBlueprint {
     String name();
 
     /**
-     * Each injection point expects a specific contract to be injected.
+     * Each dependency ia a specific contract. Each service provides one or more contracts for dependencies.
      * For example for {@code List<MyService>}, the contract is {@code MyService}.
      *
-     * @return contract of the injected service(s)
+     * @return contract of the service we depend on
      */
     @Option.Redundant
     TypeName contract();
@@ -55,7 +55,7 @@ interface DependencyBlueprint {
     /**
      * Generic type equivalent to {@link Dependency#contract()}. We need both, to prevent reflection at runtime.
      *
-     * @return generic type of the injected contract
+     * @return generic type of the dependency
      */
     @Option.Redundant
     @Option.Default("OBJECT")
@@ -82,7 +82,7 @@ interface DependencyBlueprint {
     /**
      * Type of the dependency (exact parameter type with all generics).
      *
-     * @return type of the injection point as {@link io.helidon.common.types.TypeName}
+     * @return type of the dependency as {@link io.helidon.common.types.TypeName}
      */
     @Option.Redundant(stringValue = false)
     TypeName typeName();

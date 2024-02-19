@@ -130,7 +130,7 @@ public class CyclicDependencyCoreTest {
         }
 
         @Override
-        public List<Ip> injectionPoints() {
+        public List<Ip> dependencies() {
             return List.of(DEP);
         }
 

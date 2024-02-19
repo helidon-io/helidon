@@ -16,4 +16,8 @@
 
 module io.helidon.service.tests.inject.interception {
     requires io.helidon.service.inject.api;
+    requires io.helidon.service.inject;
+    requires io.helidon.http;
+
+    exports io.helidon.service.tests.inject.interception;
 }

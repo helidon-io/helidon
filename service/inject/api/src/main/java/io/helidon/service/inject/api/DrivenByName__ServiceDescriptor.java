@@ -6,7 +6,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 /**
- * Service descriptor to enable injection of String name of a {@link io.helidon.inject.service.Injection.DrivenBy}
+ * Service descriptor to enable injection of String name of a {@link io.helidon.service.inject.api.Injection.DrivenBy}
  * service.
  * <p>
  * Not intended for direct use by users, implementation detail of the service registry, must be public,

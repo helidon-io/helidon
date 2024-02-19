@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-service-inject-tests-service-lifecycle</artifactId>
-    <name>Helidon Service Inject Tests Service Lifecycle</name>
+    <name>Helidon Service Tests Inject Service Lifecycle</name>
     <description>
         Tests for service lifecycle. This test validates that singletons are instantiated and injected just once, and at the right
         time. This test validates that non-scoped services are instantiated for each lookup, and at the right time. This test

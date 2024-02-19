@@ -149,7 +149,7 @@ class CoreServiceRegistry implements ServiceRegistry {
     }
 
     private Object instance(Descriptor<?> descriptor) {
-        List<Dependency> dependencies = descriptor.dependencies();
+        List<? extends Dependency> dependencies = descriptor.dependencies();
         Map<Dependency, Object> collectedDependencies = new HashMap<>();
 
         for (Dependency dependency : dependencies) {

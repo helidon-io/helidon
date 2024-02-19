@@ -46,9 +46,9 @@
             <artifactId>helidon-service-inject</artifactId>
         </dependency>
         <dependency>
+            <!-- must be in compile scope, so we generate application for it -->
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -137,19 +137,19 @@
                     </execution>
                 </executions>
             </plugin>
-            <!--            <plugin>-->
-            <!--                <groupId>io.helidon.inject</groupId>-->
-            <!--                <artifactId>helidon-inject-maven-plugin</artifactId>-->
-            <!--                <version>${helidon.version}</version>-->
-            <!--                <executions>-->
-            <!--                    <execution>-->
-            <!--                        <id>create-application</id>-->
-            <!--                        <goals>-->
-            <!--                            <goal>application-create</goal>-->
-            <!--                        </goals>-->
-            <!--                    </execution>-->
-            <!--                </executions>-->
-            <!--            </plugin>-->
+            <plugin>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>create-application</id>
+                        <goals>
+                            <goal>application-create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

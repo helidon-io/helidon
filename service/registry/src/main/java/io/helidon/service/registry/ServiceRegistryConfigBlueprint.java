@@ -14,6 +14,7 @@ import io.helidon.service.registry.GeneratedService.Descriptor;
  */
 @Prototype.Blueprint
 @Prototype.Configured("service-registry")
+@Prototype.CustomMethods(ServiceRegistryConfigSupport.CustomMethods.class)
 interface ServiceRegistryConfigBlueprint {
     /**
      * Whether to discover services from the class path.
