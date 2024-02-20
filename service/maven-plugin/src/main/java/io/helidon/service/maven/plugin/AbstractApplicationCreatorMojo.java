@@ -94,11 +94,11 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
     /**
      * Default constructor.
      */
-    protected AbstractApplicationCreatorMojo() {
+    AbstractApplicationCreatorMojo() {
     }
 
     @Override
-    protected void innerExecute() {
+    void innerExecute() {
 
         MavenLogger mavenLogger = MavenLogger.create(getLog(), failOnWarning());
 
@@ -169,12 +169,12 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         }
     }
 
-    protected void createApplication(MavenCodegenContext scanContext,
-                                     WrappedServices services,
-                                     CompilerOptions compilerOptions,
-                                     Set<TypeName> serviceNamesForExclusion,
-                                     String moduleName,
-                                     String packageName) {
+    void createApplication(MavenCodegenContext scanContext,
+                           WrappedServices services,
+                           CompilerOptions compilerOptions,
+                           Set<TypeName> serviceNamesForExclusion,
+                           String moduleName,
+                           String packageName) {
 
         // retrieves all the services in the registry
         Set<TypeName> allServices = services.all()
@@ -211,29 +211,28 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      *
      * @return where to generate sources
      */
-    protected abstract Path generatedSourceDirectory();
+    abstract Path generatedSourceDirectory();
 
     /**
      * Class name to be generated.
      *
      * @return application class name
      */
-
-    protected abstract String getGeneratedClassName();
+    abstract String getGeneratedClassName();
 
     /**
      * Output directory for this {@link #scope()}.
      *
      * @return output directory
      */
-    protected abstract Path outputDirectory();
+    abstract Path outputDirectory();
 
     /**
      * Source roots for this {@link #scope()}.
      *
      * @return source roots
      */
-    protected List<Path> sourceRootPaths() {
+    List<Path> sourceRootPaths() {
         return nonTestSourceRootPaths();
     }
 
@@ -242,7 +241,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      *
      * @return source roots for production code
      */
-    protected List<Path> nonTestSourceRootPaths() {
+    List<Path> nonTestSourceRootPaths() {
         MavenProject project = mavenProject();
         List<Path> result = new ArrayList<>(project.getCompileSourceRoots().size());
         for (Object a : project.getCompileSourceRoots()) {
@@ -275,7 +274,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
                 .anyMatch(p -> Files.exists(p.resolve(ModuleInfo.FILE_NAME)));
     }
 
-    protected Optional<Path> findModuleInfo(List<Path> sourcePaths) {
+    Optional<Path> findModuleInfo(List<Path> sourcePaths) {
         return sourcePaths.stream()
                 .map(it -> it.resolve(ModuleInfo.FILE_NAME))
                 .filter(Files::exists)
@@ -287,7 +286,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      *
      * @return set of services that we already code-generated
      */
-    protected Set<TypeName> serviceTypeNamesForExclusion(CodegenLogger logger) {
+    Set<TypeName> serviceTypeNamesForExclusion(CodegenLogger logger) {
         return Set.of();
     }
 
@@ -304,7 +303,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      *
      * @return codegen scope
      */
-    protected abstract CodegenScope scope();
+    abstract CodegenScope scope();
 
     /**
      * Creates a new classloader.
@@ -313,8 +312,8 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      * @param parent    the parent loader
      * @return the loader
      */
-    protected URLClassLoader createClassLoader(Collection<Path> classPath,
-                                               ClassLoader parent) {
+    URLClassLoader createClassLoader(Collection<Path> classPath,
+                                     ClassLoader parent) {
         List<URL> urls = new ArrayList<>(classPath.size());
         for (Path dependency : classPath) {
             try {
@@ -332,15 +331,15 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         return new URLClassLoader(urls.toArray(new URL[0]), parent);
     }
 
-    protected String getSource() {
+    String getSource() {
         return source;
     }
 
-    protected String getTarget() {
+    String getTarget() {
         return target;
     }
 
-    protected LinkedHashSet<Path> getSourceClasspathElements() {
+    LinkedHashSet<Path> getSourceClasspathElements() {
         MavenProject project = mavenProject();
         LinkedHashSet<Path> result = new LinkedHashSet<>(project.getCompileArtifacts().size());
         result.add(Paths.get(project.getBuild().getOutputDirectory()));
@@ -353,7 +352,7 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
     /**
      * Provides a convenient way to handle test scope. Returns the classpath for source files (or test sources) only.
      */
-    protected LinkedHashSet<Path> getClasspathElements() {
+    LinkedHashSet<Path> getClasspathElements() {
         return getSourceClasspathElements();
     }
 

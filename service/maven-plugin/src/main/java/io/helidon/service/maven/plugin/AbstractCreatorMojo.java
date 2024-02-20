@@ -107,7 +107,7 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * Default constructor.
      */
-    protected AbstractCreatorMojo() {
+    AbstractCreatorMojo() {
     }
 
     @Override
@@ -135,14 +135,14 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
      * @throws org.apache.maven.plugin.MojoExecutionException as needed
      * @throws org.apache.maven.plugin.MojoFailureException   as needed
      */
-    protected abstract void innerExecute() throws MojoExecutionException, MojoFailureException;
+    abstract void innerExecute() throws MojoExecutionException, MojoFailureException;
 
     /**
      * The project build directory.
      *
      * @return the project build directory
      */
-    protected Path projectBuildTargetDir() {
+    Path projectBuildTargetDir() {
         return Paths.get(targetDir);
     }
 
@@ -151,7 +151,7 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @return the scratch directory
      */
-    protected Path injectScratchDir() {
+    Path injectScratchDir() {
         return projectBuildTargetDir().resolve("inject");
     }
 
@@ -160,7 +160,7 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @return the target package name, if configured
      */
-    protected Optional<String> packageNameFromMavenConfig() {
+    Optional<String> packageNameFromMavenConfig() {
         return Optional.ofNullable(packageName);
     }
 
@@ -169,7 +169,7 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @return the module name, if configured
      */
-    protected Optional<String> moduleNameFromMavenConfig() {
+    Optional<String> moduleNameFromMavenConfig() {
         return Optional.ofNullable(moduleName);
     }
 
@@ -178,7 +178,7 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @return maven project
      */
-    protected MavenProject mavenProject() {
+    MavenProject mavenProject() {
         return project;
     }
 
@@ -188,7 +188,7 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @return if processing should fail on error
      */
-    protected boolean failOnError() {
+    boolean failOnError() {
         return failOnError;
     }
 
@@ -197,7 +197,7 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @return if processing should fail on warning
      */
-    protected boolean failOnWarning() {
+    boolean failOnWarning() {
         return failOnWarning;
     }
 
@@ -206,7 +206,7 @@ abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @return compiler arguments
      */
-    protected List<String> getCompilerArgs() {
+    List<String> getCompilerArgs() {
         return compilerArgs == null ? List.of() : compilerArgs;
     }
 }

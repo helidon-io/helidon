@@ -57,7 +57,7 @@ import static java.util.function.Predicate.not;
 @Mojo(name = "external-module-create", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)
 @SuppressWarnings("unused")
-public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
+class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
     private static final String UNNAMED_MODULE = "unnamed";
 
     /**
@@ -113,7 +113,7 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
     }
 
     @Override
-    protected void innerExecute() throws MojoFailureException {
+    void innerExecute() throws MojoFailureException {
         Set<Path> classpath = getDependencies("compile");
 
         try (ScanResult scan = new ClassGraph()
