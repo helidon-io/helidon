@@ -148,12 +148,12 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  */
 @Weight(800)
 public final class OidcFeature implements HttpFeature {
+    static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Map.of());
+    static final JsonBuilderFactory JSON_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
     private static final System.Logger LOGGER = System.getLogger(OidcFeature.class.getName());
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
     private static final String DEFAULT_REDIRECT = "/index.html";
-    static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Map.of());
-    static final JsonBuilderFactory JSON_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
 
     private final List<TenantConfigFinder> oidcConfigFinders;
     private final LruCache<String, Tenant> tenants = LruCache.create();
