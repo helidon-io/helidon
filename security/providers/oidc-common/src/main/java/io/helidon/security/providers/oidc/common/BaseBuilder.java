@@ -120,7 +120,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         config.get("sign-jwk.resource").map(Resource::create).ifPresent(this::signJwk);
 
         config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
-        DeprecatedConfig.get((io.helidon.config.Config) config, "validate-jwt-with-jwk", "validate-with-jwk")
+        DeprecatedConfig.get(config, "validate-jwt-with-jwk", "validate-with-jwk")
                 .asBoolean().ifPresent(this::validateJwtWithJwk);
         config.get("issuer").asString().ifPresent(this::issuer);
         config.get("audience").asString().ifPresent(this::audience);
