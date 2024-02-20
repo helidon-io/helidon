@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.examples.grpc.strings.Strings;
-import io.helidon.http.HttpMediaType;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.grpc.GrpcRouting;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.websocket.WsRouting;
