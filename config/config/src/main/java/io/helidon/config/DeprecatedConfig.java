@@ -62,6 +62,16 @@ public final class DeprecatedConfig {
         }
     }
 
+    /**
+     * Get a value from config, attempting to read both the keys.
+     * Warning is logged if either the current key is not defined, or both the keys are defined.
+     *
+     * @param config configuration instance
+     * @param currentKey key that should be used
+     * @param deprecatedKey key that should not be used
+     *
+     * @return config node of the current key if exists, of the deprecated key if it does not, missing node otherwise
+     */
     public static io.helidon.common.config.Config get(io.helidon.common.config.Config config,
                                                       String currentKey,
                                                       String deprecatedKey) {
