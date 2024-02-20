@@ -39,8 +39,8 @@ public final class GeneratedInjectService {
     /**
      * A descriptor of a service. In addition to providing service metadata, this also allows instantiation
      * and injection to the service instance.
-     * <p>
-     * All types in this class are used from generated code.
+     *
+     * @param <T> type of the service this descriptor describes
      */
     public interface Descriptor<T> extends GeneratedService.Descriptor<T>, InjectServiceInfo {
         /**
@@ -145,6 +145,10 @@ public final class GeneratedInjectService {
                                      Set<Class<? extends Throwable>> checkedExceptions);
     }
 
+    /**
+     * Each descriptor for s service that is implements {@link io.helidon.service.inject.api.Injection.QualifiedProvider}
+     * implements this interface to provide information about the qualifier it supports.
+     */
     public interface QualifiedProviderDescriptor {
         /**
          * Type of qualifier a {@link io.helidon.service.inject.api.Injection.QualifiedProvider} provides.
@@ -154,6 +158,10 @@ public final class GeneratedInjectService {
         TypeName qualifierType();
     }
 
+    /**
+     * Each descriptor for s service that is annotated with {@link io.helidon.service.inject.api.Injection.DrivenBy}
+     * implements this interface to provide information about the type that drives it.
+     */
     public interface DrivenByDescriptor {
         /**
          * A service may be driven by instances of another service.
@@ -164,10 +172,22 @@ public final class GeneratedInjectService {
         TypeName drivenBy();
     }
 
+    /**
+     * Each descriptor for a service that implements {@link io.helidon.service.inject.api.Injection.ScopeHandler}
+     * implements this interface to provide information about the scope it handles.
+     */
     public interface ScopeHandlerDescriptor {
+        /**
+         * Scope handled by the scope handler service.
+         *
+         * @return type of the scope handled (annotation)
+         */
         TypeName handledScope();
     }
 
+    /**
+     * Utility type to provide method to combine injection point information for inheritance support.
+     */
     public static final class IpSupport {
         private IpSupport() {
         }

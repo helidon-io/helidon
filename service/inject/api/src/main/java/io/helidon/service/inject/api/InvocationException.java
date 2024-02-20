@@ -19,7 +19,8 @@ package io.helidon.service.inject.api;
 import io.helidon.service.registry.ServiceRegistryException;
 
 /**
- * Wraps any checked exceptions that are thrown during the {@link io.helidon.inject.service.Interception.Interceptor} invocations.
+ * Wraps any checked exceptions that are thrown during the {@link io.helidon.service.inject.api.Interception.Interceptor}
+ * invocations.
  */
 public class InvocationException extends ServiceRegistryException {
 

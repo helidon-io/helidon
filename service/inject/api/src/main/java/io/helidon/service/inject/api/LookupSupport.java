@@ -31,7 +31,7 @@ final class LookupSupport {
 
     static final class CustomMethods {
         /**
-         * Empty criteria would match anything and everything except for abstract types.
+         * Empty lookup would match anything and everything except for abstract types.
          */
         @Prototype.Constant
         static final Lookup EMPTY = createEmpty();
@@ -40,10 +40,10 @@ final class LookupSupport {
         }
 
         /**
-         * Create service info criteria for lookup from this injection point information.
+         * Create service lookup from this injection point information.
          *
-         * @param injectionPoint injection point id to create criteria for
-         * @return criteria to lookup matching services
+         * @param injectionPoint injection point to create lookup for
+         * @return lookup to match injection point
          */
         @Prototype.FactoryMethod
         static Lookup create(Ip injectionPoint) {
@@ -53,10 +53,10 @@ final class LookupSupport {
         }
 
         /**
-         * Create service info criteria for lookup from this injection point information.
+         * Create lookup from a specific dependency.
          *
-         * @param injectionPoint injection point id to create criteria for
-         * @return criteria to lookup matching services
+         * @param dependency dependency to create lookup for
+         * @return lookup for the dependency
          */
         @Prototype.FactoryMethod
         static Lookup create(Dependency dependency) {
@@ -72,10 +72,10 @@ final class LookupSupport {
         }
 
         /**
-         * Create service info criteria for lookup from a contract type.
+         * Create service lookup from a contract type.
          *
-         * @param contract a single contract to base the criteria on
-         * @return criteria to lookup matching services
+         * @param contract a single contract to base the lookup on
+         * @return lookup for matching services
          */
         @Prototype.FactoryMethod
         static Lookup create(Class<?> contract) {
@@ -85,10 +85,10 @@ final class LookupSupport {
         }
 
         /**
-         * Create service info criteria for lookup from a contract type.
+         * Create service lookup from a contract type.
          *
-         * @param contract a single contract to base the criteria on
-         * @return criteria to lookup matching services
+         * @param contract a single contract to base the lookup on
+         * @return lookup for matching services
          */
         @Prototype.FactoryMethod
         static Lookup create(TypeName contract) {

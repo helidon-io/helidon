@@ -34,7 +34,8 @@ import java.lang.annotation.Target;
  * <ol>
  *     <li>Config instance is discovered (expected to be a service in the service registry, provided fpr example by Helidon
  *     Config)</li>
- *     <li>The generated config bean acts as a {@link io.helidon.service.registry.ServicesProvider} for the service type</li>
+ *     <li>The generated config bean acts as a {@link io.helidon.service.inject.api.Injection.ServicesProvider}
+ *          for the service type</li>
  *     <li>Based on the annotations in this type, instance(s) would be created</li>
  *     <li>These instances can be lookup up from the registry, or can be used to drive instances of other services using
  *     {@link Injection.DrivenBy}</li>

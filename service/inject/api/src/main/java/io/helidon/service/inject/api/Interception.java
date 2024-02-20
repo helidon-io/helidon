@@ -44,7 +44,7 @@ public final class Interception {
     }
 
     /**
-     * Implementors of this contract must be {@link io.helidon.inject.service.Injection.Named}
+     * Implementors of this contract must be {@link io.helidon.service.inject.api.Injection.Named}
      * according to the {@link Interception.Trigger} annotation they support.
      */
     @Service.Contract

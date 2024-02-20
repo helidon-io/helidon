@@ -16,7 +16,7 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Injection annotations. These annotations can extend support provided through
- * {@link io.helidon.service.inject.api.Service} annotations for injection.
+ * {@link io.helidon.service.registry.Service} annotations for injection.
  * <p>
  * This is the entry point for any annotation related to service definition with injection support in Helidon Service Registry.
  * <p>
@@ -24,8 +24,6 @@ import io.helidon.common.types.TypeName;
  * <p>
  * Note that to utilize Helidon Inject and its service registry, you need to configure annotation processor to generate
  * required source files.
- *
- * @see io.helidon.service.inject.api.Service
  */
 public final class Injection {
     private Injection() {
@@ -339,7 +337,7 @@ public final class Injection {
      * The service registry does not make any assumptions about qualifiers of the instances being created, though they should
      * be either the same as the injection point provider itself, or a subset of it, so the service can be discovered through
      * one of the lookup methods (i.e. the injection point provider may be annotated with a
-     * {@link io.helidon.service.inject.api.Injection.Named} with {@link io.helidon.inject.service.Injection.Named#WILDCARD_NAME}
+     * {@link Named} with {@link Named#WILDCARD_NAME}
      * value,
      * and each instance provided may use a more specific name qualifier).
      *
@@ -353,7 +351,7 @@ public final class Injection {
 
         /**
          * Get (or create) an instance of this service type for the given injection point context. This is logically the same
-         * as using the first element of the result from calling {@link #list(io.helidon.inject.service.Lookup)}.
+         * as using the first element of the result from calling {@link #list(io.helidon.service.inject.api.Lookup)}.
          *
          * @param query the service query
          * @return the best service provider matching the criteria, if any matched, with qualifiers (if any)
@@ -374,7 +372,7 @@ public final class Injection {
     /**
      * A provider to resolve qualified injection points of any type.
      * <p>
-     * As compared to {@link io.helidon.inject.service.InjectionPointProvider}, this type is capable of resolving ANY injection
+     * As compared to {@link InjectionPointProvider}, this type is capable of resolving ANY injection
      * point as long as it is annotated by the qualifier. The contract of the injection point depends on how the implementation
      * service declares the type parameters of this interface. If you use any type other than {@link java.lang.Object}, that will
      * be the only supported contract, otherwise any type is expected to be supported.
@@ -481,7 +479,7 @@ public final class Injection {
      * It should be accompanied by a way to start and stop the scope (such as {@link RequestScopeControl} for
      * request scope).
      *
-     * @param <T> Type of the scope supported
+     * @param <T> Type of the supported scope
      */
     @io.helidon.service.registry.Service.Contract
     public interface ScopeHandler<T extends Annotation> {

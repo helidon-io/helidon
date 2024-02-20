@@ -21,8 +21,9 @@
  * The following main entry points for declaring services are available:
  * <ul>
  *     <li>{@link io.helidon.service.registry.Service} - for core registry</li>
- *     <li>{@link io.helidon.service.registry.Injection} - for injection support</li>
- *     <li>{@link io.helidon.service.registry.ConfigDriven} - for config beans and config driven</li>
+ *     <li>{@link io.helidon.service.inject.api.Injection} - for injection support</li>
+ *     <li>{@link io.helidon.service.inject.api.ConfigDriven} - for config beans and config driven</li>
+ *     <li>{@link io.helidon.service.inject.api.Interception} - for interception</li>
  * </ul>
  */
 package io.helidon.service.inject.api;
