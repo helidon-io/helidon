@@ -23,6 +23,10 @@ import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.webclient.http2.Http2ClientConfig;
 
 class GrpcClientProtocol {
+
+    private GrpcClientProtocol() {
+    }
+
     static GrpcClientStream create(SocketContext scoketContext,
                                    Http2Settings serverSettings,
                                    Http2ClientConfig clientConfig,

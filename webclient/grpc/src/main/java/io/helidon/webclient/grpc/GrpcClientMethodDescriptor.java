@@ -20,13 +20,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import io.grpc.CallCredentials;
-import io.grpc.ClientInterceptor;
-import io.grpc.MethodDescriptor;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.PriorityBag;
+
+import io.grpc.CallCredentials;
+import io.grpc.ClientInterceptor;
+import io.grpc.MethodDescriptor;
 
 /**
  * Encapsulates all metadata necessary to define a gRPC method. In addition to wrapping
@@ -203,6 +204,11 @@ public final class GrpcClientMethodDescriptor {
         return (MethodDescriptor<ReqT, RespT>) descriptor;
     }
 
+    /**
+     * Returns the {@link MethodDescriptor.MethodType} of this method.
+     *
+     * @return the method type
+     */
     public MethodDescriptor.MethodType type() {
         return descriptor.getType();
     }

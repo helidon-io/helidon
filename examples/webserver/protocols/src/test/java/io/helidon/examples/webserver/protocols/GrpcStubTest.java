@@ -145,7 +145,6 @@ class GrpcStubTest {
     void testUnaryUpper() {
         Channel channel = new GrpcChannel(grpcClient);
         StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(channel);
-        Strings.StringMessage message = Strings.StringMessage.newBuilder().setText("hello").build();
         Strings.StringMessage res = service.upper(newStringMessage("hello"));
         assertThat(res.getText(), is("HELLO"));
     }
@@ -158,6 +157,16 @@ class GrpcStubTest {
         service.upper(newStringMessage("hello"), singleStreamObserver(future));
         Strings.StringMessage res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         assertThat(res.getText(), is("HELLO"));
+    }
+
+    @Test
+    void testServerStreamingSplit() {
+        Channel channel = new GrpcChannel(grpcClient);
+        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(channel);
+        Iterator<Strings.StringMessage> res = service.split(newStringMessage("hello world"));
+        assertThat(res.next().getText(), is("hello"));
+        assertThat(res.next().getText(), is("world"));
+        assertThat(res.hasNext(), is(false));
     }
 
     @Test

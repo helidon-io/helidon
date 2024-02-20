@@ -26,6 +26,7 @@ import io.grpc.stub.StreamObserver;
  * @see io.helidon.webclient.grpc.GrpcClient#serviceClient(io.helidon.webclient.grpc.GrpcServiceDescriptor)
  */
 public interface GrpcServiceClient {
+
     /**
      * Name of the service this client was created for.
      *
@@ -33,19 +34,91 @@ public interface GrpcServiceClient {
      */
     String serviceName();
 
+    /**
+     * Blocking gRPC unary call.
+     *
+     * @param methodName method name
+     * @param request the request
+     * @return the response
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     */
     <ReqT, ResT> ResT unary(String methodName, ReqT request);
 
+    /**
+     * Asynchronous gRPC unary call.
+     *
+     * @param methodName method name
+     * @param request the request
+     * @param response the response observer
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     */
     <ReqT, ResT> void unary(String methodName, ReqT request, StreamObserver<ResT> response);
 
+    /**
+     * Blocking gRPC server stream call.
+     *
+     * @param methodName method name
+     * @param request the request
+     * @return the response iterator
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     */
     <ReqT, ResT> Iterator<ResT> serverStream(String methodName, ReqT request);
 
+    /**
+     * Asynchronous gRPC server stream call.
+     *
+     * @param methodName method name
+     * @param request the request
+     * @param response the response observer
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     */
     <ReqT, ResT> void serverStream(String methodName, ReqT request, StreamObserver<ResT> response);
 
+    /**
+     * Blocking gRPC client stream call.
+     *
+     * @param methodName method name
+     * @param request the request iterator
+     * @return the response
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     */
     <ReqT, ResT> ResT clientStream(String methodName, Iterator<ReqT> request);
 
+    /**
+     * Asynchronous gRPC client stream call.
+     *
+     * @param methodName method name
+     * @param response the response observer
+     * @return the request observer
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     */
     <ReqT, ResT> StreamObserver<ReqT> clientStream(String methodName, StreamObserver<ResT> response);
 
+    /**
+     * gRPC bidirectional call using {@link Iterator}.
+     *
+     * @param methodName method name
+     * @param request request iterator
+     * @return response iterator
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     */
     <ReqT, ResT> Iterator<ResT> bidi(String methodName, Iterator<ReqT> request);
 
+    /**
+     * gRPC bidirectional call using {@link StreamObserver}.
+     *
+     * @param methodName method name
+     * @param response the response observer
+     * @return the request observer
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     */
     <ReqT, ResT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<ResT> response);
 }

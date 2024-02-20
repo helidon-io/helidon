@@ -20,10 +20,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import io.grpc.CallCredentials;
-import io.grpc.ClientInterceptor;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+
+import io.grpc.CallCredentials;
+import io.grpc.ClientInterceptor;
 
 @Prototype.Blueprint
 interface GrpcServiceDescriptorBlueprint {
