@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.declarative.codegen;
 
 import io.helidon.common.types.TypeName;
@@ -26,5 +42,4 @@ class WebServerCodegenTypes {
     static final TypeName SERVICE_SERVER_REQUEST = TypeName.create("io.helidon.webserver.ServerRequest__ServiceDescriptor");
     static final TypeName SERVICE_SERVER_RESPONSE = TypeName.create("io.helidon.webserver.ServerResponse__ServiceDescriptor");
     static final TypeName INJECT_SCOPE = TypeName.create("io.helidon.service.inject.api.Scope");
-    static final TypeName INJECT_REQUEST_SCOPE_CTRL = TypeName.create("io.helidon.service.inject.api.RequestScopeControl");
 }
