@@ -19,6 +19,9 @@ package io.helidon.webclient.grpc;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 
+/**
+ * Provider for {@link GrpcClient}.
+ */
 public class GrpcProtocolProvider implements ClientProtocolProvider<GrpcClient, GrpcClientProtocolConfig> {
     static final String CONFIG_KEY = "grpc";
 

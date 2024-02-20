@@ -27,10 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import io.grpc.ClientCall;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
-import io.grpc.Status;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Header;
@@ -53,6 +49,11 @@ import io.helidon.webclient.http2.Http2ClientConnection;
 import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.StreamTimeoutException;
+
+import io.grpc.ClientCall;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
+import io.grpc.Status;
 
 /**
  * A gRPC client call handler. The typical order of calls will be:
@@ -162,6 +163,8 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     public void cancel(String message, Throwable cause) {
         LOGGER.finest(() -> "cancel called " + message);
         responseListener.onClose(Status.CANCELLED, new Metadata());
+        readStreamFuture.cancel(true);
+        writeStreamFuture.cancel(true);
         close();
     }
 
@@ -262,11 +265,10 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     private void close() {
         LOGGER.finest("closing client call");
-        readStreamFuture.cancel(true);
-        writeStreamFuture.cancel(true);
         sendingQueue.clear();
         clientStream.cancel();
         connection.close();
+        LOGGER.finest("closing client call ends");
     }
 
     private ClientConnection clientConnection() {

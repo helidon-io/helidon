@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.spi.ClientConnectionCache;
 
+/**
+ * A cache of HTTP2 connections.
+ */
 public final class Http2ConnectionCache extends ClientConnectionCache {
     private static final Http2ConnectionCache SHARED = new Http2ConnectionCache(true);
     private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.<ConnectionKey, Boolean>builder()
@@ -41,10 +44,20 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         super(shared);
     }
 
+    /**
+     * Returns a reference to the shared connection cache.
+     *
+     * @return shared connection cache
+     */
     public static Http2ConnectionCache shared() {
         return SHARED;
     }
 
+    /**
+     * Creates a fresh connection cache.
+     *
+     * @return new connection cache
+     */
     public static Http2ConnectionCache create() {
         return new Http2ConnectionCache(false);
     }

@@ -16,16 +16,25 @@
 
 package io.helidon.webclient.grpc;
 
+import io.helidon.webclient.api.ClientUri;
+
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
-import io.helidon.webclient.api.ClientUri;
 
+/**
+ * Helidon's implementation of a gRPC {@link Channel}.
+ */
 public class GrpcChannel extends Channel {
 
     private final GrpcClientImpl grpcClient;
 
+    /**
+     * Creates a new channel from a {@link GrpcClient}.
+     *
+     * @param grpcClient the gRPC client
+     */
     public GrpcChannel(GrpcClient grpcClient) {
         this.grpcClient = (GrpcClientImpl) grpcClient;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webclient.http2;
-
-import java.time.Duration;
-
 /**
- * Configuration for an HTTP2 stream.
+ * Helidon WebClient HTTP/1.1 Support.
  */
-public interface Http2StreamConfig {
-
-    /**
-     * Prior knowledge setting.
-     *
-     * @return prior knowledge setting
-     */
-    boolean priorKnowledge();
-
-    /**
-     * Stream priority.
-     *
-     * @return the stream priority
-     */
-    int priority();
-
-    /**
-     * Read timeout for this stream.
-     *
-     * @return the timeout
-     */
-    Duration readTimeout();
-}
+package io.helidon.webclient.grpc;
