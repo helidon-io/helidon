@@ -283,7 +283,9 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
     }
 
     /**
-     * @return This represents the set of services that we already code-gen'ed
+     * Set of service types that should be excluded.
+     *
+     * @return set of services that we already code-generated
      */
     protected Set<TypeName> serviceTypeNamesForExclusion(CodegenLogger logger) {
         return Set.of();
@@ -297,6 +299,11 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         }
     }
 
+    /**
+     * The scope of the code generation (production, test etc.).
+     *
+     * @return codegen scope
+     */
     protected abstract CodegenScope scope();
 
     /**

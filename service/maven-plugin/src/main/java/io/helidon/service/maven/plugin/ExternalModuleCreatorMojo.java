@@ -51,9 +51,8 @@ import org.apache.maven.project.MavenProject;
 import static java.util.function.Predicate.not;
 
 /**
- * Responsible for creating {@link io.helidon.inject.service.ServiceDescriptor}'s and
- * a {@link io.helidon.inject.service.ModuleComponent}
- * wrapping a set of packages from an external third-party jar.
+ * Responsible for creating {@link io.helidon.service.inject.api.GeneratedInjectService.Descriptor}'s
+ * for a set of packages from an external third-party jar.
  */
 @Mojo(name = "external-module-create", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)
