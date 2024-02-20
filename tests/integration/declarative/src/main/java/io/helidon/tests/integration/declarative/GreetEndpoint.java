@@ -23,21 +23,17 @@ import java.util.Optional;
 import io.helidon.common.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Headers;
 import io.helidon.http.Http;
-import io.helidon.inject.InjectionException;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.inject.service.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryException;
 
 @Http.Path("/greet")
 class GreetEndpoint {
-    private final ServiceRegistry registry;
     private volatile String greeting;
 
     @Injection.Inject
-    GreetEndpoint(Config config, ServiceRegistry serviceRegistry) {
+    GreetEndpoint(Config config) {
         this.greeting = config.get("app.greeting").asString().orElse("Hello");
-        this.registry = serviceRegistry;
     }
 
     static String greetNamedFallback(String name,
@@ -56,7 +52,7 @@ class GreetEndpoint {
     @Http.GET
     @Http.Path("/{name}")
     @FaultTolerance.Retry(name = "someName", calls = 2, delayTime = 1, timeUnit = ChronoUnit.SECONDS, overallTimeout = 10,
-                          applyOn = InjectionException.class, skipOn = {OutOfMemoryError.class, StackOverflowError.class})
+                          applyOn = ServiceRegistryException.class, skipOn = {OutOfMemoryError.class, StackOverflowError.class})
     @FaultTolerance.Fallback("greetNamedFallback")
     @FaultTolerance.CircuitBreaker
     @FaultTolerance.Bulkhead(name = "bulkhead-it")
@@ -68,7 +64,7 @@ class GreetEndpoint {
         Maybe request scope can be a switch by the user
          */
         if (shouldThrow.orElse(false)) {
-            throw new InjectionException("Failed on purpose");
+            throw new ServiceRegistryException("Failed on purpose");
         }
         return greeting + " " + name + "! Requested host: " + hostHeader;
     }
@@ -77,6 +73,5 @@ class GreetEndpoint {
     @Http.Status(value = 254, reason = "CustomCode")
     void post(@Http.Entity String message) throws IOException {
         greeting = message;
-        registry.get(Headers.class);
     }
 }

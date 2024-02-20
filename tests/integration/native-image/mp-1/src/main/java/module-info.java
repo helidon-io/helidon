@@ -40,9 +40,6 @@ module helidon.tests.nimage.mp {
     // never reach health check CDI extension
     requires io.helidon.health.checks;
 
-    // needed to compile injection generated classes
-    requires io.helidon.inject.service;
-
     exports io.helidon.tests.integration.nativeimage.mp1;
     exports io.helidon.tests.integration.nativeimage.mp1.other;
 

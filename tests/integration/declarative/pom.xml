@@ -98,8 +98,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.webserver</groupId>
-                            <artifactId>helidon-webserver-codegen</artifactId>
+                            <groupId>io.helidon.declarative</groupId>
+                            <artifactId>helidon-declarative-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -121,8 +121,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.webserver</groupId>
-                        <artifactId>helidon-webserver-codegen</artifactId>
+                        <groupId>io.helidon.declarative</groupId>
+                        <artifactId>helidon-declarative-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
