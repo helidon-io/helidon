@@ -1,8 +1,8 @@
-# Helidon DB Client Pokemon Example with JDBC
+# Helidon DB Client Pokémon Example with JDBC
 
 This example shows how to run Helidon DB Client over JDBC.
 
-Application provides REST service endpoint with CRUD operations on Pokemons
+Application provides REST service endpoint with CRUD operations on Pokémons
 database.
 
 ## Database
@@ -24,7 +24,7 @@ Database model contains two tables:
 | name    | varchar | &nbsp;      |
 | id_type | integer | Type(id)    |
 
-with 1:N relationship between *Types* and *Pokemons*
+with 1:N relationship between *Types* and *Pokémons*
 
 Examples are given for H2, Oracle, or MySQL databases (note that MySQL is currently not supported for GraalVM native image)
 

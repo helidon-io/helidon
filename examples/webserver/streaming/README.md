@@ -7,13 +7,13 @@ to the size of the file being uploaded or downloaded.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-webserver-streaming.jar
 ```
 
 Upload a file and download it back with `curl`:
-```bash
+```shell
 curl --data-binary "@target/classes/large-file.bin" http://localhost:8080/upload
 curl http://localhost:8080/download
 ```

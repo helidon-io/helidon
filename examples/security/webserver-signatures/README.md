@@ -16,14 +16,15 @@ There are two examples with exactly the same behavior
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-security-webserver-signatures.jar
 ```
 
-Try the endpoints:
-```bash
-curl -u "jack:password" http://localhost:8080/service1
-curl -u "jill:password" http://localhost:8080/service1-rsa
-curl -v -u "john:password" http://localhost:8080/service1
+Try the endpoints (port is random, shall be replaced accordingly):
+```shell
+export PORT=34941
+curl -u "jack:password" http://localhost:${PORT}/service1
+curl -u "jill:password" http://localhost:${PORT}/service1-rsa
+curl -v -u "john:password" http://localhost:${PORT}/service1
 ```

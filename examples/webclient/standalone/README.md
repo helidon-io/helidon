@@ -5,7 +5,7 @@ standalone Java program to connect to a server.
 
 ## Build
 
-```
+```shell
 mvn package
 ```
 
@@ -13,7 +13,7 @@ mvn package
 
 First, start the server:
 
-```
+```shell
 java -jar target/helidon-examples-webclient-standalone.jar
 ```
 
@@ -26,7 +26,7 @@ WEB server is up! http://localhost:PORT/greet
 Then run the client, passing the port number. It will connect
 to the server:
 
-```
-java -cp "target/classes:target/libs/*" io.helidon.examples.webclient.standalone.ClientMain PORT
+```shell
+java -cp "target/classes:target/libs/*" io.helidon.examples.webclient.standalone.ClientMain 35963
 ```
 

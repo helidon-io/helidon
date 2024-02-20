@@ -11,34 +11,34 @@ You would typically write any given application to use only one of the approache
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 ```
 To use programmatic set-up:
-```bash
+```shell
 java -jar target/helidon-examples-metrics-kpi.jar 
 ```
 To use configuration:
-```bash
+```shell
 java -DuseConfig=true -jar target/helidon-examples-metrics-kpi.jar
 ````
 
 ## Exercise the application
 
-```
+```shell
 curl -X GET http://localhost:8080/greet
-{"message":"Hello World!"}
+#Output: {"message":"Hello World!"}
 
 curl -X GET http://localhost:8080/greet/Joe
-{"message":"Hello Joe!"}
+#Output: {"message":"Hello Joe!"}
 
 curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
 
 curl -X GET http://localhost:8080/greet/Jose
-{"message":"Hola Jose!"}
+#Output: {"message":"Hola Jose!"}
 
 curl -X GET http://localhost:8080/greet          
-{"message":"Hola World!"}
+#Output: {"message":"Hola World!"}
 ```
 
 ## Retrieve vendor metrics with key performance indicators
@@ -74,8 +74,10 @@ not reflect the fact that Helidon would subsequently conclude that _that_ reques
 long-running.
 
 ## Prometheus format
+```shell
+curl -s -X GET http://localhost:8080/observe/metrics/vendor
 ```
-curl -s -X GET http://localhost:8080/metrics/vendor
+```
 ...
 # TYPE vendor_requests_inFlight_current concurrent gauge
 # HELP vendor_requests_inFlight_current Measures the number of currently in-flight requests
@@ -100,8 +102,10 @@ vendor_requests_load_fifteen_min_rate_per_second 0.005104944851522425
 ## JSON output
 
 
-```bash
-curl -s -X GET -H "Accept: application/json" http://localhost:8080/metrics/vendor
+```shell
+curl -s -X GET -H "Accept: application/json" http://localhost:8080/observe/metrics/vendor
+```
+```
 {
   ...
   "requests.inFlight": {

@@ -10,7 +10,7 @@ This example shows how providers can be leveraged to develop using Helidon Injec
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-inject-providers.jar
 ```

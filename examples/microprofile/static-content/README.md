@@ -7,7 +7,7 @@ The configuration for the static content is in the
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-microprofile-mp1_1-static-content.jar
 ```

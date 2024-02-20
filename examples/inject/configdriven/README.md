@@ -10,7 +10,7 @@ This example shows the basics of using Helidon Injection's Config-Driven Service
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-inject-configdriven.jar
 ```

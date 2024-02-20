@@ -4,7 +4,9 @@ JAX-RS (Jersey) example for attribute based access control.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-security-abac.jar
 ```
+
+Open endpoints listen in the server's output in a browser. 
