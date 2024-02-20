@@ -23,8 +23,22 @@ import io.helidon.service.codegen.ServiceCodegenContext;
 import io.helidon.service.codegen.spi.InjectCodegenExtension;
 import io.helidon.service.codegen.spi.InjectCodegenExtensionProvider;
 
+/**
+ * Java {@link java.util.ServiceLoader} provider implementation for
+ * {@link io.helidon.service.codegen.spi.InjectCodegenExtensionProvider} that generates required
+ * services to handle declarative Fault tolerance.
+ */
 public class FallbackExtensionProvider implements InjectCodegenExtensionProvider {
     static final TypeName FALLBACK_ANNOTATION = TypeName.create("io.helidon.faulttolerance.FaultTolerance.Fallback");
+
+    /**
+     * Default constructor.
+     *
+     * @deprecated required by Java {@link java.util.ServiceLoader}
+     */
+    @Deprecated
+    public FallbackExtensionProvider() {
+    }
 
     @Override
     public Set<TypeName> supportedAnnotations() {

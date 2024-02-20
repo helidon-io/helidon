@@ -26,7 +26,7 @@ import io.helidon.service.registry.ServiceInfo;
  */
 public interface InjectRegistrySpi extends InjectRegistry {
     /**
-     * Type name of this interface
+     * Type name of this interface.
      */
     TypeName TYPE = TypeName.create(InjectRegistrySpi.class);
 

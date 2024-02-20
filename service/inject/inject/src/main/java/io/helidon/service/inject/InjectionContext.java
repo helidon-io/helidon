@@ -25,7 +25,7 @@ import io.helidon.service.registry.DependencyContext;
 class InjectionContext implements DependencyContext {
     private final Map<Dependency, IpPlan<?>> injectionPlan;
 
-    public InjectionContext(Map<Dependency, IpPlan<?>> injectionPlan) {
+    InjectionContext(Map<Dependency, IpPlan<?>> injectionPlan) {
         this.injectionPlan = injectionPlan;
     }
 

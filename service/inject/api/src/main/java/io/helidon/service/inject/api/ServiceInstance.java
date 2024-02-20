@@ -30,7 +30,7 @@ public interface ServiceInstance<T> extends Injection.QualifiedInstance<T> {
     /**
      * Type name of this interface. {@link io.helidon.common.types.TypeName} is used in various APIs of service registry.
      */
-    TypeName TYPE_NAME = TypeName.create(ServiceInstance.class);
+    TypeName TYPE = TypeName.create(ServiceInstance.class);
 
     /**
      * Contracts of the service instance.

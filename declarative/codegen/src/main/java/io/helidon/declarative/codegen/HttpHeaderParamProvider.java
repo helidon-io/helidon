@@ -16,11 +16,9 @@
 
 package io.helidon.declarative.codegen;
 
-import java.util.List;
 import java.util.Optional;
 
 import io.helidon.codegen.CodegenException;
-import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
@@ -34,16 +32,9 @@ import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_HEADER_P
 
 class HttpHeaderParamProvider extends AbstractParametersProvider implements HttpParameterCodegenProvider {
     @Override
-    public boolean codegen(List<Annotation> parameterAnnotations,
-                           TypeName parameterType,
-                           ClassModel.Builder classBuilder,
-                           ContentBuilder<?> contentBuilder,
-                           String serverRequestParamName,
-                           String serverResponseParamName,
-                           int methodIndex,
-                           int paramIndex) {
+    public boolean codegen(ParameterCodegenContext ctx) {
 
-        Optional<Annotation> first = parameterAnnotations.stream()
+        Optional<Annotation> first = ctx.parameterAnnotations().stream()
                 .filter(it -> HTTP_HEADER_PARAM_ANNOTATION.equals(it.typeName()))
                 .findFirst();
 
@@ -54,10 +45,13 @@ class HttpHeaderParamProvider extends AbstractParametersProvider implements Http
         String headerParamName = headerParam.value()
                 .orElseThrow(() -> new CodegenException("@HeaderParam annotation must have a value."));
 
-        String headerConstantName = toConstantName("header_" + headerParamName + "_" + methodIndex + "_" + paramIndex);
+        String headerConstantName =
+                toConstantName("header_" + headerParamName
+                                       + "_" + ctx.methodIndex()
+                                       + "_" + ctx.paramIndex());
 
         // add the header name constant
-        classBuilder.addField(header -> header
+        ctx.classBuilder().addField(header -> header
                 .accessModifier(AccessModifier.PRIVATE)
                 .isStatic(true)
                 .isFinal(true)
@@ -67,6 +61,10 @@ class HttpHeaderParamProvider extends AbstractParametersProvider implements Http
                 .addContent(".create(\"")
                 .addContent(headerParamName)
                 .addContent("\")"));
+
+        ContentBuilder<?> contentBuilder = ctx.contentBuilder();
+        String serverRequestParamName = ctx.serverRequestParamName();
+        TypeName parameterType = ctx.parameterType();
 
         contentBuilder.addContent(serverRequestParamName)
                 .addContent(".headers()");

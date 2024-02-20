@@ -31,7 +31,7 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 @Injection.Singleton
-public class ImperativeFeature implements HttpFeature {
+class ImperativeFeature implements HttpFeature {
     private static final Header CONTENT_TYPE = HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
                                                                          "text/plain; charset=UTF-8");
     private static final Header CONTENT_LENGTH = HeaderValues.createCached(HeaderNames.CONTENT_LENGTH, "13");

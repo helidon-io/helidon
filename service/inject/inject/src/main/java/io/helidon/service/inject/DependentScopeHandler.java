@@ -66,7 +66,7 @@ class DependentScopeHandler implements Injection.ScopeHandler<Injection.Dependen
      */
     private static class DependentScopeRegistry extends ScopedRegistryImpl {
         DependentScopeRegistry(InjectServiceRegistryImpl serviceRegistry) {
-            super(serviceRegistry, Injection.Dependent.TYPE_NAME, serviceRegistry.id(), Map.of());
+            super(serviceRegistry, Injection.Dependent.TYPE, serviceRegistry.id(), Map.of());
         }
     }
 }

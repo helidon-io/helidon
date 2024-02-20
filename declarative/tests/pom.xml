@@ -42,5 +42,6 @@
 
     <modules>
         <module>webserver</module>
+        <module>codegen</module>
     </modules>
 </project>

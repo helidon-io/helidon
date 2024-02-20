@@ -56,6 +56,6 @@ public class ServiceRegistry__ServiceDescriptor implements GeneratedInjectServic
 
     @Override
     public TypeName scope() {
-        return Injection.Singleton.TYPE_NAME;
+        return Injection.Singleton.TYPE;
     }
 }

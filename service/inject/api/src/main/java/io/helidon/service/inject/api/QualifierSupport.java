@@ -147,7 +147,7 @@ class QualifierSupport {
         static Qualifier createNamed(String name) {
             Objects.requireNonNull(name);
             return Qualifier.builder()
-                    .typeName(Injection.Named.TYPE_NAME)
+                    .typeName(Injection.Named.TYPE)
                     .value(name)
                     .build();
         }
@@ -162,7 +162,7 @@ class QualifierSupport {
         static Qualifier createNamed(Injection.Named name) {
             Objects.requireNonNull(name);
             Qualifier.Builder builder = Qualifier.builder()
-                    .typeName(Injection.Named.TYPE_NAME);
+                    .typeName(Injection.Named.TYPE);
             if (!name.value().isEmpty()) {
                 builder.value(name.value());
             }
@@ -179,7 +179,7 @@ class QualifierSupport {
         static Qualifier createNamed(Injection.ClassNamed name) {
             Objects.requireNonNull(name);
             return Qualifier.builder()
-                    .typeName(Injection.Named.TYPE_NAME)
+                    .typeName(Injection.Named.TYPE)
                     .value(name.value().getName())
                     .build();
         }
@@ -194,14 +194,14 @@ class QualifierSupport {
         static Qualifier createNamed(Class<?> className) {
             Objects.requireNonNull(className);
             return Qualifier.builder()
-                    .typeName(Injection.Named.TYPE_NAME)
+                    .typeName(Injection.Named.TYPE)
                     .value(className.getName())
                     .build();
         }
 
         private static TypeName maybeNamed(TypeName qualifierType) {
-            if (Injection.ClassNamed.TYPE_NAME.equals(qualifierType)) {
-                return Injection.Named.TYPE_NAME;
+            if (Injection.ClassNamed.TYPE.equals(qualifierType)) {
+                return Injection.Named.TYPE;
             }
             return qualifierType;
         }

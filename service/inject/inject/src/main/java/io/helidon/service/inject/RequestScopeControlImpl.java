@@ -50,7 +50,7 @@ class RequestScopeControlImpl implements RequestScopeControl, Injection.ScopeHan
             throw new IllegalStateException("Attempt to re-create request scope. Already exists for this request: " + scope);
         }
 
-        scope = new RequestScope(registry.createForScope(Injection.RequestScope.TYPE_NAME, id, initialBindings));
+        scope = new RequestScope(registry.createForScope(Injection.RequestScope.TYPE, id, initialBindings));
         REQUEST_SCOPES.set(scope);
         scope.activate();
         return scope;

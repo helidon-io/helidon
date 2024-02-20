@@ -63,6 +63,6 @@ public class Prologue__ServiceDescriptor implements Descriptor<HttpPrologue> {
 
     @Override
     public TypeName scope() {
-        return Injection.RequestScope.TYPE_NAME;
+        return Injection.RequestScope.TYPE;
     }
 }

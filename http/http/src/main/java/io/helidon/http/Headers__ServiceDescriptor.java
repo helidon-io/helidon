@@ -63,6 +63,6 @@ public class Headers__ServiceDescriptor implements Descriptor<Headers> {
 
     @Override
     public TypeName scope() {
-        return Injection.RequestScope.TYPE_NAME;
+        return Injection.RequestScope.TYPE;
     }
 }

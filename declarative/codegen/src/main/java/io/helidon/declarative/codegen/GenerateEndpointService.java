@@ -43,11 +43,11 @@ import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.WebServerCodegenExtension.GENERATOR;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.COMMON_CONTEXT;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_METHOD;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_ROUTING_BUILDER;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_RULES;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_STATUS;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_STATUS_ANNOTATION;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.INJECT_SCOPE;
+import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_HTTP_ROUTING_BUILDER;
+import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_HTTP_RULES;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_REQUEST;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_RESPONSE;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_CONTEXT;
@@ -56,7 +56,7 @@ import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_PROLO
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_SERVER_REQUEST;
 import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_SERVER_RESPONSE;
 
-class GenerateEndpointService {
+final class GenerateEndpointService {
 
     private static final String REQUEST_PARAM_NAME = "helidonDeclarative__server_req";
     private static final String RESPONSE_PARAM_NAME = "helidonDeclarative__server_res";
@@ -71,6 +71,9 @@ class GenerateEndpointService {
                     .addService(new ServerReqResParamProvider())
                     .build()
                     .asList();
+
+    private GenerateEndpointService() {
+    }
 
     static void generate(CodegenContext ctx, TypeInfo endpoint, String classNameBase, String path, List<MethodDef> httpMethods) {
         String endpointServiceName = classNameBase + "__HttpFeature";
@@ -92,7 +95,7 @@ class GenerateEndpointService {
                 .type(generatedType)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.INJECTION_SINGLETON))
-                .addInterface(WebServerCodegenTypes.HTTP_FEATURE);
+                .addInterface(WebServerCodegenTypes.SERVER_HTTP_FEATURE);
 
         boolean singleton = endpoint.hasAnnotation(ServiceCodegenTypes.INJECTION_SINGLETON);
 
@@ -264,14 +267,14 @@ class GenerateEndpointService {
                                            int methodIndex,
                                            int paramIndex) {
         for (HttpParameterCodegenProvider paramProvider : PARAM_PROVIDERS) {
-            if (paramProvider.codegen(param.qualifiers(),
-                                      param.type(),
-                                      classModel,
-                                      method,
-                                      REQUEST_PARAM_NAME,
-                                      RESPONSE_PARAM_NAME,
-                                      methodIndex,
-                                      paramIndex)) {
+            if (paramProvider.codegen(new ParamCodegenContextImpl(param.qualifiers(),
+                                                                  param.type(),
+                                                                  classModel,
+                                                                  method,
+                                                                  REQUEST_PARAM_NAME,
+                                                                  RESPONSE_PARAM_NAME,
+                                                                  methodIndex,
+                                                                  paramIndex))) {
                 return;
             }
         }
@@ -284,7 +287,7 @@ class GenerateEndpointService {
                 .accessModifier(AccessModifier.PRIVATE)
                 .name("routing")
                 .addParameter(rules -> rules
-                        .type(HTTP_RULES)
+                        .type(SERVER_HTTP_RULES)
                         .name("rules"))
                 .update(it -> httpMethods.forEach(methodDef -> addRoutingMethodContent(endpointService,
                                                                                        it,
@@ -342,7 +345,7 @@ class GenerateEndpointService {
                 .name("setup")
                 .addParameter(routing -> routing
                         .name("routing")
-                        .type(HTTP_ROUTING_BUILDER))
+                        .type(SERVER_HTTP_ROUTING_BUILDER))
                 .addContent("routing.register(\"")
                 .addContent(path)
                 .addContentLine("\", this::routing);"));

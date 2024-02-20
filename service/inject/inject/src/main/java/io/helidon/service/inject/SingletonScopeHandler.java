@@ -47,7 +47,7 @@ class SingletonScopeHandler implements Injection.ScopeHandler<Injection.Singleto
         private final LazyValue<ScopedRegistryImpl> services;
 
         SingletonScope(InjectServiceRegistryImpl serviceRegistry) {
-            this.services = LazyValue.create(() -> serviceRegistry.createForScope(Injection.Singleton.TYPE_NAME,
+            this.services = LazyValue.create(() -> serviceRegistry.createForScope(Injection.Singleton.TYPE,
                                                                                   serviceRegistry.id(),
                                                                                   Map.of()));
         }

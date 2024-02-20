@@ -87,18 +87,12 @@ class InjectionExtension implements InjectCodegenExtension {
     static final TypeName SET_OF_TYPES = TypeName.builder(TypeNames.SET)
             .addTypeArgument(TypeNames.TYPE_NAME)
             .build();
-
-    static final TypeName OPTIONAL_TYPE = TypeName.builder(TypeNames.OPTIONAL)
-            .addTypeArgument(TypeNames.TYPE_NAME)
-            .build();
-
     static final TypeName SET_OF_SIGNATURES = TypeName.builder(TypeNames.SET)
             .addTypeArgument(TypeNames.STRING)
             .build();
     private static final TypeName LIST_OF_IP_IDS = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(ServiceCodegenTypes.INJECTION_POINT)
             .build();
-
     private static final TypeName SERVICE_SOURCE_TYPE = TypeName.builder(ServiceCodegenTypes.INJECT_SERVICE_DESCRIPTOR)
             .addTypeArgument(TypeName.create("T"))
             .build();
@@ -284,23 +278,31 @@ class InjectionExtension implements InjectCodegenExtension {
                           typeInfo.originatingElement().orElseGet(typeInfo::typeName));
 
         if (methodsIntercepted) {
-            TypeName interceptedType = TypeName.builder(serviceType)
-                    .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Intercepted")
-                    .build();
-
-            var generator = new InterceptedTypeGenerator(serviceType,
-                                                         descriptorType,
-                                                         interceptedType,
-                                                         constructorInjectElement,
-                                                         maybeIntercepted.stream()
-                                                                 .filter(ElementInfoPredicates::isMethod)
-                                                                 .toList());
-
-            ctx.addType(interceptedType,
-                        generator.generate(),
-                        serviceType,
-                        typeInfo.originatingElement().orElse(serviceType));
+            generateInterceptedType(typeInfo, serviceType, descriptorType, constructorInjectElement, maybeIntercepted);
         }
+    }
+
+    private void generateInterceptedType(TypeInfo typeInfo,
+                           TypeName serviceType,
+                           TypeName descriptorType,
+                           TypedElementInfo constructorInjectElement,
+                           Set<TypedElementInfo> maybeIntercepted) {
+        TypeName interceptedType = TypeName.builder(serviceType)
+                .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Intercepted")
+                .build();
+
+        var generator = new InterceptedTypeGenerator(serviceType,
+                                                     descriptorType,
+                                                     interceptedType,
+                                                     constructorInjectElement,
+                                                     maybeIntercepted.stream()
+                                                             .filter(ElementInfoPredicates::isMethod)
+                                                             .toList());
+
+        ctx.addType(interceptedType,
+                    generator.generate(),
+                    serviceType,
+                    typeInfo.originatingElement().orElse(serviceType));
     }
 
     private void qualifiedProvider(ClassModel.Builder classModel, TypeName typeName) {
@@ -741,12 +743,10 @@ class InjectionExtension implements InjectCodegenExtension {
         if (found.isPresent()) {
             TypedElementInfo superMethod = found.get();
 
-            boolean realOverride = true;
-            if (superMethod.accessModifier() == AccessModifier.PACKAGE_PRIVATE
-                    && !currentPackage.equals(type.typeName().packageName())) {
-                // method has same signature, but is package local and is in a different package
-                realOverride = false;
-            }
+            // method has same signature, but is package local and is in a different package
+            boolean realOverride = superMethod.accessModifier() != AccessModifier.PACKAGE_PRIVATE
+                    || currentPackage.equals(type.typeName().packageName());
+
 
             if (realOverride) {
                 // let's find the declaring type
@@ -1541,7 +1541,7 @@ class InjectionExtension implements InjectCodegenExtension {
 
     private void createInstantiateInterceptBody(Method.Builder method,
                                                 List<ParamDefinition> params) {
-        List<ParamDefinition> constructorParams = declareCtrParamsAndGetThem(method, params);
+        List<ParamDefinition> constructorParams = GenerateServiceDescriptor.declareCtrParamsAndGetThem(method, params);
 
         method.addContentLine("try {")
                 .addContentLine("return interceptMeta__helidonInject.createInvoker(this,")
@@ -1571,37 +1571,11 @@ class InjectionExtension implements InjectCodegenExtension {
                 .addContentLine("}");
     }
 
-    private List<ParamDefinition> declareCtrParamsAndGetThem(Method.Builder method, List<ParamDefinition> params) {
-        /*
-            var ipParam1_serviceProviders = ctx__helidonInject.dependency(IP_PARAM_1);
-            var ipParam2_someOtherName = ctx__helidonInject.dependency(IP_PARAM_2);
-
-            return new ConfigProducer(ipParam1_serviceProviders, someOtherName);
-         */
-        List<ParamDefinition> constructorParams = params.stream()
-                .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
-                .toList();
-
-        // for each parameter, obtain its value from context
-        for (ParamDefinition param : constructorParams) {
-            method.addContent(param.declaredType())
-                    .addContent(" ")
-                    .addContent(param.ipParamName())
-                    .addContent(" = ")
-                    .update(it -> param.assignmentHandler().accept(it))
-                    .addContentLine(";");
-        }
-        if (!params.isEmpty()) {
-            method.addContentLine("");
-        }
-        return constructorParams;
-    }
-
     private void createInstantiateBody(TypeName serviceType,
                                        Method.Builder method,
                                        List<ParamDefinition> params,
                                        boolean interceptedMethods) {
-        List<ParamDefinition> constructorParams = declareCtrParamsAndGetThem(method, params);
+        List<ParamDefinition> constructorParams = GenerateServiceDescriptor.declareCtrParamsAndGetThem(method, params);
         String paramsDeclaration = constructorParams.stream()
                 .map(ParamDefinition::ipParamName)
                 .collect(Collectors.joining(", "));

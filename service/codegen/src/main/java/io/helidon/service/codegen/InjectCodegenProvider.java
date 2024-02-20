@@ -54,12 +54,13 @@ public class InjectCodegenProvider implements CodegenExtensionProvider {
                             .flatMap(it -> it.supportedOptions().stream()))
             .collect(Collectors.toUnmodifiableSet());
 
-    private static final Set<TypeName> SUPPORTED_ANNOTATIONS = Stream.concat(EXTENSIONS.stream()
-                                                                                     .flatMap(it -> it.supportedAnnotations()
-                                                                                             .stream()),
-                                                                             Stream.of(TypeNames.GENERATED,
-                                                                                       ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR))
-            .collect(Collectors.toUnmodifiableSet());
+    private static final Set<TypeName> SUPPORTED_ANNOTATIONS =
+            Stream.concat(EXTENSIONS.stream()
+                                  .flatMap(it -> it.supportedAnnotations()
+                                          .stream()),
+                          Stream.of(TypeNames.GENERATED,
+                                    ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR))
+                    .collect(Collectors.toUnmodifiableSet());
 
     private static final Set<String> SUPPORTED_ANNOTATION_PACKAGES =
             Stream.concat(EXTENSIONS.stream()

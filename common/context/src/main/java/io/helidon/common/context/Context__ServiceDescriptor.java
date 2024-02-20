@@ -64,6 +64,6 @@ public class Context__ServiceDescriptor implements Descriptor<Context> {
 
     @Override
     public TypeName scope() {
-        return Injection.RequestScope.TYPE_NAME;
+        return Injection.RequestScope.TYPE;
     }
 }

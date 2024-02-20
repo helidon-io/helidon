@@ -107,6 +107,13 @@ public interface Parameters {
         return defaultValues.get();
     }
 
+    /**
+     * A list of values for the named parameter.
+     *
+     * @param name name of the parameter
+     * @return list of parameter values, mappable to other types
+     * @throws NoSuchElementException in case the name is not present in these parameters
+     */
     List<Value<String>> allValues(String name) throws NoSuchElementException;
 
     /**

@@ -111,7 +111,7 @@ public class CyclicDependencyInjectTest {
 
         @Override
         public TypeName scope() {
-            return Injection.Singleton.TYPE_NAME;
+            return Injection.Singleton.TYPE;
         }
     }
 
@@ -156,7 +156,7 @@ public class CyclicDependencyInjectTest {
 
         @Override
         public TypeName scope() {
-            return Injection.Singleton.TYPE_NAME;
+            return Injection.Singleton.TYPE;
         }
     }
 }

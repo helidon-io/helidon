@@ -16,12 +16,7 @@
 
 package io.helidon.declarative.codegen.spi;
 
-import java.util.List;
-
-import io.helidon.codegen.classmodel.ClassModel;
-import io.helidon.codegen.classmodel.ContentBuilder;
-import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypeName;
+import io.helidon.declarative.codegen.ParameterCodegenContext;
 
 /**
  * Java {@link java.util.ServiceLoader} provider interface to add support for parameters of HTTP endpoint
@@ -35,22 +30,8 @@ public interface HttpParameterCodegenProvider {
      * this method is responsible for adding the appropriate extraction of parameter from
      * server request, server response, or other component.
      *
-     * @param parameterAnnotations    annotations of the parameter being processed
-     * @param parameterType           type of the parameter being processed
-     * @param classBuilder            builder of the content of the class (i.e. when constants need to be added)
-     * @param contentBuilder          builder of the parameter assignment
-     * @param serverRequestParamName  name of the parameter of WebServer server request
-     * @param serverResponseParamName name of the parameter of WebServer server response
-     * @param methodIndex             index of the method being processed (to be able to have unique constant names)
-     * @param paramIndex              index of the parameter being processed (to be able to have unique constant names)
+     * @param context information about the parameter being processed
      * @return whether code was generated, return {@code false} if the parameter is not supported by this provider
      */
-    boolean codegen(List<Annotation> parameterAnnotations,
-                    TypeName parameterType,
-                    ClassModel.Builder classBuilder,
-                    ContentBuilder<?> contentBuilder,
-                    String serverRequestParamName,
-                    String serverResponseParamName,
-                    int methodIndex,
-                    int paramIndex);
+    boolean codegen(ParameterCodegenContext context);
 }

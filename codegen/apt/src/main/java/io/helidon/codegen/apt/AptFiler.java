@@ -95,9 +95,9 @@ class AptFiler implements CodegenFiler {
             var resource = filer.getResource(StandardLocation.CLASS_OUTPUT, "", location);
             List<String> lines = new ArrayList<>();
 
-            try(var br = new BufferedReader(new InputStreamReader(resource.openInputStream(), UTF_8))) {
+            try (var br = new BufferedReader(new InputStreamReader(resource.openInputStream(), UTF_8))) {
                 String line;
-                while((line = br.readLine()) != null) {
+                while ((line = br.readLine()) != null) {
                     lines.add(line);
                 }
             }

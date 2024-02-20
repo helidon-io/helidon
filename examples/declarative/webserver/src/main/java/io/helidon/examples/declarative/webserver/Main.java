@@ -22,7 +22,19 @@ import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
 
+/**
+ * This is a temporary Main class. The code here will be moved to declarative module of Helidon,
+ * and each application should just use {@code io.helidon.Main}.
+ */
 public class Main {
+    private Main() {
+    }
+
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 

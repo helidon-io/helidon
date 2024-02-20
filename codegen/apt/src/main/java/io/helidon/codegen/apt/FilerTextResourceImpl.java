@@ -38,7 +38,7 @@ class FilerTextResourceImpl implements FilerTextResource {
     private final FileObject originalResource; // may be null
     private final List<String> currentLines;
 
-    boolean modified;
+    private boolean modified;
 
     FilerTextResourceImpl(Filer filer, String location, Element[] originatingElements) {
         this.filer = filer;

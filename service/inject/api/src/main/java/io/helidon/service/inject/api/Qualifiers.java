@@ -57,7 +57,7 @@ final class Qualifiers {
         if (src.contains(Qualifier.WILDCARD_NAMED)) {
             // if provider has any name, and criteria ONLY asks for named, we match
             if (criteria.stream()
-                    .allMatch(it -> it.typeName().equals(Injection.Named.TYPE_NAME))) {
+                    .allMatch(it -> it.typeName().equals(Injection.Named.TYPE))) {
                 return true;
             }
         }
@@ -65,7 +65,7 @@ final class Qualifiers {
         for (Qualifier criteriaQualifier : criteria) {
             if (src.contains(criteriaQualifier)) {
                 // NOP;
-            } else if (criteriaQualifier.typeName().equals(Injection.Named.TYPE_NAME)) {
+            } else if (criteriaQualifier.typeName().equals(Injection.Named.TYPE)) {
                 if (criteriaQualifier.equals(Qualifier.WILDCARD_NAMED)
                         || criteriaQualifier.value().isEmpty()) {
                     // any Named qualifier will match ...

@@ -18,6 +18,7 @@ package io.helidon.service.inject;
 
 import io.helidon.service.registry.ServiceDiscovery;
 import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.spi.ServiceRegistryManagerProvider;
 
 /**
@@ -38,7 +39,7 @@ public class InjectRegistryManagerProvider implements ServiceRegistryManagerProv
     @Override
     public io.helidon.service.registry.ServiceRegistryManager create(ServiceRegistryConfig config,
                                                                      ServiceDiscovery serviceDiscovery,
-                                                                     io.helidon.service.registry.ServiceRegistryManager coreRegistryManager) {
+                                                                     ServiceRegistryManager coreRegistryManager) {
         InjectConfig injectConfig;
         if (config instanceof InjectConfig ic) {
             injectConfig = ic;

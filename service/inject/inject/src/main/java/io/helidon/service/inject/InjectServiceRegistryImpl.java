@@ -139,8 +139,8 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         this.dependentScopeHandler = new DependentScopeHandler(this);
 
         Map<TypeName, Injection.ScopeHandler<?>> scopeHandlerInstances = new ConcurrentHashMap<>();
-        scopeHandlerInstances.put(Injection.Singleton.TYPE_NAME, singletonScopeHandler);
-        scopeHandlerInstances.put(Injection.Dependent.TYPE_NAME, dependentScopeHandler);
+        scopeHandlerInstances.put(Injection.Singleton.TYPE, singletonScopeHandler);
+        scopeHandlerInstances.put(Injection.Dependent.TYPE, dependentScopeHandler);
 
         this.scopeHandlerServices = scopeHandlers;
         this.scopeHandlerInstances = scopeHandlerInstances;
@@ -468,10 +468,11 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
             if (interceptors == null) {
                 // we must preserve the order of services, as they are weight ordered!
                 this.interceptors = new LinkedHashMap<>();
-                List<ServiceManager<Interception.Interceptor>> serviceManagers = lookupManagers(Lookup.builder()
-                                                                                                        .addContract(Interception.Interceptor.class)
-                                                                                                        .addQualifier(Qualifier.WILDCARD_NAMED)
-                                                                                                        .build());
+                List<ServiceManager<Interception.Interceptor>> serviceManagers =
+                        lookupManagers(Lookup.builder()
+                                               .addContract(Interception.Interceptor.class)
+                                               .addQualifier(Qualifier.WILDCARD_NAMED)
+                                               .build());
                 for (ServiceManager<Interception.Interceptor> serviceManager : serviceManagers) {
                     this.interceptors.put(serviceManager.descriptor(), serviceManager);
                 }
@@ -484,9 +485,9 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
 
     private Supplier<Scope> scopeSupplier(InjectServiceInfo descriptor) {
         TypeName scope = descriptor.scope();
-        if (Injection.Singleton.TYPE_NAME.equals(scope)) {
+        if (Injection.Singleton.TYPE.equals(scope)) {
             return LazyValue.create(singletonScopeHandler.scope());
-        } else if (Injection.Dependent.TYPE_NAME.equals(scope)) {
+        } else if (Injection.Dependent.TYPE.equals(scope)) {
             return LazyValue.create(dependentScopeHandler.scope());
         } else {
             // must be a lazy value, as the scope handler may not be available at the time this method is called

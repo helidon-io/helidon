@@ -30,7 +30,7 @@ class MavenFilerTextResource implements FilerTextResource {
     private final Path resourcePath;
     private final ArrayList<String> currentLines;
 
-    boolean modified;
+    private boolean modified;
 
     MavenFilerTextResource(Path resourcePath) {
         this.resourcePath = resourcePath;

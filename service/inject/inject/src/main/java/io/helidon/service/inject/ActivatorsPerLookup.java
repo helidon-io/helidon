@@ -141,7 +141,7 @@ final class ActivatorsPerLookup {
             this.supportedQualifier = qpd.qualifierType();
             this.supportedContracts = provider.descriptor().contracts()
                     .stream()
-                    .filter(not(QualifiedProvider.TYPE_NAME::equals))
+                    .filter(not(QualifiedProvider.TYPE::equals))
                     .collect(Collectors.toSet());
             this.anyMatch = this.supportedContracts.contains(TypeNames.OBJECT);
         }
@@ -199,7 +199,7 @@ final class ActivatorsPerLookup {
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get(currentPhase);
 
-            if (lookup.contracts().contains(InjectionPointProvider.TYPE_NAME)) {
+            if (lookup.contracts().contains(InjectionPointProvider.TYPE)) {
                 // the user requested the provider, not the provided
                 T instance = (T) ipProvider;
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
@@ -227,7 +227,7 @@ final class ActivatorsPerLookup {
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             ServicesProvider<T> instanceSupplier = (ServicesProvider<T>) serviceInstance.get(currentPhase);
 
-            if (lookup.contracts().contains(ServicesProvider.TYPE_NAME)) {
+            if (lookup.contracts().contains(ServicesProvider.TYPE)) {
                 return Optional.of(List.of(QualifiedInstance.create((T) instanceSupplier, descriptor().qualifiers())));
             }
 
@@ -298,7 +298,7 @@ final class ActivatorsPerLookup {
             Set<Qualifier> qualifiers = driver.qualifiers();
             Qualifier name = qualifiers.stream()
                     .filter(not(Qualifier.WILDCARD_NAMED::equals))
-                    .filter(it -> Injection.Named.TYPE_NAME.equals(it.typeName()))
+                    .filter(it -> Injection.Named.TYPE.equals(it.typeName()))
                     .findFirst()
                     .orElse(Qualifier.DEFAULT_NAMED);
             Set<Qualifier> newQualifiers = provider.descriptor().qualifiers()

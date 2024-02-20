@@ -109,7 +109,7 @@ class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
     /**
      * Default constructor.
      */
-    public ExternalModuleCreatorMojo() {
+    ExternalModuleCreatorMojo() {
     }
 
     @Override

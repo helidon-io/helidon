@@ -20,7 +20,18 @@ import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.webserver.WebServer;
 
+/**
+ * Example of using Helidon inject registry.
+ */
 public class Main {
+    private Main() {
+    }
+
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         InjectRegistry registry = InjectRegistryManager.create()
                 .registry();

@@ -60,7 +60,7 @@ public final class Service {
         /**
          * Type name of this annotation.
          */
-        TypeName TYPE_NAME = TypeName.create(Provider.class);
+        TypeName TYPE = TypeName.create(Provider.class);
     }
 
     /**
@@ -118,7 +118,7 @@ public final class Service {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE_NAME = TypeName.create(Descriptor.class);
+        TypeName TYPE = TypeName.create(Descriptor.class);
 
         /**
          * Type of service registry that should read this descriptor. Defaults to

@@ -87,7 +87,7 @@ public final class Injection {
         /**
          * Type name of this annotation.
          */
-        TypeName TYPE_NAME = TypeName.create(Named.class);
+        TypeName TYPE = TypeName.create(Named.class);
         /**
          * Represents a wildcard name (i.e., matches anything).
          */
@@ -130,7 +130,7 @@ public final class Injection {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE_NAME = TypeName.create(Dependent.class);
+        TypeName TYPE = TypeName.create(Dependent.class);
     }
 
     /**
@@ -155,7 +155,7 @@ public final class Injection {
         /**
          * Type name of this annotation.
          */
-        TypeName TYPE_NAME = TypeName.create(Singleton.class);
+        TypeName TYPE = TypeName.create(Singleton.class);
         /*
         Implementation note: we currently do not support custom scopes, so there is no Scope meta annotation.
         If we decide to support scopes, we may want to introduce such an annotation.
@@ -177,7 +177,7 @@ public final class Injection {
         /**
          * This interface type.
          */
-        TypeName TYPE_NAME = TypeName.create(RequestScope.class);
+        TypeName TYPE = TypeName.create(RequestScope.class);
     }
 
     /**
@@ -193,7 +193,7 @@ public final class Injection {
          * Type name of this interface.
          * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
          */
-        TypeName TYPE_NAME = TypeName.create(ClassNamed.class);
+        TypeName TYPE = TypeName.create(ClassNamed.class);
 
         /**
          * The class used will function as the name.
@@ -308,7 +308,7 @@ public final class Injection {
          * Type name of this interface.
          * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
          */
-        TypeName TYPE_NAME = TypeName.create(DrivenByName.class);
+        TypeName TYPE = TypeName.create(DrivenByName.class);
     }
 
     /**
@@ -321,7 +321,7 @@ public final class Injection {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE_NAME = TypeName.create(ServicesProvider.class);
+        TypeName TYPE = TypeName.create(ServicesProvider.class);
 
         /**
          * List of service suppliers.
@@ -363,7 +363,7 @@ public final class Injection {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE_NAME = TypeName.create(InjectionPointProvider.class);
+        TypeName TYPE = TypeName.create(InjectionPointProvider.class);
 
         /**
          * Get (or create) an instance of this service type for the given injection point context. This is logically the same
@@ -404,7 +404,7 @@ public final class Injection {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE_NAME = TypeName.create(QualifiedProvider.class);
+        TypeName TYPE = TypeName.create(QualifiedProvider.class);
 
         /**
          * Get the first instance (if any) matching the qualifier and type.
@@ -503,7 +503,7 @@ public final class Injection {
          * Type name of this interface.
          * Service registry uses {@link io.helidon.common.types.TypeName} in its APIs.
          */
-        TypeName TYPE_NAME = TypeName.create(ScopeHandler.class);
+        TypeName TYPE = TypeName.create(ScopeHandler.class);
 
         /**
          * Get the current scope if available.

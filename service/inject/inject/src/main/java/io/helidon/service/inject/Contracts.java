@@ -36,11 +36,11 @@ final class Contracts {
 
     static <T> ContractLookup create(ServiceInfo descriptor) {
         Set<TypeName> contracts = descriptor.contracts();
-        if (contracts.contains(Injection.ServicesProvider.TYPE_NAME)) {
-            return new ProviderContracts(contracts, Injection.ServicesProvider.TYPE_NAME);
+        if (contracts.contains(Injection.ServicesProvider.TYPE)) {
+            return new ProviderContracts(contracts, Injection.ServicesProvider.TYPE);
         }
-        if (contracts.contains(Injection.InjectionPointProvider.TYPE_NAME)) {
-            return new ProviderContracts(contracts, Injection.InjectionPointProvider.TYPE_NAME);
+        if (contracts.contains(Injection.InjectionPointProvider.TYPE)) {
+            return new ProviderContracts(contracts, Injection.InjectionPointProvider.TYPE);
         }
         if (contracts.contains(TypeNames.SUPPLIER)) {
             return new ProviderContracts(contracts, TypeNames.SUPPLIER);

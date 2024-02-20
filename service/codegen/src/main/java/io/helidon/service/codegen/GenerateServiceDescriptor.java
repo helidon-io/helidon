@@ -713,13 +713,7 @@ public class GenerateServiceDescriptor {
                 .update(it -> createInstantiateBody(serviceType, it, params)));
     }
 
-    private List<ParamDefinition> declareCtrParamsAndGetThem(Method.Builder method, List<ParamDefinition> params) {
-        /*
-            var ipParam1_serviceProviders = ctx__helidonInject.param(PARAM_1);
-            var ipParam2_someOtherName = ctx__helidonInject.param(PARAM_2);
-
-            return new ConfigProducer(ipParam1_serviceProviders, someOtherName);
-         */
+    static List<ParamDefinition> declareCtrParamsAndGetThem(Method.Builder method, List<ParamDefinition> params) {
         List<ParamDefinition> constructorParams = params.stream()
                 .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
                 .toList();

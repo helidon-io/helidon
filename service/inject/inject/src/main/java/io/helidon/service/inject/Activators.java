@@ -84,11 +84,11 @@ final class Activators {
         Descriptor<T> descriptor = provider.descriptor();
         Set<TypeName> contracts = descriptor.contracts();
 
-        if (descriptor.scope().equals(Injection.Dependent.TYPE_NAME)) {
-            if (contracts.contains(ServicesProvider.TYPE_NAME)) {
+        if (descriptor.scope().equals(Injection.Dependent.TYPE)) {
+            if (contracts.contains(ServicesProvider.TYPE)) {
                 return () -> new ActivatorsPerLookup.ServicesProviderActivator<>(provider);
             }
-            if (contracts.contains(InjectionPointProvider.TYPE_NAME)) {
+            if (contracts.contains(InjectionPointProvider.TYPE)) {
                 return () -> new ActivatorsPerLookup.IpProviderActivator<>(provider);
             }
             if (contracts.contains(TypeNames.SUPPLIER)) {
@@ -102,10 +102,10 @@ final class Activators {
             }
             return () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider);
         } else {
-            if (contracts.contains(ServicesProvider.TYPE_NAME)) {
+            if (contracts.contains(ServicesProvider.TYPE)) {
                 return () -> new Activators.ServicesProviderActivator<>(provider);
             }
-            if (contracts.contains(InjectionPointProvider.TYPE_NAME)) {
+            if (contracts.contains(InjectionPointProvider.TYPE)) {
                 return () -> new Activators.IpProviderActivator<>(provider);
             }
             if (contracts.contains(TypeNames.SUPPLIER)) {
@@ -486,7 +486,7 @@ final class Activators {
             this.supportedQualifier = qpd.qualifierType();
             this.supportedContracts = provider.descriptor().contracts()
                     .stream()
-                    .filter(not(QualifiedProvider.TYPE_NAME::equals))
+                    .filter(not(QualifiedProvider.TYPE::equals))
                     .collect(Collectors.toSet());
             this.anyMatch = this.supportedContracts.contains(TypeNames.OBJECT);
         }
@@ -554,7 +554,7 @@ final class Activators {
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get();
 
-            if (lookup.contracts().contains(InjectionPointProvider.TYPE_NAME)) {
+            if (lookup.contracts().contains(InjectionPointProvider.TYPE)) {
                 // the user requested the provider, not the provided
                 T instance = (T) ipProvider;
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
@@ -596,7 +596,7 @@ final class Activators {
         @SuppressWarnings("unchecked")
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            if (lookup.contracts().contains(ServicesProvider.TYPE_NAME)) {
+            if (lookup.contracts().contains(ServicesProvider.TYPE)) {
                 return Optional.of(List.of(QualifiedInstance.create((T) serviceInstance, descriptor().qualifiers())));
             }
 
@@ -650,7 +650,7 @@ final class Activators {
                 // injection point for the driving instance
                 if (contracts.contains(ip.contract())
                         && ip.qualifiers().isEmpty()) {
-                    if (ServiceInstance.TYPE_NAME.equals(ip.typeName())) {
+                    if (ServiceInstance.TYPE.equals(ip.typeName())) {
                         // if the injection point has the same contract, no qualifiers, then it is the driving instance
                         updatedPlan.put(ip, new IpPlan<>(() -> driver, injectionPlan.get(ip).descriptors()));
                     } else {
@@ -663,7 +663,7 @@ final class Activators {
                     // @DrivenByName String name
                     if (ip.qualifiers()
                             .stream()
-                            .anyMatch(it -> Injection.DrivenByName.TYPE_NAME.equals(it.typeName()))) {
+                            .anyMatch(it -> Injection.DrivenByName.TYPE.equals(it.typeName()))) {
                         updatedPlan.put(ip,
                                         new IpPlan<>(() -> name.value().orElse(Injection.Named.DEFAULT_NAME),
                                                      injectionPlan.get(ip).descriptors()));
@@ -767,7 +767,7 @@ final class Activators {
                 Set<Qualifier> qualifiers = driver.qualifiers();
                 Qualifier name = qualifiers.stream()
                         .filter(not(Qualifier.WILDCARD_NAMED::equals))
-                        .filter(it -> Injection.Named.TYPE_NAME.equals(it.typeName()))
+                        .filter(it -> Injection.Named.TYPE.equals(it.typeName()))
                         .findFirst()
                         .orElse(Qualifier.DEFAULT_NAMED);
                 Set<Qualifier> newQualifiers = provider.descriptor().qualifiers()

@@ -18,11 +18,15 @@ package io.helidon.declarative.codegen;
 
 import io.helidon.common.types.TypeName;
 
-class WebServerCodegenTypes {
+final class WebServerCodegenTypes {
     static final TypeName COMMON_CONTEXT = TypeName.create("io.helidon.common.context.Context");
+
     static final TypeName SERVER_REQUEST = TypeName.create("io.helidon.webserver.http.ServerRequest");
     static final TypeName SERVER_RESPONSE = TypeName.create("io.helidon.webserver.http.ServerResponse");
-    static final TypeName HTTP_FEATURE = TypeName.create("io.helidon.webserver.http.HttpFeature");
+    static final TypeName SERVER_HTTP_FEATURE = TypeName.create("io.helidon.webserver.http.HttpFeature");
+    static final TypeName SERVER_HTTP_ROUTING_BUILDER = TypeName.create("io.helidon.webserver.http.HttpRouting.Builder");
+    static final TypeName SERVER_HTTP_RULES = TypeName.create("io.helidon.webserver.http.HttpRules");
+
     static final TypeName HTTP_METHOD = TypeName.create("io.helidon.http.Method");
     static final TypeName HTTP_STATUS = TypeName.create("io.helidon.http.Status");
     static final TypeName HTTP_HEADER_NAME = TypeName.create("io.helidon.http.HeaderName");
@@ -30,16 +34,19 @@ class WebServerCodegenTypes {
     static final TypeName HTTP_PATH_ANNOTATION = TypeName.create("io.helidon.http.Http.Path");
     static final TypeName HTTP_METHOD_ANNOTATION = TypeName.create("io.helidon.http.Http.HttpMethod");
     static final TypeName HTTP_STATUS_ANNOTATION = TypeName.create("io.helidon.http.Http.Status");
-    static final TypeName HTTP_ROUTING_BUILDER = TypeName.create("io.helidon.webserver.http.HttpRouting.Builder");
-    static final TypeName HTTP_RULES = TypeName.create("io.helidon.webserver.http.HttpRules");
     static final TypeName HTTP_PATH_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.PathParam");
     static final TypeName HTTP_QUERY_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.QueryParam");
     static final TypeName HTTP_HEADER_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.HeaderParam");
     static final TypeName HTTP_ENTITY_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.Entity");
+
     static final TypeName SERVICE_CONTEXT = TypeName.create("io.helidon.common.context.Context__ServiceDescriptor");
     static final TypeName SERVICE_PROLOGUE = TypeName.create("io.helidon.http.Prologue__ServiceDescriptor");
     static final TypeName SERVICE_HEADERS = TypeName.create("io.helidon.http.Headers__ServiceDescriptor");
     static final TypeName SERVICE_SERVER_REQUEST = TypeName.create("io.helidon.webserver.ServerRequest__ServiceDescriptor");
     static final TypeName SERVICE_SERVER_RESPONSE = TypeName.create("io.helidon.webserver.ServerResponse__ServiceDescriptor");
+
     static final TypeName INJECT_SCOPE = TypeName.create("io.helidon.service.inject.api.Scope");
+
+    private WebServerCodegenTypes() {
+    }
 }

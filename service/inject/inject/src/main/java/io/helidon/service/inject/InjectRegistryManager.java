@@ -283,8 +283,8 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         }
 
         // scope handlers have a very specific meaning
-        if (contracts.contains(Injection.ScopeHandler.TYPE_NAME)) {
-            if (!Injection.Singleton.TYPE_NAME.equals(descriptor.scope())) {
+        if (contracts.contains(Injection.ScopeHandler.TYPE)) {
+            if (!Injection.Singleton.TYPE.equals(descriptor.scope())) {
                 throw new ServiceRegistryException("Services that provide ScopeHandler contract MUST be in Singleton scope, but "
                                                            + descriptor.serviceType().fqName() + " is in "
                                                            + descriptor.scope().fqName() + " scope.");
@@ -298,7 +298,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             }
         }
 
-        if (contracts.contains(Injection.QualifiedProvider.TYPE_NAME)) {
+        if (contracts.contains(Injection.QualifiedProvider.TYPE)) {
             // a special kind of service that matches ANY qualifier instance of a specific type, and also may match
             // a specific contract, or ANY contract
             if (descriptor instanceof GeneratedInjectService.QualifiedProviderDescriptor qpd) {
@@ -310,7 +310,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 } else {
                     // contract specific
                     Set<TypeName> realContracts = contracts.stream()
-                            .filter(Predicate.not(Injection.QualifiedProvider.TYPE_NAME::equals))
+                            .filter(Predicate.not(Injection.QualifiedProvider.TYPE::equals))
                             .collect(Collectors.toSet());
                     for (TypeName realContract : realContracts) {
                         TypedQualifiedProviderKey key = new TypedQualifiedProviderKey(qualifierType, realContract);
@@ -358,7 +358,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         @Override
         public TypeName scope() {
             // core services are equal in functionality to singletons
-            return Injection.Singleton.TYPE_NAME;
+            return Injection.Singleton.TYPE;
         }
 
         @Override
