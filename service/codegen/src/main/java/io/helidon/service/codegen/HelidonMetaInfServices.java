@@ -18,7 +18,20 @@ import io.helidon.common.types.TypeName;
 
 import static io.helidon.codegen.CodegenUtil.generatedAnnotation;
 
+/**
+ * Support for reading and writing Helidon services to the resource.
+ * <p>
+ * Helidon replacement for Java {@link java.util.ServiceLoader}.
+ * Each service annotated with appropriate annotation
+ * ({@link io.helidon.service.codegen.ServiceCodegenTypes#SERVICE_ANNOTATION_PROVIDER}, or some form of inject service
+ * annotations) will have a service descriptor generated at build time.
+ * <p>
+ * The service descriptor is then discoverable at runtime through our own resource in {@value #SERVICES_RESOURCE}.
+ */
 public class HelidonMetaInfServices {
+    /**
+     * Location of the Helidon meta services file.
+     */
     public static final String SERVICES_RESOURCE = "META-INF/helidon/services/services.txt";
 
     private final FilerTextResource services;
@@ -31,6 +44,15 @@ public class HelidonMetaInfServices {
         this.descriptors = descriptors;
     }
 
+    /**
+     * Create new instance from the current filer.
+     *
+     * @param filer      filer to find the file, and to write it
+     * @param generator  generator used in generated comment if we are creating a new file
+     * @param trigger    trigger that caused this file to be created (can be same as generator)
+     * @param moduleName module that is being built
+     * @return a new instance of the service metadata manager
+     */
     public static HelidonMetaInfServices create(CodegenFiler filer, TypeName generator, TypeName trigger, String moduleName) {
         FilerTextResource services = filer.textResource(SERVICES_RESOURCE);
 
@@ -61,10 +83,22 @@ public class HelidonMetaInfServices {
         return new HelidonMetaInfServices(services, comments, descriptors);
     }
 
+    /**
+     * Add all descriptors to the file. This never produces duplicate records.
+     * Descriptor type name is always unique within a file.
+     *
+     * @param services service descriptor metadata to add
+     */
     public void addAll(Collection<DescriptorMeta> services) {
         services.forEach(this::add);
     }
 
+    /**
+     * Add a single descriptors to the file. This never produces duplicate records.
+     * Descriptor type name is always unique within a file.
+     *
+     * @param service service descriptor metadata to add
+     */
     public void add(DescriptorMeta service) {
         // if it is the same descriptor class, remove it
         descriptors.removeIf(it -> it.descriptor().equals(service.descriptor()));
@@ -73,6 +107,9 @@ public class HelidonMetaInfServices {
         descriptors.add(service);
     }
 
+    /**
+     * Write the file to output.
+     */
     public void write() {
         List<String> lines = new ArrayList<>(comments);
         descriptors.stream()

@@ -196,7 +196,6 @@ class ConfigBeanCodegen implements InjectCodegenExtension {
         method.addContent("var childNodes = config.asNodeList().orElseGet(")
                 .addContent(List.class)
                 .addContentLine("::of);")
-                .addContentLine("boolean isList = config.isList();")
                 .addContentLine("");
 
         // now iterate through the child nodes and create an instance for each

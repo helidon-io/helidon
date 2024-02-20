@@ -126,6 +126,9 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName INJECT_SCOPE_HANDLER = TypeName.create("io.helidon.service.inject.api.Injection.ScopeHandler");
 
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code "io.helidon.service.inject.api.GeneratedInjectService.IpSupport"}.
+     */
     public static final TypeName INJECT_IP_SUPPORT = TypeName.create(
             "io.helidon.service.inject.api.GeneratedInjectService.IpSupport");
     /**

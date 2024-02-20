@@ -72,6 +72,15 @@ public class GenerateServiceDescriptor {
         this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(ctx.options());
     }
 
+    /**
+     * Generate a service descriptor for the provided service type info.
+     *
+     * @param generator   type of the generator responsible for this event
+     * @param ctx         context of code generation
+     * @param allServices all services processed in this round of processing
+     * @param service     service to create a descriptor for
+     * @return class model builder of the service descriptor
+     */
     public static ClassModel.Builder generate(TypeName generator,
                                               ServiceCodegenContext ctx,
                                               Collection<TypeInfo> allServices,

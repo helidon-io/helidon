@@ -10,9 +10,11 @@ import io.helidon.service.registry.Service;
  * Implementations of this contract are normally code generated, although then can be programmatically written by the developer
  * for special cases.
  */
-
 @Service.Contract
 public interface Application {
+    /**
+     * Type name of this interface.
+     */
     TypeName TYPE = TypeName.create(Application.class);
 
     /**

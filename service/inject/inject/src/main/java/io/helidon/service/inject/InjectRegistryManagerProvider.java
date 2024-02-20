@@ -4,7 +4,21 @@ import io.helidon.service.registry.ServiceDiscovery;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.spi.ServiceRegistryManagerProvider;
 
+/**
+ * {@link java.util.ServiceLoader} provider implementation for
+ * {@link io.helidon.service.registry.spi.ServiceRegistryManagerProvider} to provide a service registry
+ * with injection and interception support.
+ */
 public class InjectRegistryManagerProvider implements ServiceRegistryManagerProvider {
+    /**
+     * Required public constructor.
+     *
+     * @deprecated required for Java {@link java.util.ServiceLoader}
+     */
+    @Deprecated
+    public InjectRegistryManagerProvider() {
+    }
+
     @Override
     public io.helidon.service.registry.ServiceRegistryManager create(ServiceRegistryConfig config,
                                                                      ServiceDiscovery serviceDiscovery,

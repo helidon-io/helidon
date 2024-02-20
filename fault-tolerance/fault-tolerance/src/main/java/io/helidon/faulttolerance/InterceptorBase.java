@@ -105,7 +105,7 @@ abstract class InterceptorBase<T> implements Interception.Interceptor {
 
         if (name == null) {
             // not named, use annotation
-            fromAnnotation.apply(ftAnnotation);
+            return fromAnnotation.apply(ftAnnotation);
         }
 
         NamedResult<T> result = namedHandlerCache.get(name);

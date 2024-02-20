@@ -14,7 +14,7 @@ import io.helidon.service.inject.api.InvocationException;
 import io.helidon.service.inject.api.Invoker;
 
 /**
- * Handles the invocation of {@link io.helidon.inject.service.Interception.Interceptor} methods.
+ * Handles the invocation of {@link io.helidon.;inject.service.Interception.Interceptor} methods.
  * Note that upon a successful call to the {@link io.helidon.inject.service.Interception.Interceptor.Chain#proceed(Object[])} or
  * to the ultimate
  * target, the invocation will be prevented from being executed again.

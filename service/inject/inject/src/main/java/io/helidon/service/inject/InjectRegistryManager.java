@@ -31,6 +31,13 @@ import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 
+/**
+ * Manager is responsible for managing the state of a {@link io.helidon.service.inject.api.InjectRegistry}.
+ * Each manager instances owns a single service registry.
+ * <p>
+ * To use a singleton service across application, either pass it through parameters, or use
+ * {@link io.helidon.service.registry.GlobalServiceRegistry}.
+ */
 public class InjectRegistryManager implements ServiceRegistryManager {
     static final Comparator<InjectServiceInfo> SERVICE_INFO_COMPARATOR = Comparator
             .comparingDouble(InjectServiceInfo::weight)
@@ -60,10 +67,21 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         this.discovery = serviceDiscovery;
     }
 
+    /**
+     * Create a new inject registry manager with default configuration.
+     *
+     * @return a new inject registry manager
+     */
     public static InjectRegistryManager create() {
         return create(InjectConfig.create());
     }
 
+    /**
+     * Create a new inject registry manager with custom configuration.
+     *
+     * @param config configuration to use
+     * @return a new configured inject registry manager
+     */
     public static InjectRegistryManager create(InjectConfig config) {
         // we provide the service, this
         return new InjectRegistryManager(config,
@@ -229,7 +247,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                       Described described) {
 
         Descriptor<?> descriptor = described.injectDescriptor();
-        GeneratedService.Descriptor<?> coreDescriptor = described.coreDescriptor();
+
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Binding service descriptor: " + descriptor.descriptorType()
                     .fqName());
