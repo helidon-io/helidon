@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.ClientCalls;
@@ -156,6 +157,6 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
             throw new IllegalArgumentException("Method " + methodName + " is of type " + method.type()
                     + ", yet " + methodType + " was requested.");
         }
-        return new GrpcClientCall<>(grpcClient, method.descriptor());
+        return new GrpcClientCall<>(grpcClient, method.descriptor(), CallOptions.DEFAULT);
     }
 }
