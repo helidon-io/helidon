@@ -28,7 +28,6 @@ import org.glassfish.jersey.media.multipart.BodyPartEntity;
 import org.glassfish.jersey.media.multipart.MultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.message.internal.ReaderWriter;
-import org.junit.jupiter.api.Assertions;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -48,6 +47,9 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @HelidonTest
 @DisableDiscovery
@@ -95,8 +97,8 @@ public class MultipartTest {
                     .register(MultiPartFeature.class)
                     .request()
                     .post(Entity.entity(multipart, multipart.getMediaType()))) {
-                Assertions.assertEquals(Response.Status.OK.getStatusCode(), r.getStatus());
-                Assertions.assertEquals(ENTITY, r.readEntity(String.class));
+                assertThat(r.getStatus(), is(Response.Status.OK.getStatusCode()));
+                assertThat(r.readEntity(String.class), is(ENTITY));
             }
         }
     }
