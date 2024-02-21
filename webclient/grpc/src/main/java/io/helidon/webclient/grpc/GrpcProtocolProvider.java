@@ -33,7 +33,7 @@ public class GrpcProtocolProvider implements ClientProtocolProvider<GrpcClient, 
 
     @Override
     public String protocolId() {
-        return CONFIG_KEY;
+        return GrpcClient.PROTOCOL_ID;
     }
 
     @Override
@@ -49,7 +49,8 @@ public class GrpcProtocolProvider implements ClientProtocolProvider<GrpcClient, 
     @Override
     public GrpcClient protocol(WebClient client, GrpcClientProtocolConfig config) {
         return new GrpcClientImpl(client,
-                                  GrpcClientConfig.builder().from(client.prototype())
+                                  GrpcClientConfig.builder()
+                                          .from(client.prototype())
                                           .protocolConfig(config)
                                           .buildPrototype());
     }

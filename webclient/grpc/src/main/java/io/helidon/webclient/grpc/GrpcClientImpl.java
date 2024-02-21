@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.grpc;
 
+import io.grpc.Channel;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
 
@@ -46,5 +47,10 @@ class GrpcClientImpl implements GrpcClient {
     @Override
     public GrpcServiceClient serviceClient(GrpcServiceDescriptor descriptor) {
         return new GrpcServiceClientImpl(descriptor, this);
+    }
+
+    @Override
+    public Channel channel() {
+        return new GrpcChannel(this);
     }
 }

@@ -18,6 +18,7 @@ package io.helidon.webclient.grpc;
 
 import java.util.function.Consumer;
 
+import io.grpc.Channel;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.Protocol;
@@ -27,6 +28,8 @@ import io.helidon.webclient.spi.Protocol;
  */
 @RuntimeType.PrototypedBy(GrpcClientConfig.class)
 public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
+    String PROTOCOL_ID = "grpc";
+
     /**
      * Protocol to use to obtain an instance of gRPC specific client from
      * {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)}.
@@ -80,4 +83,11 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
      * @return client for the provided descriptor
      */
     GrpcServiceClient serviceClient(GrpcServiceDescriptor descriptor);
+
+    /**
+     * Create a gRPC channel for this client that can be used to create stubs.
+     *
+     * @return a new gRPC channel
+     */
+    Channel channel();
 }

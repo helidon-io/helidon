@@ -25,11 +25,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
 import io.helidon.examples.grpc.strings.StringServiceGrpc;
 import io.helidon.examples.grpc.strings.Strings;
-import io.helidon.webclient.grpc.GrpcChannel;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.GrpcRouting;
@@ -44,10 +43,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class GrpcStubTest {
     private static final long TIMEOUT_SECONDS = 10;
 
-    private final GrpcClient grpcClient;
+    private final WebClient webClient;
 
-    private GrpcStubTest(GrpcClient grpcClient) {
-        this.grpcClient = grpcClient;
+    private GrpcStubTest(WebClient webClient) {
+        this.webClient = webClient;
     }
 
     @SetUpServer
@@ -143,16 +142,16 @@ class GrpcStubTest {
 
     // @Test -- blocks indefinitely
     void testUnaryUpper() {
-        Channel channel = new GrpcChannel(grpcClient);
-        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(channel);
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
         Strings.StringMessage res = service.upper(newStringMessage("hello"));
         assertThat(res.getText(), is("HELLO"));
     }
 
     @Test
     void testUnaryUpperAsync() throws ExecutionException, InterruptedException, TimeoutException {
-        Channel channel = new GrpcChannel(grpcClient);
-        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(channel);
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(grpcClient.channel());
         CompletableFuture<Strings.StringMessage> future = new CompletableFuture<>();
         service.upper(newStringMessage("hello"), singleStreamObserver(future));
         Strings.StringMessage res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -161,8 +160,8 @@ class GrpcStubTest {
 
     @Test
     void testServerStreamingSplit() {
-        Channel channel = new GrpcChannel(grpcClient);
-        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(channel);
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
         Iterator<Strings.StringMessage> res = service.split(newStringMessage("hello world"));
         assertThat(res.next().getText(), is("hello"));
         assertThat(res.next().getText(), is("world"));
@@ -171,8 +170,8 @@ class GrpcStubTest {
 
     @Test
     void testServerStreamingSplitAsync() throws ExecutionException, InterruptedException, TimeoutException {
-        Channel channel = new GrpcChannel(grpcClient);
-        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(channel);
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(grpcClient.channel());
         CompletableFuture<Iterator<Strings.StringMessage>> future = new CompletableFuture<>();
         service.split(newStringMessage("hello world"), multiStreamObserver(future));
         Iterator<Strings.StringMessage> res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -183,8 +182,8 @@ class GrpcStubTest {
 
     @Test
     void testClientStreamingJoinAsync() throws ExecutionException, InterruptedException, TimeoutException {
-        Channel channel = new GrpcChannel(grpcClient);
-        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(channel);
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(grpcClient.channel());
         CompletableFuture<Strings.StringMessage> future = new CompletableFuture<>();
         StreamObserver<Strings.StringMessage> req = service.join(singleStreamObserver(future));
         req.onNext(newStringMessage("hello"));
@@ -196,8 +195,8 @@ class GrpcStubTest {
 
     @Test
     void testBidirectionalEchoAsync() throws ExecutionException, InterruptedException, TimeoutException {
-        Channel channel = new GrpcChannel(grpcClient);
-        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(channel);
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(grpcClient.channel());
         CompletableFuture<Iterator<Strings.StringMessage>> future = new CompletableFuture<>();
         StreamObserver<Strings.StringMessage> req = service.echo(multiStreamObserver(future));
         req.onNext(newStringMessage("hello"));
