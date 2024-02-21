@@ -121,7 +121,10 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                     .filter(ElementInfoPredicates.elementName("builder"))
                     .filter(ElementInfoPredicates::hasNoArgs)
                     .findFirst()
-                    .map(it -> new FactoryMethod(builderCandidate, it.typeName(), "builder", null))
+                    .map(it -> new FactoryMethod(builderCandidate,
+                                                 copyGenericTypes(builderCandidate, it.typeName()),
+                                                 "builder",
+                                                 null))
                     .orElse(null);
             if (found != null) {
                 break;
@@ -130,6 +133,15 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
 
         FactoryMethod secondaryMethod = secondary;
         return Optional.ofNullable(found).or(() -> Optional.ofNullable(secondaryMethod));
+    }
+
+    private static TypeName copyGenericTypes(TypeName from, TypeName to) {
+        if (from.typeArguments().isEmpty()) {
+            return to;
+        }
+        return TypeName.builder(to)
+                .typeArguments(from.typeArguments())
+                .build();
     }
 
     private static Optional<FactoryMethod> createFromConfigMethod(CodegenContext ctx,
@@ -278,7 +290,18 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             // MyTargetType MyTargetType.create(ConfigObject object)
             factoryMethodReturnType = typeHandler.actualType();
             typeWithFactoryMethod = factoryMethodReturnType;
-            argumentType = Optional.of(configuredTypeInterface.get().typeName().typeArguments().get(0));
+            TypeName argumentWithGenerics = configuredTypeInterface.get().typeName().typeArguments().get(0);
+            if (!argumentWithGenerics.typeParameters().isEmpty() || !argumentWithGenerics.typeArguments().isEmpty()) {
+                if (!factoryMethodReturnType.typeArguments().isEmpty()) {
+                    TypeName finalFactoryMethodReturnType = factoryMethodReturnType;
+                    argumentWithGenerics = TypeName.builder(argumentWithGenerics)
+                            .typeArguments(List.of())
+                            .typeParameters(List.of())
+                            .update(it -> finalFactoryMethodReturnType.typeArguments().forEach(it::addTypeArgument))
+                            .build();
+                }
+            }
+            argumentType = Optional.of(argumentWithGenerics);
 
             return Optional.of(new FactoryMethod(typeWithFactoryMethod,
                                                  factoryMethodReturnType,

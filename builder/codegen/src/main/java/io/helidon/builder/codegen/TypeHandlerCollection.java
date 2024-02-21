@@ -198,9 +198,9 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                               + generateMapListFromConfig(factoryMethods)
                                               + ").ifPresent(this::" + setterName() + ");");
             } else {
-                method.addContentLine(configGet(configured)
-                                              + generateFromConfig(factoryMethods)
-                                              + ".ifPresent(this::" + setterName() + ");");
+                method.addContent(configGet(configured));
+                generateFromConfig(method, factoryMethods);
+                method.addContentLine(".ifPresent(this::" + setterName() + ");");
             }
         } else if (BUILT_IN_MAPPERS.contains(actualType)) {
             // types we support in config can be simplified,
@@ -215,12 +215,12 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                     .addContent(setterName())
                     .addContentLine(");");
         } else {
-            method.addContentLine(configGet(configured)
-                                          + ".asNodeList()"
-                                          + ".map(nodeList -> nodeList.stream()"
-                                          + ".map(cfg -> cfg"
-                                          + generateFromConfig(factoryMethods)
-                                          + ".get())"
+            method.addContent(configGet(configured)
+                                      + ".asNodeList()"
+                                      + ".map(nodeList -> nodeList.stream()"
+                                      + ".map(cfg -> cfg");
+            generateFromConfig(method, factoryMethods);
+            method.addContentLine(".get())"
                                           + "." + collector + ")"
                                           + ".ifPresent(this::" + setterName() + ");");
         }

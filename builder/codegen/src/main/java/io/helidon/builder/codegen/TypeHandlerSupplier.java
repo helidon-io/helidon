@@ -63,9 +63,9 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
             return;
         }
         if (factoryMethods.createFromConfig().isPresent()) {
-            method.addContentLine(configGet(configured)
-                                   + generateFromConfig(factoryMethods)
-                                   + ".ifPresent(this::" + setterName() + ");");
+            method.addContent(configGet(configured));
+            generateFromConfig(method, factoryMethods);
+            method.addContentLine(".ifPresent(this::" + setterName() + ");");
         } else if (actualType().isOptional()) {
             method.addContent(setterName() + "(");
             method.addContent(configGet(configured));
@@ -74,7 +74,7 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
         } else {
             method.addContent(setterName() + "(");
             method.addContent(configGet(configured));
-            method.addContent(generateFromConfig(factoryMethods));
+            generateFromConfig(method, factoryMethods);
             method.addContentLine(".supplier());");
         }
     }

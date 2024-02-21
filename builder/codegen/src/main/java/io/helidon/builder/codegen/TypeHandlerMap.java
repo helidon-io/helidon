@@ -120,12 +120,12 @@ class TypeHandlerMap extends TypeHandler {
             // the special case of Map<String, String>
             method.addContentLine(configGet(configured) + ".detach().asMap().ifPresent(this::" + name() + ");");
         } else {
-            method.addContentLine(configGet(configured)
-                                          + ".asNodeList().ifPresent(nodes -> nodes.forEach"
-                                          + "(node -> "
-                                          + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node"
-                                          + generateFromConfig(factoryMethods)
-                                          + ".get())));");
+            method.addContent(configGet(configured)
+                                      + ".asNodeList().ifPresent(nodes -> nodes.forEach"
+                                      + "(node -> "
+                                      + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node");
+            generateFromConfig(method, factoryMethods);
+            method.addContentLine(".get())));");
         }
     }
 

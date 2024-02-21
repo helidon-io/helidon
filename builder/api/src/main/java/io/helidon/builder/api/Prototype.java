@@ -21,6 +21,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -106,7 +107,7 @@ public final class Prototype {
          * @param configType           type of the configured service
          * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
          *                             node
-         * @param existingInstances  already configured instances
+         * @param existingInstances    already configured instances
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
          * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
@@ -339,7 +340,7 @@ public final class Prototype {
          * builder still contains previous value).
          * Do not call the same setter again from within this method, as it would end in a stack overflow.
          *
-         * @param builder the target builder being decorated
+         * @param builder     the target builder being decorated
          * @param optionValue option value set by the caller of the setter method
          */
         void decorate(B builder, T optionValue);
@@ -449,6 +450,40 @@ public final class Prototype {
          * @return interfaces to implement
          */
         String[] value();
+    }
+
+    /**
+     * Utility class used from generated code for equals and hash code of specific cases of optional.
+     * This exists because of Optional of char arrays, where equals does not work as we need.
+     */
+    public static class OptionalUtil {
+        /**
+         * Equals that uses {@link java.util.Arrays#equals(char[], char[])} in case both optionals have a value.
+         *
+         * @param first  first optional
+         * @param second second optional
+         * @return whether the optionals are equals
+         */
+        public static boolean charArrayEquals(Optional<char[]> first, Optional<char[]> second) {
+            if (first.isEmpty() && second.isEmpty()) {
+                return true;
+            }
+            if (first.isEmpty() || second.isEmpty()) {
+                return false;
+            }
+            return Arrays.equals(first.get(), second.get());
+        }
+
+        /**
+         * Hash code that uses {@link java.util.Arrays#hashCode(char[])} in case the optional has a value.
+         *
+         * @param instance instance to get hash code for
+         * @return hash code that honors existence of char array
+         */
+        public static int charArrayHash(Optional<char[]> instance) {
+            return instance.map(Arrays::hashCode)
+                    .orElseGet(instance::hashCode);
+        }
     }
 }
 

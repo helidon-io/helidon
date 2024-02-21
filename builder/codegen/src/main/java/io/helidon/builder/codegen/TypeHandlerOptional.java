@@ -16,6 +16,7 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -183,6 +184,11 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                 builderType = fm.factoryMethodReturnType();
             } else {
                 builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");
+                if (!fm.factoryMethodReturnType().typeArguments().isEmpty()) {
+                    builderType = TypeName.builder(builderType)
+                            .update(it -> fm.factoryMethodReturnType().typeArguments().forEach(it::addTypeArgument))
+                            .build();
+                }
             }
             String argumentName = "consumer";
             TypeName argumentType = TypeName.builder()
@@ -194,6 +200,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                             .addParameter(argumentName, blueprintJavadoc.returnDescription())
                             .build();
 
+            TypeName finalBuilderType = builderType;
             classBuilder.addMethod(builder -> builder.name(setterName())
                     .accessModifier(setterAccessModifier(configured))
                     .returnType(returnType)
@@ -204,7 +211,21 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                     .addContentLine(".requireNonNull(" + argumentName + ");")
                     .addContent("var builder = ")
                     .addContent(fm.typeWithFactoryMethod().genericTypeName())
-                    .addContentLine("." + fm.createMethodName() + "();")
+                    .addContent(".")
+                    .update(it -> {
+                        if (!finalBuilderType.typeArguments().isEmpty()) {
+                            it.addContent("<");
+                            Iterator<TypeName> iterator = finalBuilderType.typeArguments().iterator();
+                            while (iterator.hasNext()) {
+                                it.addContent(iterator.next());
+                                if (iterator.hasNext()) {
+                                    it.addContent(", ");
+                                }
+                            }
+                            it.addContent(">");
+                        }
+                    })
+                    .addContentLine(fm.createMethodName() + "();")
                     .addContentLine("consumer.accept(builder);")
                     .addContentLine("this." + name() + "(builder.build());")
                     .addContentLine("return self();"));
