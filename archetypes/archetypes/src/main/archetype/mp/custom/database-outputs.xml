@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -477,6 +477,10 @@ Start your database before running this example.
 Example docker commands to start databases in temporary containers:
 {{start-db}}
 ]]></value>
+            </list>
+            <list key="gitignore">
+                <value>ObjectStore/</value>
+                <value>PutObjectStoreDirHere/</value>
             </list>
         </model>
     </output>
