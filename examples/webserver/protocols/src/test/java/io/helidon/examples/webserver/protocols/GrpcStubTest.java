@@ -140,7 +140,7 @@ class GrpcStubTest {
 
     // -- Tests --
 
-    // @Test -- blocks indefinitely
+    @Test
     void testUnaryUpper() {
         GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
         StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());

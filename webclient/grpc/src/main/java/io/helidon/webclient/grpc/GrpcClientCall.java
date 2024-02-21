@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -50,6 +51,7 @@ import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
+import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -77,6 +79,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final ExecutorService executor;
     private final GrpcClientImpl grpcClient;
     private final MethodDescriptor<ReqT, ResT> methodDescriptor;
+    private final CallOptions callOptions;
     private final AtomicInteger messageRequest = new AtomicInteger();
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
@@ -94,9 +97,10 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private volatile Future<?> readStreamFuture;
     private volatile Future<?> writeStreamFuture;
 
-    GrpcClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor) {
+    GrpcClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
         this.grpcClient = grpcClient;
         this.methodDescriptor = methodDescriptor;
+        this.callOptions = callOptions;
         this.requestMarshaller = methodDescriptor.getRequestMarshaller();
         this.responseMarshaller = methodDescriptor.getResponseMarshaller();
         this.executor = grpcClient.webClient().executor();
@@ -268,7 +272,24 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         sendingQueue.clear();
         clientStream.cancel();
         connection.close();
-        LOGGER.finest("closing client call ends");
+        unblockUnaryExecutor();
+    }
+
+    /**
+     * Unary blocking calls that use stubs provide their own executor which needs
+     * to be used at least once to unblock the calling thread and complete the
+     * gRPC invocation. This method submits an empty task for that purpose. There
+     * may be a better way to achieve this.
+     */
+    private void unblockUnaryExecutor() {
+        Executor executor = callOptions.getExecutor();
+        if (executor != null) {
+            try {
+                executor.execute(() -> {});
+            } catch (Throwable t) {
+                // ignored
+            }
+        }
     }
 
     private ClientConnection clientConnection() {
