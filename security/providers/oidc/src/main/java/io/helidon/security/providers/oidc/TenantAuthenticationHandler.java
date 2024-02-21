@@ -266,17 +266,19 @@ class TenantAuthenticationHandler {
                             String tokenValue = cookie.get();
                             String decodedJson = new String(Base64.getDecoder().decode(tokenValue), StandardCharsets.UTF_8);
                             JsonObject jsonObject = JSON_READER_FACTORY.createReader(new StringReader(decodedJson)).readObject();
-                            Object userIp = providerRequest.env().abacAttribute("userIp").orElseThrow();
-                            if (!jsonObject.getString("remotePeer").equals(userIp)) {
-                                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                    LOGGER.log(System.Logger.Level.DEBUG,
-                                               "Current peer IP does not match the one this access token was issued for");
+                            if (oidcConfig.accessTokenIpCheck()) {
+                                Object userIp = providerRequest.env().abacAttribute("userIp").orElseThrow();
+                                if (!jsonObject.getString("remotePeer").equals(userIp)) {
+                                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                        LOGGER.log(System.Logger.Level.DEBUG,
+                                                   "Current peer IP does not match the one this access token was issued for");
+                                    }
+                                    return errorResponse(providerRequest,
+                                                         Status.UNAUTHORIZED_401,
+                                                         "peer_host_mismatch",
+                                                         "Peer host access token mismatch",
+                                                         tenantId);
                                 }
-                                return errorResponse(providerRequest,
-                                                     Status.UNAUTHORIZED_401,
-                                                     "peer_host_mismatch",
-                                                     "Peer host access token mismatch",
-                                                     tenantId);
                             }
                             return validateAccessToken(tenantId, providerRequest, jsonObject.getString("accessToken"), idToken);
                         } catch (Exception e) {

@@ -240,7 +240,7 @@ class SecurityPartsIT extends CommonLoginBase {
 
     @Test
     @AddConfig(key = "security.providers.1.oidc.cookie-encryption-enabled", value = "false")
-    public void testAuthenticationWithoutIdToken(WebTarget webTarget) {
+    public void testAccessTokenIssuedIp(WebTarget webTarget) {
         List<String> setCookies = obtainCookies(webTarget);
 
         //Ignore ID token cookie
@@ -266,6 +266,38 @@ class SecurityPartsIT extends CommonLoginBase {
                 .get()) {
             //This means, remote peer was not the same as our IP. We are getting redirected to key cloak again
             assertThat(response.getStatus(), is(Response.Status.TEMPORARY_REDIRECT.getStatusCode()));
+        }
+    }
+
+    @Test
+    @AddConfig(key = "security.providers.1.oidc.cookie-encryption-enabled", value = "false")
+    @AddConfig(key = "security.providers.1.oidc.access-token-ip-check", value = "false")
+    public void testDisabledAccessTokenIssuedIp(WebTarget webTarget) {
+        List<String> setCookies = obtainCookies(webTarget);
+
+        //Ignore ID token cookie
+        Invocation.Builder request = client2.target(webTarget.getUri()).path("/test").request();
+        for (String setCookie : setCookies) {
+            if (!setCookie.startsWith(DEFAULT_COOKIE_NAME + "=")) {
+                request.header(HttpHeaders.COOKIE, setCookie);
+            } else {
+                String encodedJson = setCookie.substring(setCookie.indexOf("=") + 1, setCookie.indexOf(";"));
+                String json = new String(Base64.getDecoder().decode(encodedJson), StandardCharsets.UTF_8);
+                JsonObject jsonObject = JSON_READER_FACTORY.createReader(new StringReader(json)).readObject();
+                JsonObject recreatedJsonObject = JSON_OBJECT_BUILDER_FACTORY.createObjectBuilder(jsonObject)
+                        .add("remotePeer", "1.1.1.1") //some other address than localhost
+                        .build();
+                String base64 = Base64.getEncoder()
+                        .encodeToString(recreatedJsonObject.toString().getBytes(StandardCharsets.UTF_8));
+                request.header(HttpHeaders.COOKIE, DEFAULT_COOKIE_NAME + "=" + base64);
+            }
+        }
+
+        try (Response response = request
+                .property(ClientProperties.FOLLOW_REDIRECTS, false)
+                .get()) {
+            //This means, remote peer was not the same as our IP. We are getting redirected to key cloak again
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
         }
     }
 
