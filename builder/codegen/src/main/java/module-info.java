@@ -23,6 +23,7 @@ module io.helidon.builder.codegen {
     requires io.helidon.common.types;
     requires io.helidon.codegen;
     requires io.helidon.codegen.classmodel;
+    requires java.desktop;
 
     exports io.helidon.builder.codegen;
 

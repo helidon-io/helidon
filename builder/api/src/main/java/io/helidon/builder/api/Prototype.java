@@ -450,6 +450,5 @@ public final class Prototype {
          */
         String[] value();
     }
-
 }
 
