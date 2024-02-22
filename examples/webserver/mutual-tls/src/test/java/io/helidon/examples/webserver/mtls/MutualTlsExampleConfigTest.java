@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,11 @@
  */
 package io.helidon.examples.webserver.mtls;
 
+import java.util.Map;
+
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.OverrideSources;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
@@ -46,7 +50,13 @@ public class MutualTlsExampleConfigTest {
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
-        config = Config.create();
+        config = Config.builder()
+                .sources(ConfigSources.classpath("application.yaml"))
+                .overrides(() -> OverrideSources.create(Map.of(
+                        "server.port", "0",
+                        "server.sockets.*.port", "0"
+                )))
+                .build();
         ServerConfigMain.setup(server, config);
     }
 
