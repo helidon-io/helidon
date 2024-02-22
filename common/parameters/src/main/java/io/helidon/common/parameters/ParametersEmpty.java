@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Set;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
 
 class ParametersEmpty implements Parameters {
     private final String component;
@@ -33,6 +34,11 @@ class ParametersEmpty implements Parameters {
 
     @Override
     public List<String> all(String name) throws NoSuchElementException {
+        throw new NoSuchElementException("This " + component + " does not contain parameter named \"" + name + "\"");
+    }
+
+    @Override
+    public List<Value<String>> allValues(String name) throws NoSuchElementException {
         throw new NoSuchElementException("This " + component + " does not contain parameter named \"" + name + "\"");
     }
 

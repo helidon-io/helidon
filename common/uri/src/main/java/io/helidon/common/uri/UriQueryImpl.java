@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
 
 import static io.helidon.common.uri.UriEncoding.decodeUri;
 
@@ -118,6 +120,18 @@ final class UriQueryImpl implements UriQuery {
             throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
         }
         return values;
+    }
+
+    @Override
+    public List<Value<String>> allValues(String name) throws NoSuchElementException {
+        ensureDecoded();
+        List<String> values = decodedQueryParams.get(name);
+        if (values == null) {
+            throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
+        }
+        return values.stream()
+                .map(it -> Value.create(MapperManager.global(), name, it, GenericType.STRING, "uri", "query"))
+                .collect(Collectors.toList());
     }
 
     @Override

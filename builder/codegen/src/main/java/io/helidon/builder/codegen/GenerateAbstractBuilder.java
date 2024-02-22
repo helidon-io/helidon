@@ -16,7 +16,9 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -202,7 +204,7 @@ final class GenerateAbstractBuilder {
         for (var prop : typeContext.propertyData().overridingProperties()) {
             if (prop.configuredOption().hasDefault()) {
                 constructor.addContent(prop.setterName())
-                                .addContent("(");
+                        .addContent("(");
                 prop.configuredOption().defaultValue().accept(constructor);
                 constructor.addContent(");");
             }
@@ -476,7 +478,7 @@ final class GenerateAbstractBuilder {
             boolean configured = typeContext.configuredData().configured();
             if (configured) {
                 // need to have a non-null config instance
-                preBuildBuilder.addContentLine("this.config = config == null ? Config.empty() : config;");
+                preBuildBuilder.addContentLine("var config = this.config == null ? Config.empty() : this.config;");
             }
             for (PrototypeProperty property : typeContext.propertyData().properties()) {
                 AnnotationDataOption configuredOption = property.configuredOption();
@@ -754,7 +756,8 @@ final class GenerateAbstractBuilder {
                 .addContentLine("return false;")
                 .addContentLine("}");
         // compare fields
-        method.addContent("return ");
+        method.addContent("return ")
+                .increaseContentPadding();
         if (hasSuper) {
             method.addContent("super.equals(other)");
             if (!equalityFields.isEmpty()) {
@@ -764,18 +767,42 @@ final class GenerateAbstractBuilder {
         if (!hasSuper && equalityFields.isEmpty()) {
             method.addContent("true");
         } else {
-            method.addContent(equalityFields.stream()
-                                      .map(field -> {
-                                          if (field.typeName().array()) {
-                                              return "java.util.Arrays.equals(" + field.name() + ", other."
-                                                      + field.getterName() + "())";
-                                          }
-                                          if (field.typeName().primitive()) {
-                                              return field.name() + " == other." + field.getterName() + "()";
-                                          }
-                                          return "Objects.equals(" + field.name() + ", other." + field.getterName() + "())";
-                                      })
-                                      .collect(Collectors.joining(newLine)));
+            Iterator<PrototypeProperty> equalIterator = equalityFields.iterator();
+            while (equalIterator.hasNext()) {
+                PrototypeProperty field = equalIterator.next();
+                if (field.typeName().array()) {
+                    method.addContent(Arrays.class)
+                            .addContent(".equals(")
+                            .addContent(field.name())
+                            .addContent(", other.")
+                            .addContent(field.getterName())
+                            .addContent("())");
+                } else if (field.typeName().primitive()) {
+                    method.addContent(field.name())
+                            .addContent(" == other.")
+                            .addContent(field.getterName())
+                            .addContent("()");
+                } else if (field.typeName().isOptional() && field.typeHandler().actualType().equals(Types.CHAR_ARRAY)) {
+                    method.addContent(Types.GENERATED_EQUALITY_UTIL)
+                            .addContent(".optionalCharArrayEquals(")
+                            .addContent(field.name())
+                            .addContent(", other.")
+                            .addContent(field.getterName())
+                            .addContent("())");
+                } else {
+                    method.addContent(Objects.class)
+                            .addContent(".equals(")
+                            .addContent(field.name())
+                            .addContent(", other.")
+                            .addContent(field.getterName())
+                            .addContent("())");
+                }
+
+                if (equalIterator.hasNext()) {
+                    method.addContentLine("")
+                            .addContent("&& ");
+                }
+            }
         }
         method.addContentLine(";");
         classBuilder.addMethod(method);
@@ -808,9 +835,23 @@ final class GenerateAbstractBuilder {
             }
 
             method.addContent(equalityFields.stream()
+                                      .filter(it -> !(it.typeName().isOptional()
+                                                              && it.typeHandler().actualType().equals(Types.CHAR_ARRAY)))
                                       .map(PrototypeProperty::name)
                                       .collect(Collectors.joining(", ")))
-                    .addContentLine(");");
+                    .addContent(")");
+
+            for (PrototypeProperty field : equalityFields) {
+                if (field.typeName().isOptional() && field.typeHandler().actualType().equals(Types.CHAR_ARRAY)) {
+                    // Optional<char[]>
+                    method.addContent(" + 31 * ")
+                            .addContent(Types.GENERATED_EQUALITY_UTIL)
+                            .addContent(".optionalCharArrayHash(")
+                            .addContent(field.name())
+                            .addContent(")");
+                }
+            }
+            method.addContent(";");
         }
 
         classBuilder.addMethod(method);

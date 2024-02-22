@@ -24,10 +24,12 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
 
 final class UriQueryWriteableImpl implements UriQueryWriteable {
     private final Map<String, List<String>> rawQueryParams = new HashMap<>();
@@ -162,6 +164,17 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
         }
         return values;
+    }
+
+    @Override
+    public List<Value<String>> allValues(String name) throws NoSuchElementException {
+        List<String> values = decodedQueryParams.get(name);
+        if (values == null) {
+            throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
+        }
+        return values.stream()
+                .map(it -> Value.create(MapperManager.global(), name, it, GenericType.STRING, "uri", "query"))
+                .collect(Collectors.toList());
     }
 
     @Override

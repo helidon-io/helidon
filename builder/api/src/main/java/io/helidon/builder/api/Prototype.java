@@ -106,7 +106,7 @@ public final class Prototype {
          * @param configType           type of the configured service
          * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
          *                             node
-         * @param existingInstances  already configured instances
+         * @param existingInstances    already configured instances
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
          * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
@@ -339,7 +339,7 @@ public final class Prototype {
          * builder still contains previous value).
          * Do not call the same setter again from within this method, as it would end in a stack overflow.
          *
-         * @param builder the target builder being decorated
+         * @param builder     the target builder being decorated
          * @param optionValue option value set by the caller of the setter method
          */
         void decorate(B builder, T optionValue);
@@ -450,5 +450,6 @@ public final class Prototype {
          */
         String[] value();
     }
+
 }
 

@@ -18,6 +18,7 @@ package io.helidon.builder.codegen;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -292,36 +293,38 @@ class TypeHandler {
         return "config.get(\"" + configured.configKey() + "\")";
     }
 
-    String generateFromConfig(FactoryMethods factoryMethods) {
+    void generateFromConfig(ContentBuilder<?> content, FactoryMethods factoryMethods) {
         if (actualType().fqName().equals("char[]")) {
-            return ".asString().as(String::toCharArray)";
-        }
-
-        TypeName boxed = actualType().boxed();
-        return factoryMethods.createFromConfig()
-                .map(it -> ".map(" + it.typeWithFactoryMethod().genericTypeName().fqName() + "::" + it.createMethodName() + ")")
-                .orElseGet(() -> ".as(" + boxed.fqName() + ".class)");
-
-    }
-
-    void generateFromConfig(Method.Builder method, FactoryMethods factoryMethods) {
-        if (actualType().fqName().equals("char[]")) {
-            method.addContent(".asString().as(")
+            content.addContent(".asString().as(")
                     .addContent(String.class)
                     .addContent("::toCharArray)");
             return;
         }
 
-        Optional<FactoryMethods.FactoryMethod> fromConfig = factoryMethods.createFromConfig();
-        if (fromConfig.isPresent()) {
-            FactoryMethods.FactoryMethod factoryMethod = fromConfig.get();
-            method.addContent(".map(")
-                    .addContent(factoryMethod.typeWithFactoryMethod().genericTypeName())
-                    .addContent("::" + factoryMethod.createMethodName() + ")");
+        Optional<FactoryMethods.FactoryMethod> factoryMethod = factoryMethods.createFromConfig();
+
+        TypeName boxed = actualType().boxed();
+        if (factoryMethod.isPresent()) {
+            FactoryMethods.FactoryMethod fm = factoryMethod.get();
+            content.addContent(".map(")
+                    .addContent(fm.typeWithFactoryMethod().genericTypeName())
+                    .addContent("::");
+            if (!actualType().typeArguments().isEmpty()) {
+                content.addContent("<");
+                Iterator<TypeName> iterator = actualType().typeArguments().iterator();
+                while (iterator.hasNext()) {
+                    content.addContent(iterator.next());
+                    if (iterator.hasNext()) {
+                        content.addContent(", ");
+                    }
+                }
+                content.addContent(">");
+            }
+            content.addContent(fm.createMethodName())
+                    .addContent(")");
         } else {
-            TypeName boxed = actualType().boxed();
-            method.addContent(".as(")
-                    .addContent(boxed)
+            content.addContent(".as(")
+                    .addContent(boxed.genericTypeName())
                     .addContent(".class)");
         }
     }
