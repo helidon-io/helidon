@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.StringReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -68,10 +69,10 @@ import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 
+import static io.helidon.security.providers.oidc.OidcFeature.JSON_BUILDER_FACTORY;
+import static io.helidon.security.providers.oidc.OidcFeature.JSON_READER_FACTORY;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -81,7 +82,6 @@ class TenantAuthenticationHandler {
     private static final System.Logger LOGGER = System.getLogger(TenantAuthenticationHandler.class.getName());
     private static final TokenHandler PARAM_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
     private static final TokenHandler PARAM_ID_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_ID_HEADER_NAME);
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final boolean optional;
@@ -264,7 +264,23 @@ class TenantAuthenticationHandler {
                     } else {
                         try {
                             String tokenValue = cookie.get();
-                            return validateAccessToken(tenantId, providerRequest, tokenValue, idToken);
+                            String decodedJson = new String(Base64.getDecoder().decode(tokenValue), StandardCharsets.UTF_8);
+                            JsonObject jsonObject = JSON_READER_FACTORY.createReader(new StringReader(decodedJson)).readObject();
+                            if (oidcConfig.accessTokenIpCheck()) {
+                                Object userIp = providerRequest.env().abacAttribute("userIp").orElseThrow();
+                                if (!jsonObject.getString("remotePeer").equals(userIp)) {
+                                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                        LOGGER.log(System.Logger.Level.DEBUG,
+                                                   "Current peer IP does not match the one this access token was issued for");
+                                    }
+                                    return errorResponse(providerRequest,
+                                                         Status.UNAUTHORIZED_401,
+                                                         "peer_host_mismatch",
+                                                         "Peer host access token mismatch",
+                                                         tenantId);
+                                }
+                            }
+                            return validateAccessToken(tenantId, providerRequest, jsonObject.getString("accessToken"), idToken);
                         } catch (Exception e) {
                             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                                 LOGGER.log(System.Logger.Level.DEBUG, "Invalid access token in cookie", e);
@@ -372,7 +388,7 @@ class TenantAuthenticationHandler {
                     + "nonce=" + nonce + "&"
                     + "state=" + state;
 
-            JsonObject stateJson = JSON.createObjectBuilder()
+            JsonObject stateJson = JSON_BUILDER_FACTORY.createObjectBuilder()
                     .add("originalUri", origUri)
                     .add("state", state)
                     .add("nonce", nonce)
@@ -575,8 +591,7 @@ class TenantAuthenticationHandler {
             Parameters.Builder form = Parameters.builder("oidc-form-params")
                     .add("grant_type", "refresh_token")
                     .add("refresh_token", refreshTokenString)
-                    .add("client_id", tenantConfig.clientId())
-                    .add("client_secret", tenantConfig.clientSecret());
+                    .add("client_id", tenantConfig.clientId());
 
             HttpClientRequest post = webClient.post()
                     .uri(tenant.tokenEndpointUri())
@@ -600,10 +615,18 @@ class TenantAuthenticationHandler {
                             return AuthenticationResponse.failed("Invalid access token", e);
                         }
                         Errors.Collector newAccessTokenCollector = jwtValidator.apply(signedAccessToken, Errors.collector());
+                        Object remotePeer = providerRequest.env().abacAttribute("userIp").orElseThrow();
+
+                        JsonObject accessTokenCookie = JSON_BUILDER_FACTORY.createObjectBuilder()
+                                .add("accessToken", signedAccessToken.tokenContent())
+                                .add("remotePeer", remotePeer.toString())
+                                .build();
+                        String base64 = Base64.getEncoder()
+                                .encodeToString(accessTokenCookie.toString().getBytes(StandardCharsets.UTF_8));
 
                         List<String> setCookieParts = new ArrayList<>();
                         setCookieParts.add(oidcConfig.tokenCookieHandler()
-                                                   .createCookie(accessToken)
+                                                   .createCookie(base64)
                                                    .build()
                                                    .toString());
                         if (refreshToken != null) {

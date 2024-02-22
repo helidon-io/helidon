@@ -210,7 +210,7 @@ import io.helidon.webclient.api.WebClientConfig;
  *     <td>URI of an authorization endpoint used to redirect users to for logging-in.</td>
  * </tr>
  * <tr>
- *     <td>validate-with-jwk</td>
+ *     <td>validate-jwt-with-jwk</td>
  *     <td>true</td>
  *     <td>When true  - validate against jwk defined by "sign-jwk", when false
  *          validate JWT through OIDC Server endpoint "validation-endpoint-uri"</td>
@@ -225,7 +225,7 @@ import io.helidon.webclient.api.WebClientConfig;
  * <tr>
  *     <td>introspect-endpoint-uri</td>
  *     <td>"introspection_endpoint" in OIDC metadata, or identity-uri/oauth2/v1/introspect</td>
- *     <td>When validate-with-jwk is set to "false", this is the endpoint used</td>
+ *     <td>When validate-jwt-with-jwk is set to "false", this is the endpoint used</td>
  * </tr>
  * <tr>
  *     <td>base-scopes</td>
@@ -401,6 +401,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final OidcCookieHandler stateCookieHandler;
     private final boolean tokenSignatureValidation;
     private final boolean idTokenSignatureValidation;
+    private final boolean accessTokenIpCheck;
 
     private OidcConfig(Builder builder) {
         super(builder);
@@ -433,6 +434,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.stateCookieHandler = builder.stateCookieBuilder.build();
         this.tokenSignatureValidation = builder.tokenSignatureValidation;
         this.idTokenSignatureValidation = builder.idTokenSignatureValidation;
+        this.accessTokenIpCheck = builder.accessTokenIpCheck;
 
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
@@ -816,6 +818,15 @@ public final class OidcConfig extends TenantConfigImpl {
         return idTokenSignatureValidation;
     }
 
+    /**
+     * Whether to check IP address access token was issued for.
+     *
+     * @return whether to check IP address access token was issued for
+     */
+    public boolean accessTokenIpCheck() {
+        return accessTokenIpCheck;
+    }
+
     Supplier<WebClientConfig.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
     }
@@ -946,6 +957,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean relativeUris = DEFAULT_RELATIVE_URIS;
         private boolean tokenSignatureValidation = true;
         private boolean idTokenSignatureValidation = true;
+        private boolean accessTokenIpCheck = true;
 
         protected Builder() {
         }
@@ -1070,6 +1082,7 @@ public final class OidcConfig extends TenantConfigImpl {
 
             config.get("token-signature-validation").asBoolean().ifPresent(this::tokenSignatureValidation);
             config.get("id-token-signature-validation").asBoolean().ifPresent(this::idTokenSignatureValidation);
+            config.get("access-token-ip-check").asBoolean().ifPresent(this::accessTokenIpCheck);
 
             config.get("tenants").asList(Config.class)
                     .ifPresent(confList -> confList.forEach(tenantConfig -> tenantFromConfig(config, tenantConfig)));
@@ -1717,6 +1730,19 @@ public final class OidcConfig extends TenantConfigImpl {
         @ConfiguredOption("true")
         public Builder idTokenSignatureValidation(boolean enabled) {
             idTokenSignatureValidation = enabled;
+            return this;
+        }
+
+        /**
+         * Whether to check if current IP address matches the one access token was issued for.
+         * This check helps with cookie replay attack prevention.
+         *
+         * @param enabled whether to check if current IP address matches the one access token was issued for
+         * @return updated builder instance
+         */
+        @ConfiguredOption("true")
+        public Builder accessTokenIpCheck(boolean enabled) {
+            accessTokenIpCheck = enabled;
             return this;
         }
 

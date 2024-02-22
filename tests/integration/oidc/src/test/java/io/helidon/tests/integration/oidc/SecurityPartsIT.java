@@ -17,8 +17,9 @@
 package io.helidon.tests.integration.oidc;
 
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Map;
+import java.util.List;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -27,13 +28,11 @@ import io.helidon.jersey.connector.HelidonProperties;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -44,15 +43,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.hasItem;
+import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_COOKIE_NAME;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class SecurityPartsIT extends CommonLoginBase {
-    private static final JsonBuilderFactory JSON_OBJECT_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
-    private static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Map.of());
 
     private static final ClientConfig CONFIG_CLIENT_2 = new ClientConfig()
             .connectorProvider(new HelidonConnectorProvider())
@@ -238,6 +235,69 @@ class SecurityPartsIT extends CommonLoginBase {
                 .get()) {
             //state cookie did not have matching nonce
             assertThat(response.getStatus(), is(Response.Status.UNAUTHORIZED.getStatusCode()));
+        }
+    }
+
+    @Test
+    @AddConfig(key = "security.providers.1.oidc.cookie-encryption-enabled", value = "false")
+    public void testAccessTokenIssuedIp(WebTarget webTarget) {
+        List<String> setCookies = obtainCookies(webTarget);
+
+        //Ignore ID token cookie
+        Invocation.Builder request = client2.target(webTarget.getUri()).path("/test").request();
+        for (String setCookie : setCookies) {
+            if (!setCookie.startsWith(DEFAULT_COOKIE_NAME + "=")) {
+                request.header(HttpHeaders.COOKIE, setCookie);
+            } else {
+                String encodedJson = setCookie.substring(setCookie.indexOf("=") + 1, setCookie.indexOf(";"));
+                String json = new String(Base64.getDecoder().decode(encodedJson), StandardCharsets.UTF_8);
+                JsonObject jsonObject = JSON_READER_FACTORY.createReader(new StringReader(json)).readObject();
+                JsonObject recreatedJsonObject = JSON_OBJECT_BUILDER_FACTORY.createObjectBuilder(jsonObject)
+                        .add("remotePeer", "1.1.1.1") //some other address than localhost
+                        .build();
+                String base64 = Base64.getEncoder()
+                        .encodeToString(recreatedJsonObject.toString().getBytes(StandardCharsets.UTF_8));
+                request.header(HttpHeaders.COOKIE, DEFAULT_COOKIE_NAME + "=" + base64);
+            }
+        }
+
+        try (Response response = request
+                .property(ClientProperties.FOLLOW_REDIRECTS, false)
+                .get()) {
+            //This means, remote peer was not the same as our IP. We are getting redirected to key cloak again
+            assertThat(response.getStatus(), is(Response.Status.TEMPORARY_REDIRECT.getStatusCode()));
+        }
+    }
+
+    @Test
+    @AddConfig(key = "security.providers.1.oidc.cookie-encryption-enabled", value = "false")
+    @AddConfig(key = "security.providers.1.oidc.access-token-ip-check", value = "false")
+    public void testDisabledAccessTokenIssuedIp(WebTarget webTarget) {
+        List<String> setCookies = obtainCookies(webTarget);
+
+        //Ignore ID token cookie
+        Invocation.Builder request = client2.target(webTarget.getUri()).path("/test").request();
+        for (String setCookie : setCookies) {
+            if (!setCookie.startsWith(DEFAULT_COOKIE_NAME + "=")) {
+                request.header(HttpHeaders.COOKIE, setCookie);
+            } else {
+                String encodedJson = setCookie.substring(setCookie.indexOf("=") + 1, setCookie.indexOf(";"));
+                String json = new String(Base64.getDecoder().decode(encodedJson), StandardCharsets.UTF_8);
+                JsonObject jsonObject = JSON_READER_FACTORY.createReader(new StringReader(json)).readObject();
+                JsonObject recreatedJsonObject = JSON_OBJECT_BUILDER_FACTORY.createObjectBuilder(jsonObject)
+                        .add("remotePeer", "1.1.1.1") //some other address than localhost
+                        .build();
+                String base64 = Base64.getEncoder()
+                        .encodeToString(recreatedJsonObject.toString().getBytes(StandardCharsets.UTF_8));
+                request.header(HttpHeaders.COOKIE, DEFAULT_COOKIE_NAME + "=" + base64);
+            }
+        }
+
+        try (Response response = request
+                .property(ClientProperties.FOLLOW_REDIRECTS, false)
+                .get()) {
+            //This means, remote peer was not the same as our IP. We are getting redirected to key cloak again
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
         }
     }
 

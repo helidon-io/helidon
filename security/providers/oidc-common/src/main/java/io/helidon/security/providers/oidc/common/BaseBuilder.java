@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.helidon.common.Builder;
 import io.helidon.common.Errors;
 import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -119,7 +120,8 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         config.get("sign-jwk.resource").map(Resource::create).ifPresent(this::signJwk);
 
         config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
-        config.get("validate-with-jwk").asBoolean().ifPresent(this::validateJwtWithJwk);
+        DeprecatedConfig.get(config, "validate-jwt-with-jwk", "validate-with-jwk")
+                .asBoolean().ifPresent(this::validateJwtWithJwk);
         config.get("issuer").asString().ifPresent(this::issuer);
         config.get("audience").asString().ifPresent(this::audience);
 
