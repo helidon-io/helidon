@@ -26,10 +26,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.grpc.stub.StreamObserver;
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.tls.Tls;
 import io.helidon.examples.grpc.strings.StringServiceGrpc;
 import io.helidon.examples.grpc.strings.Strings;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.grpc.GrpcClient;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -39,35 +42,57 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+/**
+ * Tests gRPC client using stubs and TLS.
+ */
 @ServerTest
 class GrpcStubTest {
     private static final long TIMEOUT_SECONDS = 10;
 
     private final WebClient webClient;
 
-    private GrpcStubTest(WebClient webClient) {
-        this.webClient = webClient;
+    private GrpcStubTest(WebServer server) {
+        Tls clientTls = Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
+        this.webClient = WebClient.builder()
+                .tls(clientTls)
+                .baseUri("https://localhost:" + server.port())
+                .build();
     }
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder builder) {
-        builder.addRouting(GrpcRouting.builder()
-                .unary(Strings.getDescriptor(),
-                        "StringService",
-                        "Upper",
-                        GrpcStubTest::upper)
-                .serverStream(Strings.getDescriptor(),
-                        "StringService",
-                        "Split",
-                        GrpcStubTest::split)
-                .clientStream(Strings.getDescriptor(),
-                        "StringService",
-                        "Join",
-                        GrpcStubTest::join)
-                .bidi(Strings.getDescriptor(),
-                        "StringService",
-                        "Echo",
-                        GrpcStubTest::echo));
+        builder.tls(tls -> tls.privateKey(key -> key
+                                .keystore(store -> store
+                                        .passphrase("password")
+                                        .keystore(Resource.create("server.p12"))))
+                        .privateKeyCertChain(key -> key
+                                .keystore(store -> store
+                                        .trustStore(true)
+                                        .passphrase("password")
+                                        .keystore(Resource.create("server.p12")))))
+                .addRouting(GrpcRouting.builder()
+                        .unary(Strings.getDescriptor(),
+                                "StringService",
+                                "Upper",
+                                GrpcStubTest::upper)
+                        .serverStream(Strings.getDescriptor(),
+                                "StringService",
+                                "Split",
+                                GrpcStubTest::split)
+                        .clientStream(Strings.getDescriptor(),
+                                "StringService",
+                                "Join",
+                                GrpcStubTest::join)
+                        .bidi(Strings.getDescriptor(),
+                                "StringService",
+                                "Echo",
+                                GrpcStubTest::echo));
     }
 
     // -- gRPC server methods --

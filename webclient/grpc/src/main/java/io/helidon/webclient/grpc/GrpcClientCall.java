@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.tls.Tls;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -59,11 +58,11 @@ import io.grpc.Status;
 
 /**
  * A gRPC client call handler. The typical order of calls will be:
- *
+ * <p>
  * start (request | sendMessage)* (halfClose | cancel)
  *
- * @param <ReqT>
- * @param <ResT>
+ * @param <ReqT> request type
+ * @param <ResT> response type
  */
 class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private static final Logger LOGGER = Logger.getLogger(GrpcClientCall.class.getName());
@@ -71,6 +70,8 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
     private static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
 
+    private static final int READ_TIMEOUT_SECONDS = 10;
+    private static final int BUFFER_SIZE_BYTES = 1024;
     private static final int WAIT_TIME_MILLIS = 100;
     private static final Duration WAIT_TIME_MILLIS_DURATION = Duration.ofMillis(WAIT_TIME_MILLIS);
 
@@ -135,7 +136,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
                     @Override
                     public Duration readTimeout() {
-                        return grpcClient.prototype().readTimeout().orElse(Duration.ofSeconds(10));
+                        return grpcClient.prototype().readTimeout().orElse(Duration.ofSeconds(READ_TIMEOUT_SECONDS));
                     }
                 },
                 null,       // Http2ClientConfig
@@ -181,7 +182,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     @Override
     public void sendMessage(ReqT message) {
         LOGGER.finest("sendMessage called");
-        BufferData messageData = BufferData.growing(512);
+        BufferData messageData = BufferData.growing(BUFFER_SIZE_BYTES);
         messageData.readFrom(requestMarshaller.stream(message));
         BufferData headerData = BufferData.create(5);
         headerData.writeInt8(0);                                // no compression
@@ -297,13 +298,12 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         ClientUri clientUri = clientConfig.baseUri().orElseThrow();
         WebClient webClient = grpcClient.webClient();
 
-        Tls tls = Tls.builder().enabled(false).build();
         ConnectionKey connectionKey = new ConnectionKey(
                 clientUri.scheme(),
                 clientUri.host(),
                 clientUri.port(),
                 clientConfig.readTimeout().orElse(Duration.ZERO),
-                tls,
+                clientConfig.tls(),
                 DefaultDnsResolver.create(),
                 DnsAddressLookup.defaultLookup(),
                 Proxy.noProxy());
