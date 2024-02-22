@@ -57,7 +57,7 @@ public class MutualTlsExampleConfigTest {
                         "server.sockets.*.port", "0"
                 )))
                 .build();
-        ServerConfigMain.setup(server, config);
+        ServerConfigMain.setup(server, config.get("server"));
     }
 
     @Test

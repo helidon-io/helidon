@@ -36,12 +36,12 @@ curl --key /tmp/key.pem --cert /tmp/chain.pem --cacert /tmp/ca.pem https://local
 
 Using Helidon WebClient setup with configuration:
 
-```bash
+```shell
 mvn exec:java -Dexec.mainClass=io.helidon.examples.webserver.mtls.ClientConfigMain
 ```
 
 Using Helidon WebClient setup programmatically:
 
-```bash
+```shell
 mvn exec:java -Dexec.mainClass=io.helidon.examples.webserver.mtls.ClientBuilderMain
 ```
