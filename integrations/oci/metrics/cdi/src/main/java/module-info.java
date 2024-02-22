@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ module io.helidon.integrations.oci.metrics.cdi {
     requires oci.java.sdk.monitoring;
 
     requires jakarta.interceptor.api;
+    requires jakarta.inject.api;
     provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.oci.metrics.cdi.OciMetricsCdiExtension;
 
     opens io.helidon.integrations.oci.metrics.cdi to weld.core.impl, io.helidon.microprofile.cdi;

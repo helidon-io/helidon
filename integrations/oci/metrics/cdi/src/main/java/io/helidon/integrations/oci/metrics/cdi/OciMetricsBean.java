@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class OciMetricsBean {
 
     // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
     void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
-                            Config config, Monitoring monitoringClient) {
+                            @OciMetrics Config config, Monitoring monitoringClient) {
         Config ocimetrics = config.get("ocimetrics");
         OciMetricsSupport.Builder builder = OciMetricsSupport.builder()
                 .config(ocimetrics)
