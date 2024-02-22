@@ -21,7 +21,6 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -452,38 +451,5 @@ public final class Prototype {
         String[] value();
     }
 
-    /**
-     * Utility class used from generated code for equals and hash code of specific cases of optional.
-     * This exists because of Optional of char arrays, where equals does not work as we need.
-     */
-    public static class OptionalUtil {
-        /**
-         * Equals that uses {@link java.util.Arrays#equals(char[], char[])} in case both optionals have a value.
-         *
-         * @param first  first optional
-         * @param second second optional
-         * @return whether the optionals are equals
-         */
-        public static boolean charArrayEquals(Optional<char[]> first, Optional<char[]> second) {
-            if (first.isEmpty() && second.isEmpty()) {
-                return true;
-            }
-            if (first.isEmpty() || second.isEmpty()) {
-                return false;
-            }
-            return Arrays.equals(first.get(), second.get());
-        }
-
-        /**
-         * Hash code that uses {@link java.util.Arrays#hashCode(char[])} in case the optional has a value.
-         *
-         * @param instance instance to get hash code for
-         * @return hash code that honors existence of char array
-         */
-        public static int charArrayHash(Optional<char[]> instance) {
-            return instance.map(Arrays::hashCode)
-                    .orElseGet(instance::hashCode);
-        }
-    }
 }
 

@@ -783,8 +783,8 @@ final class GenerateAbstractBuilder {
                             .addContent(field.getterName())
                             .addContent("()");
                 } else if (field.typeName().isOptional() && field.typeHandler().actualType().equals(Types.CHAR_ARRAY)) {
-                    method.addContent(Types.PROTOTYPE_OPTIONAL_UTIL)
-                            .addContent(".charArrayEquals(")
+                    method.addContent(Types.GENERATED_EQUALITY_UTIL)
+                            .addContent(".optionalCharArrayEquals(")
                             .addContent(field.name())
                             .addContent(", other.")
                             .addContent(field.getterName())
@@ -845,8 +845,8 @@ final class GenerateAbstractBuilder {
                 if (field.typeName().isOptional() && field.typeHandler().actualType().equals(Types.CHAR_ARRAY)) {
                     // Optional<char[]>
                     method.addContent(" + 31 * ")
-                            .addContent(Types.PROTOTYPE_OPTIONAL_UTIL)
-                            .addContent(".charArrayHash(")
+                            .addContent(Types.GENERATED_EQUALITY_UTIL)
+                            .addContent(".optionalCharArrayHash(")
                             .addContent(field.name())
                             .addContent(")");
                 }
