@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class Neo4jHealthCheck implements HealthCheck {
 
         try (Session session = this.driver.session()) {
 
-            return session.writeTransaction(tx -> {
+            return session.executeWrite(tx -> {
                 var result = tx.run(CYPHER);
 
                 var edition = result.single().get("edition").asString();
