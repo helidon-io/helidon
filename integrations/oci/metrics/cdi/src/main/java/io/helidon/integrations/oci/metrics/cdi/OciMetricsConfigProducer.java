@@ -20,12 +20,21 @@ import javax.enterprise.inject.Produces;
 
 import io.helidon.config.Config;
 
-@Priority(0)
+/**
+ * Default producer for a {@link io.helidon.config.Config} instance for use by the OCI metrics integration
+ * library.
+ *
+ * The very high priority (which means very low importance) allows other libraries to use a lower-priority-value
+ * (more important) implementation to override this behavior.
+ */
+@Priority(Integer.MAX_VALUE - 1)
 class OciMetricsConfigProducer {
 
     @Produces
     @OciMetrics
-    public Config config(Config config) {
+    private static Config config(Config config) {
+        // Intentionally returns the *unqualified* Config instance created by an *unqualified* producer
+        // method elsewhere.
         return config;
     }
 }
