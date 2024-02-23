@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,12 @@
     <exec src="/common/common.xml"/>
     <source src="/common/sources.xml"/>
     <output>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>/common/files</directory>
+            <includes>
+                <include>src/**/Main.java.mustache</include>
+            </includes>
+        </templates>
         <model>
             <value key="mainClass">${package}.Main</value>
             <value key="parent-artifactId">helidon-se</value>
@@ -87,6 +93,91 @@
                 <value>io.helidon.webserver</value>
                 <value>io.helidon.common.http</value>
                 <value>io.helidon.config</value>
+            </list>
+            <value key="Main-class-javadoc"><![CDATA[
+/**
+ * The application main class.
+ */]]>
+            </value>
+            <value key="Main-method-javadoc"><![CDATA[/**
+     * Application main entry point.
+     * @param args command line arguments.
+     */]]>
+            </value>
+            <list key="Main-class-fields">
+                <value order="0"><![CDATA[
+   /**
+     * Cannot be instantiated.
+     */
+   private Main() {
+   }
+]]>
+                </value>
+            </list>
+            <list key="Main-method-content">
+                <value><![CDATA[        startServer();]]>
+                </value>
+            </list>
+            <list key="Main-class-content">
+                <value template="mustache"><![CDATA[
+    /**
+     * Start the server.
+     * @return the created {@link WebServer} instance
+     */
+    static Single<WebServer> startServer() {
+
+        // load logging configuration
+        LogConfig.configureRuntime();
+
+        // By default this will pick up application.yaml from the classpath
+        Config config = Config.create();
+
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+{{#Main-serverBuilder}}
+{{.}}
+{{/Main-serverBuilder}}
+                .build();
+
+        Single<WebServer> webserver = server.start();
+
+        // Try to start the server. If successful, print some info and arrange to
+        // print a message at shutdown. If unsuccessful, print the exception.
+        webserver.forSingle(ws -> {
+            {{Main-readyMessage}}
+            ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+        })
+        .exceptionallyAccept(t -> {
+            System.err.println("Startup failed: " + t.getMessage());
+            t.printStackTrace(System.err);
+        });
+
+        return webserver;
+    }
+
+    /**
+     * Creates new {@link Routing}.
+     *
+     * @return routing configured with JSON support, a health check, and a service
+     * @param config configuration of this server
+     */
+    private static Routing createRouting(Config config) {
+{{#Main-createRouting}}
+{{.}}
+{{/Main-createRouting}}
+
+        Routing.Builder builder = Routing.builder()
+{{#Main-routingBuilder}}
+{{.}}{{#last}}; {{/last}}
+{{/Main-routingBuilder}}
+
+{{#Main-security-routing-section}}
+{{.}}
+{{/Main-security-routing-section}}
+
+        return builder.build();
+    }]]>
+                </value>
             </list>
         </model>
     </output>

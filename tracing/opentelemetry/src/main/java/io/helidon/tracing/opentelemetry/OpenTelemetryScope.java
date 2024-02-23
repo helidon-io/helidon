@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,21 @@ import io.helidon.tracing.Scope;
 
 class OpenTelemetryScope implements Scope {
     private final io.opentelemetry.context.Scope delegate;
+    private final io.opentelemetry.context.Scope baggageScope;
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    OpenTelemetryScope(io.opentelemetry.context.Scope scope) {
+    OpenTelemetryScope(io.opentelemetry.context.Scope scope, io.opentelemetry.context.Scope baggageScope) {
         delegate = scope;
+        this.baggageScope = baggageScope;
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
+            if (baggageScope != null) {
+                baggageScope.close();
+            }
         }
     }
 

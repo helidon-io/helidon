@@ -1,0 +1,35 @@
+package {{package}};
+
+{{#Main-java-imports}}
+import {{.}};
+{{/Main-java-imports}}
+
+{{#Main-helidon-imports}}
+import {{.}};
+{{/Main-helidon-imports}}
+
+{{#Main-other-imports}}
+import {{.}};
+{{/Main-other-imports}}
+
+{{#Main-static-imports}}
+import {{.}};
+{{/Main-static-imports}}
+
+{{Main-class-javadoc}}
+public class Main {
+{{#Main-class-fields}}
+{{.}}
+{{/Main-class-fields}}
+
+    {{Main-method-javadoc}}
+    public static void main(String[] args) {
+        {{#Main-method-content}}
+        {{.}}
+        {{/Main-method-content}}
+    }
+
+{{#Main-class-content}}
+{{.}}
+{{/Main-class-content}}
+}
