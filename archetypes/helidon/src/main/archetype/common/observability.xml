@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -65,12 +65,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                             <value key="groupId">io.helidon.microprofile.metrics</value>
                                             <value key="artifactId">helidon-microprofile-metrics</value>
                                         </map>
-                                    </list>
-                                    <list key="Main-helidon-imports">
-                                        <value>io.helidon.metrics.MetricsSupport</value>
-                                    </list>
-                                    <list key="Main-routingBuilder">
-                                        <value><![CDATA[                .register(MetricsSupport.create()) // Metrics at "/metrics"]]></value>
                                     </list>
                                     <list key="SimpleGreetService-imports">
                                         <value>org.eclipse.microprofile.metrics.MetricUnits</value>
@@ -355,7 +349,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <value>io.helidon.health</value>
                                     <value if="${flavor} == 'se'">io.helidon.health.checks</value>
                                 </list>
-                                <list key="Main-helidon-imports">
+                                <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                     <value>io.helidon.health.HealthSupport</value>
                                     <value>io.helidon.health.checks.HealthChecks</value>
                                 </list>

@@ -9,6 +9,24 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.6]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Common: Manually count number of offered tasks instead of relying on pool active count [8264](https://github.com/helidon-io/helidon/pull/8264)
+- JAX-RS Client: TLS replace in HelidonConnector fix [7902](https://github.com/helidon-io/helidon/pull/7902)
+- Tracing: Backport of scope/baggage fix [8244](https://github.com/helidon-io/helidon/pull/8244)
+- Tracing: Guard against NPE during early invocation of Span.current() [8256](https://github.com/helidon-io/helidon/pull/8256)
+- WebClient: Calls clearData() on all data propagation providers. [8328](https://github.com/helidon-io/helidon/pull/8328)
+- Dependencies: Upgrade OCI SDK to 3.34.0 [8351](https://github.com/helidon-io/helidon/pull/8351)
+- Dependencies: Upgrade to Jersey 3.0.12 [8346](https://github.com/helidon-io/helidon/pull/8346)
+- Dependencies: Upgrading to latest Tyrus 2.1.5 [8277](https://github.com/helidon-io/helidon/pull/8277)
+- Dependencies: upgrade jsonp-api to 2.0.2 [8203](https://github.com/helidon-io/helidon/pull/8203)
+- Examples: Archetype - Add jpms option with false as default [8310](https://github.com/helidon-io/helidon/pull/8310)
+- Tests: Make OciMetricsDataTest.beforeEach non private [7328](https://github.com/helidon-io/helidon/pull/7328)
+
 ## [3.2.5]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -845,6 +863,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.6]: https://github.com/helidon-io/helidon/compare/3.2.5...3.2.6
 [3.2.5]: https://github.com/helidon-io/helidon/compare/3.2.4...3.2.5
 [3.2.4]: https://github.com/helidon-io/helidon/compare/3.2.3...3.2.4
 [3.2.3]: https://github.com/helidon-io/helidon/compare/3.2.2...3.2.3

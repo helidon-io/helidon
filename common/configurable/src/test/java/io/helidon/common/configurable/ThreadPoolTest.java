@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -35,6 +36,7 @@ import java.util.stream.IntStream;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.function.Executable;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -44,6 +46,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -565,6 +568,34 @@ class ThreadPoolTest {
         assertThat(pool.getCompletedTasks(), is(2));
         assertThat(pool.getFailedTasks(), is(2));
         assertThat(pool.getTotalTasks(), is(pool.getCompletedTasks() + pool.getFailedTasks()));
+    }
+
+    @Test
+    @Timeout(10)
+    public void testGrowWithHighThroughput() {
+        // Wait for 4 tasks to be executing concurrently
+        int concurrency = 4;
+        Phaser concurrencyPhaser = new Phaser(concurrency);
+
+        // Wait for all tasks, +1 for the test thread
+        int numTasks = concurrency * 10;
+        Phaser globalPhaser = new Phaser(numTasks + 1);
+
+        Runnable r = () -> {
+            globalPhaser.arrive();
+            concurrencyPhaser.arriveAndAwaitAdvance();
+        };
+        ThreadPool threadPool = newPool(1, concurrency, 0, 100);
+
+        // Launch all tasks, "concurrency" tasks should get a dedicated worker (by
+        // growing), the other ones should be queued.
+        // Once "concurrency" tasks arrive at concurrencyPhaser, they are unlocked, and
+        // queued ones can execute. Until all tasks are executed.
+        for (int i = 0; i < numTasks; i++) {
+            threadPool.submit(r);
+        }
+        globalPhaser.arriveAndAwaitAdvance();
+        assertEquals(concurrency, threadPool.getLargestPoolSize());
     }
 
     private CountDownLatch addTasks(int count) {

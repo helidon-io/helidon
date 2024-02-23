@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-bom</artifactId>
-        <version>3.2.6-SNAPSHOT</version>
+        <version>3.2.7-SNAPSHOT</version>
         <relativePath>../bom/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-dependencies</artifactId>
@@ -80,7 +80,7 @@
         <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
-        <version.lib.jakarta.jsonp-api>2.0.1</version.lib.jakarta.jsonp-api>
+        <version.lib.jakarta.jsonp-api>2.0.2</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.0.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
@@ -96,7 +96,7 @@
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>3.0.2</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
-        <version.lib.jersey>3.0.11</version.lib.jersey>
+        <version.lib.jersey>3.0.12</version.lib.jersey>
         <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
         <version.lib.junit>5.7.0</version.lib.junit>
@@ -130,7 +130,7 @@
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
         <version.lib.netty>4.1.100.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.19.Final</version.lib.netty-io_uring>
-        <version.lib.oci>3.29.0</version.lib.oci>
+        <version.lib.oci>3.34.0</version.lib.oci>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <!-- Manage okio version for dependency convergence -->
@@ -151,7 +151,7 @@
         <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
-        <version.lib.tyrus>2.1.4</version.lib.tyrus>
+        <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
         <version.lib.weld>4.0.3.Final</version.lib.weld>
         <version.lib.yasson>2.0.4</version.lib.yasson>
