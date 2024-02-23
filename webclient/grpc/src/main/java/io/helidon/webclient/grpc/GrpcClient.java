@@ -18,16 +18,20 @@ package io.helidon.webclient.grpc;
 
 import java.util.function.Consumer;
 
-import io.grpc.Channel;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.Protocol;
+
+import io.grpc.Channel;
 
 /**
  * gRPC client.
  */
 @RuntimeType.PrototypedBy(GrpcClientConfig.class)
 public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
+    /**
+     * Protocol ID constant for gRPC.
+     */
     String PROTOCOL_ID = "grpc";
 
     /**

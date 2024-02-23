@@ -35,14 +35,17 @@ class GrpcChannel extends Channel {
      *
      * @param grpcClient the gRPC client
      */
-    public GrpcChannel(GrpcClient grpcClient) {
+    GrpcChannel(GrpcClient grpcClient) {
         this.grpcClient = (GrpcClientImpl) grpcClient;
     }
 
     @Override
     public <ReqT, ResT> ClientCall<ReqT, ResT> newCall(
             MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
-        return new GrpcClientCall<>(grpcClient, methodDescriptor, callOptions);
+        MethodDescriptor.MethodType methodType = methodDescriptor.getType();
+        return methodType == MethodDescriptor.MethodType.UNARY
+                ? new GrpcUnaryClientCall<>(grpcClient, methodDescriptor, callOptions)
+                : new GrpcClientCall<>(grpcClient, methodDescriptor, callOptions);
     }
 
     @Override

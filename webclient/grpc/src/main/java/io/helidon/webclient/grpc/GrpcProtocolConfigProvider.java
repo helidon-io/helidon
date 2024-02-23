@@ -23,9 +23,9 @@ import io.helidon.webclient.spi.ProtocolConfigProvider;
  * Implementation of protocol config provider for gRPC.
  */
 public class GrpcProtocolConfigProvider implements ProtocolConfigProvider<GrpcClientProtocolConfig> {
+
     /**
      * Required to be used by {@link java.util.ServiceLoader}.
-     * @deprecated do not use directly, use Http1ClientProtocol
      */
     public GrpcProtocolConfigProvider() {
     }

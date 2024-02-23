@@ -16,11 +16,7 @@
 
 package io.helidon.webclient.grpc;
 
-import java.io.InputStream;
-import java.time.Duration;
-import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,62 +25,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Header;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.HeaderValues;
-import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2FrameData;
-import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2Settings;
-import io.helidon.http.http2.Http2StreamState;
-import io.helidon.webclient.api.ClientConnection;
-import io.helidon.webclient.api.ClientUri;
-import io.helidon.webclient.api.ConnectionKey;
-import io.helidon.webclient.api.DefaultDnsResolver;
-import io.helidon.webclient.api.DnsAddressLookup;
-import io.helidon.webclient.api.Proxy;
-import io.helidon.webclient.api.TcpClientConnection;
-import io.helidon.webclient.api.WebClient;
-import io.helidon.webclient.http2.Http2ClientConnection;
-import io.helidon.webclient.http2.Http2ClientImpl;
-import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
-import io.grpc.ClientCall;
-import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 
 /**
- * A gRPC client call handler. The typical order of calls will be:
+ *  * An implementation of a gRPC call. Expects:
  * <p>
  * start (request | sendMessage)* (halfClose | cancel)
  *
  * @param <ReqT> request type
  * @param <ResT> response type
  */
-class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
+class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private static final Logger LOGGER = Logger.getLogger(GrpcClientCall.class.getName());
 
-    private static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
-    private static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
-
-    private static final int READ_TIMEOUT_SECONDS = 10;
-    private static final int BUFFER_SIZE_BYTES = 1024;
-    private static final int WAIT_TIME_MILLIS = 100;
-    private static final Duration WAIT_TIME_MILLIS_DURATION = Duration.ofMillis(WAIT_TIME_MILLIS);
-
-    private static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
-
     private final ExecutorService executor;
-    private final GrpcClientImpl grpcClient;
-    private final MethodDescriptor<ReqT, ResT> methodDescriptor;
-    private final CallOptions callOptions;
     private final AtomicInteger messageRequest = new AtomicInteger();
-
-    private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
-    private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
 
     private final LinkedBlockingQueue<BufferData> sendingQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<BufferData> receivingQueue = new LinkedBlockingQueue<>();
@@ -92,69 +52,12 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final CountDownLatch startReadBarrier = new CountDownLatch(1);
     private final CountDownLatch startWriteBarrier = new CountDownLatch(1);
 
-    private volatile Http2ClientConnection connection;
-    private volatile GrpcClientStream clientStream;
-    private volatile Listener<ResT> responseListener;
     private volatile Future<?> readStreamFuture;
     private volatile Future<?> writeStreamFuture;
 
     GrpcClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
-        this.grpcClient = grpcClient;
-        this.methodDescriptor = methodDescriptor;
-        this.callOptions = callOptions;
-        this.requestMarshaller = methodDescriptor.getRequestMarshaller();
-        this.responseMarshaller = methodDescriptor.getResponseMarshaller();
+        super(grpcClient, methodDescriptor, callOptions);
         this.executor = grpcClient.webClient().executor();
-    }
-
-    @Override
-    public void start(Listener<ResT> responseListener, Metadata metadata) {
-        LOGGER.finest("start called");
-
-        this.responseListener = responseListener;
-
-        // obtain HTTP2 connection
-        ClientConnection clientConnection = clientConnection();
-        connection = Http2ClientConnection.create((Http2ClientImpl) grpcClient.http2Client(),
-                clientConnection, true);
-
-        // create HTTP2 stream from connection
-        clientStream = new GrpcClientStream(
-                connection,
-                Http2Settings.create(),                 // Http2Settings
-                clientConnection.helidonSocket(),       // SocketContext
-                new Http2StreamConfig() {
-                    @Override
-                    public boolean priorKnowledge() {
-                        return true;
-                    }
-
-                    @Override
-                    public int priority() {
-                        return 0;
-                    }
-
-                    @Override
-                    public Duration readTimeout() {
-                        return grpcClient.prototype().readTimeout().orElse(Duration.ofSeconds(READ_TIMEOUT_SECONDS));
-                    }
-                },
-                null,       // Http2ClientConfig
-                connection.streamIdSequence());
-
-        // start streaming threads
-        startStreamingThreads();
-
-        // send HEADERS frame
-        ClientUri clientUri = grpcClient.prototype().baseUri().orElseThrow();
-        WritableHeaders<?> headers = WritableHeaders.create();
-        headers.add(Http2Headers.AUTHORITY_NAME, clientUri.authority());
-        headers.add(Http2Headers.METHOD_NAME, "POST");
-        headers.add(Http2Headers.PATH_NAME, "/" + methodDescriptor.getFullMethodName());
-        headers.add(Http2Headers.SCHEME_NAME, "http");
-        headers.add(GRPC_CONTENT_TYPE);
-        headers.add(GRPC_ACCEPT_ENCODING);
-        clientStream.writeHeaders(Http2Headers.create(headers), false);
     }
 
     @Override
@@ -167,7 +70,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     @Override
     public void cancel(String message, Throwable cause) {
         LOGGER.finest(() -> "cancel called " + message);
-        responseListener.onClose(Status.CANCELLED, new Metadata());
+        responseListener().onClose(Status.CANCELLED, EMPTY_METADATA);
         readStreamFuture.cancel(true);
         writeStreamFuture.cancel(true);
         close();
@@ -183,7 +86,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     public void sendMessage(ReqT message) {
         LOGGER.finest("sendMessage called");
         BufferData messageData = BufferData.growing(BUFFER_SIZE_BYTES);
-        messageData.readFrom(requestMarshaller.stream(message));
+        messageData.readFrom(requestMarshaller().stream(message));
         BufferData headerData = BufferData.create(5);
         headerData.writeInt8(0);                                // no compression
         headerData.writeUnsignedInt32(messageData.available());         // length prefixed
@@ -191,7 +94,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         startWriteBarrier.countDown();
     }
 
-    private void startStreamingThreads() {
+    protected void startStreamingThreads() {
         // write streaming thread
         writeStreamFuture = executor.submit(() -> {
             try {
@@ -207,14 +110,14 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                             LOGGER.finest("[Writing thread] sending queue end marker found");
                             if (!endOfStream) {
                                 LOGGER.finest("[Writing thread] sending empty buffer to end stream");
-                                clientStream.writeData(EMPTY_BUFFER_DATA, true);
+                                clientStream().writeData(EMPTY_BUFFER_DATA, true);
                             }
                             break;
                         }
                         endOfStream = (sendingQueue.peek() == EMPTY_BUFFER_DATA);
                         boolean lastEndOfStream = endOfStream;
                         LOGGER.finest(() -> "[Writing thread] writing bufferData " + lastEndOfStream);
-                        clientStream.writeData(bufferData, endOfStream);
+                        clientStream().writeData(bufferData, endOfStream);
                     }
                 }
             } catch (Throwable e) {
@@ -230,14 +133,14 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 LOGGER.fine("[Reading thread] started");
 
                 // read response headers
-                clientStream.readHeaders();
+                clientStream().readHeaders();
 
                 while (isRemoteOpen()) {
                     // drain queue
                     drainReceivingQueue();
 
                     // trailers received?
-                    if (clientStream.trailers().isDone()) {
+                    if (clientStream().trailers().isDone()) {
                         LOGGER.finest("[Reading thread] trailers received");
                         break;
                     }
@@ -245,7 +148,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                     // attempt to read and queue
                     Http2FrameData frameData;
                     try {
-                        frameData = clientStream.readOne(WAIT_TIME_MILLIS_DURATION);
+                        frameData = clientStream().readOne(WAIT_TIME_MILLIS_DURATION);
                     } catch (StreamTimeoutException e) {
                         LOGGER.fine("[Reading thread] read timeout");
                         continue;
@@ -257,10 +160,10 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 }
 
                 LOGGER.finest("[Reading thread] closing listener");
-                responseListener.onClose(Status.OK, new Metadata());
+                responseListener().onClose(Status.OK, EMPTY_METADATA);
             } catch (Throwable e) {
                 LOGGER.finest(e.getMessage());
-                responseListener.onClose(Status.UNKNOWN, new Metadata());
+                responseListener().onClose(Status.UNKNOWN, EMPTY_METADATA);
             } finally {
                 close();
             }
@@ -271,65 +174,9 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private void close() {
         LOGGER.finest("closing client call");
         sendingQueue.clear();
-        clientStream.cancel();
-        connection.close();
+        clientStream().cancel();
+        connection().close();
         unblockUnaryExecutor();
-    }
-
-    /**
-     * Unary blocking calls that use stubs provide their own executor which needs
-     * to be used at least once to unblock the calling thread and complete the
-     * gRPC invocation. This method submits an empty task for that purpose. There
-     * may be a better way to achieve this.
-     */
-    private void unblockUnaryExecutor() {
-        Executor executor = callOptions.getExecutor();
-        if (executor != null) {
-            try {
-                executor.execute(() -> {});
-            } catch (Throwable t) {
-                // ignored
-            }
-        }
-    }
-
-    private ClientConnection clientConnection() {
-        GrpcClientConfig clientConfig = grpcClient.prototype();
-        ClientUri clientUri = clientConfig.baseUri().orElseThrow();
-        WebClient webClient = grpcClient.webClient();
-
-        ConnectionKey connectionKey = new ConnectionKey(
-                clientUri.scheme(),
-                clientUri.host(),
-                clientUri.port(),
-                clientConfig.readTimeout().orElse(Duration.ZERO),
-                clientConfig.tls(),
-                DefaultDnsResolver.create(),
-                DnsAddressLookup.defaultLookup(),
-                Proxy.noProxy());
-
-        return TcpClientConnection.create(webClient,
-                connectionKey,
-                Collections.emptyList(),
-                connection -> false,
-                connection -> {
-                }).connect();
-    }
-
-    private boolean isRemoteOpen() {
-        return clientStream.streamState() != Http2StreamState.HALF_CLOSED_REMOTE
-                && clientStream.streamState() != Http2StreamState.CLOSED;
-    }
-
-    private ResT toResponse(BufferData bufferData) {
-        bufferData.read();                  // compression
-        bufferData.readUnsignedInt32();     // length prefixed
-        return responseMarshaller.parse(new InputStream() {
-            @Override
-            public int read() {
-                return bufferData.available() > 0 ? bufferData.read() : -1;
-            }
-        });
     }
 
     private void drainReceivingQueue() {
@@ -338,7 +185,7 @@ class GrpcClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             messageRequest.getAndDecrement();
             ResT res = toResponse(receivingQueue.remove());
             LOGGER.finest("[Reading thread] sending response to listener");
-            responseListener.onMessage(res);
+            responseListener().onMessage(res);
         }
     }
 }
