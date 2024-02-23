@@ -3,24 +3,45 @@
 This application demonstrates use of client certificates to 
 authenticate HTTP client.
 
-## Build and run
+## Build
 
-This example requires two components - the server and the client.
+```shell
+mvn package
+```
 
-For each, there is an example using configuration, and an example using
-builder APIs.
+## Run
 
-To test the example:
-Start one of
- - `ServerBuilderMain` - main class for WebServer using builders
- - `ServerConfigMain`  - main class for WebServer using Config
- 
-Once the server is running, use one of:
- - `ClientBuilderMain` - main class for WebClient using builders
- - `ClientConfigMain`  - main class for WebClient using Config  
+Run the _config_ variant (default) of the application:
 
-to invoke the endpoint using client certificate.
+```shell
+java -jar target/helidon-examples-webserver-mutual-tls.jar
+```
 
-Alternative approach is to install the private key and certificate
-to your browser and invoke the endpoint manually.  
- 
+Run the _programmatic_ variant of the application:
+
+```shell
+mvn exec:java -Dexec.mainClass=io.helidon.examples.webserver.mtls.ServerBuilderMain
+```
+
+## Exercise the application
+
+Using `curl`:
+
+```shell
+openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:password -nokeys -out /tmp/chain.pem
+openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:password -nokeys -cacerts -out /tmp/ca.pem 
+openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:password -nocerts -out /tmp/key.pem
+curl --key /tmp/key.pem --cert /tmp/chain.pem --cacert /tmp/ca.pem https://localhost:443 --pass password
+```
+
+Using Helidon WebClient setup with configuration:
+
+```shell
+mvn exec:java -Dexec.mainClass=io.helidon.examples.webserver.mtls.ClientConfigMain
+```
+
+Using Helidon WebClient setup programmatically:
+
+```shell
+mvn exec:java -Dexec.mainClass=io.helidon.examples.webserver.mtls.ClientBuilderMain
+```
