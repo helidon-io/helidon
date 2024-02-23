@@ -16,9 +16,10 @@
 
 package io.helidon.webclient.grpc;
 
-import io.grpc.Channel;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
+
+import io.grpc.Channel;
 
 class GrpcClientImpl implements GrpcClient {
     private final WebClient webClient;

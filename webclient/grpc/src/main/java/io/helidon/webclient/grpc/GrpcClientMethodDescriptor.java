@@ -200,6 +200,7 @@ public final class GrpcClientMethodDescriptor {
      * @param <RespT> the response type
      * @return The {@link io.grpc.MethodDescriptor} of this method.
      */
+    @SuppressWarnings("unchecked")
     public <ReqT, RespT> MethodDescriptor<ReqT, RespT> descriptor() {
         return (MethodDescriptor<ReqT, RespT>) descriptor;
     }
