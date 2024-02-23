@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ class RequestRouting implements Routing {
             response.request(nextRequests);
             nextRequests.next();
         } catch (Error | RuntimeException e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error occurred during routing!", e);
+            LOGGER.log(Level.FINE, "Unexpected error occurred during routing!", e);
             throw e;
         }
     }
