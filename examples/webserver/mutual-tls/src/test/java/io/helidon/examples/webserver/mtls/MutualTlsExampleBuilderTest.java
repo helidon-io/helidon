@@ -25,7 +25,6 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test of mutual TLS example.
@@ -41,6 +40,10 @@ public class MutualTlsExampleBuilderTest {
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
+        server.port(0);
+        server.putSocket("secured", it -> it
+                .from(server.sockets().get("secured"))
+                .port(0));
         ServerBuilderMain.setup(server);
     }
 
