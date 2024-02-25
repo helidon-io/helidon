@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -276,9 +276,9 @@ class OciMetricsCdiExtensionTest {
     static class MockOciMetricsBean extends OciMetricsBean {
         // Override so we can test if this is invoked when enabled or skipped when disabled
         @Override
-        void activateOciMetricsSupport(Config config, OciMetricsSupport.Builder builder) {
+        protected void activateOciMetricsSupport(Config rootConfig, Config ociMetricsConfig, OciMetricsSupport.Builder builder) {
             activateOciMetricsSupportIsInvoked = true;
-            super.activateOciMetricsSupport(config, builder);
+            super.activateOciMetricsSupport(rootConfig, ociMetricsConfig, builder);
         }
     }
 }

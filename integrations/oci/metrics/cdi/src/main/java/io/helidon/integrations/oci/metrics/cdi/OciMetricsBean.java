@@ -65,10 +65,14 @@ public class OciMetricsBean {
      * initialized using the config retrieved using the {@link #configKey()} return value and the provided
      * {@link com.oracle.bmc.monitoring.Monitoring} instance.
      *
+     * @param rootConfig root {@link io.helidon.config.Config} node
+     * @param ociMetricsConfig config node for the OCI metrics settings
      * @param monitoring monitoring implementation to be used in preparing the {@code OciMetricsSupport.Builder}.
      * @return resulting builder
      */
-    protected OciMetricsSupport.Builder ociMetricsSupportBuilder(Monitoring monitoring) {
+    protected OciMetricsSupport.Builder ociMetricsSupportBuilder(Config rootConfig,
+                                                                 Config ociMetricsConfig,
+                                                                 Monitoring monitoring) {
         return OciMetricsSupport.builder()
                 .config(ociMetricsConfig)
                 .monitoringClient(monitoring);
@@ -83,21 +87,28 @@ public class OciMetricsBean {
         return ociMetricsConfig;
     }
 
-    // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
-    void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
-                            Config config, Monitoring monitoringClient) {
-        ociMetricsConfig = config.get(configKey());
-        OciMetricsSupport.Builder builder = ociMetricsSupportBuilder(monitoringClient);
-        if (builder.enabled()) {
-            activateOciMetricsSupport(ociMetricsConfig, builder);
-        }
-    }
-
-    void activateOciMetricsSupport(Config ocimetrics, OciMetricsSupport.Builder builder) {
+    /**
+     * Activates OCI metrics support.
+     *
+     * @param rootConfig root config node
+     * @param ociMetricsConfig OCI metrics configuration
+     * @param builder builder for {@link io.helidon.integrations.oci.metrics.OciMetricsSupport}
+     */
+    protected void activateOciMetricsSupport(Config rootConfig, Config ociMetricsConfig, OciMetricsSupport.Builder builder) {
         ociMetricsSupport = builder.build();
-        RoutingBuilders.create(ocimetrics)
+        RoutingBuilders.create(ociMetricsConfig)
                 .routingBuilder()
                 .register(ociMetricsSupport);
+    }
+
+    // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
+    void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
+                            Config rootConfig, Monitoring monitoringClient) {
+        ociMetricsConfig = rootConfig.get(configKey());
+        OciMetricsSupport.Builder builder = ociMetricsSupportBuilder(rootConfig, ociMetricsConfig, monitoringClient);
+        if (builder.enabled()) {
+            activateOciMetricsSupport(rootConfig, ociMetricsConfig, builder);
+        }
     }
 
     // For testing

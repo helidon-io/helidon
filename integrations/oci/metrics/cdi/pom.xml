@@ -57,8 +57,18 @@
     <build>
         <plugins>
             <plugin>
+                <!--
+                Adding the Helidon MP metrics artifact to the test scope would make the CDI extension test susceptible to changes
+                in the number of automatic metrics registered. The auto-registration does not occur without adding the dep. on
+                the MP metrics artifact.
+
+                So, instead of that, we run surefire twice, once running just the observer priority test with the Helidon
+                MP metrics library added to just thats execution. Only surefire version 3.2 and later support this feature, so
+                use a more recent version than the Helidon default.
+                -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
                 <executions>
                     <execution>
                         <id>default-test</id>
@@ -68,23 +78,6 @@
                             </excludes>
                         </configuration>
                     </execution>
-
-                </executions>
-            </plugin>
-            <plugin>
-                <!--
-                Adding the Helidon MP metrics artifact to the test scope would make the CDI extension test susceptible to changes
-                in the number of automatic metrics registered. The auto-registration does not occur without adding the dep. on
-                the MP metrics artifact.
-
-                So, instead of that, we run an execution of surefire running just the observer priority test and add the Helidon
-                MP metrics library to just this execution. Only surefire version 3.2 and later support this feature, so use a
-                more recent version than the Helidon default for this execution.
-                -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-                <executions>
                     <execution>
                         <id>observer-priority-check</id>
                         <goals>
