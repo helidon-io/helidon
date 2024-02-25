@@ -84,7 +84,7 @@ class Neo4jSnippets {
                                 return m, collect(d) as directors, collect({name:a.name, roles: r.roles}) as actors
                                 """;
 
-                    return session.readTransaction(tx -> tx.run(query).list(r -> {
+                    return session.executeRead(tx -> tx.run(query).list(r -> {
                         var movieNode = r.get("m").asNode();
 
                         var directors = r.get("directors").asList(v -> {
