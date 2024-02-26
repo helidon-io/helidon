@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,6 @@
  */
 
 /**
- * Helidon GRPC core package.
+ * Helidon WebServer Testing JUnit 5 Support for gRPC.
  */
-module io.helidon.grpc.core {
-
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.config;
-    requires transitive io.grpc;
-    requires transitive io.grpc.stub;
-    requires transitive com.google.protobuf;
-    requires transitive io.grpc.protobuf;
-    requires transitive io.grpc.protobuf.lite;
-
-    requires java.logging;
-    requires jakarta.inject;
-    requires jakarta.annotation;
-
-    exports io.helidon.grpc.core;
-
-}
+package io.helidon.webserver.testing.junit5.grpc;
