@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,24 +14,18 @@
     See the License for the specific language governing permissions and
     limitations under the License.
   -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-se</artifactId>
+        <groupId>io.helidon.webclient.tests</groupId>
+        <artifactId>helidon-webclient-tests-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.examples.webserver</groupId>
-    <artifactId>helidon-examples-webserver-protocols</artifactId>
-    <name>Helidon Examples WebServer Protocols</name>
-
-    <properties>
-        <mainClass>io.helidon.examples.webserver.protocols.ProtocolsMain</mainClass>
-    </properties>
+    <artifactId>helidon-webclient-tests-grpc</artifactId>
+    <name>Helidon WebClient gRPC Tests</name>
 
     <dependencies>
         <dependency>
@@ -46,11 +40,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-grpc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-http2</artifactId>
+            <artifactId>helidon-webserver-http2</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
@@ -58,7 +48,31 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-http2</artifactId>
+            <artifactId>helidon-webserver-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-websocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -68,6 +82,26 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5-http2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5-websocket</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5-grpc</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -103,7 +137,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${version.lib.google-protobuf}:exe:${os.detected.classifier}</protocArtifact>
+                    <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
                     <pluginId>grpc-java</pluginId>
                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:${version.lib.grpc}:exe:${os.detected.classifier}
                     </pluginArtifact>

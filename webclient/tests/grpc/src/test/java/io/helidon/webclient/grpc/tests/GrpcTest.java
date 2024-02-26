@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.webserver.protocols;
+package io.helidon.webclient.grpc.tests;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,7 +29,7 @@ import com.google.protobuf.StringValue;
 import io.grpc.stub.StreamObserver;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
-import io.helidon.examples.grpc.strings.Strings;
+import io.helidon.webclient.grpc.tests.Strings;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webclient.grpc.GrpcClientMethodDescriptor;
 import io.helidon.webclient.grpc.GrpcServiceDescriptor;

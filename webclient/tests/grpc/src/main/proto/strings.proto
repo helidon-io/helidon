@@ -16,11 +16,10 @@
 
 
 syntax = "proto3";
-option java_package = "io.helidon.examples.grpc.strings";
+option java_package = "io.helidon.webclient.grpc.tests";
 
 service StringService {
   rpc Upper (StringMessage) returns (StringMessage) {}
-  rpc Lower (StringMessage) returns (StringMessage) {}
   rpc Split (StringMessage) returns (stream StringMessage) {}
   rpc Join (stream StringMessage) returns (StringMessage) {}
   rpc Echo (stream StringMessage) returns (stream StringMessage) {}
