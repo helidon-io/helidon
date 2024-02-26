@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,6 @@
  */
 
 /**
- * Core classes used by both the reactive gRPC server API and gRPC client API.
+ * Core classes used by both the gRPC server API and gRPC client API.
  */
 package io.helidon.grpc.core;
