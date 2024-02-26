@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,19 +79,9 @@ class GrpcServiceRoute extends GrpcRoute {
         }
 
         @Override
-        public <ReqT, ResT> GrpcService.Routing unary(String methodName, GrpcServerCalls.Unary<ReqT, ResT> method) {
-            return null;
-        }
-
-        @Override
         public <ReqT, ResT> GrpcService.Routing bidi(String methodName, ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
             routes.add(Grpc.bidi(proto, serviceName, methodName, method));
             return this;
-        }
-
-        @Override
-        public <ReqT, ResT> GrpcService.Routing bidi(String methodName, GrpcServerCalls.Bidi<ReqT, ResT> method) {
-            return null;
         }
 
         @Override
@@ -102,20 +92,10 @@ class GrpcServiceRoute extends GrpcRoute {
         }
 
         @Override
-        public <ReqT, ResT> GrpcService.Routing serverStream(String methodName, GrpcServerCalls.ServerStream<ReqT, ResT> method) {
-            return null;
-        }
-
-        @Override
         public <ReqT, ResT> GrpcService.Routing clientStream(String methodName,
                                                              ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
             routes.add(Grpc.clientStream(proto, serviceName, methodName, method));
             return this;
-        }
-
-        @Override
-        public <ReqT, ResT> GrpcService.Routing clientStream(String methodName, GrpcServerCalls.ClientStream<ReqT, ResT> method) {
-            return null;
         }
 
         public GrpcServiceRoute build() {

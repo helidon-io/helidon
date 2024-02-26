@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,25 +124,6 @@ public class GrpcRouting implements Routing {
                                           String serviceName,
                                           String methodName,
                                           ServerCalls.UnaryMethod<ReqT, ResT> method) {
-
-            return route(Grpc.unary(proto, serviceName, methodName, method));
-        }
-
-        /**
-         * Unary route.
-         *
-         * @param proto       proto descriptor
-         * @param serviceName service name
-         * @param methodName  method name
-         * @param method      method to handle this route
-         * @param <ReqT>      request type
-         * @param <ResT>      response type
-         * @return updated builder
-         */
-        public <ReqT, ResT> Builder unary(Descriptors.FileDescriptor proto,
-                                          String serviceName,
-                                          String methodName,
-                                          GrpcServerCalls.Unary<ReqT, ResT> method) {
 
             return route(Grpc.unary(proto, serviceName, methodName, method));
         }
