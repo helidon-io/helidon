@@ -249,12 +249,13 @@ public class WsConnection implements ServerConnection, WsSession {
             listener.onMessage(this, payload, frame.fin());
         }
         case CLOSE -> {
-            int status = payload.readInt16();
-            String reason;
+            int status = WsCloseCodes.NORMAL_CLOSE;
+            String reason = "normal";
             if (payload.available() > 0) {
-                reason = payload.readString(payload.available(), StandardCharsets.UTF_8);
-            } else {
-                reason = "normal";
+                status = payload.readInt16();
+                if (payload.available() > 0) {
+                    reason = payload.readString(payload.available(), StandardCharsets.UTF_8);
+                }
             }
             listener.onClose(this, status, reason);
             if (!closeSent) {

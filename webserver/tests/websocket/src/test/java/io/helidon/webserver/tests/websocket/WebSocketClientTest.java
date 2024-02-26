@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,5 +97,24 @@ public class WebSocketClientTest {
         boolean await = messageLatch.await(10, TimeUnit.SECONDS);
         assertThat(await, is(true));
         assertThat(messages, hasItems(text));
+    }
+
+    /**
+     * Tests sending a close frame with no code or reason.
+     */
+    @Test
+    void testEmptyClose() throws InterruptedException {
+        CountDownLatch messageLatch = new CountDownLatch(1);
+
+        wsClient.connect("/echo", new WsListener() {
+            @Override
+            public void onOpen(WsSession session) {
+                session.close(-1, "");      // empty close
+                messageLatch.countDown();
+            }
+        });
+
+        boolean await = messageLatch.await(10, TimeUnit.SECONDS);
+        assertThat(await, is(true));
     }
 }
