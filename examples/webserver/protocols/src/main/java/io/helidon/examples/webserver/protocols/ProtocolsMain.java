@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,21 +79,11 @@ public class ProtocolsMain {
                                     .unary(Strings.getDescriptor(),
                                            "StringService",
                                            "Upper",
-                                           ProtocolsMain::grpcUpper)
-                                    .unary(Strings.getDescriptor(),
-                                           "StringService",
-                                           "Upper",
-                                           ProtocolsMain::blockingGrpcUpper))
+                                           ProtocolsMain::grpcUpper))
                 .addRouting(WsRouting.builder()
                                     .endpoint("/tyrus/echo", ProtocolsMain::wsEcho))
                 .build()
                 .start();
-    }
-
-    private static Strings.StringMessage blockingGrpcUpper(Strings.StringMessage reqT) {
-        return Strings.StringMessage.newBuilder()
-                .setText(reqT.getText().toUpperCase(Locale.ROOT))
-                .build();
     }
 
     private static void grpcUpper(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
