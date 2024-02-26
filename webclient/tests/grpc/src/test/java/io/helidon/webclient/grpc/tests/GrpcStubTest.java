@@ -16,10 +16,7 @@
 
 package io.helidon.webclient.grpc.tests;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -28,8 +25,6 @@ import java.util.concurrent.TimeoutException;
 import io.grpc.stub.StreamObserver;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
-import io.helidon.webclient.grpc.tests.StringServiceGrpc;
-import io.helidon.webclient.grpc.tests.Strings;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.WebServer;
@@ -46,7 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests gRPC client using stubs and TLS.
  */
 @ServerTest
-class GrpcStubTest {
+class GrpcStubTest extends GrpcBaseTest {
     private static final long TIMEOUT_SECONDS = 10;
 
     private final WebClient webClient;
@@ -94,76 +89,6 @@ class GrpcStubTest {
                                 "Echo",
                                 GrpcStubTest::echo));
     }
-
-    // -- gRPC server methods --
-
-    private static Strings.StringMessage upper(Strings.StringMessage reqT) {
-        return Strings.StringMessage.newBuilder()
-                .setText(reqT.getText().toUpperCase(Locale.ROOT))
-                .build();
-    }
-
-    private static void split(Strings.StringMessage reqT,
-                              StreamObserver<Strings.StringMessage> streamObserver) {
-        String[] strings = reqT.getText().split(" ");
-        for (String string : strings) {
-            streamObserver.onNext(Strings.StringMessage.newBuilder()
-                    .setText(string)
-                    .build());
-
-        }
-        streamObserver.onCompleted();
-    }
-
-    private static StreamObserver<Strings.StringMessage> join(StreamObserver<Strings.StringMessage> streamObserver) {
-        return new StreamObserver<>() {
-            private StringBuilder builder;
-
-            @Override
-            public void onNext(Strings.StringMessage value) {
-                if (builder == null) {
-                    builder = new StringBuilder();
-                    builder.append(value.getText());
-                } else {
-                    builder.append(" ").append(value.getText());
-                }
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                streamObserver.onError(t);
-            }
-
-            @Override
-            public void onCompleted() {
-                streamObserver.onNext(Strings.StringMessage.newBuilder()
-                        .setText(builder.toString())
-                        .build());
-                streamObserver.onCompleted();
-            }
-        };
-    }
-
-    private static StreamObserver<Strings.StringMessage> echo(StreamObserver<Strings.StringMessage> streamObserver) {
-        return new StreamObserver<>() {
-            @Override
-            public void onNext(Strings.StringMessage value) {
-                streamObserver.onNext(value);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                streamObserver.onError(t);
-            }
-
-            @Override
-            public void onCompleted() {
-                streamObserver.onCompleted();
-            }
-        };
-    }
-
-    // -- Tests --
 
     @Test
     void testUnaryUpper() {
@@ -231,53 +156,5 @@ class GrpcStubTest {
         assertThat(res.next().getText(), is("hello"));
         assertThat(res.next().getText(), is("world"));
         assertThat(res.hasNext(), is(false));
-    }
-
-    // -- Utility methods --
-
-    private Strings.StringMessage newStringMessage(String data) {
-        return Strings.StringMessage.newBuilder().setText(data).build();
-    }
-
-    private static <ReqT> StreamObserver<ReqT> singleStreamObserver(CompletableFuture<ReqT> future) {
-        return new StreamObserver<>() {
-            private ReqT value;
-
-            @Override
-            public void onNext(ReqT value) {
-                this.value = value;
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                future.completeExceptionally(t);
-            }
-
-            @Override
-            public void onCompleted() {
-                future.complete(value);
-            }
-        };
-    }
-
-    private static <ResT> StreamObserver<ResT> multiStreamObserver(CompletableFuture<Iterator<ResT>> future) {
-        return new StreamObserver<>() {
-            private final List<ResT> value = new ArrayList<>();
-
-            @Override
-            public void onNext(ResT value) {
-                this.value.add(value);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                future.completeExceptionally(t);
-            }
-
-            @Override
-            public void onCompleted() {
-                future.complete(value.iterator());
-            }
-        };
     }
 }
