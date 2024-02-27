@@ -48,7 +48,6 @@ import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
-import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
@@ -448,20 +447,6 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 .clearContent()
                 .addContentLine("Objects.requireNonNull(" + name() + ");") //Overwrites existing content
                 .addContentLine("this." + name() + ".addAll(" + name() + ");")
-                .addContentLine("return self();");
-        classBuilder.addMethod(builder);
-
-        // Primarily for use in preventing default values from being included in a list twice using Builder.from.
-        builder.name("addDistinct" + capitalize(name()))
-                .accessModifier(AccessModifier.PROTECTED)
-                .clearContent()
-                .addContentLine("Objects.requireNonNull(" + name() + ");")
-                .addContentLine(name() + ".forEach(newItem -> {")
-                .addContentLine("    if (!this." + name() + ".contains(newItem)) {")
-                .addContentLine("        this." + name() + ".add(newItem);")
-                .addContentLine("}")
-                .addContentLine("}")
-                .addContentLine(");")
                 .addContentLine("return self();");
         classBuilder.addMethod(builder);
     }
