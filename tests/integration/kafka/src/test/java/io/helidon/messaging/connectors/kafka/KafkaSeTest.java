@@ -431,7 +431,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
                 .publisher(toKafka,
-                        Multi.from(IntStream.rangeClosed(1, 3).boxed())
+                        Multi.create(IntStream.rangeClosed(1, 3).boxed())
                                 .map(KafkaMessage::of)
                                 .peek(msg -> msg.getHeaders()
                                         .add("secret header",
