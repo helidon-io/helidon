@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
@@ -28,14 +27,14 @@ class PeerInfoImpl implements PeerInfo {
     private final LazyValue<SocketAddress> socketAddress;
     private final LazyValue<String> host;
     private final LazyValue<Integer> port;
-    private final Supplier<Optional<Principal>> principalSupplier;
-    private final Supplier<Optional<Certificate[]>> certificateSupplier;
+    private final LazyValue<Optional<Principal>> principalSupplier;
+    private final LazyValue<Optional<Certificate[]>> certificateSupplier;
 
     private PeerInfoImpl(LazyValue<SocketAddress> socketAddress,
                          LazyValue<String> host,
                          LazyValue<Integer> port,
-                         Supplier<Optional<Principal>> principalSupplier,
-                         Supplier<Optional<Certificate[]>> certificateSupplier) {
+                         LazyValue<Optional<Principal>> principalSupplier,
+                         LazyValue<Optional<Certificate[]>> certificateSupplier) {
         this.socketAddress = socketAddress;
         this.host = host;
         this.port = port;
@@ -47,36 +46,34 @@ class PeerInfoImpl implements PeerInfo {
         return new PeerInfoImpl(LazyValue.create(socket::localSocketAddress),
                                 LazyValue.create(socket::localHost),
                                 LazyValue.create(socket::localPort),
-                                Optional::empty,
-                                Optional::empty);
+                                LazyValue.create(Optional.empty()),
+                                LazyValue.create(Optional.empty()));
     }
 
     static PeerInfoImpl createLocal(TlsSocket socket) {
         // remote socket - all lazy values, as they cannot change (and they require creating another object)
-        // tls related - there can be re-negotiation of tls, to be safe I use a supplier
         return new PeerInfoImpl(LazyValue.create(socket::localSocketAddress),
                                 LazyValue.create(socket::localHost),
                                 LazyValue.create(socket::localPort),
-                                socket::tlsPrincipal,
-                                socket::tlsCertificates);
+                                LazyValue.create(socket::tlsPrincipal),
+                                LazyValue.create(socket::tlsCertificates));
     }
 
     static PeerInfoImpl createRemote(TlsSocket socket) {
         // remote socket - all lazy values, as they cannot change (and they require creating another object)
-        // tls related - there can be re-negotiation of tls, to be safe I use a supplier
         return new PeerInfoImpl(LazyValue.create(socket::remoteSocketAddress),
                                 LazyValue.create(socket::remoteHost),
                                 LazyValue.create(socket::remotePort),
-                                socket::tlsPeerPrincipal,
-                                socket::tlsPeerCertificates);
+                                LazyValue.create(socket::tlsPeerPrincipal),
+                                LazyValue.create(socket::tlsPeerCertificates));
     }
 
     static PeerInfoImpl createRemote(PlainSocket socket) {
         return new PeerInfoImpl(LazyValue.create(socket::remoteSocketAddress),
                                 LazyValue.create(socket::remoteHost),
                                 LazyValue.create(socket::remotePort),
-                                Optional::empty,
-                                Optional::empty);
+                                LazyValue.create(Optional.empty()),
+                                LazyValue.create(Optional.empty()));
     }
 
     @Override
