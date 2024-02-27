@@ -22,17 +22,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.grpc.stub.StreamObserver;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import org.junit.jupiter.api.Test;
+
+import io.grpc.stub.StreamObserver;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -58,36 +56,6 @@ class GrpcStubTest extends GrpcBaseTest {
                 .tls(clientTls)
                 .baseUri("https://localhost:" + server.port())
                 .build();
-    }
-
-    @SetUpServer
-    public static void setup(WebServerConfig.Builder builder) {
-        builder.tls(tls -> tls.privateKey(key -> key
-                                .keystore(store -> store
-                                        .passphrase("password")
-                                        .keystore(Resource.create("server.p12"))))
-                        .privateKeyCertChain(key -> key
-                                .keystore(store -> store
-                                        .trustStore(true)
-                                        .passphrase("password")
-                                        .keystore(Resource.create("server.p12")))))
-                .addRouting(GrpcRouting.builder()
-                        .unary(Strings.getDescriptor(),
-                                "StringService",
-                                "Upper",
-                                GrpcStubTest::upper)
-                        .serverStream(Strings.getDescriptor(),
-                                "StringService",
-                                "Split",
-                                GrpcStubTest::split)
-                        .clientStream(Strings.getDescriptor(),
-                                "StringService",
-                                "Join",
-                                GrpcStubTest::join)
-                        .bidi(Strings.getDescriptor(),
-                                "StringService",
-                                "Echo",
-                                GrpcStubTest::echo));
     }
 
     @Test
