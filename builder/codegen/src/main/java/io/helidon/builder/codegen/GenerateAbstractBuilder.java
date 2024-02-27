@@ -354,8 +354,11 @@ final class GenerateAbstractBuilder {
         for (PrototypeProperty property : typeContext.propertyData().properties()) {
             TypeName declaredType = property.typeHandler().declaredType();
             if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
-                methodBuilder.addContent("add");
-                methodBuilder.addContent(capitalize(property.name()));
+                // add for Set and Map take care of enforcing distinct values themselves, but do so ourselves for List when
+                // adding values from an existing builder which will already have the default(s).
+                methodBuilder.addContent("add"
+                                                 + (declaredType.isList() ? "Distinct" : "")
+                                                 + capitalize(property.name()));
                 methodBuilder.addContent("(prototype.");
                 methodBuilder.addContent(property.typeHandler().getterName());
                 methodBuilder.addContentLine("());");
@@ -412,7 +415,11 @@ final class GenerateAbstractBuilder {
                 methodBuilder.addContentLine("builder." + getterName + "().ifPresent(this::" + setterName + ");");
             } else {
                 if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
-                    methodBuilder.addContent("add" + capitalize(property.name()));
+                    // add for Set and Map take care of enforcing distinct values themselves, but do so ourselves for List when
+                    // adding values from an existing instance which will already have the default(s).
+                    methodBuilder.addContent("add"
+                                                     + (declaredType.isList() ? "Distinct" : "")
+                                                     + capitalize(property.name()));
                 } else {
                     methodBuilder.addContent(setterName);
                 }
