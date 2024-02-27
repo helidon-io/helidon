@@ -21,9 +21,48 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.configurable.Resource;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.grpc.GrpcRouting;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+
 import io.grpc.stub.StreamObserver;
 
 class GrpcBaseTest {
+
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder builder) {
+        builder.tls(tls -> tls.privateKey(key -> key
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .keystore(Resource.create("server.p12"))))
+                .privateKeyCertChain(key -> key
+                        .keystore(store -> store
+                                .trustStore(true)
+                                .passphrase("password")
+                                .keystore(Resource.create("server.p12")))));
+    }
+
+    @SetUpRoute
+    static void setUpRoute(GrpcRouting.Builder routing) {
+        routing.unary(Strings.getDescriptor(),
+                        "StringService",
+                        "Upper",
+                        GrpcStubTest::upper)
+                .serverStream(Strings.getDescriptor(),
+                        "StringService",
+                        "Split",
+                        GrpcStubTest::split)
+                .clientStream(Strings.getDescriptor(),
+                        "StringService",
+                        "Join",
+                        GrpcStubTest::join)
+                .bidi(Strings.getDescriptor(),
+                        "StringService",
+                        "Echo",
+                        GrpcStubTest::echo);
+    }
 
     static void upper(Strings.StringMessage req,
                               StreamObserver<Strings.StringMessage> streamObserver) {

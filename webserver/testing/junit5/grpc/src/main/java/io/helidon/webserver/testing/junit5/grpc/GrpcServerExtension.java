@@ -16,8 +16,14 @@
 
 package io.helidon.webserver.testing.junit5.grpc;
 
+import java.util.Optional;
+
 import io.helidon.webclient.grpc.GrpcClient;
+import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.testing.junit5.Junit5Util;
 import io.helidon.webserver.testing.junit5.spi.ServerJunitExtension;
 
@@ -30,10 +36,13 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
  * artifacts, such as {@link io.helidon.webclient.grpc.GrpcClient} in Helidon integration tests.
  */
 public class GrpcServerExtension implements ServerJunitExtension {
-    /**
-     * Required constructor for {@link java.util.ServiceLoader}.
-     */
-    public GrpcServerExtension() {
+
+    @Override
+    public Optional<ParamHandler<?>> setUpRouteParamHandler(Class<?> type) {
+        if (GrpcRouting.Builder.class.equals(type)) {
+            return Optional.of(new RoutingParamHandler());
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -55,5 +64,24 @@ public class GrpcServerExtension implements ServerJunitExtension {
                     .build();
         }
         throw new ParameterResolutionException("gRPC extension only supports GrpcClient parameter type");
+    }
+
+    private static final class RoutingParamHandler implements ParamHandler<GrpcRouting.Builder> {
+        @Override
+        public GrpcRouting.Builder get(String socketName,
+                                     WebServerConfig.Builder serverBuilder,
+                                     ListenerConfig.Builder listenerBuilder,
+                                     Router.RouterBuilder<?> routerBuilder) {
+            return GrpcRouting.builder();
+        }
+
+        @Override
+        public void handle(String socketName,
+                           WebServerConfig.Builder serverBuilder,
+                           ListenerConfig.Builder listenerBuilder,
+                           Router.RouterBuilder<?> routerBuilder,
+                           GrpcRouting.Builder value) {
+            routerBuilder.addRouting(value);
+        }
     }
 }
