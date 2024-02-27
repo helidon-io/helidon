@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
@@ -170,7 +172,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                 tmf = createTmf(tlsConfig);
                 KeyStore keyStore = internalKeystore(tlsConfig);
                 keyStore.setCertificateEntry("trust-ca", ca);
-                tmf.init(keyStore);
+                initializeTmf(tmf, keyStore, tlsConfig);
             }
 
             Optional<X509KeyManager> keyManager = Arrays.stream(kmf.getKeyManagers())
@@ -198,6 +200,8 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             return true;
         } catch (KeyStoreException e) {
             throw new IllegalStateException("Error while loading context from OCI", e);
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
 

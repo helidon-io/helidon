@@ -18,6 +18,7 @@ package io.helidon.common.tls;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -25,13 +26,20 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertPathBuilder;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXRevocationChecker;
+import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
+import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -291,6 +299,37 @@ public class ConfiguredTlsManager implements TlsManager {
         }
     }
 
+    protected void initializeTmf(TrustManagerFactory tmf, KeyStore keyStore, TlsConfig tlsConfig)
+            throws InvalidAlgorithmParameterException, KeyStoreException, NoSuchAlgorithmException {
+        if (tlsConfig.revocation().isPresent()) {
+            RevocationConfig revocationConfig = tlsConfig.revocation().get();
+            if (revocationConfig.enabled()) {
+                CertPathBuilder cpb = CertPathBuilder.getInstance("PKIX");
+                PKIXRevocationChecker rc = (PKIXRevocationChecker) cpb.getRevocationChecker();
+                Set<PKIXRevocationChecker.Option> options = new HashSet<>();
+                if (revocationConfig.preferCrlOverOcsp()) {
+                    options.add(PKIXRevocationChecker.Option.PREFER_CRLS);
+                }
+                if (revocationConfig.checkOnlyEndEntity()) {
+                    options.add(PKIXRevocationChecker.Option.ONLY_END_ENTITY);
+                }
+                if (!revocationConfig.fallbackEnabled()) {
+                    options.add(PKIXRevocationChecker.Option.NO_FALLBACK);
+                }
+                if (revocationConfig.softFailEnabled()) {
+                    options.add(PKIXRevocationChecker.Option.SOFT_FAIL);
+                }
+                rc.setOptions(options);
+                revocationConfig.ocspResponderUri().ifPresent(rc::setOcspResponder);
+                PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(keyStore, new X509CertSelector());
+                pkixParams.addCertPathChecker(rc);
+                tmf.init(new CertPathTrustManagerParameters(pkixParams));
+                return;
+            }
+        }
+        tmf.init(keyStore);
+    }
+
     /**
      * Creates a trust all trust manager factory.
      *
@@ -302,7 +341,8 @@ public class ConfiguredTlsManager implements TlsManager {
 
     // creates an internal keystore and initializes it with certificates discovered from configuration, then gets the trust
     // manager factory using tmf(TlsConfig)
-    private TrustManagerFactory initTmf(TlsConfig tlsConfig) throws KeyStoreException {
+    private TrustManagerFactory initTmf(TlsConfig tlsConfig)
+            throws KeyStoreException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         KeyStore ks = internalKeystore(tlsConfig);
         int i = 1;
         for (X509Certificate cert : tlsConfig.trust()) {
@@ -310,12 +350,13 @@ public class ConfiguredTlsManager implements TlsManager {
             i++;
         }
         TrustManagerFactory tmf = createTmf(tlsConfig);
-        tmf.init(ks);
+        initializeTmf(tmf, ks, tlsConfig);
         return tmf;
     }
 
     // used by ConfiguredTlsManager to setup a TrustManagerFactory, that may be "trustAll", or based on configuration
-    private TrustManagerFactory tmf(TlsConfig tlsConfig) throws KeyStoreException {
+    private TrustManagerFactory tmf(TlsConfig tlsConfig)
+            throws KeyStoreException, InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         if (tlsConfig.trustAll()) {
             return trustAllTmf();
         }

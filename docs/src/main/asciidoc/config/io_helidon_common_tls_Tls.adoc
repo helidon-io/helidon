@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -85,6 +85,9 @@ Type: link:{javadoc-base-url}/io.helidon.common.tls/io/helidon/common/tls/Tls.ht
 |`provider` |string |{nbsp} |Use explicit provider to obtain an instance of javax.net.ssl.SSLContext.
 
  @return provider to use, defaults to none (only #protocol() is used by default)
+|`revocation` |xref:{rootdir}/config/io_helidon_common_tls_RevocationConfig.adoc[RevocationConfig] |{nbsp} |Certificate revocation check configuration.
+
+ @return certificate revocation configuration
 |`secure-random-algorithm` |string |{nbsp} |Algorithm to use when creating a new secure random.
 
  @return algorithm to use, by default uses java.security.SecureRandom constructor

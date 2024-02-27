@@ -291,4 +291,12 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     @Option.Configured
     Optional<String> internalKeystoreProvider();
 
+    /**
+     * Certificate revocation check configuration.
+     *
+     * @return certificate revocation configuration
+     */
+    @Option.Configured
+    Optional<RevocationConfig> revocation();
+
 }
