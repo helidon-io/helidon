@@ -173,6 +173,8 @@
         </method>
         <method name="h2">
             <output if="${db.server} == 'h2'">
+                <file source="../database/files/src/main/resources/META-INF/init_script.sql.default"
+                      target="src/main/resources/META-INF/init_script.sql"/>
                 <model>
                     <value key="readme-description">Helidon MP application that uses JPA with an in-memory H2 database.</value>
                     <value key="integration-artifactId">h2</value>
@@ -276,6 +278,8 @@ For details, see https://www.h2database.com/html/cheatSheet.html
         </method>
         <method name="mysql">
             <output if="${db.server} == 'mysql'">
+                <file source="../database/files/src/main/resources/META-INF/init_script.sql.default"
+                      target="src/main/resources/META-INF/init_script.sql"/>
                 <model>
                     <value key="helidon-test">false</value>
                     <value key="readme-description">Helidon MP application that uses the dbclient API with MySQL database.</value>
@@ -320,6 +324,8 @@ docker run --rm --name mysql -p 3306:3306 \
         </method>
         <method name="oracle">
             <output if="${db.server} == 'oracledb'">
+                <file source="../database/files/src/main/resources/META-INF/init_script.sql.oracle"
+                      target="src/main/resources/META-INF/init_script.sql"/>
                 <templates engine="mustache" transformations="mustache,packaged">
                     <directory>../database/files</directory>
                     <includes>
@@ -376,12 +382,6 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
     <call method="mysql" />
     <call method="oracle" />
     <output>
-        <files>
-            <directory>../database/files</directory>
-            <includes>
-                <include>src/*/resources/*/init_script.sql</include>
-            </includes>
-        </files>
         <templates engine="mustache" transformations="mustache,packaged">
             <directory>../database/files</directory>
             <includes>
