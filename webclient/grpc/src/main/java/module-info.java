@@ -43,6 +43,4 @@ module io.helidon.webclient.grpc {
 
     provides io.helidon.webclient.spi.ClientProtocolProvider
             with io.helidon.webclient.grpc.GrpcProtocolProvider;
-    provides io.helidon.webclient.spi.ProtocolConfigProvider
-            with io.helidon.webclient.grpc.GrpcProtocolConfigProvider;
 }
