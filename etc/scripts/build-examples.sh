@@ -29,9 +29,18 @@ error_trap_setup
 # If needed we clone the helidon-examples repo into a subdirectory of the helidon repository
 readonly HELIDON_EXAMPLES_PATH=${WS_DIR}/helidon-examples
 if [ ! -d "${HELIDON_EXAMPLES_PATH}" ]; then
+  echo "Cloning examples repository into ${HELIDON_EXAMPLES_PATH}"
   git clone git@github.com:helidon-io/helidon-examples.git "${HELIDON_EXAMPLES_PATH}"
   cd "${HELIDON_EXAMPLES_PATH}"
   git checkout dev-3.x
+fi
+
+# Make sure the helidon version from the example repo aligns with this repository
+readonly HELIDON_VERSION_IN_THIS_REPO=$(mvn --non-recursive -f ${WS_DIR}/pom.xml help:evaluate -Dexpression=helidon.version | grep -v '\[INFO\]')
+readonly HELIDON_VERSION_IN_EXAMPLES=$(mvn --non-recursive -f ${HELIDON_EXAMPLES_PATH}/pom.xml help:evaluate -Dexpression=helidon.version | grep -v '\[INFO\]')
+if [ ${HELIDON_VERSION_IN_THIS_REPO} != ${HELIDON_VERSION_IN_EXAMPLES} ]; then
+  echo "The Helidon version in this repository (${HELIDON_VERSION_IN_THIS_REPO}) does not match the Helidon version in ${HELIDON_EXAMPLES_PATH} (${HELIDON_VERSION_IN_EXAMPLES})"
+  exit 78
 fi
 
 mvn ${MAVEN_ARGS} -f ${HELIDON_EXAMPLES_PATH}/pom.xml clean install
