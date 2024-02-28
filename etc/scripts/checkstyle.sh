@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \
     -f ${WS_DIR}/pom.xml \
     -Dcheckstyle.output.format="plain" \
     -Dcheckstyle.output.file="${RESULT_FILE}" \
-    -Pexamples,ossrh-releases > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
+    -Possrh-releases > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
 grep "^\[ERROR\]" ${RESULT_FILE} \
     && die "CHECKSTYLE ERROR" || echo "CHECKSTYLE OK"
