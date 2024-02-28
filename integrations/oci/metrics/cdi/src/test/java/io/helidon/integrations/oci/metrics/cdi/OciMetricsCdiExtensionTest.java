@@ -323,9 +323,9 @@ class OciMetricsCdiExtensionTest {
     static class MockOciMetricsBean extends OciMetricsBean {
         // Override so we can test if this is invoked when enabled or skipped when disabled
         @Override
-        void activateOciMetricsSupport(Config config, OciMetricsSupport.Builder builder) {
+        protected void activateOciMetricsSupport(Config rootConfig, Config ociMetricsConfig, OciMetricsSupport.Builder builder) {
             activateOciMetricsSupportIsInvoked = true;
-            super.activateOciMetricsSupport(config, builder);
+            super.activateOciMetricsSupport(rootConfig, ociMetricsConfig, builder);
         }
     }
 }
