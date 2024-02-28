@@ -17,6 +17,7 @@ package io.helidon.docs.mp.jaxrs;
 
 import io.helidon.webserver.http.ServerRequest;
 
+import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Application;
@@ -36,4 +37,10 @@ class JaxrsApplicationsSnippets {
     }
     // end::snippet_1[]
 
+    // tag::snippet_2[]
+    @ApplicationPath("/myApplication")
+    public class MyApplication extends Application {
+
+    }
+    // end::snippet_2[]
 }
