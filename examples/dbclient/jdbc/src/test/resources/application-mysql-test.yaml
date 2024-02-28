@@ -25,7 +25,7 @@ db:
   source: jdbc
   connection:
     username: user
-    password: password
+    password: changeit
     poolName: mysql
     initializationFailTimeout: -1
     connectionTimeout: 2000

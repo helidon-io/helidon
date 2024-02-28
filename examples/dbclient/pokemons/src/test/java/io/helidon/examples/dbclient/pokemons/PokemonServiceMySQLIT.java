@@ -34,7 +34,7 @@ public class PokemonServiceMySQLIT extends AbstractPokemonServiceTest {
     @Container
     static MySQLContainer<?> container = new MySQLContainer<>("mysql:8.0.36")
             .withUsername("user")
-            .withPassword("password")
+            .withPassword("changeit")
             .withNetworkAliases("mysql")
             .withDatabaseName("pokemon");
 

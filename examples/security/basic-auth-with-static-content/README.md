@@ -23,9 +23,9 @@ Try the application:
 The application starts at the `8080` port
 ```shell
 curl http://localhost:8080/public
-curl -u "jill:password" http://localhost:8080/noRoles
-curl -u "john:password" http://localhost:8080/user
-curl -u "jack:password" http://localhost:8080/admin
-curl -v -u "john:password" http://localhost:8080/deny
-curl -u "jack:password" http://localhost:8080/noAuthn
+curl -u "jill:changeit" http://localhost:8080/noRoles
+curl -u "john:changeit" http://localhost:8080/user
+curl -u "jack:changeit" http://localhost:8080/admin
+curl -v -u "john:changeit" http://localhost:8080/deny
+curl -u "jack:changeit" http://localhost:8080/noAuthn
 ```
