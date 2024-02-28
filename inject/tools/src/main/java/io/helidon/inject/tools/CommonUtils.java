@@ -17,6 +17,7 @@
 package io.helidon.inject.tools;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -222,7 +223,7 @@ final class CommonUtils {
         if (value == null) {
             return null;
         }
-        return value.replace("\\", "/");
+        return value.replace(File.separator, "/");
     }
 
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -169,7 +170,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         if (value == null) {
             return null;
         }
-        return value.replace("\\", "/");
+        return value.replace(File.separator, "/");
     }
 
 

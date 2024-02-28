@@ -33,11 +33,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_TEST_MESSAGE;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -49,7 +45,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 
 @AddConfig(key = "security.providers.1.oidc.token-signature-validation", value = "false")
-@DisabledOnOs(OS.WINDOWS)
 class RefreshTokenIT extends CommonLoginBase {
 
     @Test

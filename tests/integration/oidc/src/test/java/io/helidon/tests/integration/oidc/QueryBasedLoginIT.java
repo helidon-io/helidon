@@ -24,11 +24,7 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientProperties;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_TEST_MESSAGE;
 import static org.hamcrest.CoreMatchers.is;
@@ -38,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddConfig(key = "security.providers.1.oidc.cookie-use", value = "false")
 @AddConfig(key = "security.providers.1.oidc.query-param-use", value = "true")
 @AddConfig(key = "server.protocols.http_1_1.max-prologue-length", value = "4096")
-@DisabledOnOs(OS.WINDOWS)
 class QueryBasedLoginIT extends CommonLoginBase {
 
     @Test

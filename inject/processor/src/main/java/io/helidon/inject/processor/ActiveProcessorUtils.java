@@ -260,7 +260,7 @@ final class ActiveProcessorUtils implements Messager {
         if (value == null) {
             return null;
         }
-        return value.replace("\\", "/");
+        return value.replace(File.separator, "/");
     }
 
 }

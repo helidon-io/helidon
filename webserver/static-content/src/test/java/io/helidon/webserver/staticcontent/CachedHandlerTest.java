@@ -38,8 +38,6 @@ import io.helidon.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
@@ -183,7 +181,6 @@ class CachedHandlerTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     void testFsFromInMemory() throws IOException {
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
 
