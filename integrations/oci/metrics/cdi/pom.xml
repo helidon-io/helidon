@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -53,4 +53,51 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <!--
+                Adding the Helidon MP metrics artifact to the test scope would make the CDI extension test susceptible to changes
+                in the number of automatic metrics registered. The auto-registration does not occur without adding the dep. on
+                the MP metrics artifact.
+
+                So, instead of that, we run surefire twice, once running just the observer priority test with the Helidon
+                MP metrics library added to just thats execution. Only surefire version 3.2 and later support this feature, so
+                use a more recent version than the Helidon default.
+                -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/TestObserverPriorities.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>observer-priority-check</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <additionalClasspathDependencies>
+                                <dependency>
+                                    <groupId>io.helidon.microprofile.metrics</groupId>
+                                    <artifactId>helidon-microprofile-metrics</artifactId>
+                                    <version>${helidon.version}</version>
+                                </dependency>
+                            </additionalClasspathDependencies>
+                            <includes>
+                                <include>**/TestObserverPriorities.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
