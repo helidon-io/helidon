@@ -30,9 +30,7 @@ error_trap_setup
 readonly HELIDON_EXAMPLES_PATH=${WS_DIR}/helidon-examples
 if [ ! -d "${HELIDON_EXAMPLES_PATH}" ]; then
   echo "Cloning examples repository into ${HELIDON_EXAMPLES_PATH}"
-  git clone git@github.com:helidon-io/helidon-examples.git "${HELIDON_EXAMPLES_PATH}"
-  cd "${HELIDON_EXAMPLES_PATH}"
-  git checkout dev-3.x
+  git clone --branch dev-3.x --single-branch git@github.com:helidon-io/helidon-examples.git "${HELIDON_EXAMPLES_PATH}"
 fi
 
 # Make sure the helidon version from the example repo aligns with this repository
