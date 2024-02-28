@@ -136,8 +136,7 @@ jobs:
       - name: Maven build
         run: |
           mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
-          cd examples
-          mvn -B verify
+          etc/scripts/build-examples.sh
   archetypes:
     timeout-minutes: 30
     strategy:
