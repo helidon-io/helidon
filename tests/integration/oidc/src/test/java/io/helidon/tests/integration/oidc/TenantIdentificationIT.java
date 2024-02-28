@@ -34,8 +34,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -46,7 +44,6 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
 @AddConfig(key = "security.providers.1.oidc.oidc-metadata-well-known", value = "false")
-@DisabledOnOs(OS.WINDOWS)
 class TenantIdentificationIT {
 
     @Test

@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.nio.file.Files;
@@ -79,7 +80,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
         String rawPath = req.prologue().uriPath().rawPath();
 
-        String relativePath = root.relativize(path).toString().replace("\\", "/");
+        String relativePath = root.relativize(path).toString().replace(File.separator, "/");
         String requestedResource;
         if (mapped) {
             requestedResource = relativePath;
