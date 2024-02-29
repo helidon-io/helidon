@@ -68,6 +68,9 @@ node/
 # Helidon CLI
 .helidon
 
+# Helidon examples repository
+helidon-examples
+
 # Other
 *~
 user.txt

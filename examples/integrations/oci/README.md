@@ -1,1 +1,0 @@
-# OCI Java SDK Examples
