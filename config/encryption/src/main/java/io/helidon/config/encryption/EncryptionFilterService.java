@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config.encryption;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigItemPolicy;
 import io.helidon.config.spi.ConfigFilter;
 
 /**
@@ -32,6 +33,14 @@ public class EncryptionFilterService implements ConfigFilter {
         }
 
         return filter.apply(key, stringValue);
+    }
+
+    @Override
+    public ConfigItemPolicy applyWithPolicy(Config.Key key, ConfigItemPolicy itemPolicy) {
+        if (null == filter) {
+            return itemPolicy;
+        }
+        return filter.applyWithPolicy(key, itemPolicy);
     }
 
     @Override
