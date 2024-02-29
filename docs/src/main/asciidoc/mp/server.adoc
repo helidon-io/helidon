@@ -300,7 +300,8 @@ You can configure `@RoutingPath` to define the path a service is registered on.
 ===== Configuration override of routing path
 
 For each HTTP service class you can define the routing path by specifying a configuration
-option `class-name.routing-path.path`.
+option `class-name.routing-path.path`. The `routing-path` configuration can be applied to Jax-RS application.
+See xref:jaxrs/jaxrs-applications.adoc[Jakarta REST Application] for more information.
 
 Example (YAML) configuration for a class `io.helidon.example.AdminService` that changes the
 routing path to `/management`:
