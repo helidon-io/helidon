@@ -38,7 +38,7 @@ class JaxrsApplicationsSnippets {
     // end::snippet_1[]
 
     // tag::snippet_2[]
-    @ApplicationPath("/myApplication")
+    @ApplicationPath("/my-application")
     public class MyApplication extends Application {
 
     }
