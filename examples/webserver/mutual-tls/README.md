@@ -28,10 +28,10 @@ mvn exec:java -Dexec.mainClass=io.helidon.examples.webserver.mtls.ServerBuilderM
 Using `curl`:
 
 ```shell
-openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:password -nokeys -out /tmp/chain.pem
-openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:password -nokeys -cacerts -out /tmp/ca.pem 
-openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:password -nocerts -out /tmp/key.pem
-curl --key /tmp/key.pem --cert /tmp/chain.pem --cacert /tmp/ca.pem https://localhost:443 --pass password
+openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:changeit -nokeys -out /tmp/chain.pem
+openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:changeit -nokeys -cacerts -out /tmp/ca.pem 
+openssl pkcs12 -in src/main/resources/client.p12 -nodes -legacy -passin pass:changeit -nocerts -out /tmp/key.pem
+curl --key /tmp/key.pem --cert /tmp/chain.pem --cacert /tmp/ca.pem https://localhost:443 --pass changeit
 ```
 
 Using Helidon WebClient setup with configuration:
