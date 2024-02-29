@@ -69,7 +69,7 @@ NOTE: Helidon treats `@Path` and `@Provided` as bean-defining annotations but, a
 == Setting Application Path
 
 The application path, also known as context root, is the base URI used to serve all resource URIs provided
-by `@Path` annotation. This section describe how to set it with annotation or configuration files.
+by `@Path` annotation. This section describes how to set it with an annotation or configuration file.
 
 When an `Application` subclass is provided, use the `@ApplicationPath`:
 
@@ -97,7 +97,7 @@ The same configuration works for `.properties` file:
 io.helidon.examples.MyApplication.routing-path.path=/my-application
 ----
 
-If no `Application` is not provided, a _synthetic_ subclass is created and can be configured using
+If an `Application` is not provided, a _synthetic_ subclass is created and can be configured using
 this property:
 
 [source,properties]
