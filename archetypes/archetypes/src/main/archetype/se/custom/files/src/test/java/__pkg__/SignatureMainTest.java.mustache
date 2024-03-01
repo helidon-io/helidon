@@ -51,7 +51,7 @@ public abstract class SignatureMainTest {
     private void test(String uri, Set<String> expectedRoles, Set<String> invalidRoles, String service) {
         try (Http1ClientResponse response = client.get(uri)
                 .property(PROPERTY_OUTBOUND_ID, "jack")
-                .property(PROPERTY_OUTBOUND_SECRET, "password")
+                .property(PROPERTY_OUTBOUND_SECRET, "changeit")
                 .request()) {
 
             assertThat(response.status().code(), is(200));

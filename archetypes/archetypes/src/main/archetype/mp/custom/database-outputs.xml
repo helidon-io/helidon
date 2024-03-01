@@ -292,7 +292,7 @@ docker run --rm --name mysql -p 3306:3306 \
     -e MYSQL_ROOT_PASSWORD=root \
     -e MYSQL_DATABASE=pokemon \
     -e MYSQL_USER=user \
-    -e MYSQL_PASSWORD=password \
+    -e MYSQL_PASSWORD=changeit \
     mysql:5.7
 ```
 ]]></value>
@@ -318,7 +318,7 @@ docker run --rm --name mysql -p 3306:3306 \
                     <value key="jdbcDataSource">com.mysql.cj.jdbc.MysqlDataSource</value>
                     <value key="databaseUrl">jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false</value>
                     <value key="dbUser">user</value>
-                    <value key="userPassword">password</value>
+                    <value key="userPassword">changeit</value>
                 </model>
             </output>
         </method>
