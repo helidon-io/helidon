@@ -121,12 +121,13 @@ jobs:
         run: etc/scripts/github-tck.sh
   examples:
     timeout-minutes: 30
+    continue-on-error: true
     strategy:
       matrix:
         os: [ ubuntu-20.04, macos-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.11.0
         with:
@@ -135,8 +136,16 @@ jobs:
           cache: maven
       - name: Maven build
         run: |
-          mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
-          echo "TBD: validate examples from external repository"
+          mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install
+      - name: Examples checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          repository: helidon-io/helidon-examples.git
+          ref: dev-3.x
+          path: helidon-examples
+      - name: Examples build
+        run: etc/scripts/build-examples.sh
   archetypes:
     timeout-minutes: 30
     strategy:
