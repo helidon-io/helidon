@@ -24,13 +24,13 @@ server:
         client-auth: "REQUIRED"
         trust:
           keystore:
-            passphrase: "password"
+            passphrase: "changeit"
             trust-store: true
             resource:
               resource-path: "server.p12"
         private-key:
           keystore:
-            passphrase: "password"
+            passphrase: "changeit"
             resource:
               resource-path: "server.p12"
 
@@ -39,12 +39,12 @@ client:
     client-auth: "REQUIRED"
     trust:
       keystore:
-        passphrase: "password"
+        passphrase: "changeit"
         trust-store: true
         resource:
           resource-path: "client.p12"
     private-key:
       keystore:
-        passphrase: "password"
+        passphrase: "changeit"
         resource:
           resource-path: "client.p12"

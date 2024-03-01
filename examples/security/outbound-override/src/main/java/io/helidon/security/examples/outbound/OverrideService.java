@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ class OverrideService implements HttpService {
 
         String result = client.get("http://localhost:" + server.port("backend") + "/hello")
                 .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jill")
-                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "anotherPassword")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "changeit")
                 .requestEntity(String.class);
 
         res.send("You are: " + context.userName() + ", backend service returned: " + result + "\n");

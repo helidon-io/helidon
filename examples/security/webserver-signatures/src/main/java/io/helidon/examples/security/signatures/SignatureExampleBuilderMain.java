@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,9 @@ public class SignatureExampleBuilderMain {
     private static final Map<String, SecureUserStore.User> USERS = new HashMap<>();
 
     static {
-        addUser("jack", "password", List.of("user", "admin"));
-        addUser("jill", "password", List.of("user"));
-        addUser("john", "password", List.of());
+        addUser("jack", "changeit", List.of("user", "admin"));
+        addUser("jill", "changeit", List.of("user"));
+        addUser("john", "changeit", List.of());
     }
 
     private SignatureExampleBuilderMain() {
@@ -159,7 +159,7 @@ public class SignatureExampleBuilderMain {
                                 .addInbound(InboundClientDefinition
                                         .builder("service1-hmac")
                                         .principalName("Service1 - HMAC signature")
-                                        .hmacSecret("somePasswordForHmacShouldBeEncrypted")
+                                        .hmacSecret("changeit")
                                         .build())
                                 .addInbound(InboundClientDefinition
                                         .builder("service1-rsa")
@@ -167,7 +167,7 @@ public class SignatureExampleBuilderMain {
                                         .publicKeyConfig(Keys.builder()
                                                 .keystore(k -> k
                                                         .keystore(Resource.create("keystore.p12"))
-                                                        .passphrase("password")
+                                                        .passphrase("changeit")
                                                         .certAlias("service_cert")
                                                         .build())
                                                 .build())
@@ -209,7 +209,7 @@ public class SignatureExampleBuilderMain {
                                 .privateKeyConfig(Keys.builder()
                                         .keystore(k -> k
                                                 .keystore(Resource.create("keystore.p12"))
-                                                .passphrase("password")
+                                                .passphrase("changeit")
                                                 .keyAlias("myPrivateKey")
                                                 .build())
                                         .build())
@@ -225,7 +225,7 @@ public class SignatureExampleBuilderMain {
                         OutboundTargetDefinition.class,
                         OutboundTargetDefinition
                                 .builder("service1-hmac")
-                                .hmacSecret("somePasswordForHmacShouldBeEncrypted")
+                                .hmacSecret("changeit")
                                 .build())
                 .build();
     }

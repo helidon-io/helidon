@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class OutboundOverrideJwtExampleTest {
         try (Http1ClientResponse response = client.get()
                 .path("/override")
                 .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "changeit")
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -77,7 +77,7 @@ public class OutboundOverrideJwtExampleTest {
         try (Http1ClientResponse response = client.get()
                 .path("/propagate")
                 .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "changeit")
                 .request()) {
 
             assertThat(response.status().code(), is(200));

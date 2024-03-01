@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class OutboundOverrideExampleTest {
         String value = client.get()
                 .path("/override")
                 .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "changeit")
                 .requestEntity(String.class);
 
         assertThat(value, is("You are: jack, backend service returned: jill\n"));
@@ -72,7 +72,7 @@ public class OutboundOverrideExampleTest {
         String value = client.get()
                 .path("/propagate")
                 .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "changeit")
                 .requestEntity(String.class);
 
         assertThat(value, is("You are: jack, backend service returned: jack\n"));
