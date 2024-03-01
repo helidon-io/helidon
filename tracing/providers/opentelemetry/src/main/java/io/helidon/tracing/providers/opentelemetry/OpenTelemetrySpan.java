@@ -90,6 +90,7 @@ class OpenTelemetrySpan implements Span {
     @Override
     public void end() {
         delegate.end();
+        OpenTelemetryTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this));
     }
 
     @Override
@@ -97,12 +98,15 @@ class OpenTelemetrySpan implements Span {
         delegate.recordException(t);
         delegate.setStatus(StatusCode.ERROR);
         delegate.end();
+        OpenTelemetryTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this, t));
     }
 
     @Override
     public Scope activate() {
         io.opentelemetry.context.Scope scope = otelContextWithSpanAndBaggage().makeCurrent();
-        return new OpenTelemetryScope(scope);
+        var result = new OpenTelemetryScope(scope);
+        OpenTelemetryTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterActivate(this, result));
+        return result;
     }
 
     @Override

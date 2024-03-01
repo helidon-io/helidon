@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,15 @@
 
 package io.helidon.tracing.providers.zipkin;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import io.helidon.tracing.SpanInfo;
+import io.helidon.tracing.WritableBaggage;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -29,7 +37,7 @@ import io.opentracing.tag.Tag;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-class ZipkinSpan implements Span {
+class ZipkinSpan implements Span, SpanInfo {
     private final Span span;
     private final boolean isClient;
 
@@ -47,12 +55,14 @@ class ZipkinSpan implements Span {
     public void finish() {
         finishLog();
         span.finish();
+        ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this));
     }
 
     @Override
     public void finish(long finishMicros) {
         finishLog();
         span.finish(finishMicros);
+        ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this));
     }
 
     @Override
@@ -122,6 +132,70 @@ class ZipkinSpan implements Span {
 
     Span unwrap() {
         return span;
+    }
+
+    @Override
+    public void addEvent(String name, Map<String, ?> attributes) {
+        Map<String, Object> attrsWithName = new HashMap<>(attributes);
+        attrsWithName.put("event", name);
+        span.log(attrsWithName);
+    }
+
+    @Override
+    public WritableBaggage baggage() {
+        return new WritableBaggage() {
+            @Override
+            public WritableBaggage set(String key, String value) {
+                span.setBaggageItem(key, value);
+                return this;
+            }
+
+            @Override
+            public Optional<String> get(String key) {
+                return Optional.ofNullable(span.getBaggageItem(key));
+            }
+
+            @Override
+            public Set<String> keys() {
+                return StreamSupport.stream(context().baggageItems().spliterator(), false)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toSet());
+            }
+
+            @Override
+            public boolean containsKey(String key) {
+                return getBaggageItem(key) != null;
+            }
+        };
+    }
+
+    @Override
+    public SpanInfo tag(io.helidon.tracing.Tag<?> tag) {
+        switch (tag.value()) {
+            case Boolean b -> setTag(tag.key(), b);
+            case Number n -> setTag(tag.key(), n);
+            case String s -> setTag(tag.key(), s);
+            default -> setTag(tag.key(), tag.value().toString());
+        }
+        return this;
+    }
+
+    @Override
+    public SpanInfo tag(String key, String value) {
+        setTag(key, value);
+        return this;
+    }
+
+    @Override
+    public SpanInfo tag(String key, Boolean value) {
+        setTag(key, value);
+        return this;
+    }
+
+    @Override
+    public SpanInfo tag(String key, Number value) {
+        setTag(key, value);
+        return this;
     }
 
     private void finishLog() {

@@ -22,11 +22,12 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.SpanInfo;
 
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 
-class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
+class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder>, SpanInfo.BuilderInfo<OpenTracingSpanBuilder> {
     private final Tracer.SpanBuilder delegate;
     private final Tracer tracer;
     private Map<String, String> baggage;
@@ -38,7 +39,7 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
 
     @Override
     public Span build() {
-        return new OpenTracingSpan(tracer, delegate.start());
+        return start();
     }
 
     @Override
@@ -93,10 +94,12 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     @Override
     public Span start(Instant instant) {
         long micro = TimeUnit.MILLISECONDS.toMicros(instant.toEpochMilli());
+        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.beforeStart(this));
         Span result = new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start());
         if (baggage != null) {
-            baggage.forEach(result::baggage);
+            baggage.forEach((k, v) -> result.baggage().set(k, v));
         }
+        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterStart(result));
         return result;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ module io.helidon.tracing.providers.opentracing {
     exports io.helidon.tracing.providers.opentracing;
 
     uses io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider;
+    uses io.helidon.tracing.spi.SpanLifeCycleListener;
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.opentracing.OpenTracingTracerProvider;
