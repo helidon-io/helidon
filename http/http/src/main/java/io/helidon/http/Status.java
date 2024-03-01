@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,14 @@ public class Status {
      */
     public static final Status ACCEPTED_202 = new Status(202, "Accepted", true);
     /**
+     * 203 Non-Authoritative Information, see
+     * <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.4">HTTP/1.1 documentation</a>
+     *
+     * @since 4.0.6
+     */
+    public static final Status NON_AUTHORITATIVE_INFORMATION_203 = new Status(203, "Non-Authoritative Information", true);
+
+    /**
      * 204 No Content, see
      * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.5">HTTP/1.1 documentation</a>.
      */
@@ -75,6 +83,11 @@ public class Status {
      * @since 2.0
      */
     public static final Status PARTIAL_CONTENT_206 = new Status(206, "Partial Content", true);
+    /**
+     * 207 Multi-Status, see
+     * <a href="https://www.rfc-editor.org/rfc/rfc4918.html#section-13">RFC 4918 - HTTP Extensions for WebDAV</a>.
+     */
+    public static final Status MULTI_STATUS_207 = new Status(207, "Multi-Status", true);
     /**
      * 301 Moved Permanently, see
      * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.2">HTTP/1.1 documentation</a>.
@@ -298,6 +311,37 @@ public class Status {
      * @since 3.0.3
      */
     public static final Status HTTP_VERSION_NOT_SUPPORTED_505 = new Status(505, "HTTP Version Not Supported", true);
+    /**
+     * 507 Insufficient Storage, see
+     * <a href="http://www.ietf.org/rfc/rfc4918.txt">WebDAV documentation</a>.
+     *
+     * @since 4.0.6
+     */
+    public static final Status INSUFFICIENT_STORAGE_507 = new Status(507, "Insufficient Storage", true);
+    /**
+     * 508 Loop Detected, see
+     * <a href="https://www.rfc-editor.org/rfc/rfc5842#section-7.2">RFC 5842 - Bindings for the Constrained Application Protocol (CoAP)</a>
+     *
+     *  @since 4.0.6
+     */
+    public static final Status LOOP_DETECTED_508 = new Status(508, "Loop Detected", true);
+
+    /**
+     * 510 Not Extended, see
+     * <a href="https://www.rfc-editor.org/rfc/rfc2774#section-7">RFC 2774 - An HTTP Extension Framework</a>
+     *
+     *  @since 4.0.6
+     */
+    public static final Status NOT_EXTENDED_510 = new Status(510, "Not Extended", true);
+
+    /**
+     * 511 Network Authentication Required, see
+     * <a href="https://www.rfc-editor.org/rfc/rfc6585#section-6">RFC 6585 - Additional HTTP Status Codes</a>
+     *
+     * @since 4.0.6
+     */
+    public static final Status NETWORK_AUTHENTICATION_REQUIRED_511 = new Status(511, "Network Authentication Required", true);
+
 
     static {
         // THIS MUST BE AFTER THE LAST CONSTANT
