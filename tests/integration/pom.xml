@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@
         <module>jep290</module>
         <module>mp-bean-validation</module>
         <module>restclient</module>
+        <module>restclient-connector</module>
         <module>oidc</module>
         <module>gh-5792</module>
         <module>se-gh-6845</module>
