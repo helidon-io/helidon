@@ -85,7 +85,9 @@ public class Status {
     public static final Status PARTIAL_CONTENT_206 = new Status(206, "Partial Content", true);
     /**
      * 207 Multi-Status, see
-     * <a href="https://www.rfc-editor.org/rfc/rfc4918.html#section-13">RFC 4918 - HTTP Extensions for WebDAV</a>.
+     * <a href="https://www.rfc-editor.org/rfc/rfc4918.html#section-13">RFC 4918 - HTTP Extensions for WebDAV</a>
+     *
+     * @since 4.0.6
      */
     public static final Status MULTI_STATUS_207 = new Status(207, "Multi-Status", true);
     /**
