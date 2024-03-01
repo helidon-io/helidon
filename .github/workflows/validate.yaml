@@ -19,9 +19,6 @@ env:
   JAVA_VERSION: '17'
   JAVA_DISTRO: 'oracle'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
-  HELIDON_EXAMPLES_REPOSITORY: 'helidon-io/helidon-examples.git'  # external examples repository
-  HELIDON_EXAMPLES_BUILD_BRANCH: 'dev-3.x'                        # validation branch for examples
-  HELIDON_EXAMPLES_CHECKOUT_FOLDER: 'helidon-examples'                 # local checkout folder for validation branch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -144,9 +141,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: '0'
-          repository: ${{ env.HELIDON_EXAMPLES_REPOSITORY }}
-          ref: ${{ env.HELIDON_EXAMPLES_BUILD_BRANCH }}
-          path: ${{ env.HELIDON_EXAMPLES_CHECKOUT_FOLDER }}
+          repository: helidon-io/helidon-examples.git
+          ref: dev-3.x
+          path: helidon-examples
       - name: Examples build
         run: etc/scripts/build-examples.sh
   archetypes:
