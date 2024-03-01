@@ -35,6 +35,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Additional Information, Additional Information>>
 ** <<Jaeger Tracing, Jaeger Tracing>>
 ** <<Zipkin Tracing, Zipkin Tracing>>
+** <<Tracing-callbacks, Responding to Span Life Cycle Events>>
 - <<Reference, Reference>>
 
 == Overview
@@ -506,6 +507,10 @@ As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger 
 
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
+
+
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;brief,leveloffset=+1]
+
 == Reference
 
 * link:{microprofile-tracing-spec-url}[MicroProfile Opentracing Specification]

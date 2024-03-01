@@ -521,6 +521,8 @@ kubectl delete service jaeger-external
 docker rm -f jaeger
 ----
 
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed]
+
 == Summary
 
 This guide has demonstrated how to use the Helidon MP tracing feature with Jaeger. You have learned to do the following:

@@ -152,6 +152,7 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_6, indent=0]
 <2> Use the injected baggage.
 <3> Use `Baggage.current()` to access the current baggage.
 
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
 
 == Configuration
 
