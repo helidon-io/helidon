@@ -55,13 +55,13 @@ security:
           keys:
             - key-id: "service1-hmac"
               principal-name: "Service1 - HMAC signature"
-              hmac.secret: "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
+              hmac.secret: "${CLEAR=changeit}"
             - key-id: "service1-rsa"
               principal-name: "Service1 - RSA signature"
               public-key:
                 keystore:
                   resource.path: "src/main/resources/keystore.p12"
-                  passphrase: "password"
+                  passphrase: "changeit"
                   cert.alias: "service_cert"
         outbound:
           - name: "service2-hmac"
@@ -69,7 +69,7 @@ security:
             paths: ["/service2"]
             signature:
               key-id: "service1-hmac"
-              hmac.secret: "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
+              hmac.secret: "${CLEAR=changeit}"
           - name: "service2-rsa"
             hosts: ["localhost"]
             paths: ["/service2-rsa.*"]
@@ -78,7 +78,7 @@ security:
               private-key:
                 keystore:
                   resource.path: "src/main/resources/keystore.p12"
-                  passphrase: "password"
+                  passphrase: "changeit"
                   key.alias: "myPrivateKey"
 ----
 

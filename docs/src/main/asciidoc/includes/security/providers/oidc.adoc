@@ -35,7 +35,7 @@ security:
   providers:
   - oidc:
       client-id: "client-id-of-this-service"
-      client-secret: "${CLEAR=client-secret-of-this-service}"
+      client-secret: "${CLEAR=changeit}"
       identity-uri: "https://your-tenant.identity-server.com"
       frontend-uri: "http://my-service:8080"
       audience: "http://my-service"
