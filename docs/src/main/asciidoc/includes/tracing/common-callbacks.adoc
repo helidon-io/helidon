@@ -42,9 +42,9 @@ Applications and libraries can register listeners to be notified at several mome
 
 The next sections explain how you can write and add a listener and what it can do. See the link:{tracing-spi-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
 
-=== What Can Listeners Do?
+=== Understanding What Listeners Do
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span.
-Often a listener does additional work that does not change the span or scope, such as logging a message.
+Often a listener does additional work that does not change the span or scope such as logging a message.
 
 The parameter types which Helidon passes to the listener methods limit the access the listener has to the span or scope, as summarized in the following table.
 
