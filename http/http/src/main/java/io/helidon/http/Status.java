@@ -58,7 +58,7 @@ public class Status {
     public static final Status ACCEPTED_202 = new Status(202, "Accepted", true);
     /**
      * 203 Non-Authoritative Information, see
-     * <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.4">HTTP/1.1 documentation</a>
+     * <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.4">HTTP/1.1 documentation</a>.
      *
      * @since 4.0.6
      */
@@ -85,7 +85,7 @@ public class Status {
     public static final Status PARTIAL_CONTENT_206 = new Status(206, "Partial Content", true);
     /**
      * 207 Multi-Status, see
-     * <a href="https://www.rfc-editor.org/rfc/rfc4918.html#section-13">RFC 4918 - HTTP Extensions for WebDAV</a>
+     * <a href="https://www.rfc-editor.org/rfc/rfc4918.html#section-13">RFC 4918 - HTTP Extensions for WebDAV</a>.
      *
      * @since 4.0.6
      */
@@ -322,7 +322,7 @@ public class Status {
     public static final Status INSUFFICIENT_STORAGE_507 = new Status(507, "Insufficient Storage", true);
     /**
      * 508 Loop Detected, see
-     * <a href="https://www.rfc-editor.org/rfc/rfc5842#section-7.2">RFC 5842 - Bindings for the Constrained Application Protocol (CoAP)</a>
+     * <a href="https://www.rfc-editor.org/rfc/rfc5842#section-7.2">RFC 5842 - Bindings for the Constrained Application Protocol (CoAP)</a>.
      *
      *  @since 4.0.6
      */
@@ -330,7 +330,7 @@ public class Status {
 
     /**
      * 510 Not Extended, see
-     * <a href="https://www.rfc-editor.org/rfc/rfc2774#section-7">RFC 2774 - An HTTP Extension Framework</a>
+     * <a href="https://www.rfc-editor.org/rfc/rfc2774#section-7">RFC 2774 - An HTTP Extension Framework</a>.
      *
      *  @since 4.0.6
      */
@@ -338,7 +338,7 @@ public class Status {
 
     /**
      * 511 Network Authentication Required, see
-     * <a href="https://www.rfc-editor.org/rfc/rfc6585#section-6">RFC 6585 - Additional HTTP Status Codes</a>
+     * <a href="https://www.rfc-editor.org/rfc/rfc6585#section-6">RFC 6585 - Additional HTTP Status Codes</a>.
      *
      * @since 4.0.6
      */
