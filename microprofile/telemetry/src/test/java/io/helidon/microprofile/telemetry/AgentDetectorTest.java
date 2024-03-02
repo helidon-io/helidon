@@ -24,6 +24,7 @@ import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import jakarta.enterprise.inject.spi.CDI;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,9 +55,18 @@ class AgentDetectorTest {
 
     @Test
     void checkEnvVariable(){
-        System.setProperty(HelidonOpenTelemetry.IO_OPENTELEMETRY_JAVAAGENT, "true");
-        Config config = CDI.current().select(Config.class).get();
-        boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
-        assertThat(present, is(true));
+        var originalAgentPropertyValue = System.setProperty(HelidonOpenTelemetry.IO_OPENTELEMETRY_JAVAAGENT, "true");
+        try {
+            Config config = CDI.current().select(Config.class).get();
+            boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
+            assertThat(present, is(true));
+        } finally {
+            // Restore or clear the agent setting to avoid polluting other tests which might follow.
+            if (originalAgentPropertyValue != null) {
+                System.setProperty(HelidonOpenTelemetry.IO_OPENTELEMETRY_JAVAAGENT, originalAgentPropertyValue);
+            } else {
+                System.clearProperty(HelidonOpenTelemetry.IO_OPENTELEMETRY_JAVAAGENT);
+            }
+        }
     }
 }
