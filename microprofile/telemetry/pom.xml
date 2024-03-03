@@ -143,7 +143,6 @@
                         <configuration>
                             <!-- The default for the following is 5000 ms. Reducing it significantly speeds up tests. -->
                             <argLine>-Dotel.bsp.schedule.delay=100</argLine>
-
                         </configuration>
                     </execution>
                 </executions>
