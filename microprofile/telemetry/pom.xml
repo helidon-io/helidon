@@ -32,6 +32,11 @@
         Support for MicroProfile Telemetry
     </description>
 
+    <properties>
+        <!-- The default for the following is 5000 ms. Reducing it speeds up tests significantly. -->
+        <otel.bsp.schedule.delay>100</otel.bsp.schedule.delay>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
@@ -141,8 +146,9 @@
                     <execution>
                         <id>default-test</id>
                         <configuration>
-                            <!-- The default for the following is 5000 ms. Reducing it significantly speeds up tests. -->
-                            <argLine>-Dotel.bsp.schedule.delay=100</argLine>
+                            <systemPropertyVariables>
+                                <otel.bsp.schedule.delay>${otel.bsp.schedule.delay}</otel.bsp.schedule.delay>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                 </executions>
