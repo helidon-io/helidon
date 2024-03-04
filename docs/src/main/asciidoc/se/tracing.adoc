@@ -115,6 +115,8 @@ A span is associated to a single service, but its descendants can belong to diff
 if you trace a service endpoint that calls another service, then the trace would contain spans from both services.
 Within a trace, spans are organized as a directed acyclic graph (DAG) and
 can belong to multiple services, running on multiple hosts.
+* _Baggage_ is a collection of key-value pairs associated with a span.
+* _Span context_ captures data about a span not related to its duration, such as the tracer ID, the span ID, and baggage.
 
 Support for specific tracers is abstracted. Your application can depend on
 the Helidon abstraction layer and provide a specific tracer implementation as a Java
@@ -145,6 +147,19 @@ include::{sourcedir}/se/TracingSnippets.java[tag=snippet_2, indent=0]
 <1> Create span from tracer.
 <2> Do some work and end span.
 <3> End span with exception.
+
+=== Handling Baggage
+Your application can set and read baggage associated with a
+link:{tracing-javadoc-base-url}/io/helidon/tracing/Span.html[`Span`].
+The `Span.baggage()` method returns a
+link:{tracing-javadoc-base-url}/io/helidon/tracing/WritableBaggage.html[`WritableBaggage`] instance.
+
+Further, Helidon also provides read-only access to baggage linked to
+a link:{tracing-javadoc-base-url}/io/helidon/tracing/SpanContext.html[`SpanContext`].
+For example, HTTP headers can convey trace ID, span ID, and baggage information and Helidon puts such information into a `SpanContext`.
+Your code can create a `SpanContext` from other sources as well. The `SpanContext.baggage()` method returns a read-only link:{tracing-javadoc-base-url}/io/helidon/tracing/Baggage.html[`Baggage`] instance.
+
+The JavaDoc for the types describes how to get and set baggage entries, get all the baggage keys, and check whether a baggage key exists in the baggage.
 
 == Helidon Spans
 

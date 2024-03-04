@@ -16,13 +16,13 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.WritableBaggage;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
@@ -99,16 +99,18 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public Span baggage(String key, String value) {
-        Objects.requireNonNull(key, "baggage key cannot be null");
-        Objects.requireNonNull(value, "baggage value cannot be null");
-        baggage.baggage(key, value);
+        baggage.set(key, value);
         return this;
     }
 
     @Override
     public Optional<String> baggage(String key) {
-        Objects.requireNonNull(key, "Baggage Key cannot be null");
-        return Optional.ofNullable(baggage.getEntryValue(key));
+        return baggage.get(key);
+    }
+
+    @Override
+    public WritableBaggage baggage() {
+        return baggage;
     }
 
     @Override

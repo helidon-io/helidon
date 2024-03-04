@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,6 +105,9 @@ class OpenTracingTracer implements Tracer {
     public <T> T unwrap(Class<T> tracerClass) {
         if (tracerClass.isAssignableFrom(delegate.getClass())) {
             return tracerClass.cast(delegate);
+        }
+        if (tracerClass.isInstance(this)) {
+            return tracerClass.cast(this);
         }
         throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
                                                    + ", open tracing tracer is: " + delegate.getClass().getName());

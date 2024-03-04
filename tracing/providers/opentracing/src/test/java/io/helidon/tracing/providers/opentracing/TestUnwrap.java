@@ -15,13 +15,16 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
-import io.opentracing.Span;
-import io.opentracing.Tracer;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.Tracer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 
+// These tests use the OTel types for unwrapping. We add the OTel artifacts to the test-time classpath so the baggage
+// tests actually work. That means that the tracer, span builder, and span we get in the tests in this class are OTel ones.
 class TestUnwrap {
 
     @Test
@@ -37,13 +40,12 @@ class TestUnwrap {
         var tracer = io.helidon.tracing.Tracer.global();
         var spanBuilder = tracer.spanBuilder("test1");
         assertThat("Span builder unwrapped",
-                   spanBuilder.unwrap(Tracer.SpanBuilder.class),
-                   instanceOf(Tracer.SpanBuilder.class));
+                   spanBuilder.unwrap(SpanBuilder.class),
+                   instanceOf(SpanBuilder.class));
 
         var span = spanBuilder.start();
         assertThat("Span unwrapped",
                    span.unwrap(Span.class),
                    instanceOf(Span.class));
-
     }
 }
