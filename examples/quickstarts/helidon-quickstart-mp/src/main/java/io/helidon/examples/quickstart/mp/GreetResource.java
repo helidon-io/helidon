@@ -16,8 +16,6 @@
 
 package io.helidon.examples.quickstart.mp;
 
-import io.helidon.microprofile.metrics.RegistryFactory;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -27,8 +25,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -58,9 +54,6 @@ public class GreetResource {
      */
     private final GreetingProvider greetingProvider;
 
-    @Inject
-    private RegistryFactory registryFactory;
-
     /**
      * Using constructor injection to get a configuration property.
      * By default this gets the value from META-INF/microprofile-config
@@ -78,10 +71,8 @@ public class GreetResource {
      * @return {@link GreetingMessage}
      */
     @GET
-    @Counted(absolute = true)
     @Produces(MediaType.APPLICATION_JSON)
     public GreetingMessage getDefaultMessage() {
-        MetricRegistry metricRegistry = registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE);
         return createResponse("World");
     }
 
@@ -104,7 +95,6 @@ public class GreetResource {
      * @param message JSON containing the new greeting
      * @return {@link Response}
      */
-    @Counted(absolute = true)
     @Path("/greeting")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
