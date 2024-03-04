@@ -69,7 +69,7 @@ For details, see https://www.h2database.com/html/cheatSheet.html
                     <list key="db-connection">
                         <value><![CDATA[    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
     username: user
-    password: password]]></value>
+    password: changeit]]></value>
                     </list>
                     <value key="start-db" template="mustache"><![CDATA[
 MySQL:
@@ -78,7 +78,7 @@ docker run --rm --name mysql -p 3306:3306 \
     -e MYSQL_ROOT_PASSWORD=root \
     -e MYSQL_DATABASE=pokemon \
     -e MYSQL_USER=user \
-    -e MYSQL_PASSWORD=password \
+    -e MYSQL_PASSWORD=changeit \
     mysql:5.7
 ```
 ]]></value>

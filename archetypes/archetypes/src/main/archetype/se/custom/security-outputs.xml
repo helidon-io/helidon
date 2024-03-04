@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
                         <value><![CDATA[
   - oidc:
       client-id: "your-client-id"
-      client-secret: "your-client-secret"
+      client-secret: "changeit"
       identity-uri: "https://your-tenant-id.identity.oracle.com"
       # A prefix used for custom scopes
       scope-audience: "http://localhost:7987/test-application"
@@ -49,7 +49,7 @@
         # IDCS serves both as open ID connect authenticator and
         # as a role mapper. Using minimal configuration here
         client-id: "your-client-id"
-        client-secret: "your-client-secret"
+        client-secret: "changeit"
         identity-uri: "https://your-tenant-id.identity.oracle.com"]]></value>
                     </list>
                     <list key="paths-config-entries">
@@ -348,10 +348,10 @@ Update the following files with your client id (it should support http://localho
 ## Try JWT
 
 ```bash
-curl -u "jack:password" http://localhost:8080/propagate
-curl -u "jack:password" http://localhost:8080/override
-curl -u "jill:anotherPassword" http://localhost:8080/propagate
-curl -u "jill:anotherPassword" http://localhost:8080/override
+curl -u "jack:changeit" http://localhost:8080/propagate
+curl -u "jack:changeit" http://localhost:8080/override
+curl -u "jill:changeit" http://localhost:8080/propagate
+curl -u "jill:changeit" http://localhost:8080/override
 ```
 ]]></value>
                     </list>
@@ -411,9 +411,9 @@ curl -u "jill:anotherPassword" http://localhost:8080/override
     private static final Map<String, SecureUserStore.User> USERS = new HashMap<>();
 
     static {
-        addUser("jack", "password", List.of("user", "admin"));
-        addUser("jill", "password", List.of("user"));
-        addUser("john", "password", List.of());
+        addUser("jack", "changeit", List.of("user", "admin"));
+        addUser("jill", "changeit", List.of("user"));
+        addUser("john", "changeit", List.of());
     }
 
     private static void addUser(String user, String password, List<String> roles) {
@@ -479,7 +479,7 @@ private static void routing2(HttpRouting.Builder routing) {
                                 .addInbound(InboundClientDefinition
                                         .builder("service1-hmac")
                                         .principalName("Service1 - HMAC signature")
-                                        .hmacSecret("somePasswordForHmacShouldBeEncrypted")
+                                        .hmacSecret("changeit")
                                         .build())
                                 .addInbound(InboundClientDefinition
                                         .builder("service1-rsa")
@@ -487,7 +487,7 @@ private static void routing2(HttpRouting.Builder routing) {
                                         .publicKeyConfig(Keys.builder()
                                                 .keystore(k -> k
                                                         .keystore(Resource.create("keystore.p12"))
-                                                        .passphrase("password")
+                                                        .passphrase("changeit")
                                                         .certAlias("service_cert")
                                                         .build())
                                                 .build())
@@ -529,7 +529,7 @@ private static void routing2(HttpRouting.Builder routing) {
                                 .privateKeyConfig(Keys.builder()
                                         .keystore(k -> k
                                                 .keystore(Resource.create("keystore.p12"))
-                                                .passphrase("password")
+                                                .passphrase("changeit")
                                                 .keyAlias("myPrivateKey")
                                                 .build())
                                         .build())
@@ -545,7 +545,7 @@ private static void routing2(HttpRouting.Builder routing) {
                         OutboundTargetDefinition.class,
                         OutboundTargetDefinition
                                 .builder("service1-hmac")
-                                .hmacSecret("somePasswordForHmacShouldBeEncrypted")
+                                .hmacSecret("changeit")
                                 .build())
                 .build();
     }
@@ -575,9 +575,9 @@ private static void routing2(HttpRouting.Builder routing) {
 ## Try Signature
 
 ```bash
-curl -u "jack:password" http://localhost:8080/service1
-curl -u "jill:password" http://localhost:8080/service1-rsa
-curl -v -u "john:password" http://localhost:8080/service1
+curl -u "jack:changeit" http://localhost:8080/service1
+curl -u "jill:changeit" http://localhost:8080/service1-rsa
+curl -v -u "john:changeit" http://localhost:8080/service1
 ```
 ]]></value>
                     </list>
