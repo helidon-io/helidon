@@ -1,10 +1,10 @@
 db:
   source: jdbc
   connection:
-    # docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+    # docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=changeit  mysql:5.7
     url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
     username: user
-    password: password
+    password: changeit
     poolName: mysql
     initializationFailTimeout: -1
     connectionTimeout: 2000
