@@ -131,16 +131,6 @@ update_version(){
         mv ${pom}.tmp ${pom}
     done
 
-    # Hack to update helidon.version in build.gradle files
-    for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
-    do
-        echo "Updating helidonversion property in ${bfile} to ${FULL_VERSION}"
-        cat ${bfile} | \
-            sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
-            > ${bfile}.tmp
-        mv ${bfile}.tmp ${bfile}
-    done
-
     # Hack to update helidon-version in doc files
     for dfile in `egrep ":helidon-version: .*" -r . --include attributes.adoc | cut -d ':' -f 1 | sort | uniq `
     do
