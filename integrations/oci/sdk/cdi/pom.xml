@@ -40,11 +40,32 @@
     <dependencies>
 
         <!-- Compile-scoped dependencies. -->
+
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
             <scope>compile</scope>
         </dependency>
+
+        <!-- Provided-scoped dependencies. -->
+
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Runtime-scoped dependencies. -->
+
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
@@ -61,51 +82,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-          <groupId>io.helidon.config</groupId>
-          <artifactId>helidon-config-mp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.oci.sdk</groupId>
-            <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
-        </dependency>
         <!-- For dependency convergence. To make sure we use Jersey version of org.apache.httpcomponents:httpclient and httpcore -->
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
             <artifactId>jersey-apache-connector</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.ws.rs</groupId>
-            <artifactId>jakarta.ws.rs-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- Provided-scoped dependencies. -->
-
-        <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Runtime-scoped dependencies. -->
-
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
@@ -166,6 +148,9 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <environmentVariables>
+                        <CI>${env.CI}</CI>
+                    </environmentVariables>
                     <systemPropertyVariables>
                         <io.helidon.logging.config.disabled>true</io.helidon.logging.config.disabled>
                         <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
