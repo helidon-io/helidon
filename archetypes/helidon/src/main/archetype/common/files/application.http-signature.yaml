@@ -5,7 +5,7 @@
             - key-id: "service1-hmac"
               principal-name: "Service1 - HMAC signature"
               # See [EncryptionFilter](https://helidon.io/docs/latest/apidocs/io.helidon.config.encryption/io/helidon/config/encryption/EncryptionFilter.html) for details about encrypting passwords in configuration files.
-              hmac.secret: "somePasswordForHmacShouldBeEncrypted"
+              hmac.secret: "changeit"
             - key-id: "service1-rsa"
               principal-name: "Service1 - RSA signature"
               public-key:
@@ -17,6 +17,6 @@
                   # defaults to jdk default
                   # keystore-type: "PKCS12"
                   # password of the keystore
-                  passphrase: "password"
+                  passphrase: "changeit"
                   # alias of the certificate to get public key from
                   cert.alias: "service_cert"
