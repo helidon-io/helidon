@@ -153,7 +153,7 @@ update_version(){
 
     # Hack to update helidon-version-is-release in doc files
     # We are a released version if we are not a SNAPSHOT version
-    if [[ ${HELIDON_VERSION} == *-SNAPSHOT ]]; then
+    if [[ ${FULL_VERSION} == *-SNAPSHOT ]]; then
         readonly IS_RELEASED="false"
     else
         readonly IS_RELEASED="true"
