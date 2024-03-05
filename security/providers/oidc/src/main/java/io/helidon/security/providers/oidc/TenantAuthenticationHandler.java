@@ -415,8 +415,8 @@ class TenantAuthenticationHandler {
         for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
             if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
                 String firstHost = entry.getValue().getFirst();
-                return oidcConfig.redirectUriWithHost(oidcConfig.forceHttpsRedirects() ? "https" : env.transport()
-                        + "://" + firstHost);
+                String schema = oidcConfig.forceHttpsRedirects() ? "https" : env.transport();
+                return oidcConfig.redirectUriWithHost(schema + "://" + firstHost);
             }
         }
 
