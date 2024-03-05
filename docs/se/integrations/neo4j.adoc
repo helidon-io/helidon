@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -268,8 +268,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 
 ----
 
-Full example code is available in link:https://github.com/oracle/helidon/tree/master/examples/integrations/neo4j/neo4j-mp[Helidon GitHub Repository].
-
+Full example code is available in link:{helidon-github-examples-url}/integrations/neo4j/neo4j-se[Helidon GitHub Repository].
 
 == Additional Information
 

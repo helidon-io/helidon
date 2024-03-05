@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -518,7 +518,7 @@ once it has been <<DS-Setup,set up>> and
 <<DS-Configuration,configured>>, create an ordinary
 link:{jdk-javadoc-url}/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
 injection point in a
-https://github.com/oracle/helidon/wiki/FAQ#how-do-i-make-a-class-a-cdi-bean[Java
+https://github.com/helidon-io/helidon/wiki/FAQ#how-do-i-make-a-class-a-cdi-bean[Java
 class representing a CDI bean] somewhere in your application,
 link:{jakarta-inject-javadoc-url}/jakarta/inject/named[annotated with
 the name] of the data source you wish to use.
@@ -1399,8 +1399,7 @@ relational database tables, and how to perform other related tasks.
 
 === Examples [[JPA-Examples]]
 
-* link:{helidon-github-tree-url}/examples/integrations/cdi/pokemons[JPA
-  Pokemons Example]
+* link:{helidon-github-examples-url}/integrations/cdi/pokemons[JPA Pokemons Example]
   
 === References [[JPA-References]]
 
