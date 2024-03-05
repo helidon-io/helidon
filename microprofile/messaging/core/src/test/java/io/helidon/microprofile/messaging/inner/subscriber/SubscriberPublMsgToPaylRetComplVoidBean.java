@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.messaging.inner.subscriber;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -42,6 +43,7 @@ import org.reactivestreams.Publisher;
 public class SubscriberPublMsgToPaylRetComplVoidBean implements AssertableTestBean, AsyncTestBean {
 
     CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
+    private final CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
     private final ExecutorService executor = createExecutor();
 
     @Outgoing("cs-void-payload")
@@ -53,11 +55,15 @@ public class SubscriberPublMsgToPaylRetComplVoidBean implements AssertableTestBe
 
     @Incoming("cs-void-payload")
     public CompletionStage<Void> consumePayloadAndReturnCompletionStageOfVoid(String payload) {
-        return CompletableFuture.runAsync(() -> resultData.add(payload), executor);
+        return CompletableFuture.runAsync(() -> {
+            resultData.add(payload);
+            countDownLatch.countDown();
+        }, executor);
     }
 
     @Override
     public void assertValid() {
+        await("Messages not delivered in time!", countDownLatch);
         assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
     }
 
