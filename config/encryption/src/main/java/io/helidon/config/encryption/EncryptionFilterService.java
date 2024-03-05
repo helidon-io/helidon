@@ -17,7 +17,7 @@
 package io.helidon.config.encryption;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigItemPolicy;
+import io.helidon.config.ConfigItem;
 import io.helidon.config.spi.ConfigFilter;
 
 /**
@@ -36,11 +36,11 @@ public class EncryptionFilterService implements ConfigFilter {
     }
 
     @Override
-    public ConfigItemPolicy applyWithPolicy(Config.Key key, ConfigItemPolicy itemPolicy) {
+    public ConfigItem apply(Config.Key key, ConfigItem itemPolicy) {
         if (null == filter) {
             return itemPolicy;
         }
-        return filter.applyWithPolicy(key, itemPolicy);
+        return filter.apply(key, itemPolicy);
     }
 
     @Override

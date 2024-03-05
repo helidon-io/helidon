@@ -17,7 +17,7 @@
 package io.helidon.config.spi;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigItemPolicy;
+import io.helidon.config.ConfigItem;
 
 /**
  * Filter that can transform elementary configuration ({@code String}) values
@@ -68,7 +68,7 @@ public interface ConfigFilter {
 
     /**
      * Filters an elementary config value before it is made available to the
-     * application via the {@code Config} API. Returns {@link ConfigItemPolicy} object
+     * application via the {@code Config} API. Returns {@link ConfigItem} object
      * which contains filtered config value and specific value settings.
      *
      * @param key configuration {@link Config#key() key} associated with the
@@ -76,13 +76,13 @@ public interface ConfigFilter {
      * @param itemPolicy original item policy
      * @return new item policy object with the filtered config value
      */
-    default ConfigItemPolicy applyWithPolicy(Config.Key key, ConfigItemPolicy itemPolicy) {
+    default ConfigItem apply(Config.Key key, ConfigItem itemPolicy) {
         String originalItem = itemPolicy.item();
         String newItem = apply(key, originalItem);
-        if (newItem == originalItem) { //intended
+        if (newItem.equals(originalItem)) {
             return itemPolicy;
         }
-        return ConfigItemPolicy.builder()
+        return ConfigItem.builder()
                 .from(itemPolicy)
                 .item(newItem)
                 .build();

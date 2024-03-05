@@ -23,7 +23,7 @@ import io.helidon.builder.api.Prototype;
  * Contains information about the given item to improve its handling.
  */
 @Prototype.Blueprint
-interface ConfigItemPolicyBlueprint {
+interface ConfigItemBlueprint {
 
     /**
      * Whether to cache this handled config item or not.

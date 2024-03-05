@@ -312,31 +312,31 @@ class ProviderImpl implements Config.Context {
         public String apply(Config.Key key, String stringValue) {
             if (cachingEnabled) {
                 if (!valueCache.containsKey(key)) {
-                    ConfigItemPolicy configItemPolicy = ConfigItemPolicy.builder()
+                    ConfigItem configItem = ConfigItem.builder()
                             .cacheItem(cachingEnabled)
                             .item(stringValue)
                             .build();
-                    configItemPolicy = proceedFilters(key, configItemPolicy);
-                    String value = configItemPolicy.item();
-                    if (configItemPolicy.cacheItem()) {
+                    configItem = proceedFilters(key, configItem);
+                    String value = configItem.item();
+                    if (configItem.cacheItem()) {
                         valueCache.put(key, value);
                     }
                     return value;
                 }
                 return valueCache.get(key);
             } else {
-                ConfigItemPolicy configItemPolicy = ConfigItemPolicy.builder()
+                ConfigItem configItem = ConfigItem.builder()
                         .cacheItem(cachingEnabled)
                         .item(stringValue)
                         .build();
-                return proceedFilters(key, configItemPolicy).item();
+                return proceedFilters(key, configItem).item();
             }
         }
 
-        private ConfigItemPolicy proceedFilters(Config.Key key, ConfigItemPolicy configItemPolicy) {
-            ConfigItemPolicy toReturn = configItemPolicy;
+        private ConfigItem proceedFilters(Config.Key key, ConfigItem configItem) {
+            ConfigItem toReturn = configItem;
             for (Function<Config, ConfigFilter> configFilterProvider : filterProviders) {
-                toReturn = configFilterProvider.apply(config).applyWithPolicy(key, toReturn);
+                toReturn = configFilterProvider.apply(config).apply(key, toReturn);
             }
             return toReturn;
         }

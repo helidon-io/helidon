@@ -27,6 +27,8 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigValues.simpleValue;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
@@ -95,7 +97,7 @@ abstract class AbstractSecureConfigTest {
         assertThat(value1, is(TEST_STRING));
         assertThat(value2, is(TEST_STRING));
         //This is intended, since we want to verify, that the new String has been created and was not reused
-        assertFalse(value1 == value2);
+        assertThat(value1, not(sameInstance(value2)));
     }
 
     @Test

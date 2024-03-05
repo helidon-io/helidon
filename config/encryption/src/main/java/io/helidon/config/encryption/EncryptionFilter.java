@@ -26,7 +26,7 @@ import java.util.function.Function;
 
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigItemPolicy;
+import io.helidon.config.ConfigItem;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.spi.ConfigFilter;
 
@@ -134,10 +134,15 @@ public final class EncryptionFilter implements ConfigFilter {
     }
 
     @Override
-    public ConfigItemPolicy applyWithPolicy(Config.Key key, ConfigItemPolicy itemPolicy) {
-        return ConfigItemPolicy.builder()
+    public ConfigItem apply(Config.Key key, ConfigItem itemPolicy) {
+        String item = apply(key, itemPolicy.item());
+        if (item.equals(itemPolicy.item())) {
+            //This was not config item handled by this filter.
+            return itemPolicy;
+        }
+        return ConfigItem.builder()
                 .cacheItem(false)
-                .item(apply(key, itemPolicy.item()))
+                .item(item)
                 .build();
     }
 
