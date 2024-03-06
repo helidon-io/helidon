@@ -41,7 +41,7 @@ link:{helidon-github-examples-url}/quickstarts/helidon-standalone-quickstart-{fl
 This example has a stand-alone POM that you can pattern your own application POM after.
 
 For more details on Helidon application POMs see the
-link:{helidon-github-url}/docs-internal/application-pom.md[Helidon's Application POMS]
+link:{helidon-github-tree-url}/docs-internal/application-pom.md[Helidon's Application POMS]
 
 == Dependency Management
 
