@@ -131,29 +131,6 @@ public interface Parameters {
     }
 
     /**
-     * A list of values for the named parameter.
-     *
-     * @param name name of the parameter
-     * @return list of parameter values, mappable to other types
-     * @throws NoSuchElementException in case the name is not present in these parameters
-     */
-    List<Value<String>> allValues(String name) throws NoSuchElementException;
-
-    /**
-     * Get all values using a default value supplier if the parameter does not exist.
-     *
-     * @param name          name of the parameter
-     * @param defaultValues default values supplier to use if parameter is not present
-     * @return all values as a list
-     */
-    default List<Value<String>> allValues(String name, Supplier<List<Value<String>>> defaultValues) {
-        if (contains(name)) {
-            return allValues(name);
-        }
-        return defaultValues.get();
-    }
-
-    /**
      * Get the first value.
      *
      * @param name name of the parameter
