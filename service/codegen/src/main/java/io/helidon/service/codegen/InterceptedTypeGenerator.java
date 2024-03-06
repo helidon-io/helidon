@@ -47,7 +47,7 @@ class InterceptedTypeGenerator {
                              TypeName descriptorType,
                              TypeName interceptedType,
                              TypedElementInfo constructor,
-                             List<TypedElementInfo> interceptedMethods) {
+                             List<InjectionExtension.ElementMeta> interceptedMethods) {
         this.serviceType = serviceType;
         this.descriptorType = descriptorType;
         this.interceptedType = interceptedType;
@@ -265,10 +265,13 @@ class InterceptedTypeGenerator {
                                     boolean isVoid,
                                     Set<TypeName> exceptionTypes) {
 
-        public static List<MethodDefinition> toDefinitions(List<TypedElementInfo> interceptedMethods) {
-            List<TypedElementInfo> sortedMethods = new ArrayList<>(interceptedMethods);
+        public static List<MethodDefinition> toDefinitions(List<InjectionExtension.ElementMeta> interceptedMethods) {
+            List<InjectionExtension.ElementMeta> sortedMethods = new ArrayList<>(interceptedMethods);
             // order must be fixed
-            sortedMethods.sort((first, second) -> {
+            sortedMethods.sort((firstMeta, secondMeta) -> {
+                TypedElementInfo first = firstMeta.element();
+                TypedElementInfo second = secondMeta.element();
+
                 int compare = first.elementName().compareTo(second.elementName());
                 if (compare != 0) {
                     return compare;
@@ -289,7 +292,15 @@ class InterceptedTypeGenerator {
 
             List<MethodDefinition> result = new ArrayList<>();
             for (int i = 0; i < sortedMethods.size(); i++) {
-                TypedElementInfo typedElementInfo = sortedMethods.get(i);
+                InjectionExtension.ElementMeta elementMeta = sortedMethods.get(i);
+
+                List<Annotation> elementAnnotations = new ArrayList<>(elementMeta.element().annotations());
+                addInterfaceAnnotations(elementAnnotations, elementMeta.interfaceMethods());
+
+                TypedElementInfo typedElementInfo = TypedElementInfo.builder()
+                        .from(elementMeta.element())
+                        .annotations(elementAnnotations)
+                        .build();
 
                 String constantName =
                         "METHOD_" + i + "_" + toConstantName(typedElementInfo.elementName());
@@ -303,6 +314,23 @@ class InterceptedTypeGenerator {
             }
             result.sort(Comparator.comparing(o -> o.invokerName));
             return result;
+        }
+
+        private static void addInterfaceAnnotations(List<Annotation> elementAnnotations,
+                                                    List<InjectionExtension.DeclaredElement> declaredElements) {
+
+            for (InjectionExtension.DeclaredElement declaredElement : declaredElements) {
+                declaredElement.element()
+                        .annotations()
+                        .forEach(it -> addInterfaceAnnotation(elementAnnotations, it));
+            }
+        }
+
+        private static void addInterfaceAnnotation(List<Annotation> elementAnnotations, Annotation annotation) {
+            // only add if not already there
+            if (!elementAnnotations.contains(annotation)) {
+                elementAnnotations.add(annotation);
+            }
         }
     }
 }

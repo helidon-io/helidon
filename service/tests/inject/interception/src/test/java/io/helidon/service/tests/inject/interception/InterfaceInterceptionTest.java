@@ -23,13 +23,13 @@ import io.helidon.service.inject.api.InvocationException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -55,11 +55,9 @@ class InterfaceInterceptionTest {
                 () -> assertThat("Interceptors should not be called for constructor - returning",
                                  ReturningInterceptor.lastCall(),
                                  nullValue()),
-                /* Does not work, issue #6647
                 () -> assertThat("Interceptors should be called for constructor - modifying",
                                  ModifyingInterceptor.lastCall(),
                                  notNullValue()),
-                 */
                 () -> assertThat("Interceptors should not be called for constructor - repeating",
                                  RepeatingInterceptor.lastCall(),
                                  nullValue())
@@ -114,11 +112,9 @@ class InterfaceInterceptionTest {
                 () -> assertThat("Interceptors should not be called for method not annotated with @Modify",
                                  modifying,
                                  nullValue()),
-                /* Does not work, issue #6647
                 () -> assertThat("Interceptor should be called for method annotated with @Return",
                                  returning,
                                  notNullValue()),
-                 */
                 () -> assertThat("Interceptor should be called for method annotated with @Repeat",
                                  repeating,
                                  notNullValue())
@@ -126,10 +122,8 @@ class InterfaceInterceptionTest {
 
         // then assert the called values
         assertAll(
-                /* Does not work, issue #6647
                 () -> assertThat("Returning last call", returning.methodName(), is("interceptedSubset")),
                 () -> assertThat("Returning last call", returning.args(), is(new Object[] {"hello", true, false, false})),
-                 */
                 () -> assertThat("Repeating last call", repeating.methodName(), is("interceptedSubset")),
                 () -> assertThat("Repeating last call", repeating.args(), is(new Object[] {"hello", true, false, false}))
         );
@@ -150,24 +144,20 @@ class InterfaceInterceptionTest {
                 () -> assertThat("Interceptors should not be called as ReturningInterceptor should have returned",
                                  modifying,
                                  nullValue()),
-                /* Does not work, issue #6647
                 () -> assertThat("Interceptor should be called for method annotated with @Return",
                                  returning,
                                  notNullValue()),
-                 */
                 () -> assertThat("Interceptor should not be called as ReturningInterceptor should have returned",
                                  repeating,
                                  nullValue())
         );
 
-        /* Does not work, issue #6647
         assertAll(
                 () -> assertThat("Returning last call", returning.methodName(), is("intercepted")),
                 () -> assertThat("Returning last call", returning.args(), is(new Object[] {"hello", false, false, true}))
         );
 
         assertThat(response, is("fixed_answer"));
-         */
     }
 
     @Test
@@ -179,7 +169,6 @@ class InterfaceInterceptionTest {
         Invocation repeating = RepeatingInterceptor.lastCall();
 
         // first make sure the interceptors were/were not called
-        /* Does not work, issue #6647
         assertAll(
                 () -> assertThat("Interceptors should be called for method annotated with @Modify",
                                  modifying,
@@ -204,22 +193,19 @@ class InterfaceInterceptionTest {
 
         // and the message
         assertThat(response, is("mod_hello"));
-         */
     }
 
     /**
      * Once the target is called once successfully it should not be allowed to repeat normally.
      */
-    @Disabled("Known problem - issue #6647")
     @Test
     void testRepeatWithNoExceptionThrownFromTarget() {
         InvocationException e = assertThrows(InvocationException.class,
                                              () -> service.intercepted("hello", false, true, false));
-        assertThat(e.getMessage(), equalTo("Duplicate invocation, or unknown call type: java.lang.String intercepted"));
+        assertThat(e.getMessage(), startsWith("Duplicate invocation, or unknown call type: java.lang.String intercepted"));
         assertThat(e.targetWasCalled(), is(true));
     }
 
-    @Disabled("Known problem - issue #6647")
     @Test
     void testRepeatWithExceptionThrownFromTarget() {
         service.throwException(true);

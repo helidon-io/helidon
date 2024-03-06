@@ -20,9 +20,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -99,11 +97,11 @@ class InjectionExtension implements InjectCodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(InjectionExtension.class);
     private static final Annotation RUNTIME_RETENTION = Annotation.create(Retention.class, RetentionPolicy.RUNTIME.name());
     private static final Annotation CLASS_RETENTION = Annotation.create(Retention.class, RetentionPolicy.CLASS.name());
-    private static final TypedElementInfo DEFAULT_CONSTRUCTOR = TypedElementInfo.builder()
-            .typeName(TypeNames.OBJECT)
-            .accessModifier(AccessModifier.PUBLIC)
-            .kind(ElementKind.CONSTRUCTOR)
-            .build();
+    private static final ElementMeta DEFAULT_CONSTRUCTOR = new ElementMeta(TypedElementInfo.builder()
+                                                                                         .typeName(TypeNames.OBJECT)
+                                                                                         .accessModifier(AccessModifier.PUBLIC)
+                                                                                         .kind(ElementKind.CONSTRUCTOR)
+                                                                                         .build());
     private static final TypeName GENERIC_T_TYPE = TypeName.createFromGenericDeclaration("T");
     private static final TypeName ANY_GENERIC_TYPE = TypeName.builder(TypeNames.GENERIC_TYPE)
             .addTypeArgument(TypeName.create("?"))
@@ -153,10 +151,14 @@ class InjectionExtension implements InjectCodegenExtension {
 
         // this set now contains all fields, constructors, and methods that may be intercepted, as they contain
         // an annotation that is an interception trigger (based on interceptionStrategy)
-        Set<TypedElementInfo> maybeIntercepted = maybeIntercepted(typeInfo);
+        List<ElementMeta> maybeIntercepted = maybeIntercepted(typeInfo);
         boolean canIntercept = !maybeIntercepted.isEmpty();
         boolean methodsIntercepted = maybeIntercepted.stream()
+                .map(ElementMeta::element)
                 .anyMatch(ElementInfoPredicates::isMethod);
+        boolean constructorIntercepted = maybeIntercepted.stream()
+                .map(ElementMeta::element)
+                .anyMatch(it -> it.kind() == ElementKind.CONSTRUCTOR);
 
         TypeName serviceType = typeInfo.typeName();
         // this must result in generating a service descriptor file
@@ -167,8 +169,6 @@ class InjectionExtension implements InjectCodegenExtension {
 
         TypedElementInfo constructorInjectElement = injectConstructor(typeInfo);
         List<TypedElementInfo> fieldInjectElements = fieldInjectElements(typeInfo);
-
-        boolean constructorIntercepted = maybeIntercepted.contains(constructorInjectElement);
 
         params(services,
                typeInfo,
@@ -237,7 +237,7 @@ class InjectionExtension implements InjectCodegenExtension {
             }
             // if injected field intercepted, add its element (other fields cannot be intercepted)
             fieldInjectElements.stream()
-                    .filter(maybeIntercepted::contains)
+                    .filter(it -> isIntercepted(maybeIntercepted, it))
                     .forEach(fieldElement -> fieldElementField(classModel, fieldElement));
             // all other interception is done on method level and is handled by the
             // service descriptor delegating to a generated type
@@ -283,10 +283,10 @@ class InjectionExtension implements InjectCodegenExtension {
     }
 
     private void generateInterceptedType(TypeInfo typeInfo,
-                           TypeName serviceType,
-                           TypeName descriptorType,
-                           TypedElementInfo constructorInjectElement,
-                           Set<TypedElementInfo> maybeIntercepted) {
+                                         TypeName serviceType,
+                                         TypeName descriptorType,
+                                         TypedElementInfo constructorInjectElement,
+                                         List<ElementMeta> maybeIntercepted) {
         TypeName interceptedType = TypeName.builder(serviceType)
                 .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Intercepted")
                 .build();
@@ -296,7 +296,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                                      interceptedType,
                                                      constructorInjectElement,
                                                      maybeIntercepted.stream()
-                                                             .filter(ElementInfoPredicates::isMethod)
+                                                             .filter(it -> it.element().kind() == ElementKind.METHOD)
                                                              .toList());
 
         ctx.addType(interceptedType,
@@ -457,39 +457,113 @@ class InjectionExtension implements InjectCodegenExtension {
                 .orElseGet(SuperType::noSuperType);
     }
 
-    private Set<TypedElementInfo> maybeIntercepted(TypeInfo typeInfo) {
+    private List<ElementMeta> maybeIntercepted(TypeInfo typeInfo) {
         if (interceptionStrategy == InterceptionStrategy.NONE) {
-            return Set.of();
+            return List.of();
         }
 
-        Set<TypedElementInfo> result = Collections.newSetFromMap(new IdentityHashMap<>());
+        List<ElementMeta> result = new ArrayList<>();
 
         // depending on strategy
-        if (hasInterceptTrigger(typeInfo, typeInfo)) {
+        List<ElementMeta> allElements = gatherElements(typeInfo);
+
+        if (hasInterceptTrigger(typeInfo)) {
             // we cannot intercept private stuff (never modify source code or bytecode!)
-            result.addAll(typeInfo.elementInfo()
-                                  .stream()
-                                  .filter(it -> it.accessModifier() != AccessModifier.PRIVATE)
-                                  .toList());
+            allElements.stream()
+                    .filter(it -> it.element().accessModifier() != AccessModifier.PRIVATE)
+                    .forEach(result::add);
             result.add(DEFAULT_CONSTRUCTOR); // we must intercept construction as well
         } else {
-            result.addAll(typeInfo.elementInfo().stream()
-                                  .filter(elementInfo -> hasInterceptTrigger(typeInfo, elementInfo))
+            result.addAll(allElements.stream()
+                                  .filter(methodMetadata -> hasInterceptTrigger(typeInfo, methodMetadata))
                                   .peek(it -> {
-                                      if (it.accessModifier() == AccessModifier.PRIVATE) {
+                                      if (it.element().accessModifier() == AccessModifier.PRIVATE) {
                                           throw new CodegenException(typeInfo.typeName()
-                                                                             .fqName() + "#" + it.elementName() + " is declared "
+                                                                             .fqName() + "#" + it.element()
+                                                  .elementName() + " is declared "
                                                                              + "as private, but has interceptor trigger "
                                                                              + "annotation declared. "
                                                                              + "This cannot be supported, as we do not modify "
                                                                              + "sources or bytecode.",
-                                                                     it.originatingElement().orElse(typeInfo.typeName()));
+                                                                     it.element().originatingElement()
+                                                                             .orElse(typeInfo.typeName()));
                                       }
                                   })
                                   .toList());
         }
 
         return result;
+    }
+
+    private List<ElementMeta> gatherElements(TypeInfo typeInfo) {
+        List<ElementMeta> result = new ArrayList<>();
+
+        List<TypedElementInfo> declaredElements = typeInfo.elementInfo()
+                .stream()
+                .toList();
+
+        for (TypedElementInfo declaredMethod : declaredElements) {
+            List<DeclaredElement> interfaceMethods = new ArrayList<>();
+
+            if (declaredMethod.kind() == ElementKind.METHOD) {
+                // now find the same method on any interface (if declared there)
+                for (TypeInfo info : typeInfo.interfaceTypeInfo()) {
+                    info.elementInfo()
+                            .stream()
+                            .filter(ElementInfoPredicates::isMethod)
+                            .filter(not(ElementInfoPredicates::isStatic))
+                            .filter(not(ElementInfoPredicates::isPrivate))
+                            .filter(it -> signatureMatches(declaredMethod, it))
+                            .findFirst()
+                            .ifPresent(it -> interfaceMethods.add(new DeclaredElement(info, it)));
+                }
+            }
+            result.add(new ElementMeta(declaredMethod, interfaceMethods));
+        }
+
+        return result;
+    }
+
+    // intercept trigger on the type (or on implemented interface)
+    private boolean hasInterceptTrigger(TypeInfo typeInfo) {
+        if (hasInterceptTrigger(typeInfo, typeInfo)) {
+            return true;
+        }
+        // check all implemented interfaces
+        for (TypeInfo ifaceType : typeInfo.interfaceTypeInfo()) {
+            if (hasInterceptTrigger(ifaceType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasInterceptTrigger(TypeInfo typeInfo, ElementMeta methodMeta) {
+        if (hasInterceptTrigger(typeInfo, methodMeta.element())) {
+            // the method is declared with the annotation
+            return true;
+        }
+        for (DeclaredElement interfaceMethod : methodMeta.interfaceMethods()) {
+            if (hasInterceptTrigger(interfaceMethod.iface(), interfaceMethod.element())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean signatureMatches(TypedElementInfo method, TypedElementInfo interfaceMethod) {
+        // if the method has the same name and same parameter types, it is our candidate (return type MUST be the same,
+        // as otherwise this could not be compiled
+        if (!ElementInfoPredicates.elementName(method.elementName()).test(interfaceMethod)) {
+            return false;
+        }
+        List<TypeName> expectedParams = method.parameterArguments()
+                .stream()
+                .map(TypedElementInfo::typeName)
+                .toList();
+
+        return ElementInfoPredicates.hasParams(expectedParams).test(interfaceMethod);
     }
 
     private boolean hasInterceptTrigger(TypeInfo typeInfo, Annotated element) {
@@ -534,7 +608,7 @@ class InjectionExtension implements InjectCodegenExtension {
                         .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
                         .findFirst())
                 // or default constructor
-                .orElse(DEFAULT_CONSTRUCTOR);
+                .orElse(DEFAULT_CONSTRUCTOR.element());
     }
 
     private List<TypedElementInfo> fieldInjectElements(TypeInfo typeInfo) {
@@ -746,7 +820,6 @@ class InjectionExtension implements InjectCodegenExtension {
             // method has same signature, but is package local and is in a different package
             boolean realOverride = superMethod.accessModifier() != AccessModifier.PACKAGE_PRIVATE
                     || currentPackage.equals(type.typeName().packageName());
-
 
             if (realOverride) {
                 // let's find the declaring type
@@ -1661,7 +1734,7 @@ class InjectionExtension implements InjectCodegenExtension {
                               SuperType superType,
                               List<MethodDefinition> methods,
                               boolean canIntercept,
-                              Set<TypedElementInfo> maybeIntercepted) {
+                              List<ElementMeta> maybeIntercepted) {
 
         // method for field and method injections
         List<ParamDefinition> fields = params.stream()
@@ -1694,7 +1767,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                   List<MethodDefinition> methods,
                                   List<ParamDefinition> fields,
                                   boolean canIntercept,
-                                  Set<TypedElementInfo> maybeIntercepted) {
+                                  List<ElementMeta> maybeIntercepted) {
 
         // two passes for methods - first mark method to be injected, then call super, then inject
         for (MethodDefinition method : methods) {
@@ -1780,8 +1853,8 @@ class InjectionExtension implements InjectCodegenExtension {
     private void injectFieldBody(Method.Builder methodBuilder,
                                  ParamDefinition field,
                                  boolean canIntercept,
-                                 Set<TypedElementInfo> maybeIntercepted) {
-        if (canIntercept && maybeIntercepted.contains(field.elementInfo())) {
+                                 List<ElementMeta> maybeIntercepted) {
+        if (canIntercept && isIntercepted(maybeIntercepted, field.elementInfo())) {
             methodBuilder.addContentLine(field.declaredType().resolvedName() + " "
                                                  + field.ipParamName()
                                                  + " = ctx__helidonInject.dependency(" + field.constantName() + ");");
@@ -1820,6 +1893,16 @@ class InjectionExtension implements InjectCodegenExtension {
                     .update(it -> field.assignmentHandler().accept(it))
                     .addContentLine(";");
         }
+    }
+
+    private boolean isIntercepted(List<ElementMeta> maybeIntercepted, TypedElementInfo typedElementInfo) {
+        for (ElementMeta methodMetadata : maybeIntercepted) {
+            // yes, we want instance comparison, as we must use the same instances from the same type info
+            if (methodMetadata.element() == typedElementInfo) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void postConstructMethod(TypeInfo typeInfo, ClassModel.Builder classModel, TypeName serviceType) {
@@ -1991,5 +2074,16 @@ class InjectionExtension implements InjectCodegenExtension {
 
     private record GenericTypeDeclaration(String constantName,
                                           TypeName typeName) {
+    }
+
+    record ElementMeta(TypedElementInfo element,
+                       List<DeclaredElement> interfaceMethods) {
+        ElementMeta(TypedElementInfo element) {
+            this(element, List.of());
+        }
+    }
+
+    record DeclaredElement(TypeInfo iface,
+                           TypedElementInfo element) {
     }
 }
