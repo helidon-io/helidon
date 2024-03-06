@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ use a Helidon application POM as their parent. This parent POM provides the foll
    Helidon application.
 
 If you want to use your own parent POM, then take a look at the
-link:{helidon-github-tree-url}/examples/quickstarts/helidon-standalone-quickstart-{flavor-lc}[standalone quickstart example].
+link:{helidon-github-examples-url}/quickstarts/helidon-standalone-quickstart-{flavor-lc}[standalone quickstart example].
 This example has a stand-alone POM that you can pattern your own application POM after.
 
 For more details on Helidon application POMs see the
@@ -98,7 +98,7 @@ Helidon provides a Maven plugin that, among other things, provides the following
 1. native-image: Build a xref:{guidesdir}/graalnative.adoc[GraalVM native image].
 2. jlink-image:  Build a xref:{guidesdir}/jlink-image.adoc[custom runtime Java image].
 
-For full documentation of the plugin please see the https://github.com/oracle/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin[Helidon Maven Plugin README].
+For full documentation of the plugin please see the https://github.com/helidon-io/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin[Helidon Maven Plugin README].
 
 If you use the Helidon application parent POM you will have this plugin configured
 for you. If you need to customize the `helidon-maven-plugin` you can do so in a few ways:

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ Have a question?
 
 * Ask them in in Slack at http://slack.helidon.io[#helidon-user]
 * Or on https://stackoverflow.com/questions/tagged/helidon[Stack Overflow] using the `helidon` tag
-* Read the https://github.com/oracle/helidon/wiki/FAQ[Helidon FAQ]
+* Read the https://github.com/helidon-io/helidon/wiki/FAQ[Helidon FAQ]
 
 == Code and Issues
 
-* Helidon source is hosted on https://github.com/oracle/helidon[GitHub].
+* Helidon source is hosted on https://github.com/helidon-io/helidon[GitHub].
 * If you'd like to report a bug, enhancement request, or check if an
-issue is on our list, visit the https://github.com/oracle/helidon/issues[Helidon GitHub issue tracker].
+issue is on our list, visit the https://github.com/helidon-io/helidon/issues[Helidon GitHub issue tracker].
 
 
 == Stay Informed
