@@ -47,7 +47,7 @@ class InterceptedTypeGenerator {
                              TypeName descriptorType,
                              TypeName interceptedType,
                              TypedElementInfo constructor,
-                             List<InjectionExtension.ElementMeta> interceptedMethods) {
+                             List<TypedElements.ElementMeta> interceptedMethods) {
         this.serviceType = serviceType;
         this.descriptorType = descriptorType;
         this.interceptedType = interceptedType;
@@ -265,8 +265,8 @@ class InterceptedTypeGenerator {
                                     boolean isVoid,
                                     Set<TypeName> exceptionTypes) {
 
-        public static List<MethodDefinition> toDefinitions(List<InjectionExtension.ElementMeta> interceptedMethods) {
-            List<InjectionExtension.ElementMeta> sortedMethods = new ArrayList<>(interceptedMethods);
+        public static List<MethodDefinition> toDefinitions(List<TypedElements.ElementMeta> interceptedMethods) {
+            List<TypedElements.ElementMeta> sortedMethods = new ArrayList<>(interceptedMethods);
             // order must be fixed
             sortedMethods.sort((firstMeta, secondMeta) -> {
                 TypedElementInfo first = firstMeta.element();
@@ -292,7 +292,7 @@ class InterceptedTypeGenerator {
 
             List<MethodDefinition> result = new ArrayList<>();
             for (int i = 0; i < sortedMethods.size(); i++) {
-                InjectionExtension.ElementMeta elementMeta = sortedMethods.get(i);
+                TypedElements.ElementMeta elementMeta = sortedMethods.get(i);
 
                 List<Annotation> elementAnnotations = new ArrayList<>(elementMeta.element().annotations());
                 addInterfaceAnnotations(elementAnnotations, elementMeta.interfaceMethods());
@@ -317,9 +317,9 @@ class InterceptedTypeGenerator {
         }
 
         private static void addInterfaceAnnotations(List<Annotation> elementAnnotations,
-                                                    List<InjectionExtension.DeclaredElement> declaredElements) {
+                                                    List<TypedElements.DeclaredElement> declaredElements) {
 
-            for (InjectionExtension.DeclaredElement declaredElement : declaredElements) {
+            for (TypedElements.DeclaredElement declaredElement : declaredElements) {
                 declaredElement.element()
                         .annotations()
                         .forEach(it -> addInterfaceAnnotation(elementAnnotations, it));

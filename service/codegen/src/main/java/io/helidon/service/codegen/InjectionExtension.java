@@ -16,8 +16,6 @@
 
 package io.helidon.service.codegen;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -95,13 +93,6 @@ class InjectionExtension implements InjectCodegenExtension {
             .addTypeArgument(TypeName.create("T"))
             .build();
     private static final TypeName GENERATOR = TypeName.create(InjectionExtension.class);
-    private static final Annotation RUNTIME_RETENTION = Annotation.create(Retention.class, RetentionPolicy.RUNTIME.name());
-    private static final Annotation CLASS_RETENTION = Annotation.create(Retention.class, RetentionPolicy.CLASS.name());
-    private static final ElementMeta DEFAULT_CONSTRUCTOR = new ElementMeta(TypedElementInfo.builder()
-                                                                                         .typeName(TypeNames.OBJECT)
-                                                                                         .accessModifier(AccessModifier.PUBLIC)
-                                                                                         .kind(ElementKind.CONSTRUCTOR)
-                                                                                         .build());
     private static final TypeName GENERIC_T_TYPE = TypeName.createFromGenericDeclaration("T");
     private static final TypeName ANY_GENERIC_TYPE = TypeName.builder(TypeNames.GENERIC_TYPE)
             .addTypeArgument(TypeName.create("?"))
@@ -110,7 +101,7 @@ class InjectionExtension implements InjectCodegenExtension {
 
     private final ServiceCodegenContext ctx;
     private final boolean autoAddContracts;
-    private final InterceptionStrategy interceptionStrategy;
+    private final Interception interception;
     private final Set<TypeName> scopeMetaAnnotations;
     private final List<InjectCodegenObserver> observers;
 
@@ -118,7 +109,7 @@ class InjectionExtension implements InjectCodegenExtension {
         this.ctx = codegenContext;
         CodegenOptions options = codegenContext.options();
         this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(options);
-        this.interceptionStrategy = InjectOptions.INTERCEPTION_STRATEGY.value(options);
+        this.interception = new Interception(InjectOptions.INTERCEPTION_STRATEGY.value(options));
         this.scopeMetaAnnotations = InjectOptions.SCOPE_META_ANNOTATIONS.value(options);
         this.observers = HelidonServiceLoader.create(ServiceLoader.load(InjectCodegenObserverProvider.class,
                                                                         InjectionExtension.class.getClassLoader()))
@@ -151,13 +142,13 @@ class InjectionExtension implements InjectCodegenExtension {
 
         // this set now contains all fields, constructors, and methods that may be intercepted, as they contain
         // an annotation that is an interception trigger (based on interceptionStrategy)
-        List<ElementMeta> maybeIntercepted = maybeIntercepted(typeInfo);
+        List<TypedElements.ElementMeta> maybeIntercepted = interception.maybeIntercepted(typeInfo);
         boolean canIntercept = !maybeIntercepted.isEmpty();
         boolean methodsIntercepted = maybeIntercepted.stream()
-                .map(ElementMeta::element)
+                .map(TypedElements.ElementMeta::element)
                 .anyMatch(ElementInfoPredicates::isMethod);
         boolean constructorIntercepted = maybeIntercepted.stream()
-                .map(ElementMeta::element)
+                .map(TypedElements.ElementMeta::element)
                 .anyMatch(it -> it.kind() == ElementKind.CONSTRUCTOR);
 
         TypeName serviceType = typeInfo.typeName();
@@ -286,7 +277,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                          TypeName serviceType,
                                          TypeName descriptorType,
                                          TypedElementInfo constructorInjectElement,
-                                         List<ElementMeta> maybeIntercepted) {
+                                         List<TypedElements.ElementMeta> maybeIntercepted) {
         TypeName interceptedType = TypeName.builder(serviceType)
                 .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Intercepted")
                 .build();
@@ -457,142 +448,6 @@ class InjectionExtension implements InjectCodegenExtension {
                 .orElseGet(SuperType::noSuperType);
     }
 
-    private List<ElementMeta> maybeIntercepted(TypeInfo typeInfo) {
-        if (interceptionStrategy == InterceptionStrategy.NONE) {
-            return List.of();
-        }
-
-        List<ElementMeta> result = new ArrayList<>();
-
-        // depending on strategy
-        List<ElementMeta> allElements = gatherElements(typeInfo);
-
-        if (hasInterceptTrigger(typeInfo)) {
-            // we cannot intercept private stuff (never modify source code or bytecode!)
-            allElements.stream()
-                    .filter(it -> it.element().accessModifier() != AccessModifier.PRIVATE)
-                    .forEach(result::add);
-            result.add(DEFAULT_CONSTRUCTOR); // we must intercept construction as well
-        } else {
-            result.addAll(allElements.stream()
-                                  .filter(methodMetadata -> hasInterceptTrigger(typeInfo, methodMetadata))
-                                  .peek(it -> {
-                                      if (it.element().accessModifier() == AccessModifier.PRIVATE) {
-                                          throw new CodegenException(typeInfo.typeName()
-                                                                             .fqName() + "#" + it.element()
-                                                  .elementName() + " is declared "
-                                                                             + "as private, but has interceptor trigger "
-                                                                             + "annotation declared. "
-                                                                             + "This cannot be supported, as we do not modify "
-                                                                             + "sources or bytecode.",
-                                                                     it.element().originatingElement()
-                                                                             .orElse(typeInfo.typeName()));
-                                      }
-                                  })
-                                  .toList());
-        }
-
-        return result;
-    }
-
-    private List<ElementMeta> gatherElements(TypeInfo typeInfo) {
-        List<ElementMeta> result = new ArrayList<>();
-
-        List<TypedElementInfo> declaredElements = typeInfo.elementInfo()
-                .stream()
-                .toList();
-
-        for (TypedElementInfo declaredMethod : declaredElements) {
-            List<DeclaredElement> interfaceMethods = new ArrayList<>();
-
-            if (declaredMethod.kind() == ElementKind.METHOD) {
-                // now find the same method on any interface (if declared there)
-                for (TypeInfo info : typeInfo.interfaceTypeInfo()) {
-                    info.elementInfo()
-                            .stream()
-                            .filter(ElementInfoPredicates::isMethod)
-                            .filter(not(ElementInfoPredicates::isStatic))
-                            .filter(not(ElementInfoPredicates::isPrivate))
-                            .filter(it -> signatureMatches(declaredMethod, it))
-                            .findFirst()
-                            .ifPresent(it -> interfaceMethods.add(new DeclaredElement(info, it)));
-                }
-            }
-            result.add(new ElementMeta(declaredMethod, interfaceMethods));
-        }
-
-        return result;
-    }
-
-    // intercept trigger on the type (or on implemented interface)
-    private boolean hasInterceptTrigger(TypeInfo typeInfo) {
-        if (hasInterceptTrigger(typeInfo, typeInfo)) {
-            return true;
-        }
-        // check all implemented interfaces
-        for (TypeInfo ifaceType : typeInfo.interfaceTypeInfo()) {
-            if (hasInterceptTrigger(ifaceType)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean hasInterceptTrigger(TypeInfo typeInfo, ElementMeta methodMeta) {
-        if (hasInterceptTrigger(typeInfo, methodMeta.element())) {
-            // the method is declared with the annotation
-            return true;
-        }
-        for (DeclaredElement interfaceMethod : methodMeta.interfaceMethods()) {
-            if (hasInterceptTrigger(interfaceMethod.iface(), interfaceMethod.element())) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean signatureMatches(TypedElementInfo method, TypedElementInfo interfaceMethod) {
-        // if the method has the same name and same parameter types, it is our candidate (return type MUST be the same,
-        // as otherwise this could not be compiled
-        if (!ElementInfoPredicates.elementName(method.elementName()).test(interfaceMethod)) {
-            return false;
-        }
-        List<TypeName> expectedParams = method.parameterArguments()
-                .stream()
-                .map(TypedElementInfo::typeName)
-                .toList();
-
-        return ElementInfoPredicates.hasParams(expectedParams).test(interfaceMethod);
-    }
-
-    private boolean hasInterceptTrigger(TypeInfo typeInfo, Annotated element) {
-        for (Annotation annotation : element.annotations()) {
-            if (interceptionStrategy.ordinal() >= InterceptionStrategy.EXPLICIT.ordinal()) {
-                if (typeInfo.hasMetaAnnotation(annotation.typeName(), ServiceCodegenTypes.INTERCEPTION_TRIGGER)) {
-                    return true;
-                }
-            }
-            if (interceptionStrategy.ordinal() >= InterceptionStrategy.ALL_RUNTIME.ordinal()) {
-                Optional<Annotation> retention = typeInfo.metaAnnotation(annotation.typeName(),
-                                                                         TypeNames.RETENTION);
-                boolean isRuntime = retention.map(RUNTIME_RETENTION::equals).orElse(false);
-                if (isRuntime) {
-                    return true;
-                }
-            }
-            if (interceptionStrategy.ordinal() >= InterceptionStrategy.ALL_RETAINED.ordinal()) {
-                Optional<Annotation> retention = typeInfo.metaAnnotation(annotation.typeName(),
-                                                                         TypeNames.RETENTION);
-                boolean isClass = retention.map(CLASS_RETENTION::equals).orElse(false);
-                if (isClass) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     // find constructor with @Inject, if none, find the first constructor (assume @Inject)
     private TypedElementInfo injectConstructor(TypeInfo typeInfo) {
         // first @Inject
@@ -608,7 +463,7 @@ class InjectionExtension implements InjectCodegenExtension {
                         .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
                         .findFirst())
                 // or default constructor
-                .orElse(DEFAULT_CONSTRUCTOR.element());
+                .orElse(TypedElements.DEFAULT_CONSTRUCTOR.element());
     }
 
     private List<TypedElementInfo> fieldInjectElements(TypeInfo typeInfo) {
@@ -1734,7 +1589,7 @@ class InjectionExtension implements InjectCodegenExtension {
                               SuperType superType,
                               List<MethodDefinition> methods,
                               boolean canIntercept,
-                              List<ElementMeta> maybeIntercepted) {
+                              List<TypedElements.ElementMeta> maybeIntercepted) {
 
         // method for field and method injections
         List<ParamDefinition> fields = params.stream()
@@ -1767,7 +1622,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                   List<MethodDefinition> methods,
                                   List<ParamDefinition> fields,
                                   boolean canIntercept,
-                                  List<ElementMeta> maybeIntercepted) {
+                                  List<TypedElements.ElementMeta> maybeIntercepted) {
 
         // two passes for methods - first mark method to be injected, then call super, then inject
         for (MethodDefinition method : methods) {
@@ -1853,7 +1708,7 @@ class InjectionExtension implements InjectCodegenExtension {
     private void injectFieldBody(Method.Builder methodBuilder,
                                  ParamDefinition field,
                                  boolean canIntercept,
-                                 List<ElementMeta> maybeIntercepted) {
+                                 List<TypedElements.ElementMeta> maybeIntercepted) {
         if (canIntercept && isIntercepted(maybeIntercepted, field.elementInfo())) {
             methodBuilder.addContentLine(field.declaredType().resolvedName() + " "
                                                  + field.ipParamName()
@@ -1895,8 +1750,8 @@ class InjectionExtension implements InjectCodegenExtension {
         }
     }
 
-    private boolean isIntercepted(List<ElementMeta> maybeIntercepted, TypedElementInfo typedElementInfo) {
-        for (ElementMeta methodMetadata : maybeIntercepted) {
+    private boolean isIntercepted(List<TypedElements.ElementMeta> maybeIntercepted, TypedElementInfo typedElementInfo) {
+        for (TypedElements.ElementMeta methodMetadata : maybeIntercepted) {
             // yes, we want instance comparison, as we must use the same instances from the same type info
             if (methodMetadata.element() == typedElementInfo) {
                 return true;
@@ -2074,16 +1929,5 @@ class InjectionExtension implements InjectCodegenExtension {
 
     private record GenericTypeDeclaration(String constantName,
                                           TypeName typeName) {
-    }
-
-    record ElementMeta(TypedElementInfo element,
-                       List<DeclaredElement> interfaceMethods) {
-        ElementMeta(TypedElementInfo element) {
-            this(element, List.of());
-        }
-    }
-
-    record DeclaredElement(TypeInfo iface,
-                           TypedElementInfo element) {
     }
 }
