@@ -200,8 +200,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             return true;
         } catch (KeyStoreException e) {
             throw new IllegalStateException("Error while loading context from OCI", e);
-        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
         }
     }
 

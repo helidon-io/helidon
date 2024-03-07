@@ -299,35 +299,46 @@ public class ConfiguredTlsManager implements TlsManager {
         }
     }
 
-    protected void initializeTmf(TrustManagerFactory tmf, KeyStore keyStore, TlsConfig tlsConfig)
-            throws InvalidAlgorithmParameterException, KeyStoreException, NoSuchAlgorithmException {
-        if (tlsConfig.revocation().isPresent()) {
-            RevocationConfig revocationConfig = tlsConfig.revocation().get();
-            if (revocationConfig.enabled()) {
-                CertPathBuilder cpb = CertPathBuilder.getInstance("PKIX");
-                PKIXRevocationChecker rc = (PKIXRevocationChecker) cpb.getRevocationChecker();
-                Set<PKIXRevocationChecker.Option> options = new HashSet<>();
-                if (revocationConfig.preferCrlOverOcsp()) {
-                    options.add(PKIXRevocationChecker.Option.PREFER_CRLS);
+    /**
+     * Perform initialization of the {@link TrustManagerFactory} based on the provided TLS configuration.
+     *
+     * @param tmf trust manager factory to be initialized
+     * @param keyStore keystore
+     * @param tlsConfig tls configuration
+     */
+    protected void initializeTmf(TrustManagerFactory tmf, KeyStore keyStore, TlsConfig tlsConfig) {
+        try {
+            if (tlsConfig.revocation().isPresent()) {
+                RevocationConfig revocationConfig = tlsConfig.revocation().get();
+                if (revocationConfig.enabled()) {
+                    CertPathBuilder cpb = null;
+                    cpb = CertPathBuilder.getInstance("PKIX");
+                    PKIXRevocationChecker rc = (PKIXRevocationChecker) cpb.getRevocationChecker();
+                    Set<PKIXRevocationChecker.Option> options = new HashSet<>();
+                    if (revocationConfig.preferCrlOverOcsp()) {
+                        options.add(PKIXRevocationChecker.Option.PREFER_CRLS);
+                    }
+                    if (revocationConfig.checkOnlyEndEntity()) {
+                        options.add(PKIXRevocationChecker.Option.ONLY_END_ENTITY);
+                    }
+                    if (!revocationConfig.fallbackEnabled()) {
+                        options.add(PKIXRevocationChecker.Option.NO_FALLBACK);
+                    }
+                    if (revocationConfig.softFailEnabled()) {
+                        options.add(PKIXRevocationChecker.Option.SOFT_FAIL);
+                    }
+                    rc.setOptions(options);
+                    revocationConfig.ocspResponderUri().ifPresent(rc::setOcspResponder);
+                    PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(keyStore, new X509CertSelector());
+                    pkixParams.addCertPathChecker(rc);
+                    tmf.init(new CertPathTrustManagerParameters(pkixParams));
+                    return;
                 }
-                if (revocationConfig.checkOnlyEndEntity()) {
-                    options.add(PKIXRevocationChecker.Option.ONLY_END_ENTITY);
-                }
-                if (!revocationConfig.fallbackEnabled()) {
-                    options.add(PKIXRevocationChecker.Option.NO_FALLBACK);
-                }
-                if (revocationConfig.softFailEnabled()) {
-                    options.add(PKIXRevocationChecker.Option.SOFT_FAIL);
-                }
-                rc.setOptions(options);
-                revocationConfig.ocspResponderUri().ifPresent(rc::setOcspResponder);
-                PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(keyStore, new X509CertSelector());
-                pkixParams.addCertPathChecker(rc);
-                tmf.init(new CertPathTrustManagerParameters(pkixParams));
-                return;
             }
+            tmf.init(keyStore);
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | KeyStoreException e) {
+            throw new IllegalArgumentException("Failed to initialize TrustManagerFactory", e);
         }
-        tmf.init(keyStore);
     }
 
     /**
@@ -341,8 +352,7 @@ public class ConfiguredTlsManager implements TlsManager {
 
     // creates an internal keystore and initializes it with certificates discovered from configuration, then gets the trust
     // manager factory using tmf(TlsConfig)
-    private TrustManagerFactory initTmf(TlsConfig tlsConfig)
-            throws KeyStoreException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+    private TrustManagerFactory initTmf(TlsConfig tlsConfig) throws KeyStoreException {
         KeyStore ks = internalKeystore(tlsConfig);
         int i = 1;
         for (X509Certificate cert : tlsConfig.trust()) {
@@ -355,8 +365,7 @@ public class ConfiguredTlsManager implements TlsManager {
     }
 
     // used by ConfiguredTlsManager to setup a TrustManagerFactory, that may be "trustAll", or based on configuration
-    private TrustManagerFactory tmf(TlsConfig tlsConfig)
-            throws KeyStoreException, InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+    private TrustManagerFactory tmf(TlsConfig tlsConfig) throws KeyStoreException {
         if (tlsConfig.trustAll()) {
             return trustAllTmf();
         }

@@ -22,6 +22,19 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+/**
+ * Certificate revocation configuration.
+ * This configuration determines whether client certificate validation should include checking if
+ * it is still considered valid by the certificate authority.
+ * <br>
+ * Types of certificate validation checks:
+ * <ul>
+ *     <li>CRL - shortcut name for Certificate Revocation List. It is a list of certificates that have
+ *     been revoked by a certificate authority before their expiration date</li>
+ *     <li>OCSP - shortcut name for Online Certificate Status Protocol. It  is a real-time protocol used
+ *     to check the status of a certificate, providing immediate verification of its validity</li>
+ * </ul>
+ */
 @Prototype.Blueprint
 @Prototype.Configured
 interface RevocationConfigBlueprint {
@@ -37,7 +50,7 @@ interface RevocationConfigBlueprint {
 
     /**
      * Prefer CRL over OCSP.
-     * Default value is {@code false}.
+     * Default value is {@code false}. OCSP is preferred over the CRL by default.
      *
      * @return whether to prefer CRL over OCSP
      */
@@ -57,6 +70,11 @@ interface RevocationConfigBlueprint {
 
     /**
      * Enable fallback to the less preferred checking option.
+     * <br>
+     * If the primary method for revocation checking fails to verify the revocation status of a certificate
+     * (such as using a CRL or OCSP), the checker will attempt alternative methods. This option ensures
+     * whether revocation checking is performed strictly according to the specified method, or should fallback
+     * to the one less preferred. OCSP is preferred over the CRL by default.
      *
      * @return whether to allow fallback to the less preferred checking option
      */
