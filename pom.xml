@@ -172,6 +172,8 @@
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
+        <javadoc.link.oci-common>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-common/${version.lib.oci}/</javadoc.link.oci-common>
+        <javadoc.link.oci-addons-oke-workload-identity>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-addons-oke-workload-identity/${version.lib.oci}/</javadoc.link.oci-addons-oke-workload-identity>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
@@ -408,6 +410,14 @@
                             <offlineLink>
                                 <url>${javadoc.link.ucp}</url>
                                 <location>${javadoc.pkg.dir}/ucp</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.oci-common}</url>
+                                <location>${javadoc.pkg.dir}/oci-common</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.oci-addons-oke-workload-identity}</url>
+                                <location>${javadoc.pkg.dir}/oci-addons-oke-workload-identity</location>
                             </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">

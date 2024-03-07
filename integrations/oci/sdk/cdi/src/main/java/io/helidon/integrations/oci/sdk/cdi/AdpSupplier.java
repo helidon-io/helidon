@@ -24,8 +24,8 @@ import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
  * A {@link Supplier} of {@link Optional} instances {@linkplain Optional#get() housing} {@link
  * BasicAuthenticationDetailsProvider} instances.
  *
- * <p>Note: "{@code Adp}" is a convenient abbreviation for the otherwise cumbersome text "{@code
- * AuthenticationDetailsProvider}".</p>
+ * <p><strong>Note:</strong> "{@code Adp}" is a convenient abbreviation for the otherwise cumbersome text
+ * "{@code AuthenticationDetailsProvider}".</p>
  *
  * @param <T> a {@link BasicAuthenticationDetailsProvider} subtype
  *
@@ -75,6 +75,7 @@ interface AdpSupplier<T extends BasicAuthenticationDetailsProvider> extends Supp
      *
      * @see BasicAuthenticationDetailsProvider
      */
+    @Override
     Optional<T> get();
 
 }

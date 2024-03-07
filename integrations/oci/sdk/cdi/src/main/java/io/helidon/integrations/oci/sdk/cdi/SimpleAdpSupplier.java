@@ -53,7 +53,12 @@ class SimpleAdpSupplier implements AdpSupplier<SimpleAuthenticationDetailsProvid
      */
 
 
-    private final Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> builderSupplier;
+    // You might be tempted to change this to a simple Supplier<? extends SimpleAuthenticationDetailsProvider>, but
+    // don't do that. You want this to be a Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> because (a)
+    // you don't need a builder unless the available() check passes, and (b) you need to have the builder configured
+    // only when the available() check passes, so you need to (c) defer production of the builder until it's actually
+    // needed.
+    private final Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs;
 
     private final ConfigAccessor ca;
 
@@ -63,15 +68,14 @@ class SimpleAdpSupplier implements AdpSupplier<SimpleAuthenticationDetailsProvid
      */
 
 
-    SimpleAdpSupplier(ConfigAccessor ca) {
-        this(SimpleAuthenticationDetailsProvider::builder, ca);
-    }
-
-    SimpleAdpSupplier(Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> builderSupplier,
+    SimpleAdpSupplier(Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs, // must not return null
                       ConfigAccessor ca) {
         super();
-        this.builderSupplier = builderSupplier == null ? SimpleAuthenticationDetailsProvider::builder : builderSupplier;
         this.ca = Objects.requireNonNull(ca, "ca");
+        this.bs =
+            bs == null
+            ? () -> configure(SimpleAuthenticationDetailsProvider.builder(), ca)
+            : () -> configure(bs.get(), ca);
     }
 
 
@@ -85,11 +89,11 @@ class SimpleAdpSupplier implements AdpSupplier<SimpleAuthenticationDetailsProvid
     public Optional<SimpleAuthenticationDetailsProvider> get() {
         // Here we check for the presence of required configuration values, but do not apply them.(that's the job of the
         // builder supplier).
-        return this.available() ? Optional.of(this.builderSupplier.get().build()) : Optional.empty();
+        return Optional.ofNullable(this.available() ? this.bs.get().build() : null);
     }
 
     // Throws IllegalArgumentException if the region code or ID is bad
-    public boolean available() {
+    public final boolean available() {
         return available(this.ca);
     }
 
@@ -106,15 +110,16 @@ class SimpleAdpSupplier implements AdpSupplier<SimpleAuthenticationDetailsProvid
             && ca.get(OCI_AUTH_USER_ID).isPresent(); // NOTE: not clear
     }
 
-    // Convenience; not used internally
     // Throws IllegalArgumentException if the region code or ID is bad
-    public static final void configure(SimpleAuthenticationDetailsProviderBuilder b, ConfigAccessor ca) {
+    public static final SimpleAuthenticationDetailsProviderBuilder configure(SimpleAuthenticationDetailsProviderBuilder b,
+                                                                             ConfigAccessor ca) {
         ca.get(OCI_AUTH_FINGERPRINT).ifPresent(b::fingerprint);
         ca.get(OCI_AUTH_PASSPHRASE).or(() -> ca.get(OCI_AUTH_PASSPHRASE + "Characters")).ifPresent(b::passPhrase);
         ca.get(OCI_AUTH_TENANT_ID).ifPresent(b::tenantId);
         ca.get(OCI_AUTH_REGION).map(Region::valueOf).ifPresent(b::region);
         ca.get(OCI_AUTH_USER_ID).ifPresent(b::userId);
         privateKeySupplier(ca).ifPresent(b::privateKeySupplier);
+        return b;
     }
 
     private static Optional<Supplier<InputStream>> privateKeySupplier(ConfigAccessor ca) {

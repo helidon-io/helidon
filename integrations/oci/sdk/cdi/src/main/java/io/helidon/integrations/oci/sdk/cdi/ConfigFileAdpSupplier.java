@@ -83,8 +83,8 @@ class ConfigFileAdpSupplier implements AdpSupplier<ConfigFileAuthenticationDetai
      */
     @Override
     public Optional<ConfigFileAuthenticationDetailsProvider> get() {
-        Optional<? extends ConfigFile> o = this.configFile();
-        return Optional.ofNullable(o.isPresent() ? new ConfigFileAuthenticationDetailsProvider(o.orElseThrow()) : null);
+        return this.configFile()
+            .map(ConfigFileAuthenticationDetailsProvider::new);
     }
 
     /**
@@ -100,15 +100,28 @@ class ConfigFileAdpSupplier implements AdpSupplier<ConfigFileAuthenticationDetai
      * @see ConfigFiles#configFile(Supplier)
      */
     public Optional<ConfigFile> configFile() {
-        return
-            ConfigFiles.configFile(this.cfs)
+        return ConfigFiles.configFile(this.cfs)
             .filter(ConfigFileAdpSupplier::containsRequiredValues);
     }
 
+    /**
+     * Returns {@code true} if and only if the supplied {@link ConfigFile} has the minimal set of required information
+     * present for all possible OCI-supported {@link ConfigFileAuthenticationDetailsProvider}-related use cases.
+     *
+     * <p>No additional validation of any kind is performed by this method.</p>
+     *
+     * @param cf a {@link ConfigFile ConfigFile}; must not be {@code null}
+     *
+     * @return {@code true} if and only if the supplied {@link ConfigFile} has the minimal set of required information
+     * present for all possible OCI-supported authentication-related use cases
+     *
+     * @exception NullPointerException if {@code cf} is {@code null}
+     *
+     * @see ConfigFiles#containsRequiredValues(ConfigFile)
+     */
     public static boolean containsRequiredValues(ConfigFile cf) {
-        return cf.get("fingerprint") != null
-            && cf.get("user") != null
-            && ConfigFiles.containsRequiredValues(cf);
+        // Rule out SessionTokenAuthenticationDetailsProvider usage up front.
+        return cf.get("security_token_file") == null && ConfigFiles.containsRequiredValues(cf);
     }
 
 }

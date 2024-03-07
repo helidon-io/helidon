@@ -46,6 +46,10 @@
             <artifactId>oci-java-sdk-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-addons-oke-workload-identity</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
             <scope>compile</scope>

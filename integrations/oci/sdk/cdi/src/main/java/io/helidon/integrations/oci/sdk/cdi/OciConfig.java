@@ -38,7 +38,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder
  * associated builder class} or from an {@linkplain
  * com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(com.oracle.bmc.ConfigFileReader.ConfigFile)
- * OCI configuration file}. It might be useful to qualify production in the second case with this qualifier
+ * OCI configuration file}. It can be useful to qualify production in the second case with this qualifier
  * annotation.</p>
  */
 @Documented

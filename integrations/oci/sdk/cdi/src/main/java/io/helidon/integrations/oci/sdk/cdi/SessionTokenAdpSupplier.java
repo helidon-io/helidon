@@ -111,8 +111,6 @@ class SessionTokenAdpSupplier implements AdpSupplier<SessionTokenAuthenticationD
      * SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(ConfigFile) create a
      * <code>SessionTokenAuthenticationDetailsProvider</code>}.
      *
-     * <p>As of this writing,
-     *
      * @param cf a {@link ConfigFile}; must not be {@code null}
      *
      * @return {@code true} if and only if the supplied {@link ConfigFile} contains enough information to {@linkplain
@@ -120,8 +118,11 @@ class SessionTokenAdpSupplier implements AdpSupplier<SessionTokenAuthenticationD
      * <code>SessionTokenAuthenticationDetailsProvider</code>}
      *
      * @exception NullPointerException if {@code cf} is {@code null}
+     *
+     * @see ConfigFiles#containsRequiredValues(ConfigFile)
      */
     public static boolean containsRequiredValues(ConfigFile cf) {
+        // Rule out ConfigFileAuthenticationDetailsProvider usage up front.
         return cf.get("security_token_file") != null && ConfigFiles.containsRequiredValues(cf);
     }
 

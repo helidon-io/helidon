@@ -27,6 +27,7 @@ module io.helidon.integrations.oci.sdk.cdi {
     requires transitive jakarta.cdi;
     requires microprofile.config.api;
     requires oci.java.sdk.common;
+    requires oci.java.sdk.addons.oke.workload.identity;
 
     exports io.helidon.integrations.oci.sdk.cdi;
 

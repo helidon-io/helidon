@@ -30,12 +30,12 @@ import com.oracle.bmc.ConfigFileReader.ConfigFile;
 import static java.lang.System.Logger.Level.DEBUG;
 
 /**
- * A utility class for working with {@link ConfigFile} instances, {@link ConfigFileReader} instances, and their
- * idiosyncracies.
+ * A utility class for working with {@link ConfigFile ConfigFile} instances, {@link ConfigFileReader} instances, and
+ * their many idiosyncracies.
  *
- * <p>{@link ConfigFile} parsing is ultimately controlled by the {@link ConfigFileReader#parseDefault()}, {@link
- * ConfigFileReader#parseDefault(String)}, and {@link ConfigFileReader#parse(String, String)} methods. They are subtly
- * different from one another.</p>
+ * <p>{@link ConfigFile ConfigFile} production is ultimately controlled by the {@link ConfigFileReader#parseDefault()},
+ * {@link ConfigFileReader#parseDefault(String)}, and {@link ConfigFileReader#parse(String, String)} methods. They are
+ * subtly different from one another.</p>
  *
  * <p>The {@link #parseDefault()}, {@link #parseDefault(String)}, and {@link #parse(String, String)} methods in this
  * class are convenience methods that invoke their canonical counterparts and wrap any {@link IOException}s thrown in
@@ -80,11 +80,11 @@ final class ConfigFiles {
 
 
     /**
-     * Calls the {@link #configFile(Supplier)} method, passing it a method reference to the {@link #parseDefault()}
-     * method, and returns the result.
+     * A convenience method that calls the {@link #configFile(Supplier)} method, passing it a method reference to the
+     * {@link #parseDefault()} method, and returns the result.
      *
-     * @@return a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a {@link ConfigFile}; never
-     * {@code null}
+     * @@return a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a {@link ConfigFile
+     * ConfigFile}; never {@code null}
      *
      * @exception UncheckedIOException if there was a problem parsing a configuration file
      *
@@ -96,12 +96,13 @@ final class ConfigFiles {
 
     /**
      * A convenience method that returns a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a
-     * {@link ConfigFile}, using the supplied {@link Supplier} as a source of {@link ConfigFile} instances.
+     * {@link ConfigFile ConfigFile}, using the supplied {@link Supplier} as a source of {@link ConfigFile ConfigFile}
+     * instances.
      *
-     * @param cfs a {@link Supplier} of {@link ConfigFile} instances; must not be {@code null}
+     * @param cfs a {@link Supplier} of {@link ConfigFile ConfigFile} instances; must not be {@code null}
      *
-     * @return a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a {@link ConfigFile}; never
-     * {@code null}
+     * @return a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a {@link ConfigFile
+     * ConfigFile}; never {@code null}
      *
      * @exception UncheckedIOException if there was a problem parsing a configuration file
      *
@@ -113,16 +114,17 @@ final class ConfigFiles {
 
     /**
      * A convenience method that returns a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a
-     * {@link ConfigFile}, using the supplied {@link Supplier} as a source of {@link ConfigFile} instances.
+     * {@link ConfigFile ConfigFile}, using the supplied {@link Supplier} as a source of {@link ConfigFile ConfigFile}
+     * instances.
      *
-     * @param cfs a {@link Supplier} of {@link ConfigFile} instances; must not be {@code null}
+     * @param cfs a {@link Supplier} of {@link ConfigFile ConfigFile} instances; must not be {@code null}
      *
      * @param indicatesAbsence a {@link Predicate} that tests a {@link RuntimeException} for whether it (and its
-     * {@linkplain Throwable#getCause() causal chain}) merely indicates the absence of a readable {@link ConfigFile}
-     * (versus a truly exceptional condition); must not be {@code null}
+     * {@linkplain Throwable#getCause() causal chain}) merely indicates the absence of a readable {@link ConfigFile
+     * ConfigFile} (versus a truly exceptional condition); must not be {@code null}
      *
-     * @return a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a {@link ConfigFile}; never
-     * {@code null}
+     * @return a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a {@link ConfigFile
+     * ConfigFile}; never {@code null}
      *
      * @exception UncheckedIOException if there was a problem parsing a configuration file
      *
@@ -152,10 +154,10 @@ final class ConfigFiles {
      * A convenience method, suitable mostly for using, via method reference, as a {@link Predicate
      * Predicate&lt;RuntimeException&gt;} that returns {@code true} if the supplied {@link RuntimeException} indicates,
      * logically, usually via its {@linkplain Throwable#getCause() causal chain}, a non-exceptional condition, e.g. that
-     * a {@link ConfigFile} simply does not exist or is otherwise unavailable for reading.
+     * a {@link ConfigFile ConfigFile} simply does not exist or is otherwise unavailable for reading.
      *
-     * <p>Certain exceptions do not warrant being thrown from {@link ConfigFile} {@link Supplier}s when they are simply
-     * conveying that, for example, a file does not exist. Others, of course, indicate truly exceptional
+     * <p>Certain exceptions do not warrant being thrown from {@link ConfigFile ConfigFile} {@link Supplier}s when they
+     * are simply conveying that, for example, a file does not exist. Others, of course, indicate truly exceptional
      * conditions. This method returns {@code true} when the supplied {@link RuntimeException} is one of the former, and
      * {@code false} when it is one of the latter.</p>
      *
@@ -170,8 +172,8 @@ final class ConfigFiles {
      * @param e the {@link RuntimeException} to test (including its {@linkplain Throwable#getCause() causal chain})
      *
      * @return {@code true} if and only if the supplied {@link RuntimeException} indicates only that a file could not be
-     * found or is (for example) not the kind of file that can be opened and read as a {@link ConfigFile}; {@code false}
-     * if the supplied {@link RuntimeException} indicates a truly exceptional condition
+     * found or is (for example) not the kind of file that can be opened and read as a {@link ConfigFile ConfigFile};
+     * {@code false} if the supplied {@link RuntimeException} indicates a truly exceptional condition
      *
      * @see #configFile(Supplier, Predicate)
      */
@@ -229,13 +231,13 @@ final class ConfigFiles {
      *
      * @see #parseDefault()
      */
-    public static Supplier<? extends ConfigFile> configFileSupplier() {
+    public static Supplier<ConfigFile> configFileSupplier() {
         return ConfigFiles::parseDefault;
     }
 
     /**
-     * A convenience method that returns a {@link Supplier} of {@link ConfigFile} instances based on either the {@link
-     * #parse(String, String)}, {@link #parseDefault(String)}, or {@link #parseDefault()} methods.
+     * A convenience method that returns a {@link Supplier} of {@link ConfigFile ConfigFile} instances based on either
+     * the {@link #parse(String, String)}, {@link #parseDefault(String)}, or {@link #parseDefault()} methods.
      *
      * <p>The supplied {@link ConfigAccessor} will be {@linkplain ConfigAccessor#get(String) queried} for {@link
      * String}-typed values named {@code oci.config.path}, {@code oci.config.profile}, and, for backwards compatibility,
@@ -244,7 +246,7 @@ final class ConfigFiles {
      *
      * @param ca a {@link ConfigAccessor}; must not be {@code null}
      *
-     * @return a {@link Supplier} of {@link ConfigFile} instances; never {@code null}
+     * @return a {@link Supplier} of {@link ConfigFile ConfigFile} instances; never {@code null}
      *
      * @exception NullPointerException if {@code ca} is {@code null}
      *
@@ -256,7 +258,7 @@ final class ConfigFiles {
      *
      * @see #parseDefault()
      */
-    public static Supplier<? extends ConfigFile> configFileSupplier(ConfigAccessor ca) {
+    public static Supplier<ConfigFile> configFileSupplier(ConfigAccessor ca) {
         return
             configFileSupplier(ca.get("oci.config.path").orElse(null),
                                ca.get("oci.config.profile").or(() -> ca.get("oci.auth.profile")).orElse(null));
@@ -280,7 +282,7 @@ final class ConfigFiles {
      *
      * @see #parseDefault()
      */
-    public static Supplier<? extends ConfigFile> configFileSupplier(String profile) {
+    public static Supplier<ConfigFile> configFileSupplier(String profile) {
         return profile == null ? ConfigFiles::parseDefault : () -> parseDefault(profile);
     }
 
@@ -301,7 +303,7 @@ final class ConfigFiles {
      * null} in which case the {@link #parseDefault(String)} or {@link #parseDefault()} method will be used instead,
      * based on the value of the supplied {@code configurationFilePath}
      *
-     * @return a {@link Supplier} of {@link ConfigFile} instances, never {@code null}
+     * @return a {@link Supplier} of {@link ConfigFile ConfigFile} instances, never {@code null}
      *
      * @see #parse(String, String)
      *
@@ -309,7 +311,7 @@ final class ConfigFiles {
      *
      * @see #parseDefault()
      */
-    public static Supplier<? extends ConfigFile> configFileSupplier(String configurationFilePath, String profile) {
+    public static Supplier<ConfigFile> configFileSupplier(String configurationFilePath, String profile) {
         if (configurationFilePath == null) {
             return profile == null ? ConfigFiles::parseDefault : () -> parseDefault(profile);
         }
@@ -323,7 +325,7 @@ final class ConfigFiles {
      * <p>This is a "pass-through" method that adds no additional logic to its invocation of {@link
      * ConfigFileReader#parseDefault()} beyond exception type conversion.</p>
      *
-     * @return a {@link ConfigFile}; never {@code null}
+     * @return a {@link ConfigFile ConfigFile}; never {@code null}
      *
      * @exception UncheckedIOException if the {@link ConfigFileReader#parseDefault()} method throws an {@link
      * IOException}; its {@linkplain Throwable#getCause() cause} will be the {@link IOException}
@@ -347,7 +349,7 @@ final class ConfigFiles {
      *
      * @param profile the argument to be supplied to the {@link ConfigFileReader#parseDefault(String)} method
      *
-     * @return a {@link ConfigFile}; never {@code null}
+     * @return a {@link ConfigFile ConfigFile}; never {@code null}
      *
      * @exception UncheckedIOException if the {@link ConfigFileReader#parseDefault(String)} method throws an {@link
      * IOException}; its {@linkplain Throwable#getCause() cause} will be the {@link IOException}
@@ -374,7 +376,7 @@ final class ConfigFiles {
      *
      * @param profile the second argument to be supplied to the {@link ConfigFileReader#parse(String, String)} method
      *
-     * @return a {@link ConfigFile}; never {@code null}
+     * @return a {@link ConfigFile ConfigFile}; never {@code null}
      *
      * @exception UncheckedIOException if the {@link ConfigFileReader#parse(String, String)} method throws an {@link
      * IOException}; its {@linkplain Throwable#getCause() cause} will be the {@link IOException}
@@ -390,31 +392,33 @@ final class ConfigFiles {
     }
 
     /**
-     * Returns {@code true} if and only if the supplied {@link ConfigFile} contains at least the information required by
-     * all of its usage scenarios.
+     * A convenience method that returns {@code true} if and only if the supplied {@link ConfigFile ConfigFile} contains
+     * at least the information required by all of its usage scenarios.
      *
-     * <p>A {@link ConfigFile} is, itself, agnostic with respect to requirements. It is a simple store that maps {@link
-     * String}-typed keys to {@link String}-typed values. Asking a {@link ConfigFile} for a key that it does not know
-     * about will return {@code null}.</p>
+     * <p>A {@link ConfigFile ConfigFile} is, itself, agnostic with respect to requirements. It is a simple store that
+     * maps {@link String}-typed keys to {@link String}-typed values. Asking a {@link ConfigFile ConfigFile} for a key
+     * that it does not know about will return {@code null}.</p>
      *
-     * <p>Different OCI Java SDK usages of {@link ConfigFile} impose additional requirements upon any of its instances'
-     * contents. The rules are fairly complicated and detailed below. Other OCI language SDKs parse the underlying
-     * configuration file differently. This method follows the OCI Java SDK logic.</p>
+     * <p>Different OCI Java SDK usages of {@link ConfigFile ConfigFile} impose additional requirements upon any of its
+     * instances' contents. The rules are fairly complicated and detailed below. Other OCI language SDKs parse the
+     * underlying configuration file differently. This method follows the OCI Java SDK logic.</p>
      *
      * <ul>
      *
      * <li>{@code configFile.}{@link ConfigFile#get(String) get}{@code ("authentication_type")} is called. If the return
-     * value is {@linkplain String#equals(Object) equal to} {@code instance_principal} (singular) or {@code
-     * resource_principal}, this method returns {@code true}.</li>
+     * value is {@linkplain String#equals(Object) equal to} "{@code instance_principal}" (singular) or "{@code
+     * resource_principal}", this method returns {@code true}.</li>
      *
      * <li>If the value for the {@code authentication_type} is any other value, including {@code null}, then additional
      * values are checked:
      *
      * <ul>
      *
-     * <li>If {@code configFile.}{@link ConfigFile#get(String) get}{@code ("key_file")} returns {@code null}, {@code false} is returned.</li>
+     * <li>If {@code configFile.}{@link ConfigFile#get(String) get}{@code ("key_file")} returns {@code null}, {@code
+     * false} is returned.</li>
      *
-     * <li>If {@code configFile.}{@link ConfigFile#get(String) get}{@code ("tenancy")} returns {@code null}, {@code false} is returned.</li>
+     * <li>If {@code configFile.}{@link ConfigFile#get(String) get}{@code ("tenancy")} returns {@code null}, {@code
+     * false} is returned.</li>
      *
      * <li>If {@code configFile.}{@link ConfigFile#get(String) get}{@code ("security_token_file")} returns {@code null},
      * then {@code configFile.}{@link ConfigFile#get(String) get}{@code ("fingerprint")} and {@code configFile.}{@link
@@ -427,10 +431,10 @@ final class ConfigFiles {
      *
      * <p>In all other cases, {@code true} is returned.</p>
      *
-     * @param cf the {@link ConfigFile} in question; must not be {@code null}
+     * @param cf the {@link ConfigFile ConfigFile} in question; must not be {@code null}
      *
-     * @return {@code true} if and only if the supplied {@link ConfigFile} contains at least the information required by
-     * all of its usage scenarios
+     * @return {@code true} if and only if the supplied {@link ConfigFile ConfigFile} contains at least the information
+     * required by all of its usage scenarios
      *
      * @exception NullPointerException if {@code cf} is {@code null}
      *
@@ -467,7 +471,7 @@ final class ConfigFiles {
         // equivalent).
         //
         // To learn what purpose a ConfigFile is serving, you get a value for the (undocumented) "authentication_type"
-        // key. That has two possible well-known values:
+        // key. That has two possible well-known values that the Java SDK knows about:
         //
         // * instance_principal (yes, singular)
         // * resource_principal
@@ -476,8 +480,9 @@ final class ConfigFiles {
         // https://github.com/oracle/oci-java-sdk/blob/v3.36.0/bmc-common/src/main/java/com/oracle/bmc/auth/ConfigFileAuthenticationDetailsProvider.java#L72-L87
         //
         // (Note that other OCI language SDKs seem to omit support for resource_principal, which means if
-        // authentication_type=resource_principal appears in your configuration file, if you parse it with Java, you
-        // will be OK, but if you parse it with Python you will not. There may be other strange cases here.)
+        // authentication_type=resource_principal appears in your configuration file, if you parse it with the OCI Java
+        // SDK, you will be OK, but if you parse it with the OCI Python SDK you will not. There may be other strange
+        // cases here.)
         //
         // Anyhow, if the value for authentication_type is instance_principal (singular) or resource_principal, then
         // authentication is carried out by built-in AbstractAuthenticationDetailsProvider objects that behave kind of

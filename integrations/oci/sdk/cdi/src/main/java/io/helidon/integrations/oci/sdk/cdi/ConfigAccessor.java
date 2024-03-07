@@ -17,21 +17,36 @@ package io.helidon.integrations.oci.sdk.cdi;
 
 import java.util.Optional;
 
+/**
+ * A {@linkplain FunctionalInterface functional interface} whose implementations can {@linkplain #get(String) access
+ * known configuration values by name}.
+ *
+ * <p><strong>Note:</strong> This interface does <em>not</em> describe a general-purpose configuration system. It is
+ * deliberately minimal, deliberately dependency-free, deliberately <strong>suited only for the requirements of classes
+ * and interfaces in this package</strong>, and deliberately generic only so that it can be backed for its very minimal
+ * purposes by a variety of actual general-purpose configuration systems and libraries.</p>
+ *
+ * @see #get(String)
+ */
+@FunctionalInterface
 interface ConfigAccessor {
 
-    <T> Optional<T> get(String name, Class<T> type);
-
-    default Optional<String> get(String name) {
-        return this.get(name, String.class);
-    }
-
-    default ConfigAccessor thenTry(ConfigAccessor ca) {
-        return new ConfigAccessor() {
-            @Override
-            public <T> Optional<T> get(String name, Class<T> type) {
-                return ConfigAccessor.this.get(name, type).or(() -> ca.get(name, type));
-            }
-        };
-    }
+    /**
+     * Returns an {@link Optional} {@linkplain Optional#get() housing} a {@link String}-typed configuration value
+     * suitable for the supplied configuration name, or an {@linkplain Optional#isEmpty() empty <code>Optional</code>}
+     * if such a value cannot be provided.
+     *
+     * <p>Implementations of this method are not obligated to produce a determinate value and there are no additional
+     * semantics of any kind implied by this contract.</p>
+     *
+     * @param name the configuration name; must not be {@code null}
+     *
+     * @return an {@link Optional} {@linkplain Optional#get() housing} a {@link String}-typed configuration value
+     * suitable for the supplied configuration name, or an {@linkplain Optional#isEmpty() empty <code>Optional</code>}
+     * if such a value cannot be provided; never {@code null}
+     *
+     * @exception NullPointerException if {@code name} is {@code null}
+     */
+    Optional<String> get(String name);
 
 }

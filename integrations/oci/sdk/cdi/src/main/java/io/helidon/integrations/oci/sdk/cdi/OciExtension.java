@@ -30,6 +30,7 @@ import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -50,6 +51,8 @@ import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider.OkeWorkloadIdentityAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.common.ClientBuilderBase;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
@@ -72,6 +75,9 @@ import jakarta.inject.Singleton;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import static io.helidon.integrations.oci.sdk.cdi.AdpStrategyDescriptors.DEFAULT_ORDERED_ADP_STRATEGY_DESCRIPTORS;
+import static io.helidon.integrations.oci.sdk.cdi.AdpStrategyDescriptors.replaceElements;
+import static io.helidon.integrations.oci.sdk.cdi.AdpStrategyDescriptors.strategyDescriptors;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.lang.invoke.MethodType.methodType;
@@ -200,7 +206,7 @@ import static java.lang.invoke.MethodType.methodType;
  * target="_top"><code>oci-java-sdk-</code><strong><code>cloudexample</code></strong><code>-$VERSION.jar</code></a>,
  * where {@code $VERSION} should be replaced by a suitable version number).</p>
  *
- * <h2>Advanced Usage</h2>
+ * <h2>Advanced Usage and Customization</h2>
  *
  * <p>In the course of providing {@linkplain jakarta.inject.Inject injection support} for a <a
  * href="#service-interface">service interface</a> or an <a href="#async-service-interface">asynchronous service
@@ -238,10 +244,11 @@ import static java.lang.invoke.MethodType.methodType;
  * href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile" target="_top">MicroProfile
  * Config</a> property names (note, however, that no configuration is required):</p>
  *
- * <table>
+ * <table class="striped">
  *
- *   <caption><a href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile"
- *   target="_top">MicroProfile Config</a> property names</caption>
+ *   <caption style="display:none"><a
+ *   href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile" target="_top">MicroProfile
+ *   Config</a> property names</caption>
  *
  *   <thead>
  *
@@ -281,37 +288,51 @@ import static java.lang.invoke.MethodType.methodType;
  *           <li>{@code config}</li>
  *           <li>{@code config-file}</li>
  *           <li>{@code instance-principals}</li>
+ *           <li>{@code oke-workload-identity}</li>
  *           <li>{@code resource-principal}</li>
+ *           <li>{@code session-token-builder}</li>
  *           <li>{@code session-token-config-file}</li>
  *         </ul>
  *
- *         <p>A strategy descriptor of {@code config} will cause a {@link
- *         com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider} to be used, populated with other MicroProfile Config
- *         properties described here.</p>
+ *         <p>A strategy descriptor of <strong>{@code config}</strong> will cause a {@link
+ *         SimpleAuthenticationDetailsProvider} to be used, populated with other MicroProfile Config properties
+ *         described here.</p>
  *
- *         <p>A strategy descriptor of {@code config-file} will cause a {@link
- *         com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider} to be used, {@linkplain
+ *         <p>A strategy descriptor of <strong>{@code config-file}</strong> will cause a {@link
+ *         ConfigFileAuthenticationDetailsProvider} to be used, {@linkplain
+ *         ConfigFileAuthenticationDetailsProvider#ConfigFileAuthenticationDetailsProvider(ConfigFile) loaded from} an
+ *         <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm">OCI configuration file</a>,
+ *         with a loading process customized with other MicroProfile Config properties described here.</p>
+ *
+ *         <p>A strategy descriptor of <strong>{@code instance-principals}</strong> will cause an {@link
+ *         InstancePrincipalsAuthenticationDetailsProvider} to be used.</p>
+ *
+ *         <p>A strategy descriptor of <strong>{@code oke-workload-identity}</strong> will cause a {@link
+ *         OkeWorkloadIdentityAuthenticationDetailsProvider} to be used.</p>
+ *
+ *         <p>A strategy descriptor of <strong>{@code resource-principal}</strong> will cause a {@link
+ *         ResourcePrincipalAuthenticationDetailsProvider} to be used.</p>
+ *
+ *         <p>A strategy descriptor of <strong>{@code session-token-builder}</strong> will cause a {@link
+ *         SessionTokenAuthenticationDetailsProvider} to be used, {@linkplain
+ *         SessionTokenAuthenticationDetailsProviderBuilder#build() built} from a {@link
+ *         SessionTokenAuthenticationDetailsProviderBuilder SessionTokenAuthenticationDetailsProviderBuilder} instance,
+ *         customizable using other facilities described in this documentation.</p>
+ *
+ *         <p>A strategy descriptor of <strong>{@code session-token-config-file}</strong> will cause a {@link
+ *         SessionTokenAuthenticationDetailsProvider} to be used, {@linkplain
  *         SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(ConfigFile) loaded from}
  *         an <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm">OCI configuration
  *         file</a>, with a loading process customized with other MicroProfile Config properties described here.</p>
  *
- *         <p>A strategy descriptor of {@code instance-principals} will cause an {@link
- *         com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider} to be used.</p>
- *
- *         <p>A strategy descriptor of {@code resource-principal} will cause a {@link
- *         com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider} to be used.</p>
- *
- *         <p>A strategy descriptor of {@code session-token-config-file} will cause a {@link
- *         com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider} to be used, loaded from an <a
- *         href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm">OCI configuration file</a>, with
- *         a loading process customized with other MicroProfile Config properties described here.</p>
- *
  *         <p>If there are many strategy descriptors supplied, the first one that is deemed to be available or suitable
  *         will be used and all others will be ignored.</p>
  *
- *         <p>If {@code auto} is present in the list, or if no value for this property exists, the behavior will be as
- *         if {@code config,config-file,session-token-config-file,instance-principals,resource-principal} were supplied
- *         instead.</p></td>
+ *         <p>If <strong>{@code auto}</strong> is present in the list, or if no value for this property can be found,
+ *         the behavior will be as if {@code auto} were replaced with <strong>{@code
+ *         config,config-file,session-token-config-file,session-token-builder,instance-principals,resource-principal,oke-workload-identity}</strong>
+ *         instead. (The replacement values for {@code auto}, and the absence of a value for this property, are subject
+ *         to change without notice in subsequent revisions of this class.)</p></td>
  *
  *     </tr>
  *
@@ -323,7 +344,9 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>A {@link String} that is {@linkplain com.oracle.bmc.ConfigFileReader#parse(String) a path to a valid OCI
  *       configuration file}</td> <td>A {@linkplain com.oracle.bmc.ConfigFileReader#parseDefault() default
- *       location}</td> <td>This configuration property has an effect only when either {@code config-file} or {@code
+ *       location}</td>
+ *
+ *       <td>This configuration property has an effect only when either {@code config-file} or {@code
  *       session-token-config-file} is, explicitly or implicitly, present in the value for the {@code
  *       oci.auth-strategies} configuration property described elsewhere in this table.</td>
  *
@@ -436,7 +459,7 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@code true}</td>
  *
- *       <td></td>
+ *       <td>It is recommended not to supply a value for this property name except in extraordinary circumstances.</td>
  *
  *     </tr>
  *
@@ -503,6 +526,12 @@ public final class OciExtension implements Extension {
     private static final TypeLiteral<AdpSupplier<InstancePrincipalsAuthenticationDetailsProvider>>
         ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
 
+    private static final TypeLiteral<AdpSupplier<OkeWorkloadIdentityAuthenticationDetailsProvider>>
+        ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE =
+        (ParameterizedType) ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
+
     private static final ParameterizedType ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE =
         (ParameterizedType) ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
 
@@ -529,12 +558,6 @@ public final class OciExtension implements Extension {
 
     private static final ParameterizedType ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE =
         (ParameterizedType) ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final TypeLiteral<CascadingAdpSupplier<BasicAuthenticationDetailsProvider>>
-        CASCADINGADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType CASCADINGADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) CASCADINGADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
 
     private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<>() {};
 
@@ -832,6 +855,9 @@ public final class OciExtension implements Extension {
         // InstancePrincipalsAuthenticationDetailsProvider
         installInstancePrincipalsAdp(event, bm, qualifiers);
 
+        // OkeWorkloadIdentityAuthenticationDetailsProvider
+        installOkeWorkloadIdentityAdp(event, bm, qualifiers);
+
         // ResourcePrincipalAuthenticationDetailsProvider
         installResourcePrincipalAdp(event, bm, qualifiers);
 
@@ -841,11 +867,11 @@ public final class OciExtension implements Extension {
         // SimpleAuthenticationDetailsProvider
         installSimpleAdp(event, bm, qualifiers);
 
-        // CascadingAdpSupplier<BasicAuthenticationDetailsProvider>
-        installAutoAdp(event, bm, qualifiers);
+        // CascadingAdpSupplier
+        installCascadingAdp(event, bm, qualifiers);
 
         // AbstractAuthenticationDetailsProvider, BasicAuthenticationDetailsProvider
-        installBasic(event, bm, qualifiers);
+        installBasicAdp(event, bm, qualifiers);
     }
 
     private static void installConfigAccessor(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
@@ -931,6 +957,39 @@ public final class OciExtension implements Extension {
                 .scope(Singleton.class)
                 .produceWith(i ->
                              i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers).get()
+                             .build());
+        }
+    }
+
+    private static void installOkeWorkloadIdentityAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // AdpSupplier<OkeWorkloadIdentityAuthenticationDetailsProvider>, OkeWorkloadIdentityAdpSupplier
+        if (isUnsatisfied(bm, ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiers)) {
+            event.addBean()
+                .types(ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE, OkeWorkloadIdentityAdpSupplier.class)
+                .qualifiers(withName(qualifiers, "oke-workload-identity"))
+                .scope(Singleton.class) // or Dependent?
+                .produceWith(i ->
+                             new OkeWorkloadIdentityAdpSupplier(
+                                 i.select(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class, qualifiers)::get));
+        }
+        // OkeWorkloadIdentityAuthenticationDetailsProviderBuilder
+        if (isUnsatisfied(bm, OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class, qualifiers)) {
+            event.addBean()
+                .types(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             fire(i,
+                                  OkeWorkloadIdentityAuthenticationDetailsProvider.builder(),
+                                  qualifiers));
+        }
+        // OkeWorkloadIdentityAuthenticationDetailsProvider
+        if (isUnsatisfied(bm, OkeWorkloadIdentityAuthenticationDetailsProvider.class, qualifiers)) {
+            event.addBean()
+                .types(OkeWorkloadIdentityAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> i.select(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class, qualifiers).get()
                              .build());
         }
     }
@@ -1078,20 +1137,24 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static void installAutoAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
-        // CascadingAdpSupplier<BasicAuthenticationDetailsProvider>
-        if (isUnsatisfied(bm, CASCADINGADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiers)) {
+    private static void installCascadingAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // CascadingAdpSupplier
+        if (isUnsatisfied(bm, CascadingAdpSupplier.class, qualifiers)) {
             event.addBean()
-                .addTransitiveTypeClosure(AutoAdpSupplier.class)
+                .addTransitiveTypeClosure(CascadingAdpSupplier.class)
                 .qualifiers(withName(qualifiers, "auto"))
                 .scope(Singleton.class)
                 .produceWith(i ->
-                             new AutoAdpSupplier(i.select(ConfigAccessor.class, qualifiers).get(),
-                                                 n -> adpSupplierSelector(i, qualifiers, n)));
+                             new CascadingAdpSupplier(n -> adpSupplierSelector(i, n, qualifiers),
+                                                      replaceElements(strategyDescriptors(i.select(ConfigAccessor.class,
+                                                                                                   qualifiers).get()),
+                                                                      n -> "auto".equals(n)
+                                                                           ? DEFAULT_ORDERED_ADP_STRATEGY_DESCRIPTORS
+                                                                           : List.of(n))));
         }
     }
 
-    private static void installBasic(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+    private static void installBasicAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
         // AbstractAuthenticationDetailsProvider, BasicAuthenticationDetailsProvider
         if (isUnsatisfied(bm, BasicAuthenticationDetailsProvider.class, qualifiers)) {
             event.addBean()
@@ -1099,22 +1162,21 @@ public final class OciExtension implements Extension {
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i ->
-                             i.select(ADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL,
-                                      qualifiers).get()
-                             .get()
-                             .orElseThrow(UnsatisfiedResolutionException::new));
+                             i.select(ADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL, qualifiers).get()
+                                 .get()
+                                 .orElseThrow(UnsatisfiedResolutionException::new));
         }
     }
 
     /**
-     * A method called by reference that selects an {@link AdpSupplier AdpSupplier&lt;? extends
-     * BasicAuthenticationDetailsProvider&gt;} by name (and additional qualifiers).
+     * A method that selects an {@link AdpSupplier AdpSupplier&lt;? extends BasicAuthenticationDetailsProvider&gt;} by
+     * name (and possibly additional qualifiers).
      *
      * @param i an {@link Instance}; must not be {@code null}
      *
-     * @param qualifiers additional qualifier {@link Annotation}s; must not be {@code null}
-     *
      * @param n the name; must not be {@code null}
+     *
+     * @param qualifiers additional qualifier {@link Annotation}s; must not be {@code null}
      *
      * @return an {@link AdpSupplier AdpSupplier&lt;? extends BasicAuthenticationDetailsProvider&gt;}; never {@code
      * null}
@@ -1124,8 +1186,8 @@ public final class OciExtension implements Extension {
      * @exception UnsatisfiedResolutionException if there is no such {@link AdpSupplier}
      */
     private static AdpSupplier<? extends BasicAuthenticationDetailsProvider> adpSupplierSelector(Instance<Object> i,
-                                                                                                 Annotation[] qualifiers,
-                                                                                                 String n) {
+                                                                                                 String n,
+                                                                                                 Annotation[] qualifiers) {
         Instance<AdpSupplier<? extends BasicAuthenticationDetailsProvider>> adpss =
             i.select(ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL, withName(qualifiers, n));
         return adpss.isUnsatisfied() ? EmptyAdpSupplier.of() : adpss.get();

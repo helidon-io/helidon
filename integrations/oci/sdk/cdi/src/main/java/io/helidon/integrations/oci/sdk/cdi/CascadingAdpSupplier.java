@@ -18,45 +18,80 @@ package io.helidon.integrations.oci.sdk.cdi;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.StringJoiner;
-import java.util.function.Function;
 
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Stream.iterate;
 
-class CascadingAdpSupplier<T extends BasicAuthenticationDetailsProvider> implements AdpSupplier<T> {
+/**
+ * An {@link AdpSupplier} that tries a series of other {@link AdpSupplier}s until a suitable one is found.
+ *
+ * @see #get()
+ */
+class CascadingAdpSupplier implements AdpSupplier<BasicAuthenticationDetailsProvider> {
 
-    private final List<? extends String> names;
+    private final List<? extends AdpSupplier<? extends BasicAuthenticationDetailsProvider>> adps;
 
-    private final Function<? super String, ? extends AdpSupplier<? extends T>> f;
-
-    CascadingAdpSupplier(Iterable<? extends String> names,
-                         Function<? super String, ? extends AdpSupplier<? extends T>> f) {
-        super();
-        this.names = list(names);
-        this.f = Objects.requireNonNull(f, "f");
+    /**
+     * A convenience constructor that creates a new {@link CascadingAdpSupplier} using an {@link AdpSupplierSelector}
+     * and a sequence of {@linkplain AdpStrategyDescriptors OCI authentication strategy descriptors}.
+     *
+     * @param <K> the type of the {@linkplain AdpStrategyDescriptors OCI authentication strategy descriptors} used by
+     * the supplied {@link AdpSupplierSelector}; most commonly {@link String}
+     *
+     * @param s an {@link AdpSupplierSelector}; must not be {@code null}
+     *
+     * @param i an {@link Iterable} of strategy descriptors; must not be {@code null}
+     *
+     * @exception NullPointerException if either argument is {@code null}
+     *
+     * @see #CascadingAdpSupplier(Iterable)
+     *
+     * @see AdpSupplierSelector#select(Iterable)
+     *
+     * @see AdpStrategyDescriptors
+     */
+    <K> CascadingAdpSupplier(AdpSupplierSelector<K, BasicAuthenticationDetailsProvider> s,
+                             Iterable<? extends K> i) {
+        this(s.select(i));
     }
 
+    /**
+     * Creates a new {@link CascadingAdpSupplier}.
+     *
+     * @param adps an {@link Iterable} of {@link BasicAuthenticationDetailsProvider}s; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code adps} is {@code null}
+     */
+    CascadingAdpSupplier(Iterable<? extends AdpSupplier<? extends BasicAuthenticationDetailsProvider>> adps) {
+        super();
+        this.adps = list(adps);
+    }
+
+    /**
+     * Calls the {@link AdpSupplier#get()} method on each of the {@linkplain #CascadingAdpSupplier(Iterable)
+     * <code>AdpSupplier</code>s supplied at construction time}, in order, until a non-{@linkplain Optional#isEmpty()
+     * empty} {@link Optional} {@linkplain Optional#get() housing} a {@link BasicAuthenticationDetailsProvider} is
+     * found, and returns it.
+     *
+     * <p>If no non-{@linkplain Optional#isEmpty() empty} {@link Optional} can be found, then the result of invoking
+     * {@link Optional#empty()} is returned.</p>
+     *
+     * @return an {@link Optional} {@linkplain Optional#get() housing} a {@link BasicAuthenticationDetailsProvider}, or
+     * an {@linkplain Optional#isEmpty() empty} {@link Optional}; never {@code null}
+     *
+     * @see #CascadingAdpSupplier(Iterable)
+     */
     @Override
     @SuppressWarnings("unchecked")
-    public final Optional<T> get() {
-        return (Optional<T>) this.names.stream()
-            .map(this.f)
+    public final Optional<BasicAuthenticationDetailsProvider> get() {
+        return (Optional<BasicAuthenticationDetailsProvider>) this.adps.stream()
             .map(AdpSupplier::get)
             .dropWhile(Optional::isEmpty)
             .findFirst()
             .orElseGet(Optional::empty);
-    }
-
-    @Override
-    public String toString() {
-        StringJoiner sj = new StringJoiner(",");
-        this.names.forEach(sj::add);
-        return sj.toString();
     }
 
     private static <T> List<T> list(Iterable<T> i) {
