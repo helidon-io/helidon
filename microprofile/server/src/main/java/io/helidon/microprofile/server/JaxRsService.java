@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,7 +190,8 @@ class JaxRsService implements HttpService {
         ContainerRequest requestContext = new ContainerRequest(uris.baseUri,
                                                                uris.requestUri,
                                                                req.prologue().method().text(),
-                                                               new HelidonMpSecurityContext(), new MapPropertiesDelegate(),
+                                                               new HelidonMpSecurityContext(),
+                                                               new MapPropertiesDelegate(),
                                                                resourceConfig);
         /*
          MP CORS supports needs a way to obtain the UriInfo from the request context.
@@ -378,8 +379,7 @@ class JaxRsService implements HttpService {
 
         @Override
         public boolean enableResponseBuffering() {
-            // Jersey should not try to do the buffering
-            return false;
+            return true;        // enable buffering in Jersey
         }
 
         public void await() {
