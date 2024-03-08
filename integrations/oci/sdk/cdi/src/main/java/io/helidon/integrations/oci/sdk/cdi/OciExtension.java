@@ -480,10 +480,87 @@ public final class OciExtension implements Extension {
      */
 
 
+    /*
+     * Type and TypeLiteral constants, sorted as alphabetically as possible.
+     */
+
+    private static final TypeLiteral<AdpSupplier<BasicAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<ConfigFileAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<InstancePrincipalsAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+
+    private static final TypeLiteral<AdpSupplier<OkeWorkloadIdentityAuthenticationDetailsProvider>>
+        ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE =
+        (ParameterizedType) ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final ParameterizedType ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<ResourcePrincipalAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<SessionTokenAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<SimpleAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<? extends BasicAuthenticationDetailsProvider>>
+        ADPSUPPLIER_WILDCARD_EXTENDS_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADPSUPPLIER_WILDCARD_EXTENDS_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADPSUPPLIER_WILDCARD_EXTENDS_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<>() {};
+
+
+    private static final TypeLiteral<Supplier<ConfigFile>> SUPPLIER_CONFIGFILE_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType SUPPLIER_CONFIGFILE_TYPE =
+        (ParameterizedType) SUPPLIER_CONFIGFILE_TYPE_LITERAL.getType();
+
+    /*
+     * Other constants, sorted alphabetically.
+     */
+
+    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
+
     private static final Logger LOGGER = System.getLogger(OciExtension.class.getName());
 
     // Evaluates to "com.oracle.bmc." (yes, bmc, not oci) as of the current version of the public OCI Java SDK.
     private static final String OCI_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
+
+    private static final Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
 
     // For any OCI service conceptually named "Example" in an OCI_PACKAGE_PREFIX subpackage named "example":
     //
@@ -511,82 +588,17 @@ public final class OciExtension implements Extension {
                         + ".+?)(?:Async)?(?:Client(?:\\$?Builder)?)?" // (3)
                         + "$"); // (4)
 
-    private static final TypeLiteral<AdpSupplier<BasicAuthenticationDetailsProvider>>
-        ADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType ADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) ADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final TypeLiteral<AdpSupplier<ConfigFileAuthenticationDetailsProvider>>
-        ADPSUPPLIER_CONFIGFILEAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType ADPSUPPLIER_CONFIGFILEAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) ADPSUPPLIER_CONFIGFILEAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final TypeLiteral<AdpSupplier<InstancePrincipalsAuthenticationDetailsProvider>>
-        ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final TypeLiteral<AdpSupplier<OkeWorkloadIdentityAuthenticationDetailsProvider>>
-        ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final ParameterizedType ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final TypeLiteral<AdpSupplier<ResourcePrincipalAuthenticationDetailsProvider>>
-        ADPSUPPLIER_RESOURCEPRINCIPALAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType ADPSUPPLIER_RESOURCEPRINCIPALAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) ADPSUPPLIER_RESOURCEPRINCIPALAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final TypeLiteral<AdpSupplier<SessionTokenAuthenticationDetailsProvider>>
-        ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final TypeLiteral<AdpSupplier<SimpleAuthenticationDetailsProvider>>
-        ADPSUPPLIER_SIMPLEAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType ADPSUPPLIER_SIMPLEAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) ADPSUPPLIER_SIMPLEAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final TypeLiteral<AdpSupplier<? extends BasicAuthenticationDetailsProvider>>
-        ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE =
-        (ParameterizedType) ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
-
-    private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final TypeLiteral<Supplier<ConfigFile>> SUPPLIER_CONFIGFILE_TYPE_LITERAL = new TypeLiteral<>() {};
-
-    private static final ParameterizedType SUPPLIER_CONFIGFILE_TYPE =
-        (ParameterizedType) SUPPLIER_CONFIGFILE_TYPE_LITERAL.getType();
-
-    private static final Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
-
-    private static final Set<Class<?>> ADP_BUILDER_CLASSES =
-        Set.of(InstancePrincipalsAuthenticationDetailsProviderBuilder.class,
-               ResourcePrincipalAuthenticationDetailsProviderBuilder.class,
-               SessionTokenAuthenticationDetailsProviderBuilder.class,
-               SimpleAuthenticationDetailsProviderBuilder.class);
-
-    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
-
 
     /*
-     * Instance fields.
+     * Instance fields, sorted alphabetically.
      */
 
+
+    private final Set<String> additionalVetoes;
 
     private boolean lenientClassloading;
 
     private final Set<ServiceTaqs> serviceTaqs;
-
-    private final Set<String> additionalVetoes;
 
     private final Set<String> unloadableClassNames;
 
@@ -630,8 +642,8 @@ public final class OciExtension implements Extension {
             this.lenientClassloading = true;
         }
         this.additionalVetoes.addAll(c.getOptionalValue("oci.extension.classname-vetoes", String[].class)
-                                     .map(Set::<String>of)
-                                     .orElse(Set.of()));
+                                         .map(Set::<String>of)
+                                         .orElse(Set.of()));
     }
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
@@ -725,7 +737,7 @@ public final class OciExtension implements Extension {
             // Optimization: the set of classes we're interested in is a subset of general OCI-related classes.
             return;
         }
-        if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(c) || ADP_BUILDER_CLASSES.contains(c)) {
+        if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(c) || isAdpBuilderClass(c)) {
             // Register an "empty" ServiceTaqs as an indicator of demand for some kind of
             // AbstractAuthenticationDetailsProvider (or a relevant builder).
             this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
@@ -909,9 +921,9 @@ public final class OciExtension implements Extension {
 
     private static void installConfigFileAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
         // AdpSupplier<ConfigFileAuthenticationDetailsProvider>, ConfigFileAdpSupplier
-        if (isUnsatisfied(bm, ADPSUPPLIER_CONFIGFILEAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiers)) {
+        if (isUnsatisfied(bm, ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
             event.addBean()
-                .types(ADPSUPPLIER_CONFIGFILEAUTHENTICATIONDETAILSPROVIDER_TYPE, ConfigFileAdpSupplier.class)
+                .types(ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE, ConfigFileAdpSupplier.class)
                 .qualifiers(withName(qualifiers, "config-file"))
                 .scope(Singleton.class)
                 .produceWith(i ->
@@ -930,9 +942,9 @@ public final class OciExtension implements Extension {
 
     private static void installInstancePrincipalsAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
         // AdpSupplier<InstancePrincipalsAuthenticationDetailsProvider>, InstancePrincipalsAdpSupplier
-        if (isUnsatisfied(bm, ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiers)) {
+        if (isUnsatisfied(bm, ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
             event.addBean()
-                .types(ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE, InstancePrincipalsAdpSupplier.class)
+                .types(ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE, InstancePrincipalsAdpSupplier.class)
                 .qualifiers(withName(qualifiers, "instance-principals"))
                 .scope(Singleton.class)
                 .produceWith(i ->
@@ -994,9 +1006,9 @@ public final class OciExtension implements Extension {
 
     private static void installResourcePrincipalAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
         // AdpSupplier<ResourcePrincipalAuthenticationDetailsProvider>, ResourcePrincipalAdpSupplier
-        if (isUnsatisfied(bm, ADPSUPPLIER_RESOURCEPRINCIPALAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiers)) {
+        if (isUnsatisfied(bm, ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
             event.addBean()
-                .types(ADPSUPPLIER_RESOURCEPRINCIPALAUTHENTICATIONDETAILSPROVIDER_TYPE, ResourcePrincipalAdpSupplier.class)
+                .types(ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE, ResourcePrincipalAdpSupplier.class)
                 .qualifiers(withName(qualifiers, "resource-principal"))
                 .scope(Singleton.class) // or Dependent?
                 .produceWith(i ->
@@ -1034,9 +1046,9 @@ public final class OciExtension implements Extension {
                              fire(i, SessionTokenAuthenticationDetailsProvider.builder(), qualifiers));
         }
         // AdpSupplier<SessionTokenAuthenticationDetailsProvider>, SessionTokenAdpSupplier (from builder)
-        if (isUnsatisfied(bm, ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiers)) {
+        if (isUnsatisfied(bm, ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
             event.addBean()
-                .types(ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE, SessionTokenAdpSupplier.class)
+                .types(ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE, SessionTokenAdpSupplier.class)
                 .qualifiers(withName(qualifiers, "session-token-builder"))
                 .scope(Singleton.class)
                 .produceWith(i ->
@@ -1055,9 +1067,9 @@ public final class OciExtension implements Extension {
             qualifiersPlusNamePlusOciConfig[qualifiers.length + 1] = NamedLiteral.of("session-token-config-file");
         }
         // AdpSupplier<SessionTokenAuthenticationDetailsProvider>, SessionTokenAdpSupplier (from ConfigFile)
-        if (isUnsatisfied(bm, ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiersPlusNamePlusOciConfig)) {
+        if (isUnsatisfied(bm, ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiersPlusNamePlusOciConfig)) {
             event.addBean()
-                .types(ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE, SessionTokenAdpSupplier.class)
+                .types(ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE, SessionTokenAdpSupplier.class)
                 .qualifiers(qualifiersPlusNamePlusOciConfig)
                 .scope(Singleton.class)
                 .produceWith(i ->
@@ -1104,9 +1116,9 @@ public final class OciExtension implements Extension {
 
     private static void installSimpleAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
         // AdpSupplier<SimpleAuthenticationDetailsProvider>, SimpleAdpSupplier
-        if (isUnsatisfied(bm, ADPSUPPLIER_SIMPLEAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiers)) {
+        if (isUnsatisfied(bm, ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
             event.addBean()
-                .types(ADPSUPPLIER_SIMPLEAUTHENTICATIONDETAILSPROVIDER_TYPE, SimpleAdpSupplier.class)
+                .types(ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE, SimpleAdpSupplier.class)
                 .qualifiers(withName(qualifiers, "config"))
                 .scope(Singleton.class)
                 .produceWith(i ->
@@ -1159,7 +1171,7 @@ public final class OciExtension implements Extension {
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i ->
-                             i.select(ADPSUPPLIER_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL, qualifiers).get()
+                             i.select(ADP_SUPPLIER_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL, qualifiers).get()
                                  .get()
                                  .orElseThrow(UnsatisfiedResolutionException::new));
         }
@@ -1187,7 +1199,7 @@ public final class OciExtension implements Extension {
                                           String sd,
                                           Annotation[] qualifiers) {
         Instance<AdpSupplier<? extends BasicAuthenticationDetailsProvider>> adpss =
-            i.select(ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL, withName(qualifiers, sd));
+            i.select(ADPSUPPLIER_WILDCARD_EXTENDS_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL, withName(qualifiers, sd));
         return adpss.isUnsatisfied() ? EmptyAdpSupplier.of() : adpss.get();
     }
 
@@ -1270,6 +1282,14 @@ public final class OciExtension implements Extension {
             }
         }
         return false;
+    }
+
+    private static boolean isAdpBuilderClass(Class<?> c) {
+        return isAdpBuilderClassName(c.getName());
+    }
+
+    private static boolean isAdpBuilderClassName(String n) {
+        return n.startsWith(OCI_PACKAGE_PREFIX) && n.endsWith("AuthenticationDetailsProviderBuilder");
     }
 
     private static MicroProfileConfigConfigAccessor produceConfigAccessor(Instance<? super Object> instance,
