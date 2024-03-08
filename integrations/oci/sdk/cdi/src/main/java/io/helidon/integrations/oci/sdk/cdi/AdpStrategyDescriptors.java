@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,8 @@ final class AdpStrategyDescriptors {
      *
      * <li><strong>{@code session-token-builder}</strong> should {@linkplain AdpSupplierSelector#select(Object) select}
      * a <strong>{@link SessionTokenAdpSupplier}</strong> instance {@linkplain
-     * SessionTokenAdpSupplier#ofBuilder(com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder)
-     * built by a <code>SessionTokenAuthenticationDetailsProviderBuilder</code>}</li>
+     * SessionTokenAdpSupplier#ofBuilderSupplier(Supplier) built by a
+     * <code>SessionTokenAuthenticationDetailsProviderBuilder</code>}</li>
      *
      * <li><strong>{@code instance-principals}</strong> should {@linkplain AdpSupplierSelector#select(Object) select} an
      * <strong>{@link InstancePrincipalsAdpSupplier}</strong> instance</li>

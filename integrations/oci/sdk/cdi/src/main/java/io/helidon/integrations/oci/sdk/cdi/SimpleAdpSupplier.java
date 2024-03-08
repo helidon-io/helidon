@@ -27,6 +27,9 @@ import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticat
 import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 import com.oracle.bmc.auth.StringPrivateKeySupplier;
 
+import static io.helidon.integrations.oci.sdk.cdi.ConfigAccessor.environmentVariables;
+import static io.helidon.integrations.oci.sdk.cdi.ConfigAccessor.systemProperties;
+
 class SimpleAdpSupplier implements AdpSupplier<SimpleAuthenticationDetailsProvider> {
 
 
@@ -67,6 +70,18 @@ class SimpleAdpSupplier implements AdpSupplier<SimpleAuthenticationDetailsProvid
      * Constructors.
      */
 
+
+    SimpleAdpSupplier() {
+        this(SimpleAuthenticationDetailsProvider::builder);
+    }
+
+    SimpleAdpSupplier(ConfigAccessor ca) {
+        this(SimpleAuthenticationDetailsProvider::builder, ca);
+    }
+
+    SimpleAdpSupplier(Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs) {
+        this(bs, systemProperties().thenTry(environmentVariables()));
+    }
 
     SimpleAdpSupplier(Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs, // must not return null
                       ConfigAccessor ca) {

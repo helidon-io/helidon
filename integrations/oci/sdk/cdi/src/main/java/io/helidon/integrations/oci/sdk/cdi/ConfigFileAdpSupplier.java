@@ -17,13 +17,16 @@ package io.helidon.integrations.oci.sdk.cdi;
 
 import java.io.UncheckedIOException;
 import java.lang.System.Logger;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import com.oracle.bmc.ConfigFileReader.ConfigFile;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 
+import static io.helidon.integrations.oci.sdk.cdi.ConfigAccessor.environmentVariables;
+import static io.helidon.integrations.oci.sdk.cdi.ConfigAccessor.systemProperties;
 import static io.helidon.integrations.oci.sdk.cdi.ConfigFiles.configFileSupplier;
 
 class ConfigFileAdpSupplier implements AdpSupplier<ConfigFileAuthenticationDetailsProvider> {
@@ -44,19 +47,44 @@ class ConfigFileAdpSupplier implements AdpSupplier<ConfigFileAuthenticationDetai
 
     private final Supplier<? extends ConfigFile> cfs;
 
+    private final Function<? super ConfigFile, ? extends ConfigFileAuthenticationDetailsProvider> f;
+
+    private final Predicate<? super RuntimeException> p;
+
 
     /*
      * Constructors.
      */
 
 
-    ConfigFileAdpSupplier(ConfigAccessor ca) {
-        this(configFileSupplier(ca));
+    ConfigFileAdpSupplier() {
+        this(configFileSupplier(systemProperties().thenTry(environmentVariables())));
+    }
+
+    ConfigFileAdpSupplier(String configurationFilePath, String profile) {
+        this(configFileSupplier(configurationFilePath, profile));
     }
 
     ConfigFileAdpSupplier(Supplier<? extends ConfigFile> configFileSupplier) {
+        this(configFileSupplier, ConfigFileAuthenticationDetailsProvider::new);
+    }
+
+    ConfigFileAdpSupplier(Function<? super ConfigFile, ? extends ConfigFileAuthenticationDetailsProvider> f) {
+        this(configFileSupplier(systemProperties().thenTry(environmentVariables())), f);
+    }
+
+    ConfigFileAdpSupplier(Supplier<? extends ConfigFile> configFileSupplier,
+                          Function<? super ConfigFile, ? extends ConfigFileAuthenticationDetailsProvider> f) {
+        this(configFileSupplier, f, ConfigFiles::indicatesConfigFileAbsence);
+    }
+
+    ConfigFileAdpSupplier(Supplier<? extends ConfigFile> configFileSupplier,
+                          Function<? super ConfigFile, ? extends ConfigFileAuthenticationDetailsProvider> f,
+                          Predicate<? super RuntimeException> indicatesConfigFileAbsence) {
         super();
-        this.cfs = Objects.requireNonNull(configFileSupplier, "configFileSupplier");
+        this.cfs = configFileSupplier == null ? ConfigFiles::parseDefault : configFileSupplier;
+        this.f = f == null ? ConfigFileAuthenticationDetailsProvider::new : f;
+        this.p = indicatesConfigFileAbsence == null ? ConfigFiles::indicatesConfigFileAbsence : indicatesConfigFileAbsence;
     }
 
 
@@ -77,14 +105,14 @@ class ConfigFileAdpSupplier implements AdpSupplier<ConfigFileAuthenticationDetai
      * <code>configFileSupplier</code> supplied at construction time} throws an {@link UncheckedIOException}; its
      * {@linkplain Throwable#getCause() cause} will reflect the nature of the underlying problem
      *
-     * @see #configFile()
+     * @see #validConfigFile()
      *
      * @see ConfigFileAuthenticationDetailsProvider
      */
     @Override
     public Optional<ConfigFileAuthenticationDetailsProvider> get() {
-        return this.configFile()
-            .map(ConfigFileAuthenticationDetailsProvider::new);
+        return this.validConfigFile()
+            .map(this.f);
     }
 
     /**
@@ -99,8 +127,8 @@ class ConfigFileAdpSupplier implements AdpSupplier<ConfigFileAuthenticationDetai
      *
      * @see ConfigFiles#configFile(Supplier)
      */
-    public Optional<ConfigFile> configFile() {
-        return ConfigFiles.configFile(this.cfs)
+    public Optional<ConfigFile> validConfigFile() {
+        return ConfigFiles.configFile(this.cfs, this.p)
             .filter(ConfigFileAdpSupplier::containsRequiredValues);
     }
 
@@ -119,6 +147,7 @@ class ConfigFileAdpSupplier implements AdpSupplier<ConfigFileAuthenticationDetai
      *
      * @see ConfigFiles#containsRequiredValues(ConfigFile)
      */
+    // (available())
     public static boolean containsRequiredValues(ConfigFile cf) {
         // Rule out SessionTokenAuthenticationDetailsProvider usage up front.
         return cf.get("security_token_file") == null && ConfigFiles.containsRequiredValues(cf);

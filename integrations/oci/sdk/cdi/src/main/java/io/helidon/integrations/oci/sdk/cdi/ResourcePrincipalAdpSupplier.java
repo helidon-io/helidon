@@ -16,6 +16,7 @@
 package io.helidon.integrations.oci.sdk.cdi;
 
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
@@ -31,6 +32,9 @@ class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthe
 
     private final Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> builderSupplier;
 
+    private final Function<? super ResourcePrincipalAuthenticationDetailsProviderBuilder,
+                           ? extends ResourcePrincipalAuthenticationDetailsProvider> f;
+
 
     /*
      * Constructors.
@@ -38,13 +42,26 @@ class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthe
 
 
     ResourcePrincipalAdpSupplier() {
-        this(ResourcePrincipalAuthenticationDetailsProvider::builder);
+        this(ResourcePrincipalAuthenticationDetailsProvider::builder,
+             ResourcePrincipalAuthenticationDetailsProviderBuilder::build);
     }
 
     ResourcePrincipalAdpSupplier(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> builderSupplier) {
+        this(builderSupplier, ResourcePrincipalAuthenticationDetailsProviderBuilder::build);
+    }
+
+    ResourcePrincipalAdpSupplier(Function<? super ResourcePrincipalAuthenticationDetailsProviderBuilder,
+                                          ? extends ResourcePrincipalAuthenticationDetailsProvider> f) {
+        this(ResourcePrincipalAuthenticationDetailsProvider::builder, f);
+    }
+
+    // This is The Way.
+    ResourcePrincipalAdpSupplier(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs,
+                                 Function<? super ResourcePrincipalAuthenticationDetailsProviderBuilder,
+                                          ? extends ResourcePrincipalAuthenticationDetailsProvider> f) {
         super();
-        this.builderSupplier =
-            builderSupplier == null ? ResourcePrincipalAuthenticationDetailsProvider::builder : builderSupplier;
+        this.builderSupplier = bs == null ? ResourcePrincipalAuthenticationDetailsProvider::builder : bs;
+        this.f = f == null ? ResourcePrincipalAuthenticationDetailsProviderBuilder::build : f;
     }
 
 
@@ -54,8 +71,8 @@ class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthe
 
 
     @Override
-    public Optional<ResourcePrincipalAuthenticationDetailsProvider> get() {
-        return Optional.ofNullable(available() ? this.builderSupplier.get().build() : null);
+    public final Optional<ResourcePrincipalAuthenticationDetailsProvider> get() {
+        return Optional.ofNullable(available() ? this.f.apply(this.builderSupplier.get()) : null);
     }
 
 
@@ -64,7 +81,7 @@ class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthe
      */
 
 
-    private static boolean available() {
+    public static boolean available() {
         return System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null;
     }
 

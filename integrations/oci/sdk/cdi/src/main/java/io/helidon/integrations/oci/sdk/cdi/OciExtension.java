@@ -54,6 +54,7 @@ import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticat
 import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider.OkeWorkloadIdentityAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.common.ClientBuilderBase;
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.AmbiguousResolutionException;
@@ -331,8 +332,7 @@ import static java.lang.invoke.MethodType.methodType;
  *         <p>If <strong>{@code auto}</strong> is present in the list, or if no value for this property can be found,
  *         the behavior will be as if {@code auto} were replaced with <strong>{@code
  *         config,config-file,session-token-config-file,session-token-builder,instance-principals,resource-principal,oke-workload-identity}</strong>
- *         instead. (The replacement values for {@code auto}, and the absence of a value for this property, are subject
- *         to change without notice in subsequent revisions of this class.)</p></td>
+ *         instead. (The replacement values are subject to change in subsequent revisions of this class.)</p></td>
  *
  *     </tr>
  *
@@ -901,7 +901,7 @@ public final class OciExtension implements Extension {
             event.addBean()
                 .types(ConfigFile.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
+                .scope(Singleton.class) // if this were Dependent, we'd read the file every time
                 .produceWith(i ->
                              i.select(SUPPLIER_CONFIGFILE_TYPE_LITERAL, qualifiers).get());
         }
@@ -934,18 +934,18 @@ public final class OciExtension implements Extension {
             event.addBean()
                 .types(ADPSUPPLIER_INSTANCEPRINCIPALSAUTHENTICATIONDETAILSPROVIDER_TYPE, InstancePrincipalsAdpSupplier.class)
                 .qualifiers(withName(qualifiers, "instance-principals"))
-                .scope(Singleton.class) // or Dependent?
+                .scope(Singleton.class)
                 .produceWith(i ->
                              new InstancePrincipalsAdpSupplier(
-                                 i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers)::get,
-                                 i.select(ConfigAccessor.class, qualifiers).get()));
+                                 i.select(ConfigAccessor.class, qualifiers).get(),
+                                 i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers)::get));
         }
         // InstancePrincipalsAuthenticationDetailsProviderBuilder
         if (isUnsatisfied(bm, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers)) {
             event.addBean()
                 .types(InstancePrincipalsAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
+                .scope(Dependent.class)
                 .produceWith(i ->
                              fire(i, InstancePrincipalsAuthenticationDetailsProvider.builder(), qualifiers));
         }
@@ -977,11 +977,9 @@ public final class OciExtension implements Extension {
             event.addBean()
                 .types(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
+                .scope(Dependent.class)
                 .produceWith(i ->
-                             fire(i,
-                                  OkeWorkloadIdentityAuthenticationDetailsProvider.builder(),
-                                  qualifiers));
+                             fire(i, OkeWorkloadIdentityAuthenticationDetailsProvider.builder(), qualifiers));
         }
         // OkeWorkloadIdentityAuthenticationDetailsProvider
         if (isUnsatisfied(bm, OkeWorkloadIdentityAuthenticationDetailsProvider.class, qualifiers)) {
@@ -1010,11 +1008,9 @@ public final class OciExtension implements Extension {
             event.addBean()
                 .types(ResourcePrincipalAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
+                .scope(Dependent.class)
                 .produceWith(i ->
-                             fire(i,
-                                  ResourcePrincipalAuthenticationDetailsProvider.builder(),
-                                  qualifiers));
+                             fire(i, ResourcePrincipalAuthenticationDetailsProvider.builder(), qualifiers));
         }
         // ResourcePrincipalAuthenticationDetailsProvider
         if (isUnsatisfied(bm, ResourcePrincipalAuthenticationDetailsProvider.class, qualifiers)) {
@@ -1033,7 +1029,7 @@ public final class OciExtension implements Extension {
             event.addBean()
                 .types(SessionTokenAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
+                .scope(Dependent.class)
                 .produceWith(i ->
                              fire(i, SessionTokenAuthenticationDetailsProvider.builder(), qualifiers));
         }
@@ -1042,10 +1038,11 @@ public final class OciExtension implements Extension {
             event.addBean()
                 .types(ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE, SessionTokenAdpSupplier.class)
                 .qualifiers(withName(qualifiers, "session-token-builder"))
-                .scope(Singleton.class) // or Dependent?
+                .scope(Singleton.class)
                 .produceWith(i ->
                              SessionTokenAdpSupplier
-                             .ofBuilder(i.select(SessionTokenAuthenticationDetailsProviderBuilder.class, qualifiers).get()));
+                                 .ofBuilderSupplier(i.select(SessionTokenAuthenticationDetailsProviderBuilder.class,
+                                                             qualifiers)::get));
         }
         Annotation[] qualifiersPlusNamePlusOciConfig;
         if (qualifiers.length == 0) {
@@ -1062,7 +1059,7 @@ public final class OciExtension implements Extension {
             event.addBean()
                 .types(ADPSUPPLIER_SESSIONTOKENAUTHENTICATIONDETAILSPROVIDER_TYPE, SessionTokenAdpSupplier.class)
                 .qualifiers(qualifiersPlusNamePlusOciConfig)
-                .scope(Singleton.class) // or Dependent?
+                .scope(Singleton.class)
                 .produceWith(i ->
                              SessionTokenAdpSupplier.ofConfigFileSupplier(i.select(SUPPLIER_CONFIGFILE_TYPE_LITERAL,
                                                                                    qualifiers).get()));
@@ -1122,7 +1119,7 @@ public final class OciExtension implements Extension {
             event.addBean()
                 .types(SimpleAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
+                .scope(Dependent.class)
                 .produceWith(i ->
                              fire(i, SimpleAuthenticationDetailsProvider.builder(), qualifiers));
         }
@@ -1145,7 +1142,7 @@ public final class OciExtension implements Extension {
                 .qualifiers(withName(qualifiers, "auto"))
                 .scope(Singleton.class)
                 .produceWith(i ->
-                             new CascadingAdpSupplier(n -> adpSupplierSelector(i, n, qualifiers),
+                             new CascadingAdpSupplier(n -> adpSupplierFromStrategyDescriptor(i, n, qualifiers),
                                                       replaceElements(strategyDescriptors(i.select(ConfigAccessor.class,
                                                                                                    qualifiers).get()),
                                                                       n -> "auto".equals(n)
@@ -1170,11 +1167,11 @@ public final class OciExtension implements Extension {
 
     /**
      * A method that selects an {@link AdpSupplier AdpSupplier&lt;? extends BasicAuthenticationDetailsProvider&gt;} by
-     * name (and possibly additional qualifiers).
+     * strategy descriptor (and possibly additional qualifiers).
      *
      * @param i an {@link Instance}; must not be {@code null}
      *
-     * @param n the name; must not be {@code null}
+     * @param sd the strategy descriptor; must not be {@code null}
      *
      * @param qualifiers additional qualifier {@link Annotation}s; must not be {@code null}
      *
@@ -1185,11 +1182,12 @@ public final class OciExtension implements Extension {
      *
      * @exception UnsatisfiedResolutionException if there is no such {@link AdpSupplier}
      */
-    private static AdpSupplier<? extends BasicAuthenticationDetailsProvider> adpSupplierSelector(Instance<Object> i,
-                                                                                                 String n,
-                                                                                                 Annotation[] qualifiers) {
+    private static AdpSupplier<? extends BasicAuthenticationDetailsProvider>
+        adpSupplierFromStrategyDescriptor(Instance<Object> i,
+                                          String sd,
+                                          Annotation[] qualifiers) {
         Instance<AdpSupplier<? extends BasicAuthenticationDetailsProvider>> adpss =
-            i.select(ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL, withName(qualifiers, n));
+            i.select(ADPSUPPLIER_WILDCARD_EXTENDS_BASICAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL, withName(qualifiers, sd));
         return adpss.isUnsatisfied() ? EmptyAdpSupplier.of() : adpss.get();
     }
 

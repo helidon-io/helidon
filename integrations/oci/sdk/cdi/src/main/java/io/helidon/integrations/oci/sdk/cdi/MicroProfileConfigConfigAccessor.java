@@ -25,6 +25,10 @@ import org.eclipse.microprofile.config.ConfigProvider;
 /**
  * A {@link ConfigAccessor} implementation backed by <a
  * href="https://microprofile.io/project/eclipse/microprofile-config">MicroProfile Config</a> constructs.
+ *
+ * @see #get(String)
+ *
+ * @see #MicroProfileConfigConfigAccessor(Supplier)
  */
 class MicroProfileConfigConfigAccessor implements ConfigAccessor {
 
@@ -102,7 +106,7 @@ class MicroProfileConfigConfigAccessor implements ConfigAccessor {
      *
      * @exception NullPointerException if {@code name} is {@code null}, or if the {@link Supplier} of {@link Config}
      * instances {@linkplain #MicroProfileConfigConfigAccessor(Supplier) supplied at construction time} returns {@code
-     * null} from its {@link Supplier#get() get()} method
+     * null} (illegally) from its {@link Supplier#get() get()} method
      *
      * @see Config#getOptionalValue(String, Class)
      */

@@ -25,6 +25,19 @@ import com.oracle.bmc.ConfigFileReader.ConfigFile;
 import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder;
 
+/**
+ * An {@link AdpSupplier} of {@link SessionTokenAuthenticationDetailsProvider} instances.
+ *
+ * @see #get()
+ *
+ * @see #ofConfigFileSupplier(Supplier)
+ *
+ * @see #ofBuilderSupplier(Supplier)
+ *
+ * @see SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(ConfigFile)
+ *
+ * @see SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder
+ */
 class SessionTokenAdpSupplier implements AdpSupplier<SessionTokenAuthenticationDetailsProvider> {
 
 
@@ -51,6 +64,65 @@ class SessionTokenAdpSupplier implements AdpSupplier<SessionTokenAuthenticationD
      */
 
 
+    /**
+     * Returns an {@link Optional} {@linkplain Optional#get() housing} a {@link
+     * SessionTokenAuthenticationDetailsProvider} instance.
+     *
+     * <p>An {@linkplain Optional#isEmpty() empty <code>Optional</code>} return value indicates only that at the moment
+     * of invocation minimal requirements were not met. It implies no further semantics of any kind.</p>
+     *
+     * <p>Note that for unknown reasons the requirements for creating a {@link
+     * SessionTokenAuthenticationDetailsProvider} instance using a {@link
+     * SessionTokenAuthenticationDetailsProviderBuilder SessionTokenAuthenticationDetailsProviderBuilder} instance are
+     * different from those for creating {@link SessionTokenAuthenticationDetailsProvider} from a {@link ConfigFile
+     * ConfigFile}. Neither set of requirements is documented. The following requirements are subject to change without
+     * notice as the OCI Java SDK changes its assumptions and requirements in subsequent versions.</p>
+     *
+     * <p>If this {@link SessionTokenAdpSupplier} was created using the {@link #ofBuilderSupplier(Supplier)} factory
+     * method, then:</p>
+     *
+     * <ul>
+     *
+     * <li>if the builder's {@link SessionTokenAuthenticationDetailsProviderBuilder#tenantId(String) tenantId(String)}
+     * method was never called or was called with a {@code null} value, or</li>
+     *
+     * <li>if the builder's {@link SessionTokenAuthenticationDetailsProviderBuilder#privateKeyFilePath(String)
+     * privateKeyFilePath(String)} method was never called or was called with a {@code null} value, or</li>
+     *
+     * <li>if either the builder's {@link SessionTokenAuthenticationDetailsProviderBuilder#region(String)
+     * region(String)} or {@link SessionTokenAuthenticationDetailsProviderBuilder#region(com.oracle.bmc.Region)
+     * region(Region)} method was never called or was called with a {@code null} value, or
+     *
+     * <li>if either the builder's {@link SessionTokenAuthenticationDetailsProviderBuilder#sessionToken(String)
+     * sessionToken(String)} or {@link SessionTokenAuthenticationDetailsProviderBuilder#sessionTokenFilePath(String)
+     * sessionTokenFilePath(String)} method was never called or was called with a {@code null} value</li>
+     *
+     * </ul>
+     *
+     * <p>&hellip;this method will return an {@linkplain Optional#isEmpty() empty <code>Optional</code>}.</p>
+     *
+     * <p>If this {@link SessionTokenAdpSupplier} was created using the {@link #ofConfigFileSupplier(Supplier)} factory
+     * method, then:</p>
+     *
+     * <ul>
+     *
+     * <li>if an invocation of {@link #containsRequiredValues(ConfigFile)} returns {@code false}</li>
+     *
+     * </ul>
+     *
+     * <p>&hellip;this method will return an {@linkplain Optional#isEmpty() empty <code>Optional</code>}.</p>
+     *
+     * @return an {@link Optional} {@linkplain Optional#get() housing} a {@link
+     * SessionTokenAuthenticationDetailsProvider} instance, never {@code null}
+     *
+     * @see #ofBuilderSupplier(Supplier)
+     *
+     * @see #ofConfigFileSupplier(Supplier)
+     *
+     * @see #containsRequiredValues(ConfigFile)
+     *
+     * @see SessionTokenAuthenticationDetailsProvider
+     */
     @Override
     public final Optional<SessionTokenAuthenticationDetailsProvider> get() {
         return this.s.get();
@@ -63,19 +135,22 @@ class SessionTokenAdpSupplier implements AdpSupplier<SessionTokenAuthenticationD
 
 
     /**
-     * Returns a {@link SessionTokenAdpSupplier} backed by the supplied {@link SessionTokenAuthenticationDetailsProviderBuilder}.
+     * Returns a {@link SessionTokenAdpSupplier} backed by the supplied {@link Supplier} of {@link
+     * SessionTokenAuthenticationDetailsProviderBuilder SessionTokenAuthenticationDetailsProviderBuilder} instances.
      *
-     * @param b a {@link SessionTokenAuthenticationDetailsProviderBuilder}; must not be {@code null}
+     * @param bs a {@link Supplier} of {@link SessionTokenAuthenticationDetailsProviderBuilder} instances; must not be
+     * {@code null}
      *
      * @return a {@link SessionTokenAdpSupplier}; never {@code null}
      *
-     * @exception NullPointerException if {@code b} is {@code null}
+     * @exception NullPointerException if {@code bs} is {@code null}
      *
      * @see #ofSupplier(Supplier)
      */
-    public static SessionTokenAdpSupplier ofBuilder(SessionTokenAuthenticationDetailsProviderBuilder b) {
-        Objects.requireNonNull(b, "b");
-        return ofSupplier(() -> produce(b));
+    public static SessionTokenAdpSupplier
+        ofBuilderSupplier(Supplier<? extends SessionTokenAuthenticationDetailsProviderBuilder> bs) {
+        Objects.requireNonNull(bs, "bs");
+        return ofSupplier(() -> produce(bs.get()));
     }
 
     /**
@@ -93,10 +168,10 @@ class SessionTokenAdpSupplier implements AdpSupplier<SessionTokenAuthenticationD
     }
 
     /**
-     * Returns a {@link SessionTokenAdpSupplier} backed by the supplied {@link Supplier} of {@link ConfigFile}
-     * instances.
+     * Returns a {@link SessionTokenAdpSupplier} backed by the supplied {@link Supplier} of {@link ConfigFile
+     * ConfigFile} instances.
      *
-     * @param cfs a {@link Supplier} of {@link ConfigFile} instances; must not be {@code null}
+     * @param cfs a {@link Supplier} of {@link ConfigFile ConfigFile} instances; must not be {@code null}
      *
      * @return a {@link SessionTokenAdpSupplier}; never {@code null}
      *
@@ -107,22 +182,42 @@ class SessionTokenAdpSupplier implements AdpSupplier<SessionTokenAuthenticationD
     }
 
     /**
-     * Returns {@code true} if and only if the supplied {@link ConfigFile} contains enough information to {@linkplain
-     * SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(ConfigFile) create a
-     * <code>SessionTokenAuthenticationDetailsProvider</code>}.
+     * Returns {@code true} if and only if the supplied {@link ConfigFile ConfigFile} contains enough information to
+     * {@linkplain SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(ConfigFile)
+     * create a <code>SessionTokenAuthenticationDetailsProvider</code>}.
+     *
+     * <p>Specifically:</p>
+     *
+     * <ul>
+     *
+     * <li>if the supplied {@link ConfigFile ConfigFile} returns {@code null} from a {@link ConfigFile#get(String)
+     * get("security_token_file")} invocation, or</li>
+     *
+     * <li>if the supplied {@link ConfigFile ConfigFile} returns {@code null} from a {@link ConfigFile#get(String)
+     * get("key_file")} invocation, or</li>
+     *
+     * <li>if the supplied {@link ConfigFile ConfigFile} returns {@code null} from a {@link ConfigFile#get(String)
+     * get("tenancy")} invocation</li>
+     *
+     * </ul>
+     *
+     * <p>&hellip;then {@code false} will be returned.</p>
      *
      * @param cf a {@link ConfigFile}; must not be {@code null}
      *
-     * @return {@code true} if and only if the supplied {@link ConfigFile} contains enough information to {@linkplain
-     * SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(ConfigFile) create a
-     * <code>SessionTokenAuthenticationDetailsProvider</code>}
+     * @return {@code true} if and only if the supplied {@link ConfigFile ConfigFile} contains enough information to
+     * {@linkplain SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(ConfigFile)
+     * create a <code>SessionTokenAuthenticationDetailsProvider</code>}
      *
      * @exception NullPointerException if {@code cf} is {@code null}
      *
      * @see ConfigFiles#containsRequiredValues(ConfigFile)
      */
     public static boolean containsRequiredValues(ConfigFile cf) {
-        // Rule out ConfigFileAuthenticationDetailsProvider usage up front.
+        // Rule out ConfigFileAuthenticationDetailsProvider usage up front. Interestingly, when you build a
+        // SessionTokenAuthenticationDetailsProvider from a builder, region is required. When you build it from a
+        // ConfigFile it is not, even though this will lead to a NullPointerException later. This class is not in the
+        // business of policing the innards of the OCI Java SDK so we just let it fly.
         return cf.get("security_token_file") != null && ConfigFiles.containsRequiredValues(cf);
     }
 
@@ -151,18 +246,22 @@ class SessionTokenAdpSupplier implements AdpSupplier<SessionTokenAuthenticationD
 
     private static boolean indicatesMissingRequirement(RuntimeException e) {
         // There is no way to check if a SessionTokenAuthenticationDetailsProviderBuilder contains the information
-        // required for building before attempting a build. You just have to try it, and then interpret the resulting
-        // NullPointerException's message to see which requirement was missing, and repeat as necessary.
+        // required for building before attempting a build. You just have to try the build, and then interpret the
+        // resulting NullPointerException's message to see which requirement was missing, and repeat as necessary.
         if (e instanceof NullPointerException) {
             String message = e.getMessage();
             if (message != null && message.startsWith("SessionTokenAuthenticationDetailsProvider: ")) {
                 // See
                 // https://github.com/oracle/oci-java-sdk/blob/v3.34.1/bmc-common/src/main/java/com/oracle/bmc/auth/SessionTokenAuthenticationDetailsProvider.java#L112-L138
-                message = message.substring("SessionTokenAuthenticationDetailsProvider: ".length());
+                //
                 // Requirements were not supplied, but this isn't really an error, per se, just a reflection of the fact
                 // that the builder is missing requirements, so this strategy isn't available.
+                //
+                // Chop off the text that is common to all messages indicating (undocumented) requirements violations to
+                // preclude substring operations.
+                message = message.substring("SessionTokenAuthenticationDetailsProvider: ".length());
                 return message.startsWith("privateKeyFilePath ")
-                    || message.startsWith("Set either region ")
+                    || message.startsWith("Set either region ") // region is required here, but not (!) in a ConfigFile
                     || message.startsWith("Set either sessionToken ")
                     || message.startsWith("tenantId ");
             }

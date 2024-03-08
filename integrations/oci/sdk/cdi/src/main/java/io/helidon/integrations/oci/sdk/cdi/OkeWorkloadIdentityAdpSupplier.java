@@ -20,6 +20,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider;
@@ -35,7 +36,10 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
      */
 
 
-    private final Supplier<? extends OkeWorkloadIdentityAuthenticationDetailsProviderBuilder> builderSupplier;
+    private final Supplier<? extends OkeWorkloadIdentityAuthenticationDetailsProviderBuilder> bs;
+
+    private final Function<? super OkeWorkloadIdentityAuthenticationDetailsProviderBuilder,
+                           ? extends OkeWorkloadIdentityAuthenticationDetailsProvider> f;
 
 
     /*
@@ -44,13 +48,25 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
 
 
     OkeWorkloadIdentityAdpSupplier() {
-        this(OkeWorkloadIdentityAuthenticationDetailsProvider::builder);
+        this(OkeWorkloadIdentityAuthenticationDetailsProvider::builder,
+             OkeWorkloadIdentityAuthenticationDetailsProviderBuilder::build);
     }
 
-    OkeWorkloadIdentityAdpSupplier(Supplier<? extends OkeWorkloadIdentityAuthenticationDetailsProviderBuilder> builderSupplier) {
+    OkeWorkloadIdentityAdpSupplier(Supplier<? extends OkeWorkloadIdentityAuthenticationDetailsProviderBuilder> bs) {
+        this(bs, OkeWorkloadIdentityAuthenticationDetailsProviderBuilder::build);
+    }
+
+    OkeWorkloadIdentityAdpSupplier(Function<? super OkeWorkloadIdentityAuthenticationDetailsProviderBuilder,
+                                            ? extends OkeWorkloadIdentityAuthenticationDetailsProvider> f) {
+        this(OkeWorkloadIdentityAuthenticationDetailsProvider::builder, f);
+    }
+
+    OkeWorkloadIdentityAdpSupplier(Supplier<? extends OkeWorkloadIdentityAuthenticationDetailsProviderBuilder> bs,
+                                   Function<? super OkeWorkloadIdentityAuthenticationDetailsProviderBuilder,
+                                            ? extends OkeWorkloadIdentityAuthenticationDetailsProvider> f) {
         super();
-        this.builderSupplier =
-            builderSupplier == null ? OkeWorkloadIdentityAuthenticationDetailsProvider::builder : builderSupplier;
+        this.bs = bs == null ? OkeWorkloadIdentityAuthenticationDetailsProvider::builder : bs;
+        this.f = f == null ? OkeWorkloadIdentityAuthenticationDetailsProviderBuilder::build : f;
     }
 
 
@@ -60,8 +76,8 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
 
 
     @Override
-    public Optional<OkeWorkloadIdentityAuthenticationDetailsProvider> get() {
-        return Optional.ofNullable(available() ? this.builderSupplier.get().build() : null);
+    public final Optional<OkeWorkloadIdentityAuthenticationDetailsProvider> get() {
+        return Optional.ofNullable(available() ? this.bs.get().build() : null);
     }
 
 
@@ -70,7 +86,7 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
      */
 
 
-    private static boolean available() {
+    public static boolean available() {
         try {
             return
                 readAttributes(Path.of(Optional.ofNullable(System.getenv("OCI_KUBERNETES_SERVICE_ACCOUNT_CERT_PATH"))
