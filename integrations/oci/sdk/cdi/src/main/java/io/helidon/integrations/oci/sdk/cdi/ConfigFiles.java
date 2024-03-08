@@ -83,7 +83,7 @@ final class ConfigFiles {
      * A convenience method that calls the {@link #configFile(Supplier)} method, passing it a method reference to the
      * {@link #parseDefault()} method, and returns the result.
      *
-     * @@return a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a {@link ConfigFile
+     * @return a possibly {@linkplain Optional#isEmpty() empty} {@link Optional} housing a {@link ConfigFile
      * ConfigFile}; never {@code null}
      *
      * @exception UncheckedIOException if there was a problem parsing a configuration file

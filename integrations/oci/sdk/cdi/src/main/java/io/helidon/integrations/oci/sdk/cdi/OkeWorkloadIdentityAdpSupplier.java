@@ -28,6 +28,15 @@ import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthentication
 
 import static java.nio.file.Files.readAttributes;
 
+/**
+ * An {@link AdpSupplier} of {@link OkeWorkloadIdentityAuthenticationDetailsProvider} instances.
+ *
+ * @see #get()
+ *
+ * @see #OkeWorkloadIdentityAdpSupplier(Supplier, Function)
+ *
+ * @see OkeWorkloadIdentityAuthenticationDetailsProvider
+ */
 class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityAuthenticationDetailsProvider> {
 
 
@@ -47,20 +56,68 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
      */
 
 
+    /**
+     * Creates a new {@link OkeWorkloadIdentityAdpSupplier}.
+     *
+     * @see #OkeWorkloadIdentityAdpSupplier(Supplier, Function)
+     */
     OkeWorkloadIdentityAdpSupplier() {
         this(OkeWorkloadIdentityAuthenticationDetailsProvider::builder,
              OkeWorkloadIdentityAuthenticationDetailsProviderBuilder::build);
     }
 
+    /**
+     * Creates a new {@link OkeWorkloadIdentityAdpSupplier}.
+     *
+     * @param bs a {@link Supplier} of {@link OkeWorkloadIdentityAuthenticationDetailsProviderBuilder
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder} instances; must not be {@code null}; {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProvider#builder()
+     * OkeWorkloadIdentityAuthenticationDetailsProvider::builder} is a commonly-supplied value
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @see #OkeWorkloadIdentityAdpSupplier(Supplier, Function)
+     */
     OkeWorkloadIdentityAdpSupplier(Supplier<? extends OkeWorkloadIdentityAuthenticationDetailsProviderBuilder> bs) {
         this(bs, OkeWorkloadIdentityAuthenticationDetailsProviderBuilder::build);
     }
 
+    /**
+     * Creates a new {@link OkeWorkloadIdentityAdpSupplier}.
+     *
+     * @param f a {@link Function} that accepts an {@link OkeWorkloadIdentityAuthenticationDetailsProviderBuilder
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder} and returns an {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProvider} sourced ultimately from its {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder#build() build()} method; must not be {@code null}; {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder#build()
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder::build} is a commonly-supplied value
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @see #OkeWorkloadIdentityAdpSupplier(Supplier, Function)
+     */
     OkeWorkloadIdentityAdpSupplier(Function<? super OkeWorkloadIdentityAuthenticationDetailsProviderBuilder,
                                             ? extends OkeWorkloadIdentityAuthenticationDetailsProvider> f) {
         this(OkeWorkloadIdentityAuthenticationDetailsProvider::builder, f);
     }
 
+    /**
+     * Creates a new {@link OkeWorkloadIdentityAdpSupplier}.
+     *
+     * @param bs a {@link Supplier} of {@link OkeWorkloadIdentityAuthenticationDetailsProviderBuilder
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder} instances; must not be {@code null}; {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProvider#builder()
+     * OkeWorkloadIdentityAuthenticationDetailsProvider::builder} is a commonly-supplied value
+     *
+     * @param f a {@link Function} that accepts an {@link OkeWorkloadIdentityAuthenticationDetailsProviderBuilder
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder} and returns an {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProvider} sourced ultimately from its {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder#build() build()} method; must not be {@code null}; {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder#build()
+     * OkeWorkloadIdentityAuthenticationDetailsProviderBuilder::build} is a commonly-supplied value
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     */
     OkeWorkloadIdentityAdpSupplier(Supplier<? extends OkeWorkloadIdentityAuthenticationDetailsProviderBuilder> bs,
                                    Function<? super OkeWorkloadIdentityAuthenticationDetailsProviderBuilder,
                                             ? extends OkeWorkloadIdentityAuthenticationDetailsProvider> f) {
@@ -75,9 +132,28 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
      */
 
 
+    /**
+     * Returns an {@link Optional} {@linkplain Optional#get() housing} an {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProvider} instance.
+     *
+     * <p>An {@linkplain Optional#isEmpty() empty <code>Optional</code>} return value indicates only that at the moment
+     * of invocation minimal requirements were not met. It implies no further semantics of any kind.</p>
+     *
+     * <p>This method will return an {@linkplain Optional#isEmpty() empty <code>Optional</code>} if at the moment of
+     * invocation an invocation of the {@link #available()} method returns {@code false}.</p>
+     *
+     * @return an {@link Optional} {@linkplain Optional#get() housing} an {@link
+     * OkeWorkloadIdentityAuthenticationDetailsProvider} instance; never {@code null}
+     *
+     * @see #OkeWorkloadIdentityAdpSupplier(Supplier, Function)
+     *
+     * @see #available()
+     *
+     * @see OkeWorkloadIdentityAuthenticationDetailsProvider
+     */
     @Override
     public final Optional<OkeWorkloadIdentityAuthenticationDetailsProvider> get() {
-        return Optional.ofNullable(available() ? this.bs.get().build() : null);
+        return Optional.ofNullable(available() ? this.f.apply(this.bs.get()) : null);
     }
 
 
@@ -86,6 +162,21 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
      */
 
 
+    /**
+     * Returns {@code true} if and only if the file identified by the value of the {@code
+     * OCI_KUBERNETES_SERVICE_ACCOUNT_CERT_PATH} environment variable, or the default value "{@code
+     * /var/run/secrets/kubernetes.io/serviceaccount/ca.crt}", {@linkplain BasicFileAttributes#isRegularFile() is a
+     * regular file}.
+     *
+     * <p>This method is called by the {@link #get()} method.</p>
+     *
+     * @return {@code true} if and only if the file identified by the value of the {@code
+     * OCI_KUBERNETES_SERVICE_ACCOUNT_CERT_PATH} environment variable, or the default value "{@code
+     * /var/run/secrets/kubernetes.io/serviceaccount/ca.crt}", {@linkplain BasicFileAttributes#isRegularFile() is a
+     * regular file}; {@code false} in all other cases
+     *
+     * @exception UncheckedIOException if there was an error checking attributes of the (extant) file
+     */
     public static boolean available() {
         try {
             return

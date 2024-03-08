@@ -84,7 +84,7 @@ import static java.lang.System.Logger.Level.WARNING;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
- * A <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#spi" target="_top">CDI 3.0 portable
+ * A <a href="https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html#spi" target="_top">CDI portable
  * extension</a> that enables the {@linkplain jakarta.inject.Inject injection} of any <a
  * href="#service-interface"><em>service interface</em></a>, <a href="#service-client"><em>service client</em></a>, <a
  * href="#service-client-builder"><em>service client builder</em></a>, <a
@@ -1110,9 +1110,9 @@ public final class OciExtension implements Extension {
                 .qualifiers(withName(qualifiers, "config"))
                 .scope(Singleton.class)
                 .produceWith(i ->
-                             new SimpleAdpSupplier(i.select(SimpleAuthenticationDetailsProviderBuilder.class,
-                                                            qualifiers)::get,
-                                                   i.select(ConfigAccessor.class, qualifiers).get()));
+                             new SimpleAdpSupplier(i.select(ConfigAccessor.class, qualifiers).get(),
+                                                   i.select(SimpleAuthenticationDetailsProviderBuilder.class,
+                                                            qualifiers)::get));
         }
         // SimpleAuthenticationDetailsProviderBuilder
         if (isUnsatisfied(bm, SimpleAuthenticationDetailsProviderBuilder.class, qualifiers)) {

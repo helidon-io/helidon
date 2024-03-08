@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.oci.sdk.cdi;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -49,18 +50,49 @@ interface ConfigAccessor {
      */
     Optional<String> get(String name);
 
+    /**
+     * Returns a {@link ConfigAccessor} whose {@link #get(String)} method is implemented by first invoking this {@link
+     * ConfigAccessor}'s {@link #get(String)} method, or, if its return value {@linkplain Optional#isEmpty() is empty},
+     * invoking the {@link #get(String)} method of the supplied {@link ConfigAccessor}.
+     *
+     * @param ca a {@link ConfigAccessor}; must not be {@code null}
+     *
+     * @return a {@link ConfigAccessor} whose {@link #get(String)} method is implemented by first invoking this {@link
+     * ConfigAccessor}'s {@link #get(String)} method, or, if its return value {@linkplain Optional#isEmpty() is empty},
+     * invoking the {@link #get(String)} method of the supplied {@link ConfigAccessor}; never {@code null}
+     *
+     * @exception NullPointerException if {@code ca} is {@code null}
+     */
     default ConfigAccessor thenTry(ConfigAccessor ca) {
+        Objects.requireNonNull(ca, "ca");
         return n -> get(n).or(() -> ca.get(n));
     }
 
+    /**
+     * Returns a {@link ConfigAccessor} that returns an {@linkplain Optional#isEmpty() empty <code>Optional</code>} for
+     * every argument.
+     *
+     * @return a {@link ConfigAccessor} that returns an {@linkplain Optional#isEmpty() empty <code>Optional</code>} for
+     * every argument; never {@code null}
+     */
     static ConfigAccessor empty() {
         return n -> Optional.empty();
     }
 
+    /**
+     * Returns a {@link ConfigAccessor} backed by the {@link System#getenv(String)} method.
+     *
+     * @return a {@link ConfigAccessor} backed by the {@link System#getenv(String)} method; never {@code null}
+     */
     static ConfigAccessor environmentVariables() {
         return n -> Optional.ofNullable(System.getenv(n));
     }
 
+    /**
+     * Returns a {@link ConfigAccessor} backed by the {@link System#getProperty(String)} method.
+     *
+     * @return a {@link ConfigAccessor} backed by the {@link System#getProperty(String)} method; never {@code null}
+     */
     static ConfigAccessor systemProperties() {
         return n -> Optional.ofNullable(System.getProperty(n));
     }

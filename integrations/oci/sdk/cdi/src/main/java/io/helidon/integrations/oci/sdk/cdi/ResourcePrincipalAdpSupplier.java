@@ -22,6 +22,17 @@ import java.util.function.Supplier;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
 
+/**
+ * An {@link AdpSupplier} of {@link ResourcePrincipalAuthenticationDetailsProvider} instances.
+ *
+ * @see #get()
+ *
+ * @see #ResourcePrincipalAdpSupplier(Supplier, Function)
+ *
+ * @see ResourcePrincipalAuthenticationDetailsProvider
+ *
+ * @see ResourcePrincipalAuthenticationDetailsProviderBuilder
+ */
 class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthenticationDetailsProvider> {
 
 
@@ -30,7 +41,7 @@ class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthe
      */
 
 
-    private final Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> builderSupplier;
+    private final Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs;
 
     private final Function<? super ResourcePrincipalAuthenticationDetailsProviderBuilder,
                            ? extends ResourcePrincipalAuthenticationDetailsProvider> f;
@@ -41,26 +52,74 @@ class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthe
      */
 
 
+    /**
+     * Creates a new {@link ResourcePrincipalAdpSupplier}.
+     *
+     * @see #ResourcePrincipalAdpSupplier(Supplier, Function)
+     */
     ResourcePrincipalAdpSupplier() {
         this(ResourcePrincipalAuthenticationDetailsProvider::builder,
              ResourcePrincipalAuthenticationDetailsProviderBuilder::build);
     }
 
-    ResourcePrincipalAdpSupplier(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> builderSupplier) {
-        this(builderSupplier, ResourcePrincipalAuthenticationDetailsProviderBuilder::build);
+    /**
+     * Creates a new {@link ResourcePrincipalAdpSupplier}.
+     *
+     * @param bs a {@link Supplier} of {@link ResourcePrincipalAuthenticationDetailsProviderBuilder
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder} instances; must not be {@code null}; {@link
+     * ResourcePrincipalAuthenticationDetailsProvider#builder() ResourcePrincipalAuthenticationDetailsProvider::builder}
+     * is a commonly-supplied value
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @see #ResourcePrincipalAdpSupplier(Supplier, Function)
+     */
+    ResourcePrincipalAdpSupplier(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs) {
+        this(bs, ResourcePrincipalAuthenticationDetailsProviderBuilder::build);
     }
 
+    /**
+     * Creates a new {@link ResourcePrincipalAdpSupplier}.
+     *
+     * @param f a {@link Function} that accepts an {@link ResourcePrincipalAuthenticationDetailsProviderBuilder
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder} and returns an {@link
+     * ResourcePrincipalAuthenticationDetailsProvider} sourced ultimately from its {@link
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder#build() build()} method; must not be {@code null}; {@link
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder#build()
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder::build} is a commonly-supplied value
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @see #ResourcePrincipalAdpSupplier(Supplier, Function)
+     */
     ResourcePrincipalAdpSupplier(Function<? super ResourcePrincipalAuthenticationDetailsProviderBuilder,
                                           ? extends ResourcePrincipalAuthenticationDetailsProvider> f) {
         this(ResourcePrincipalAuthenticationDetailsProvider::builder, f);
     }
 
+    /**
+     * Creates a new {@link ResourcePrincipalAdpSupplier}.
+     *
+     * @param bs a {@link Supplier} of {@link ResourcePrincipalAuthenticationDetailsProviderBuilder
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder} instances; must not be {@code null}; {@link
+     * ResourcePrincipalAuthenticationDetailsProvider#builder() ResourcePrincipalAuthenticationDetailsProvider::builder}
+     * is a commonly-supplied value
+     *
+     * @param f a {@link Function} that accepts an {@link ResourcePrincipalAuthenticationDetailsProviderBuilder
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder} and returns an {@link
+     * ResourcePrincipalAuthenticationDetailsProvider} sourced ultimately from its {@link
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder#build() build()} method; must not be {@code null}; {@link
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder#build()
+     * ResourcePrincipalAuthenticationDetailsProviderBuilder::build} is a commonly-supplied value
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     */
     // This is The Way.
     ResourcePrincipalAdpSupplier(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs,
                                  Function<? super ResourcePrincipalAuthenticationDetailsProviderBuilder,
                                           ? extends ResourcePrincipalAuthenticationDetailsProvider> f) {
         super();
-        this.builderSupplier = bs == null ? ResourcePrincipalAuthenticationDetailsProvider::builder : bs;
+        this.bs = bs == null ? ResourcePrincipalAuthenticationDetailsProvider::builder : bs;
         this.f = f == null ? ResourcePrincipalAuthenticationDetailsProviderBuilder::build : f;
     }
 
@@ -70,9 +129,28 @@ class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthe
      */
 
 
+    /**
+     * Returns an {@link Optional} {@linkplain Optional#get() housing} a {@link
+     * ResourcePrincipalAuthenticationDetailsProvider} instance.
+     *
+     * <p>An {@linkplain Optional#isEmpty() empty <code>Optional</code>} return value indicates only that at the moment
+     * of invocation minimal requirements were not met. It implies no further semantics of any kind.</p>
+     *
+     * <p>This method will return an {@linkplain Optional#isEmpty() empty <code>Optional</code>} if at the moment of
+     * invocation an invocation of the {@link #available()} method returns {@code false}.</p>
+     *
+     * @return an {@link Optional} {@linkplain Optional#get() housing} a {@link
+     * ResourcePrincipalAuthenticationDetailsProvider} instance; never {@code null}
+     *
+     * @see #ResourcePrincipalAdpSupplier(Supplier, Function)
+     *
+     * @see #available()
+     *
+     * @see ResourcePrincipalAuthenticationDetailsProvider
+     */
     @Override
     public final Optional<ResourcePrincipalAuthenticationDetailsProvider> get() {
-        return Optional.ofNullable(available() ? this.f.apply(this.builderSupplier.get()) : null);
+        return Optional.ofNullable(available() ? this.f.apply(this.bs.get()) : null);
     }
 
 
@@ -81,6 +159,17 @@ class ResourcePrincipalAdpSupplier implements AdpSupplier<ResourcePrincipalAuthe
      */
 
 
+    /**
+     * Returns {@code true} if a non-{@code null} value {@linkplain System#getenv(String) exists for the environment
+     * variable} named "{@link ResourcePrincipalAuthenticationDetailsProvider OCI_RESOURCE_PRINCIPAL_VERSION}" and
+     * {@code false} if it does not.
+     *
+     * @return {@code true} if a non-{@code null} value {@linkplain System#getenv(String) exists for the environment
+     * variable} named "{@link ResourcePrincipalAuthenticationDetailsProvider OCI_RESOURCE_PRINCIPAL_VERSION}" and
+     * {@code false} if it does not
+     *
+     * @see ResourcePrincipalAuthenticationDetailsProvider
+     */
     public static boolean available() {
         return System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null;
     }

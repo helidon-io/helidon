@@ -32,10 +32,10 @@ import static java.util.function.Predicate.not;
  * abbreviations of "{@linkplain com.oracle.bmc.auth.BasicAuthenticationDetailsProvider authentication details
  * provider}".</p>
  *
- * <p>An OCI authentication strategy descriptor can serve as a kind of shorthand identifier for {@linkplain
- * AdpSupplierSelector#select(Object) selecting} a particular {@link AdpSupplier} that can ultimately supply a
- * particular {@link com.oracle.bmc.auth.BasicAuthenticationDetailsProvider BasicAuthenticationDetailsProvider}
- * implementation.</p>
+ * <p>An OCI authentication strategy descriptor&mdash;a simple {@link String} with no additional semantics&mdash;can
+ * serve as a kind of shorthand identifier for {@linkplain AdpSupplierSelector#select(Object) selecting} a particular
+ * {@link AdpSupplier} that can ultimately supply a particular {@link
+ * com.oracle.bmc.auth.BasicAuthenticationDetailsProvider BasicAuthenticationDetailsProvider} implementation.</p>
  *
  * <p>While fundamentally OCI authentication strategy descriptors are simply {@link String}s with no particular
  * semantics, they are particularly useful when combined with the usage of an {@link AdpSupplierSelector}. See the
@@ -179,6 +179,8 @@ final class AdpStrategyDescriptors {
      *
      * <p>This method never returns {@code null}.</p>
      *
+     * @param ca a {@link ConfigAccessor}; must not be {@code null}
+     *
      * @return an unodifiable, unchanging {@link List} of names; never {@code null}
      *
      * @exception NullPointerException if {@code ca} is {@code null}
@@ -207,6 +209,8 @@ final class AdpStrategyDescriptors {
      * <p>This method is often used in combination with the return value of the {@link
      * #strategyDescriptors(ConfigAccessor)} method and an {@link AdpSupplierSelector}'s {@link
      * AdpSupplierSelector#select(Iterable)} method, but it is general-purpose.</p>
+     *
+     * @param <T> the element type
      *
      * @param i an {@link Iterable}; must not be {@code null}
      *

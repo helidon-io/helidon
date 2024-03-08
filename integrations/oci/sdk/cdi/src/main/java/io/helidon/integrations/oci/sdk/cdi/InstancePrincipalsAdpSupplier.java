@@ -101,8 +101,8 @@ class InstancePrincipalsAdpSupplier implements AdpSupplier<InstancePrincipalsAut
      *
      * @param bs a {@link Supplier} of {@link InstancePrincipalsAuthenticationDetailsProviderBuilder
      * InstancePrincipalsAuthenticationDetailsProviderBuilder} instances; must not be {@code null}; {@link
-     * InstancePrincipalsAuthenticationDetailsProvider InstancePrincipalsAuthenticationDetailsProvider}{@code ::}{@link
-     * InstancePrincipalsAuthenticationDetailsProvider#builder() builder} is a commonly-supplied value
+     * InstancePrincipalsAuthenticationDetailsProvider#builder()
+     * InstancePrincipalsAuthenticationDetailsProvider::builder} is a commonly-supplied value
      *
      * @exception NullPointerException if {@code bs} is {@code null}
      *
@@ -121,9 +121,8 @@ class InstancePrincipalsAdpSupplier implements AdpSupplier<InstancePrincipalsAut
      * InstancePrincipalsAuthenticationDetailsProviderBuilder} and returns an {@link
      * InstancePrincipalsAuthenticationDetailsProvider} sourced ultimately from its {@link
      * InstancePrincipalsAuthenticationDetailsProviderBuilder#build() build()} method; must not be {@code null}; {@link
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder}{@code ::}{@link
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder#build() build} is a commonly-supplied value
+     * InstancePrincipalsAuthenticationDetailsProviderBuilder#build()
+     * InstancePrincipalsAuthenticationDetailsProviderBuilder::build} is a commonly-supplied value
      *
      * @exception NullPointerException if {@code f} is {@code null}
      *
@@ -141,16 +140,15 @@ class InstancePrincipalsAdpSupplier implements AdpSupplier<InstancePrincipalsAut
      *
      * @param bs a {@link Supplier} of {@link InstancePrincipalsAuthenticationDetailsProviderBuilder
      * InstancePrincipalsAuthenticationDetailsProviderBuilder} instances; must not be {@code null}; {@link
-     * InstancePrincipalsAuthenticationDetailsProvider InstancePrincipalsAuthenticationDetailsProvider}{@code ::}{@link
-     * InstancePrincipalsAuthenticationDetailsProvider#builder() builder} is a commonly-supplied value
+     * InstancePrincipalsAuthenticationDetailsProvider#builder()
+     * InstancePrincipalsAuthenticationDetailsProvider::builder} is a commonly-supplied value
      *
      * @param f a {@link Function} that accepts an {@link InstancePrincipalsAuthenticationDetailsProviderBuilder
      * InstancePrincipalsAuthenticationDetailsProviderBuilder} and returns an {@link
      * InstancePrincipalsAuthenticationDetailsProvider} sourced ultimately from its {@link
      * InstancePrincipalsAuthenticationDetailsProviderBuilder#build() build()} method; must not be {@code null}; {@link
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder}{@code ::}{@link
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder#build() build} is a commonly-supplied value
+     * InstancePrincipalsAuthenticationDetailsProviderBuilder#build()
+     * InstancePrincipalsAuthenticationDetailsProvider::build} is a commonly-supplied value
      *
      * @exception NullPointerException if any argument is {@code null}
      *
@@ -169,8 +167,8 @@ class InstancePrincipalsAdpSupplier implements AdpSupplier<InstancePrincipalsAut
      *
      * @param bs a {@link Supplier} of {@link InstancePrincipalsAuthenticationDetailsProviderBuilder
      * InstancePrincipalsAuthenticationDetailsProviderBuilder} instances; must not be {@code null}; {@link
-     * InstancePrincipalsAuthenticationDetailsProvider InstancePrincipalsAuthenticationDetailsProvider}{@code ::}{@link
-     * InstancePrincipalsAuthenticationDetailsProvider#builder() builder} is a commonly-supplied value
+     * InstancePrincipalsAuthenticationDetailsProvider#builder()
+     * InstancePrincipalsAuthenticationDetailsProvider::builder} is a commonly-supplied value
      *
      * @see #InstancePrincipalsAdpSupplier(ConfigAccessor, Supplier, Function)
      */
@@ -188,9 +186,8 @@ class InstancePrincipalsAdpSupplier implements AdpSupplier<InstancePrincipalsAut
      * InstancePrincipalsAuthenticationDetailsProviderBuilder} and returns an {@link
      * InstancePrincipalsAuthenticationDetailsProvider} sourced ultimately from its {@link
      * InstancePrincipalsAuthenticationDetailsProviderBuilder#build() build()} method; must not be {@code null}; {@link
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder}{@code ::}{@link
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder#build() build} is a commonly-supplied value
+     * InstancePrincipalsAuthenticationDetailsProviderBuilder#build()
+     * InstancePrincipalsAuthenticationDetailsProviderBuilder::build} is a commonly-supplied value
      *
      * @exception NullPointerException if any argument is {@code null}
      *
@@ -209,16 +206,15 @@ class InstancePrincipalsAdpSupplier implements AdpSupplier<InstancePrincipalsAut
      *
      * @param bs a {@link Supplier} of {@link InstancePrincipalsAuthenticationDetailsProviderBuilder
      * InstancePrincipalsAuthenticationDetailsProviderBuilder} instances; must not be {@code null}; {@link
-     * InstancePrincipalsAuthenticationDetailsProvider InstancePrincipalsAuthenticationDetailsProvider}{@code ::}{@link
-     * InstancePrincipalsAuthenticationDetailsProvider#builder() builder} is a commonly-supplied value
+     * InstancePrincipalsAuthenticationDetailsProvider#builder()
+     * InstancePrincipalsAuthenticationDetailsProvider::builder} is a commonly-supplied value
      *
      * @param f a {@link Function} that accepts an {@link InstancePrincipalsAuthenticationDetailsProviderBuilder
      * InstancePrincipalsAuthenticationDetailsProviderBuilder} and returns an {@link
      * InstancePrincipalsAuthenticationDetailsProvider} sourced ultimately from its {@link
      * InstancePrincipalsAuthenticationDetailsProviderBuilder#build() build()} method; must not be {@code null}; {@link
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder}{@code ::}{@link
-     * InstancePrincipalsAuthenticationDetailsProviderBuilder#build() build} is a commonly-supplied value
+     * InstancePrincipalsAuthenticationDetailsProviderBuilder#build()
+     * InstancePrincipalsAuthenticationDetailsProviderBuilder::build} is a commonly-supplied value
      *
      * @exception NullPointerException if any argument is {@code null}
      */
@@ -266,6 +262,8 @@ class InstancePrincipalsAdpSupplier implements AdpSupplier<InstancePrincipalsAut
      * Invokes the {@link #available(ConfigAccessor)} method with the {@link ConfigAccessor} {@linkplain
      * #InstancePrincipalsAdpSupplier(ConfigAccessor, Supplier, Function) supplied at construction time} and returns its
      * result.
+     *
+     * <p>This method is called by the {@link #get()} method's implementation.</p>
      *
      * @return the result of invoking the {@link #available(ConfigAccessor)} method with the {@link ConfigAccessor}
      * {@linkplain #InstancePrincipalsAdpSupplier(ConfigAccessor, Supplier, Function) supplied at construction time}
@@ -323,6 +321,8 @@ class InstancePrincipalsAdpSupplier implements AdpSupplier<InstancePrincipalsAut
      * @exception NullPointerException if {@code ca} is {@code null}
      *
      * @exception UncheckedIOException if a network error occurs that was not caused by a {@link ConnectException}
+     *
+     * @see ConfigAccessor#get(String)
      */
     public static boolean available(ConfigAccessor ca) {
         InetAddress imds;
