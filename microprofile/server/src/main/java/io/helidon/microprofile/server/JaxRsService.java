@@ -379,8 +379,7 @@ class JaxRsService implements HttpService {
 
         @Override
         public boolean enableResponseBuffering() {
-            // Jersey should not try to do the buffering
-            return true;
+            return true;        // enable buffering in Jersey
         }
 
         public void await() {
