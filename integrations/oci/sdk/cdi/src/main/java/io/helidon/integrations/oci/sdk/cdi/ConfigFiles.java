@@ -406,11 +406,11 @@ final class ConfigFiles {
      * <ul>
      *
      * <li>{@code configFile.}{@link ConfigFile#get(String) get}{@code ("authentication_type")} is called. If the return
-     * value is {@linkplain String#equals(Object) equal to} "{@code instance_principal}" (singular) or "{@code
-     * resource_principal}", this method returns {@code true}.</li>
+     * value is {@linkplain String#equals(Object) equal to} "{@code instance_principal}" (singular) or
+     * "{@code resource_principal}", this method returns {@code true}.</li>
      *
-     * <li>If the value for the {@code authentication_type} is any other value, including {@code null}, then additional
-     * values are checked:
+     * <li>If the value for the {@code authentication_type} key is any other value, including {@code null}, then
+     * additional values are checked:
      *
      * <ul>
      *
@@ -430,6 +430,11 @@ final class ConfigFiles {
      * </ul>
      *
      * <p>In all other cases, {@code true} is returned.</p>
+     *
+     * <p>The <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#File_Entries">official
+     * documentation</a> does not match the actual miminally required information, but is suitable for basic use cases,
+     * particularly in support of a {@link ConfigFileAuthenticationDetailsProvider}. This method checks for the actual
+     * minimal set of requirements, as described above.</p>
      *
      * @param cf the {@link ConfigFile ConfigFile} in question; must not be {@code null}
      *
