@@ -48,7 +48,7 @@
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://www.eclipse.org/downloads/download.php?file=/ee4j/jakartaee-tck/jakartaee10/staged/eftl/jakarta-core-profile-tck-${version.lib.microprofile-core-profile}.zip&amp;mirror_id=1281" dest="jakarta-core-profile-tck-${version.lib.microprofile-core-profile}.zip"/>
+                                <get skipexisting="true" src="https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/staged/eftl/jakarta-core-profile-tck-${version.lib.microprofile-core-profile}.zip" dest="jakarta-core-profile-tck-${version.lib.microprofile-core-profile}.zip"/>
                                 <unzip src="jakarta-core-profile-tck-${version.lib.microprofile-core-profile}.zip" dest="./target"/>
                                 <chmod file="artifact-install.sh" perm="+x"/>
                                 <exec executable="sh">

@@ -100,7 +100,7 @@ class MaxPayloadSizeTest {
                         it.write(PAYLOAD_BYTES);
                         it.write(PAYLOAD_BYTES);
                         it.write(PAYLOAD_BYTES);
-                    } catch (IOException e) {
+                    } catch (IOException | UncheckedIOException e) {
                         // ignored -- possible connection reset
                     }
                 })) {
