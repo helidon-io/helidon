@@ -201,6 +201,8 @@ final class ConfigFiles {
                 // condition. For the purposes of this method, in such cases we want to return an empty Optional rather
                 // than throwing an exception.
                 //
+                // Probably the OCI Java SDK should have used BasicFileAttributes#isRegularFile() instead.
+                //
                 // See
                 // https://github.com/oracle/oci-java-sdk/blob/v3.35.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L91-L94
                 String message = ioe.getMessage();
@@ -433,8 +435,9 @@ final class ConfigFiles {
      *
      * <p>The <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#File_Entries">official
      * documentation</a> does not match the actual miminally required information, but is suitable for basic use cases,
-     * particularly in support of a {@link ConfigFileAuthenticationDetailsProvider}. This method checks for the actual
-     * minimal set of requirements, as described above.</p>
+     * particularly in support of a {@link com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider
+     * ConfigFileAuthenticationDetailsProvider}. This method checks for the actual minimal set of requirements, as
+     * described above.</p>
      *
      * @param cf the {@link ConfigFile ConfigFile} in question; must not be {@code null}
      *
