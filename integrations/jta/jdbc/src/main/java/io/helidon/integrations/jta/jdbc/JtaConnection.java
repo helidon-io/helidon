@@ -171,8 +171,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @param immediateEnlistment whether an attempt to enlist the new {@link JtaConnection} in a global transaction, if
      * there is one, will be made immediately
      *
-     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}
-     *
      * @exception SQLException if transaction enlistment fails or the supplied {@code delegate} {@linkplain
      * Connection#isClosed() is closed}
      *
@@ -828,33 +826,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
         return this == other;
     }
 
-    /**
-     * Returns {@code true} if a JTA transaction exists and {@linkplain
-     * TransactionSynchronizationRegistry#getTransactionStatus() has a status} equal to either {@link
-     * Status#STATUS_ACTIVE} or {@link Status#STATUS_MARKED_ROLLBACK}.
-     *
-     * @return {@code true} if a JTA transaction exists and {@linkplain
-     * TransactionSynchronizationRegistry#getTransactionStatus() has a status} equal to either {@link
-     * Status#STATUS_ACTIVE} or {@link Status#STATUS_MARKED_ROLLBACK}; {@code false} in all other cases
-     *
-     * @exception SQLException if the status could not be acquired
-     *
-     * @see TransactionSynchronizationRegistry#getTransactionStatus()
-     *
-     * @see Status
-     */
-    private boolean activeOrMarkedRollbackTransaction() throws SQLException {
-        switch (this.transactionStatus()) {
-            // See https://www.eclipse.org/lists/jta-dev/msg00264.html and
-            // https://github.com/jakartaee/transactions/issues/211.
-        case Status.STATUS_ACTIVE:
-        case Status.STATUS_MARKED_ROLLBACK:
-            return true;
-        default:
-            return false;
-        }
-    }
-
     private int transactionStatus() throws SQLException {
         try {
             return this.tsr.getTransactionStatus();
@@ -877,17 +848,19 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * {@linkplain Transaction#getStatus() status} is one of {@link Status#STATUS_ACTIVE} or {@link
      * Status#STATUS_MARKED_ROLLBACK} as a result of a prior {@link #enlist()} invocation on the current thread.
      *
-     * @return {@code true} if and only if this {@link JtaConnection} is associated with a {@linkplain
-     * #activeOrMarkedRollbackTransaction() JTA transaction whose status is known and not yet prepared}; {@code false}
-     * in all other cases
+     * @return {@code true} if and only if this {@link JtaConnection} is associated with a JTA transaction whose status
+     * is known and not yet prepared; {@code false} in all other cases
      *
      * @exception SQLException if the enlisted status could not be acquired
      */
     boolean enlisted() throws SQLException {
         Enlistment enlistment = this.enlistment; // volatile read
         if (enlistment == null) {
+            // No Enlistment object, so we are not enlisted.
             return false;
-        } else if (enlistment.threadId() != Thread.currentThread().threadId()) {
+        }
+
+        if (enlistment.threadId() != Thread.currentThread().threadId()) {
             // We're enlisted in a Transaction on thread 1, and a caller from thread 2 is trying to do something with
             // us. This could have unintended side effects. Throw.
             throw new SQLTransientException("Already enlisted (" + enlistment + "); current thread id: "
@@ -896,38 +869,45 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
         // We are, or were, enlisted. Let's see in what way.
 
-        // We're enlisted in a Transaction that was created on the current thread. So far so good. Is it active?
+        // We're enlisted in a Transaction that was created on the current thread. So far so good. Is it active or
+        // marked-for-rollback, i.e. still in play? (See also: https://www.eclipse.org/lists/jta-dev/msg00316.html)
         Transaction t = enlistment.transaction();
         int transactionStatus = statusFrom(t);
+        int currentThreadTransactionStatus = Status.STATUS_UNKNOWN; // a value for "not-yet-initialized/known"
         switch (transactionStatus) {
         case Status.STATUS_ACTIVE:
-            // We have been enlisted in an active transaction that was created on this thread. Is the current
-            // transaction, whatever it is, active?
-            int currentThreadTransactionStatus = this.transactionStatus();
+        case Status.STATUS_MARKED_ROLLBACK:
+            // We have been enlisted in an active or marked-for-rollback transaction that was created on this
+            // thread. Does the current transaction, whatever it is, also bear the same status?
+            //
+            // (This cheap compare-two-ints-in-a-switch-block check helps rule out inequality very quickly.)
+            currentThreadTransactionStatus = this.transactionStatus();
+            if (currentThreadTransactionStatus == transactionStatus && t.equals(this.transaction())) {
+                // The Transaction associated with the current thread (this.transaction()) is the same active or
+                // marked-for-rollback one we're enlisted with (enlistment.transaction(), t), so we're already enlisted,
+                // nothing is suspended, and everything is fine.
+                //
+                // (Equality/"sameness" is governed by the spec:
+                // https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html#transaction-equality-and-hash-code)
+                return true;
+            }
+            // We now know we're going to throw an exception because the transaction we were enlisted with has become
+            // suspended (the current transaction is not the same as the one we were enlisted with); all that's left is
+            // to figure out which kind of exception.
             switch (currentThreadTransactionStatus) {
             case Status.STATUS_ACTIVE:
-                // We have been enlisted in an active transaction that was created on this thread AND the current
-                // thread's transaction status is ALSO active. Is the current thread's transaction equal to the one
-                // we're enlisted in?  Or is it a different one (in which case our transaction has been suspended)?
-                if (t.equals(this.transaction())) {
-                    // The Transaction associated with the current thread is the active one we're enlisted with, so
-                    // we're already enlisted and everything is fine. (Equality is governed by the spec:
-                    // https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html#transaction-equality-and-hash-code)
-                    return true;
-                }
-                throw new SQLTransientException("Attempting to perform work while associated with a suspended transaction",
-                                                INVALID_TRANSACTION_STATE_NO_SUBCLASS);
             case Status.STATUS_COMMITTED:
-            case Status.STATUS_ROLLEDBACK:
             case Status.STATUS_COMMITTING:
             case Status.STATUS_MARKED_ROLLBACK:
+            case Status.STATUS_NO_TRANSACTION:
             case Status.STATUS_PREPARED:
             case Status.STATUS_PREPARING:
+            case Status.STATUS_ROLLEDBACK:
             case Status.STATUS_ROLLING_BACK:
-            case Status.STATUS_NO_TRANSACTION:
-                // The current thread's transaction status is not active, so it can't be the same transaction with
-                // which we are enlisted, so by definition we're enlisted in a suspended transaction and no further
-                // work should be done until that transaction is resumed.
+                // The current thread's transaction status is not the same as our transaction status, so the current
+                // thread's transaction can't be the same transaction with which we are enlisted, so by definition we're
+                // enlisted in a suspended transaction and no further work should be done until that transaction is
+                // resumed.
                 throw new SQLTransientException("Attempting to perform work while associated with a suspended transaction",
                                                 INVALID_TRANSACTION_STATE_NO_SUBCLASS);
             case Status.STATUS_UNKNOWN:
@@ -944,7 +924,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // longer enlisted.
             return false;
         case Status.STATUS_COMMITTING:
-        case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_PREPARED:
         case Status.STATUS_PREPARING:
         case Status.STATUS_ROLLING_BACK:
@@ -990,8 +969,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
         int currentThreadTransactionStatus = this.transactionStatus();
         switch (currentThreadTransactionStatus) {
         case Status.STATUS_ACTIVE:
-            // There is a global transaction currently active on the current thread. That's good. Keep going. (Every
-            // other case in this switch statement will result in a return or a throw.)
+        case Status.STATUS_MARKED_ROLLBACK:
+            // There is a global transaction currently active (or marked for rollback) on the current thread. That's
+            // good. Keep going. (Every other case in this switch statement will result in a return or a throw.)
             break;
         case Status.STATUS_COMMITTED:
         case Status.STATUS_NO_TRANSACTION:
@@ -1001,7 +981,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // without enlisting.
             return;
         case Status.STATUS_COMMITTING:
-        case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_PREPARED:
         case Status.STATUS_PREPARING:
         case Status.STATUS_ROLLING_BACK:
@@ -1016,12 +995,12 @@ class JtaConnection extends ConditionallyCloseableConnection {
         }
 
         if (!super.getAutoCommit()) {
-            // There is, as far as we can tell, an active global transaction on the current thread, and
-            // super.getAutoCommit() (super. on purpose, not this., to prevent a circular call to enlist()) returned
-            // false, and we aren't (yet) enlisted with the active global transaction, so autoCommit must have been
-            // disabled on purpose by the caller, not by the transaction enlistment machinery. In such a case, we don't
-            // want to permit enlistment, because a local transaction may be in progress and we don't want to have its
-            // effects mixed in.
+            // There is, as far as we can tell, an active (or marked-for-rollback) global transaction on the current
+            // thread, and super.getAutoCommit() (super. on purpose, not this., to prevent a circular call to enlist())
+            // returned false, and we aren't (yet) enlisted with the active global transaction, so autoCommit must have
+            // been disabled on purpose by the caller, not by the transaction enlistment machinery. In such a case, we
+            // don't want to permit enlistment, because a local transaction may be in progress and we don't want to have
+            // its effects mixed in.
             throw new SQLTransientException("autoCommit was false during active transaction enlistment",
                                             INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
@@ -1030,6 +1009,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         int transactionStatus = statusFrom(t);
         switch (transactionStatus) {
         case Status.STATUS_ACTIVE:
+        case Status.STATUS_MARKED_ROLLBACK:
             // No one has started or finished the transaction completion process yet. Most common. Keep going.
             break;
         case Status.STATUS_COMMITTED:
@@ -1037,7 +1017,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // Terminal. Return without enlisting.
             return;
         case Status.STATUS_COMMITTING:
-        case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_PREPARED:
         case Status.STATUS_PREPARING:
         case Status.STATUS_ROLLING_BACK:
@@ -1046,9 +1025,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
                                             INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         case Status.STATUS_NO_TRANSACTION:
             // Impossible state machine transition since t is non-null and at least at one earlier point on this thread
-            // the status was Status.STATUS_ACTIVE. Even if somehow the global transaction is disassociated from the
-            // current thread, the Transaction object's status will never, by spec, go to
-            // Status.STATUS_NO_TRANSACTION. See
+            // the status was Status.STATUS_ACTIVE or Status.STATUS_MARKED_ROLLBACK. Even if somehow the global
+            // transaction is disassociated from the current thread, the Transaction object's status will never, by
+            // spec, go to Status.STATUS_NO_TRANSACTION. See
             // https://groups.google.com/g/narayana-users/c/eYVUmhE9QZg/m/xbBh2CsBBQAJ.
             throw new AssertionError(); // per spec
         case Status.STATUS_UNKNOWN:
@@ -1061,10 +1040,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
         // One last check to see if we've been actually closed or requested to close asynchronously.
         this.failWhenClosed();
 
-        // Point of no return. We ensured that the Transaction at one point had a status of Status.STATUS_ACTIVE and
-        // ensured we aren't already enlisted and our autoCommit status is true. The Transaction's status can still
-        // change at any point (as a result of asynchronous rollback, for example) through certain permitted state
-        // transitions, so we have to watch for exceptions.
+        // Point of no return. We ensured that the Transaction at one point had a status of Status.STATUS_ACTIVE (or
+        // Status.STATUS_MARKED_ROLLBACK) and ensured we aren't already enlisted and our autoCommit status is true. The
+        // Transaction's status can still change at any point (as a result of asynchronous rollback, for example)
+        // through certain permitted state transitions, so we have to watch for exceptions.
 
         XAResource xar = this.xaResourceSupplier.get();
         if (xar == null) {

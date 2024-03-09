@@ -53,6 +53,11 @@ import static javax.transaction.xa.XAException.XA_RBROLLBACK;
  * potentially lossy in the presence of two-phase commit operations.</p>
  *
  * <p>Instances of this class are safe for concurrent use by multiple threads.</p>
+ *
+ * @see XAResource
+ *
+ * @see <a href="https://pubs.opengroup.org/onlinepubs/009680699/toc.pdf">Distributed Transaction Processing:
+ * The XA Specification</a>
  */
 final class LocalXAResource implements XAResource {
 
@@ -701,6 +706,7 @@ final class LocalXAResource implements XAResource {
      * Inner and nested classes.
      */
 
+
     record Association(BranchState branchState,
                        Xid xid,
                        boolean suspended,
@@ -708,6 +714,8 @@ final class LocalXAResource implements XAResource {
                        boolean priorAutoCommit) {
 
         private static final Logger LOGGER = Logger.getLogger(Association.class.getName());
+
+        // https://pubs.opengroup.org/onlinepubs/009680699/toc.pdf
 
         // Branch Association States: (XA specification, table 6-2)
         // T0: Not Associated
@@ -721,6 +729,50 @@ final class LocalXAResource implements XAResource {
         // S3: Prepared
         // S4: Rollback Only
         // S5: Heuristically Completed
+
+        /*
+          digraph "Branch States (XA specification, table 6-4)" {
+              s0 [label="Non-existent\nTransaction\n(s0)"];
+              s1 [label="Active\n(s1)"];
+              s2 [label="Idle\n(s2)"];
+              s3 [label="Prepared\n(s3)"];
+              s4 [label="Rollback\nOnly\n(s4)"];
+              s5 [label="Heuristically\nCompleted\n(s5)"];
+
+              s0 -> s1 [label="start()"];
+              s0 -> s0 [label="recover()"];
+
+              s1 -> s1 [label="recover()"];
+              s1 -> s2 [label="end()"];
+              s1 -> s4 [label="end() [RB]"];
+
+              s2 -> s0 [label="prepare() [RB, RDONLY]"];
+              s2 -> s0 [label="commit() [RB, OK, ERR]"];
+              s2 -> s0 [label="rollback() [RB, OK, ERR]"];
+              s2 -> s1 [label="start()"];
+              s2 -> s2 [label="recover()"];
+              s2 -> s3 [label="prepare()"];
+              s2 -> s4 [label="start() [RB]"];
+              s2 -> s5 [label="commit() [HEUR]"]
+
+              s3 -> s0 [label="commit()"];
+              s3 -> s0 [label="rollback()"];
+              s3 -> s3 [label="commit() [RETRY]"];
+              s3 -> s3 [label="recover()"];
+              s3 -> s5 [label="commit() [HEUR]"]
+              s3 -> s5 [label="rollback() [HEUR]"];
+
+              s4 -> s0 [label="rollback() [RB, OK, ERR]"];
+              s4 -> s4 [label="recover()"];
+              s4 -> s5 [label="rollback() [HEUR]"];
+
+              s5 -> s0 [label="forget()"];
+              s5 -> s5 [label="commit() [HEUR]"];
+              s5 -> s5 [label="forget() [ERR]"];
+              s5 -> s5 [label="rollback() [HEUR]"];
+              s5 -> s5 [label="recover()"];
+          }
+         */
 
         Association(BranchState branchState, Xid xid, Connection connection) {
             this(branchState, xid, false, connection, autoCommit(connection));
