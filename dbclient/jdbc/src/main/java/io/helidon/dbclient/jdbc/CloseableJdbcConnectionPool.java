@@ -12,36 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-package io.helidon.dbclient;
+ */package io.helidon.dbclient.jdbc;
 
 /**
- * Base {@link DbClient} implementation.
+ * CloseableJdbcConnectionPool is an interface that represents a JDBC connection pool that can be closed.
+ * It extends the JdbcConnectionPool interface and the AutoCloseable interface.
+ *
+ * @see JdbcConnectionPool
+ * @see AutoCloseable
  */
-public abstract class DbClientBase implements DbClient {
-
-    private final DbClientContext context;
-
-    /**
-     * Create a new instance.
-     *
-     * @param context context
-     */
-    protected DbClientBase(DbClientContext context) {
-        this.context = context;
-    }
-
-    /**
-     * Get the {@link DbClientContext}.
-     *
-     * @return DbClientContext
-     */
-    public DbClientContext context() {
-        return context;
-    }
-
-    @Override
-    public void close() {
-        // No-op by default
-    }
+public interface CloseableJdbcConnectionPool extends JdbcConnectionPool, AutoCloseable {
 }
