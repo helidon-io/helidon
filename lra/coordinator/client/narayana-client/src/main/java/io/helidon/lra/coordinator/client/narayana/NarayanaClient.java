@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ import io.helidon.webclient.api.WebClient;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
+
+import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * Narayana LRA coordinator client.
@@ -103,6 +105,7 @@ public class NarayanaClient implements CoordinatorClient {
                 .map(p -> parseBaseUri(p.toASCIIString()))
                 .orElse(coordinatorUriSupplier.get());
 
+        logF("Starting LRA, coordinator: {0}/start, clientId: {1}, timeout: {2}", baseUri, clientID, timeout);
         return retry.invoke(() -> {
             HttpClientRequest req = prepareWebClient(baseUri)
                     .post()
@@ -139,6 +142,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public void cancel(URI lraId, PropagatedHeaders headers) {
+        logF("Cancelling LRA {0}", lraId);
         retry.<Void>invoke(() -> {
             var req = prepareWebClient(lraId)
                     .put()
@@ -164,6 +168,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public void close(URI lraId, PropagatedHeaders headers) {
+        logF("Closing LRA {0}", lraId);
         retry.invoke(() -> {
                     var req = prepareWebClient(lraId)
                             .put()
@@ -197,6 +202,7 @@ public class NarayanaClient implements CoordinatorClient {
                               Participant p) {
         String links = compensatorLinks(p);
 
+        logF("Joining LRA {0} with links: {1}", lraId, links);
         return retry.invoke(() -> {
             var req = prepareWebClient(lraId)
                     .put()
@@ -227,13 +233,14 @@ public class NarayanaClient implements CoordinatorClient {
                         throw connectionError("Unexpected coordinator response ", res.status().code());
                 }
             } catch (Exception e) {
-                throw connectionError("Unable to join LRA", e);
+                throw connectionError("Unable to join LRA " + lraId, e);
             }
         });
     }
 
     @Override
     public void leave(URI lraId, PropagatedHeaders headers, Participant p) {
+        logF("Leaving LRA {0} participant: {1}", lraId, p);
         retry.invoke(() -> {
             var req = prepareWebClient(lraId)
                     .put()
@@ -260,6 +267,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public LRAStatus status(URI lraId, PropagatedHeaders headers) {
+        logF("Checking status of LRA {0}", lraId);
         return retry.invoke(() -> {
             var req = prepareWebClient(lraId)
                     .get()
@@ -354,7 +362,9 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     private void logF(String msg, Object... params) {
-        LOGGER.log(Level.DEBUG, msg, params);
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, msg, params);
+        }
     }
 }
 

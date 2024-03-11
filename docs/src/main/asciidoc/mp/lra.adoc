@@ -24,6 +24,7 @@
 :spec-version: 1.0-RC3
 :spec-name: MicroProfile {feature-name} specification
 :javadoc-link: https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/apidocs/org/eclipse/microprofile/lra/annotation/
+:microtx-link: https://docs.oracle.com/en/database/oracle/transaction-manager-for-microservices/index.html
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/mp.adoc[]
@@ -36,8 +37,10 @@ include::{rootdir}/includes/mp.adoc[]
 * <<API, API>>
 * <<Configuration, Configuration>>
 * <<Examples, Examples>>
+* <<Testing, Testing>>
 * <<Additional Information, Additional Information>>
 ** <<Coordinator, Coordinator>>
+** <<MicroTx LRA Coordinator, MicroTx LRA Coordinator>>
 ** <<Helidon LRA Coordinator, Helidon LRA Coordinator>>
 ** <<Narayana, Narayana>>
 * <<Reference, Reference>>
@@ -351,6 +354,73 @@ include::{sourcedir}/mp/LraSnippets.java[tag=snippet_13, indent=0]
 <5> Method which will be called by coordinator when LRA is completed
 <6> Method which will be called by coordinator when LRA is canceled
 
+== Testing
+Testing of JAX-RS resources with LRA can be challenging as LRA participant running in parallel with the test is needed.
+
+Helidon provides test coordinator which can be started automatically with additional socket on a random port within your
+own Helidon application. You only need one extra test dependency to enable test coordinator in your xref:testing/testing.adoc[@HelidonTest].
+
+[source, xml]
+.Dependency
+----
+<dependency>
+    <groupId>io.helidon.microprofile.lra</groupId>
+    <artifactId>helidon-microprofile-lra-testing</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+Considering that you have LRA enabled JAX-RS resource you want to test.
+
+[source, java]
+.Example JAX-RS resource with LRA.
+----
+include::{sourcedir}/mp/LraSnippets.java[tag=snippet_14, indent=0]
+----
+
+Helidon test with enabled CDI discovery can look like this.
+
+[source, java]
+.HelidonTest with LRA test support.
+----
+include::{sourcedir}/mp/LraSnippets.java[tag=snippet_15, indent=0]
+----
+<1> Resource is discovered automatically
+<2> Test coordinator needs to be added manually
+<3> Injecting test coordinator to access state of LRA managed by coordinator mid-test
+<4> Retrieving LRA managed by coordinator by LraId
+<5> Asserting LRA state in coordinator
+
+LRA testing feature has the following default configuration:
+
+* port: `0` - coordinator is started on random port(Helidon LRA participant is capable to discover test coordinator automatically)
+* bind-address: `localhost` - bind address of the coordinator
+* helidon.lra.coordinator.persistence: `false` - LRAs managed by test coordinator are not persisted
+* helidon.lra.participant.use-build-time-index: `false` - Participant annotation inspection ignores Jandex index files created in build time, it helps to avoid issues with additional test resources
+
+Testing LRA coordinator is started on additional named socket `test-lra-coordinator` configured with default index `500`.
+Default index can be changed with system property `helidon.lra.coordinator.test-socket.index`.
+
+Example: `-Dhelidon.lra.coordinator.test-socket.index=20`.
+
+[source, java]
+.HelidonTest override LRA test feature default settings.
+----
+include::{sourcedir}/mp/LraSnippets.java[tag=snippet_16, indent=0]
+----
+<1> Start test LRA coordinator always on the same port 8070(default is random port)
+<2> Test LRA coordinator socket bind address (default is localhost)
+<3> Persist LRA managed by coordinator(default is false)
+<4> Use build time Jandex index(default is false)
+
+When CDI bean auto-discovery is not desired, LRA and Config CDI extensions needs to be added manually.
+
+[source, java]
+.HelidonTest setup with disabled discovery.
+----
+include::{sourcedir}/mp/LraSnippets.java[tag=snippet_17, indent=0]
+----
+
 == Additional Information
 
 === Coordinator
@@ -359,12 +429,65 @@ the participants when the LRA transaction gets cancelled or completes (in case i
 In addition, participant also keeps track of timeouts, retries participant calls, and assigns LRA ids.
 
 .Helidon LRA supports following coordinators
+* {microtx-link}[MicroTx LRA coordinator]
 * Helidon LRA coordinator
 * https://narayana.io/lra[Narayana coordinator].
 
+=== MicroTx LRA Coordinator
+Oracle Transaction Manager for Microservices - {microtx-link}[MicroTx] is an enterprise grade transaction manager for microservices,
+among other it manages LRA transactions and is compatible with Narayana LRA clients.
+
+MicroTx LRA coordinator is compatible with Narayana clients when `narayanaLraCompatibilityMode` is on,
+you need to add another dependency to enable Narayana client:
+[source,xml]
+.Dependency needed for using Helidon LRA with Narayana compatible coordinator
+----
+<dependency>
+    <groupId>io.helidon.lra</groupId>
+    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+</dependency>
+----
+
+[source, bash]
+.Run MicroTx in Docker
+----
+docker container run --name otmm -v "$(pwd)":/app/config \
+-w /app/config -p 8080:8080/tcp --env CONFIG_FILE=tcs.yaml \
+--add-host host.docker.internal:host-gateway -d tmm:<version>
+----
+
+To use MicroTx with Helidon LRA participant, `narayanaLraCompatibilityMode` needs to be enabled.
+
+[source, yaml]
+.Configure MicroTx for development
+----
+tmmAppName: tcs
+tmmConfiguration:
+  listenAddr: 0.0.0.0:8080
+  internalAddr: http://host.docker.internal:8080
+  externalUrl: http://lra-coordinator.acme.com:8080
+  xaCoordinator:
+    enabled: false
+  lraCoordinator:
+    enabled: true
+  tccCoordinator:
+    enabled: false
+  storage:
+    type: memory
+  authentication:
+    enabled: false
+  authorization:
+    enabled: false
+  serveTLS:
+    enabled: false
+  narayanaLraCompatibilityMode:
+    enabled: true #<1>
+----
+<1> Enable Narayana compatibility mode
+
 === Helidon LRA Coordinator
 
-CAUTION: Experimental tool, usage in production is not advised.
+CAUTION: Test tool, usage in production is not advised.
 
 [source,bash]
 .Build and run Helidon LRA coordinator
@@ -417,3 +540,4 @@ with port `8070` defined in the snippet above you need to configure your Helidon
 * {microprofile-lra-spec-url}[{spec-name}]
 * https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/apidocs/org/eclipse/microprofile/lra/[Microprofile LRA JavaDoc]
 * https://helidon.io/docs/v4/apidocs/io.helidon.lra.coordinator.client/module-summary.html[Helidon LRA Client JavaDoc]
+* {microtx-link}[MicroTx - Oracle Transaction Manager for Microservices]
