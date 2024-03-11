@@ -48,7 +48,7 @@
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/promoted/eftl/jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip" dest="jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip"/>
+                                <get skipexisting="true" src="https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/staged/eftl/jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip" dest="jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip"/>
                                 <unzip src="jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip" dest="./target"/>
                                 <chmod file="target/jsonb-tck/artifacts/artifact-install.sh" perm="+x"/>
                                 <exec dir="target/jsonb-tck/artifacts" executable="sh">
