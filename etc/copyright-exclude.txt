@@ -37,6 +37,7 @@ jaxb.index
 .bin
 .vm
 .sql
+.crl
 src/main/proto/
 src/test/resources/keystore/
 etc/javadoc/
