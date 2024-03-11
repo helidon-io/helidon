@@ -11,6 +11,119 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.6]
+
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+
+Java 21 is required to use Helidon 4.0.6.
+
+### CHANGES
+
+- Builders: Fixes for problems discovered in service registry work [8403](https://github.com/helidon-io/helidon/pull/8403)
+- Config: Config encryption improvements [8440](https://github.com/helidon-io/helidon/pull/8440)
+- DBClient: Fix for #8344 - Incorrect SQL Type for null Parameters in JDBC Parameter Binding [8342](https://github.com/helidon-io/helidon/pull/8342)
+- DataSource: Adds support for injecting UniversalConnectionPool instances [8378](https://github.com/helidon-io/helidon/pull/8378)
+- DataSource: Installs a convenient default for connectionPoolName in UCPBackedDataSourceExtension when appropriate [8359](https://github.com/helidon-io/helidon/pull/8359)
+- HTTP: Enhance Status.java with Additional Standard HTTP Status Codes [8444](https://github.com/helidon-io/helidon/pull/8444)
+- LRA: Replace deprecated classInfo.classAnnotation(DotName) on classInfo.declaredAnnotation(DotName) [8417](https://github.com/helidon-io/helidon/pull/8417)
+- Media: Multipart fixes (streaming, consume) [8375](https://github.com/helidon-io/helidon/pull/8375)
+- Media: Replace deprecated MediaType.fullType() on MediaType.text() [8340](https://github.com/helidon-io/helidon/pull/8340)
+- Metrics: More carefully handle re-creation of global meter registry [8389](https://github.com/helidon-io/helidon/pull/8389)
+- Neo4J: Replace deprecated session.writeTransaction on session.executeWrite in Neo4jHealthCheck [8397](https://github.com/helidon-io/helidon/pull/8397)
+- OCI: Generalize the creation of the `OciMetricsSupport` instance from CDI [8431](https://github.com/helidon-io/helidon/pull/8431)
+- OIDC: OIDC hostname handling [8456](https://github.com/helidon-io/helidon/pull/8456)
+- OIDC: OIDC updates [8387](https://github.com/helidon-io/helidon/pull/8387)
+- OIDC: check file system support posix before setting permission [8296](https://github.com/helidon-io/helidon/pull/8296)
+- OIDC: refresh token optionality fix [8336](https://github.com/helidon-io/helidon/pull/8336)
+- Reactive: Replace deprecated  Awaitable.await(long, TimeUnit) on Awaitable.await(Duration) [8334](https://github.com/helidon-io/helidon/pull/8334)
+- Tracing: Add baggage API and allow access to baggage via `SpanContext` (as well as `Span`) [8320](https://github.com/helidon-io/helidon/pull/8320)
+- Tracing: Suppress Helidon handling of OpenTelemetry annotations if OTel Java agent is present [8360](https://github.com/helidon-io/helidon/pull/8360)
+- Tracing: Use OTel AgentDetector instead of just system property - review comments from earlier PR [8374](https://github.com/helidon-io/helidon/pull/8374)
+- WebServer: Adds support for sending websocket CLOSE frames without a payload [8408](https://github.com/helidon-io/helidon/pull/8408)
+- WebServer: Fix buffering of content in our Jersey integration. [8461](https://github.com/helidon-io/helidon/pull/8461)
+- WebServer: Include requested URI config in ListenerConfig; fix config keys [8371](https://github.com/helidon-io/helidon/pull/8371)
+- WebServer: Releasing entity count down latch even if connection is set to close. [8376](https://github.com/helidon-io/helidon/pull/8376)
+- WebServer: Return 500 when 204 with entity is sent from routing. [8357](https://github.com/helidon-io/helidon/pull/8357)
+- WebServer: TLS Revocation config [8425](https://github.com/helidon-io/helidon/pull/8425)
+- WebServer: TLS peer certs performance [8316](https://github.com/helidon-io/helidon/pull/8316)
+- Build:  Upgrade GitHub actions [8442](https://github.com/helidon-io/helidon/pull/8442)
+- Dependencies: Bump com.oracle.oci.sdk:oci-java-sdk-bom from 3.34.0 to 3.35.0 in /dependencies [8421](https://github.com/helidon-io/helidon/pull/8421)
+- Dependencies: PostgreSQL JDBC driver updated to 42.7.2. [8413](https://github.com/helidon-io/helidon/pull/8413)
+- Dependencies: Upgrades Oracle database libraries to version 21.9.0.0. Adds tests under datasource-ucp CDI integration. [8221](https://github.com/helidon-io/helidon/pull/8221)
+- Docs: Externalize and compile documentation java snippets [8294](https://github.com/helidon-io/helidon/pull/8294)
+- Docs: Replace deprecated session.readTransaction on session.executeRead [8420](https://github.com/helidon-io/helidon/pull/8420)
+- Docs: Update `context-root` config documentation [8427](https://github.com/helidon-io/helidon/pull/8427)
+- Docs: Update javadocs of Meter builders to cross reference MeterRegistry.getOrCreate() [8381](https://github.com/helidon-io/helidon/pull/8381)
+- Docs: doc examples snippets cleanup [8439](https://github.com/helidon-io/helidon/pull/8439)
+- Examples: Align README.md vs functionality [8380](https://github.com/helidon-io/helidon/pull/8380)
+- Examples: Archetype - Fix sql script for oracle database [8426](https://github.com/helidon-io/helidon/pull/8426)
+- Examples: Fix WebServer Mutual TLS example [8409](https://github.com/helidon-io/helidon/pull/8409)
+- Examples: archetype cleanup  [8445](https://github.com/helidon-io/helidon/pull/8445)
+- Examples: examples cleanup [8433](https://github.com/helidon-io/helidon/pull/8433)
+- Examples: generate a .gitignore files from archetype [8401](https://github.com/helidon-io/helidon/pull/8401)
+- Tests: Also catch UncheckedIOException in test to handle broken pipes [8462](https://github.com/helidon-io/helidon/pull/8462)
+- Tests: Fix OTel agent detector test that was polluting the JVM for later tests [8449](https://github.com/helidon-io/helidon/pull/8449)
+- Tests: Improve examples test coverage [8338](https://github.com/helidon-io/helidon/pull/8338)
+- Tests: Make test execution conditional to IPv6 being configured for localhost [8388](https://github.com/helidon-io/helidon/pull/8388)
+- Tests: Replace deprecated API for configuring ObjectMapper [8395](https://github.com/helidon-io/helidon/pull/8395)
+- Tests: Replace deprecated Multi.from(Stream) on Multi.create(Stream) [8424](https://github.com/helidon-io/helidon/pull/8424)
+- Tests: Replace deprecated OutputStreamMultiBuilder.timeout(long,TimeUnit) on OutputStreamMultiBuilder.timeout(Duration) [8404](https://github.com/helidon-io/helidon/pull/8404)
+- Tests: Replace deprecated java.util.Locale constructors on factory methods [8355](https://github.com/helidon-io/helidon/pull/8355)
+- Tests: Restfull tck 3.1.5 [8368](https://github.com/helidon-io/helidon/pull/8368)
+- Tests: Updates test to handle IOException if connection was closed [8457](https://github.com/helidon-io/helidon/pull/8457)
+
+
+## [4.0.5]
+
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+
+Java 21 is required to use Helidon 4.0.5.
+
+### CHANGES
+
+- Builders: Use vararg instead of optional (as a name). [8301](https://github.com/helidon-io/helidon/pull/8301)
+- HTTP: Fixes a few problems handling character encodings in URIs [8327](https://github.com/helidon-io/helidon/pull/8327)
+- Metrics: Remove clear-out of registries from extension; do it in TCK-only shutdown observer; update doc [8292](https://github.com/helidon-io/helidon/pull/8292)
+- Security: OIDC improvement [8323](https://github.com/helidon-io/helidon/pull/8323)
+- Tracing: Add null check for resource path in filter [8312](https://github.com/helidon-io/helidon/pull/8312)
+- Tracing: Fix unwrap methods to return cast delegates rather than cast 'this' [8298](https://github.com/helidon-io/helidon/pull/8298)
+- Tracing: Set incoming baggage from parent on Span [8303](https://github.com/helidon-io/helidon/pull/8303)
+- Dependencies: Upgrade OCI SDK to 3.31.1 [8304](https://github.com/helidon-io/helidon/pull/8304)
+- Test: Fix KafkaSeTest on Windows [8322](https://github.com/helidon-io/helidon/pull/8322)
+- Test: Fix CachedHandlerTest.testFsFromInMemory on Windows [8318](https://github.com/helidon-io/helidon/pull/8318)
+
+## [4.0.4]
+
+This release contains bugfixes and ehancements and is recommended for all users of Helidon 4. In particular
+this release contains a fix for issue [8250](https://github.com/helidon-io/helidon/issues/8250) which can occur
+when running previous releases of Helidon 4 on Java 21.0.2 or newer.
+
+Java 21 is required to use Helidon 4.0.4.
+
+### CHANGES
+
+- JPA: Ensures that the enabled flag is honored in JpaExtension's observer methods [8235](https://github.com/helidon-io/helidon/pull/8235)
+- Media: JSON unicode detection without UTF-32 workaround [8253](https://github.com/helidon-io/helidon/pull/8253)
+- RestClient: TLS replace in HelidonConnector fix [8247](https://github.com/helidon-io/helidon/pull/8247)
+- Security: Authorized set to false fix [8295](https://github.com/helidon-io/helidon/pull/8295)
+- Security: Security propagation is now disabled with not configured [8239](https://github.com/helidon-io/helidon/pull/8239)
+- Tracing: Guard against NPE during early invocation of Span.current() [8257](https://github.com/helidon-io/helidon/pull/8257)
+- Tracing: Slight clean-up of recent baggage and span scope fix [8258](https://github.com/helidon-io/helidon/pull/8258)
+- WebClient: Cleans up and simplifies logic to determine which type of IP addresses to consider [8280](https://github.com/helidon-io/helidon/pull/8280)
+- WebClient: Http client protocol creation not honoring disabled service discovery [8284](https://github.com/helidon-io/helidon/pull/8284)
+- WebClient: Set weight for `WebClientTracing` provider greater than that for `WebClientSecurity` provider [8274](https://github.com/helidon-io/helidon/pull/8274)
+- WebServer: Fix for buffer data when created with an offset. [8251](https://github.com/helidon-io/helidon/pull/8251)
+- WebServer: Some minor optimizations in WebServer [8242](https://github.com/helidon-io/helidon/pull/8242)
+- Build: Change backport action to accept target versions for porting via checkboxes and select current issue's version from a list [8236](https://github.com/helidon-io/helidon/pull/8236)
+- Dependencies: Upgrade Yasson to 3.0.3 [8272](https://github.com/helidon-io/helidon/pull/8272)
+- Dependencies: Upgrading to latest Tyrus 2.1.5 [8278](https://github.com/helidon-io/helidon/pull/8278)
+- Docs: broken link fix [8259](https://github.com/helidon-io/helidon/pull/8259)
+- Docs: change WebServer.Builder to WebServerConfig.Builder. [8261](https://github.com/helidon-io/helidon/pull/8261)
+- Docs: fix broken documentation links Part 2 [8300](https://github.com/helidon-io/helidon/pull/8300)
+- Examples: Remove unnecessary GreetingProvider from example custom liveness health check [8184](https://github.com/helidon-io/helidon/pull/8184)
+- Tests: Add back span name test containing an explicit Application bean [8238](https://github.com/helidon-io/helidon/pull/8238)
+- Tests: Fix vault tests [8279](https://github.com/helidon-io/helidon/pull/8279)
+
 ## [4.0.3]
 
 This release contains bugfixes and ehancements and is recommended for all users of Helidon 4.
@@ -981,6 +1094,9 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.6]: https://github.com/oracle/helidon/compare/4.0.5...4.0.6
+[4.0.5]: https://github.com/oracle/helidon/compare/4.0.4...4.0.5
+[4.0.4]: https://github.com/oracle/helidon/compare/4.0.3...4.0.4
 [4.0.3]: https://github.com/oracle/helidon/compare/4.0.2...4.0.3
 [4.0.2]: https://github.com/oracle/helidon/compare/4.0.1...4.0.2
 [4.0.1]: https://github.com/oracle/helidon/compare/4.0.0...4.0.1
