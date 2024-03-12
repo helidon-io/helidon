@@ -20,6 +20,8 @@ module io.helidon.service.inject.tests.scopes {
     // we use Application
     requires io.helidon.service.inject;
     requires io.helidon.http;
+    requires java.net.http;
+    requires io.helidon.common.context;
 
     exports io.helidon.service.tests.inject.scopes;
 }

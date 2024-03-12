@@ -19,7 +19,7 @@ package io.helidon.codegen;
 import java.util.List;
 
 /**
- * A resource from class output (such as {@code target/META-INF/helidon/services}) that can have existing
+ * A resource from class output (such as {@code target/META-INF/helidon}) that can have existing
  * values, and may be replaced with a new value.
  */
 public interface FilerTextResource {

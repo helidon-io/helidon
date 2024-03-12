@@ -48,7 +48,7 @@ public class HelidonMetaInfServices {
     /**
      * Location of the Helidon meta services file.
      */
-    public static final String SERVICES_RESOURCE = "META-INF/helidon/services/services.txt";
+    public static final String SERVICES_RESOURCE = "META-INF/helidon/services.txt";
 
     private final FilerTextResource services;
     private final List<String> comments;
@@ -155,7 +155,7 @@ public class HelidonMetaInfServices {
         private static DescriptorMeta parse(String line) {
             String[] elements = line.split(":");
             if (elements.length < 4) {
-                throw new CodegenException("Failed to parse line from existing META-INF/helidon/services/services.txt: "
+                throw new CodegenException("Failed to parse line from existing META-INF/helidon/services.txt: "
                                                    + line + ", expecting registry-type:serviceDescriptor:weight:contracts");
             }
             Set<TypeName> contracts = Stream.of(elements[3].split(","))

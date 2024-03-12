@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.Weighted;
+import io.helidon.common.Weights;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.GeneratedService.Descriptor;
 
@@ -38,23 +40,32 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 class CoreServiceDiscovery implements ServiceDiscovery {
     private static final System.Logger LOGGER = System.getLogger(CoreServiceDiscovery.class.getName());
-    private static final String SERVICES_RESOURCE = "META-INF/helidon/services/services.txt";
 
     private final List<DescriptorMetadata> allDescriptors;
 
     private CoreServiceDiscovery() {
         Map<TypeName, DescriptorMetadata> allDescriptors = new LinkedHashMap<>();
 
-        classLoader().resources(SERVICES_RESOURCE)
+        ClassLoader classLoader = classLoader();
+
+        // each line is a type:service-descriptor:weight:contract,contract
+        classLoader.resources(SERVICES_RESOURCE)
                 .flatMap(CoreServiceDiscovery::loadLines)
                 .filter(Predicate.not(Line::isEmpty))
                 .filter(Predicate.not(Line::isComment))
                 .flatMap(DescriptorMeta::parse)
-                .forEach(it -> {
-                    allDescriptors.putIfAbsent(it.descriptorType(), it);
-                });
+                .forEach(it -> allDescriptors.putIfAbsent(it.descriptorType(), it));
+        List<DescriptorMetadata> result = new ArrayList<>(allDescriptors.values());
 
-        this.allDescriptors = List.copyOf(allDescriptors.values());
+        // each line is a provider type name (and may have zero or more implementations)
+        classLoader.resources(SERVICES_LOADER_RESOURCE)
+                .flatMap(CoreServiceDiscovery::loadLines)
+                .filter(Predicate.not(Line::isEmpty))
+                .filter(Predicate.not(Line::isComment))
+                .flatMap(it -> DescriptorMeta.parseServiceProvider(classLoader, it))
+                .forEach(result::add);
+
+        this.allDescriptors = List.copyOf(result);
     }
 
     static ServiceDiscovery create() {
@@ -65,9 +76,54 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         return NoopServiceDiscovery.INSTANCE;
     }
 
+    static Object instantiateServiceLoaded(TypeName typeName) {
+        // service loaded is a public class with a public no-args constructor
+        // in Helidon, we always export it; in user's libraries, they would need to open the module
+        // to this module, or export it
+        Class<?> clazz = toClass(typeName);
+
+        try {
+            return clazz.getConstructor()
+                    .newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new ServiceRegistryException("Could not obtain the instance of service provider implementation "
+                                                       + typeName.fqName() + ", please either export the package it defines it,"
+                                                       + " or open it to io.helidon.service.registry module",
+                                               e);
+        }
+    }
+
     @Override
     public List<DescriptorMetadata> allMetadata() {
         return allDescriptors;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static <T> Class<? extends T> toClass(TypeName descriptorType) {
+        try {
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            cl = (cl == null) ? CoreServiceDiscovery.class.getClassLoader() : cl;
+
+            return (Class) cl.loadClass(descriptorType.fqName());
+        } catch (ClassNotFoundException e) {
+            throw new ServiceRegistryException("Resolution of service descriptor \"" + descriptorType.fqName()
+                                                       + "\" to class failed.",
+                                               e);
+        }
+
+    }
+
+    private static Descriptor<?> getDescriptorInstance(TypeName descriptorType) {
+        Class<?> clazz = toClass(descriptorType);
+
+        try {
+            Field field = clazz.getField("INSTANCE");
+            return (Descriptor<?>) field.get(null);
+        } catch (ReflectiveOperationException e) {
+            throw new ServiceRegistryException("Could not obtain the instance of service descriptor "
+                                                       + descriptorType.fqName(),
+                                               e);
+        }
     }
 
     private static ClassLoader classLoader() {
@@ -98,6 +154,17 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
     }
 
+    private static DescriptorMeta createServiceProviderDescriptor(TypeName providerType, TypeName providerImpl) {
+        Object instance = instantiateServiceLoaded(providerImpl);
+        double weight = Weights.find(instance, Weighted.DEFAULT_WEIGHT);
+        Descriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, providerImpl, weight, instance);
+        return new DescriptorMeta("core",
+                                  descriptor.descriptorType(),
+                                  weight,
+                                  descriptor.contracts(),
+                                  LazyValue.create(descriptor));
+    }
+
     private record Line(String source, String line, int lineNumber) {
         boolean isEmpty() {
             return line.isEmpty();
@@ -120,6 +187,19 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         @Override
         public Descriptor<?> descriptor() {
             return descriptorSupplier.get();
+        }
+
+        private static Stream<DescriptorMeta> parseServiceProvider(ClassLoader classLoader, Line line) {
+            // io.helidon.config.ConfigSource
+            TypeName providerType = TypeName.create(line.line.trim());
+            // each line is a service implementation
+            return classLoader.resources("META-INF/services/" + providerType.fqName())
+                    .flatMap(CoreServiceDiscovery::loadLines)
+                    .filter(Predicate.not(Line::isEmpty))
+                    .filter(Predicate.not(Line::isComment))
+                    .map(Line::line)
+                    .map(TypeName::create)
+                    .map(it -> CoreServiceDiscovery.createServiceProviderDescriptor(providerType, it));
         }
 
         private static Stream<DescriptorMeta> parse(Line line) {
@@ -149,34 +229,6 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                                    + " is invalid, should be service-descriptor:weight:contracts",
                            e);
                 return Stream.empty();
-            }
-        }
-
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        private static <T> Class<? extends T> toClass(TypeName descriptorType) {
-            try {
-                ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                cl = (cl == null) ? CoreServiceDiscovery.class.getClassLoader() : cl;
-
-                return (Class) cl.loadClass(descriptorType.fqName());
-            } catch (ClassNotFoundException e) {
-                throw new ServiceRegistryException("Resolution of service descriptor \"" + descriptorType.fqName()
-                                                           + "\" to class failed.",
-                                                   e);
-            }
-
-        }
-
-        private static Descriptor<?> getDescriptorInstance(TypeName descriptorType) {
-            Class<?> clazz = toClass(descriptorType);
-
-            try {
-                Field field = clazz.getField("INSTANCE");
-                return (Descriptor<?>) field.get(null);
-            } catch (ReflectiveOperationException e) {
-                throw new ServiceRegistryException("Could not obtain the instance of service descriptor "
-                                                           + descriptorType.fqName(),
-                                                   e);
             }
         }
     }

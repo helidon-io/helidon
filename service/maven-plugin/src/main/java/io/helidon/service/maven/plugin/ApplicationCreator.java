@@ -52,6 +52,7 @@ import io.helidon.service.inject.api.Interception;
 import io.helidon.service.inject.api.Ip;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
+import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_PLAN_BINDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_POINT_PROVIDER;
@@ -221,6 +222,26 @@ class ApplicationCreator {
         }
 
         return new BindingPlan(serviceDescriptorType, bindings);
+    }
+
+    private static Consumer<ContentBuilder<?>> toContentBuilder(InjectServiceInfo serviceInfo) {
+        if (serviceInfo.coreInfo() instanceof ServiceLoader__ServiceDescriptor sl) {
+            // we need to create a specific descriptor for interface and implementation
+            TypeName providerInterface = sl.providerInterface();
+            TypeName providerImpl = sl.serviceType();
+            return it -> it.addContent(sl.descriptorType())
+                    .addContent(".create(")
+                    .addContentCreate(providerInterface)
+                    .addContent(", ")
+                    .addContentCreate(providerImpl)
+                    .addContent(", ")
+                    .addContent(String.valueOf(sl.weight()))
+                    .addContent(")");
+        } else {
+            // the usual singleton instance
+            return it -> it.addContent(serviceInfo.descriptorType().fqName())
+                    .addContent(".INSTANCE");
+        }
     }
 
     private static Lookup toLookup(TypeName typeName) {
@@ -457,8 +478,8 @@ class ApplicationCreator {
 
         Ip injectionPoint = binding.injectionPoint();
         List<InjectServiceInfo> discovered = binding.descriptors();
-        Iterator<TypeName> descriptors = discovered.stream()
-                .map(InjectServiceInfo::descriptorType)
+        Iterator<Consumer<ContentBuilder<?>>> descriptors = discovered.stream()
+                .map(ApplicationCreator::toContentBuilder)
                 .iterator();
 
         TypeName ipType = injectionPoint.typeName();
@@ -481,8 +502,7 @@ class ApplicationCreator {
                 method.addContent(", ")
                         .update(it -> {
                             while (descriptors.hasNext()) {
-                                it.addContent(descriptors.next())
-                                        .addContent(".INSTANCE");
+                                descriptors.next().accept(it);
                                 if (descriptors.hasNext()) {
                                     it.addContent(", ");
                                 }
@@ -504,9 +524,9 @@ class ApplicationCreator {
             if (discovered.isEmpty()) {
                 method.addContentLine(")");
             } else {
-                method.addContent(", ")
-                        .addContent(descriptors.next().genericTypeName())
-                        .addContentLine(".INSTANCE)");
+                method.addContent(", ");
+                descriptors.next().accept(method);
+                method.addContentLine(")");
             }
         } else if (ipType.isSupplier()) {
             // one of the supplier options
@@ -519,9 +539,9 @@ class ApplicationCreator {
                 if (discovered.isEmpty()) {
                     method.addContentLine(")");
                 } else {
-                    method.addContent(", ")
-                            .addContent(descriptors.next().genericTypeName())
-                            .addContentLine(".INSTANCE)");
+                    method.addContent(", ");
+                    descriptors.next().accept(method);
+                    method.addContentLine(")");
                 }
             } else if (typeOfSupplier.isList()) {
                 // inject Supplier<List<Contract>>
@@ -533,8 +553,7 @@ class ApplicationCreator {
                     method.addContent(", ")
                             .update(it -> {
                                 while (descriptors.hasNext()) {
-                                    it.addContent(descriptors.next())
-                                            .addContent(".INSTANCE");
+                                    descriptors.next().accept(it);
                                     if (descriptors.hasNext()) {
                                         it.addContent(", ");
                                     }
@@ -552,9 +571,9 @@ class ApplicationCreator {
                     throw new CodegenException("Injection point requires a value, but no provider discovered: "
                                                        + injectionPoint);
                 }
-                method.addContent(", ")
-                        .addContent(descriptors.next().genericTypeName())
-                        .addContentLine(".INSTANCE)");
+                method.addContent(", ");
+                descriptors.next().accept(method);
+                method.addContentLine(")");
             }
         } else {
             // inject Contract
@@ -572,8 +591,8 @@ class ApplicationCreator {
                 method.addContent(".bind(")
                         .update(ipId::accept)
                         .addContent(", ")
-                        .addContent(descriptors.next().genericTypeName())
-                        .addContentLine(".INSTANCE)");
+                        .update(descriptors.next()::accept)
+                        .addContentLine(")");
             }
         }
     }

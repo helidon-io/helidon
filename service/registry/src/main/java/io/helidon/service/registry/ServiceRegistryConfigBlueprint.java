@@ -37,11 +37,22 @@ interface ServiceRegistryConfigBlueprint {
      * When set to {@code false}, only services added through {@link #serviceDescriptors()} and/or
      * {@link #serviceInstances()} would be available.
      *
-     * @return whether to discover services from classpath
+     * @return whether to discover services from classpath, defaults to {@code true}
      */
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean discoverServices();
+
+    /**
+     * Whether to discover services from Java service loader.
+     * See {@link io.helidon.service.registry.ServiceDiscovery#SERVICES_LOADER_RESOURCE}.
+     *
+     * @return whether to discover Java {@link java.util.ServiceLoader} services from classpath (a curated list only),
+     *         defaults to {@code true}
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean discoverServicesFromServiceLoader();
 
     /**
      * Manually registered service descriptors to add to the registry.

@@ -25,6 +25,9 @@ import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
 import io.helidon.common.config.ConfigValue;
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigMapperProvider;
+import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.service.registry.Service;
 
@@ -34,7 +37,10 @@ class ConfigProvider implements Config {
     private final Config config;
 
     ConfigProvider(Supplier<MetaConfig> metaConfig,
-                   Supplier<List<ConfigSource>> configSources) {
+                   Supplier<List<ConfigSource>> configSources,
+                   Supplier<List<ConfigParser>> configParsers,
+                   Supplier<List<ConfigFilter>> configFilters,
+                   Supplier<List<ConfigMapperProvider>> configMappers) {
         if (GlobalConfig.configured()) {
             config = GlobalConfig.config();
         } else {
@@ -42,6 +48,15 @@ class ConfigProvider implements Config {
                     .config(metaConfig.get().metaConfiguration())
                     .update(it -> configSources.get()
                             .forEach(it::addSource))
+                    .disableParserServices()
+                    .update(it -> configParsers.get()
+                            .forEach(it::addParser))
+                    .disableFilterServices()
+                    .update(it -> configFilters.get()
+                            .forEach(it::addFilter))
+                    .disableMapperServices()
+                    .update(it -> configMappers.get()
+                            .forEach(it::addMapper))
                     .build();
         }
     }

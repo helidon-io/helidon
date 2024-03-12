@@ -156,17 +156,18 @@ public final class Injection {
          * Type name of this annotation.
          */
         TypeName TYPE = TypeName.create(Singleton.class);
-        /*
-        Implementation note: we currently do not support custom scopes, so there is no Scope meta annotation.
-        If we decide to support scopes, we may want to introduce such an annotation.
-        */
     }
 
     /**
      * A service with an instance per request.
      * Injections to different scopes are supported, but must be through a {@link java.util.function.Supplier},
      * as we do not provide a proxy mechanism for instances.
-     * For example an HTTP request would most likely start a request scope.
+     * <p>
+     * Request scope is not started by default. If you want to use request scope, you can add the following
+     * library to your classpath to add support for it:
+     * <ul>
+     *     <li>{@code io.helidon.declarative.webserver:helidon-declarative-webserver-request-scope}</li>
+     * </ul>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
