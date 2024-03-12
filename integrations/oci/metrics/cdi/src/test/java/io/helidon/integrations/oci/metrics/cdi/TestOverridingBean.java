@@ -34,7 +34,6 @@ import static org.hamcrest.Matchers.is;
 @AddBean(OverridingOciMetricsBean.class)
 @AddConfig(key = "oci.metrics.product", value = TestOverridingBean.PRODUCT)
 @AddConfig(key = "oci.metrics.fleet", value = TestOverridingBean.FLEET)
-@AddBean(OciMetricsCdiExtensionTest.MockMonitoring.class)
 class TestOverridingBean {
 
     static final String PRODUCT = "overriding-product-name";

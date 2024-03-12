@@ -18,18 +18,9 @@ package io.helidon.integrations.oci.metrics.cdi;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import com.oracle.bmc.monitoring.requests.CreateAlarmSuppressionRequest;
-import com.oracle.bmc.monitoring.requests.DeleteAlarmSuppressionRequest;
-import com.oracle.bmc.monitoring.requests.GetAlarmSuppressionRequest;
-import com.oracle.bmc.monitoring.requests.ListAlarmSuppressionsRequest;
-import com.oracle.bmc.monitoring.requests.SummarizeAlarmSuppressionHistoryRequest;
-import com.oracle.bmc.monitoring.responses.CreateAlarmSuppressionResponse;
-import com.oracle.bmc.monitoring.responses.DeleteAlarmSuppressionResponse;
-import com.oracle.bmc.monitoring.responses.GetAlarmSuppressionResponse;
-import com.oracle.bmc.monitoring.responses.ListAlarmSuppressionsResponse;
-import com.oracle.bmc.monitoring.responses.SummarizeAlarmSuppressionHistoryResponse;
 import io.helidon.config.Config;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
+import io.helidon.integrations.oci.sdk.cdi.OciExtension;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -43,56 +34,39 @@ import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
-import com.oracle.bmc.Region;
 import com.oracle.bmc.monitoring.Monitoring;
-import com.oracle.bmc.monitoring.MonitoringPaginators;
-import com.oracle.bmc.monitoring.MonitoringWaiters;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
-import com.oracle.bmc.monitoring.requests.ChangeAlarmCompartmentRequest;
-import com.oracle.bmc.monitoring.requests.CreateAlarmRequest;
-import com.oracle.bmc.monitoring.requests.DeleteAlarmRequest;
-import com.oracle.bmc.monitoring.requests.GetAlarmHistoryRequest;
-import com.oracle.bmc.monitoring.requests.GetAlarmRequest;
-import com.oracle.bmc.monitoring.requests.ListAlarmsRequest;
-import com.oracle.bmc.monitoring.requests.ListAlarmsStatusRequest;
-import com.oracle.bmc.monitoring.requests.ListMetricsRequest;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
-import com.oracle.bmc.monitoring.requests.RemoveAlarmSuppressionRequest;
-import com.oracle.bmc.monitoring.requests.RetrieveDimensionStatesRequest;
-import com.oracle.bmc.monitoring.requests.SummarizeMetricsDataRequest;
-import com.oracle.bmc.monitoring.requests.UpdateAlarmRequest;
-import com.oracle.bmc.monitoring.responses.ChangeAlarmCompartmentResponse;
-import com.oracle.bmc.monitoring.responses.CreateAlarmResponse;
-import com.oracle.bmc.monitoring.responses.DeleteAlarmResponse;
-import com.oracle.bmc.monitoring.responses.GetAlarmHistoryResponse;
-import com.oracle.bmc.monitoring.responses.GetAlarmResponse;
-import com.oracle.bmc.monitoring.responses.ListAlarmsResponse;
-import com.oracle.bmc.monitoring.responses.ListAlarmsStatusResponse;
-import com.oracle.bmc.monitoring.responses.ListMetricsResponse;
 import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
-import com.oracle.bmc.monitoring.responses.RemoveAlarmSuppressionResponse;
-import com.oracle.bmc.monitoring.responses.RetrieveDimensionStatesResponse;
-import com.oracle.bmc.monitoring.responses.SummarizeMetricsDataResponse;
-import com.oracle.bmc.monitoring.responses.UpdateAlarmResponse;
+
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @HelidonTest(resetPerTest = true)
-@AddBean(OciMetricsCdiExtensionTest.MockMonitoring.class)
-@AddBean(OciMetricsCdiExtensionTest.MockOciMetricsBean.class)
 @DisableDiscovery
+// Add bean that will simulate oci metrics posting
+@AddBean(OciMetricsCdiExtensionTest.MockOciMetricsBean.class)
 // Helidon MP Extensions
 @AddExtension(ServerCdiExtension.class)
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(ConfigCdiExtension.class)
-// OciMetricsCdiExtension
-@AddExtension(OciMetricsCdiExtension.class)
+@AddExtension(OciExtension.class)
 // ConfigSources
 @AddConfig(key = "ocimetrics.compartmentId",
            value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.compartmentId)
@@ -183,144 +157,26 @@ class OciMetricsCdiExtensionTest {
         String resourceGroup = "dummy_resourceGroup";
     }
 
-    static class MockMonitoring implements Monitoring {
-        @Override
-        public String getEndpoint() {
-            return "http://www.DummyEndpoint.com";
-        }
-
-        @Override
-        public void setEndpoint(String s) {
-        }
-
-        @Override
-        public void setRegion(Region region) {
-        }
-
-        @Override
-        public void setRegion(String s) {
-        }
-
-        @Override
-        public void useRealmSpecificEndpointTemplate(boolean b) {
-        }
-
-        @Override
-        public void refreshClient() {
-        }
-
-        @Override
-        public ChangeAlarmCompartmentResponse changeAlarmCompartment(ChangeAlarmCompartmentRequest changeAlarmCompartmentRequest) {
-            return null;
-        }
-
-        @Override
-        public CreateAlarmResponse createAlarm(CreateAlarmRequest createAlarmRequest) {
-            return null;
-        }
-
-        @Override
-        public CreateAlarmSuppressionResponse createAlarmSuppression(CreateAlarmSuppressionRequest createAlarmSuppressionRequest) {
-            return null;
-        }
-
-        @Override
-        public DeleteAlarmResponse deleteAlarm(DeleteAlarmRequest deleteAlarmRequest) {
-            return null;
-        }
-
-        @Override
-        public DeleteAlarmSuppressionResponse deleteAlarmSuppression(DeleteAlarmSuppressionRequest deleteAlarmSuppressionRequest) {
-            return null;
-        }
-
-        @Override
-        public GetAlarmResponse getAlarm(GetAlarmRequest getAlarmRequest) {
-            return null;
-        }
-
-        @Override
-        public GetAlarmHistoryResponse getAlarmHistory(GetAlarmHistoryRequest getAlarmHistoryRequest) {
-            return null;
-        }
-
-        @Override
-        public GetAlarmSuppressionResponse getAlarmSuppression(GetAlarmSuppressionRequest getAlarmSuppressionRequest) {
-            return null;
-        }
-
-        @Override
-        public ListAlarmSuppressionsResponse listAlarmSuppressions(ListAlarmSuppressionsRequest listAlarmSuppressionsRequest) {
-            return null;
-        }
-
-        @Override
-        public ListAlarmsResponse listAlarms(ListAlarmsRequest listAlarmsRequest) {
-            return null;
-        }
-
-        @Override
-        public ListAlarmsStatusResponse listAlarmsStatus(ListAlarmsStatusRequest listAlarmsStatusRequest) {
-            return null;
-        }
-
-        @Override
-        public ListMetricsResponse listMetrics(ListMetricsRequest listMetricsRequest) {
-            return null;
-        }
-
-        @Override
-        public PostMetricDataResponse postMetricData(PostMetricDataRequest postMetricDataRequest) {
-            postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
-            testMetricCount = postMetricDataDetails.getMetricData().size();
-            // Give signal that testMetricCount was retrieved
-            countDownLatch.countDown();
-            return PostMetricDataResponse.builder()
-                    .__httpStatusCode__(200)
-                    .build();
-        }
-
-        @Override
-        public RemoveAlarmSuppressionResponse removeAlarmSuppression(RemoveAlarmSuppressionRequest removeAlarmSuppressionRequest) {
-            return null;
-        }
-
-        @Override
-        public RetrieveDimensionStatesResponse retrieveDimensionStates(RetrieveDimensionStatesRequest retrieveDimensionStatesRequest) {
-            return null;
-        }
-
-        @Override
-        public SummarizeAlarmSuppressionHistoryResponse summarizeAlarmSuppressionHistory(SummarizeAlarmSuppressionHistoryRequest summarizeAlarmSuppressionHistoryRequest) {
-            return null;
-        }
-
-        @Override
-        public SummarizeMetricsDataResponse summarizeMetricsData(SummarizeMetricsDataRequest summarizeMetricsDataRequest) {
-            return null;
-        }
-
-        @Override
-        public UpdateAlarmResponse updateAlarm(UpdateAlarmRequest updateAlarmRequest) {
-            return null;
-        }
-
-        @Override
-        public MonitoringWaiters getWaiters() {
-            return null;
-        }
-
-        @Override
-        public MonitoringPaginators getPaginators() {
-            return null;
-        }
-
-        @Override
-        public void close() throws Exception {
-        }
-    }
-
     static class MockOciMetricsBean extends OciMetricsBean {
+        @Override
+        void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object ignore,
+                                Config config, Monitoring monitoringClient) {
+            Monitoring mockedMonitoringClient = mock(Monitoring.class);
+            when(mockedMonitoringClient.getEndpoint()).thenReturn("http://www.DummyEndpoint.com");
+            doAnswer(invocationOnMock -> {
+                PostMetricDataRequest postMetricDataRequest = invocationOnMock.getArgument(0);
+                System.out.println("PostMetricDataRequest=" + postMetricDataRequest);
+                postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
+                testMetricCount = postMetricDataDetails.getMetricData().size();
+                // Give signal that metrics has been posted
+                countDownLatch.countDown();
+                return PostMetricDataResponse.builder()
+                        .__httpStatusCode__(200)
+                        .build();
+            }).when(mockedMonitoringClient).postMetricData(any());
+            super.registerOciMetrics(ignore, config, mockedMonitoringClient);
+        }
+
         // Override so we can test if this is invoked when enabled or skipped when disabled
         @Override
         protected void activateOciMetricsSupport(Config rootConfig, Config ociMetricsConfig, OciMetricsSupport.Builder builder) {
