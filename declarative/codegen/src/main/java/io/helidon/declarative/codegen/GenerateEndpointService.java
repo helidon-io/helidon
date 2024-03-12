@@ -121,6 +121,7 @@ final class GenerateEndpointService {
 
     private static void addConstructor(ClassModel.Builder endpointService, TypeName endpoint, boolean singleton) {
         endpointService.addConstructor(ctr -> ctr
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.INJECTION_INJECT))
                 .addParameter(param -> param
                         .type(singleton ? endpoint : supplierOf(endpoint))
