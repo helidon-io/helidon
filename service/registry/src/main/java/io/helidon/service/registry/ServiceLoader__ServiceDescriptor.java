@@ -19,10 +19,9 @@ package io.helidon.service.registry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -55,39 +54,8 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
             ProviderKey key = new ProviderKey(providerInterface, providerImpl);
             ServiceLoader__ServiceDescriptor descriptor = INSTANCE_CACHE.get(key);
             if (descriptor == null) {
-                descriptor = new ServiceProviderDescriptor(providerInterface, providerImpl, weight, null);
+                descriptor = new ServiceProviderDescriptor(providerInterface, providerImpl, weight);
                 INSTANCE_CACHE.put(key, descriptor);
-            }
-
-            return descriptor;
-        } finally {
-            LOCK.unlock();
-        }
-    }
-
-    /**
-     * Create a new instance for a specific service provider interface and its implementation.
-     *
-     * @param providerInterface provider interface type
-     * @param providerImpl      provider implementation type
-     * @param weight            weight of the provider
-     * @param instance          provider implementation instance
-     * @return new descriptor
-     */
-    public static ServiceLoader__ServiceDescriptor create(TypeName providerInterface,
-                                                          TypeName providerImpl,
-                                                          double weight,
-                                                          Object instance) {
-        LOCK.lock();
-        try {
-            ProviderKey key = new ProviderKey(providerInterface, providerImpl);
-            ServiceLoader__ServiceDescriptor descriptor = INSTANCE_CACHE.get(key);
-            if (descriptor == null) {
-                descriptor = new ServiceProviderDescriptor(providerInterface, providerImpl, weight, instance);
-                INSTANCE_CACHE.put(key, descriptor);
-            } else {
-                // set the instance if not already set, to make sure we do not instantiate the service more than once
-                descriptor.instance(instance);
             }
 
             return descriptor;
@@ -108,27 +76,22 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
      */
     public abstract TypeName providerInterface();
 
-    abstract void instance(Object instance);
-
     private static class ServiceProviderDescriptor extends ServiceLoader__ServiceDescriptor {
         private final TypeName providerInterface;
         private final Set<TypeName> contracts;
         private final TypeName providerImpl;
         private final double weight;
-        private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
-
-        private Object instance;
+        private final LazyValue<Object> instance;
 
         private ServiceProviderDescriptor(TypeName providerInterface,
                                           TypeName providerImpl,
-                                          double weight,
-                                          Object instance) {
+                                          double weight) {
 
             this.providerInterface = providerInterface;
             this.contracts = Set.of(providerInterface);
             this.providerImpl = providerImpl;
             this.weight = weight;
-            this.instance = instance;
+            this.instance = LazyValue.create(this::newInstance);
         }
 
         @Override
@@ -143,24 +106,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
 
         @Override
         public Object instantiate(DependencyContext ctx) {
-            rwLock.readLock().lock();
-            try {
-                if (instance != null) {
-                    return instance;
-                }
-            } finally {
-                rwLock.readLock().unlock();
-            }
-
-            rwLock.writeLock().lock();
-            try {
-                if (instance == null) {
-                    instance = newInstance();
-                }
-                return instance;
-            } finally {
-                rwLock.writeLock().unlock();
-            }
+            return instance.get();
         }
 
         @Override
@@ -171,19 +117,6 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
         @Override
         public TypeName providerInterface() {
             return providerInterface;
-        }
-
-        @Override
-        void instance(Object instance) {
-            rwLock.writeLock().lock();
-            try {
-                if (this.instance != null) {
-                    return;
-                }
-                this.instance = instance;
-            } finally {
-                rwLock.writeLock().unlock();
-            }
         }
 
         private Object newInstance() {

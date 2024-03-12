@@ -43,7 +43,16 @@ public interface ServiceDiscovery {
      * @return service discovery based on classpath
      */
     static ServiceDiscovery create() {
-        return CoreServiceDiscovery.create();
+        return create(ServiceRegistryConfig.create());
+    }
+
+    /**
+     * Create a new instance that discovers service descriptors based on the configuration.
+     *
+     * @return service discovery based on classpath
+     */
+    static ServiceDiscovery create(ServiceRegistryConfig config) {
+        return CoreServiceDiscovery.create(config);
     }
 
     /**

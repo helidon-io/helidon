@@ -46,7 +46,7 @@ public class ConfigDrivenNoConfigTest {
 
     @BeforeAll
     static void init() {
-        GlobalConfig.config(() -> Config.empty(), true);
+        GlobalConfig.config(Config::empty, true);
         registryManager = InjectRegistryManager.create();
         registry = registryManager.registry();
     }

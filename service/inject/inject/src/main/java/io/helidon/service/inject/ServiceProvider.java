@@ -107,7 +107,8 @@ class ServiceProvider<T> {
     }
 
     private Map<Dependency, IpPlan<?>> createInjectionPlan() {
-        List<? extends Dependency> dependencies = descriptor.dependencies();
+        // for core services, we must use Dependency, for inject services, we must use Ip
+        List<? extends Dependency> dependencies = descriptor.coreInfo().dependencies();
 
         if (dependencies.isEmpty()) {
             return Map.of();

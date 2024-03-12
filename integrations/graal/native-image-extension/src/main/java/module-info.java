@@ -23,10 +23,11 @@ module io.helidon.graal.nativeimage {
     requires io.helidon.common.features;
     requires io.helidon.config;
     requires io.helidon.logging.common;
+    requires io.helidon.service.registry;
     requires jakarta.json;
 
     requires transitive org.graalvm.nativeimage;
 
     exports io.helidon.integrations.graal.nativeimage.extension;
-	
+
 }

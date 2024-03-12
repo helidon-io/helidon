@@ -44,6 +44,7 @@ import io.helidon.service.registry.DescriptorMetadata;
 import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.ServiceDiscovery;
 import io.helidon.service.registry.ServiceInfo;
+import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -265,8 +266,14 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         Descriptor<?> descriptor = described.injectDescriptor();
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-            LOGGER.log(System.Logger.Level.TRACE, "Binding service descriptor: " + descriptor.descriptorType()
-                    .fqName());
+            if (descriptor.coreInfo() instanceof ServiceLoader__ServiceDescriptor sl) {
+                LOGGER.log(System.Logger.Level.TRACE,
+                           "Binding service loader descriptor: " + sl.serviceType().fqName() + "(" + sl.providerInterface()
+                                   .fqName() + ")");
+            } else {
+                LOGGER.log(System.Logger.Level.TRACE, "Binding service descriptor: " + descriptor.descriptorType()
+                        .fqName());
+            }
         }
 
         // by service type

@@ -19,6 +19,7 @@ package io.helidon.service.registry;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
@@ -43,33 +44,38 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
     private final List<DescriptorMetadata> allDescriptors;
 
-    private CoreServiceDiscovery() {
+    private CoreServiceDiscovery(ServiceRegistryConfig config) {
         Map<TypeName, DescriptorMetadata> allDescriptors = new LinkedHashMap<>();
 
         ClassLoader classLoader = classLoader();
 
         // each line is a type:service-descriptor:weight:contract,contract
-        classLoader.resources(SERVICES_RESOURCE)
-                .flatMap(CoreServiceDiscovery::loadLines)
-                .filter(Predicate.not(Line::isEmpty))
-                .filter(Predicate.not(Line::isComment))
-                .flatMap(DescriptorMeta::parse)
-                .forEach(it -> allDescriptors.putIfAbsent(it.descriptorType(), it));
+        if (config.discoverServices()) {
+            classLoader.resources(SERVICES_RESOURCE)
+                    .flatMap(CoreServiceDiscovery::loadLines)
+                    .filter(Predicate.not(Line::isEmpty))
+                    .filter(Predicate.not(Line::isComment))
+                    .flatMap(DescriptorMeta::parse)
+                    .forEach(it -> allDescriptors.putIfAbsent(it.descriptorType(), it));
+        }
+
         List<DescriptorMetadata> result = new ArrayList<>(allDescriptors.values());
 
-        // each line is a provider type name (and may have zero or more implementations)
-        classLoader.resources(SERVICES_LOADER_RESOURCE)
-                .flatMap(CoreServiceDiscovery::loadLines)
-                .filter(Predicate.not(Line::isEmpty))
-                .filter(Predicate.not(Line::isComment))
-                .flatMap(it -> DescriptorMeta.parseServiceProvider(classLoader, it))
-                .forEach(result::add);
+        if (config.discoverServicesFromServiceLoader()) {
+            // each line is a provider type name (and may have zero or more implementations)
+            classLoader.resources(SERVICES_LOADER_RESOURCE)
+                    .flatMap(CoreServiceDiscovery::loadLines)
+                    .filter(Predicate.not(Line::isEmpty))
+                    .filter(Predicate.not(Line::isComment))
+                    .flatMap(it -> DescriptorMeta.parseServiceProvider(classLoader, it))
+                    .forEach(result::add);
+        }
 
         this.allDescriptors = List.copyOf(result);
     }
 
-    static ServiceDiscovery create() {
-        return new CoreServiceDiscovery();
+    static ServiceDiscovery create(ServiceRegistryConfig config) {
+        return new CoreServiceDiscovery(config);
     }
 
     static ServiceDiscovery noop() {
@@ -149,15 +155,23 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
             return lines.stream();
         } catch (IOException e) {
-            LOGGER.log(System.Logger.Level.WARNING, "Failed to read services from " + url, e);
+            LOGGER.log(Level.WARNING, "Failed to read services from " + url, e);
             return Stream.of();
         }
     }
 
     private static DescriptorMeta createServiceProviderDescriptor(TypeName providerType, TypeName providerImpl) {
-        Object instance = instantiateServiceLoaded(providerImpl);
-        double weight = Weights.find(instance, Weighted.DEFAULT_WEIGHT);
-        Descriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, providerImpl, weight, instance);
+        Class<?> serviceClass = toClass(providerImpl);
+        double weight = Weights.find(serviceClass, Weighted.DEFAULT_WEIGHT);
+
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE,
+                       "Discovered service provider for type %s: %s, weight: %s".formatted(providerType.fqName(),
+                                                                                           providerImpl.fqName(),
+                                                                                           weight));
+        }
+
+        Descriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, providerImpl, weight);
         return new DescriptorMeta("core",
                                   descriptor.descriptorType(),
                                   weight,
@@ -208,7 +222,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
             String[] components = line.line().split(":");
             if (components.length < 4) {
                 // allow more, if we need more info in the future, to be backward compatible for libraries
-                LOGGER.log(System.Logger.Level.WARNING,
+                LOGGER.log(Level.WARNING,
                            "Line " + line.lineNumber() + " of " + line.source()
                                    + " is invalid, should be registry-type:service-descriptor:weight:contracts");
             }
@@ -217,6 +231,12 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                 TypeName descriptor = TypeName.create(components[1]);
                 double weight = Double.parseDouble(components[2]);
 
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE,
+                               "Discovered service descriptor %s, weight: %s".formatted(descriptor.fqName(),
+                                                                                        weight));
+                }
+
                 Set<TypeName> contracts = Stream.of(components[3].split(","))
                         .map(String::trim)
                         .map(TypeName::create)
@@ -224,7 +244,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
                 return Stream.of(new DescriptorMeta(registryType, descriptor, weight, contracts));
             } catch (RuntimeException e) {
-                LOGGER.log(System.Logger.Level.WARNING,
+                LOGGER.log(Level.WARNING,
                            "Line " + line.lineNumber() + " of " + line.source()
                                    + " is invalid, should be service-descriptor:weight:contracts",
                            e);
