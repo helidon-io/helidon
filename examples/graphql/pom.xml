@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-examples-project</artifactId>
         <groupId>io.helidon.examples</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.6-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples.graphql</groupId>
     <artifactId>helidon-examples-graphql-project</artifactId>

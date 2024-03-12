@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tck-reactive-operators</artifactId>
