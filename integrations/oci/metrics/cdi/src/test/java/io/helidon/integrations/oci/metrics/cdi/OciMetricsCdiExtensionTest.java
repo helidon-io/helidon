@@ -165,7 +165,6 @@ class OciMetricsCdiExtensionTest {
             when(mockedMonitoringClient.getEndpoint()).thenReturn("http://www.DummyEndpoint.com");
             doAnswer(invocationOnMock -> {
                 PostMetricDataRequest postMetricDataRequest = invocationOnMock.getArgument(0);
-                System.out.println("PostMetricDataRequest=" + postMetricDataRequest);
                 postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
                 testMetricCount = postMetricDataDetails.getMetricData().size();
                 // Give signal that metrics has been posted
