@@ -8,7 +8,7 @@ and downloading files. The unit test uses the `WebClient` API to test the endpoi
 
 ## Build
 
-```
+```shell
 mvn package
 ```
 
@@ -16,8 +16,8 @@ mvn package
 
 First, start the server:
 
-```
-java -jar target/helidon-examples-microprofile-multipart.jar
+```shell
+java -jar target/helidon-examples-media-multipart.jar
 ```
 
 Then open <http://localhost:8080/ui> in your browser.

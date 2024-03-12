@@ -11,12 +11,12 @@ The example can be built using GraalVM native image as well.
 # Running as jar
 
 Build this application:
-```shell script
+```shell
 mvn clean package
 ```
 
 Run from command line:
-```shell script
+```shell
 java -jar target/helidon-examples-logging-log4j.jar
 ```
 
@@ -36,13 +36,13 @@ or you can specify an environment variable `GRAALVM_HOME` that points
 to such an installation.
 
 Build this application:
-```shell script
+```shell
 mvn clean package -Pnative-image
 ```
 
 Run from command line:
-```shell script
-./target/helidon-examples-logging-log4j
+```shell
+java -jar target/helidon-examples-logging-log4j
 ```
 
 *In native image, we can only replace loggers initialized after reconfiguration of logging system

@@ -7,12 +7,12 @@ implemented.
 
 ## Build and run
 
-```bash
+```shell
 mvn -f ../pom.xml -pl common,client-standalone package
 java -jar target/helidon-examples-grpc-client-standalone.jar
 ```
 
 The client invokes the string service on the server, and should print out:
-```
+```text
 Text 'lower case original' to upper case is 'LOWER CASE ORIGINAL'
 ```

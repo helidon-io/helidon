@@ -32,3 +32,8 @@ The following information/configuration is needed:
 4. Vault `transit` secret engine must be enabled
 5. A key named `signature-key` must be created (RSA) in `transit` secret engine for signature
 6. A key named `encryption-key` must be created in `transit` secret engine for encryption and HMAC
+
+```shell
+mvn package
+java -jar target/helidon-examples-security-vaults.jar
+```

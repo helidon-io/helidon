@@ -9,7 +9,7 @@ For generation of our projects we will use `openapi-generator-cli.jar` that can 
 ## Build, prepare and run the Helidon MP server
 
 To generate Helidon MP server at first we create `mp-server` folder and then inside it we run the following command where `path-to-generator` is the directory where you downloaded the generator CLI JAR file and `path-to-openapi-doc` is the folder where `quickstart.yaml` is located:
-```bash
+```shell
 java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
           -g java-helidon-server \  
@@ -56,7 +56,7 @@ Let's change a little class `MessageServiceImpl` for our example :
 To run the application : 
 
 With JDK11+
-```bash
+```shell
 mvn package
 java -jar target/openapi-java-server.jar
 ```
@@ -81,7 +81,7 @@ curl -X GET http://localhost:8080/greet
 The second part of this example is generating MicroProfile Rest Client that will communicate with the server that we have just created.
 
 To generate Helidon MP client at first we create `mp-client` folder and then inside it we run the following command where `path-to-generator` is the directory where you downloaded the generator CLI JAR file and `path-to-openapi-doc` is the folder where `quickstart.yaml` is located:
-```bash
+```shell
 java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
           -g java-helidon-client \  
@@ -189,7 +189,7 @@ to
 To run the application :
 
 With JDK11+
-```bash
+```shell
 mvn package
 java -jar target/openapi-java-client.jar
 ```

@@ -4,13 +4,13 @@ An example gRPC server using basic auth security.
 
 ## Build and run
 
-```bash
+```shell
 mvn  -f ../pom.xml -pl common,security package
 java -jar target/helidon-examples-grpc-security.jar
 ```
 
 # Exercise the example:
-```bash
+```shell
 java -cp target/helidon-examples-grpc-security.jar \
     io.helidon.grpc.examples.security.SecureGreetClient
 java -cp target/helidon-examples-grpc-security.jar \
@@ -19,7 +19,7 @@ java -cp target/helidon-examples-grpc-security.jar \
 
 # Sample client output:
 SecureGreetClient:
-```bash
+```shell
 message: "Hello Aleks!"
 
 greeting: "Hey"
@@ -28,6 +28,6 @@ message: "Hey Aleks!"
 ```
 
 SecureStringClient:
-```bash
+```shell
 Response from Lower method call is 'abcde'
 ```

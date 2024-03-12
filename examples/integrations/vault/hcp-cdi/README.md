@@ -20,7 +20,7 @@ mvn clean package
 3. Start this application
 
 ```shell
-java -jar ./target/
+java -jar ./target/helidon-examples-integrations-vault-hcp-cdi.jar
 ```
 
 4. Exercise the endpoints

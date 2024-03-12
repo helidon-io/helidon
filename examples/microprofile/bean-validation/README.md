@@ -15,20 +15,20 @@ To be able to use bean validation add the following dependency:
 
 ## Build and run
 
-With JDK11+
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-microprofile-bean-validation.jar
 ```
 
 ## Exercise the application
 
-```
+```shell
 curl -X GET http://localhost:8080/greet
-{"message":"Hello World!"}
+#{"message":"Hello World!"}
 
 curl -X GET -I http://localhost:8080/greet/null
-
+```
+```text
 
 HTTP/1.1 400 Bad Request
 Content-Type: application/json

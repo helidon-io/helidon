@@ -2,35 +2,34 @@
 
 ## Build and run
 
-With JDK11+
-```bash
+```shell
 mvn package
-java -jar target/openapi-java-server.jar
+java -jar target/openapi-mp-server.jar
 ```
 
 ## Exercise the application
 
-```
-curl -X GET http://localhost:8080
-curl -X GET http://localhost:8080/{name}
-curl -X PUT http://localhost:8080/greeting
+```shell
+curl -X GET http://localhost:8080/greet/
+curl -X GET http://localhost:8080/greet/{name}
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting
 
 ```
 
 ## Try health and metrics
 
-```
+```shell
 curl -s -X GET http://localhost:8080/health
-{"outcome":"UP",...
+#{"outcome":"UP",...
 . . .
 
 # Prometheus Format
 curl -s -X GET http://localhost:8080/metrics
 # TYPE base:gc_g1_young_generation_count gauge
-. . .
+#. . .
 
 # JSON Format
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
-{"base":...
-. . .
+#{"base":...
+#. . .
 ```

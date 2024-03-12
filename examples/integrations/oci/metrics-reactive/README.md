@@ -1,4 +1,4 @@
-# Helidon ATP Reactive Examples
+# Helidon Metrics Reactive Examples
 
 This example demonstrates how user can easily retrieve wallet from their ATP instance running in OCI and use information from that wallet to setup DataSource to do Database operations.
 
@@ -16,13 +16,13 @@ Once you have updated required properties, you can run the example:
 
 ```shell
 mvn clean install
-java -jar ./target/helidon-examples-integrations-oci-atp-reactive.jar
-```  
+java -jar ./target/helidon-examples-integrations-oci-metrics-reactive.jar
+```
 
 To verify that, you can retrieve wallet and do database operation:
 
 ```text
-http://localhost:8080/atp/wallet
+http://localhost:8080/metrics
 ```
 
-You should see `Hello world!!`
+You should see metrics output

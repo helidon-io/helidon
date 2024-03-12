@@ -21,13 +21,13 @@ Seperate routing is defined for each named socket in `Main.java`
 ## Build and run
 
 With JDK11+
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-webserver-multiport.jar
 ```
 ## Exercise the application
 
-```
+```shell
 curl -X GET http://localhost:8080/hello
 
 curl -X GET http://localhost:8081/private/hello
