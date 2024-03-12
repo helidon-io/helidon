@@ -159,8 +159,8 @@ class OciMetricsCdiExtensionTest {
 
     static class MockOciMetricsBean extends OciMetricsBean {
         @Override
-        void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object ignore,
-                                Config config, Monitoring monitoringClient) {
+        void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
+                                Config rootConfig, Monitoring monitoringClient) {
             Monitoring mockedMonitoringClient = mock(Monitoring.class);
             when(mockedMonitoringClient.getEndpoint()).thenReturn("http://www.DummyEndpoint.com");
             doAnswer(invocationOnMock -> {
@@ -174,7 +174,7 @@ class OciMetricsCdiExtensionTest {
                         .__httpStatusCode__(200)
                         .build();
             }).when(mockedMonitoringClient).postMetricData(any());
-            super.registerOciMetrics(ignore, config, mockedMonitoringClient);
+            super.registerOciMetrics(ignore, rootConfig, mockedMonitoringClient);
         }
 
         // Override so we can test if this is invoked when enabled or skipped when disabled
