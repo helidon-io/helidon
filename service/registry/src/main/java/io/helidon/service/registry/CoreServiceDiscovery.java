@@ -23,11 +23,11 @@ import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,6 +38,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.GeneratedService.Descriptor;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.function.Predicate.not;
 
 class CoreServiceDiscovery implements ServiceDiscovery {
     private static final System.Logger LOGGER = System.getLogger(CoreServiceDiscovery.class.getName());
@@ -53,8 +54,8 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         if (config.discoverServices()) {
             classLoader.resources(SERVICES_RESOURCE)
                     .flatMap(CoreServiceDiscovery::loadLines)
-                    .filter(Predicate.not(Line::isEmpty))
-                    .filter(Predicate.not(Line::isComment))
+                    .filter(not(Line::isEmpty))
+                    .filter(not(Line::isComment))
                     .flatMap(DescriptorMeta::parse)
                     .forEach(it -> allDescriptors.putIfAbsent(it.descriptorType(), it));
         }
@@ -65,8 +66,8 @@ class CoreServiceDiscovery implements ServiceDiscovery {
             // each line is a provider type name (and may have zero or more implementations)
             classLoader.resources(SERVICES_LOADER_RESOURCE)
                     .flatMap(CoreServiceDiscovery::loadLines)
-                    .filter(Predicate.not(Line::isEmpty))
-                    .filter(Predicate.not(Line::isComment))
+                    .filter(not(Line::isEmpty))
+                    .filter(not(Line::isComment))
                     .flatMap(it -> DescriptorMeta.parseServiceProvider(classLoader, it))
                     .forEach(result::add);
         }
@@ -179,6 +180,14 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                                   LazyValue.create(descriptor));
     }
 
+    private static boolean isJavaModule(Module module) {
+        String name = module.getName();
+        if (name == null || name.isEmpty()) {
+            return true;
+        }
+        return name.startsWith("java.") || name.startsWith("jdk.");
+    }
+
     private record Line(String source, String line, int lineNumber) {
         boolean isEmpty() {
             return line.isEmpty();
@@ -206,13 +215,33 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         private static Stream<DescriptorMeta> parseServiceProvider(ClassLoader classLoader, Line line) {
             // io.helidon.config.ConfigSource
             TypeName providerType = TypeName.create(line.line.trim());
+            String providerInterface = providerType.fqName();
+
             // each line is a service implementation
-            return classLoader.resources("META-INF/services/" + providerType.fqName())
+            Set<TypeName> implementations = new HashSet<>();
+
+            // all discovered through META-INF/services
+            classLoader.resources("META-INF/services/" + providerInterface)
                     .flatMap(CoreServiceDiscovery::loadLines)
-                    .filter(Predicate.not(Line::isEmpty))
-                    .filter(Predicate.not(Line::isComment))
+                    .filter(not(Line::isEmpty))
+                    .filter(not(Line::isComment))
                     .map(Line::line)
                     .map(TypeName::create)
+                    .forEach(implementations::add);
+
+            // and all from modules
+            ModuleLayer.boot()
+                    .modules()
+                    .stream()
+                    .filter(not(CoreServiceDiscovery::isJavaModule))
+                    .map(Module::getDescriptor)
+                    .flatMap(it -> it.provides().stream())
+                    .filter(it -> it.service().equals(providerInterface))
+                    .flatMap(it -> it.providers().stream())
+                    .map(TypeName::create)
+                    .forEach(implementations::add);
+
+            return implementations.stream()
                     .map(it -> CoreServiceDiscovery.createServiceProviderDescriptor(providerType, it));
         }
 
