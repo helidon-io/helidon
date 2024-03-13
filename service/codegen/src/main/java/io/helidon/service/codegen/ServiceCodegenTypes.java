@@ -42,7 +42,8 @@ public final class ServiceCodegenTypes {
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.NamedByClass}.
      */
-    public static final TypeName INJECTION_NAMED_BY_CLASS = TypeName.create("io.helidon.service.inject.api.Injection.NamedByClass");
+    public static final TypeName INJECTION_NAMED_BY_CLASS =
+            TypeName.create("io.helidon.service.inject.api.Injection.NamedByClass");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Qualifier}.
      */
@@ -50,8 +51,8 @@ public final class ServiceCodegenTypes {
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.PostConstruct}.
      */
-    public static final TypeName INJECTION_POST_CONSTRUCT = TypeName.create(
-            "io.helidon.service.inject.api.Injection.PostConstruct");
+    public static final TypeName INJECTION_POST_CONSTRUCT =
+            TypeName.create("io.helidon.service.inject.api.Injection.PostConstruct");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.PreDestroy}.
      */

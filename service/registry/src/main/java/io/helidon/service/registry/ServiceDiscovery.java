@@ -49,6 +49,7 @@ public interface ServiceDiscovery {
     /**
      * Create a new instance that discovers service descriptors based on the configuration.
      *
+     * @param config registry configuration to control discovery
      * @return service discovery based on classpath
      */
     static ServiceDiscovery create(ServiceRegistryConfig config) {
