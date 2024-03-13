@@ -30,8 +30,6 @@ import io.helidon.webserver.websocket.WsRouting;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 @ServerTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
@@ -66,7 +64,6 @@ class WsConversationTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     void testConversation1000() throws Exception {
         testConversation(WsConversation.createRandom(1000));
     }

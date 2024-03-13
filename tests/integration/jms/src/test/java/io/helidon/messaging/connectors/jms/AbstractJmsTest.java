@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static io.helidon.messaging.connectors.jms.AcknowledgeMode.AUTO_ACKNOWLED
 
 public class AbstractJmsTest {
 
-    static final String BROKER_URL = "vm://localhost?broker.persistent=false";
+    static final String BROKER_URL = "vm://localhost?broker.persistent=true";
     static Session session;
     static ConnectionFactory connectionFactory;
 
