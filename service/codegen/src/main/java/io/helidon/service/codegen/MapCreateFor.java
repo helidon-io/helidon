@@ -29,7 +29,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DRIVEN_BY;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_CREATE_FOR;
 
 /**
  * A {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.codegen.spi.AnnotationMapperProvider}
@@ -37,7 +37,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DRIVEN_BY
  * is already defined.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
-public class MapDrivenBy implements AnnotationMapperProvider {
+public class MapCreateFor implements AnnotationMapperProvider {
     private static final Annotation SERVICE = Annotation.create(ServiceCodegenTypes.INJECTION_DEPENDENT);
 
     /**
@@ -46,12 +46,12 @@ public class MapDrivenBy implements AnnotationMapperProvider {
      * @deprecated required by {@link java.util.ServiceLoader}
      */
     @Deprecated
-    public MapDrivenBy() {
+    public MapCreateFor() {
     }
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(INJECTION_DRIVEN_BY);
+        return Set.of(INJECTION_CREATE_FOR);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class MapDrivenBy implements AnnotationMapperProvider {
     private static class ConfigDrivenMapper implements AnnotationMapper {
         @Override
         public boolean supportsAnnotation(Annotation annotation) {
-            return annotation.typeName().equals(INJECTION_DRIVEN_BY);
+            return annotation.typeName().equals(INJECTION_CREATE_FOR);
         }
 
         @Override

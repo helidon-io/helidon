@@ -31,7 +31,7 @@ import io.helidon.service.inject.api.Qualifier;
 /**
  * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
  */
-@Injection.DrivenBy(AsyncConfigBlueprint.class)
+@Injection.CreateFor(AsyncConfigBlueprint.class)
 class AsyncImpl implements Async {
     private static final System.Logger LOGGER = System.getLogger(AsyncImpl.class.getName());
 

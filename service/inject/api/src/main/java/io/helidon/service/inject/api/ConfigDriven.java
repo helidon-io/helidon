@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * A set of annotations and other types for using config beans and services that are
- * driven by configuration in general.
+ * created for configuration in general.
  * If you want to use {@link ConfigDriven.ConfigBean} annotation, at least
  * Helidon common config must be on the classpath. To make use of it, you should also include an implementation
  * ({@code helidon-config}, or maybe {@code helidon-config-yaml}).
@@ -32,13 +32,13 @@ import java.lang.annotation.Target;
  * <p>
  * A configuration bean works as follows:
  * <ol>
- *     <li>Config instance is discovered (expected to be a service in the service registry, provided fpr example by Helidon
+ *     <li>Config instance is discovered (expected to be a service in the service registry, provided for example by Helidon
  *     Config)</li>
  *     <li>The generated config bean acts as a {@link io.helidon.service.inject.api.Injection.ServicesProvider}
  *          for the service type</li>
  *     <li>Based on the annotations in this type, instance(s) would be created</li>
  *     <li>These instances can be lookup up from the registry, or can be used to drive instances of other services using
- *     {@link Injection.DrivenBy}</li>
+ *     {@link io.helidon.service.inject.api.Injection.CreateFor}</li>
  * </ol>
  */
 public final class ConfigDriven {

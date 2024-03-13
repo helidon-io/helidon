@@ -46,7 +46,7 @@ import io.helidon.service.inject.InjectRegistryManager.TypedQualifiedProviderKey
 import io.helidon.service.inject.ServiceSupplies.ServiceSupplyList;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.Activator;
-import io.helidon.service.inject.api.DrivenByName__ServiceDescriptor;
+import io.helidon.service.inject.api.CreateForName__ServiceDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
 import io.helidon.service.inject.api.InjectRegistry;
@@ -288,19 +288,19 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         try {
             stateReadLock.lock();
             // a very special lookup
-            if (lookup.qualifiers().contains(Qualifier.DRIVEN_BY_NAME)) {
+            if (lookup.qualifiers().contains(Qualifier.CREATE_FOR_NAME)) {
                 if (lookup.qualifiers().size() != 1) {
-                    throw new ServiceRegistryException("Invalid injection lookup. @DrivenByName must be the only qualifier used"
+                    throw new ServiceRegistryException("Invalid injection lookup. @CreateForName must be the only qualifier used"
                                                                + ".");
                 }
                 if (!lookup.contracts().contains(TypeNames.STRING)) {
-                    throw new ServiceRegistryException("Invalid injection lookup. @DrivenByName must use String contract.");
+                    throw new ServiceRegistryException("Invalid injection lookup. @CreateForName must use String contract.");
                 }
                 if (lookup.contracts().size() != 1) {
-                    throw new ServiceRegistryException("Invalid injection lookup. @DrivenByName must use String as the only "
+                    throw new ServiceRegistryException("Invalid injection lookup. @CreateForName must use String as the only "
                                                                + "contract.");
                 }
-                return List.of(DrivenByName__ServiceDescriptor.INSTANCE);
+                return List.of(CreateForName__ServiceDescriptor.INSTANCE);
             }
 
             lookupCounter.increment();

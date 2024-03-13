@@ -40,9 +40,9 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName INJECTION_NAMED = TypeName.create("io.helidon.service.inject.api.Injection.Named");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.ClassNamed}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.NamedByClass}.
      */
-    public static final TypeName INJECTION_CLASS_NAMED = TypeName.create("io.helidon.service.inject.api.Injection.ClassNamed");
+    public static final TypeName INJECTION_NAMED_BY_CLASS = TypeName.create("io.helidon.service.inject.api.Injection.NamedByClass");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Qualifier}.
      */
@@ -80,12 +80,12 @@ public final class ServiceCodegenTypes {
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Descriptor}.
      */
-    public static final TypeName SERVICE_ANNOTATION_DESCRIPTOR = TypeName.create("io.helidon.service.registry.Service"
-                                                                                         + ".Descriptor");
+    public static final TypeName SERVICE_ANNOTATION_DESCRIPTOR =
+            TypeName.create("io.helidon.service.registry.Service.Descriptor");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.DrivenBy}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.CreateFor}.
      */
-    public static final TypeName INJECTION_DRIVEN_BY = TypeName.create("io.helidon.service.inject.api.Injection.DrivenBy");
+    public static final TypeName INJECTION_CREATE_FOR = TypeName.create("io.helidon.service.inject.api.Injection.CreateFor");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.RunLevel}.
      */
@@ -105,10 +105,10 @@ public final class ServiceCodegenTypes {
             "io.helidon.service.inject.api.GeneratedInjectService.Descriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for
-     * {@code io.helidon.service.inject.api.GeneratedInjectService.DrivenByDescriptor}.
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor}.
      */
-    public static final TypeName INJECT_DRIVEN_BY_DESCRIPTOR = TypeName.create(
-            "io.helidon.service.inject.api.GeneratedInjectService.DrivenByDescriptor");
+    public static final TypeName INJECT_CREATE_FOR_DESCRIPTOR = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for
      * {@code io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor}.

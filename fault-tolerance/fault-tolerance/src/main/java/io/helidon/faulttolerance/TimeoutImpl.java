@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.DrivenBy(TimeoutConfigBlueprint.class)
+@Injection.CreateFor(TimeoutConfigBlueprint.class)
 class TimeoutImpl implements Timeout {
     private static final System.Logger LOGGER = System.getLogger(TimeoutImpl.class.getName());
 

@@ -28,7 +28,7 @@ import io.helidon.service.inject.api.InvocationContext;
 import io.helidon.service.registry.ServiceRegistryException;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-@Injection.ClassNamed(FaultTolerance.Fallback.class)
+@Injection.NamedByClass(FaultTolerance.Fallback.class)
 @Weight(FaultTolerance.WEIGHT_FALLBACK)
 @Injection.Singleton
 class FallbackInterceptor extends InterceptorBase<Fallback> {

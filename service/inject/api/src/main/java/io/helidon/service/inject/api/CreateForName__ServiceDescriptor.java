@@ -22,23 +22,23 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 /**
- * Service descriptor to enable injection of String name of a {@link io.helidon.service.inject.api.Injection.DrivenBy}
+ * Service descriptor to enable injection of String name of a {@link io.helidon.service.inject.api.Injection.CreateFor}
  * service.
  * <p>
  * Not intended for direct use by users, implementation detail of the service registry, must be public,
  * as it may be used in generated applications
  */
 @SuppressWarnings({"checkstyle:TypeName"}) // matches pattern of generated descriptors
-public class DrivenByName__ServiceDescriptor implements GeneratedInjectService.Descriptor<String> {
+public class CreateForName__ServiceDescriptor implements GeneratedInjectService.Descriptor<String> {
     /**
      * Singleton instance to be referenced when building applications.
      */
-    public static final DrivenByName__ServiceDescriptor INSTANCE = new DrivenByName__ServiceDescriptor();
+    public static final CreateForName__ServiceDescriptor INSTANCE = new CreateForName__ServiceDescriptor();
 
-    private static final TypeName INFO_TYPE = TypeName.create(DrivenByName__ServiceDescriptor.class);
+    private static final TypeName INFO_TYPE = TypeName.create(CreateForName__ServiceDescriptor.class);
     private static final Set<TypeName> CONTRACTS = Set.of(TypeNames.STRING);
 
-    private DrivenByName__ServiceDescriptor() {
+    private CreateForName__ServiceDescriptor() {
     }
 
     @Override

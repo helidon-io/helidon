@@ -42,11 +42,11 @@ class QualifierSupport {
         static final Qualifier DEFAULT_NAMED = createNamed(Injection.Named.DEFAULT_NAME);
 
         /**
-         * Represents a qualifier used for injecting name of {@link io.helidon.service.inject.api.Injection.DrivenBy}
+         * Represents a qualifier used for injecting name of {@link io.helidon.service.inject.api.Injection.CreateFor}
          * instances.
          */
         @Prototype.Constant
-        static final Qualifier DRIVEN_BY_NAME = create(Injection.DrivenByName.class);
+        static final Qualifier CREATE_FOR_NAME = create(Injection.CreateForName.class);
 
         /**
          * Represents a configuration based bean.
@@ -176,7 +176,7 @@ class QualifierSupport {
          * @return named qualifier
          */
         @Prototype.FactoryMethod
-        static Qualifier createNamed(Injection.ClassNamed name) {
+        static Qualifier createNamed(Injection.NamedByClass name) {
             Objects.requireNonNull(name);
             return Qualifier.builder()
                     .typeName(Injection.Named.TYPE)
@@ -200,7 +200,7 @@ class QualifierSupport {
         }
 
         private static TypeName maybeNamed(TypeName qualifierType) {
-            if (Injection.ClassNamed.TYPE.equals(qualifierType)) {
+            if (Injection.NamedByClass.TYPE.equals(qualifierType)) {
                 return Injection.Named.TYPE;
             }
             return qualifierType;

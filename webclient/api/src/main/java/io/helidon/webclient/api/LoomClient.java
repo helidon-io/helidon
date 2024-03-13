@@ -39,7 +39,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
  * Base class for HTTP implementations of {@link WebClient}.
  */
 @SuppressWarnings("rawtypes")
-@Injection.DrivenBy(WebClientConfigBlueprint.class)
+@Injection.CreateFor(WebClientConfigBlueprint.class)
 class LoomClient implements WebClient {
     static final LazyValue<ExecutorService> EXECUTOR = LazyValue.create(() -> {
         return Executors.newThreadPerTaskExecutor(Thread.ofVirtual()

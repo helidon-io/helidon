@@ -18,13 +18,13 @@ package io.helidon.service.tests.inject.configdriven;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.DrivenBy(BConfigBlueprint.class)
+@Injection.CreateFor(BConfigBlueprint.class)
 class BService implements TheContract {
     private final BConfig config;
     private final String name;
 
     @Injection.Inject
-    BService(BConfig config, @Injection.DrivenByName String name) {
+    BService(BConfig config, @Injection.CreateForName String name) {
         this.config = config;
         this.name = name;
     }

@@ -37,8 +37,9 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator;
+import io.helidon.service.inject.api.GeneratedInjectService;
+import io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
-import io.helidon.service.inject.api.GeneratedInjectService.DrivenByDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
 import io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor;
 import io.helidon.service.inject.api.Injection;
@@ -94,8 +95,8 @@ final class Activators {
             if (contracts.contains(TypeNames.SUPPLIER)) {
                 return () -> new ActivatorsPerLookup.SupplierActivator<>(provider);
             }
-            if (descriptor instanceof DrivenByDescriptor dbd) {
-                return () -> new ActivatorsPerLookup.DrivenByActivator<>(registry, dbd, provider);
+            if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
+                return () -> new ActivatorsPerLookup.CreateForActivator<>(registry, dbd, provider);
             }
             if (descriptor instanceof QualifiedProviderDescriptor qpd) {
                 return () -> new ActivatorsPerLookup.QualifiedProviderActivator<>(provider, qpd);
@@ -111,8 +112,8 @@ final class Activators {
             if (contracts.contains(TypeNames.SUPPLIER)) {
                 return () -> new Activators.SupplierActivator<>(provider);
             }
-            if (descriptor instanceof DrivenByDescriptor dbd) {
-                return () -> new Activators.DrivenByActivator<>(registry, provider, dbd);
+            if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
+                return () -> new CreateForActivator<>(registry, provider, dbd);
             }
             if (descriptor instanceof QualifiedProviderDescriptor qpd) {
                 return () -> new Activators.QualifiedProviderActivator<>(provider, qpd);
@@ -616,22 +617,22 @@ final class Activators {
     }
 
     /**
-     * Service annotated {@link Injection.DrivenBy}.
+     * Service annotated {@link io.helidon.service.inject.api.Injection.CreateFor}.
      */
-    static class DrivenByActivator<T> extends BaseActivator<T> {
+    static class CreateForActivator<T> extends BaseActivator<T> {
         private final InjectServiceRegistryImpl registry;
-        private final TypeName drivenBy;
-        private final Lookup drivenByLookup;
+        private final TypeName createFor;
+        private final Lookup createForLookup;
         private List<QualifiedServiceInstance<T>> serviceInstances;
         private List<QualifiedInstance<T>> targetInstances;
 
-        DrivenByActivator(InjectServiceRegistryImpl registry, ServiceProvider<T> provider, DrivenByDescriptor dbd) {
+        CreateForActivator(InjectServiceRegistryImpl registry, ServiceProvider<T> provider, CreateForDescriptor dbd) {
             super(provider);
 
             this.registry = registry;
-            this.drivenBy = dbd.drivenBy();
-            this.drivenByLookup = Lookup.builder()
-                    .addContract(drivenBy)
+            this.createFor = dbd.createFor();
+            this.createForLookup = Lookup.builder()
+                    .addContract(createFor)
                     .build();
         }
 
@@ -660,10 +661,10 @@ final class Activators {
                 }
                 // injection point for the service name
                 if (TypeNames.STRING.equals(ip.contract())) {
-                    // @DrivenByName String name
+                    // @CreateForName String name
                     if (ip.qualifiers()
                             .stream()
-                            .anyMatch(it -> Injection.DrivenByName.TYPE.equals(it.typeName()))) {
+                            .anyMatch(it -> Injection.CreateForName.TYPE.equals(it.typeName()))) {
                         updatedPlan.put(ip,
                                         new IpPlan<>(() -> name.value().orElse(Injection.Named.DEFAULT_NAME),
                                                      injectionPlan.get(ip).descriptors()));
@@ -679,14 +680,14 @@ final class Activators {
             // at this moment, we must resolve services that are driving this instance
 
             // we do not want to use lookup, as that is doing too much for us
-            List<ServiceInstance<Object>> drivingInstances = driversFromPlan(provider.injectionPlan(), drivenBy)
+            List<ServiceInstance<Object>> drivingInstances = driversFromPlan(provider.injectionPlan(), createFor)
                     .stream()
                     .map(registry::serviceManager)
                     .flatMap(it -> it.activator()
-                            .instances(drivenByLookup)
+                            .instances(createForLookup)
                             .stream()
                             .flatMap(List::stream)
-                            .map(qi -> it.registryInstance(drivenByLookup, qi)))
+                            .map(qi -> it.registryInstance(createForLookup, qi)))
                     .toList();
 
             serviceInstances = drivingInstances.stream()
@@ -746,19 +747,19 @@ final class Activators {
             return Optional.of(List.copyOf(response));
         }
 
-        private List<ServiceInfo> driversFromPlan(Map<Dependency, IpPlan<?>> ipSupplierMap, TypeName drivenBy) {
+        private List<ServiceInfo> driversFromPlan(Map<Dependency, IpPlan<?>> ipSupplierMap, TypeName createFor) {
             // I need the list of descriptors from the injection plan
             for (Map.Entry<Dependency, IpPlan<?>> entry : ipSupplierMap.entrySet()) {
                 Dependency dependency = entry.getKey();
                 Ip ip = Ip.create(dependency);
-                if (drivenBy.equals(ip.contract())
+                if (createFor.equals(ip.contract())
                         && ip.qualifiers().size() == 1
                         && ip.qualifiers().contains(Qualifier.WILDCARD_NAMED)) {
                     return List.of(entry.getValue().descriptors());
                 }
             }
             // there is not
-            return registry.servicesByContract(drivenBy);
+            return registry.servicesByContract(createFor);
         }
 
         private record QualifiedServiceInstance<T>(InstanceHolder<T> serviceInstance,

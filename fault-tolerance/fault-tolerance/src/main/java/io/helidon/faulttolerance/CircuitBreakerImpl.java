@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.DrivenBy(CircuitBreakerConfigBlueprint.class)
+@Injection.CreateFor(CircuitBreakerConfigBlueprint.class)
 class CircuitBreakerImpl implements CircuitBreaker {
     /*
      Configuration options

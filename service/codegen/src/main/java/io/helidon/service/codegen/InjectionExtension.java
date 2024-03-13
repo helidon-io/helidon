@@ -59,8 +59,8 @@ import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_CREATE_FOR;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DEPENDENT;
-import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DRIVEN_BY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_POINT_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SINGLETON;
@@ -252,7 +252,7 @@ class InjectionExtension implements InjectCodegenExtension {
         scopeMethod(classModel, scope.orElse(INJECTION_DEPENDENT));
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
-        drivenByMethod(typeInfo, classModel, superType, contracts);
+        createForMethod(typeInfo, classModel, superType, contracts);
         qualifiedProvider(classModel, qualifiedProviderQualifier.get());
         scopeHandler(typeInfo, classModel, contracts);
 
@@ -358,66 +358,66 @@ class InjectionExtension implements InjectCodegenExtension {
                                            + ", ScopeHandler<Type> must be directly implemented by the service.");
     }
 
-    private void drivenByMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType, Set<TypeName> contracts) {
-        Optional<Annotation> drivenBy = typeInfo.findAnnotation(INJECTION_DRIVEN_BY);
-        if (!superType.hasSupertype() && drivenBy.isEmpty()) {
+    private void createForMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType, Set<TypeName> contracts) {
+        Optional<Annotation> createFor = typeInfo.findAnnotation(INJECTION_CREATE_FOR);
+        if (!superType.hasSupertype() && createFor.isEmpty()) {
             // this is the default
             return;
         }
-        if (drivenBy.isPresent()) {
+        if (createFor.isPresent()) {
             // make sure that driven by does not implement providers
             if (contracts.contains(INJECTION_POINT_PROVIDER)
                     || contracts.contains(SERVICES_PROVIDER)
                     || contracts.contains(QUALIFIED_PROVIDER)) {
                 throw new CodegenException("Service " + typeInfo.typeName().classNameWithEnclosingNames()
-                                                   + " is annotated with @DrivenBy, and as such it must not implement any "
+                                                   + " is annotated with @CreateFor, and as such it must not implement any "
                                                    + "provider interfaces. Contracts: " + contracts,
                                            typeInfo.originatingElement().orElseGet(() -> typeInfo.typeName().fqName()));
             }
 
-            TypeName drivenByType = drivenBy.get()
+            TypeName createForType = createFor.get()
                     .typeValue()
-                    .orElseThrow(() -> new CodegenException(INJECTION_DRIVEN_BY.fqName()
+                    .orElseThrow(() -> new CodegenException(INJECTION_CREATE_FOR.fqName()
                                                                     + ".value() is required, yet not found on type: "
                                                                     + typeInfo.typeName().fqName()));
 
-            String drivenByClassName = drivenByType.className();
-            if (drivenByClassName.endsWith("Blueprint")) {
+            String createForClassName = createForType.className();
+            if (createForClassName.endsWith("Blueprint")) {
                 // this may be a config blueprint, use the config instance
-                Optional<TypeInfo> drivenByTypeInfo = ctx.typeInfo(drivenByType);
-                if (drivenByTypeInfo.isPresent()) {
-                    if (drivenByTypeInfo.get().hasAnnotation(BUILDER_BLUEPRINT)) {
-                        drivenByType = TypeName.builder(drivenByType)
-                                .className(drivenByClassName.substring(0, drivenByClassName.length() - "Blueprint".length()))
+                Optional<TypeInfo> createForTypeInfo = ctx.typeInfo(createForType);
+                if (createForTypeInfo.isPresent()) {
+                    if (createForTypeInfo.get().hasAnnotation(BUILDER_BLUEPRINT)) {
+                        createForType = TypeName.builder(createForType)
+                                .className(createForClassName.substring(0, createForClassName.length() - "Blueprint".length()))
                                 .build();
                     }
                 }
             }
 
-            if (drivenByType.packageName().isBlank()) {
-                throw new CodegenException("Driven by type used on " + typeInfo.typeName().fqName() + " does not have a "
+            if (createForType.packageName().isBlank()) {
+                throw new CodegenException("CreateFor type used on " + typeInfo.typeName().fqName() + " does not have a "
                                                    + "package defined. Package is mandatory. If the type is a generated"
                                                    + " prototype, please use the Blueprint type instead.");
             }
 
             // used from lambda
-            TypeName drivenByTypeFinal = drivenByType;
-            classModel.addInterface(ServiceCodegenTypes.INJECT_DRIVEN_BY_DESCRIPTOR);
+            TypeName createForTypeFinal = createForType;
+            classModel.addInterface(ServiceCodegenTypes.INJECT_CREATE_FOR_DESCRIPTOR);
 
-            classModel.addField(drivenByField -> drivenByField
+            classModel.addField(createForField -> createForField
                     .accessModifier(AccessModifier.PRIVATE)
                     .isStatic(true)
                     .isFinal(true)
-                    .name("DRIVEN_BY")
+                    .name("CREATE_FOR")
                     .type(TypeNames.TYPE_NAME)
-                    .addContentCreate(drivenByTypeFinal));
+                    .addContentCreate(createForTypeFinal));
 
-            classModel.addMethod(drivenByMethod -> drivenByMethod
+            classModel.addMethod(createForMethod -> createForMethod
                     .accessModifier(AccessModifier.PUBLIC)
                     .addAnnotation(Annotations.OVERRIDE)
                     .returnType(TypeNames.TYPE_NAME)
-                    .name("drivenBy")
-                    .addContentLine("return DRIVEN_BY;"));
+                    .name("createFor")
+                    .addContentLine("return CREATE_FOR;"));
         }
 
     }
@@ -782,7 +782,7 @@ class InjectionExtension implements InjectCodegenExtension {
     private void qualifiers(TypeInfo service, Set<Annotation> qualifiers) {
         qualifiers.addAll(qualifiers(service, service));
         // the type info itself
-        if (service.hasAnnotation(INJECTION_DRIVEN_BY)) {
+        if (service.hasAnnotation(INJECTION_CREATE_FOR)) {
             // only for the type, not for injection points
             qualifiers.add(WILDCARD_NAMED);
         }
@@ -949,7 +949,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                                + "This is not supported. Scopes. " + result);
         }
 
-        if (result.isEmpty() && service.hasAnnotation(INJECTION_DRIVEN_BY)) {
+        if (result.isEmpty() && service.hasAnnotation(INJECTION_CREATE_FOR)) {
             result.add(INJECTION_SINGLETON);
         }
 

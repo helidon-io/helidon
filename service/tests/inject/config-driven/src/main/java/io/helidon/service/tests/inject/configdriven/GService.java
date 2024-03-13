@@ -18,13 +18,13 @@ package io.helidon.service.tests.inject.configdriven;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.DrivenBy(GConfigBlueprint.class)
+@Injection.CreateFor(GConfigBlueprint.class)
 class GService implements TheContract {
     private final GConfig config;
     private final String name;
 
     @Injection.Inject
-    GService(GConfig config, @Injection.DrivenByName String name) {
+    GService(GConfig config, @Injection.CreateForName String name) {
         this.config = config;
         this.name = name;
     }

@@ -47,7 +47,7 @@ public final class Injection {
 
     /**
      * Method, constructor, or field marked with this annotation is considered as injectable, and its injection points
-     * will be satisfied with services from the service registry. An injection point is a filed, or a single parameter.
+     * will be satisfied with services from the service registry. An injection point is a field, or a single parameter.
      * <p>
      * An injection point may expect instance of a service, or a {@link java.util.function.Supplier} of the same.
      * <p>
@@ -189,12 +189,12 @@ public final class Injection {
     @Qualifier
     @Documented
     @Retention(RetentionPolicy.CLASS)
-    public @interface ClassNamed {
+    public @interface NamedByClass {
         /**
          * Type name of this interface.
          * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
          */
-        TypeName TYPE = TypeName.create(ClassNamed.class);
+        TypeName TYPE = TypeName.create(NamedByClass.class);
 
         /**
          * The class used will function as the name.
@@ -279,14 +279,14 @@ public final class Injection {
      * <li>There MAY be an injection point of the type defined in {@link #value()}, without any qualifiers -
      * this injection point will be satisfied by the driving instance</li>
      * <li>There MAY be a {@link String} injection point qualified with
-     * {@link Injection.DrivenByName} - this injection point will be satisfied by the
+     * {@link io.helidon.service.inject.api.Injection.CreateForName} - this injection point will be satisfied by the
      * name of the driving instance</li>
      * </ul>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
-    public @interface DrivenBy {
+    public @interface CreateFor {
         /**
          * The service type driving this service. The service type MUST provide {@link Injection.Named}
          * instances.
@@ -297,19 +297,19 @@ public final class Injection {
     }
 
     /**
-     * For types that are {@link Injection.DrivenBy}, an injection point (field, parameter) can
+     * For types that are {@link io.helidon.service.inject.api.Injection.CreateFor}, an injection point (field, parameter) can
      * be annotated with this annotation to receive the name qualifier associated with this instance.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Qualifier
-    public @interface DrivenByName {
+    public @interface CreateForName {
         /**
          * Type name of this interface.
          * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
          */
-        TypeName TYPE = TypeName.create(DrivenByName.class);
+        TypeName TYPE = TypeName.create(CreateForName.class);
     }
 
     /**

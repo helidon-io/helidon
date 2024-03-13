@@ -24,7 +24,7 @@ import io.helidon.service.inject.api.Interception;
 import io.helidon.service.inject.api.InvocationContext;
 import io.helidon.service.inject.api.InvocationException;
 
-@Injection.ClassNamed(Repeat.class)
+@Injection.NamedByClass(Repeat.class)
 @Injection.Singleton
 class RepeatingInterceptor implements Interception.Interceptor {
     private static final AtomicReference<Invocation> LAST_CALL = new AtomicReference<>();

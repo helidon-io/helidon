@@ -18,7 +18,7 @@ package io.helidon.service.tests.inject.configdriven;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.DrivenBy(IConfigBlueprint.class)
+@Injection.CreateFor(IConfigBlueprint.class)
 @Injection.Named("jane")
 class IService implements IContract {
     private boolean running;

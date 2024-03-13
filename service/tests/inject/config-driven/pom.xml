@@ -30,7 +30,7 @@
 
     <artifactId>helidon-service-tests-inject-config-driven</artifactId>
     <name>Helidon Service Tests Inject Config Driven</name>
-    <description>Tests for config beans and DrivenBy</description>
+    <description>Tests for config beans and CreateFor</description>
 
     <dependencies>
         <dependency>

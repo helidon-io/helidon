@@ -70,7 +70,7 @@ public final class Interception {
          */
         interface Chain<V> {
             /**
-             * Call the next interceptor in line, or finishing with the call to the service provider being intercepted.
+             * Call the next interceptor in line, or finish with the call to the service being intercepted.
              * Note that that arguments are passed by reference to each interceptor ultimately leading up to the final
              * call to the underlying intercepted target. Callers can mutate the arguments passed directly on the provided array
              * instance.

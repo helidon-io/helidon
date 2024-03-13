@@ -243,27 +243,27 @@ final class ActivatorsPerLookup {
     }
 
     /**
-     * Service annotated {@link io.helidon.service.inject.api.Injection.DrivenBy}.
+     * Service annotated {@link io.helidon.service.inject.api.Injection.CreateFor}.
      */
-    static class DrivenByActivator<T> extends Activators.BaseActivator<T> {
+    static class CreateForActivator<T> extends Activators.BaseActivator<T> {
         private final InjectServiceRegistryImpl registry;
-        private final TypeName drivenBy;
+        private final TypeName createFor;
 
         private List<QualifiedOnDemandInstance<T>> serviceInstances;
 
-        DrivenByActivator(InjectServiceRegistryImpl registry,
-                          GeneratedInjectService.DrivenByDescriptor dbd,
-                          ServiceProvider<T> provider) {
+        CreateForActivator(InjectServiceRegistryImpl registry,
+                           GeneratedInjectService.CreateForDescriptor dbd,
+                           ServiceProvider<T> provider) {
             super(provider);
 
             this.registry = registry;
-            this.drivenBy = dbd.drivenBy();
+            this.createFor = dbd.createFor();
         }
 
         @Override
         protected void construct(ActivationResult.Builder response) {
             // at this moment, we must resolve services that are driving this instance
-            List<ServiceInfo> services = registry.servicesByContract(drivenBy);
+            List<ServiceInfo> services = registry.servicesByContract(createFor);
 
             serviceInstances = services.stream()
                     .map(registry::serviceManager)
@@ -307,9 +307,9 @@ final class ActivatorsPerLookup {
                     .collect(Collectors.toSet());
             newQualifiers.add(name);
 
-            Map<Dependency, IpPlan<?>> injectionPlan = Activators.DrivenByActivator.updatePlan(provider.injectionPlan(),
-                                                                                               driver,
-                                                                                               name);
+            Map<Dependency, IpPlan<?>> injectionPlan = Activators.CreateForActivator.updatePlan(provider.injectionPlan(),
+                                                                                                driver,
+                                                                                                name);
 
             return new QualifiedOnDemandInstance<>(new OnDemandInstance<>(InjectionContext.create(injectionPlan),
                                                                           provider.interceptionMetadata(),
