@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.Executor;
-import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
@@ -47,11 +46,13 @@ import io.grpc.ClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 
+import static java.lang.System.Logger.Level.DEBUG;
+
 /**
  * Base class for gRPC client calls.
  */
 abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
-    private static final Logger LOGGER = Logger.getLogger(GrpcBaseClientCall.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GrpcBaseClientCall.class.getName());
 
     protected static final Metadata EMPTY_METADATA = new Metadata();
     protected static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
@@ -83,25 +84,25 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.responseMarshaller = methodDescriptor.getResponseMarshaller();
     }
 
-    public Http2ClientConnection connection() {
+    protected Http2ClientConnection connection() {
         return connection;
     }
 
-    public MethodDescriptor.Marshaller<ReqT> requestMarshaller() {
+    protected MethodDescriptor.Marshaller<ReqT> requestMarshaller() {
         return requestMarshaller;
     }
 
-    public GrpcClientStream clientStream() {
+    protected GrpcClientStream clientStream() {
         return clientStream;
     }
 
-    public Listener<ResT> responseListener() {
+    protected Listener<ResT> responseListener() {
         return responseListener;
     }
 
     @Override
     public void start(Listener<ResT> responseListener, Metadata metadata) {
-        LOGGER.finest("start called");
+        LOGGER.log(DEBUG, "start called");
 
         this.responseListener = responseListener;
 

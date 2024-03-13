@@ -32,12 +32,10 @@ module io.helidon.webclient.grpc {
     requires transitive io.grpc;
     requires transitive io.grpc.stub;
     requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.common.pki;
     requires transitive io.helidon.webclient.http2;
     requires transitive io.helidon.webclient;
 
     requires io.helidon.grpc.core;
-    requires java.logging;
 
     exports io.helidon.webclient.grpc;
 
