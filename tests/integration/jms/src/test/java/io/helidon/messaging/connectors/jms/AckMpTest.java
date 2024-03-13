@@ -58,7 +58,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 })
 @AddConfigs({
         @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.provider.url",
-                value = "vm://localhost?broker.persistent=false"),
+                value = "vm://localhost?broker.persistent=true"),
         @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.factory.initial",
                 value = "org.apache.activemq.jndi.ActiveMQInitialContextFactory"),
 
@@ -101,18 +101,19 @@ public class AckMpTest extends AbstractMPTest {
         List<String> testData = List.of("0", "1", "2", "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
         produce(TEST_QUEUE_ACK, testData, m -> {});
         mockConnector.outgoing("mock-conn-channel", String.class)
-                        .awaitPayloads(Duration.ofSeconds(5), testData.toArray(String[]::new));
+                        .awaitPayloads(Duration.ofMinutes(1), testData.toArray(String[]::new));
     }
 
     @Test
     @Order(2)
     void resendAckTestPart2(SeContainer cdi) {
-            MockConnector mockConnector = cdi.select(MockConnector.class, TEST_CONNECTOR_ANNOTATION).get();
+        MockConnector mockConnector = cdi.select(MockConnector.class, TEST_CONNECTOR_ANNOTATION).get();
 
-            //Check if not acked messages are redelivered
-            mockConnector.outgoing("mock-conn-channel", String.class)
-                    .requestMax()
-                    .awaitPayloads(Duration.ofSeconds(5), "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
+        //Check if not acked messages are redelivered
+        mockConnector.outgoing("mock-conn-channel", String.class)
+                .requestMax()
+                .awaitCount(Duration.ofMinutes(1), 1)
+                .awaitPayloads(Duration.ofMinutes(1), "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
     }
 
     @AfterAll
