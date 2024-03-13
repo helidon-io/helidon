@@ -1533,6 +1533,12 @@ class InjectionExtension implements InjectCodegenExtension {
                     .addContent(paramsDeclaration)
                     .addContentLine(");");
         }
+        boolean hasGenericType = constructorParams.stream()
+                .anyMatch(it -> !it.declaredType().typeArguments().isEmpty());
+
+        if (hasGenericType) {
+            method.addAnnotation(Annotation.create(TypeName.create(SuppressWarnings.class), "unchecked"));
+        }
     }
 
     private void createDoInstantiateBody(TypeName serviceType,
@@ -1623,6 +1629,16 @@ class InjectionExtension implements InjectCodegenExtension {
                                   List<ParamDefinition> fields,
                                   boolean canIntercept,
                                   List<TypedElements.ElementMeta> maybeIntercepted) {
+
+        boolean hasGenericType = methods.stream()
+                .flatMap(it -> it.params().stream())
+                .anyMatch(it -> !it.declaredType().typeArguments().isEmpty())
+                || fields.stream()
+                .anyMatch(it -> !it.declaredType().typeArguments().isEmpty());
+
+        if (hasGenericType) {
+            methodBuilder.addAnnotation(Annotation.create(TypeName.create(SuppressWarnings.class), "unchecked"));
+        }
 
         // two passes for methods - first mark method to be injected, then call super, then inject
         for (MethodDefinition method : methods) {

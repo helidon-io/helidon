@@ -71,6 +71,12 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
     private String source;
 
     /**
+     * Whether to validate the application when creating its bindings.
+     */
+    @Parameter(property = "helidon.inject.application.validate", defaultValue = "true")
+    private boolean validate;
+
+    /**
      * The -target argument for the Java compiler.
      * Note: using the same as maven-compiler for convenience and least astonishment.
      */
@@ -194,6 +200,12 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         getLog().debug("All services to be processed (exclusions applied): " + allServices);
 
         String className = getGeneratedClassName();
+
+        if (validate) {
+            // validate the application
+            ApplicationValidator validator = new ApplicationValidator(scanContext, failOnWarning());
+            validator.validate(services);
+        }
 
         // get the application creator only after services are initialized (we need to ignore any existing apps)
         ApplicationCreator creator = new ApplicationCreator(scanContext, failOnError());
