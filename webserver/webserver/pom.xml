@@ -33,6 +33,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon</groupId>
+            <artifactId>helidon</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http</artifactId>
         </dependency>

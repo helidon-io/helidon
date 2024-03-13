@@ -34,10 +34,6 @@
         Example usages of a Helidon Declarative project creating WebServer endpoints
     </description>
 
-    <properties>
-        <mainClass>io.helidon.examples.declarative.webserver.Main</mainClass>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon</groupId>

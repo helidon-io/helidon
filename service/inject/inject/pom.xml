@@ -52,6 +52,10 @@
             <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon</groupId>
+            <artifactId>helidon</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
