@@ -16,8 +16,6 @@
 
 package io.helidon.webclient.grpc;
 
-import java.util.logging.Logger;
-
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.webclient.http2.StreamTimeoutException;
@@ -25,6 +23,9 @@ import io.helidon.webclient.http2.StreamTimeoutException;
 import io.grpc.CallOptions;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
+
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.ERROR;
 
 /**
  * An implementation of a unary gRPC call. Expects:
@@ -35,7 +36,7 @@ import io.grpc.Status;
  * @param <ResT> response type
  */
 class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
-    private static final Logger LOGGER = Logger.getLogger(GrpcUnaryClientCall.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GrpcUnaryClientCall.class.getName());
 
     private volatile boolean closeCalled;
     private volatile boolean requestSent;
@@ -48,7 +49,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void request(int numMessages) {
-        LOGGER.finest(() -> "request called " + numMessages);
+        LOGGER.log(DEBUG, () -> "request called " + numMessages);
         if (numMessages < 1) {
             close(Status.INVALID_ARGUMENT);
         }
@@ -56,19 +57,19 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void cancel(String message, Throwable cause) {
-        LOGGER.finest(() -> "cancel called " + message);
+        LOGGER.log(DEBUG, () -> "cancel called " + message);
         close(Status.CANCELLED);
     }
 
     @Override
     public void halfClose() {
-        LOGGER.finest("halfClose called");
+        LOGGER.log(DEBUG, "halfClose called");
         close(responseSent ? Status.OK : Status.UNKNOWN);
     }
 
     @Override
     public void sendMessage(ReqT message) {
-        LOGGER.finest("sendMessage called");
+        LOGGER.log(DEBUG, "sendMessage called");
 
         // should only be called once
         if (requestSent) {
@@ -87,7 +88,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         while (isRemoteOpen()) {
             // trailers received?
             if (clientStream().trailers().isDone()) {
-                LOGGER.finest("trailers received");
+                LOGGER.log(DEBUG, "trailers received");
                 return;
             }
 
@@ -96,11 +97,11 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             try {
                 frameData = clientStream().readOne(WAIT_TIME_MILLIS_DURATION);
             } catch (StreamTimeoutException e) {
-                LOGGER.fine("read timeout");
+                LOGGER.log(ERROR, "read timeout");
                 continue;
             }
             if (frameData != null) {
-                LOGGER.finest("response received");
+                LOGGER.log(DEBUG, "response received");
                 responseListener().onMessage(toResponse(frameData.data()));
                 responseSent = true;
             }
@@ -114,7 +115,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     private void close(Status status) {
         if (!closeCalled) {
-            LOGGER.finest("closing client call");
+            LOGGER.log(ERROR, "closing client call");
             responseListener().onClose(status, EMPTY_METADATA);
             clientStream().cancel();
             connection().close();

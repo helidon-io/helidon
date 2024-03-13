@@ -19,7 +19,6 @@ package io.helidon.grpc.core;
 import com.google.protobuf.MessageLite;
 import io.grpc.MethodDescriptor;
 import io.grpc.protobuf.lite.ProtoLiteUtils;
-import jakarta.inject.Named;
 
 /**
  * A supplier of {@link MethodDescriptor.Marshaller} instances for specific
@@ -27,16 +26,6 @@ import jakarta.inject.Named;
  */
 @FunctionalInterface
 public interface MarshallerSupplier {
-
-    /**
-     * The name of the Protocol Buffer marshaller supplier.
-     */
-    String PROTO = "proto";
-
-    /**
-     * The name to use to specify the default marshaller supplier.
-     */
-    String DEFAULT = "default";
 
     /**
      * Obtain a {@link MethodDescriptor.Marshaller} for a type.
@@ -60,9 +49,7 @@ public interface MarshallerSupplier {
     /**
      * The default {@link MarshallerSupplier}.
      */
-    @Named(MarshallerSupplier.DEFAULT)
-    class DefaultMarshallerSupplier
-            implements MarshallerSupplier {
+    class DefaultMarshallerSupplier implements MarshallerSupplier {
 
         private final ProtoMarshallerSupplier proto = new ProtoMarshallerSupplier();
 
@@ -82,9 +69,7 @@ public interface MarshallerSupplier {
      * A {@link MarshallerSupplier} implementation that
      * supplies Protocol Buffer marshaller instances.
      */
-    @Named(PROTO)
-    class ProtoMarshallerSupplier
-            implements MarshallerSupplier {
+    class ProtoMarshallerSupplier implements MarshallerSupplier {
 
         @Override
         @SuppressWarnings("unchecked")

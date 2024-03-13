@@ -16,17 +16,12 @@
 
 package io.helidon.webclient.grpc;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.Objects;
 
-import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.CallCredentials;
-import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
 
 /**
@@ -54,11 +49,6 @@ public final class GrpcClientMethodDescriptor {
     private final MethodDescriptor<?, ?> descriptor;
 
     /**
-     * The list of client interceptors for this method.
-     */
-    private final List<ClientInterceptor> interceptors;
-
-    /**
      * The {@link io.grpc.CallCredentials} for this method.
      */
     private final CallCredentials callCredentials;
@@ -70,12 +60,10 @@ public final class GrpcClientMethodDescriptor {
 
     private GrpcClientMethodDescriptor(String name,
                                        MethodDescriptor<?, ?> descriptor,
-                                       List<ClientInterceptor> interceptors,
                                        CallCredentials callCredentials,
                                        MethodHandler<?, ?> methodHandler) {
         this.name = name;
         this.descriptor = descriptor;
-        this.interceptors = interceptors;
         this.callCredentials = callCredentials;
         this.methodHandler = methodHandler;
     }
@@ -215,15 +203,6 @@ public final class GrpcClientMethodDescriptor {
     }
 
     /**
-     * Obtain the {@link io.grpc.ClientInterceptor}s to use for this method.
-     *
-     * @return the {@link io.grpc.ClientInterceptor}s to use for this method
-     */
-    List<ClientInterceptor> interceptors() {
-        return Collections.unmodifiableList(interceptors);
-    }
-
-    /**
      * Obtain the {@link MethodHandler} to use to make client calls.
      *
      * @return the {@link MethodHandler} to use to make client calls
@@ -254,27 +233,6 @@ public final class GrpcClientMethodDescriptor {
          *              fluent call chaining
          */
         Rules responseType(Class<?> type);
-
-        /**
-         * Register one or more {@link io.grpc.ClientInterceptor interceptors} for the method.
-         *
-         * @param interceptors the interceptor(s) to register
-         * @return this {@link GrpcClientMethodDescriptor.Rules} instance for
-         * fluent call chaining
-         */
-        Rules intercept(ClientInterceptor... interceptors);
-
-        /**
-         * Register one or more {@link io.grpc.ClientInterceptor interceptors} for the method.
-         * <p>
-         * The added interceptors will be applied using the specified priority.
-         *
-         * @param priority     the priority to assign to the interceptors
-         * @param interceptors one or more {@link io.grpc.ClientInterceptor}s to register
-         * @return this {@link GrpcClientMethodDescriptor.Rules} to allow
-         *              fluent method chaining
-         */
-        Rules intercept(int priority, ClientInterceptor... interceptors);
 
         /**
          * Register the {@link MarshallerSupplier} for the method.
@@ -318,7 +276,6 @@ public final class GrpcClientMethodDescriptor {
         private final MethodDescriptor.Builder<?, ?> descriptor;
         private Class<?> requestType;
         private Class<?> responseType;
-        private final PriorityBag<ClientInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
         private MarshallerSupplier marshallerSupplier;
         private CallCredentials callCredentials;
@@ -349,29 +306,13 @@ public final class GrpcClientMethodDescriptor {
         }
 
         @Override
-        public Builder intercept(ClientInterceptor... interceptors) {
-            this.interceptors.addAll(Arrays.asList(interceptors));
-            return this;
-        }
-
-        @Override
-        public Builder intercept(int priority, ClientInterceptor... interceptors) {
-            this.interceptors.addAll(Arrays.asList(interceptors), priority);
-            return this;
-        }
-
-        @Override
         public Builder marshallerSupplier(MarshallerSupplier supplier) {
             this.marshallerSupplier = supplier;
             return this;
         }
 
         Builder defaultMarshallerSupplier(MarshallerSupplier supplier) {
-            if (supplier == null) {
-                this.defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
-            } else {
-                this.defaultMarshallerSupplier = supplier;
-            }
+            this.defaultMarshallerSupplier = Objects.requireNonNullElseGet(supplier, MarshallerSupplier::defaultInstance);
             return this;
         }
 
@@ -423,7 +364,6 @@ public final class GrpcClientMethodDescriptor {
 
             return new GrpcClientMethodDescriptor(name,
                                               descriptor.build(),
-                                              interceptors.stream().toList(),
                                               callCredentials,
                                               methodHandler);
         }
