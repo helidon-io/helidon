@@ -722,6 +722,23 @@ final class LocalXAResource implements XAResource {
         // T1: Associated
         // T2: Association Suspended
 
+        /*
+          digraph "Transaction States (Jakarta Transactions Specification)" {
+              t0 [label="Not Associated\n(t0)"];
+              t1 [label="Associated\n(t1)"];
+              t2 [label="Association\nSuspended\n(t2)"];
+
+              t0 -> t1 [label="start()"];
+              t0 -> t1 [label="start() [TMJOIN]"];
+
+              t1 -> t0 [label="end() [TMFAIL, TMSUCCESS"];
+              t1 -> t2 [label="end() [TMSUSPEND]"];
+
+              t2 -> t0 [label="end() [TMFAIL, TMSUCCESS]"]
+              t2 -> t1 [label="start() [TMRESUME]"];
+          }
+        */
+
         // Branch States: (XA specification, table 6-4)
         // S0: Non-existent Transaction
         // S1: Active
