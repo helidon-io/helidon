@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,8 @@ final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.Dat
 
     private final boolean immediateEnlistment;
 
+    private final boolean preemptiveEnlistmentChecks;
+
     private final ExceptionConverter exceptionConverter;
 
 
@@ -118,6 +120,8 @@ final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.Dat
             Boolean.parseBoolean(System.getProperty("helidon.jta.interposedSynchronizations", "true"));
         this.immediateEnlistment =
             Boolean.parseBoolean(System.getProperty("helidon.jta.immediateEnlistment", "false"));
+        this.preemptiveEnlistmentChecks =
+            Boolean.parseBoolean(System.getProperty("helidon.jta.preemptiveEnlistmentChecks", "true"));
         Instance<ExceptionConverter> i = objects.select(ExceptionConverter.class);
         this.exceptionConverter = i.isUnsatisfied() ? null : i.get();
     }
@@ -167,7 +171,8 @@ final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.Dat
                                                                                 this.interposedSynchronizations,
                                                                                 this.exceptionConverter,
                                                                                 this.objects.select(DataSource.class).get(),
-                                                                                this.immediateEnlistment));
+                                                                                this.immediateEnlistment,
+                                                                                this.preemptiveEnlistmentChecks));
     }
 
     private JtaAdaptingDataSource getNamedJtaDataSource(String name) {
@@ -179,7 +184,8 @@ final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.Dat
                                                                                 this.exceptionConverter,
                                                                                 this.objects.select(DataSource.class,
                                                                                                     NamedLiteral.of(n)).get(),
-                                                                                this.immediateEnlistment));
+                                                                                this.immediateEnlistment,
+                                                                                this.preemptiveEnlistmentChecks));
     }
 
     private DataSource getNamedNonJtaDataSource(String name) {
