@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
@@ -76,12 +77,14 @@ class FallbackExtension implements InjectCodegenExtension {
         for (TypeInfo info : roundContext.types()) {
             types.put(info.typeName(), info);
         }
+        int index = 0;
         for (TypedElementInfo element : elements) {
-            process(types, element);
+            process(types, element, index);
+            index++;
         }
     }
 
-    private void process(Map<TypeName, TypeInfo> types, TypedElementInfo element) {
+    private void process(Map<TypeName, TypeInfo> types, TypedElementInfo element, int index) {
         if (element.enclosingType().isEmpty()) {
             throw new CodegenException(
                     "Fallback annotation is only allowed on a method, yet this element does not have an enclosing type: "
@@ -97,12 +100,14 @@ class FallbackExtension implements InjectCodegenExtension {
 
         Annotation fallbackAnnotation = element.annotation(FallbackExtensionProvider.FALLBACK_ANNOTATION);
         String methodName = element.elementName();
-        TypeName generatedType = generatedType(enclosingType, methodName);
+        TypeName generatedType = generatedType(enclosingType, methodName, index);
 
         ClassModel.Builder classModel = ClassModel.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(SINGLETON_ANNOTATION)
-                .addAnnotation(Annotation.create(INJECTION_NAMED, enclosingType.fqName() + "." + methodName))
+                .addAnnotation(Annotation.create(INJECTION_NAMED, enclosingType.fqName()
+                        + "." + methodName
+                        + "(" + paramsForNamed(element.parameterArguments()) + ")"))
                 .type(generatedType)
                 .addInterface(fallbackMethodType(element.typeName(), enclosingType))
                 .sortStaticFields(false);
@@ -111,6 +116,13 @@ class FallbackExtension implements InjectCodegenExtension {
         parameterTypesMethod(classModel, element.parameterArguments());
 
         ctx.addType(generatedType, classModel, enclosingType, typeInfo.originatingElement().orElse(enclosingType));
+    }
+
+    private String paramsForNamed(List<TypedElementInfo> params) {
+        return params.stream()
+                .map(TypedElementInfo::typeName)
+                .map(TypeName::fqName)
+                .collect(Collectors.joining(","));
     }
 
     private void parameterTypesMethod(ClassModel.Builder classModel, List<TypedElementInfo> arguments) {
@@ -151,7 +163,7 @@ class FallbackExtension implements InjectCodegenExtension {
             field.addContent("new ")
                     .addContent(TypeNames.GENERIC_TYPE)
                     .addContent("<")
-                    .addContent(typeName)
+                    .addContent(typeName.boxed())
                     .addContent("> () {}");
             if (iterator.hasNext()) {
                 field.addContent(",");
@@ -173,14 +185,13 @@ class FallbackExtension implements InjectCodegenExtension {
 
         String fallbackMethodName = fallbackAnnotation.value()
                 .orElseThrow(() -> new CodegenException("value is mandatory on Fallback annotation. Missing for: " + element));
-        TypeName returnType = element.typeName().boxed();
-        boolean isVoid = TypeNames.BOXED_VOID.equals(returnType);
+        TypeName returnType = element.typeName();
+        boolean isVoid = TypeNames.PRIMITIVE_VOID.equals(returnType) || TypeNames.BOXED_VOID.equals(returnType);
 
         // then the implementation of interface method to fallback
         List<TypeName> expectedArguments = element.parameterArguments()
                 .stream()
                 .map(TypedElementInfo::typeName)
-                .map(TypeName::boxed)
                 .toList();
         List<TypeName> argsWithThrowable = new ArrayList<>(expectedArguments);
         argsWithThrowable.add(TypeName.create(Throwable.class));
@@ -191,8 +202,13 @@ class FallbackExtension implements InjectCodegenExtension {
                 .filter(ElementInfoPredicates::isMethod)
                 .toList();
         if (matchingByName.isEmpty()) {
-            throw new CodegenException("Could not find matching fallback method for name "
-                                               + fallbackMethodName + " in "
+            throw new CodegenException("Could not find matching fallback method for  "
+                                               + returnType.className() + " "
+                                               + fallbackMethodName
+                                               + "(" + expectedArguments.stream()
+                    .map(TypeName::className)
+                    .collect(Collectors.joining(", ")) + ")"
+                                               + " in "
                                                + typeInfo.typeName().fqName() + ".",
                                        typeInfo.originatingElement().orElseGet(typeInfo::typeName));
         }
@@ -227,8 +243,13 @@ class FallbackExtension implements InjectCodegenExtension {
             badCandidates.add(new BadCandidate(elementInfo, reason));
         }
         if (!found) {
-            throw new CodegenException("Could not find matching fallback method for name " + fallbackMethodName + ","
-                                               + " following bad candidates found: " + badCandidates);
+            throw new CodegenException("Could not find matching fallback method for  "
+                                               + returnType.className() + " "
+                                               + fallbackMethodName
+                                               + "(" + expectedArguments.stream()
+                    .map(TypeName::className)
+                    .collect(Collectors.joining(", ")) + ")"
+                                               + ", following bad candidates found: " + badCandidates);
         }
         boolean isStatic = fallbackMethod.elementModifiers().contains(Modifier.STATIC);
 
@@ -237,7 +258,7 @@ class FallbackExtension implements InjectCodegenExtension {
         classModel.addMethod(fallback -> fallback
                 .addAnnotation(Annotations.OVERRIDE)
                 .accessModifier(AccessModifier.PUBLIC)
-                .returnType(returnType)
+                .returnType(returnType.boxed())
                 .name("fallback")
                 .addParameter(serviceParam -> serviceParam
                         .type(typeInfo.typeName())
@@ -310,7 +331,7 @@ class FallbackExtension implements InjectCodegenExtension {
         method.addContentLine(");");
 
         if (isVoid) {
-            method.addContentLine("return null");
+            method.addContentLine("return null;");
         }
     }
 
@@ -383,11 +404,11 @@ class FallbackExtension implements InjectCodegenExtension {
                 .build();
     }
 
-    private TypeName generatedType(TypeName enclosingType, String methodName) {
+    private TypeName generatedType(TypeName enclosingType, String methodName, int index) {
         return TypeName.builder()
                 .packageName(enclosingType.packageName())
                 .className(enclosingType.classNameWithEnclosingNames().replace('.', '_') + "_"
-                                   + methodName + "__Fallback")
+                                   + methodName + (index == 0 ? "" : "_" + index) + "__Fallback")
                 .build();
     }
 

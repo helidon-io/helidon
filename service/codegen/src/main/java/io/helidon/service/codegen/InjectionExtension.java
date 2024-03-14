@@ -278,9 +278,7 @@ class InjectionExtension implements InjectCodegenExtension {
                                          TypeName descriptorType,
                                          TypedElementInfo constructorInjectElement,
                                          List<TypedElements.ElementMeta> maybeIntercepted) {
-        TypeName interceptedType = TypeName.builder(serviceType)
-                .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Intercepted")
-                .build();
+        TypeName interceptedType = interceptedTypeName(serviceType);
 
         var generator = new InterceptedTypeGenerator(serviceType,
                                                      descriptorType,
@@ -294,6 +292,13 @@ class InjectionExtension implements InjectCodegenExtension {
                     generator.generate(),
                     serviceType,
                     typeInfo.originatingElement().orElse(serviceType));
+    }
+
+    private TypeName interceptedTypeName(TypeName serviceType) {
+        return TypeName.builder(serviceType)
+                .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Intercepted")
+                .enclosingNames(List.of())
+                .build();
     }
 
     private void qualifiedProvider(ClassModel.Builder classModel, TypeName typeName) {
@@ -1437,7 +1442,7 @@ class InjectionExtension implements InjectCodegenExtension {
 
         // T instantiate(InjectionContext ctx__helidonInject, InterceptionMetadata interceptMeta__helidonInject)
         TypeName toInstantiate = interceptedMethods
-                ? TypeName.builder(serviceType).className(serviceType.className() + "__Intercepted").build()
+                ? interceptedTypeName(serviceType)
                 : serviceType;
 
         classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)

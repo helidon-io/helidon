@@ -24,8 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.inject.api.InjectRegistry;
@@ -132,47 +132,11 @@ abstract class InterceptorBase<T> implements Interception.Interceptor {
     }
 
     <M extends FtMethod> Optional<M> generatedMethod(Class<M> type, CacheRecord cacheRecord) {
-        var qualifier = Qualifier.createNamed(cacheRecord.typeName().name()
-                                                      + "."
-                                                      + cacheRecord.methodName());
-        List<M> methods = services.all(Lookup.builder()
-                                               .addContract(type)
-                                               .addQualifier(qualifier)
-                                               .build());
-        return methods.stream()
-                .filter(filterIt -> {
-                    // only find methods that match the parameter types
-                    List<GenericType<?>> supportedTypes = filterIt.parameterTypes();
-                    List<TypedElementInfo> expectedTypes = cacheRecord.params();
-                    if (supportedTypes.isEmpty() && expectedTypes.isEmpty()) {
-                        // we have a match - no parameters
-                        return true;
-                    }
-                    if (expectedTypes.isEmpty()) {
-                        // supported types is not empty
-                        return false;
-                    }
-
-                    if (supportedTypes.size() != expectedTypes.size()) {
-                        // different number of parameters
-                        return false;
-                    }
-
-                    // same number of parameters, let's see if the same types
-                    for (int i = 0; i < expectedTypes.size(); i++) {
-                        TypedElementInfo expectedType = expectedTypes.get(i);
-                        GenericType<?> supportedType = supportedTypes.get(i);
-                        if (!supportedType.type().getTypeName().equals(expectedType.typeName().resolvedName())) {
-                            return false;
-                        }
-                    }
-                    return true;
-                })
-                .findAny();
-    }
-
-    InjectRegistry services() {
-        return services;
+        var qualifier = Qualifier.createNamed(cacheRecord.namedValue());
+        return services.first(Lookup.builder()
+                                      .addContract(type)
+                                      .addQualifier(qualifier)
+                                      .build());
     }
 
     private interface ThrowingSupplier<T> {
@@ -180,6 +144,19 @@ abstract class InterceptorBase<T> implements Interception.Interceptor {
     }
 
     record CacheRecord(TypeName typeName, String methodName, List<TypedElementInfo> params) {
+        String namedValue() {
+            return typeName().fqName()
+                    + "."
+                    + methodName()
+                    + "(" + paramsTypes() + ")";
+        }
+
+        String paramsTypes() {
+            return params.stream()
+                    .map(TypedElementInfo::typeName)
+                    .map(TypeName::fqName)
+                    .collect(Collectors.joining(","));
+        }
     }
 
     record NamedResult<T>(Optional<T> instance) {

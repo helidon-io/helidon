@@ -75,8 +75,8 @@ class FallbackInterceptor extends InterceptorBase<Fallback> {
 
         @Override
         public Object fallback(Object service, Throwable throwable, Object... arguments) {
-            throw new ServiceRegistryException("Could not find a service that implements fallback method for: "
-                                                       + cacheRecord);
+            throw new ServiceRegistryException("Could not find a service that implements fallback method named: "
+                                                       + cacheRecord.namedValue());
         }
 
         @Override

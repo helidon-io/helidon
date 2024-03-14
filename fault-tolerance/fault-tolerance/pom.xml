@@ -52,6 +52,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <!--
             Generating config driven beans with builders
             -->
@@ -125,6 +130,11 @@
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.fault-tolerance</groupId>
+                            <artifactId>helidon-fault-tolerance-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
@@ -156,6 +166,11 @@
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.fault-tolerance</groupId>
+                        <artifactId>helidon-fault-tolerance-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
