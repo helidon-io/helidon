@@ -18,8 +18,13 @@ package io.helidon.integrations.oci.metrics.cdi;
 import java.lang.reflect.Field;
 
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
+import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
@@ -31,7 +36,15 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
+@DisableDiscovery
 @AddBean(OverridingOciMetricsBean.class)
+// Use OciMetricsCdiExtensionTest.MockOciMonitoringExtension to avoid Monitoring client from being instantiated
+// with OCI authentication
+@AddExtension(OciMetricsCdiExtensionTest.MockOciMonitoringExtension.class)
+// Supporting Extensions for CDI
+@AddExtension(ServerCdiExtension.class)
+@AddExtension(JaxRsCdiExtension.class)
+@AddExtension(ConfigCdiExtension.class)
 @AddConfig(key = "oci.metrics.product", value = TestOverridingBean.PRODUCT)
 @AddConfig(key = "oci.metrics.fleet", value = TestOverridingBean.FLEET)
 class TestOverridingBean {
@@ -53,7 +66,7 @@ class TestOverridingBean {
         String resourceGroup = getStringField("resourceGroup", ociMetricsSupport);
 
         assertThat("Effective namespace", namespace, is(equalTo(PRODUCT)));
-        assertThat("Effective namespace", resourceGroup, is(equalTo(FLEET)));
+        assertThat("Effective resourceGroup", resourceGroup, is(equalTo(FLEET)));
     }
 
     private String getStringField(String fieldName, OciMetricsSupport ociMetricsSupport)
