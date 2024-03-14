@@ -50,7 +50,9 @@ class GrpcChannel extends Channel {
 
     @Override
     public String authority() {
-        ClientUri clientUri = grpcClient.prototype().baseUri().orElseThrow();
+        ClientUri clientUri = grpcClient.prototype()
+                .baseUri()
+                .orElseThrow(() -> new IllegalArgumentException("No base URI provided for GrpcClient"));
         return clientUri.authority();
     }
 }

@@ -21,7 +21,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
- * Configuration of an HTTP/1.1 client.
+ * Configuration of a gRPC client.
  */
 @Prototype.Blueprint
 @Prototype.Configured
@@ -35,5 +35,4 @@ interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
     @Option.Default(GrpcProtocolProvider.CONFIG_KEY)
     @Override
     String name();
-
 }

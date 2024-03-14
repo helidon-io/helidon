@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.concurrent.Executor;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -75,6 +76,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private volatile Http2ClientConnection connection;
     private volatile GrpcClientStream clientStream;
     private volatile Listener<ResT> responseListener;
+    private volatile HelidonSocket socket;
 
     GrpcBaseClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
         this.grpcClient = grpcClient;
@@ -100,6 +102,10 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return responseListener;
     }
 
+    protected HelidonSocket socket() {
+        return socket;
+    }
+
     @Override
     public void start(Listener<ResT> responseListener, Metadata metadata) {
         LOGGER.log(DEBUG, "start called");
@@ -108,6 +114,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
         // obtain HTTP2 connection
         ClientConnection clientConnection = clientConnection();
+        socket = clientConnection.helidonSocket();
         connection = Http2ClientConnection.create((Http2ClientImpl) grpcClient.http2Client(),
                 clientConnection, true);
 
@@ -115,7 +122,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         clientStream = new GrpcClientStream(
                 connection,
                 Http2Settings.create(),                 // Http2Settings
-                clientConnection.helidonSocket(),       // SocketContext
+                socket,                                 // SocketContext
                 new Http2StreamConfig() {
                     @Override
                     public boolean priorKnowledge() {
