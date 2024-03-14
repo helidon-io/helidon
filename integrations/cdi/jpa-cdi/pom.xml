@@ -30,10 +30,13 @@
     <name>Helidon CDI Integrations JPA</name>
 
     <properties>
-      <doclint>-syntax</doclint>
-      <eclipselink.skip>false</eclipselink.skip>
-      <hibernate.skip>false</hibernate.skip>
-      <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+        <doclint>-syntax</doclint>
+        <eclipselink.skip>false</eclipselink.skip>
+        <helidon.jta.immediateEnlistment>false</helidon.jta.immediateEnlistment>
+        <helidon.jta.interposedSynchronizations>true</helidon.jta.interposedSynchronizations>
+        <helidon.jta.preemptiveEnlistmentChecks>true</helidon.jta.preemptiveEnlistmentChecks>
+        <hibernate.skip>false</hibernate.skip>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
@@ -291,6 +294,9 @@
                     <reportNameSuffix>eclipselink</reportNameSuffix>
                     <skip>${eclipselink.skip}</skip>
                     <systemPropertyVariables>
+                        <helidon.jta.immediateEnlistment>${helidon.jta.immediateEnlistment}</helidon.jta.immediateEnlistment>
+                        <helidon.jta.interposedSynchronizations>${helidon.jta.interposedSynchronizations}</helidon.jta.interposedSynchronizations>
+                        <helidon.jta.preemptiveEnlistmentChecks>${helidon.jta.preemptiveEnlistmentChecks}</helidon.jta.preemptiveEnlistmentChecks>
                         <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                     <testClassesDirectory>${project.build.directory}/eclipselink/test-classes</testClassesDirectory>

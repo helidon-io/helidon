@@ -40,6 +40,7 @@ import io.helidon.integrations.jta.jdbc.ExceptionConverter.XARoutine;
 import static javax.transaction.xa.XAException.XAER_DUPID;
 import static javax.transaction.xa.XAException.XAER_INVAL;
 import static javax.transaction.xa.XAException.XAER_NOTA;
+import static javax.transaction.xa.XAException.XAER_OUTSIDE;
 import static javax.transaction.xa.XAException.XAER_PROTO;
 import static javax.transaction.xa.XAException.XAER_RMERR;
 import static javax.transaction.xa.XAException.XAER_RMFAIL;
@@ -175,7 +176,20 @@ final class LocalXAResource implements XAResource {
             throw new UncheckedXAException((XAException) new XAException(XAER_RMERR)
                                            .initCause(new NullPointerException("connectionFunction.apply(" + x + ")")));
         }
-        a = new Association(Association.BranchState.ACTIVE, x, c);
+        if (!autoCommit(c)) {
+            // The Connection is doing work outside of a global transaction, i.e. someone else set its autoCommit status
+            // to false before this branch started, so there is work going on outside of the about-to-start branch, so
+            // if we were to call commit() on the connection we would have no idea what would be committed. The XA
+            // specification calls this "work outside of a global transaction", and says to report XAER_OUTSIDE here in
+            // such a case.
+            throw new UncheckedXAException((XAException) new XAException(XAER_OUTSIDE)
+                                           .initCause(new IllegalStateException("!c.getAutoCommit(): " + c)));
+        }
+        a = new Association(Association.BranchState.ACTIVE,
+                            x,
+                            false, // not suspended
+                            c,
+                            true); // already checked for a false autoCommit status
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.logp(Level.FINE, this.getClass().getName(), "start",
                         "Created new Association ({0}) for connection ({1}) in state ACTIVE", new Object[] {a, c});
@@ -417,14 +431,17 @@ final class LocalXAResource implements XAResource {
                 returnValue = (XAException) new XAException(XAER_PROTO).initCause(e);
             } else if (e instanceof SQLException sqlException) {
                 returnValue = this.exceptionConverter.convert(xaRoutine, sqlException);
+                if (returnValue == null) {
+                    returnValue = (XAException) new XAException(XAER_RMERR).initCause(e);
+                }
             } else if (cause instanceof SQLException sqlException) {
                 returnValue = this.exceptionConverter.convert(xaRoutine, sqlException);
+                if (returnValue == null) {
+                    returnValue = (XAException) new XAException(XAER_RMERR).initCause(e);
+                }
             } else {
                 returnValue = (XAException) new XAException(XAER_RMERR).initCause(e);
             }
-        }
-        if (returnValue == null) {
-            returnValue = (XAException) new XAException(XAER_RMERR).initCause(e);
         }
         return returnValue;
     }
@@ -701,6 +718,14 @@ final class LocalXAResource implements XAResource {
         }
     }
 
+    private static boolean autoCommit(Connection c) {
+        try {
+            return c.getAutoCommit();
+        } catch (SQLException e) {
+            throw new UncheckedSQLException(e);
+        }
+    }
+
 
     /*
      * Inner and nested classes.
@@ -790,10 +815,6 @@ final class LocalXAResource implements XAResource {
               s5 -> s5 [label="recover()"];
           }
          */
-
-        Association(BranchState branchState, Xid xid, Connection connection) {
-            this(branchState, xid, false, connection, autoCommit(connection));
-        }
 
         Association {
             Objects.requireNonNull(xid, "xid");
@@ -1067,14 +1088,6 @@ final class LocalXAResource implements XAResource {
                                    false,
                                    connection,
                                    this.priorAutoCommit());
-        }
-
-        private static boolean autoCommit(Connection c) {
-            try {
-                return c.getAutoCommit();
-            } catch (SQLException e) {
-                throw new UncheckedSQLException(e);
-            }
         }
 
         // Transaction Branch States (XA specification, table 6-4):

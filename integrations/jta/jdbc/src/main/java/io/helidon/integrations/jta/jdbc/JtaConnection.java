@@ -1275,7 +1275,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
         this.validateTransactionStatusForEnlistment(currentThreadTransactionStatus);
 
-        if (!super.getAutoCommit()) {
+        if (this.preemptiveEnlistmentChecks && !super.getAutoCommit()) {
             // There is, as far as we can tell, a global transaction on the current thread, and super.getAutoCommit()
             // (super. on purpose, not this., to prevent a circular call to enlist()) returned false, and we aren't
             // (yet) enlisted with the global transaction, so autoCommit must have been disabled on purpose by the
