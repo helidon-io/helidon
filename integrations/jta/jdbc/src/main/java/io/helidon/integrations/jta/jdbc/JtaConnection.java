@@ -1112,6 +1112,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         if (currentThreadTransactionStatus == Status.STATUS_NO_TRANSACTION) {
             return false;
         }
+
         Enlistment enlistment = this.enlistment; // volatile read
         if (enlistment != null) {
             if (enlistment.threadId() != Thread.currentThread().threadId()) {
@@ -1213,6 +1214,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
             }
         }
 
+        // Violates checkstyle, but if it didn't we could do:
+        // assert enlistment == null;
+
         this.validateTransactionStatusForEnlistment(currentThreadTransactionStatus);
 
         if (!super.getAutoCommit()) {
@@ -1222,7 +1226,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // been disabled on purpose by the caller, not by the transaction enlistment machinery. In such a case, we
             // don't want to permit enlistment, because a local transaction may be in progress and we don't want to have
             // its effects mixed in.
-            throw new SQLTransientException("autoCommit was false during active transaction enlistment",
+            throw new SQLTransientException("autoCommit was false during transaction enlistment",
                                             INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
 
