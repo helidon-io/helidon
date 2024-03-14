@@ -77,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.fail;
            value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.namespace)
 @AddConfig(key = "ocimetrics.resourceGroup",
            value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.resourceGroup)
-@AddConfig(key = "ocimetrics.initialDelay", value = "0")
+@AddConfig(key = "ocimetrics.initialDelay", value = "1")
 @AddConfig(key = "ocimetrics.delay", value = "1")
 class OciMetricsCdiExtensionTest {
     private static String METRIC_NAME_SUFFIX = "DummyCounter";
@@ -187,7 +187,6 @@ class OciMetricsCdiExtensionTest {
                                 if (method.getName().equals("getEndpoint")) {
                                     return "http://www.DummyEndpoint.com";
                                 } else if (method.getName().equals("postMetricData")) {
-                                    // startupMetricLatch.await(5, TimeUnit.SECONDS);
                                     PostMetricDataRequest postMetricDataRequest = (PostMetricDataRequest) args[0];
                                     postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
                                     testMetricCount = (int) postMetricDataDetails.getMetricData().stream()
