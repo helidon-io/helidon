@@ -49,7 +49,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void request(int numMessages) {
-        LOGGER.log(DEBUG, () -> "request called " + numMessages);
+        socket().log(LOGGER, DEBUG, "request called %d", numMessages);
         if (numMessages < 1) {
             close(Status.INVALID_ARGUMENT);
         }
@@ -57,19 +57,19 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void cancel(String message, Throwable cause) {
-        LOGGER.log(DEBUG, () -> "cancel called " + message);
+        socket().log(LOGGER, DEBUG, "cancel called %s", message);
         close(Status.CANCELLED);
     }
 
     @Override
     public void halfClose() {
-        LOGGER.log(DEBUG, "halfClose called");
+        socket().log(LOGGER, DEBUG, "halfClose called");
         close(responseSent ? Status.OK : Status.UNKNOWN);
     }
 
     @Override
     public void sendMessage(ReqT message) {
-        LOGGER.log(DEBUG, "sendMessage called");
+        socket().log(LOGGER, DEBUG, "sendMessage called");
 
         // should only be called once
         if (requestSent) {
@@ -88,7 +88,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         while (isRemoteOpen()) {
             // trailers received?
             if (clientStream().trailers().isDone()) {
-                LOGGER.log(DEBUG, "trailers received");
+                socket().log(LOGGER, DEBUG, "trailers received");
                 return;
             }
 
@@ -97,11 +97,11 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             try {
                 frameData = clientStream().readOne(WAIT_TIME_MILLIS_DURATION);
             } catch (StreamTimeoutException e) {
-                LOGGER.log(ERROR, "read timeout");
+                socket().log(LOGGER, ERROR, "read timeout");
                 continue;
             }
             if (frameData != null) {
-                LOGGER.log(DEBUG, "response received");
+                socket().log(LOGGER, DEBUG, "response received");
                 responseListener().onMessage(toResponse(frameData.data()));
                 responseSent = true;
             }
@@ -115,7 +115,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     private void close(Status status) {
         if (!closeCalled) {
-            LOGGER.log(ERROR, "closing client call");
+            socket().log(LOGGER, DEBUG, "closing client call");
             responseListener().onClose(status, EMPTY_METADATA);
             clientStream().cancel();
             connection().close();
