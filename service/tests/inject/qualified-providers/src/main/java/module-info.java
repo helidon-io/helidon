@@ -20,6 +20,7 @@ module io.helidon.service.tests.qualified.providers {
     // we use Application
     requires io.helidon.service.inject;
     requires io.helidon.http;
+    requires io.helidon.common.context;
 
     exports io.helidon.service.tests.inject.qualified.providers;
 }

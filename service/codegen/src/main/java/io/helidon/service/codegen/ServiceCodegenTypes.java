@@ -214,6 +214,10 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName INJECT_REGISTRY = TypeName.create("io.helidon.service.inject.api.InjectRegistry");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.ApplicationMain"}.
+     */
+    public static final TypeName INJECT_APPLICATION_MAIN = TypeName.create("io.helidon.service.inject.ApplicationMain");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.builder.api.Prototype.Blueprint}.
      */
     public static final TypeName BUILDER_BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");

@@ -143,10 +143,12 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             Map<TypedQualifiedProviderKey, Set<InjectServiceInfo>> typedQualifiedProviders =
                     new HashMap<>();
 
+            List<GeneratedService.Descriptor<Application>> applications = new ArrayList<>();
+
             config.serviceInstances()
                     .forEach((descriptor, instance) -> {
                         Described described = toDescribed(descriptorToDescribed, descriptor);
-                        bind(scopeHandlers,
+                        bind(applications, scopeHandlers,
                              servicesByType,
                              servicesByContract,
                              qualifiedProvidersByQualifier,
@@ -156,7 +158,8 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                     });
 
             for (var descriptor : config.serviceDescriptors()) {
-                bind(scopeHandlers,
+                bind(applications,
+                     scopeHandlers,
                      servicesByType,
                      servicesByContract,
                      qualifiedProvidersByQualifier,
@@ -166,7 +169,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
 
             boolean logUnsupported = LOGGER.isLoggable(System.Logger.Level.TRACE);
 
-            List<GeneratedService.Descriptor<Application>> applications = new ArrayList<>();
+
 
             for (var descriptorMeta : discovery.allMetadata()) {
                 String registryType = descriptorMeta.registryType();
@@ -186,7 +189,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 } else {
                     Described described = toDescribed(descriptorToDescribed, descriptor);
 
-                    bind(scopeHandlers,
+                    bind(applications, scopeHandlers,
                          servicesByType,
                          servicesByContract,
                          qualifiedProvidersByQualifier,
@@ -199,7 +202,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             Descriptor<?> myDescriptor = ServiceRegistry__ServiceDescriptor.INSTANCE;
             Described described = new Described(myDescriptor, myDescriptor, false);
             descriptorToDescribed.put(myDescriptor, described);
-            bind(scopeHandlers,
+            bind(applications, scopeHandlers,
                  servicesByType,
                  servicesByContract,
                  qualifiedProvidersByQualifier,
@@ -256,7 +259,9 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         });
     }
 
-    private void bind(Map<TypeName, InjectServiceInfo> scopeHandlers,
+    @SuppressWarnings("unchecked")
+    private void bind(List<GeneratedService.Descriptor<Application>> applications,
+                      Map<TypeName, InjectServiceInfo> scopeHandlers,
                       Map<TypeName, InjectServiceInfo> servicesByType,
                       Map<TypeName, Set<InjectServiceInfo>> servicesByContract,
                       Map<TypeName, Set<InjectServiceInfo>> qualifiedProvidersByQualifier,
@@ -264,6 +269,12 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                       Described described) {
 
         Descriptor<?> descriptor = described.injectDescriptor();
+
+        if (descriptor.contracts().contains(Application.TYPE)) {
+            applications.add((GeneratedService.Descriptor<Application>) described.coreDescriptor());
+            // application is not bound to the registry
+            return;
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             if (descriptor.coreInfo() instanceof ServiceLoader__ServiceDescriptor sl) {

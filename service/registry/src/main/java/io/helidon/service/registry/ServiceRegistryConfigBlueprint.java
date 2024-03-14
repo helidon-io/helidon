@@ -29,7 +29,7 @@ import io.helidon.service.registry.GeneratedService.Descriptor;
  * Helidon service registry configuration.
  */
 @Prototype.Blueprint
-@Prototype.Configured("service-registry")
+@Prototype.Configured("registry")
 @Prototype.CustomMethods(ServiceRegistryConfigSupport.CustomMethods.class)
 interface ServiceRegistryConfigBlueprint {
     /**

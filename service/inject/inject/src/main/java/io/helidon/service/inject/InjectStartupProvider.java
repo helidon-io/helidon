@@ -24,6 +24,7 @@ import io.helidon.common.Weighted;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.spi.HelidonShutdownHandler;
 import io.helidon.spi.HelidonStartupProvider;
 
@@ -42,12 +43,24 @@ public class InjectStartupProvider implements HelidonStartupProvider {
     public InjectStartupProvider() {
     }
 
+    /**
+     * Register a shutdown handler.
+     * The handler is registered, and never de-registered. This method should only be used by main classes of applications.
+     * If a custom shutdown is desired, please use
+     * {@link io.helidon.Main#addShutdownHandler(io.helidon.spi.HelidonShutdownHandler)} directly.
+     *
+     * @param registryManager registry manager
+     */
+    public static void registerShutdownHandler(ServiceRegistryManager registryManager) {
+        System.Logger logger = System.getLogger(InjectStartupProvider.class.getName());
+        Main.addShutdownHandler(new InjectShutdownHandler(logger, registryManager));
+    }
+
     @Override
     public void start(String[] arguments) {
-        System.Logger logger = System.getLogger(InjectStartupProvider.class.getName());
         InjectRegistryManager m = InjectRegistryManager.create();
         InjectRegistry registry = m.registry();
-        Main.addShutdownHandler(new InjectShutdownHandler(logger, m));
+        registerShutdownHandler(m);
 
         registry.all(Lookup.builder()
                              .runLevel(Injection.RunLevel.STARTUP)
@@ -58,9 +71,9 @@ public class InjectStartupProvider implements HelidonStartupProvider {
     @Weight(Weighted.DEFAULT_WEIGHT + 10)
     private static final class InjectShutdownHandler implements HelidonShutdownHandler {
         private final System.Logger logger;
-        private final InjectRegistryManager registryManager;
+        private final ServiceRegistryManager registryManager;
 
-        private InjectShutdownHandler(System.Logger logger, InjectRegistryManager registryManager) {
+        private InjectShutdownHandler(System.Logger logger, ServiceRegistryManager registryManager) {
             this.logger = logger;
             this.registryManager = registryManager;
         }

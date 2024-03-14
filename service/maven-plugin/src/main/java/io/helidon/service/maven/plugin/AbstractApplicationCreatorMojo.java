@@ -77,6 +77,19 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
     private boolean validate;
 
     /**
+     * Whether to generate main class. Default name is {@code GeneratedMain} in the same package as
+     * the generated application.
+     */
+    @Parameter(property = "helidon.inject.application.generate.main", defaultValue = "true")
+    private boolean generateMain;
+
+    /**
+     * Whether to generate application class (provides generated injection plan for all services).
+     */
+    @Parameter(property = "helidon.inject.application.generate.application", defaultValue = "true")
+    private boolean generateApplication;
+
+    /**
      * The -target argument for the Java compiler.
      * Note: using the same as maven-compiler for convenience and least astonishment.
      */
@@ -96,6 +109,12 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
      */
     @Parameter(property = "helidon.inject.permitted.provider.qualifier.type.names", readonly = true)
     private List<String> permittedProviderQualifierTypeNames;
+
+    /**
+     * Name of the generated main class.
+     */
+    @Parameter(property = "helidon.inject.application.main.class.name", defaultValue = "GeneratedMain")
+    private String mainClassName;
 
     /**
      * Default constructor.
@@ -148,17 +167,17 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
         try {
             Thread.currentThread().setContextClassLoader(loader);
 
-            try (WrappedServices services = WrappedServices.create(loader, mavenLogger, false)) {
-                CompilerOptions compilerOptions = CompilerOptions.builder()
-                        .classpath(List.copyOf(classpath))
-                        .modulepath(List.copyOf(modulepath))
-                        .sourcepath(sourceRootPaths())
-                        .source(getSource())
-                        .target(getTarget())
-                        .commandLineArguments(getCompilerArgs())
-                        .outputDirectory(outputDirectory())
-                        .build();
+            CompilerOptions compilerOptions = CompilerOptions.builder()
+                    .classpath(List.copyOf(classpath))
+                    .modulepath(List.copyOf(modulepath))
+                    .sourcepath(sourceRootPaths())
+                    .source(getSource())
+                    .target(getTarget())
+                    .commandLineArguments(getCompilerArgs())
+                    .outputDirectory(outputDirectory())
+                    .build();
 
+            try (WrappedServices services = WrappedServices.create(loader, mavenLogger, false)) {
                 createApplication(scanContext,
                                   services,
                                   compilerOptions,
@@ -170,9 +189,35 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
             } catch (Exception e) {
                 throw new CodegenException("An error occurred creating the Application in " + getClass().getName(), e);
             }
+
+            if (generateMain) {
+                try (WrappedServices services = WrappedServices.create(loader, mavenLogger, false)) {
+                    createMainClass(compilerOptions,
+                                    scanContext,
+                                    services,
+                                    packageName);
+                } catch (CodegenException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new CodegenException("An error occurred creating the Application in " + getClass().getName(), e);
+                }
+            }
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
         }
+    }
+
+    void createMainClass(CompilerOptions compilerOptions,
+                         MavenCodegenContext scanContext,
+                         WrappedServices services,
+                         String packageName) {
+        TypeName generatedType = TypeName.builder()
+                .packageName(packageName)
+                .className(mainClassName)
+                .build();
+
+        MainClassCreator creator = new MainClassCreator(scanContext, failOnError());
+        creator.create(compilerOptions, services, generatedType);
     }
 
     void createApplication(MavenCodegenContext scanContext,
@@ -207,14 +252,16 @@ abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
             validator.validate(services);
         }
 
-        // get the application creator only after services are initialized (we need to ignore any existing apps)
-        ApplicationCreator creator = new ApplicationCreator(scanContext, failOnError());
+        if (generateApplication) {
+            // get the application creator only after services are initialized (we need to ignore any existing apps)
+            ApplicationCreator creator = new ApplicationCreator(scanContext, failOnError());
 
-        creator.createApplication(services,
-                                  allServices,
-                                  TypeName.create(packageName + "." + className),
-                                  moduleName,
-                                  compilerOptions);
+            creator.createApplication(services,
+                                      allServices,
+                                      TypeName.create(packageName + "." + className),
+                                      moduleName,
+                                      compilerOptions);
+        }
     }
 
     /**

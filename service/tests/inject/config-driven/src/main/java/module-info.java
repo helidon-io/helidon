@@ -23,6 +23,7 @@ module io.helidon.service.tests.config.driven {
     // we use Application
     requires io.helidon.service.inject;
     requires io.helidon.http;
+    requires io.helidon.common.context;
 
     exports io.helidon.service.tests.inject.configdriven;
 }

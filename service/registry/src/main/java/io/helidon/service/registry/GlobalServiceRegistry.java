@@ -64,7 +64,7 @@ public final class GlobalServiceRegistry {
             RW_LOCK.writeLock().lock();
             ServiceRegistryConfig config;
             if (GlobalConfig.configured()) {
-                config = ServiceRegistryConfig.create(GlobalConfig.config().get("service-registry"));
+                config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
             } else {
                 config = ServiceRegistryConfig.create();
             }

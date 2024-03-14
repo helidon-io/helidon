@@ -30,6 +30,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.Configured;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.inject.Application;
+import io.helidon.service.inject.ApplicationMain;
 import io.helidon.service.inject.InjectConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.InjectionPlanBinder;
@@ -124,6 +125,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECT_CONFIG", InjectConfig.class);
         checkField(toCheck, checked, fields, "INJECT_REGISTRY_MANAGER", InjectRegistryManager.class);
         checkField(toCheck, checked, fields, "INJECT_REGISTRY", InjectRegistry.class);
+        checkField(toCheck, checked, fields, "INJECT_APPLICATION_MAIN", ApplicationMain.class);
 
         checkField(toCheck, checked, fields, "INVOKER", Invoker.class);
         checkField(toCheck, checked, fields, "INVOCATION_EXCEPTION", InvocationException.class);

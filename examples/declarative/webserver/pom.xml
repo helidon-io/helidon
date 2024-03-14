@@ -34,6 +34,10 @@
         Example usages of a Helidon Declarative project creating WebServer endpoints
     </description>
 
+    <properties>
+        <mainClass>io.helidon.examples.declarative.webserver.GeneratedMain</mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon</groupId>
@@ -97,6 +101,19 @@
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>create-application</id>
+                        <goals>
+                            <goal>application-create</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -31,7 +31,7 @@ import io.helidon.service.registry.ServiceRegistryConfig;
  * Helidon Inject configuration options.
  */
 @Prototype.Blueprint
-@Prototype.Configured
+@Prototype.Configured("registry")
 interface InjectConfigBlueprint extends ServiceRegistryConfig {
     /**
      * LRU cache to use for caching lookup. Only needed if {@link #lookupCacheEnabled()} is set to {@code true}.

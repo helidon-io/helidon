@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenLogger;
 import io.helidon.codegen.CodegenScope;
+import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.InjectServiceInfo;
 
@@ -136,5 +137,13 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
     @Override
     protected CodegenScope scope() {
         return new CodegenScope("test");
+    }
+
+    @Override
+    void createMainClass(CompilerOptions compilerOptions,
+                         MavenCodegenContext scanContext,
+                         WrappedServices services,
+                         String packageName) {
+        // no main class for tests
     }
 }

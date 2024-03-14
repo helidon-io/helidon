@@ -22,6 +22,7 @@ module io.helidon.service.tests.inject.toolbox {
     requires io.helidon.service.inject;
     requires io.helidon.config;
     requires io.helidon.http;
+    requires io.helidon.common.context;
 
     exports io.helidon.service.tests.inject.toolbox;
 }
