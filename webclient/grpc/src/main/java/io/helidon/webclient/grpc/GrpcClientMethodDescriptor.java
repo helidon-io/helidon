@@ -16,12 +16,16 @@
 
 package io.helidon.webclient.grpc;
 
+import java.util.Arrays;
 import java.util.Objects;
 
+import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.core.MethodHandler;
+import io.helidon.grpc.core.WeightedBag;
 
 import io.grpc.CallCredentials;
+import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
 
 /**
@@ -49,6 +53,11 @@ public final class GrpcClientMethodDescriptor {
     private final MethodDescriptor<?, ?> descriptor;
 
     /**
+     * The list of client interceptors for this method.
+     */
+    private WeightedBag<ClientInterceptor> interceptors;
+
+    /**
      * The {@link io.grpc.CallCredentials} for this method.
      */
     private final CallCredentials callCredentials;
@@ -60,10 +69,12 @@ public final class GrpcClientMethodDescriptor {
 
     private GrpcClientMethodDescriptor(String name,
                                        MethodDescriptor<?, ?> descriptor,
+                                       WeightedBag<ClientInterceptor> interceptors,
                                        CallCredentials callCredentials,
                                        MethodHandler<?, ?> methodHandler) {
         this.name = name;
         this.descriptor = descriptor;
+        this.interceptors = interceptors;
         this.callCredentials = callCredentials;
         this.methodHandler = methodHandler;
     }
@@ -144,6 +155,15 @@ public final class GrpcClientMethodDescriptor {
      */
     public static Builder bidirectional(String serviceName, String name) {
         return builder(serviceName, name, MethodDescriptor.MethodType.BIDI_STREAMING);
+    }
+
+    /**
+     * Obtain the {@link ClientInterceptor}s to use for this method.
+     *
+     * @return the {@link ClientInterceptor}s to use for this method
+     */
+    WeightedBag<ClientInterceptor> interceptors() {
+        return interceptors.readOnly();
     }
 
     /**
@@ -235,6 +255,25 @@ public final class GrpcClientMethodDescriptor {
         Rules responseType(Class<?> type);
 
         /**
+         * Register one or more {@link ClientInterceptor interceptors} for the method.
+         *
+         * @param interceptors the interceptor(s) to register
+         * @return this {@link Rules} instance for fluent call chaining
+         */
+        Rules intercept(ClientInterceptor... interceptors);
+
+        /**
+         * Register one or more {@link ClientInterceptor interceptors} for the method.
+         * <p>
+         * The added interceptors will be applied using the specified priority.
+         *
+         * @param weight the weight to assign to the interceptors
+         * @param interceptors one or more {@link ClientInterceptor}s to register
+         * @return this {@link Rules} to allow fluent method chaining
+         */
+        Rules intercept(double weight, ClientInterceptor... interceptors);
+
+        /**
          * Register the {@link MarshallerSupplier} for the method.
          * <p>
          * If not set the default {@link MarshallerSupplier} from the service will be used.
@@ -276,6 +315,7 @@ public final class GrpcClientMethodDescriptor {
         private final MethodDescriptor.Builder<?, ?> descriptor;
         private Class<?> requestType;
         private Class<?> responseType;
+        private final WeightedBag<ClientInterceptor> interceptors = WeightedBag.withDefaultWeight(InterceptorWeights.USER);
         private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
         private MarshallerSupplier marshallerSupplier;
         private CallCredentials callCredentials;
@@ -302,6 +342,18 @@ public final class GrpcClientMethodDescriptor {
         @Override
         public Builder responseType(Class<?> type) {
             this.responseType = type;
+            return this;
+        }
+
+        @Override
+        public Builder intercept(ClientInterceptor... interceptors) {
+            this.interceptors.addAll(Arrays.asList(interceptors));
+            return this;
+        }
+
+        @Override
+        public Builder intercept(double weight, ClientInterceptor... interceptors) {
+            this.interceptors.addAll(Arrays.asList(interceptors), weight);
             return this;
         }
 
@@ -364,6 +416,7 @@ public final class GrpcClientMethodDescriptor {
 
             return new GrpcClientMethodDescriptor(name,
                                               descriptor.build(),
+                                              interceptors,
                                               callCredentials,
                                               methodHandler);
         }
