@@ -19,26 +19,49 @@ package io.helidon.webclient.grpc;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+
+import io.helidon.grpc.core.WeightedBag;
 
 import io.grpc.CallOptions;
+import io.grpc.Channel;
 import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
+import io.grpc.ClientInterceptors;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
 
 class GrpcServiceClientImpl implements GrpcServiceClient {
-    private final GrpcServiceDescriptor descriptor;
+    private final GrpcServiceDescriptor serviceDescriptor;
+    private final Channel serviceChannel;
     private final GrpcClientImpl grpcClient;
+    private final Map<String, Channel> methodCache = new ConcurrentHashMap<>();
 
     GrpcServiceClientImpl(GrpcServiceDescriptor descriptor, GrpcClientImpl grpcClient) {
-        this.descriptor = descriptor;
+        this.serviceDescriptor = descriptor;
         this.grpcClient = grpcClient;
+
+        if (descriptor.interceptors().isEmpty()) {
+            serviceChannel = grpcClient.channel();
+        } else {
+            // sort interceptors using a weighted bag
+            WeightedBag<ClientInterceptor> interceptors = WeightedBag.create();
+            for (ClientInterceptor interceptor : descriptor.interceptors()) {
+                interceptors.add(interceptor);
+            }
+
+            // wrap channel to call interceptors -- reversed for composition
+            List<ClientInterceptor> orderedInterceptors = interceptors.stream().toList().reversed();
+            serviceChannel = ClientInterceptors.intercept(grpcClient.channel(), orderedInterceptors);
+        }
     }
 
     @Override
     public String serviceName() {
-        return descriptor.serviceName();
+        return serviceDescriptor.serviceName();
     }
 
     @Override
@@ -152,13 +175,26 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     private <ReqT, ResT> ClientCall<ReqT, ResT> ensureMethod(String methodName, MethodDescriptor.MethodType methodType) {
-        GrpcClientMethodDescriptor method = descriptor.method(methodName);
-        if (!method.type().equals(methodType)) {
-            throw new IllegalArgumentException("Method " + methodName + " is of type " + method.type()
+        GrpcClientMethodDescriptor methodDescriptor = serviceDescriptor.method(methodName);
+        if (!methodDescriptor.type().equals(methodType)) {
+            throw new IllegalArgumentException("Method " + methodName + " is of type " + methodDescriptor.type()
                     + ", yet " + methodType + " was requested.");
         }
-        return methodType == MethodDescriptor.MethodType.UNARY
-                ? new GrpcUnaryClientCall<>(grpcClient, method.descriptor(), CallOptions.DEFAULT)
-                : new GrpcClientCall<>(grpcClient, method.descriptor(), CallOptions.DEFAULT);
+
+        // use channel that contains all service and method interceptors
+        if (methodDescriptor.interceptors().isEmpty()) {
+            return serviceChannel.newCall(methodDescriptor.descriptor(), CallOptions.DEFAULT);
+        } else {
+            Channel methodChannel = methodCache.computeIfAbsent(methodName, k -> {
+                WeightedBag<ClientInterceptor> interceptors = WeightedBag.create();
+                for (ClientInterceptor interceptor : serviceDescriptor.interceptors()) {
+                    interceptors.add(interceptor);
+                }
+                interceptors.merge(methodDescriptor.interceptors());
+                List<ClientInterceptor> orderedInterceptors = interceptors.stream().toList().reversed();
+                return ClientInterceptors.intercept(grpcClient.channel(), orderedInterceptors);
+            });
+            return methodChannel.newCall(methodDescriptor.descriptor(), CallOptions.DEFAULT);
+        }
     }
 }

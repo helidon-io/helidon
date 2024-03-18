@@ -83,6 +83,15 @@ public class WeightedBag<T> implements Iterable<T> {
     }
 
     /**
+     * Check if bag is empty.
+     *
+     * @return outcome of test
+     */
+    public boolean isEmpty() {
+        return contents.isEmpty() && noWeightedList.isEmpty();
+    }
+
+    /**
      * Obtain a copy of this {@link WeightedBag}.
      *
      * @return a copy of this {@link WeightedBag}
