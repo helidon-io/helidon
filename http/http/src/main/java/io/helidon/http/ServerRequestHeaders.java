@@ -183,7 +183,7 @@ public interface ServerRequestHeaders extends Headers {
      *
      * @return Acceptable version in time.
      */
-    default Optional<ZonedDateTime> acceptDatetime() {
+    default Optional<ZonedDateTime>acceptDatetime() {
         if (contains(HeaderNames.ACCEPT_DATETIME)) {
             return Optional.of(get(HeaderNames.ACCEPT_DATETIME))
                     .map(Header::value)

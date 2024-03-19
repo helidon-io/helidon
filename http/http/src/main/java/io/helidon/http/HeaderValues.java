@@ -290,9 +290,10 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(HeaderName name, String... values) {
         if (values.length == 0) {
@@ -305,9 +306,10 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(String name, String... values) {
         return create(HeaderNames.create(name), values);
@@ -317,9 +319,10 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(HeaderName name, Collection<String> values) {
         if (values.isEmpty()) {
@@ -332,9 +335,10 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(String name, Collection<String> values) {
         return create(HeaderNames.create(name), values);
