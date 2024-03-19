@@ -5,13 +5,15 @@ metadata:
   labels:
     app: {{artifactId}}
 spec:
-  type: NodePort
+  type: ClusterIP
+  clusterIP: 10.43.32.195   # Use the clusterIP of your choice
   selector:
     app: {{artifactId}}
   ports:
-  - port: 8080
-    targetPort: 8080
-    name: http
+    - name: tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
 ---
 kind: Deployment
 apiVersion: apps/v1
