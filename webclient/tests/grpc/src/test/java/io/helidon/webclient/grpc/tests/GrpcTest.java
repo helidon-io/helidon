@@ -47,6 +47,7 @@ class GrpcTest extends GrpcBaseTest {
     private static final long TIMEOUT_SECONDS = 10;
 
     private final GrpcClient grpcClient;
+
     private final GrpcServiceDescriptor serviceDescriptor;
 
     private GrpcTest(WebServer server) {

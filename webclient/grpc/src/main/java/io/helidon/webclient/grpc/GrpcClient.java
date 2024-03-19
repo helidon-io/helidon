@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.grpc;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -23,6 +24,7 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.Protocol;
 
 import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
 
 /**
  * gRPC client.
@@ -94,4 +96,22 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
      * @return a new gRPC channel
      */
     Channel channel();
+
+    /**
+     * Create a gRPC channel for this client that can be used to create stubs.
+     *
+     * @param interceptors the array of client interceptors
+     * @return a new gRPC channel
+     */
+    Channel channel(ClientInterceptor... interceptors);
+
+    /**
+     * Create a gRPC channel for this client that can be used to create stubs.
+     *
+     * @param interceptors the list of client interceptors
+     * @return a new gRPC channel
+     */
+    default Channel channel(Collection<ClientInterceptor> interceptors) {
+        return channel(interceptors.toArray(new ClientInterceptor[] {}));
+    }
 }
