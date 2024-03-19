@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,7 +183,7 @@ public interface ServerRequestHeaders extends Headers {
      *
      * @return Acceptable version in time.
      */
-    default Optional<ZonedDateTime>acceptDatetime() {
+    default Optional<ZonedDateTime> acceptDatetime() {
         if (contains(HeaderNames.ACCEPT_DATETIME)) {
             return Optional.of(get(HeaderNames.ACCEPT_DATETIME))
                     .map(Header::value)
