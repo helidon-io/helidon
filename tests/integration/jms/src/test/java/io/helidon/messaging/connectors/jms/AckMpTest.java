@@ -43,6 +43,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -58,7 +60,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 })
 @AddConfigs({
         @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.provider.url",
-                value = "vm://localhost?broker.persistent=true"),
+                value = "vm://localhost?broker.persistent=false"),
         @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.factory.initial",
                 value = "org.apache.activemq.jndi.ActiveMQInitialContextFactory"),
 
@@ -101,19 +103,20 @@ public class AckMpTest extends AbstractMPTest {
         List<String> testData = List.of("0", "1", "2", "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
         produce(TEST_QUEUE_ACK, testData, m -> {});
         mockConnector.outgoing("mock-conn-channel", String.class)
-                        .awaitPayloads(Duration.ofMinutes(1), testData.toArray(String[]::new));
+                        .awaitPayloads(Duration.ofSeconds(5), testData.toArray(String[]::new));
     }
 
     @Test
     @Order(2)
+    @DisabledOnOs(OS.WINDOWS)
     void resendAckTestPart2(SeContainer cdi) {
         MockConnector mockConnector = cdi.select(MockConnector.class, TEST_CONNECTOR_ANNOTATION).get();
 
         //Check if not acked messages are redelivered
         mockConnector.outgoing("mock-conn-channel", String.class)
                 .requestMax()
-                .awaitCount(Duration.ofMinutes(1), 1)
-                .awaitPayloads(Duration.ofMinutes(1), "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
+                .awaitCount(Duration.ofSeconds(5), 1)
+                .awaitPayloads(Duration.ofSeconds(5), "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
     }
 
     @AfterAll

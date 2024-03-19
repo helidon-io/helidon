@@ -32,7 +32,7 @@ import static io.helidon.messaging.connectors.jms.AcknowledgeMode.AUTO_ACKNOWLED
 
 public class AbstractJmsTest {
 
-    static final String BROKER_URL = "vm://localhost?broker.persistent=true";
+    static final String BROKER_URL = "vm://localhost?broker.persistent=false";
     static Session session;
     static ConnectionFactory connectionFactory;
 
