@@ -718,11 +718,17 @@ class TenantAuthenticationHandler {
             }
 
             if (missingScopes.isEmpty()) {
-                return AuthenticationResponse.builder()
+                AuthenticationResponse.Builder response = AuthenticationResponse.builder()
                         .status(SecurityResponse.SecurityStatus.SUCCESS)
-                        .user(subject)
-                        .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookies)
-                        .build();
+                        .user(subject);
+
+                if (cookies.isEmpty()) {
+                    return response.build();
+                } else {
+                    return response
+                            .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookies)
+                            .build();
+                }
             } else {
                 return errorResponse(providerRequest,
                                      Status.FORBIDDEN_403,
