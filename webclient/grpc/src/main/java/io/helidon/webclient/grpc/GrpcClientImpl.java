@@ -20,6 +20,8 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
 
 import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
+import io.grpc.ClientInterceptors;
 
 class GrpcClientImpl implements GrpcClient {
     private final WebClient webClient;
@@ -53,5 +55,10 @@ class GrpcClientImpl implements GrpcClient {
     @Override
     public Channel channel() {
         return new GrpcChannel(this);
+    }
+
+    @Override
+    public Channel channel(ClientInterceptor... interceptors) {
+        return ClientInterceptors.intercept(channel(), interceptors);
     }
 }
