@@ -22,9 +22,9 @@ Try the application:
 The application starts on a random port, the following assumes it is `56551`
 ```bash
 curl http://localhost:56551/public
-curl --digest -u "jill:password" http://localhost:56551/noRoles
-curl --digest -u "john:password" http://localhost:56551/user
-curl --digest -u "jack:password" http://localhost:56551/admin
-curl -v --digest -u "john:password" http://localhost:56551/deny
-curl --digest -u "jack:password" http://localhost:56551/noAuthn
+curl --digest -u "jill:changeit" http://localhost:56551/noRoles
+curl --digest -u "john:changeit" http://localhost:56551/user
+curl --digest -u "jack:changeit" http://localhost:56551/admin
+curl -v --digest -u "john:changeit" http://localhost:56551/deny
+curl --digest -u "jack:changeit" http://localhost:56551/noAuthn
 ```

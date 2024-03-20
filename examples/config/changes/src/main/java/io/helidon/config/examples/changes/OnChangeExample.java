@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class OnChangeExample {
 
     private static void logSecrets(Config secrets) {
         LOGGER.info("Loaded secrets are u: " + secrets.get("username").asString().get()
-                            + ", p: " + secrets.get("password").asString().get());
+                            + ", p: " + secrets.get("changeit").asString().get());
     }
 
 }

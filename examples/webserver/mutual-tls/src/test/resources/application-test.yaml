@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ server:
         client-auth: "REQUIRE"
         trust:
           keystore:
-            passphrase: "password"
+            passphrase: "changeit"
             trust-store: true
             resource:
               resource-path: "server.p12"
         private-key:
           keystore:
-            passphrase: "password"
+            passphrase: "changeit"
             resource:
               resource-path: "server.p12"
 
@@ -37,13 +37,13 @@ client:
   tls:
     server:
       keystore:
-        passphrase: "password"
+        passphrase: "changeit"
         trust-store: true
         resource:
           resource-path: "client.p12"
     client:
       keystore:
-        passphrase: "password"
+        passphrase: "changeit"
         resource:
           resource-path: "client.p12"
 

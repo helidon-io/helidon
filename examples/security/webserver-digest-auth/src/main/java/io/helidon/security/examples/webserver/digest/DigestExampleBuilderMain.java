@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,9 @@ public final class DigestExampleBuilderMain {
     private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
 
     static {
-        users.put("jack", new MyUser("jack", "password".toCharArray(), Set.of("user", "admin")));
-        users.put("jill", new MyUser("jill", "password".toCharArray(), Set.of("user")));
-        users.put("john", new MyUser("john", "password".toCharArray(), Set.of()));
+        users.put("jack", new MyUser("jack", "changeit".toCharArray(), Set.of("user", "admin")));
+        users.put("jill", new MyUser("jill", "changeit".toCharArray(), Set.of("user")));
+        users.put("john", new MyUser("john", "changeit".toCharArray(), Set.of()));
     }
 
     private DigestExampleBuilderMain() {
@@ -95,7 +95,7 @@ public final class DigestExampleBuilderMain {
                 .addAuthenticationProvider(
                         HttpDigestAuthProvider.builder()
                                 .realm("mic")
-                                .digestServerSecret("aPassword".toCharArray())
+                                .digestServerSecret("changeit".toCharArray())
                                 .userStore(buildUserStore()),
                         "digest-auth")
                 .build();

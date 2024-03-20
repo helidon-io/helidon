@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ services:
 security:
   config:
     require-encryption: false
-    aes.insecure-passphrase: "jungle"
+    aes.insecure-passphrase: "changeit"
   provider-policy:
     type: "COMPOSITE"
     authentication:
@@ -53,7 +53,7 @@ security:
             hosts: [ "localhost" ]
             signature:
               key-id: "frontend"
-              hmac.secret: "${CLEAR=frontend2backend}"
+              hmac.secret: "${CLEAR=changeit}"
   web-server:
     paths:
       - path: "/api/{+}"

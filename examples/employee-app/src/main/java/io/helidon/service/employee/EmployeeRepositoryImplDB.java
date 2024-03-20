@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ final class EmployeeRepositoryImplDB implements EmployeeRepository {
         String driver = "oracle.jdbc.driver.OracleDriver";
 
         String dbUserName = config.get("app.user").asString().orElse("sys as SYSDBA");
-        String dbUserPassword = config.get("app.password").asString().orElse("password");
+        String dbUserPassword = config.get("app.password").asString().orElse("changeit");
         String dbHostURL = config.get("app.hosturl").asString().orElse("localhost:1521/xe");
 
         try {
