@@ -108,7 +108,7 @@ public class AckMpTest extends AbstractMPTest {
 
     @Test
     @Order(2)
-    @DisabledOnOs(OS.WINDOWS)
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "https://github.com/helidon-io/helidon/issues/8509")
     void resendAckTestPart2(SeContainer cdi) {
         MockConnector mockConnector = cdi.select(MockConnector.class, TEST_CONNECTOR_ANNOTATION).get();
 

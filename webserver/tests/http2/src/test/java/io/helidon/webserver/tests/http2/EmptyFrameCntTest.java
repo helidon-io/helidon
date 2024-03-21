@@ -70,7 +70,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 @ServerTest
-@DisabledOnOs(OS.WINDOWS)
+@DisabledOnOs(value = OS.WINDOWS, disabledReason = "https://github.com/helidon-io/helidon/issues/8510")
 class EmptyFrameCntTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
