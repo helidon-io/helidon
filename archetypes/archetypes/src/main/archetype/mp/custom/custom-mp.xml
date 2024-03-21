@@ -97,7 +97,7 @@ Hello World!
                 <value>io.helidon.microprofile.config</value>
                 <value>io.helidon.microprofile.server</value>
             </list>
-            <value key="module-opens">true</value>
+            <value key="module-opens-package">true</value>
         </model>
     </output>
 </archetype-script>
