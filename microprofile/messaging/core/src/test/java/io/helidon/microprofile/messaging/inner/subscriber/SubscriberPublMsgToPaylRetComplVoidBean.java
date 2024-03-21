@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.messaging.inner.subscriber;
 
-import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -43,6 +43,7 @@ import org.reactivestreams.Publisher;
 public class SubscriberPublMsgToPaylRetComplVoidBean implements AssertableTestBean, AsyncTestBean {
 
     CopyOnWriteArraySet<String> resultData = new CopyOnWriteArraySet<>();
+    private final CountDownLatch countDownLatch = new CountDownLatch(TEST_DATA.size());
     private final ExecutorService executor = createExecutor();
 
     @Outgoing("cs-void-payload")
@@ -54,12 +55,16 @@ public class SubscriberPublMsgToPaylRetComplVoidBean implements AssertableTestBe
 
     @Incoming("cs-void-payload")
     public CompletionStage<Void> consumePayloadAndReturnCompletionStageOfVoid(String payload) {
-        return CompletableFuture.runAsync(() -> resultData.add(payload), executor);
+        return CompletableFuture.runAsync(() -> {
+            resultData.add(payload);
+            countDownLatch.countDown();
+        }, executor);
     }
 
     @Override
     public void assertValid() {
-        assertWithOrigin("Result doesn't match", new HashSet<String>(resultData), is(TEST_DATA));
+        await("Messages not delivered in time!", countDownLatch);
+        assertWithOrigin("Result doesn't match", resultData, is(TEST_DATA));
     }
 
     @Override
