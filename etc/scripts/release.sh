@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -131,16 +131,6 @@ update_version(){
         mv ${pom}.tmp ${pom}
     done
 
-    # Hack to update helidon.version in build.gradle files
-    for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
-    do
-        echo "Updating helidonversion property in ${bfile} to ${FULL_VERSION}"
-        cat ${bfile} | \
-            sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
-            > ${bfile}.tmp
-        mv ${bfile}.tmp ${bfile}
-    done
-
     # Hack to update helidon-version in doc files
     for dfile in `egrep ":helidon-version: .*" -r . --include attributes.adoc | cut -d ':' -f 1 | sort | uniq `
     do
@@ -153,7 +143,7 @@ update_version(){
 
     # Hack to update helidon-version-is-release in doc files
     # We are a released version if we are not a SNAPSHOT version
-    if [[ ${HELIDON_VERSION} == *-SNAPSHOT ]]; then
+    if [[ ${FULL_VERSION} == *-SNAPSHOT ]]; then
         readonly IS_RELEASED="false"
     else
         readonly IS_RELEASED="true"
