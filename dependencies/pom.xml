@@ -122,7 +122,7 @@
         <version.lib.hibernate-validator>6.2.5.Final</version.lib.hibernate-validator>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
-        <version.lib.netty>4.1.100.Final</version.lib.netty>
+        <version.lib.netty>4.1.108.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.19.Final</version.lib.netty-io_uring>
         <version.lib.oci>3.26.0</version.lib.oci>
         <version.lib.oci-java-sdk-objectstorage>${version.lib.oci}</version.lib.oci-java-sdk-objectstorage>
