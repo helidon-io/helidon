@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -171,6 +171,9 @@
                             <list key="module-requires" if="${flavor} == 'mp'">
                                 <value>jakarta.json</value>
                                 <value>jersey.media.multipart</value>
+                            </list>
+                            <list key="module-opens" if="${flavor} == 'se'">
+                                <value>WEB</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.http.Status</value>
