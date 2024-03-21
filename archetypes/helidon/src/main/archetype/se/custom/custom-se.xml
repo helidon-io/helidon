@@ -31,6 +31,7 @@
     <source src="/se/custom/observability.xml"/>
     <exec src="/se/common/common-se.xml"/>
     <output>
+        <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
         <model>
             <value order="0" key="readme-description">Minimal Helidon SE project suitable to start from scratch.</value>
             <list key="readme-exercise-the-application">

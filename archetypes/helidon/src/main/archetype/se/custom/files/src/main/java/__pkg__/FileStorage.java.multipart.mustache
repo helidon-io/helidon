@@ -1,14 +1,14 @@
 
 package {{package}};
 
-import io.helidon.webserver.BadRequestException;
-import io.helidon.webserver.NotFoundException;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+
+import io.helidon.webserver.BadRequestException;
+import io.helidon.webserver.NotFoundException;
 
 /**
  * Simple bean to managed a directory based storage.

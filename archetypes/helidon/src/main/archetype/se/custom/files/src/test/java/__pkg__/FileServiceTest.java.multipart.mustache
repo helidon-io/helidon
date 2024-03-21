@@ -71,7 +71,7 @@ class FileServiceTest {
                                       .addFile("file[]", "foo.txt", file)
                                       .build())
                 .await(Duration.ofSeconds(5));
-        assertThat(response.status().code(), is(200));
+        assertThat(response.status().code(), is(301));
     }
 
     @Test
@@ -88,7 +88,7 @@ class FileServiceTest {
                                       .addFile("otherPart", "streamed-foo2.txt", file2)
                                       .build())
                 .await(2, TimeUnit.SECONDS);
-        assertThat(response.status().code(), is(200));
+        assertThat(response.status().code(), is(301));
     }
 
     @Test

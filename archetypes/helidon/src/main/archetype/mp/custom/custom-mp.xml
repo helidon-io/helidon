@@ -84,7 +84,7 @@
                 <value>jakarta.ws.rs</value>
                 <value>io.helidon.microprofile.config</value>
             </list>
-            <value key="module-opens">true</value>
+            <value key="module-opens-package">true</value>
         </model>
     </output>
 </archetype-script>
