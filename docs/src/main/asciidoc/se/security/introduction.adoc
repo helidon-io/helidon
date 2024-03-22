@@ -56,6 +56,8 @@ Helidon Security provides authentication, authorization, and auditing for your H
  logger called "AUDIT" (may be overridden through configuration). AuditProvider
  SPI may be implemented to support other auditing options.
 
+Each feature is implemented with the help of "xref:providers.adoc[Security Providers]".
+
 Security module is quite HTTP centric (as most common use cases are related to
  HTTP REST), though it is not HTTP specific (the security module may be used to
  secure even other transports, such as JMS, Kafka messages etc. if an appropriate
@@ -115,6 +117,13 @@ See xref:tools.adoc[Secure config] for details about encrypting passwords in
 include::{sourcedir}/se/security/IntroductionSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Uses `io.helidon.Config`
+
+As mentioned above, security features are implemented through providers, which are configured under key
+`security.providers`. Each element of the list is one security provider. The key of the provider must match
+its config key (as documented in xref:providers.adoc[Security Providers] for each supported provider).
+
+A key `enabled` can be used for each provider to provide fine control of which providers are enabled/disabled, for example
+to support different setup in testing and in production environments.
 
 [source,yaml]
 .Security from configuration - application.yaml
