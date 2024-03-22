@@ -16,6 +16,7 @@
 
 package io.helidon.examples.webserver.streaming;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
@@ -26,6 +27,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.logging.Logger;
 
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -38,14 +40,13 @@ import io.helidon.webserver.http.ServerResponse;
 public class StreamingService implements HttpService {
     private static final Logger LOGGER = Logger.getLogger(StreamingService.class.getName());
 
-    private final Path filePath;
+    // Last file uploaded (or default). Since we don't do any locking
+    // when operating on the file this example is not safe for concurrent requests.
+    private volatile File file;
 
     StreamingService() {
-        try {
-            filePath = Paths.get(Objects.requireNonNull(getClass().getResource(Main.LARGE_FILE_RESOURCE)).toURI());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        // Default download file;
+        file = Paths.get(Main.LARGE_FILE_PATH).toFile();
     }
 
     @Override
@@ -59,22 +60,28 @@ public class StreamingService implements HttpService {
         try {
             Path tempFilePath = Files.createTempFile("large-file", ".tmp");
             Files.copy(request.content().inputStream(), tempFilePath, StandardCopyOption.REPLACE_EXISTING);
+            file = tempFilePath.toFile();
             response.send("File was stored as " + tempFilePath);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        LOGGER.info("Exiting upload ...");
+        LOGGER.info("Exiting upload after uploading " + file.length() + " bytes...");
     }
 
     private void download(ServerRequest request, ServerResponse response) {
         LOGGER.info("Entering download ..." + Thread.currentThread());
-        long length = filePath.toFile().length();
+        if (!file.canRead()) {
+            LOGGER.warning("Can't read file " + file.getAbsolutePath());
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
+        long length = file.length();
         response.headers().contentLength(length);
         try {
-            Files.copy(filePath, response.outputStream());
+            Files.copy(file.toPath(), response.outputStream());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        LOGGER.info("Exiting download ...");
+        LOGGER.info("Exiting download after serving " + length + " bytes...");
     }
 }

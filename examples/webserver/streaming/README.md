@@ -1,9 +1,14 @@
 # Streaming Example
 
-This application uses NIO and data buffers to show the implementation of a simple streaming service.
- Files can be uploaded and downloaded in a streaming fashion using `Subscriber<DataChunk>` and 
-`Producer<DataChunk>`. As a result, service runs in constant space instead of proportional
-to the size of the file being uploaded or downloaded.
+This application is an example of a very simple streaming service. It leverages the
+fact that Helidon uses virtual threads to perform simple input/output stream blocking
+operations in the endpoint handlers. As a result, this service runs in constant space instead
+of proportional to the size of the file being uploaded or downloaded.
+
+There are two endpoints:
+
+- `upload` : uploads a file to the service
+- `download` : downloads the previously uploaded file
 
 ## Build and run
 
