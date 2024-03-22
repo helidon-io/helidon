@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -55,6 +55,8 @@ Helidon Security provides authentication, authorization, and auditing for your H
  A default AuditProvider is provided as well, logging to Java util logging (JUL)
  logger called "AUDIT" (may be overridden through configuration). AuditProvider
  SPI may be implemented to support other auditing options.
+
+Each feature is implemented with the help of "xref:providers.adoc[Security Providers]".
 
 Security module is quite HTTP centric (as most common use cases are related to
  HTTP REST), though it is not HTTP specific (the security module may be used to
@@ -142,6 +144,13 @@ See xref:tools.adoc[Secure config] for details about encrypting passwords in
 // uses io.helidon.Config
 Security security = Security.create(config);
 ----
+
+As mentioned above, security features are implemented through providers, which are configured under key
+`security.providers`. Each element of the list is one security provider. The key of the provider must match
+its config key (as documented in xref:providers.adoc[Security Providers] for each supported provider).
+
+A key `enabled` can be used for each provider to provide fine control of which providers are enabled/disabled, for example
+to support different setup in testing and in production environments.
 
 [source,yaml]
 .Security from configuration - application.yaml
