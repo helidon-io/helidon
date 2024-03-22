@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
 
     @Override
     protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
-        defaultRules
+        serviceEndpointRoutingRules
                 .any(new MetricsContextHandler(registry()))
                 .get(context(), this::getOrOptions)
                 .options(context(), this::getOrOptions);
