@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerLifecycle;
 
 final class HttpRoutingImpl implements HttpRouting {
@@ -215,7 +214,8 @@ final class HttpRoutingImpl implements HttpRouting {
         private HttpSecurity security = HttpSecurity.create();
         private int maxReRouteCount = 10;
 
-        private BuilderImpl() {}
+        private BuilderImpl() {
+        }
 
         private BuilderImpl(List<HttpFeature> features, HttpRoutingFeature mainRouting, HttpSecurity security, int maxReroute) {
             this.features.addAll(features);

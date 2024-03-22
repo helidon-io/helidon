@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public interface HttpRouting extends Routing, Prototype.Api {
      *
      * @return a new instance
      */
-    public static Builder builder() {
+    static Builder builder() {
         return HttpRoutingImpl.builder();
     }
 
@@ -48,7 +48,7 @@ public interface HttpRouting extends Routing, Prototype.Api {
      *
      * @return new default router
      */
-    public static HttpRouting create() {
+    static HttpRouting create() {
         return HttpRouting.builder()
                 .route(HttpRoute.builder()
                                .handler((req, res) -> res.send("Helidon WebServer works!"))
@@ -61,15 +61,24 @@ public interface HttpRouting extends Routing, Prototype.Api {
      *
      * @return empty routing
      */
-    public static HttpRouting empty() {
+    static HttpRouting empty() {
         return HttpRoutingImpl.empty();
     }
 
     @Override
-    public default Class<? extends Routing> routingType() { return HttpRouting.class; }
+    default Class<? extends Routing> routingType() {
+        return HttpRouting.class;
+    }
 
 
-    public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response);
+    /**
+     * Route a request.
+     *
+     * @param ctx the underlying connection context
+     * @param request the request to route
+     * @param response the response for the request
+     */
+    void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response);
 
 
     /**
@@ -77,13 +86,13 @@ public interface HttpRouting extends Routing, Prototype.Api {
      *
      * @return security
      */
-    public HttpSecurity security();
+    HttpSecurity security();
 
 
     /**
      * Fluent API builder for {@link HttpRouting}.
      */
-    public interface Builder extends HttpRules, io.helidon.common.Builder<Builder, HttpRouting> {
+    interface Builder extends HttpRules, io.helidon.common.Builder<Builder, HttpRouting> {
         @Override
         Builder register(HttpService... service);
 
