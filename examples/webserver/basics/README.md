@@ -8,13 +8,13 @@ methods.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 ```
 
 To see the list of methods that are available run:
 
-```bash
+```shell
 java -DexampleName=help -jar target/helidon-examples-webserver-basics.jar
 ```
 

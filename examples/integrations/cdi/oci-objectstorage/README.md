@@ -4,7 +4,7 @@
 
 Setup your OCI SDK [configuration](https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm)
  if you haven't done so already, and then run the following command:
-```bash
+```shell
 ./oci-setup.sh && source oci-env
 ```
 
@@ -15,7 +15,7 @@ This example requires an Object Storage, you can create one using the
 ## Build and run
 
 With Docker:
-```bash
+```shell
 docker build -t helidon-examples-integrations-cdi-oci-objectstorage .
 docker run --rm -d -p 8080:8080 \
     -e OCI_AUTH_PRIVATEKEY \
@@ -30,7 +30,7 @@ docker run --rm -d -p 8080:8080 \
 ```
 
 With Java:
-```bash
+```shell
 mvn package
 java -Doci.auth.fingerprint="${OCI_AUTH_FINGERPRINT}" \
     -Doci.auth.passphraseCharacters="${OCI_AUTH_PASSPHRASE}" \
@@ -44,13 +44,13 @@ java -Doci.auth.fingerprint="${OCI_AUTH_FINGERPRINT}" \
 
 Try the endpoint:
 
-```bash
+```shell
 curl http://localhost:8080/logo/{namespaceName}/{bucketName}/{objectName}
 ```
 
 ## Run With Kubernetes (docker for desktop)
 
-```bash
+```shell
 docker build -t helidon-examples-integrations-cdi-oci-objectstorage .
 ./oci-setup.sh -k8s
 kubectl apply \
@@ -60,16 +60,16 @@ kubectl apply \
 
 Try the endpoint:
 
-```bash
+```shell
 curl http://localhost/oci-objectstorage/logo/{namespaceName}/{bucketName}/{objectName}
 ```
 
 Stop the docker containers:
-```bash
+```shell
 docker stop helidon-examples-integrations-cdi-oci-objectstorage
 ```
 
 Delete the Kubernetes resources:
-```bash
+```shell
 kubectl -f app.yaml
 ```

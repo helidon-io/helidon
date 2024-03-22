@@ -18,13 +18,13 @@ which provides a microprofile gRPC client that uses the services deployed in thi
 
 ## Build
 
-```bash
+```shell
 mvn -f ../../pom.xml -pl common,microprofile/basic-server-implicit package
 ```
 
 ## Run
 
-```bash
+```shell
 java -jar target/helidon-examples-grpc-microprofile-basic-implicit.jar
 ```
 

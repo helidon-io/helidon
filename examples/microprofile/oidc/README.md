@@ -21,7 +21,7 @@ in `application.yaml`.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-microprofile-security-oidc-login.jar
 ```

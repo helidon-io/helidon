@@ -4,23 +4,23 @@
 
 Bring up a Neo4j instance via Docker
 
-```bash
+```shell
 docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:4.0
 ```
 
 Goto the Neo4j browser and play the first step of the movies graph: [`:play movies`](http://localhost:7474/browser/?cmd=play&arg=movies).
 
 Build and run with With JDK11+
-```bash
-mvn package
+```shell
+mvn package -DskipTests
 java -jar target/helidon-examples-integration-neo4j-se.jar  
 ```
 
 Then access the rest API like this:
 
-````
+```shell
 curl localhost:8080/api/movies
-````
+```
 
 #Health and metrics
 
@@ -52,25 +52,25 @@ and enable them in the driver:
 ```
 
 
-````
+```shell
 curl localhost:8080/health
-````
+```
 
-````
+```shell
 curl localhost:8080/metrics
-````
+```
 
 
 
 ## Build the Docker Image
 
-```
+```shell
 docker build -t helidon-integrations-heo4j-se .
 ```
 
 ## Start the application with Docker
 
-```
+```shell
 docker run --rm -p 8080:8080 helidon-integrations-heo4j-se:latest
 ```
 
@@ -78,7 +78,7 @@ Exercise the application as described above
 
 ## Deploy the application to Kubernetes
 
-```
+```shell
 kubectl cluster-info                                 # Verify which cluster
 kubectl get pods                                     # Verify connectivity to cluster
 kubectl create -f app.yaml                           # Deply application
@@ -100,7 +100,7 @@ You can build a native executable in 2 different ways:
 Download Graal VM at https://www.graalvm.org/downloads. We recommend
 version `20.1.0` or later.
 
-```
+```shell
 # Setup the environment
 export GRAALVM_HOME=/path
 # build the native executable
@@ -115,7 +115,7 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 
 Start the application:
 
-```
+```shell
 ./target/helidon-integrations-heo4j-se
 ```
 
@@ -123,13 +123,13 @@ Start the application:
 
 Build the "native" Docker Image
 
-```
+```shell
 docker build -t helidon-integrations-heo4j-se-native -f Dockerfile.native .
 ```
 
 Start the application:
 
-```
+```shell
 docker run --rm -p 8080:8080 helidon-integrations-heo4j-se-native:latest
 ```
 
@@ -148,7 +148,7 @@ You can build a custom JRI in two different ways:
 
 ### Local build
 
-```
+```shell
 # build the JRI
 mvn package -Pjlink-image
 ```
@@ -158,7 +158,7 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 
 Start the application:
 
-```
+```shell
 ./target/helidon-integrations-heo4j-se-jri/bin/start
 ```
 
@@ -166,18 +166,18 @@ Start the application:
 
 Build the JRI as a Docker Image
 
-```
+```shell
 docker build -t helidon-integrations-heo4j-se-jri -f Dockerfile.jlink .
 ```
 
 Start the application:
 
-```
+```shell
 docker run --rm -p 8080:8080 helidon-integrations-heo4j-se-jri:latest
 ```
 
 See the start script help:
 
-```
+```shell
 docker run --rm helidon-integrations-heo4j-se-jri:latest --help
 ```

@@ -2,9 +2,9 @@
 
 ## Build and run
 
-With JDK11+
-```bash
-mvn install && java -jar ./target/helidon-examples-microprofile-lra.jar
+```shell
+mvn package
+java -jar ./target/helidon-examples-microprofile-lra.jar
 ```
 
 ### Coordinator
@@ -23,7 +23,7 @@ docker run --rm --name lra-coordinator --network="host" helidon/lra-coordinator
 
 ### Test LRA resource
 Then call for completed transaction:
-```bash
+```shell
 curl -X PUT -d 'lra rocks' http://localhost:7001/example/start-example
 ```
 And observe processing success in the output followed by complete called by LRA coordinator:
@@ -33,7 +33,7 @@ LRA id: f120a842-88da-429b-82d9-7274ee9ce8f6 completed 🎉
 ```
 
 For compensated transaction:
-```bash
+```shell
 curl -X PUT -d BOOM http://localhost:7001/example/start-example
 ```
 Observe exception in the output followed by compensation called by LRA coordinator:
@@ -45,6 +45,6 @@ LRA id: 3629421b-b2a4-4fc4-a2f0-941cbf3fa8ad compensated 🚒
 ```
 
 Or compensated transaction timeout:
-```bash
+```shell
 curl -X PUT -d TIMEOUT http://localhost:7001/example/start-example
 ```

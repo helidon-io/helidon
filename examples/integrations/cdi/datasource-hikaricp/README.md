@@ -20,7 +20,7 @@ account if you don't already have one, see
 To log in to the Oracle Container Registry (which you will need to do
 in order to download Oracle database Docker images from it):
 
-```bash
+```shell
 docker login -u username -p password container-registry.oracle.com
 ```
 
@@ -31,7 +31,7 @@ To run Oracle's `database/standard` Docker image in a Docker container
 named `oracle` that publishes ports 1521 and 5500 to
 the host while relying on the defaults for all other settings:
 
-```bash
+```shell
 docker container run -d -it -p 1521:1521 -p 5500:5500 --shm-size=3g \
     --name oracle \
     container-registry.oracle.com/database/standard:latest
@@ -58,7 +58,7 @@ javax.sql.DataSource.example.dataSource.password = Oracle
 ## Build and run
 
 With Docker:
-```bash
+```shell
 docker build -t helidon-examples-integrations-datasource-hikaricp .
 docker run --rm -d \
     --link oracle \
@@ -69,17 +69,17 @@ docker run --rm -d \
 OR
 
 With Maven:
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-integrations-datasource-hikaricp.jar
 ```
 
 Try the endpoint:
-```bash
+```shell
 curl http://localhost:8080/tables
 ```
 
 Stop the docker containers:
-```bash
+```shell
 docker stop oracle helidon-examples-integrations-datasource-hikaricp
 ```
