@@ -61,7 +61,10 @@ public class CorsSupportHelper<Q, R> {
 
     static final Logger LOGGER = Logger.getLogger(CorsSupportHelper.class.getName());
 
+    static final String OPAQUE_ORIGIN = "null"; // browsers might send this as Origin header if origin info is untrusted
+
     private static final Supplier<Optional<CrossOriginConfig>> EMPTY_SECONDARY_SUPPLIER = Optional::empty;
+
 
     private final String name;
 
@@ -392,7 +395,7 @@ public class CorsSupportHelper<Q, R> {
 
             return new RequestTypeInfo(originLocation,
                                        hostLocation,
-                                       originLocation.equals(hostLocation));
+                                       originLocation.equals(hostLocation) || originLocation.equals(OPAQUE_ORIGIN));
         }
     }
 
@@ -403,6 +406,9 @@ public class CorsSupportHelper<Q, R> {
         // Fast decision if there is no Origin header.
         if (originOpt.isEmpty()) {
             LogHelper.logIsRequestTypeNormalNoOrigin(silent, requestAdapter);
+            return true;
+        } else if (originOpt.get().equals(OPAQUE_ORIGIN)) {
+            LogHelper.logIsRequestTypeNormalOpaqueOrigin(silent, requestAdapter);
             return true;
         }
 
@@ -421,7 +427,7 @@ public class CorsSupportHelper<Q, R> {
         int originLastColon = origin.lastIndexOf(':');
 
         return origin + (
-                (originEndOfScheme == originLastColon)
+                (originEndOfScheme == originLastColon && originEndOfScheme >= 0)
                         ? ":" + portForScheme(origin.substring(0, originEndOfScheme))
                         : "");
     }
