@@ -79,14 +79,14 @@ class LogHelper {
                                                    List.of("header " + HeaderNames.ORIGIN + " is absent")));
     }
 
-    static <T> void logIsRequestTypeNormalOpaqueOrigin(boolean silent, CorsRequestAdapter<T> requestAdapter) {
+    static <T> void logOpaqueOrigin(boolean silent, CorsRequestAdapter<T> requestAdapter) {
         if (silent || !CorsSupportHelper.LOGGER.isLoggable(DECISION_LEVEL)) {
             return;
         }
         CorsSupportHelper.LOGGER.log(DECISION_LEVEL,
-                                     String.format("Request %s is not cross-host: %s",
+                                     String.format("Request %s specifies opaque origin: %s",
                                                    requestAdapter,
-                                                   List.of("header " + HeaderNames.ORIGIN + " value is opaque")));
+                                                   List.of("header " + HeaderNames.ORIGIN)));
     }
 
     static <T> void logIsRequestTypeNormal(boolean result, boolean silent, CorsRequestAdapter<T> requestAdapter,

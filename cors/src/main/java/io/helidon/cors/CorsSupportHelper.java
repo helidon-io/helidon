@@ -407,9 +407,10 @@ public class CorsSupportHelper<Q, R> {
         if (originOpt.isEmpty()) {
             LogHelper.logIsRequestTypeNormalNoOrigin(silent, requestAdapter);
             return true;
-        } else if (originOpt.get().equals(OPAQUE_ORIGIN)) {
-            LogHelper.logIsRequestTypeNormalOpaqueOrigin(silent, requestAdapter);
-            return true;
+        }
+        if (isOriginOpaque(originOpt.get())) {
+            LogHelper.logOpaqueOrigin(silent, requestAdapter);
+            // Do not return. Continue processing having noted the opaque origin.
         }
 
         RequestTypeInfo result = requestType(originOpt.get(), requestAdapter.requestedUri());
@@ -420,6 +421,10 @@ public class CorsSupportHelper<Q, R> {
                                          result.originLocation,
                                          result.hostLocation);
         return result.isNormal;
+    }
+
+    static boolean isOriginOpaque(String origin) {
+        return origin.equals(OPAQUE_ORIGIN);
     }
 
     private static String originLocation(String origin) {
