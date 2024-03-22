@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <methods>
+        <method name="webclient">
+            <output if="${extra} contains 'webclient'">
+                <templates engine="mustache" transformations="mustache,packaged">
+                    <directory>files</directory>
+                    <includes>
+                        <include>src/*/java/**/WebClientMain.java.mustache</include>
+                    </includes>
+                </templates>
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.webclient</value>
+                            <value key="artifactId">helidon-webclient</value>
+                        </map>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.webclient</value>
+                    </list>
+                    <list key="Abstract-tests">
+                        <value><![CDATA[
+    @Test
+    public void testPerformGetMethod() {
+        String greeting = WebClientMain.performGetMethod(client);
+        assertThat(greeting, containsString("Hello World!"));
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="MainTest-static-imports">
+                        <value>org.hamcrest.CoreMatchers.containsString</value>
+                    </list>
+                    <list key="readme-sections">
+                        <value template="mustache"><![CDATA[
+## Exercise Webclient
+
+First, start the server:
+
+```
+java -jar target/{{artifactId}}.jar
+```
+
+Note the port number that it displays. For example:
+
+```
+WEB server is up! http://localhost:8080/simple-greet
+```
+
+Then run the client, passing the port number. It will connect
+to the server:
+
+```
+java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
+```
+
+]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="fault-tolerance">
+            <output if="${extra} contains 'fault-tolerance'">
+                <templates engine="mustache" transformations="mustache,packaged">
+                    <directory>files</directory>
+                    <includes>
+                        <include>src/*/java/**/FtService.java.mustache</include>
+                    </includes>
+                </templates>
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.fault-tolerance</value>
+                            <value key="artifactId">helidon-fault-tolerance</value>
+                        </map>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.http.Status</value>
+                        <value>io.helidon.faulttolerance.BulkheadException</value>
+                        <value>io.helidon.faulttolerance.CircuitBreakerOpenException</value>
+                        <value>io.helidon.faulttolerance.TimeoutException</value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[.register("/", new FtService())
+                .error(BulkheadException.class,
+                        (req, res, ex) -> res.status(Status.SERVICE_UNAVAILABLE_503).send("bulkhead"))
+                .error(CircuitBreakerOpenException.class,
+                        (req, res, ex) -> res.status(Status.SERVICE_UNAVAILABLE_503).send("circuit breaker"))
+                .error(TimeoutException.class,
+                        (req, res, ex) -> res.status(Status.REQUEST_TIMEOUT_408).send("timeout"))
+                .error(Throwable.class,
+                        (req, res, ex) -> res.status(Status.INTERNAL_SERVER_ERROR_500)
+                                .send(ex.getClass().getName() + ": " + ex.getMessage()))]]>
+                        </value>
+                    </list>
+                    <list key="Abstract-tests">
+                        <value><![CDATA[
+    @Test
+    void testAsync() {
+        String response = client.get()
+                .path("/async")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("blocked for 100 millis"));
+    }
+
+    @Test
+    void testBulkhead() throws InterruptedException {
+        // bulkhead is configured for limit of 1 and queue of 1, so third
+        // request should fail
+        client.get()
+                .path("/bulkhead/10000")
+                .request();
+
+        client.get()
+                .path("/bulkhead/10000")
+                .request();
+
+        // I want to make sure the above is connected
+        Thread.sleep(300);
+
+        try (Http1ClientResponse third = client.get().path("/bulkhead/10000").request()) {
+            // registered an error handler in Main
+            assertThat(third.status(), is(Status.OK_200));
+            assertThat(third.as(String.class), is("Call rejected: 1"));
+        }
+    }
+
+    @Test
+    void testCircuitBreaker() {
+        String response = client.get()
+                .path("/circuitBreaker/true")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("blocked for 100 millis"));
+
+        // error ratio is 20% within 10 request
+        client.get()
+                .path("/circuitBreaker/false")
+                .request()
+                .close();
+
+        // should work after first
+        response = client.get()
+                .path("/circuitBreaker/true")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("blocked for 100 millis"));
+
+        // should open after second
+        client.get()
+                .path("/circuitBreaker/false")
+                .request()
+                .close();
+
+        Http1ClientResponse clientResponse = client.get()
+                .path("/circuitBreaker/true")
+                .request();
+
+        // registered an error handler in Main
+        assertThat(clientResponse.status(), is(Status.SERVICE_UNAVAILABLE_503));
+        assertThat(clientResponse.as(String.class), is("circuit breaker"));
+    }
+
+    @Test
+    void testFallback() {
+        String response = client.get()
+                .path("/fallback/true")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("blocked for 100 millis"));
+
+        response = client.get()
+                .path("/fallback/false")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("Failed back because of reactive failure"));
+    }
+
+    @Test
+    void testRetry() {
+        String response = client.get()
+                .path("/retry/1")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("calls/failures: 1/0"));
+
+        response = client.get()
+                .path("/retry/2")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("calls/failures: 2/1"));
+
+        response = client.get()
+                .path("/retry/3")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("calls/failures: 3/2"));
+
+        try (Http1ClientResponse clientResponse = client.get()
+                .path("/retry/4")
+                .request()) {
+
+            // no error handler specified
+            assertThat(clientResponse.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(clientResponse.as(String.class), is("java.lang.RuntimeException: reactive failure"));
+        }
+    }
+
+    @Test
+    void testTimeout() {
+        String response = client.get()
+                .path("/timeout/10")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is("Slept for 10 ms"));
+
+        try (Http1ClientResponse clientResponse = client.get()
+                .path("/timeout/1000")
+                .request()) {
+            // error handler specified in Main
+            assertThat(clientResponse.status(), is(Status.REQUEST_TIMEOUT_408));
+            assertThat(clientResponse.as(String.class), is("timeout"));
+        }
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.faulttolerance</value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="cors">
+            <output if="${extra} contains 'cors'">
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.webserver</value>
+                            <value key="artifactId">helidon-webserver-cors</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.cors</value>
+                            <value key="artifactId">helidon-cors</value>
+                        </map>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.webserver.cors</value>
+                        <value>io.helidon.cors</value>
+                        <value>java.logging</value>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.cors.CrossOriginConfig</value>
+                        <value>io.helidon.webserver.cors.CorsSupport</value>
+                    </list>
+                    <list key="Main-java-imports">
+                        <value>java.util.logging.Logger</value>
+                    </list>
+                    <list key="application-yaml-entries">
+                        <value><![CDATA[
+restrictive-cors:
+  allow-origins: ["http://foo.com", "http://there.com"]
+  allow-methods: ["PUT", "DELETE"]
+
+# The example app uses the following for overriding other settings.
+#cors:
+#  paths:
+#    - path-pattern: /greeting
+#      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
+#      allow-methods: ["PUT", "DELETE"]
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(), new GreetService())
+]]>
+                        </value>
+                    </list>
+                    <list key="main-class-content">
+                        <value><![CDATA[
+    private static CorsSupport corsSupportForGreeting() {
+        Config restrictiveConfig = Config.global().get("restrictive-cors");
+        if (!restrictiveConfig.exists()) {
+            Logger.getLogger(Main.class.getName())
+                    .warning("Missing restrictive config; continuing with default CORS support");
+        }
+
+        CorsSupport.Builder corsBuilder = CorsSupport.builder();
+
+        Config.global().get("cors")
+                .ifExists(c -> {
+                    Logger.getLogger(Main.class.getName()).info("Using the override configuration");
+                    corsBuilder.mappedConfig(c);
+                });
+        corsBuilder
+                .config(restrictiveConfig) // restricted sharing for PUT, DELETE
+                .addCrossOrigin(CrossOriginConfig.create()) // open sharing for other methods
+                .build();
+
+        return corsBuilder.build();
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="MainTest-java-imports">
+                        <value>java.util.Optional</value>
+                    </list>
+                    <list key="MainTest-helidon-imports">
+                        <value>io.helidon.http.Headers</value>
+                        <value>io.helidon.cors.CrossOriginConfig</value>
+                    </list>
+                    <list key="MainTest-static-imports">
+                        <value>io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN</value>
+                        <value>io.helidon.http.HeaderNames.HOST</value>
+                        <value>io.helidon.http.HeaderNames.ORIGIN</value>
+                        <value>org.hamcrest.CoreMatchers.containsString</value>
+                    </list>
+                    <list key="Abstract-tests">
+                        <value><![CDATA[
+    @Test
+    void testAnonymousGreetWithCors() {
+        try (Http1ClientResponse response = client.get()
+                .path("/cors-greet")
+                .headers(it -> it
+                        .set(ORIGIN, "http://foo.com")
+                        .set(HOST, "here.com"))
+                .request()) {
+
+            assertThat(response.status().code(), is(200));
+            String payload = response.entity().as(String.class);
+            assertThat(payload, containsString("Hello World"));
+            Headers responseHeaders = response.headers();
+            Optional<String> allowOrigin = responseHeaders.value(ACCESS_CONTROL_ALLOW_ORIGIN);
+            assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent",
+                    allowOrigin.isPresent(), is(true));
+            assertThat(allowOrigin.get(), is("*"));
+        }
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="readme-sections">
+                        <value><![CDATA[
+## Using CORS
+
+The following requests illustrate the CORS protocol with the example app.
+
+By setting `Origin` and `Host` headers that do not indicate the same system we trigger CORS processing in the
+ server:
+
+```bash
+# Follow the CORS protocol for GET
+curl -i -X GET -H "Origin: http://foo.com" -H "Host: here.com" http://localhost:8080/cors-greet
+
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Content-Type: application/json
+Date: Thu, 30 Apr 2020 17:25:51 -0500
+Vary: Origin
+connection: keep-alive
+content-length: 27
+
+Hello World
+```
+]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <call method="webclient"/>
+    <call method="fault-tolerance"/>
+    <call method="cors"/>
+</archetype-script>

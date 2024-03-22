@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <methods>
+        <method name="jwt">
+            <output if="${security}">
+                <model if="${security.atn} contains 'jwt'">
+                    <list key="module-requires">
+                        <value>io.helidon.webserver.context</value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="google">
+            <output if="${security}">
+                <model if="${security.atn} contains 'google'">
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.security.providers</value>
+                            <value key="artifactId">helidon-security-providers-google-login</value>
+                        </map>
+                    </list>
+                    <list key="paths-config-entries">
+                        <value><![CDATA[    - path: "/rest/profile"
+      methods: ["get"]
+      authenticate: true]]></value>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.webserver.context</value>
+                        <value>io.helidon.webserver.staticcontent</value>
+                        <value>io.helidon.security.providers.google.login</value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="http-signature">
+            <output if="${security}">
+                <files if="${security.atn} contains 'http-signature'">
+                    <directory>files</directory>
+                    <includes>
+                        <include>src/main/resources/keystore.p12</include>
+                    </includes>
+                </files>
+                <model if="${security.atn} contains 'http-signature'">
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.security.providers</value>
+                            <value key="artifactId">helidon-security-providers-http-sign</value>
+                        </map>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="abac">
+            <output if="${security}">
+                <model if="${security.atz} contains 'abac'">
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.security.providers</value>
+                            <value key="artifactId">helidon-security-providers-abac</value>
+                        </map>
+                    </list>
+                    <list key="paths-config-entries">
+                        <value order="90" if="!(${security.atn} contains 'oidc')"><![CDATA[         roles-allowed: ["user"]]]></value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="security">
+            <output if="${security}">
+                <model>
+                    <value key="security">true</value>
+                    <value key="features">true</value>
+                    <list key="server-features">
+                        <value template="mustache"><![CDATA[
+    security:
+      defaults:
+        authenticate: true
+      web-server:
+        # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
+        paths:
+        {{#paths-config-entries}}
+        {{.}}
+        {{/paths-config-entries}}
+]]></value>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <call method="jwt"/>
+    <call method="google"/>
+    <call method="http-signature"/>
+    <call method="abac"/>
+    <call method="security"/>
+</archetype-script>
