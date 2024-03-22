@@ -16,12 +16,10 @@
 
 package io.helidon.examples.webserver.streaming;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.logging.Logger;
 
@@ -40,11 +38,9 @@ public class StreamingService implements HttpService {
 
     // Last file uploaded (or default). Since we don't do any locking
     // when operating on the file this example is not safe for concurrent requests.
-    private volatile File file;
+    private volatile Path filePath;
 
     StreamingService() {
-        // Default download file;
-        file = Paths.get(Main.LARGE_FILE_PATH).toFile();
     }
 
     @Override
@@ -58,25 +54,24 @@ public class StreamingService implements HttpService {
         try {
             Path tempFilePath = Files.createTempFile("large-file", ".tmp");
             Files.copy(request.content().inputStream(), tempFilePath, StandardCopyOption.REPLACE_EXISTING);
-            file = tempFilePath.toFile();
+            filePath = tempFilePath;
             response.send("File was stored as " + tempFilePath);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        LOGGER.info("Exiting upload after uploading " + file.length() + " bytes...");
+        LOGGER.info("Exiting upload after uploading " + filePath.toFile().length() + " bytes...");
     }
 
     private void download(ServerRequest request, ServerResponse response) {
         LOGGER.info("Entering download ..." + Thread.currentThread());
-        if (!file.canRead()) {
-            LOGGER.warning("Can't read file " + file.getAbsolutePath());
-            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
+        if (filePath == null) {
+            response.status(Status.BAD_REQUEST_400).send("No file to download. Please upload file first.");
             return;
         }
-        long length = file.length();
+        long length = filePath.toFile().length();
         response.headers().contentLength(length);
         try {
-            Files.copy(file.toPath(), response.outputStream());
+            Files.copy(filePath, response.outputStream());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

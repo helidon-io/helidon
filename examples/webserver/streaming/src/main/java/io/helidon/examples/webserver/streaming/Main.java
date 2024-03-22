@@ -25,8 +25,6 @@ import io.helidon.webserver.http.HttpRouting;
  */
 public class Main {
 
-    static final String LARGE_FILE_PATH = "target/classes/large-file.bin";
-
     private Main() {
     }
 
