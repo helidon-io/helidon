@@ -169,15 +169,24 @@ public final class OidcFeature implements HttpFeature {
     private OidcFeature(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
-        this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
-        this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
-        this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
-        this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
-        this.stateCookieHandler = oidcConfig.stateCookieHandler();
-        this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
-        this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
-
-        this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
+        if (enabled) {
+            this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
+            this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+            this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
+            this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
+            this.stateCookieHandler = oidcConfig.stateCookieHandler();
+            this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
+            this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
+            this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
+        } else {
+            this.tokenCookieHandler = null;
+            this.idTokenCookieHandler = null;
+            this.refreshTokenCookieHandler = null;
+            this.tenantCookieHandler = null;
+            this.stateCookieHandler = null;
+            this.corsSupport = null;
+            this.oidcConfigFinders = List.of();
+        }
     }
 
     /**
