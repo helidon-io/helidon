@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -1294,6 +1295,22 @@ public class Security {
                                         Map<String, SecurityProviderService> classNameToService,
                                         String knownKeys,
                                         Config pConf) {
+            boolean enabled = pConf.get("enabled").asBoolean().orElse(true);
+            if (!enabled) {
+                // this provider is marked as disabled, we will ignore it
+                // this is checking the top level provider configuration (see below check for provider specific)
+                // this section check (example):
+                /*
+                security.providers:
+                    - type: "some-type
+                      enabled: false
+                 */
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest("Provider with key: " + pConf.key() + " is disabled");
+                }
+                return;
+            }
+
             AtomicReference<SecurityProviderService> service = new AtomicReference<>();
             AtomicReference<Config> providerSpecific = new AtomicReference<>();
 
@@ -1323,6 +1340,26 @@ public class Security {
             }
 
             String name = resolveProviderName(pConf, className, providerSpecificConfig, providerService);
+
+            if (providerSpecificConfig != null && !providerSpecificConfig.get("enabled")
+                    .asBoolean()
+                    .orElse(true)) {
+                // this provider is marked as disabled, we will ignore it
+                // this is within the provider specific configuration, to support both simple lists (checked above)
+                // and nested provider configuration; this section check (example):
+                /*
+                security.providers:
+                    - oidc:
+                        enabled: false
+                 */
+
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest("Provider: " + name + " is disabled");
+                }
+
+                return;
+            }
+
             boolean isAuthn = pConf.get("is-authentication-provider").asBoolean().orElse(true);
             boolean isAuthz = pConf.get("is-authorization-provider").asBoolean().orElse(true);
             boolean isClientSec = pConf.get("is-client-security-provider").asBoolean().orElse(true);
