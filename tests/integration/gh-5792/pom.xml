@@ -21,12 +21,12 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
-        <version>2.6.6-SNAPSHOT</version>
+        <version>2.6.7-SNAPSHOT</version>
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-yaml-parsing</artifactId>
-    <version>2.6.6-SNAPSHOT</version>
+    <version>2.6.7-SNAPSHOT</version>
 
     <properties>
         <mainClass>io.helidon.tests.integration.yamlparsing.Main</mainClass>
