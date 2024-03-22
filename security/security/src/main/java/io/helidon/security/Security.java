@@ -1128,8 +1128,9 @@ public interface Security {
 
             String name = resolveProviderName(pConf, className, providerSpecificConfig, providerService);
 
-            if (providerSpecificConfig != null
-                    &&!providerSpecificConfig.get("enabled").asBoolean().orElse(true)) {
+            if (providerSpecificConfig != null && !providerSpecificConfig.get("enabled")
+                    .asBoolean()
+                    .orElse(true)) {
                 // this provider is marked as disabled, we will ignore it
                 // this is within the provider specific configuration, to support both simple lists (checked above)
                 // and nested provider configuration; this section check (example):
