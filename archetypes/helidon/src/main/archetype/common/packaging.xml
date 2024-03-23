@@ -59,13 +59,13 @@ kubectl get pods                            # Verify connectivity to cluster
 ### Deploy the application to Kubernetes
 
 ```
-kubectl create -f app.yaml                  # Deploy application
-kubectl get pods                            # Wait for quickstart pod to be RUNNING
-kubectl get service  {{artifactId}}         # Get service info
+kubectl create -f app.yaml                              # Deploy application
+kubectl get pods                                        # Wait for quickstart pod to be RUNNING
+kubectl get service  {{artifactId}}                     # Get service info
+kubectl port-forward service/{{artifactId}} 8081:8080   # Forward service port to 8081
 ```
 
-Note the PORTs. You can now exercise the application as you did before but use the second
-port number (the NodePort) instead of 8080.
+You can now exercise the application as you did before but use the port number 8081.
 
 After you’re done, cleanup.
 
