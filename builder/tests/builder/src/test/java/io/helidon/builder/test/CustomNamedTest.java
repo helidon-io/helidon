@@ -56,11 +56,7 @@ class CustomNamedTest {
                 .build();
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter();
         String json = mapper.writer(printer).writeValueAsString(customNamed);
-        assertThat(json, equalTo("""
-                                         {
-                                           "isStringListMutated" : false,
-                                           "stringSet" : [ "b", "a", "y" ]
-                                         }"""));
+        assertThat(json, equalTo("{\n" + "  \"stringSet\" : [ \"b\", \"a\", \"y\" ]\n" + "}"));
     }
 
 }
