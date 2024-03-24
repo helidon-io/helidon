@@ -467,7 +467,7 @@ final class GenerateAbstractBuilder {
                         .name(child.name() + "DiscoverServices")
                         .defaultValue(String.valueOf(child.configuredOption().providerDiscoverServices())));
             }
-            if (child.typeHandler().declaredType().isList()) {
+            if (isBuilder && child.typeHandler().declaredType().isList()) {
                 classBuilder.addField(builder -> builder.type(boolean.class)
                         .name("is" + capitalize(child.name()) + "Mutated")
                         .accessModifier(AccessModifier.PRIVATE));
