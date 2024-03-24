@@ -354,11 +354,15 @@ final class GenerateAbstractBuilder {
         for (PrototypeProperty property : typeContext.propertyData().properties()) {
             TypeName declaredType = property.typeHandler().declaredType();
             if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
-                // Sets and maps take care of enforcing distinct values themselves, but do so ourselves for lists when
-                // adding values from an existing builder which will already have the default(s).
-                methodBuilder.addContent("add"
-                                                 + (declaredType.isList() ? "Distinct" : "")
-                                                 + capitalize(property.name()));
+                if (declaredType.isList()) {
+                    // A list might contain only default values. If it has not been updated, clear it of default values
+                    // before adding the values from the other builder.
+                    methodBuilder.addContentLine("if (!is" + capitalize(property.name()) + "Mutated) {")
+                            .addContentLine(property.name() + ".clear();")
+                            .addContentLine("}");
+                }
+                methodBuilder.addContent("add");
+                methodBuilder.addContent(capitalize(property.name()));
                 methodBuilder.addContent("(prototype.");
                 methodBuilder.addContent(property.typeHandler().getterName());
                 methodBuilder.addContentLine("());");
@@ -415,11 +419,14 @@ final class GenerateAbstractBuilder {
                 methodBuilder.addContentLine("builder." + getterName + "().ifPresent(this::" + setterName + ");");
             } else {
                 if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
-                    // Sets and maps take care of enforcing distinct values themselves, but do so ourselves for lists when
-                    // adding values from an existing builder which will already have the default(s).
-                    methodBuilder.addContent("add"
-                                                     + (declaredType.isList() ? "Distinct" : "")
-                                                     + capitalize(property.name()));
+                    if (declaredType.isList()) {
+                        // A list might contain only default values. If it has not been updated, clear it of default values
+                        // before adding the values from the other builder.
+                        methodBuilder.addContentLine("if (!is" + capitalize(property.name()) + "Mutated) {")
+                                .addContentLine(property.name() + ".clear();")
+                                .addContentLine("}");
+                    }
+                    methodBuilder.addContent("add" + capitalize(property.name()));
                 } else {
                     methodBuilder.addContent(setterName);
                 }
@@ -459,6 +466,11 @@ final class GenerateAbstractBuilder {
                 classBuilder.addField(builder -> builder.type(boolean.class)
                         .name(child.name() + "DiscoverServices")
                         .defaultValue(String.valueOf(child.configuredOption().providerDiscoverServices())));
+            }
+            if (child.typeHandler().declaredType().isList()) {
+                classBuilder.addField(builder -> builder.type(boolean.class)
+                        .name("is" + capitalize(child.name()) + "Mutated")
+                        .accessModifier(AccessModifier.PRIVATE));
             }
         }
     }

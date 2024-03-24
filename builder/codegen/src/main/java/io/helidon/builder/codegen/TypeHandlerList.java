@@ -17,15 +17,11 @@
 package io.helidon.builder.codegen;
 
 import java.util.Optional;
-import java.util.function.Predicate;
 
-import io.helidon.codegen.classmodel.InnerClass;
-import io.helidon.codegen.classmodel.Javadoc;
+import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.Method;
-import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.common.types.TypeNames.LIST;
 
 class TypeHandlerList extends TypeHandlerCollection {
@@ -35,38 +31,16 @@ class TypeHandlerList extends TypeHandlerCollection {
     }
 
     @Override
-    void setters(InnerClass.Builder classBuilder,
-                 AnnotationDataOption configured,
-                 FactoryMethods factoryMethods,
-                 TypeName returnType,
-                 Javadoc blueprintJavadoc) {
-        super.setters(classBuilder, configured, factoryMethods, returnType, blueprintJavadoc);
-        declaredDistinctSetter(classBuilder, returnType, blueprintJavadoc);
+    Method.Builder extraAdderContent(Method.Builder builder) {
+        return builder.addContentLine(isMutatedField() + " = true;");
     }
 
-    private void declaredDistinctSetter(InnerClass.Builder classBuilder, TypeName returnType, Javadoc blueprintJavadoc) {
+    @Override
+    Method.Builder extraSetterContent(Method.Builder builder) {
+        return builder.addContentLine(isMutatedField() + " = true;");
+    }
 
-        // Primarily for use in preventing default values from being included in a list twice using Builder.from.
-        classBuilder.addImport(Predicate.class);
-        Method.Builder builder = Method.builder()
-                .name("addDistinct" + capitalize(name()))
-                .accessModifier(AccessModifier.PROTECTED)
-                .returnType(returnType, "updated builder instance")
-                .description("Adds distinct values")
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .addParameter(param -> param.name(name())
-                        .type(argumentTypeName())
-                        .description(blueprintJavadoc.returnDescription()))
-
-                .addContentLine("Objects.requireNonNull(" + name() + ");")
-                .addContentLine(name() + ".stream()")
-                .increaseContentPadding()
-                .increaseContentPadding()
-                .addContentLine(".filter(Predicate.not(this." + name() + "::contains))")
-                .addContentLine(".forEach(this." + name() + "::add);")
-                .decreaseContentPadding()
-                .decreaseContentPadding()
-                .addContentLine("return self();");
-        classBuilder.addMethod(builder);
+    private String isMutatedField() {
+        return "is" + CodegenUtil.capitalize(name()) + "Mutated";
     }
 }
