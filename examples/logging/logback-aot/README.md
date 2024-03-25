@@ -30,13 +30,13 @@ The output is also logged into `helidon.log`.
 # Running as jar
 
 Build this application:
-```shell script
+```shell
 mvn clean package
 ```
 
 Run from command line:
-```shell script
-java -jar target/helidon-examples-logging-sfl4j.jar
+```shell
+java -jar target/helidon-examples-logging-slf4j-aot.jar
 ```
 
 Execute endpoint:
@@ -50,11 +50,11 @@ or you can specify an environment variable `GRAALVM_HOME` that points
 to such an installation.
 
 Build this application:
-```shell script
+```shell
 mvn clean package -Pnative-image
 ```
 
 Run from command line:
-```shell script
+```shell
 ./target/helidon-examples-logging-sfl4j
 ```

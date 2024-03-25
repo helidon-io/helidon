@@ -39,7 +39,7 @@ Edit application.yaml based on your IDCS Configuration
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-microprofile-security-idcs.jar
 ```

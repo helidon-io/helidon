@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Destroyed;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -208,6 +209,16 @@ public class FaultToleranceExtension implements Extension {
                 getRegisteredMethods().add(method);
             }
         }
+    }
+
+    /**
+     * Clean up method states, to make sure we honor different config if CDI is shut down and restarted,
+     * such as when running tests.
+     *
+     * @param event ignored event
+     */
+    void cleanUp(@Observes @Priority(LIBRARY_BEFORE + 15) @Destroyed(ApplicationScoped.class) Object event) {
+        MethodInvoker.clearMethodStatesMap();
     }
 
     /**

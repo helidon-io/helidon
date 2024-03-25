@@ -4,7 +4,7 @@ This application demonstrates use of websockets and REST.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-webserver-websocket.jar
 ```

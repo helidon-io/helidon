@@ -2,14 +2,14 @@
 
 ## Start Redis
 
-```bash
+```shell
 docker run --rm --name redis -d -p 6379:6379 redis
 ```
 
 ## Build and run
 
 With Docker:
-```bash
+```shell
 docker build -t helidon-examples-integrations-cdi-jedis .
 docker run --rm -d \
     --link redis
@@ -18,20 +18,20 @@ docker run --rm -d \
 ```
 
 With Java:
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-integrations-cdi-jedis.jar
 ```
 
 Try the endpoint:
-```bash
+```shell
 curl -X PUT  -H "Content-Type: text/plain" http://localhost:8080/jedis/foo -d 'bar'
 curl http://localhost:8080/jedis/foo
 ```
 
 ## Run with Kubernetes (docker for desktop)
 
-```bash
+```shell
 docker build -t helidon-examples-integrations-cdi-jedis .
 kubectl apply \
   -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/ingress-nginx-3.15.2/deploy/static/provider/cloud/deploy.yaml \
@@ -39,17 +39,17 @@ kubectl apply \
 ```
 
 Try the endpoint:
-```bash
+```shell
 curl -X PUT -H "Content-Type: text/plain" http://localhost/helidon-cdi-jedis/jedis/foo -d 'bar'
 curl http://localhost/helidon-cdi-jedis/jedis/foo
 ```
 
 Stop the docker containers:
-```bash
+```shell
 docker stop redis helidon-examples-integrations-cdi-jedis
 ```
 
 Delete the Kubernetes resources:
-```bash
+```shell
 kubectl delete -f app.yaml
 ```

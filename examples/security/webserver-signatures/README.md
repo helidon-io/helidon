@@ -16,13 +16,14 @@ There are two examples with exactly the same behavior
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-security-webserver-signatures.jar
 ```
 
 Try the endpoints:
-```bash
+
+```shell
 curl -u "jack:changeit" http://localhost:8080/service1
 curl -u "jill:changeit" http://localhost:8080/service1-rsa
 curl -v -u "john:changeit" http://localhost:8080/service1

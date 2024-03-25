@@ -14,7 +14,7 @@ Before running the test, make sure to update required properties in `application
 
 Once you have updated required properties, you can run the example:
 
-```shell script
+```shell
 mvn clean install
 java -jar ./target/helidon-examples-integrations-oci-atp-reactive.jar
 ```  

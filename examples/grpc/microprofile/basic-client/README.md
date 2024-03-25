@@ -12,18 +12,18 @@ the client will use is represented by an annotated interface `io.helidon.micropr
 which defines all of the methods available on the service deployed on the server.
 
 ## Build
-```bash
+```shell
 mvn -f ../../pom.xml -pl common,microprofile/basic-client package
 ```
 
 ## Run
 Ensure that the server in [Basic Implicit gRPC Server example](../basic-server-implicit/README.md) is started.
 Then in this module run:
-```bash
+```shell
 java -jar target/helidon-examples-grpc-microprofile-client.jar 
 ```
 Sample output from the client:
-```bash
+```text
 ...
 Unary Lower response: 'abcd'
 Response from blocking Split: 'A'

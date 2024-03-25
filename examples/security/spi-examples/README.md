@@ -15,3 +15,6 @@ The following examples are available:
 
 This is an API/SPI example. It is validated through unit tests.
  
+```shell
+mvn package
+```

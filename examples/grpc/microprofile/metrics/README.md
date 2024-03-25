@@ -9,24 +9,24 @@ which provides a microprofile gRPC client that uses the services deployed in thi
 
 ## Build and run
 
-```bash
+```shell
 mvn -f ../../pom.xml -pl common,microprofile/metrics package
 java -jar target/helidon-examples-grpc-microprofile-metrics.jar
 ```
 
 Run the basic-client from [Basic gRPC Client example](../basic-client/README.md) to invoke 
 activity on the gRPC endpoint `localhost:1408`.
-```bash
+```shell
 java -jar target/helidon-examples-grpc-microprofile-client.jar 
 ```
 
 Retrieve the metrics:
-```bash
+```shell
 curl http://localhost:8080/metrics
 ```
 
 Notice that you will get application metrics from the Helidon server metric response similar to this:
-```bash
+```text
 ...
 # TYPE application_io_helidon_microprofile_grpc_example_metrics_StringService_echo_total counter
 # HELP application_io_helidon_microprofile_grpc_example_metrics_StringService_echo_total 
