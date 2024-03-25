@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ security:
   - http-basic-auth:
       users:
       - login: "john"
-        password: "johnnyPassword"
+        password: "changeit"
         roles: ["admin"]
       - login: "jack"
-        password: "password"
+        password: "changeit"
         roles: ["user", "admin"]
       - login: "jill"
-        password: "anotherPassword"
+        password: "changeit"
         roles: ["user"]
       outbound:
         - name: "propagate-all"

@@ -28,7 +28,7 @@
     </parent>
 
     <groupId>io.helidon.examples.todos</groupId>
-    <artifactId>example-todo-app-project</artifactId>
+    <artifactId>helidon-examples-todo-app-project</artifactId>
     <packaging>pom</packaging>
     <version>2.6.7-SNAPSHOT</version>
     <name>Helidon Examples TODO Demo</name>

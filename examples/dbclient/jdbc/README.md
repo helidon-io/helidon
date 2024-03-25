@@ -30,8 +30,9 @@ Instructions for H2 can be found here: http://www.h2database.com/html/cheatSheet
 Instructions for Oracle can be found here: https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance
 
 MySQL can be run as a docker container with the following command:
-```shell
-docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+
+```
+docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=changeit  mysql:5.7
 ```
 
 

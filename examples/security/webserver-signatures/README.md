@@ -22,8 +22,9 @@ java -jar target/helidon-examples-security-webserver-signatures.jar
 ```
 
 Try the endpoints:
+
 ```shell
-curl -u "jack:password" http://localhost:8080/service1
-curl -u "jill:password" http://localhost:8080/service1-rsa
-curl -v -u "john:password" http://localhost:8080/service1
+curl -u "jack:changeit" http://localhost:8080/service1
+curl -u "jill:changeit" http://localhost:8080/service1-rsa
+curl -v -u "john:changeit" http://localhost:8080/service1
 ```

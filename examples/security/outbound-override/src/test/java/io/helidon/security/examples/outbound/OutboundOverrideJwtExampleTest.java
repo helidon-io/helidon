@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class OutboundOverrideJwtExampleTest {
         String value = webClient.get()
                 .path("/override")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "changeit")
                 .request(String.class)
                 .await();
 
@@ -73,7 +73,7 @@ public class OutboundOverrideJwtExampleTest {
         String value = webClient.get()
                 .path("/propagate")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "changeit")
                 .request(String.class)
                 .await();
 
