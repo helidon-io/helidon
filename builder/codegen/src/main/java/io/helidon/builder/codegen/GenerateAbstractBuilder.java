@@ -420,17 +420,41 @@ final class GenerateAbstractBuilder {
             } else {
                 if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
                     if (declaredType.isList()) {
-                        // A list might contain only default values. If it has not been updated, clear it of default values
-                        // before adding the values from the other builder.
-                        methodBuilder.addContentLine("if (!is" + capitalize(property.name()) + "Mutated) {")
+                        /*
+                        If this builder's list HAS been mutated, add the other builder's values ONLY if they are not defaults.
+
+                        If this builder's list HAS NOT been mutated, clear it (to remove defaults) and add the other builder's
+                        values regardless of whether they are defaulted or explicitly set.
+
+                        Generated code:
+
+                        if (isXxxMutated) {
+                            if (builder.isXxxMutated) {
+                                xxx.addAll(builder.xxx());
+                            }
+                        } else {
+                            xxx.clear();
+                            xxx.addAll(builder.xxx());
+                        }
+                        */
+                        String isMutatedProperty = TypeHandlerList.isMutatedField(property.name());
+                        methodBuilder.addContentLine("if (" + isMutatedProperty + ") {")
+                                .addContentLine("if (builder." + isMutatedProperty + ") {")
+                                .addContentLine("add" + capitalize(property.name()) + "(builder." + property.name() + ");")
+                                .addContentLine("} else {")
                                 .addContentLine(property.name() + ".clear();")
+                                .addContentLine("add" + capitalize(property.name()) + "(builder." + property.name() + ");")
+                                .addContentLine("}")
                                 .addContentLine("}");
+
+                    } else {
+                        // Non-list collection case.
+                        methodBuilder.addContentLine("add" + capitalize(property.name()) + "(builder." + property.name() + ");");
                     }
-                    methodBuilder.addContent("add" + capitalize(property.name()));
                 } else {
-                    methodBuilder.addContent(setterName);
+                    // Non-collection case.
+                    methodBuilder.addContentLine(setterName + "(builder." + getterName + "());");
                 }
-                methodBuilder.addContentLine("(builder." + getterName + "());");
             }
 
         }

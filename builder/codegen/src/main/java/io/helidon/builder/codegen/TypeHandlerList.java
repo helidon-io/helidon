@@ -30,6 +30,10 @@ class TypeHandlerList extends TypeHandlerCollection {
         super(name, getterName, setterName, declaredType, LIST, "toList()", Optional.empty());
     }
 
+    static String isMutatedField(String propertyName) {
+        return "is" + CodegenUtil.capitalize(propertyName) + "Mutated";
+    }
+
     @Override
     Method.Builder extraAdderContent(Method.Builder builder) {
         return builder.addContentLine(isMutatedField() + " = true;");
@@ -41,6 +45,6 @@ class TypeHandlerList extends TypeHandlerCollection {
     }
 
     private String isMutatedField() {
-        return "is" + CodegenUtil.capitalize(name()) + "Mutated";
+        return isMutatedField(name());
     }
 }
