@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,11 @@ public interface Observer extends NamedService {
      * This is used by the observe feature.
      * Do NOT use this method directly, kindly start with {@link io.helidon.webserver.observe.ObserveFeature} and register
      * it with the server builder.
+     * <p>
+     * Implementations of observers should register all they need through an {@link io.helidon.webserver.http.HttpFeature},
+     * to make sure the weight of the {@link io.helidon.webserver.observe.ObserveFeature} is honored when routing is
+     * set up. If you do not use an HttpFeature, the registration will always happen later than the default (business) routing
+     * feature.
      *
      * @param featureContext         access to all routing builders, for cases where this observer needs to register additional
      *                               components to other sockets

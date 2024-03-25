@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
+import io.helidon.common.Weighted;
+import io.helidon.common.Weights;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
@@ -81,8 +83,10 @@ class LoomServer implements WebServer {
         List<ServerFeature> features = serverConfig.features();
         ServerFeatureContextImpl featureContext = ServerFeatureContextImpl.create(serverConfig);
         for (ServerFeature feature : features) {
+            featureContext.weight(Weights.find(feature, Weighted.DEFAULT_WEIGHT));
             feature.setup(featureContext);
         }
+        featureContext.weight(Weighted.DEFAULT_WEIGHT);
 
         Timer idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
         Map<String, ServerListener> listenerMap = new HashMap<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -460,6 +460,18 @@ public final class HttpRouting implements Routing, Prototype.Api {
          * @return updated builder
          */
         Builder addFilter(Filter filter);
+
+        /**
+         * Add a new feature.
+         * If a feature is added from within a feature, it will inherit weight of the feature adding it and will be fully
+         * registered at the same time.
+         *
+         * @param feature feature to add
+         * @return updated builder
+         */
+        default Builder addFeature(HttpFeature feature) {
+            return addFeature((Supplier<? extends HttpFeature>) feature);
+        }
 
         /**
          * Add a new feature.

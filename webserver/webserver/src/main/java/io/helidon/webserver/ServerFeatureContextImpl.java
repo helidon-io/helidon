@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,22 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
+import io.helidon.common.LazyValue;
+import io.helidon.common.Weighted;
+import io.helidon.common.Weights;
+import io.helidon.webserver.http.ErrorHandler;
+import io.helidon.webserver.http.Filter;
+import io.helidon.webserver.http.HttpFeature;
+import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.HttpSecurity;
+import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.spi.ServerFeature;
 
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
@@ -38,24 +49,31 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
     private final Map<String, ListenerBuildersImpl> socketToBuilders;
     private final Set<String> configuredSockets;
 
-    private ServerFeatureContextImpl(WebServerConfig serverConfig, Map<String, ListenerBuildersImpl> socketToBuilders) {
+    private final AtomicReference<Double> weight;
+
+    private ServerFeatureContextImpl(WebServerConfig serverConfig,
+                                     Map<String, ListenerBuildersImpl> socketToBuilders,
+                                     AtomicReference<Double> weight) {
         this.serverConfig = serverConfig;
         this.socketToBuilders = socketToBuilders;
         this.configuredSockets = socketToBuilders.keySet()
                 .stream()
                 .filter(Predicate.not(DEFAULT_SOCKET_NAME::equals))
                 .collect(Collectors.toSet());
+        this.weight = weight;
     }
 
     static ServerFeatureContextImpl create(WebServerConfig serverConfig) {
+        AtomicReference<Double> weight = new AtomicReference<>();
+
         Map<String, List<Builder<?, ? extends Routing>>> routingMap = serverConfig.namedRoutings();
         Map<String, ListenerConfig> sockets = serverConfig.sockets();
-        HttpRouting.Builder httpRouting = defaultRouting(serverConfig);
+        HttpRouting.Builder httpRouting = new WeightedBuilder(defaultRouting(serverConfig), weight);
         List<Builder<?, ? extends Routing>> routings = serverConfig.routings();
 
         Map<String, ListenerBuildersImpl> socketToBuilders = new HashMap<>();
         socketToBuilders.put(DEFAULT_SOCKET_NAME,
-                             new ListenerBuildersImpl(DEFAULT_SOCKET_NAME, serverConfig, httpRouting, routings));
+                             new ListenerBuildersImpl(DEFAULT_SOCKET_NAME, serverConfig, httpRouting, routings, weight));
 
         // for each socket, gather all routing builders
         sockets.forEach((socketName, listener) -> {
@@ -69,18 +87,18 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
             HttpRouting.Builder listenerHttpRouting = null;
             for (Builder<?, ? extends Routing> builder : builders) {
                 if (builder instanceof HttpRouting.Builder httpBuilder) {
-                    listenerHttpRouting = httpBuilder;
+                    listenerHttpRouting = new WeightedBuilder(httpBuilder, weight);
                 }
             }
             if (listenerHttpRouting == null) {
-                listenerHttpRouting = listener.routing().orElseGet(HttpRouting::builder);
+                listenerHttpRouting = new WeightedBuilder(listener.routing().orElseGet(HttpRouting::builder), weight);
                 builders.add(listenerHttpRouting);
             }
             socketToBuilders.put(socketName,
-                                 new ListenerBuildersImpl(socketName, serverConfig, listenerHttpRouting, builders));
+                                 new ListenerBuildersImpl(socketName, serverConfig, listenerHttpRouting, builders, weight));
         });
 
-        return new ServerFeatureContextImpl(serverConfig, socketToBuilders);
+        return new ServerFeatureContextImpl(serverConfig, socketToBuilders, weight);
     }
 
     @Override
@@ -103,6 +121,10 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
         return Optional.ofNullable(socketToBuilders.get(socketName))
                 .orElseThrow(() -> new NoSuchElementException("There is no socket configuration for socket named \""
                                                                       + socketName + "\""));
+    }
+
+    void weight(double weight) {
+        this.weight.set(weight);
     }
 
     Router router() {
@@ -180,15 +202,18 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
         private final ListenerConfig listenerConfig;
         private final HttpRouting.Builder httpRouting;
         private final List<Builder<?, ? extends Routing>> routings;
+        private final AtomicReference<Double> weight;
         private final ServerFeature.RoutingBuilders routingBuilders;
 
         ListenerBuildersImpl(String socketName,
                              ListenerConfig listenerConfig,
                              HttpRouting.Builder httpRouting,
-                             List<Builder<?, ? extends Routing>> routings) {
+                             List<Builder<?, ? extends Routing>> routings,
+                             AtomicReference<Double> weight) {
             this.listenerConfig = listenerConfig;
             this.httpRouting = httpRouting;
             this.routings = routings;
+            this.weight = weight;
 
             this.routingBuilders = RoutingBuildersImpl.create(socketName, routings);
         }
@@ -210,6 +235,129 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
 
         List<Builder<?, ? extends Routing>> routings() {
             return routings;
+        }
+    }
+
+    private static final class WeightedHttpFeature implements HttpFeature, Weighted {
+        private final LazyValue<? extends HttpFeature> delegate;
+        private final double weight;
+
+        private WeightedHttpFeature(Supplier<? extends HttpFeature> delegate, double weight) {
+            this.delegate = LazyValue.create(delegate);
+            this.weight = weight;
+        }
+
+        @Override
+        public void setup(HttpRouting.Builder routing) {
+            delegate.get().setup(routing);
+        }
+
+        @Override
+        public String socket() {
+            return delegate.get().socket();
+        }
+
+        @Override
+        public boolean socketRequired() {
+            return delegate.get().socketRequired();
+        }
+
+        @Override
+        public void beforeStart() {
+            delegate.get().beforeStart();
+        }
+
+        @Override
+        public void afterStop() {
+            delegate.get().afterStop();
+        }
+
+        @Override
+        public double weight() {
+            return weight;
+        }
+    }
+
+    /*
+    This builder is used as we promise to honor weight of the server feature when adding a feature
+    (and it also makes sense). So when for example observability adds an HttpFeature, it will use the same
+    weight, and will be ordered as expected.
+     */
+    private static class WeightedBuilder implements HttpRouting.Builder {
+        private final HttpRouting.Builder delegate;
+        private final AtomicReference<Double> weight;
+
+        private WeightedBuilder(HttpRouting.Builder delegate, AtomicReference<Double> weight) {
+            this.delegate = delegate;
+            this.weight = weight;
+        }
+
+        @Override
+        public HttpRouting.Builder register(HttpService... services) {
+            delegate.register(services);
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder register(String path, HttpService... services) {
+            delegate.register(path, services);
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder route(HttpRoute route) {
+            delegate.route(route);
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder addFilter(Filter filter) {
+            delegate.addFilter(filter);
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder addFeature(HttpFeature feature) {
+            delegate.addFeature(new WeightedHttpFeature(feature, Weights.find(feature, weight.get())));
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder addFeature(Supplier<? extends HttpFeature> feature) {
+            if (feature instanceof HttpFeature h) {
+                return addFeature(h);
+            }
+            delegate.addFeature(new WeightedHttpFeature(feature, weight.get()));
+            return this;
+        }
+
+        @Override
+        public <T extends Throwable> HttpRouting.Builder error(Class<T> exceptionClass, ErrorHandler<? super T> handler) {
+            delegate.error(exceptionClass, handler);
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder maxReRouteCount(int maxReRouteCount) {
+            delegate.maxReRouteCount(maxReRouteCount);
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder security(HttpSecurity security) {
+            delegate.security(security);
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder copy() {
+            delegate.copy();
+            return this;
+        }
+
+        @Override
+        public HttpRouting build() {
+            return delegate.build();
         }
     }
 }
