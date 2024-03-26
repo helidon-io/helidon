@@ -33,7 +33,7 @@
                             </includes>
                         </templates>
                         <model>
-                            <list key="modules">
+                            <list key="module-requires">
                                 <value>io.helidon.webclient</value>
                             </list>
                         </model>
@@ -67,7 +67,7 @@
                                     <value key="artifactId">helidon-webclient</value>
                                 </map>
                             </list>
-                            <list key="modules">
+                            <list key="module-requires">
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.faulttolerance</value>
                                 <value if="${flavor} == 'mp'">io.helidon.common.reactive</value>
                                 <value if="${flavor} == 'se'">io.helidon.faulttolerance</value>
@@ -154,7 +154,7 @@
                 .addCrossOrigin(CrossOriginConfig.create())
                 .build();]]></value>
                             </list>
-                            <list key="modules">
+                            <list key="module-requires">
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.cors</value>
                                 <value if="${flavor} == 'se'">io.helidon.webserver.cors</value>
                             </list>

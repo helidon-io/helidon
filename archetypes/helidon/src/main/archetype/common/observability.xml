@@ -128,7 +128,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     @Inject
     private MetricRegistry registry;]]></value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value>io.helidon.microprofile.metrics</value>
                                     </list>
                                 </model>
@@ -211,7 +211,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <list key="MainTest-static-imports">
                                         <value>static org.junit.jupiter.api.Assertions.assertEquals</value>
                                     </list>
-                                    <list key="modules">
+                                    <list key="module-requires">
                                         <value>io.helidon.integrations.micrometer</value>
                                     </list>
                                     <list key="readme-sections">
@@ -278,7 +278,7 @@ allRequests_total 0.0
         assertThat(response.status().code(), is(200));
     }]]></value>
                                 </list>
-                                <list key="modules" if="${flavor} == 'se'">
+                                <list key="module-requires" if="${flavor} == 'se'">
                                     <value>io.helidon.metrics</value>
                                 </list>
                                 <list key="readme-sections" if="${flavor} == 'se'">
@@ -345,7 +345,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value key="artifactId">helidon-health-checks</value>
                                     </map>
                                 </list>
-                                <list key="modules">
+                                <list key="module-requires">
                                     <value>io.helidon.health</value>
                                     <value if="${flavor} == 'se'">io.helidon.health.checks</value>
                                 </list>

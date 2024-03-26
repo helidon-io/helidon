@@ -463,7 +463,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                 <value key="scope">runtime</value>
                             </map>
                         </list>
-                        <list key="modules">
+                        <list key="module-requires">
                             <value>jakarta.xml.bind</value>
                         </list>
                         <list key="maven-plugins">
