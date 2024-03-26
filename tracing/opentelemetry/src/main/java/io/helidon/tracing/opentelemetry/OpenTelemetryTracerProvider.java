@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,13 +93,13 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     public static Optional<Span> activeSpan() {
         // OTel returns a no-op span if there is no current one.
         io.opentelemetry.api.trace.Span otelSpan = io.opentelemetry.api.trace.Span.current();
-        Span helidonSpan = HelidonOpenTelemetry.create(otelSpan);
 
         // OTel returns empty baggage if there is no current one.
         io.opentelemetry.api.baggage.Baggage otelBaggage = io.opentelemetry.api.baggage.Baggage.current();
 
-        otelBaggage.forEach((key, baggageEntry) -> helidonSpan.baggage(key, baggageEntry.getValue()));
-        return Optional.of(helidonSpan);
+        // Create the span directly with the retrieved baggage. Ideally, it will be our writable baggage because we had put it
+        // there in the context.
+        return Optional.of(HelidonOpenTelemetry.create(otelSpan, otelBaggage));
     }
 
     @Override
