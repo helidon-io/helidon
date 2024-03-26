@@ -1,0 +1,14 @@
+server:
+  port: 8080
+  host: 0.0.0.0
+
+app:
+    greeting: "Hello"
+    application-platform-executor:
+      thread-name-prefix: "application-platform-executor-"
+      core-pool-size: 1
+      max-pool-size: 2
+      queue-capacity: 10
+    application-virtual-executor:
+      thread-name-prefix: "application-virtual-executor-"
+      virtual-threads: true
