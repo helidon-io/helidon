@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,12 +34,6 @@
                             <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${flavor} == 'se'">
                                 <output>
                                     <model>
-                                        <list key="dependencies">
-                                            <map order="500">
-                                                <value key="groupId">io.helidon.media</value>
-                                                <value key="artifactId">helidon-media-jsonp</value>
-                                            </map>
-                                        </list>
                                         <list key="Main-helidon-imports">
                                             <value>io.helidon.media.jsonp.JsonpSupport</value>
                                         </list>
@@ -58,8 +52,7 @@
                                         <list key="WebClient-builder">
                                             <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
                                         </list>
-                                        <list key="modules">
-                                            <value>jakarta.json</value>
+                                        <list key="module-requires">
                                             <value>io.helidon.media.jsonp</value>
                                         </list>
                                     </model>
@@ -101,7 +94,7 @@
                                         <list key="WebClient-builder" if="${flavor} == 'se'">
                                             <value><![CDATA[                .addMediaSupport(JacksonSupport.create())]]></value>
                                         </list>
-                                        <list key="modules">
+                                        <list key="module-requires">
                                             <value>com.fasterxml.jackson.annotation</value>
                                             <value if="${flavor} == 'se'">io.helidon.media.jackson</value>
                                         </list>
@@ -144,8 +137,7 @@
                                         <list key="WebClient-builder" if="${flavor} == 'se'">
                                             <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
                                         </list>
-                                        <list key="modules">
-                                            <value>jakarta.json</value>
+                                        <list key="module-requires">
                                             <value if="${flavor} == 'se'">io.helidon.media.jsonb</value>
                                         </list>
                                     </model>
@@ -167,14 +159,14 @@
                                     <value key="artifactId">helidon-media-multipart</value>
                                 </map>
                                 <map order="500" if="${flavor} == 'se'">
-                                    <value key="groupId">io.helidon.media</value>
-                                    <value key="artifactId">helidon-media-jsonp</value>
+                                    <value key="groupId">io.helidon.webserver</value>
+                                    <value key="artifactId">helidon-webserver-static-content</value>
                                 </map>
                             </list>
-                            <list key="modules">
-                                <value>jakarta.json</value>
+                            <list key="module-requires">
                                 <value if="${flavor} == 'se'">io.helidon.media.multipart</value>
                                 <value if="${flavor} == 'se'">io.helidon.media.jsonp</value>
+                                <value if="${flavor} == 'se'">io.helidon.webserver.staticcontent</value>
                                 <value if="${flavor} == 'mp'">jersey.media.multipart</value>
                             </list>
                             <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
@@ -182,9 +174,8 @@
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.media.jsonp.JsonpSupport</value>
-                            </list>
-                            <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.media.multipart.MultiPartSupport</value>
+                                <value>io.helidon.webserver.staticcontent.StaticContentSupport</value>
                             </list>
                             <list key="Main-serverBuilder" if="${flavor} == 'se'">
                                 <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
@@ -196,7 +187,13 @@
                                 <value><![CDATA[                .addMediaSupport(MultiPartSupport.create())]]></value>
                             </list>
                             <list key="Main-routingBuilder" if="${flavor} == 'se'">
-                                <value><![CDATA[                .register("/multipart", new FileService())]]></value>
+                                <value order="1"><![CDATA[                .register("/ui", StaticContentSupport.builder("WEB")
+                        .welcomeFileName("index.html")
+                        .build())
+                .register("/multipart", new FileService())]]></value>
+                            </list>
+                            <list key="module-opens" if="${flavor} == 'se'">
+                                <value>WEB</value>
                             </list>
                         </model>
                     </output>
@@ -215,6 +212,15 @@
                 <value key="media-json-jackson" if="!(${media} contains 'json' &amp;&amp; ${media.json-lib} == 'jackson')">false</value>
                 <value key="json-lib" if="${media} contains 'json'">${media.json-lib}</value>
                 <value key="multipart" if="${media} contains 'multipart'">true</value>
+                <list key="dependencies" if="${media} contains 'multipart' || ${media.json-lib} == 'jsonp'">
+                    <map order="500" if="${flavor} == 'se'">
+                        <value key="groupId">io.helidon.media</value>
+                        <value key="artifactId">helidon-media-jsonp</value>
+                    </map>
+                </list>
+                <list key="module-requires" if="${media} contains 'multipart' || ['jsonp', 'jsonb'] contains ${media.json-lib}">
+                    <value>jakarta.json</value>
+                </list>
             </model>
         </output>
     </step>

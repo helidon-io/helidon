@@ -313,7 +313,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="artifactId">slf4j-jdk14</value>
                             </map>
                         </list>
-                        <list key="modules">
+                        <list key="module-requires">
                             <value>io.helidon.dbclient</value>
                             <value if="${flavor} == 'mp'">io.helidon.dbclient.spi</value>
                             <value if="${media.json-lib} != 'jsonb'">io.helidon.media.jsonb</value>
@@ -351,6 +351,10 @@ docker run --rm --name mongo -p 27017:27017 mongo
                     LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
                     return null;
                 });]]></value>
+                        </list>
+                        <list key="gitignore">
+                            <value>ObjectStore/</value>
+                            <value>PutObjectStoreDirHere/</value>
                         </list>
                     </model>
                 </output>
