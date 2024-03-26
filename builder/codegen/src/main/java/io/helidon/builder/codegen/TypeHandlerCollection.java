@@ -388,6 +388,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 .addContent(Objects.class)
                 .addContentLine(".requireNonNull(" + singularName + ");")
                 .addContentLine("this." + name() + ".add(" + singularName + ");")
+                .update(this::extraAdderContent)
                 .addContentLine("return self();");
         classBuilder.addMethod(builder);
     }

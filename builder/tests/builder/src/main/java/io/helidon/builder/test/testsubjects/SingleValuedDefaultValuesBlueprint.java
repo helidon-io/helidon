@@ -26,6 +26,7 @@ interface SingleValuedDefaultValuesBlueprint {
     String DEFAULT_STRING = "defaultValue";
 
     @Option.Default(DEFAULT_STRING)
+    @Option.Singular
     List<String> strings();
 
 }
