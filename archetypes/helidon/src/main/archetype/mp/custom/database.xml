@@ -173,6 +173,8 @@
                     <enum id="server" name="Select a Database Server" default="h2" optional="true">
                         <option value="h2" name="H2" description="In-memory relational database">
                             <output>
+                                <file source="../database/files/src/main/resources/META-INF/init_script.sql.default"
+                                      target="src/main/resources/META-INF/init_script.sql"/>
                                 <model>
                                     <value key="readme-description">Helidon MP application that uses the dbclient API with an in-memory H2 database.</value>
                                     <value key="readme-native-docker">docker run -d -p 1521:1521 -p 81:81 -e H2_OPTIONS='-ifNotExists' --name=h2 oscarfonts/h2</value>
@@ -275,6 +277,8 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
                         </option>
                         <option value="mysql" name="MySQL" description="Relational database">
                             <output>
+                                <file source="../database/files/src/main/resources/META-INF/init_script.sql.default"
+                                      target="src/main/resources/META-INF/init_script.sql"/>
                                 <model>
                                     <value key="helidon-test">false</value>
                                     <value key="readme-description">Helidon MP application that uses the dbclient API with MySQL database.</value>
@@ -317,6 +321,8 @@ docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_D
                         </option>
                         <option value="oracledb" name="Oracle DB" description="Multi-model database">
                             <output>
+                                <file source="../database/files/src/main/resources/META-INF/init_script.sql.oracle"
+                                      target="src/main/resources/META-INF/init_script.sql"/>
                                 <model>
                                     <value key="helidon-test">false</value>
                                     <value key="readme-description">Helidon MP application that uses the dbclient API with OracleDB database.</value>
@@ -383,12 +389,6 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                     <text id="ds-name" name="Datasource Name" default="ds1" optional="true"/>
                 </inputs>
                 <output>
-                    <files>
-                        <directory>../database/files</directory>
-                        <includes>
-                            <include>src/*/resources/*/init_script.sql</include>
-                        </includes>
-                    </files>
                     <templates engine="mustache" transformations="mustache,packaged">
                         <directory>../database/files</directory>
                         <includes>
