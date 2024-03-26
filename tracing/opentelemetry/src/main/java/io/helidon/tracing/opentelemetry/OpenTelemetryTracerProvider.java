@@ -84,6 +84,24 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
         return GLOBAL_TRACER.get();
     }
 
+    /**
+     * Returns a {@link io.helidon.tracing.Span} representing the currently-active OpenTelemetry span with any current baggage
+     * set on the returned span.
+     *
+     * @return optional of the current span
+     */
+    public static Optional<Span> activeSpan() {
+        // OTel returns a no-op span if there is no current one.
+        io.opentelemetry.api.trace.Span otelSpan = io.opentelemetry.api.trace.Span.current();
+        Span helidonSpan = HelidonOpenTelemetry.create(otelSpan);
+
+        // OTel returns empty baggage if there is no current one.
+        io.opentelemetry.api.baggage.Baggage otelBaggage = io.opentelemetry.api.baggage.Baggage.current();
+
+        otelBaggage.forEach((key, baggageEntry) -> helidonSpan.baggage(key, baggageEntry.getValue()));
+        return Optional.of(helidonSpan);
+    }
+
     @Override
     public TracerBuilder<?> createBuilder() {
         return OpenTelemetryTracer.builder();
@@ -105,7 +123,7 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
 
     @Override
     public Optional<Span> currentSpan() {
-        return Optional.ofNullable(io.opentelemetry.api.trace.Span.current()).map(HelidonOpenTelemetry::create);
+        return activeSpan();
     }
 
     @Override
