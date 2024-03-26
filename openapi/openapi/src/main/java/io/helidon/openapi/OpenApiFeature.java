@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
+import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -41,7 +42,7 @@ import io.helidon.webserver.spi.ServerFeature;
  * Helidon Support for OpenAPI.
  */
 @RuntimeType.PrototypedBy(OpenApiFeatureConfig.class)
-public final class OpenApiFeature implements ServerFeature, RuntimeType.Api<OpenApiFeatureConfig> {
+public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeType.Api<OpenApiFeatureConfig> {
 
     static final String OPENAPI_ID = "openapi";
     static final double WEIGHT = 90;
@@ -169,6 +170,11 @@ public final class OpenApiFeature implements ServerFeature, RuntimeType.Api<Open
     @Override
     public String type() {
         return OPENAPI_ID;
+    }
+
+    @Override
+    public double weight() {
+        return config.weight();
     }
 
     /**

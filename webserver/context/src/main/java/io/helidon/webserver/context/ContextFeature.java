@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import io.helidon.webserver.spi.ServerFeature;
  * When added to the processing, further processing will be executed in a request specific context.
  */
 @RuntimeType.PrototypedBy(ContextFeatureConfig.class)
-public class ContextFeature implements ServerFeature, RuntimeType.Api<ContextFeatureConfig> {
+public class ContextFeature implements Weighted, ServerFeature, RuntimeType.Api<ContextFeatureConfig> {
     /**
      * Default weight of the feature. It is quite high, as context is used by a lot of other features.
      */
@@ -122,5 +122,10 @@ public class ContextFeature implements ServerFeature, RuntimeType.Api<ContextFea
     @Override
     public ContextFeatureConfig prototype() {
         return config;
+    }
+
+    @Override
+    public double weight() {
+        return config.weight();
     }
 }
