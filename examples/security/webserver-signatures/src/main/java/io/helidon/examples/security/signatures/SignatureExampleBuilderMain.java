@@ -39,6 +39,7 @@ import io.helidon.security.providers.httpsign.InboundClientDefinition;
 import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.security.SecurityHttpFeature;
@@ -121,7 +122,12 @@ public class SignatureExampleBuilderMain {
     }
 
     static void setup(WebServerConfig.Builder server) {
-        server.routing(SignatureExampleBuilderMain::routing1)
+        // as we explicitly configure SecurityHttpFeature, we must disable automated loading of security,
+        // as it would add another feature with different configuration
+        server.featuresDiscoverServices(false)
+                // context is a required pre-requisite of security
+                .addFeature(ContextFeature.create())
+                .routing(SignatureExampleBuilderMain::routing1)
                 .putSocket("service2", socket -> socket
                         .routing(SignatureExampleBuilderMain::routing2));
     }

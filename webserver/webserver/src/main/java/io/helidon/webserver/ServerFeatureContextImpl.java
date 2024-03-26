@@ -318,7 +318,12 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
 
         @Override
         public HttpRouting.Builder addFeature(HttpFeature feature) {
-            delegate.addFeature(new WeightedHttpFeature(feature, Weights.find(feature, weight.get())));
+            double foundWeight = Weights.find(feature, -1);
+            if (foundWeight == -1) {
+                delegate.addFeature(new WeightedHttpFeature(feature, weight.get()));
+            } else {
+                delegate.addFeature(feature);
+            }
             return this;
         }
 
