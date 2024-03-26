@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.examples.webserver.threads;
 
 import java.util.ArrayList;
@@ -27,10 +43,6 @@ class ThreadService implements HttpService {
     private static ExecutorService platformExecutorService;
     // Executor of virtual threads.
     private static ExecutorService virtualExecutorService;
-
-    WebClient client = WebClient.builder()
-            .baseUri("http://localhost:8080/thread")
-            .build();
 
     /**
      * The config value for the key {@code greeting}.
@@ -100,7 +112,7 @@ class ThreadService implements HttpService {
     }
 
     /**
-     * Sleep for a specified number of secons.
+     * Sleep for a specified number of seconds.
      * The optional path parameter controls the number of seconds to sleep. Defaults to 1
      *
      * @param request server request
@@ -149,13 +161,14 @@ class ThreadService implements HttpService {
     }
 
     /**
-     * Simulate a remote client call be calling the sleep endpoint on ourself.
+     * Simulate a remote client call be calling this server's sleep endpoint
      *
      * @param seconds number of seconds the endpoint should sleep.
-     * @return
+     * @return string response from client
      */
     private String callRemote(int seconds) {
         LOGGER.log(Level.INFO, Thread.currentThread() + ": Calling remote sleep for " + seconds + "s");
+        WebClient client = Main.webclient;
         try (HttpClientResponse response = client.get("/sleep/" + seconds).request()) {
             if (response.status().equals(Status.OK_200)) {
                 return response.as(String.class);
@@ -168,7 +181,7 @@ class ThreadService implements HttpService {
     /**
      * Sleep current thread
      * @param seconds number of seconds to sleep
-     * @return
+     * @return number of seconds requested to sleep
      */
     private int sleep(int seconds) {
         try {
@@ -182,6 +195,7 @@ class ThreadService implements HttpService {
     /**
      * Perform a CPU intensive computation
      * @param iterations: number of times to perform computation
+     * @return result of computation
      */
     private double compute(int iterations) {
         LOGGER.log(Level.INFO, Thread.currentThread() + ": Computing with " + iterations + " iterations");
