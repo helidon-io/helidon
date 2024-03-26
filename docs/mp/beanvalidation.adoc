@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ Note that `double` and `float` are not supported due to rounding errors (some pr
 
 
 |`@Max`
-a|The annotated element must be a number whose value must be higher or equal to the specified minimum.
+a|The annotated element must be a number whose value must be lower or equal to the specified maximum.
 
 Supported types are:
 
@@ -117,12 +117,13 @@ Note that `double` and `float` are not supported due to rounding errors (some pr
 `Null` elements are considered valid.
 
 |`@DecimalMin`
-a|The annotated element must be a number whose value must be lower or equal to the specified maximum.
+a|The annotated element must be a number whose value must be higher or equal to the specified minimum.
 
 Supported types are:
 
 * `BigDecimal`
 * `BigInteger`
+* `CharSequence`
 * `byte`, `short`, `int`, `long`, and their respective wrappers
 
 Note that `double` and `float` are not supported due to rounding errors (some providers might provide some approximative support).
@@ -137,6 +138,7 @@ Supported types are:
 
 * `BigDecimal`
 * `BigInteger`
+* `CharSequence`
 * `byte`, `short`, `int`, `long`, and their respective wrappers
 
 Note that `double` and `float` are not supported due to rounding errors (some providers might provide some approximative support).
@@ -191,6 +193,7 @@ Supported types are:
 |`@Size`
 a|The annotated element size must be between the specified boundaries (included).
 Supported types are:
+
  * `CharSequence` - length of character sequence is evaluated
  * `Collection` - collection size is evaluated
  * `Map` - map size is evaluated
@@ -212,7 +215,7 @@ Supported types are:
 
 
 |`@Past`
-a|The annotated element must be an instant, date or time in the past or in the present.
+a|The annotated element must be an instant, date or time in the past.
 `Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
 according to the virtual machine, applying the current default time zone if needed.
 
@@ -242,6 +245,10 @@ a|The annotated element must be an instant, date or time in the past or in the p
 `Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
 according to the virtual machine, applying the current default time zone if needed.
 
+The notion of present is defined relatively to the type on which the constraint is
+used. For instance, if the constraint is on a `Year`, present would mean the whole
+current year.
+
 Supported types are:
 
 *     `java.util.Date`
@@ -263,7 +270,7 @@ Supported types are:
 
 `Null` elements are considered valid.
 
-|`@PastOrPresent`
+|`@Future`
 a|The annotated element must be an instant, date or time in the future.
 `Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
 according to the virtual machine, applying the current default time zone if needed.
@@ -294,6 +301,10 @@ a|The annotated element must be an instant, date or time in the present or in th
 `Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
 according to the virtual machine, applying the current default time zone if needed.
 
+The notion of present here is defined relatively to the type on which the constraint is
+used. For instance, if the constraint is on a `Year`, present would mean the whole
+current year.
+
 Supported types are:
 
 *     `java.util.Date`
@@ -315,7 +326,7 @@ Supported types are:
 
 `Null` elements are considered valid.
 
-|`@FutureOrPresent`
+|`@Pattern`
 a|The annotated `CharSequence` must match the specified regular expression.
 The regular expression follows the Java regular expression conventions see `java.util.regex.Pattern`.
 Accepts `CharSequence`.
@@ -325,6 +336,7 @@ Accepts `CharSequence`.
 |`@NotEmpty`
 a|The annotated element must not be `null` nor empty.
 Supported types are:
+
 * `CharSequence` - length of character sequence is evaluated
 * `Collection` - collection size is evaluated
 * `Map` - map size is evaluated
