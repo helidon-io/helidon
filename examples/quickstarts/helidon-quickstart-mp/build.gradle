@@ -32,7 +32,7 @@ tasks.withType(JavaCompile) {
 }
 
 ext {
-    helidonversion = '2.6.7-SNAPSHOT'
+    helidonversion = '2.6.7'
     mainClass='io.helidon.microprofile.cdi.Main'
 }
 
