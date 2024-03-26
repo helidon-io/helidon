@@ -430,21 +430,22 @@ final class GenerateAbstractBuilder {
 
                         if (isXxxMutated) {
                             if (builder.isXxxMutated) {
-                                xxx.addAll(builder.xxx());
+                                addXxx(builder.xxx());
                             }
                         } else {
                             xxx.clear();
-                            xxx.addAll(builder.xxx());
+                            addXxx(builder.xxx());
                         }
                         */
                         String isMutatedProperty = TypeHandlerList.isMutatedField(property.name());
                         methodBuilder.addContentLine("if (" + isMutatedProperty + ") {")
                                 .addContentLine("if (builder." + isMutatedProperty + ") {")
                                 .addContentLine("add" + capitalize(property.name()) + "(builder." + property.name() + ");")
+                                .addContentLine("}")
+                                .decreaseContentPadding() // Ideally would not be needed but makes for nicer generated code.
                                 .addContentLine("} else {")
                                 .addContentLine(property.name() + ".clear();")
                                 .addContentLine("add" + capitalize(property.name()) + "(builder." + property.name() + ");")
-                                .addContentLine("}")
                                 .addContentLine("}");
 
                     } else {
