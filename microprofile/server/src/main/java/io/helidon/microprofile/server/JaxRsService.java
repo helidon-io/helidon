@@ -205,7 +205,7 @@ class JaxRsService implements HttpService {
 
         JaxRsResponseWriter writer = new JaxRsResponseWriter(res);
         requestContext.setWriter(writer);
-        requestContext.setEntityStream(req.content().inputStream());
+        requestContext.setEntityStream(new LazyInputStream(req));
         requestContext.setProperty("io.helidon.jaxrs.remote-host", req.remotePeer().host());
         requestContext.setProperty("io.helidon.jaxrs.remote-port", req.remotePeer().port());
         requestContext.setRequestScopedInitializer(ij -> {
