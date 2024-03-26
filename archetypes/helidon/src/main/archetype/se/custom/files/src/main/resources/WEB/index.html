@@ -9,7 +9,7 @@
         <ul>
         {{#files}}
           <li>
-            <a href="/api/{{.}}">{{.}}</a>
+            <a href="/multipart/{{.}}">{{.}}</a>
           </li>
         {{/files}}
         </ul>
@@ -20,7 +20,7 @@
 <div id="repository"></div>
 
 <h1>Upload</h1>
-<form action="/api" method="post" enctype="multipart/form-data">
+<form action="/multipart" method="post" enctype="multipart/form-data">
     Select a file to upload:
     <input id="files" type="file" name="file[]" multiple />
     <input type="submit" value="Upload!" name="submit">
@@ -29,7 +29,7 @@
 <script type="text/javascript">
     $(document).ready(function() {
         $.ajax({
-            url: "/api",
+            url: "/multipart",
             method: "GET"
         }).done(function(data) {
             var template = $('#repository_tpl').html()
