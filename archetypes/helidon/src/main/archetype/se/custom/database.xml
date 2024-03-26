@@ -352,6 +352,10 @@ docker run --rm --name mongo -p 27017:27017 mongo
                     return null;
                 });]]></value>
                         </list>
+                        <list key="gitignore">
+                            <value>ObjectStore/</value>
+                            <value>PutObjectStoreDirHere/</value>
+                        </list>
                     </model>
                 </output>
             </boolean>
