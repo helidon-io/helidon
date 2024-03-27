@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.tracing.providers.zipkin;
 
 import java.util.List;
 
+import io.helidon.tracing.SpanInfo;
 import io.helidon.tracing.Tag;
 
 import io.opentracing.Span;
@@ -31,7 +32,7 @@ import io.opentracing.Tracer;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-class ZipkinSpanBuilder implements Tracer.SpanBuilder {
+class ZipkinSpanBuilder implements Tracer.SpanBuilder, SpanInfo.BuilderInfo<Tracer.SpanBuilder> {
     private final Tracer tracer;
     private final Tracer.SpanBuilder spanBuilder;
     private final List<Tag<?>> tags;
@@ -90,6 +91,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
     @Override
     public Span start() {
+        ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.beforeStart(this));
         Span span = spanBuilder.start();
 
         if (isClient) {
@@ -98,7 +100,10 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
             span.log("sr");
         }
 
-        return new ZipkinSpan(span, isClient);
+        var result = new ZipkinSpan(span, isClient);
+        ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterStart(result));
+
+        return result;
     }
 
     @Override
@@ -109,5 +114,30 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     @Override
     public <T> Tracer.SpanBuilder withTag(io.opentracing.tag.Tag<T> tag, T value) {
         return spanBuilder.withTag(tag, value);
+    }
+
+    @Override
+    public Tracer.SpanBuilder tag(Tag<?> tag) {
+        return switch (tag.value()) {
+            case Boolean b -> withTag(tag.key(), b);
+            case Number n -> withTag(tag.key(), n);
+            case String s -> withTag(tag.key(), s);
+            default -> withTag(tag.key(), tag.value().toString());
+        };
+    }
+
+    @Override
+    public Tracer.SpanBuilder tag(String key, String value) {
+        return withTag(key, value);
+    }
+
+    @Override
+    public Tracer.SpanBuilder tag(String key, Boolean value) {
+        return withTag(key, value);
+    }
+
+    @Override
+    public Tracer.SpanBuilder tag(String key, Number value) {
+        return withTag(key, value);
     }
 }

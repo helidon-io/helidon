@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.tracing;
 /**
  * A Scope that can be (eventually) closed. Used when making a span active.
  */
-public interface Scope extends AutoCloseable {
+public interface Scope extends SpanInfo.ScopeInfo, AutoCloseable {
     @Override
     void close();
 

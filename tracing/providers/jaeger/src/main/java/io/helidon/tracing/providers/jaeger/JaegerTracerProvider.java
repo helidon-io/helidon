@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,18 @@
  */
 package io.helidon.tracing.providers.jaeger;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
+import io.helidon.tracing.spi.SpanLifeCycleListener;
 import io.helidon.tracing.spi.TracerProvider;
 
 import io.opentelemetry.context.Context;
@@ -32,6 +36,10 @@ import io.opentelemetry.context.Context;
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class JaegerTracerProvider implements TracerProvider {
+
+    private static final List<SpanLifeCycleListener> LIFE_CYCLE_LISTENERS = HelidonServiceLoader.create(ServiceLoader.load(
+            SpanLifeCycleListener.class)).asList();
+
     @Override
     public Tracer global() {
         return OpenTelemetryTracerProvider.globalTracer();
@@ -56,5 +64,9 @@ public class JaegerTracerProvider implements TracerProvider {
     @Override
     public boolean available() {
         return true;
+    }
+
+    static List<SpanLifeCycleListener> lifeCycleListeners() {
+        return LIFE_CYCLE_LISTENERS;
     }
 }

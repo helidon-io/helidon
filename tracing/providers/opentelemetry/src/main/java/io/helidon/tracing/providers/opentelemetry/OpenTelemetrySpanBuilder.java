@@ -19,13 +19,14 @@ import java.time.Instant;
 
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.SpanInfo;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
 
-class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder> {
+class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>, SpanInfo.BuilderInfo<OpenTelemetrySpanBuilder> {
     private final SpanBuilder spanBuilder;
     private boolean parentSet;
     private Baggage parentBaggage;
@@ -89,11 +90,14 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
             spanBuilder.setNoParent();
         }
         spanBuilder.setStartTimestamp(instant);
+        OpenTelemetryTracerProvider.lifeCycleListeners().forEach(listener -> listener.beforeStart(this));
         io.opentelemetry.api.trace.Span span = spanBuilder.startSpan();
         Span result = new OpenTelemetrySpan(span);
         if (parentBaggage != null) {
-            parentBaggage.forEach((key, baggageEntry) -> result.baggage(key, baggageEntry.getValue()));
+            parentBaggage.forEach((key, baggageEntry) -> result.baggage().set(key, baggageEntry.getValue()));
         }
+        OpenTelemetryTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterStart(result));
+
         return result;
     }
 

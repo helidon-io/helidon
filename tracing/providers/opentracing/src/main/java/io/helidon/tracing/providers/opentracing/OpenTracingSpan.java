@@ -82,6 +82,7 @@ class OpenTracingSpan implements Span {
     @Override
     public void end() {
         delegate.finish();
+        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this));
     }
 
     @Override
@@ -92,11 +93,14 @@ class OpenTracingSpan implements Span {
                             "error.object", throwable,
                             "message", throwable.getMessage()));
         delegate.finish();
+        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this, throwable));
     }
 
     @Override
     public Scope activate() {
-        return new OpenTracingScope(tracer.activateSpan(delegate));
+        var result = new OpenTracingScope(tracer.activateSpan(delegate));
+        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterActivate(this, result));
+        return result;
     }
 
     @Override
