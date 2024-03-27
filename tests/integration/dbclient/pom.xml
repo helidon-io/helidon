@@ -26,17 +26,13 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
+    <!-- Tests in this module are no more buildable, they shall be removed. -->
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-project</artifactId>
     <packaging>pom</packaging>
     <name>Helidon Tests Integration Database Client</name>
     <description>A set of tests that validate Database Client</description>
-
-    <modules>
-        <module>common</module>
-        <module>h2</module>
-        <module>app</module>
-    </modules>
 
     <build>
         <plugins>
@@ -54,7 +50,9 @@
         <profile>
             <id>testcontainers</id>
             <modules>
-<!--                <module>mongodb</module>-->
+                <module>mongodb</module>
+                <module>mysql</module>
+                <module>pgsql</module>
             </modules>
         </profile>
     </profiles>
