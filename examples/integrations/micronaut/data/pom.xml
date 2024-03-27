@@ -45,6 +45,10 @@
             <artifactId>micronaut-data-jdbc</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.micronaut.validation</groupId>
+            <artifactId>micronaut-validation</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-runtime</artifactId>
         </dependency>
@@ -118,8 +122,13 @@
                         </path>
                         <path>
                             <groupId>io.micronaut</groupId>
-                            <artifactId>micronaut-validation</artifactId>
+                            <artifactId>micronaut-core-processor</artifactId>
                             <version>${version.lib.micronaut}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut.validation</groupId>
+                            <artifactId>micronaut-validation-processor</artifactId>
+                            <version>${version.lib.micronaut.validation}</version>
                         </path>
                         <path>
                             <groupId>io.micronaut.data</groupId>
