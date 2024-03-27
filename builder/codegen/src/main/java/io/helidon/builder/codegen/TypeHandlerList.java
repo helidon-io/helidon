@@ -18,6 +18,8 @@ package io.helidon.builder.codegen;
 
 import java.util.Optional;
 
+import io.helidon.codegen.CodegenUtil;
+import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.common.types.TypeNames.LIST;
@@ -26,5 +28,23 @@ class TypeHandlerList extends TypeHandlerCollection {
 
     TypeHandlerList(String name, String getterName, String setterName, TypeName declaredType) {
         super(name, getterName, setterName, declaredType, LIST, "toList()", Optional.empty());
+    }
+
+    static String isMutatedField(String propertyName) {
+        return "is" + CodegenUtil.capitalize(propertyName) + "Mutated";
+    }
+
+    @Override
+    Method.Builder extraAdderContent(Method.Builder builder) {
+        return builder.addContentLine(isMutatedField() + " = true;");
+    }
+
+    @Override
+    Method.Builder extraSetterContent(Method.Builder builder) {
+        return builder.addContentLine(isMutatedField() + " = true;");
+    }
+
+    private String isMutatedField() {
+        return isMutatedField(name());
     }
 }

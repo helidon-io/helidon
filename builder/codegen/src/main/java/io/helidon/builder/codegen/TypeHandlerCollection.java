@@ -388,6 +388,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 .addContent(Objects.class)
                 .addContentLine(".requireNonNull(" + singularName + ");")
                 .addContentLine("this." + name() + ".add(" + singularName + ");")
+                .update(this::extraAdderContent)
                 .addContentLine("return self();");
         classBuilder.addMethod(builder);
     }
@@ -438,6 +439,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 .accessModifier(setterAccessModifier(configured))
                 .addContent(Objects.class)
                 .addContentLine(".requireNonNull(" + name() + ");")
+                .update(this::extraSetterContent)
                 .addContentLine("this." + name() + ".clear();")
                 .addContentLine("this." + name() + ".addAll(" + name() + ");")
                 .addContentLine("return self();");
@@ -446,8 +448,18 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         builder.name("add" + capitalize(name()))
                 .clearContent()
                 .addContentLine("Objects.requireNonNull(" + name() + ");") //Overwrites existing content
+                .update(this::extraAdderContent)
                 .addContentLine("this." + name() + ".addAll(" + name() + ");")
                 .addContentLine("return self();");
         classBuilder.addMethod(builder);
     }
+
+    Method.Builder extraSetterContent(Method.Builder builder) {
+        return builder;
+    }
+
+    Method.Builder extraAdderContent(Method.Builder builder) {
+        return builder;
+    }
+
 }

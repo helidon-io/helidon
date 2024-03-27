@@ -354,6 +354,13 @@ final class GenerateAbstractBuilder {
         for (PrototypeProperty property : typeContext.propertyData().properties()) {
             TypeName declaredType = property.typeHandler().declaredType();
             if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
+                if (declaredType.isList()) {
+                    // A list might contain only default values. If it has not been updated, clear it of default values
+                    // before adding the values from the other builder.
+                    methodBuilder.addContentLine("if (!is" + capitalize(property.name()) + "Mutated) {")
+                            .addContentLine(property.name() + ".clear();")
+                            .addContentLine("}");
+                }
                 methodBuilder.addContent("add");
                 methodBuilder.addContent(capitalize(property.name()));
                 methodBuilder.addContent("(prototype.");
@@ -412,11 +419,43 @@ final class GenerateAbstractBuilder {
                 methodBuilder.addContentLine("builder." + getterName + "().ifPresent(this::" + setterName + ");");
             } else {
                 if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
-                    methodBuilder.addContent("add" + capitalize(property.name()));
+                    if (declaredType.isList()) {
+                        /*
+                        If this builder's list HAS been mutated, add the other builder's values ONLY if they are not defaults.
+
+                        If this builder's list HAS NOT been mutated, clear it (to remove defaults) and add the other builder's
+                        values regardless of whether they are defaulted or explicitly set.
+
+                        Generated code:
+
+                        if (isXxxMutated) {
+                            if (builder.isXxxMutated) {
+                                addXxx(builder.xxx());
+                            }
+                        } else {
+                            xxx.clear();
+                            addXxx(builder.xxx());
+                        }
+                        */
+                        String isMutatedProperty = TypeHandlerList.isMutatedField(property.name());
+                        methodBuilder.addContentLine("if (" + isMutatedProperty + ") {")
+                                .addContentLine("if (builder." + isMutatedProperty + ") {")
+                                .addContentLine("add" + capitalize(property.name()) + "(builder." + property.name() + ");")
+                                .addContentLine("}")
+                                .decreaseContentPadding() // Ideally would not be needed but makes for nicer generated code.
+                                .addContentLine("} else {")
+                                .addContentLine(property.name() + ".clear();")
+                                .addContentLine("add" + capitalize(property.name()) + "(builder." + property.name() + ");")
+                                .addContentLine("}");
+
+                    } else {
+                        // Non-list collection case.
+                        methodBuilder.addContentLine("add" + capitalize(property.name()) + "(builder." + property.name() + ");");
+                    }
                 } else {
-                    methodBuilder.addContent(setterName);
+                    // Non-collection case.
+                    methodBuilder.addContentLine(setterName + "(builder." + getterName + "());");
                 }
-                methodBuilder.addContentLine("(builder." + getterName + "());");
             }
 
         }
@@ -452,6 +491,11 @@ final class GenerateAbstractBuilder {
                 classBuilder.addField(builder -> builder.type(boolean.class)
                         .name(child.name() + "DiscoverServices")
                         .defaultValue(String.valueOf(child.configuredOption().providerDiscoverServices())));
+            }
+            if (isBuilder && child.typeHandler().declaredType().isList()) {
+                classBuilder.addField(builder -> builder.type(boolean.class)
+                        .name("is" + capitalize(child.name()) + "Mutated")
+                        .accessModifier(AccessModifier.PRIVATE));
             }
         }
     }
