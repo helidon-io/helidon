@@ -27,7 +27,6 @@ import io.helidon.webserver.http.HttpRouting;
  */
 public class Main {
 
-    static WebServer webserver;
     static WebClient webclient;
 
     /**
@@ -49,12 +48,13 @@ public class Main {
         Config config = Config.create();
         Config.global(config);
 
-        webserver = WebServer.builder()
+        WebServer webserver = WebServer.builder()
                 .config(config.get("server"))
                 .routing(Main::routing)
                 .build()
                 .start();
 
+        // Construct webclient here using port of running server
         webclient = WebClient.builder()
                 .baseUri("http://localhost:" + webserver.port() + "/thread")
                 .build();

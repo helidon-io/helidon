@@ -16,18 +16,18 @@
 
 package io.helidon.examples.webserver.threads;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.lang.System.Logger.Level;
 import java.util.concurrent.RejectedExecutionException;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.http.Status;
-import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -69,11 +69,6 @@ class ThreadService implements HttpService {
         virtualExecutorService = virtualThreadPoolSupplier.get();
     }
 
-    /**
-     * A service registers itself by updating the routing rules.
-     *
-     * @param rules the routing rules.
-     */
     @Override
     public void routing(HttpRules rules) {
         rules
@@ -90,16 +85,16 @@ class ThreadService implements HttpService {
      * The optional path parameter controls the number of iterations of the computation. The more
      * iterations the longer it will take.
      *
-     * @param request server request
+     * @param request  server request
      * @param response server response
      */
     private void computeHandler(ServerRequest request, ServerResponse response) {
-        String iterations = request.path().pathParameters().first("iterations").orElse("1");
+        int iterations = request.path().pathParameters().first("iterations").asInt().orElse(1);
         try {
             // We execute the computation on a platform thread. This prevents pining of the virtual
             // thread, plus provides us the ability to limit the number of concurrent computation requests
             // we handle by limiting the thread pool work queue length (as defined in application.yaml)
-            Future<Double> future = platformExecutorService.submit(() -> compute(Integer.parseInt(iterations)));
+            Future<Double> future = platformExecutorService.submit(() -> compute(iterations));
             response.send(future.get().toString());
         } catch (RejectedExecutionException e) {
             // Work queue is full! We reject the request
@@ -115,23 +110,23 @@ class ThreadService implements HttpService {
      * Sleep for a specified number of seconds.
      * The optional path parameter controls the number of seconds to sleep. Defaults to 1
      *
-     * @param request server request
+     * @param request  server request
      * @param response server response
      */
     private void sleepHandler(ServerRequest request, ServerResponse response) {
-        String seconds = request.path().pathParameters().first("seconds").orElse("1");
-        response.send(Integer.toString(sleep(Integer.parseInt(seconds))));
+        int seconds = request.path().pathParameters().first("seconds").asInt().orElse(1);
+        response.send(String.valueOf(sleep(seconds)));
     }
 
     /**
      * Fan out a number of remote requests in parallel.
      * The optional path parameter controls the number of parallel requests to make.
      *
-     * @param request server request
+     * @param request  server request
      * @param response server response
      */
     private void fanOutHandler(ServerRequest request, ServerResponse response) {
-        int count = Integer.parseInt(request.path().pathParameters().first("count").orElse("1"));
+        int count = request.path().pathParameters().first("count").asInt().orElse(1);
         LOGGER.log(Level.INFO, "Fanning out " + count + " parallel requests");
         // We simulate multiple client requests running in parallel by calling our sleep endpoint.
         try {
@@ -161,7 +156,7 @@ class ThreadService implements HttpService {
     }
 
     /**
-     * Simulate a remote client call be calling this server's sleep endpoint
+     * Simulate a remote client call by calling this server's sleep endpoint
      *
      * @param seconds number of seconds the endpoint should sleep.
      * @return string response from client
@@ -169,17 +164,16 @@ class ThreadService implements HttpService {
     private String callRemote(int seconds) {
         LOGGER.log(Level.INFO, Thread.currentThread() + ": Calling remote sleep for " + seconds + "s");
         WebClient client = Main.webclient;
-        try (HttpClientResponse response = client.get("/sleep/" + seconds).request()) {
-            if (response.status().equals(Status.OK_200)) {
-                return response.as(String.class);
-            } else {
-                return (response.status().toString());
-            }
+        ClientResponseTyped<String> response = client.get("/sleep/" + seconds).request(String.class);
+        if (response.status().equals(Status.OK_200)) {
+            return response.entity();
         }
+        return response.status().toString();
     }
 
     /**
      * Sleep current thread
+     *
      * @param seconds number of seconds to sleep
      * @return number of seconds requested to sleep
      */
@@ -194,14 +188,15 @@ class ThreadService implements HttpService {
 
     /**
      * Perform a CPU intensive computation
+     *
      * @param iterations: number of times to perform computation
      * @return result of computation
      */
     private double compute(int iterations) {
         LOGGER.log(Level.INFO, Thread.currentThread() + ": Computing with " + iterations + " iterations");
         double d = 123456789.123456789 * rand.nextInt(100);
-        for (int i=0; i < iterations; i++) {
-            for (int n=0; n < 1_000_000; n++) {
+        for (int i = 0; i < iterations; i++) {
+            for (int n = 0; n < 1_000_000; n++) {
                 for (int j = 0; j < 5; j++) {
                     d = Math.tan(d);
                     d = Math.atan(d);
