@@ -17,14 +17,19 @@ package io.helidon.tracing.providers.jaeger;
 
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.config.Config;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
-import io.helidon.tracing.WritableBaggage;
+import io.helidon.tracing.TracerBuilder;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,21 +41,54 @@ class JaegerBaggagePropagationTest {
     static final String BAGGAGE_KEY = "myKey";
     static final String BAGGAGE_VALUE = "myValue";
 
+    private static Config config;
+    private static Tracer tracer;
+
+    @BeforeAll
+    static void init() {
+        config = Config.create().get("tracing");
+        tracer = TracerBuilder.create(config.get("jaeger-all-propagators")).build();
+    }
+
     @Test
     void testBaggageProp() {
         var tracer = Tracer.global();
         var span = tracer.spanBuilder("testSpan").start();
 
-        WritableBaggage baggage = span.baggage();
-        baggage.set(BAGGAGE_KEY, BAGGAGE_VALUE);
+        span.baggage().set(BAGGAGE_KEY, BAGGAGE_VALUE);
 
+        checkBaggage(tracer, span, span::context);
+
+    }
+
+    @Test
+    void testBaggageBeforeActivatingSpan() {
+        var span = tracer.spanBuilder("activatedTestSpan").start();
+        span.baggage().set(BAGGAGE_KEY, BAGGAGE_VALUE);
+
+        try (Scope scope = span.activate()) {
+            checkBaggage(tracer, span, this::currentSpanContext);
+        }
+    }
+
+    @Test
+    void testBaggageAfterActivatingSpan() {
+        var span = tracer.spanBuilder("activatedTestSpan").start();
+
+        try (Scope scope = span.activate()) {
+            span.baggage().set(BAGGAGE_KEY, BAGGAGE_VALUE);
+            checkBaggage(tracer, span, this::currentSpanContext);
+        }
+    }
+
+    private void checkBaggage(Tracer tracer, Span span, Supplier<SpanContext> spanContextSupplier) {
         try {
             assertThat("Value after initial storage of baggage",
-                       baggage.get(BAGGAGE_KEY),
+                       span.baggage().get(BAGGAGE_KEY),
                        OptionalMatcher.optionalValue(is(equalTo(BAGGAGE_VALUE))));
 
             var headerConsumer = HeaderConsumer.create(new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-            tracer.inject(span.context(), HeaderProvider.empty(), headerConsumer);
+            tracer.inject(spanContextSupplier.get(), HeaderProvider.empty(), headerConsumer);
 
             // Make sure the baggage header was set.
             Optional<String> baggageHeader = headerConsumer.get("baggage");
@@ -71,5 +109,11 @@ class JaegerBaggagePropagationTest {
         } catch (Exception ex) {
             span.end(ex);
         }
+    }
+
+    private SpanContext currentSpanContext() {
+        return Span.current()
+                .map(Span::context)
+                .orElseThrow(() -> new IllegalStateException("No current span"));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,8 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
-import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 import io.helidon.tracing.spi.TracerProvider;
-
-import io.opentelemetry.context.Context;
 
 /**
  * Jaeger java service.
@@ -44,8 +41,7 @@ public class JaegerTracerProvider implements TracerProvider {
 
     @Override
     public Optional<Span> currentSpan() {
-        return Optional.ofNullable(io.opentelemetry.api.trace.Span.fromContextOrNull(Context.current()))
-                .map(HelidonOpenTelemetry::create);
+        return OpenTelemetryTracerProvider.activeSpan();
     }
 
     @Override
