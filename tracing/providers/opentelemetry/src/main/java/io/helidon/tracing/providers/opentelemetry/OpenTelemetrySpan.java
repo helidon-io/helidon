@@ -17,6 +17,7 @@ package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Scope;
@@ -24,6 +25,7 @@ import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.WritableBaggage;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.StatusCode;
@@ -31,10 +33,16 @@ import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpan implements Span {
     private final io.opentelemetry.api.trace.Span delegate;
-    private final MutableOpenTelemetryBaggage baggage = new MutableOpenTelemetryBaggage();
+    private final Baggage baggage;
 
     OpenTelemetrySpan(io.opentelemetry.api.trace.Span span) {
         this.delegate = span;
+        baggage = new MutableOpenTelemetryBaggage();
+    }
+
+    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, Baggage baggage) {
+        delegate = span;
+        this.baggage = baggage;
     }
 
     @Override
@@ -99,18 +107,23 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public Span baggage(String key, String value) {
-        baggage.set(key, value);
+        if (baggage instanceof WritableBaggage writableBaggage) {
+            writableBaggage.set(key, value);
+        } else {
+            throw new UnsupportedOperationException(
+                    "Attempt to set baggage on a span with read-only baggage (perhaps from context");
+        }
         return this;
     }
 
     @Override
     public Optional<String> baggage(String key) {
-        return baggage.get(key);
+        return Optional.ofNullable(baggage.getEntryValue(key));
     }
 
     @Override
     public WritableBaggage baggage() {
-        return baggage;
+        return baggage instanceof WritableBaggage writableBaggage ? writableBaggage : writableBaggage(baggage);
     }
 
     @Override
@@ -131,6 +144,41 @@ class OpenTelemetrySpan implements Span {
         return Contexts.context()
                 .flatMap(ctx -> ctx.get(Context.class))
                 .orElseGet(Context::current);
+    }
+
+    /**
+     * Writable wrapper around non-writable baggage.
+     *
+     * <p>
+     *     Used only if the baggage in the current context is not our writable variety when it is extracted and attached to
+     *     the current span. This should be very rare.
+     * </p>
+     *
+     * @param baggage non-writable baggage to wrap
+     * @return wrapper
+     */
+    private static WritableBaggage writableBaggage(Baggage baggage) {
+        return new WritableBaggage() {
+            @Override
+            public WritableBaggage set(String key, String value) {
+                throw new UnsupportedOperationException("Attempt to modify read-only baggage");
+            }
+
+            @Override
+            public Optional<String> get(String key) {
+                return Optional.ofNullable(baggage.getEntryValue(key));
+            }
+
+            @Override
+            public Set<String> keys() {
+                return baggage.asMap().keySet();
+            }
+
+            @Override
+            public boolean containsKey(String key) {
+                return baggage.asMap().containsKey(key);
+            }
+        };
     }
 
     private Context otelContextWithSpanAndBaggage() {
