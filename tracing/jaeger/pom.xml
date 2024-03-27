@@ -154,6 +154,11 @@
             <artifactId>bedrock-testing-support</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -166,19 +171,31 @@
                         <id>default-test</id>
                         <configuration>
                             <excludes>
-                                <exclude>**/B3HeadersPropagationCaseTest.java</exclude>
+                                <exclude>**/B3HeadersPropagationCaseTest.java,**/JaegerBaggagePropagationTest.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
                     <execution>
                         <!-- Run this test in a separate JVM so we don't init GlobalOpenTelemetry multiple times. -->
-                        <id>headers-propagation-test</id>
+                        <id>b3-headers-propagation-test</id>
                         <goals>
                             <goal>test</goal>
                         </goals>
                         <configuration>
                             <includes>
                                 <include>**/B3HeadersPropagationCaseTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Run this test in a separate JVM so we don't init GlobalOpenTelemetry multiple times. -->
+                        <id>all-headers-propagation-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/JaegerBaggagePropagationTest.java</include>
                             </includes>
                         </configuration>
                     </execution>

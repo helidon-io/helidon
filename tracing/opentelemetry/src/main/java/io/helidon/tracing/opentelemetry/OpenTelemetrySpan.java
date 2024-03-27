@@ -23,6 +23,7 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.StatusCode;
@@ -30,10 +31,16 @@ import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpan implements Span {
     private final io.opentelemetry.api.trace.Span delegate;
-    private final MutableOpenTelemetryBaggage baggage = new MutableOpenTelemetryBaggage();
+    private final Baggage baggage;
 
     OpenTelemetrySpan(io.opentelemetry.api.trace.Span span) {
         this.delegate = span;
+        baggage = new MutableOpenTelemetryBaggage();
+    }
+
+    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, Baggage baggage) {
+        delegate = span;
+        this.baggage = baggage;
     }
 
     @Override
@@ -100,7 +107,12 @@ class OpenTelemetrySpan implements Span {
     public Span baggage(String key, String value) {
         Objects.requireNonNull(key, "baggage key cannot be null");
         Objects.requireNonNull(value, "baggage value cannot be null");
-        baggage.baggage(key, value);
+        if (baggage instanceof MutableOpenTelemetryBaggage mutableBaggage) {
+            mutableBaggage.baggage(key, value);
+        } else {
+            throw new UnsupportedOperationException(
+                    "Attempt to set baggage on a span with read-only baggage (perhaps from context");
+        }
         return this;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 import io.helidon.config.Config;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 
@@ -55,6 +56,17 @@ public final class HelidonOpenTelemetry {
      */
     public static io.helidon.tracing.Span create(Span span) {
         return new OpenTelemetrySpan(span);
+    }
+
+    /**
+     * Wrap an open telemetry span.
+     *
+     * @param span open telemetry span
+     * @param baggage open telemetry baggage
+     * @return Helidon (@link io.helidon.tracing.Span}
+     */
+    public static io.helidon.tracing.Span create(Span span, Baggage baggage) {
+        return new OpenTelemetrySpan(span, baggage);
     }
 
 
