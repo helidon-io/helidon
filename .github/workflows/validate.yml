@@ -1,5 +1,4 @@
 # Notes
-# - cannot run on Windows, as we use shell scripts
 # - removed macos-latest from most jobs to speed up the process
 
 name: "Validate"
@@ -75,7 +74,12 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-20.04, windows-2022 ]
+        include:
+          - os: ubuntu-20.04
+            build_script: etc/scripts/github-build.sh
+          - os: windows-2022
+            build_script: etc/scripts/github-build.bat
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -85,13 +89,21 @@ jobs:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
-      - name: Maven build
-        run: etc/scripts/github-build.sh
+      - name: Maven Build
+        run: ${{ matrix.build_script }}
+      - name: Archive test results
+        uses: actions/upload-artifact@v3.1.2
+        if: always()
+        with:
+         name: test-results
+         path: |
+           **/target/surefire-reports/*.txt
+           **/target/it/**/*.log
   examples:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-latest ]
+        os: [ ubuntu-20.04, macos-latest, windows-2022 ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -124,10 +136,15 @@ jobs:
       - name: Maven build
         run: etc/scripts/mp-tck.sh
   archetypes:
-    timeout-minutes: 45
+    timeout-minutes: 50
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-20.04, windows-2022 ]
+        include:
+          - os: ubuntu-20.04
+            test-archetypes: etc/scripts/test-archetypes.sh
+          - os: windows-2022
+            test-archetypes: etc/scripts/test-archetypes.bat
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -138,12 +155,28 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Test archetypes
-        run: etc/scripts/test-archetypes.sh
+        run: ${{ matrix.test-archetypes }}
   packaging:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-latest]
+        os: [ ubuntu-20.04, macos-latest, windows-2022 ]
+        include:
+          - os: ubuntu-20.04
+            compile: etc/scripts/github-compile.sh
+            test-jar: etc/scripts/test-packaging-jar.sh
+            test-jlink: etc/scripts/test-packaging-jlink.sh
+            test-native: etc/scripts/test-packaging-native.sh
+          - os: macos-latest
+            compile: etc/scripts/github-compile.sh
+            test-jar: etc/scripts/test-packaging-jar.sh
+            test-jlink: etc/scripts/test-packaging-jlink.sh
+            test-native: etc/scripts/test-packaging-native.sh
+          - os: windows-2022
+            compile: etc/scripts/github-compile.bat
+            test-jar: etc/scripts/test-packaging-jar.bat
+            test-jlink: etc/scripts/test-packaging-jlink.bat
+            test-native: etc/scripts/test-packaging-native.bat
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -155,10 +188,10 @@ jobs:
           native-image-job-reports: true
           cache: maven
       - name: Build Helidon
-        run: etc/scripts/github-compile.sh
+        run: ${{ matrix.compile }}
       - name: JAR packaging
-        run: etc/scripts/test-packaging-jar.sh
+        run: ${{ matrix.test-jar }}
       - name: JLink packaging
-        run: etc/scripts/test-packaging-jlink.sh
+        run: ${{ matrix.test-jlink }}
       - name: Native-Image packaging
-        run: etc/scripts/test-packaging-native.sh
+        run: ${{ matrix.test-native }}

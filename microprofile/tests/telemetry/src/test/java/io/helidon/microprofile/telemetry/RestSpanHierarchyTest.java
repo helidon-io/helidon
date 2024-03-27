@@ -19,11 +19,8 @@ package io.helidon.microprofile.telemetry;
 
 import java.util.List;
 
-import io.helidon.http.Status;
-import io.helidon.microprofile.telemetry.InMemorySpanExporterProvider;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
-import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import io.opentelemetry.api.common.AttributeKey;
@@ -31,13 +28,10 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

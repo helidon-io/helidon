@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,8 @@ import io.helidon.common.types.TypeName;
 import io.helidon.inject.api.Activator;
 import io.helidon.inject.api.Application;
 import io.helidon.inject.api.ModuleComponent;
+
+import static io.helidon.inject.tools.CommonUtils.normalizePath;
 
 /**
  * This class is used to generate the source and resources originating from either annotation processing or maven-plugin
@@ -194,6 +196,7 @@ public class CodeGenFiler {
             mergedMap.put(contract, mergedSet);
             String outPath = new File(paths.metaInfServicesPath()
                                               .orElse(CodeGenPaths.DEFAULT_META_INF_SERVICES_PATH), contract).getPath();
+            outPath = normalizePath(outPath);
             try {
                 messager.debug("Reading " + outPath);
                 FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", outPath);
@@ -475,6 +478,7 @@ public class CodeGenFiler {
     private Optional<Path> codegenResourceFilerOut(String outPath,
                                                    String body,
                                                    Optional<Function<InputStream, String>> optFnUpdater) {
+        outPath = normalizePath(outPath);
         Messager messager = messager();
         if (!filerWriterEnabled()) {
             messager.log("(disabled) Writing " + outPath + " with:\n" + body);
