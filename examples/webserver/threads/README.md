@@ -6,7 +6,7 @@ application specific executors is desirable. This example illustrates two
 such cases:
 
 1. Using a virtual thread executor to execute multiple tasks in parallel.
-2. Using a platform thread executor to execute long-running CPU intensive operations using platform threads.
+2. Using a platform thread executor to execute long-running CPU intensive operations.
 
 ## Build and run
 
@@ -22,7 +22,7 @@ __Compute:__
 curl -X GET http://localhost:8080/thread/compute/5
 ```
 The `compute` endpoint runs a costly floating point computation using a platform thread.
-Increases the number to make the computation more costly (and take longer).
+Increase the number to make the computation more costly (and take longer).
 
 The request returns the results of the computation (not important!).
 
@@ -31,8 +31,8 @@ __Fanout:__
 curl -X GET http://localhost:8080/thread/fanout/5
 ```
 The `fanout` endpoint simulates a fanout of remote calls that are run in parallel using
-virtual threads. Each call invokes the server's `sleep` endpoint sleeping anywhere from
-0 to 4 seconds. Since the remote requests are executed in parallel the request should not
+virtual threads. Each remote call invokes the server's `sleep` endpoint sleeping anywhere from
+0 to 4 seconds. Since the remote requests are executed in parallel the curl request should not
 take longer than 4 seconds to return. Increase the number to have more remote calls made
 in parallel.
 
@@ -77,7 +77,7 @@ of platform threads to execute the task.
 ### Use of Helidon's ThreadPoolSupplier and Configuration
 
 This example uses `io.helidon.common.configurable.ThreadPoolSupplier` to create the 
-two executors used in the example. This provides a couple of benefits:
+two executors used in the example. This provides a few benefits:
 
 1. ThreadPoolSupplier supports a number of tuning parameters that enable us to configure a small, bounded threadpool.
 2. You can drive the thread pool configuration via Helidon config -- see this example's `application.yaml`
