@@ -68,9 +68,9 @@ class JdbcClient extends DbClientBase implements DbClient {
 
     @Override
     public void close() {
-        if (connectionPool instanceof CloseableJdbcConnectionPool) {
+        if (connectionPool instanceof CloseableJdbcConnectionPool cjcp) {
             try {
-                ((AutoCloseable) connectionPool).close();
+                cjcp.close();
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to close the connection pool", e);
             }
