@@ -19,10 +19,14 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
@@ -32,6 +36,8 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.ws.rs.OPTIONS;
@@ -49,6 +55,8 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  */
 public class CorsCdiExtension implements Extension {
 
+    private static final Logger LOGGER = Logger.getLogger(CorsCdiExtension.class.getName());
+
     /**
      * Key used for retrieving CORS-related configuration from MP configuration.
      */
@@ -60,9 +68,29 @@ public class CorsCdiExtension implements Extension {
 
     private final Set<Method> methodsWithCrossOriginIncorrectlyUsed = new HashSet<>();
     private final Map<Method, CrossOriginConfig> corsConfigs = new HashMap<>();
+    private Class<?> clazzWithClassLevelAnnotationCrossOriginWithoutOptionMethods = null;
 
     void processManagedBean(@Observes ProcessManagedBean<?> pmb) {
-        pmb.getAnnotatedBeanClass().getMethods().forEach(am -> {
+        AnnotatedType<?> annotatedBeanClass = pmb.getAnnotatedBeanClass();
+
+        if (annotatedBeanClass.isAnnotationPresent(CrossOrigin.class)) {
+            List<AnnotatedMethod<?>> optionMethods = getOptionMethods(pmb);
+            Class<?> resourceJavaClass = annotatedBeanClass.getJavaClass();
+
+            if (optionMethods.isEmpty()) {
+                clazzWithClassLevelAnnotationCrossOriginWithoutOptionMethods = resourceJavaClass;
+                return;
+            } else if (isEveryMethodHasOwnCrossOriginAnnotation(optionMethods)) {
+                LOGGER.log(Level.FINE, String.format("%s has unnecessary class level annotation @%s. "
+                                + "Every @%s method has own @%s. Method-level annotation takes precedence.",
+                        resourceJavaClass.getSimpleName(),
+                        CrossOrigin.class.getSimpleName(),
+                        OPTIONS.class.getSimpleName(),
+                        CrossOrigin.class.getSimpleName()));
+            }
+        }
+
+        annotatedBeanClass.getMethods().forEach(am -> {
             Method method = am.getJavaMember();
             if (am.isAnnotationPresent(CrossOrigin.class) && !am.isAnnotationPresent(OPTIONS.class)) {
                 methodsWithCrossOriginIncorrectlyUsed.add(method);
@@ -87,6 +115,14 @@ public class CorsCdiExtension implements Extension {
                             CrossOrigin.class.getSimpleName(),
                             methodsWithCrossOriginIncorrectlyUsed));
         }
+        if (clazzWithClassLevelAnnotationCrossOriginWithoutOptionMethods != null) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "%s has class-level annotation @%s and should have at least one @%s method",
+                            clazzWithClassLevelAnnotationCrossOriginWithoutOptionMethods.getSimpleName(),
+                            CrossOrigin.class.getSimpleName(),
+                            OPTIONS.class.getSimpleName()));
+        }
 
         Config corsConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(CORS_CONFIG_KEY);
 
@@ -103,6 +139,19 @@ public class CorsCdiExtension implements Extension {
 
     CorsSupportMp corsSupportMp() {
         return corsSupportMp;
+    }
+
+    private boolean isEveryMethodHasOwnCrossOriginAnnotation(List<AnnotatedMethod<?>> methods) {
+        return methods
+                .stream()
+                .allMatch(am -> am.isAnnotationPresent(CrossOrigin.class));
+    }
+
+    private List<AnnotatedMethod<?>> getOptionMethods(ProcessManagedBean<?> pmb) {
+        return pmb.getAnnotatedBeanClass().getMethods()
+                .stream()
+                .filter(am -> am.isAnnotationPresent(OPTIONS.class))
+                .collect(Collectors.toList());
     }
 
     private Optional<CrossOriginConfig> deferringSecondaryLookupSupplier() {
@@ -128,7 +177,7 @@ public class CorsCdiExtension implements Extension {
         OPTIONS optsAnnot = resourceMethod.getAnnotation(OPTIONS.class);
         Path pathAnnot = resourceMethod.getAnnotation(Path.class);
         if (optsAnnot != null) {
-            corsAnnot = resourceMethod.getAnnotation(CrossOrigin.class);
+            corsAnnot = getCrossOriginAnnotation(resourceMethod, resourceClass);
         } else {
             // Find the @OPTIONS method with the same path as the resource method, if any. That one might have a
             // @CrossOrigin annotation which applies to the resource method.
@@ -146,10 +195,16 @@ public class CorsCdiExtension implements Extension {
                         return false;
                     })
                     .findFirst();
-            corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class))
+            corsAnnot = optionsMethod.map(m -> getCrossOriginAnnotation(m, resourceClass))
                     .orElse(null);
         }
         return Optional.ofNullable(corsAnnot == null ? null : annotationToConfig(corsAnnot));
+    }
+
+    private CrossOrigin getCrossOriginAnnotation(Method resourceOptionMethod, Class<?> resourceClass) {
+        return resourceOptionMethod.isAnnotationPresent(CrossOrigin.class)
+                ? resourceOptionMethod.getAnnotation(CrossOrigin.class)
+                : resourceClass.getAnnotation(CrossOrigin.class);
     }
 
     private static CrossOriginConfig annotationToConfig(CrossOrigin crossOrigin) {
