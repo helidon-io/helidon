@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import javax.enterprise.inject.ResolutionException;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DefinitionException;
@@ -466,7 +467,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                     new BaseRegistryTypeLiteral()).get();
             Objects.requireNonNull(metricRegistry);
             metricRegistry.removeMatching((m, v) -> true);
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | ResolutionException e) {
             LOGGER.log(Level.WARNING, "Unable to cleanup base metrics", e);
         }
     }
