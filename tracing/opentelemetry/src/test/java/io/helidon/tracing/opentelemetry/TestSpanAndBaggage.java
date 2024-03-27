@@ -113,14 +113,11 @@ class TestSpanAndBaggage {
             outerSpan.end(e);
         }
 
-        // There was no active span before outerSpan was activated, so expect the "default" ad-hoc span ID of all zeroes.
+        // There was no active span before outerSpan was activated, so expect an empty current span.
         Optional<Span> currentSpanAfterTryResourcesBlock = Span.current();
         assertThat("Current span just after try-resources block",
                    currentSpanAfterTryResourcesBlock,
-                   OptionalMatcher.optionalPresent());
-        assertThat("Current span just after try-resources block",
-                   currentSpanAfterTryResourcesBlock.get().context().spanId(),
-                   containsString("00000000"));
+                   OptionalMatcher.optionalEmpty());
     }
 
 
