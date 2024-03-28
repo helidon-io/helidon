@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,26 +15,19 @@
  */
 
 /**
- * Provides classes and interfaces that integrate any service client
- * from the <a
- * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
- * target="_top">Oracle Cloud Infrastructure Java SDK</a> into CDI
- * 3.0-based applications.
+ * Provides classes and interfaces that integrate any service client from the <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html" target="_top">Oracle Cloud Infrastructure Java
+ * SDK</a> into CDI 3.0-based applications.
  *
  * @see io.helidon.integrations.oci.sdk.cdi.OciExtension
  */
-@SuppressWarnings({ "module", "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "module", "requires-automatic" })
 module io.helidon.integrations.oci.sdk.cdi {
 
-    requires java.logging;
     requires transitive jakarta.cdi;
-    requires jakarta.inject;
-    requires jakarta.ws.rs;
-    requires io.helidon.config.mp;
-    requires io.helidon.integrations.oci.sdk.runtime;
     requires microprofile.config.api;
     requires oci.java.sdk.common;
-    requires oci.java.sdk.common.httpclient;
+    requires oci.java.sdk.addons.oke.workload.identity;
 
     exports io.helidon.integrations.oci.sdk.cdi;
 
@@ -42,5 +35,5 @@ module io.helidon.integrations.oci.sdk.cdi {
         with io.helidon.integrations.oci.sdk.cdi.OciExtension;
 
     opens io.helidon.integrations.oci.sdk.cdi to weld.core.impl;
-	
+
 }
