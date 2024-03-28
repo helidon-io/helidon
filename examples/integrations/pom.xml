@@ -38,6 +38,7 @@
         <module>oci</module>
         <module>vault</module>
         <module>microstream</module>
+        <module>eclipsestore</module>
     </modules>
 
 </project>

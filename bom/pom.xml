@@ -1091,7 +1091,32 @@
                 <artifactId>helidon-integrations-microstream-cache</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-
+            <!-- Eclipse Store -->
+            <dependency>
+                <groupId>io.helidon.integrations.eclipsestore</groupId>
+                <artifactId>helidon-integrations-eclipsestore</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.eclipsestore</groupId>
+                <artifactId>helidon-integrations-eclipsestore-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.eclipsestore</groupId>
+                <artifactId>helidon-integrations-eclipsestore-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.eclipsestore</groupId>
+                <artifactId>helidon-integrations-eclipsestore-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.eclipsestore</groupId>
+                <artifactId>helidon-integrations-eclipsestore-cache</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.helidon.http</groupId>
                 <artifactId>helidon-http</artifactId>
