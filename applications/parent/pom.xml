@@ -50,6 +50,8 @@
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
         <version.plugin.resources>3.3.1</version.plugin.resources>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
+
+        <mainClass>io.helidon.Main</mainClass>
     </properties>
 
     <build>

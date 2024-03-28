@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.context.Context;
 import io.helidon.common.tls.Tls;
+import io.helidon.service.registry.Service;
 
 /**
  * Server that opens server sockets and handles requests through routing.
  */
 @RuntimeType.PrototypedBy(WebServerConfig.class)
+@Service.Contract
 public interface WebServer extends RuntimeType.Api<WebServerConfig> {
     /**
      * The default server socket configuration name. All the default server socket

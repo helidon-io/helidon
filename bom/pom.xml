@@ -293,6 +293,11 @@
                 <artifactId>helidon-bundles-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.bundles</groupId>
+                <artifactId>helidon-bundles-apt</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- microprofile -->
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>
@@ -1317,6 +1322,11 @@
                 <artifactId>helidon-fault-tolerance</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.fault-tolerance</groupId>
+                <artifactId>helidon-fault-tolerance-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Builder -->
             <dependency>
@@ -1335,59 +1345,42 @@
                 <version>${helidon.version}</version>
             </dependency>
 
-            <!-- Injection Core -->
+            <!-- Service registry -->
             <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-api</artifactId>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-registry</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-tools</artifactId>
+                <groupId>io.helidon.service.inject</groupId>
+                <artifactId>helidon-service-inject-api</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-processor</artifactId>
+                <groupId>io.helidon.service.inject</groupId>
+                <artifactId>helidon-service-inject</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-maven-plugin</artifactId>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-testing</artifactId>
+                <groupId>io.helidon.declarative</groupId>
+                <artifactId>helidon-declarative-webserver-request-scope</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-runtime</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
-            <!-- Injection Config-Driven related -->
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-runtime</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-processor</artifactId>
+                <groupId>io.helidon.declarative</groupId>
+                <artifactId>helidon-declarative-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
             <!-- Injection Integrations related -->
             <dependency>
                 <groupId>io.helidon.integrations.oci.sdk</groupId>
-                <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
+                <artifactId>helidon-integrations-oci-sdk-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

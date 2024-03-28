@@ -66,6 +66,7 @@
         <module>security</module>
         <module>vault</module>
         <module>zipkin-mp-2.2</module>
+        <module>declarative</module>
         <module>tls-revocation-config</module>
     </modules>
 

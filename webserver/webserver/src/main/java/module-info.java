@@ -34,6 +34,7 @@ module io.helidon.webserver {
     requires io.helidon.logging.common;
     requires java.logging; // only used to keep logging active until shutdown hook finishes
     requires java.management;
+    requires io.helidon;
 
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.context;
@@ -43,6 +44,9 @@ module io.helidon.webserver {
     requires transitive io.helidon.config;
     requires transitive io.helidon.http.encoding;
     requires transitive io.helidon.http.media;
+
+    requires static io.helidon.service.inject.api;
+    requires io.helidon.service.registry;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use
@@ -65,5 +69,4 @@ module io.helidon.webserver {
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http1.Http1ProtocolConfigProvider;
     provides io.helidon.webserver.spi.ServerConnectionSelectorProvider with io.helidon.webserver.http1.Http1ConnectionProvider;
-
 }

@@ -33,7 +33,7 @@
 
     <modules>
         <module>cdi</module>
-        <module>processor</module>
+        <module>codegen</module>
         <module>runtime</module>
         <module>tests</module>
     </modules>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
  * Types needed to start a Helidon application.
  */
 module io.helidon {
+    // this is required due to a bug in JDK (see Main for details and link)
+    requires java.logging;
 
     requires io.helidon.common;
     requires io.helidon.logging.common;

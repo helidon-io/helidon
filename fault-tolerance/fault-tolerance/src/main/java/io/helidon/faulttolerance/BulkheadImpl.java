@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import jakarta.inject.Inject;
+import io.helidon.service.inject.api.Injection;
 
+@Injection.CreateFor(BulkheadConfigBlueprint.class)
 class BulkheadImpl implements Bulkhead {
     private static final System.Logger LOGGER = System.getLogger(BulkheadImpl.class.getName());
 
@@ -48,7 +49,7 @@ class BulkheadImpl implements Bulkhead {
     private final Set<Supplier<?>> cancelledSuppliers = new CopyOnWriteArraySet<>();
     private final BulkheadConfig config;
 
-    @Inject
+    @Injection.Inject
     BulkheadImpl(BulkheadConfig config) {
         this.inProgress = new Semaphore(config.limit(), true);
         this.name = config.name().orElseGet(() -> "bulkhead-" + System.identityHashCode(config));

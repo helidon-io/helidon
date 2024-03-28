@@ -56,7 +56,7 @@ final class GeneratedAnnotationHandler {
         return PROVIDER.create(generator, trigger, generatedType, versionId, comments);
     }
 
-    // @Generated(value = "io.helidon.inject.tools.ActivatorCreatorDefault", comments = "version=1")
+    // @Generated(value = "io.helidon.service.codegen.InjectionExtension", comments = "version=1")
     private static class DefaultProvider implements GeneratedAnnotationProvider {
         @Override
         public Annotation create(TypeName generator,

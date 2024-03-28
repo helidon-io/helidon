@@ -49,5 +49,6 @@
         <module>tracing</module>
         <module>tutorial</module>
         <module>websocket</module>
+        <module>service-registry</module>
     </modules>
 </project>

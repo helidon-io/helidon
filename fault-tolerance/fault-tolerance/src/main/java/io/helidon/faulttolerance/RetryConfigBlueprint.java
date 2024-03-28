@@ -22,11 +22,14 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.service.inject.api.ConfigDriven;
 
 /**
  * {@link Retry} configuration bean.
  */
-// @ConfigBean(value = "fault-tolerance.retries", repeatable = true, wantDefaultConfigBean = true)
+@ConfigDriven.ConfigBean
+@ConfigDriven.Repeatable
+@ConfigDriven.WantDefault
 @Prototype.Blueprint(decorator = RetryConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.retries")
 interface RetryConfigBlueprint extends Prototype.Factory<Retry> {

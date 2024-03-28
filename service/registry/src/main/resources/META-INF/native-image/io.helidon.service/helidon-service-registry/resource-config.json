@@ -1,0 +1,10 @@
+{
+    "resources": [
+        {
+            "pattern": "META-INF/helidon/services.txt"
+        },
+        {
+            "pattern": "META-INF/helidon/services-loader.txt"
+        }
+    ]
+}

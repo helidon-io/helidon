@@ -33,6 +33,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon</groupId>
+            <artifactId>helidon</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http</artifactId>
         </dependency>
@@ -75,6 +79,15 @@
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject-api</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -123,11 +136,6 @@
             <groupId>io.helidon.common.testing</groupId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-testing</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -158,6 +166,11 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -178,6 +191,11 @@
                     <dependency>
                         <groupId>io.helidon.builder</groupId>
                         <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

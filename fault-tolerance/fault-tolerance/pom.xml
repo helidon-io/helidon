@@ -42,21 +42,19 @@
             <artifactId>helidon-common-configurable</artifactId>
         </dependency>
         <dependency>
-            <!--
-            must be in compile & runtime dependencies
-            as we provide services that are in API
-            -->
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-api</artifactId>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
-            <!--
-            must be in compile dependencies, as it is used by generated classes
-            optional for runtime - if injection is used, it will be loaded
-            -->
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject-api</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <!--
@@ -71,23 +69,6 @@
             -->
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
-            Marks singletons driven by configuration
-            -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
-            must be in compile dependencies, as it is used by generated classes
-            optional for runtime - if injection is used, it will be loaded
-            -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -130,8 +111,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-processor</artifactId>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -149,6 +130,11 @@
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.fault-tolerance</groupId>
+                            <artifactId>helidon-fault-tolerance-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
@@ -158,8 +144,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-processor</artifactId>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
@@ -180,6 +166,11 @@
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.fault-tolerance</groupId>
+                        <artifactId>helidon-fault-tolerance-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

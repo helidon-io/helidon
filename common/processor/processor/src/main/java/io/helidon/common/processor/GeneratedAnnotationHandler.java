@@ -93,7 +93,7 @@ public final class GeneratedAnnotationHandler {
                 .toString();
     }
 
-    // @Generated(value = "io.helidon.inject.tools.ActivatorCreatorDefault", comments = "version=1")
+    // @Generated(value = "io.helidon.service.inject.codegen.InjectionExtension", comments = "version=1")
     private static class DefaultProvider implements GeneratedAnnotationProvider {
         private static final TypeName GENERATED = TypeName.create("io.helidon.common.Generated");
 

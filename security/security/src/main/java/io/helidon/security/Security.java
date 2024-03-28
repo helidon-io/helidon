@@ -52,6 +52,7 @@ import io.helidon.security.spi.SecretsProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 import io.helidon.security.spi.SubjectMappingProvider;
+import io.helidon.service.registry.Service;
 import io.helidon.tracing.Tracer;
 
 /**
@@ -68,6 +69,7 @@ import io.helidon.tracing.Tracer;
  * @see #builder()
  * @see #create(Config)
  */
+@Service.Contract
 public interface Security {
     /**
      * Integration should add a special header to each request. The value will contain the original

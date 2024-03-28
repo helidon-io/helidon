@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.RetryPolicy;
+import io.helidon.service.registry.Service;
 
 /**
  * Meta configuration.
@@ -69,6 +70,7 @@ import io.helidon.config.spi.RetryPolicy;
  *     <li>Classpath resource config source for resource {@code default.yaml} that is mandatory</li>
  * </ul>
  */
+@Service.Provider
 public final class MetaConfig {
     private static final System.Logger LOGGER = System.getLogger(MetaConfig.class.getName());
     private static final Set<MediaType> SUPPORTED_MEDIA_TYPES;
@@ -88,7 +90,10 @@ public final class MetaConfig {
         SUPPORTED_SUFFIXES = List.copyOf(supportedSuffixes);
     }
 
-    private MetaConfig() {
+    private final Config metaConfig;
+
+    MetaConfig() {
+        this.metaConfig = metaConfig().orElseGet(Config::empty);
     }
 
     /**
@@ -201,7 +206,15 @@ public final class MetaConfig {
 
             return List.of(source);
         }
+    }
 
+    /**
+     * Meta configuration if provided, or empty config if not.
+     *
+     * @return meta configuration
+     */
+    public Config metaConfiguration() {
+        return this.metaConfig;
     }
 
     // override config source

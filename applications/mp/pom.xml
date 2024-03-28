@@ -34,7 +34,6 @@
     <properties>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jandex>${version.lib.jandex}</version.plugin.jandex>
-        <mainClass>io.helidon.Main</mainClass>
     </properties>
 
     <build>

@@ -31,9 +31,9 @@ module io.helidon.webclient.api {
 
     requires static io.helidon.common.features.api; // @Feature
     requires static io.helidon.config.metadata; // @ConfiguredOption etc
-    requires static io.helidon.inject.configdriven.api;
-    requires static io.helidon.inject.configdriven.runtime;
-    requires static jakarta.inject; // Injection support
+
+    // need to code generate a service for config bean
+    requires static io.helidon.service.inject.api;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.configurable;
@@ -54,5 +54,4 @@ module io.helidon.webclient.api {
     uses io.helidon.webclient.spi.WebClientServiceProvider;
     uses io.helidon.webclient.spi.ProtocolConfigProvider;
     uses io.helidon.webclient.spi.HttpClientSpiProvider;
-	
 }

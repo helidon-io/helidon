@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
+import io.helidon.service.inject.api.ConfigDriven;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -33,6 +35,9 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ServerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.CustomMethods.class)
 @Prototype.Configured("server")
+@ConfigDriven.ConfigBean
+@ConfigDriven.AtLeastOne
+@ConfigDriven.WantDefault
 interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
     /**
      * When true the webserver registers a shutdown hook with the JVM Runtime.
@@ -84,4 +89,12 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      */
     Optional<Context> serverContext();
 
+    /**
+     * When running with a service registry, it can be configured in builder, and used to obtain components to set up the
+     * server, such as {@link io.helidon.webserver.http.HttpFeature}, {@link io.helidon.webserver.spi.ServerFeature},
+     * {@link io.helidon.http.media.MediaSupport} etc.
+     *
+     * @return service registry, if configured
+     */
+    Optional<ServiceRegistry> serviceRegistry();
 }

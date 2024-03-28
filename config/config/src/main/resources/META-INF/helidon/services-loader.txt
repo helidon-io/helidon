@@ -1,0 +1,9 @@
+# List of services we want to support either from service registry, or from service loader
+io.helidon.config.spi.ConfigParser
+io.helidon.config.spi.ConfigFilter
+io.helidon.config.spi.ConfigMapperProvider
+io.helidon.config.spi.ConfigSourceProvider
+io.helidon.config.spi.OverrideSourceProvider
+io.helidon.config.spi.RetryPolicyProvider
+io.helidon.config.spi.PollingStrategyProvider
+io.helidon.config.spi.ChangeWatcherProvider

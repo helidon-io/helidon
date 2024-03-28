@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,11 @@ import io.helidon.common.Weight;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
-import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.NodeConfigSource;
-import io.helidon.inject.api.ExternalContracts;
+import io.helidon.service.registry.Service;
 
-import jakarta.inject.Singleton;
-
-@Singleton
+@Service.Provider
 @Weight(200)
-@ExternalContracts(ConfigSource.class)
 class TestConfigSource implements NodeConfigSource {
 
     @Override

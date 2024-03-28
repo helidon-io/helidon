@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ module io.helidon.http {
 
     requires static io.helidon.config.metadata;
 
+    requires static io.helidon.service.registry;
+    requires static io.helidon.service.inject.api;
+
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.mapper;
@@ -29,5 +32,4 @@ module io.helidon.http {
     requires transitive io.helidon.common;
 
     exports io.helidon.http;
-
 }

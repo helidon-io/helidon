@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,16 +27,13 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE
 )
 module io.helidon.config {
-
-    requires io.helidon.inject.api;
-
     requires static io.helidon.common.features.api;
-    requires static io.helidon.inject.runtime;
-    requires static jakarta.inject;
 
+    requires static io.helidon.service.registry;
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.media.type;
     requires transitive io.helidon.common;
+    requires transitive io.helidon.builder.api;
 
     exports io.helidon.config;
     exports io.helidon.config.spi;
@@ -54,8 +51,6 @@ module io.helidon.config {
             with io.helidon.config.PropertiesConfigParser;
     provides io.helidon.common.config.spi.ConfigProvider
             with io.helidon.config.HelidonConfigProvider;
-    provides io.helidon.inject.api.ModuleComponent
-            with io.helidon.config.Injection$$Module;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.config to weld.core.impl, io.helidon.microprofile.cdi;
