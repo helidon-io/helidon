@@ -9,6 +9,35 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.7]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Faul Tolerance: Fix fault tolerance method cache not being reset on CDI shutdown. [8519](https://github.com/helidon-io/helidon/pull/8519)
+- Metrics: Respect named port selection in MicrometerSupport for endpoint [8518](https://github.com/helidon-io/helidon/pull/8518)
+- Neo4J: Replace deprecated session.writeTransaction on session.executeWrite in Neo4jHealthCheck [8405](https://github.com/helidon-io/helidon/pull/8405)
+- RestClient: Support Multipart with HelidonConnector/WebClient [8270](https://github.com/helidon-io/helidon/pull/8270)
+- Security: Disabled OidcFeature no longer throws an NPE. (#8520) [8544](https://github.com/helidon-io/helidon/pull/8544)
+- Security: Support for disabling security providers through configuration. [8546](https://github.com/helidon-io/helidon/pull/8546)
+- Tests: Avoid implementing the OCI Monitoring interface. [8553](https://github.com/helidon-io/helidon/pull/8553)
+- Tests: Introducing a test to validate that combination of config annotations… [8490](https://github.com/helidon-io/helidon/pull/8490)
+- Tests: Replace deprecated Multi.from(Stream) on Multi.create(Stream) [8438](https://github.com/helidon-io/helidon/pull/8438)
+- Tracing: Fix handling of baggage when retrieving current span [8567](https://github.com/helidon-io/helidon/pull/8567)
+- Tracing: Fix Span.current() behavior with OTel - return Optional.empty() if there is no current span [8574](https://github.com/helidon-io/helidon/pull/8574)
+- Tracing: Set incoming baggage from parent on Span [8364](https://github.com/helidon-io/helidon/pull/8364)
+- WebServer: 8029 Bad media type logging level [8032](https://github.com/helidon-io/helidon/pull/8032)
+- Build: upgrade GitHub actions to v4 [8446](https://github.com/helidon-io/helidon/pull/8446)
+- Dependencies: PostgreSQL JDBC driver updated to 42.4.4. [8414](https://github.com/helidon-io/helidon/pull/8414)
+- Dependencies: Upgrade netty to 4.1.108.Final [8513](https://github.com/helidon-io/helidon/pull/8513)
+- Docs: fix GitHub urls [8458](https://github.com/helidon-io/helidon/pull/8458)
+- Examples: Archetype - Backport several issues from 4.x to 3.x  [8564](https://github.com/helidon-io/helidon/pull/8564)
+- Examples: cleanup for archetypes [8454](https://github.com/helidon-io/helidon/pull/8454)
+- Examples: example removal (migration to helidon-examples) [8437](https://github.com/helidon-io/helidon/pull/8437)
+- Examples: validation flow for external examples repo [7889](https://github.com/helidon-io/helidon/pull/7889)
+
+
 ## [3.2.6]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -863,6 +892,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.7]: https://github.com/helidon-io/helidon/compare/3.2.6...3.2.7
 [3.2.6]: https://github.com/helidon-io/helidon/compare/3.2.5...3.2.6
 [3.2.5]: https://github.com/helidon-io/helidon/compare/3.2.4...3.2.5
 [3.2.4]: https://github.com/helidon-io/helidon/compare/3.2.3...3.2.4
