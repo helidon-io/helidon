@@ -41,6 +41,7 @@
         <module>tracing</module>
         <module>webclient</module>
         <module>websocket</module>
+        <module>grpc</module>
     </modules>
 
     <profiles>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class LockingStreamIdSequence {
+/**
+ * A stream ID sequence that uses locks for concurrency.
+ */
+public class LockingStreamIdSequence {
 
     private final AtomicInteger streamIdSeq = new AtomicInteger(0);
     private final Lock lock = new ReentrantLock();
 
     int lockAndNext() {
-            lock.lock();
-            return streamIdSeq.updateAndGet(o -> o % 2 == 0 ? o + 1 : o + 2);
+        lock.lock();
+        return streamIdSeq.updateAndGet(o -> o % 2 == 0 ? o + 1 : o + 2);
     }
 
-    void unlock(){
+    void unlock() {
         lock.unlock();
     }
 }

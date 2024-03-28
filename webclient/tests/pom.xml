@@ -37,6 +37,7 @@
         <module>http1</module>
         <module>http2</module>
         <module>webclient</module>
+        <module>grpc</module>
     </modules>
 
     <properties>

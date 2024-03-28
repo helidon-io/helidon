@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,10 @@ import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
-class Http2ClientConnection {
+/**
+ * Represents an HTTP2 connection on the client.
+ */
+public class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
@@ -103,7 +106,15 @@ class Http2ClientConnection {
         this.writer = new Http2ConnectionWriter(connection.helidonSocket(), connection.writer(), List.of());
     }
 
-    static Http2ClientConnection create(Http2ClientImpl http2Client,
+    /**
+     * Creates an HTTP2 client connection.
+     *
+     * @param http2Client the HTTP2 client
+     * @param connection the client connection
+     * @param sendSettings whether to send the settings or not
+     * @return an HTTP2 client connection
+     */
+    public static Http2ClientConnection create(Http2ClientImpl http2Client,
                                         ClientConnection connection,
                                         boolean sendSettings) {
 
@@ -136,6 +147,15 @@ class Http2ClientConnection {
 
     }
 
+    /**
+     * Stream ID sequence.
+     *
+     * @return the ID sequence
+     */
+    public LockingStreamIdSequence streamIdSequence() {
+        return streamIdSeq;
+    }
+
     Http2ClientStream createStream(Http2StreamConfig config) {
         //FIXME: priority
         Http2ClientStream stream = new Http2ClientStream(this,
@@ -147,7 +167,13 @@ class Http2ClientConnection {
         return stream;
     }
 
-    void addStream(int streamId, Http2ClientStream stream) {
+    /**
+     * Adds a stream to the connection.
+     *
+     * @param streamId the stream ID
+     * @param stream the stream
+     */
+    public void addStream(int streamId, Http2ClientStream stream) {
         Lock lock = streamsLock.writeLock();
         lock.lock();
         try {
@@ -157,7 +183,12 @@ class Http2ClientConnection {
         }
     }
 
-    void removeStream(int streamId) {
+    /**
+     * Removes a stream from the connection.
+     *
+     * @param streamId the stream ID
+     */
+    public void removeStream(int streamId) {
         Lock lock = streamsLock.writeLock();
         lock.lock();
         try {
@@ -202,7 +233,10 @@ class Http2ClientConnection {
         this.lastStreamId = lastStreamId;
     }
 
-    void close() {
+    /**
+     * Closes this connection.
+     */
+    public void close() {
         this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
         if (state.getAndSet(State.CLOSED) != State.CLOSED) {
             try {

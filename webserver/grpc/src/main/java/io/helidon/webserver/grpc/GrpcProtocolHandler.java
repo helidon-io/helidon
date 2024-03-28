@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,8 +160,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void sendHeaders(Metadata headers) {
-                // todo ignoring headers, just sending required response headers
                 WritableHeaders<?> writable = WritableHeaders.create();
+
                 writable.set(GRPC_CONTENT_TYPE);
                 writable.set(GRPC_ENCODING_IDENTITY);
 

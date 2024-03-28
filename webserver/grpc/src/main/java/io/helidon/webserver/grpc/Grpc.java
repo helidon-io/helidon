@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,17 +136,17 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
          - to invoke a static method on it
          */
         Class<ReqT> requestType = load(getClassName(mtd.getInputType()));
-        Class<ResT> responsetype = load(getClassName(mtd.getOutputType()));
+        Class<ResT> responseType = load(getClassName(mtd.getOutputType()));
 
         MethodDescriptor.Marshaller<ReqT> reqMarshaller = ProtoMarshaller.get(requestType);
-        MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responsetype);
+        MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responseType);
 
         io.grpc.MethodDescriptor.Builder<ReqT, ResT> grpcDesc = io.grpc.MethodDescriptor.<ReqT, ResT>newBuilder()
                 .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(serviceName, methodName))
                 .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
-        return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), requestType, responsetype, callHandler);
+        return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), requestType, responseType, callHandler);
     }
 
 
