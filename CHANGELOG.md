@@ -25,6 +25,7 @@ This is a bugfix release of Helidon and is recommended for all users of Helidon 
 - Tests: Introducing a test to validate that combination of config annotations… [8490](https://github.com/helidon-io/helidon/pull/8490)
 - Tests: Replace deprecated Multi.from(Stream) on Multi.create(Stream) [8438](https://github.com/helidon-io/helidon/pull/8438)
 - Tracing: Fix handling of baggage when retrieving current span [8567](https://github.com/helidon-io/helidon/pull/8567)
+- Tracing: Fix Span.current() behavior with OTel - return Optional.empty() if there is no current span [8574](https://github.com/helidon-io/helidon/pull/8574)
 - Tracing: Set incoming baggage from parent on Span [8364](https://github.com/helidon-io/helidon/pull/8364)
 - WebServer: 8029 Bad media type logging level [8032](https://github.com/helidon-io/helidon/pull/8032)
 - Build: upgrade GitHub actions to v4 [8446](https://github.com/helidon-io/helidon/pull/8446)
