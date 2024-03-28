@@ -116,6 +116,8 @@ Your code should work with metrics only after the Helidon metrics system has ini
 One way to accomplish this is to deal with metrics in a method that observes the Helidon `RuntimeStart` CDI event, which the xref:extension_example[extension example below] illustrates.
 
 // Here's Configuration.
+
+[[config-intro]]
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 
 == Examples
