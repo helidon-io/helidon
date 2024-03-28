@@ -149,7 +149,7 @@ sources:
 <5> Loads the system properties config source.
 <6> Loads a properties file
 <7> Location of the file: `/conf/prod.properties` on the file system
-<8> Custom ordinal, if not defined, the value defined in the file, or default value is used. The source precedence order is the order of appearance in the file.
+<8> Custom ordinal, if not defined, the value defined in the file, or default value is used. The source precedence order is the order of appearance in the file. The default is 100.
 <9> The file is optional (if not optional and no file is found, the bootstrap fails)
 <10> Loads a YAML file
 <11> Location of the file: `META-INF/database.yaml` on the classpath
