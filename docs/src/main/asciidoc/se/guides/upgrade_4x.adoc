@@ -123,11 +123,38 @@ This is to allow ordering of features in a meaningful way (e.g. Context should b
 
 
 == Adding Additional Routing Criteria
-In prior versions, the `RequestPredicate` class was used to specify more routing criteria. This class has been removed from Helidon 4. The following example shows the `RoutingHandlerResource`:
 
+In prior versions, the `RequestPredicate` class was used to specify more routing criteria. This class has been removed from Helidon 4. 
+
+So, for example, if you used the following in Helidon 3:
 
 [source, java]
-.Helidon SE 4.x - RequestPredicate removed
+.Helidon 3.x using `RequestPredicate` 
+----
+import io.helidon.webserver.RequestPredicate;
+
+public abstract class RoutingHandlerResource<I, R> implements HttpService {
+
+　// ~~
+
+    protected Handler requestHandler(final HttpRules rules, final Method method, final Handler applyHandler) {
+        switch (method) {
+        case PUT:
+            return RequestPredicate.create()
+                .accepts(MediaType.APPLICATION_JSON)
+                .containsHeader(HttpHeaderField.AUTHORIZATION.headerName())
+                .hasContentType(ContentHeader.TYPE_JSON)
+                .thenApply(applyHandler);
+　　　　}
+　　　　// ~~
+　　}
+}
+
+----
+
+Then you would use the following in Helidon 4:
+[source, java]
+.Helidon 4 `RequestPredicate` removed
 ----
 public abstract class RoutingHandlerResource<I, R> implements HttpService {
 
@@ -149,8 +176,9 @@ public abstract class RoutingHandlerResource<I, R> implements HttpService {
         };
     }
 }
-
 ----
+
+
 
 == Services
 
