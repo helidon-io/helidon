@@ -189,6 +189,12 @@ backend:
                 sources:
                   - "metrics.adoc"
                   - "prometheus-exemplar-support.adoc"
+              - type: "PAGE"
+                title: "Observability"
+                source: "observability.adoc"
+                glyph:
+                  type: "icon"
+                  value: "search"
               - type: "MENU"
                 title: "OpenAPI"
                 dir: "openapi"
