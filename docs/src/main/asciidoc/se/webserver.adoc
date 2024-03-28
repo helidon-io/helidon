@@ -104,8 +104,7 @@ include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+2,tag
 
 Routing lets you use request matching criteria to bind requests to a `handler` that implements
 your custom business logic. Matching criteria include one or more *HTTP Method(s)* and, optionally,
-a request *path matcher*. Use the `RequestPredicate` class to specify more routing
-criteria.
+a request *path matcher*. 
 
 === Routing Basics
 
@@ -671,6 +670,8 @@ server:
 All options shown below are also available programmatically when using builder.
 
 include::{rootdir}/config/io_helidon_webserver_accesslog_AccessLogConfig.adoc[leveloffset=+1]
+
+
 
 == TLS Configuration
 
