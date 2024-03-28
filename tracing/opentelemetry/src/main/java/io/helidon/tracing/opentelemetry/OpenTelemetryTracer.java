@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,10 @@ class OpenTelemetryTracer implements Tracer {
     public Optional<SpanContext> extract(HeaderProvider headersProvider) {
         Context context = propagator.extract(Context.current(), headersProvider, GETTER);
 
-        return Optional.ofNullable(context)
-                .map(OpenTelemetrySpanContext::new);
+        // OTel Span.current() returns a no-op span if there is no current one. Use fromContextOrNull instead to distinguish.
+        io.opentelemetry.api.trace.Span otelSpan = io.opentelemetry.api.trace.Span.fromContextOrNull(context);
+        return Optional.ofNullable(otelSpan)
+                .map(span -> new OpenTelemetrySpanContext(context));
     }
 
     @Override
