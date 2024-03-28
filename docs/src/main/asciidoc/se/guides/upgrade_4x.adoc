@@ -37,7 +37,7 @@ Helidon 4 no longer uses Netty.
 Helidon SE is now running on Helidon WebServer which is based on virtual threads technology, available in Java 21.
 
 
-== Programming paradigm
+== Programming Paradigm
 
 Helidon SE has changed from an asynchronous style API to an imperative/blocking style API that is optimized for use with virtual threads.
 Currently, there is no compatibility API available
@@ -121,6 +121,36 @@ Main difference is that a feature can add `Filters` and it cannot be registered 
 Features are not registered immediately—each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher-weighted features are registered first.
 This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc).
 
+
+== Adding Additional Routing Criteria
+In prior versions, the `RequestPredicate` class was used to specify more routing criteria. This class has been removed from Helidon 4. The following example shows the `RoutingHandlerResource`:
+
+
+[source, java]
+.Helidon SE 4.x - RequestPredicate removed
+----
+public abstract class RoutingHandlerResource<I, R> implements HttpService {
+
+    protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
+        return switch (method.text()) {
+            case "PUT" -> (req, res) -> {
+                ServerRequestHeaders headers = req.headers();
+                if (headers.isAccepted(MediaTypes.APPLICATION_JSON)
+                    && headers.contains(HeaderNames.AUTHORIZATION)
+                    && headers.contentType()
+                            .filter(HttpMediaTypes.JSON_PREDICATE)
+                            .isPresent()) {
+                    applyHandler.handle(req, res);
+                } else {
+                    res.next();
+                }
+            };
+            default -> (req, res) -> res.next();
+        };
+    }
+}
+
+----
 
 == Services
 
