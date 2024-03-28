@@ -103,7 +103,10 @@ In order to properly configure your application using configuration sources, you
 Each Config Source has an ordinal that determines the priority of the Config Source.
 A Config Source with higher ordinal has higher priority as compared to the Config Source with
 lower ordinal. The values taken from the high-priority Config Source overrides the values
-from low-priority Config Source.
+from low-priority Config Source. The default value is 100.
+
+NOTE: In MP, the ordering is not defined for sources that have the same ordinal. 
+
 
 This helps to customize the configuration of Config Sources using external Config Source
 if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
