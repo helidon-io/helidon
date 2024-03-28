@@ -65,6 +65,13 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     }
 
     /**
+     * Creates a new provider; reserved for service loading.
+     */
+    @Deprecated
+    public OpenTelemetryTracerProvider() {
+    }
+
+    /**
      * Register global tracer.
      *
      * @param tracer global tracer
@@ -90,10 +97,17 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
      * @return optional of the current span
      */
     public static Optional<Span> activeSpan() {
-        // OTel returns a no-op span if there is no current one.
-        io.opentelemetry.api.trace.Span otelSpan = io.opentelemetry.api.trace.Span.current();
+        io.opentelemetry.context.Context otelContext = io.opentelemetry.context.Context.current();
 
-        // OTel returns empty baggage if there is no current one.
+        // OTel Span.current() returns a no-op span if there is no current one. Use fromContextOrNull instead to distinguish.
+        io.opentelemetry.api.trace.Span otelSpan =
+                io.opentelemetry.api.trace.Span.fromContextOrNull(otelContext);
+
+        if (otelSpan == null) {
+            return Optional.empty();
+        }
+
+        // OTel Baggage.current() returns empty baggage if there is no current one. That's OK for baggage.
         io.opentelemetry.api.baggage.Baggage otelBaggage = io.opentelemetry.api.baggage.Baggage.current();
 
         // Create the span directly with the retrieved baggage. Ideally, it will be our writable baggage because we had put it
