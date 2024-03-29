@@ -124,7 +124,10 @@ class TestSpanAndBaggage {
     @Test
     void testIncomingBaggage() {
         Tracer tracer = Tracer.global();
-        HeaderProvider inboundHeaders = new MapHeaderProvider(Map.of("baggage", List.of("bag1=val1,bag2=val2")));
+        // Need to supply both the traceparent and the baggage for OTel to construct a proper span context.
+        HeaderProvider inboundHeaders = new MapHeaderProvider(
+                Map.of("traceparent", List.of("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
+                       "baggage", List.of("bag1=val1,bag2=val2")));
         Optional<SpanContext> spanContextOpt = tracer.extract(inboundHeaders);
         assertThat("Span context from inbound headers", spanContextOpt, OptionalMatcher.optionalPresent());
         Span span = tracer.spanBuilder("inbound").parent(spanContextOpt.get()).start();
@@ -172,7 +175,7 @@ class TestSpanAndBaggage {
         final String BAGGAGE_KEY = "mykey";
         final String BAGGAGE_VALUE = "myvalue";
         final var tracer = io.helidon.tracing.Tracer.global();
-        final var span = tracer.spanBuilder("baggageCanaryMinimal").start();
+        final var span = tracer.spanBuilder("baggageMinimal").start();
         try {
             // Set baggage and confirm that it's known in the span
             try (Scope scope = span.activate()) {
@@ -184,6 +187,17 @@ class TestSpanAndBaggage {
         } finally {
             span.end();
         }
+    }
+
+    @Test
+    void testExtractWithNoCurrentSpan() {
+        final var tracer = io.helidon.tracing.Tracer.global();
+
+        HeaderProvider headers = HeaderProvider.create(Map.of("not-a-trace", List.of("1234567890123456"),
+                                                              "not-a-span", List.of("6543210987654321")));
+        Optional<SpanContext> spanContext = tracer.extract(headers);
+
+        assertThat("Current span reported", spanContext, OptionalMatcher.optionalEmpty());
     }
 
     private void checkBaggage(Tracer tracer, Span span, Supplier<SpanContext> spanContextSupplier) {
