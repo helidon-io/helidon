@@ -9,6 +9,20 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.7]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- Fault Tolerance: Reset fault tolerance method cache on CDI shutdown [8487](https://github.com/helidon-io/helidon/pull/8487)
+- Security: Support for disabling security providers through configuration. (#8521) [8547](https://github.com/helidon-io/helidon/pull/8547)
+- Security: Disabled OidcFeature no longer throws an NPE. (#8520) [8545](https://github.com/helidon-io/helidon/pull/8545)
+- Dependencies: Upgrade netty to 4.1.108.Final [8514](https://github.com/helidon-io/helidon/pull/8514)
+- Examples: examples cleanup [8498](https://github.com/helidon-io/helidon/pull/8498)
+- Examples: align README.md vs functionality [8473](https://github.com/helidon-io/helidon/pull/8473)
+- Tests: Avoid implementing the OCI Monitoring interface. [8555](https://github.com/helidon-io/helidon/pull/8555)
+
 ## [2.6.6]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2220,6 +2234,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.7]: https://github.com/oracle/helidon/compare/2.6.6...2.6.7
 [2.6.6]: https://github.com/oracle/helidon/compare/2.6.5...2.6.6
 [2.6.5]: https://github.com/oracle/helidon/compare/2.6.4...2.6.5
 [2.6.4]: https://github.com/oracle/helidon/compare/2.6.3...2.6.4
