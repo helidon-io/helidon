@@ -492,9 +492,9 @@ specification is also provided for the Kubernetes service and deployment.
 ----
 include::{sourcedir}/se/HealthSnippets.java[tag=snippet_8, indent=0]
 ----
-<1> The health service for the `liveness` probe is exposed at `/observe/health/live`.
+<1> The health service for the `liveness` probe is exposed at `/health/live`.
 <2> Using the built-in health checks for the `liveness` probe.
-<3> The health service for the `readiness` probe is exposed at `/observe/health/ready`.
+<3> The health service for the `readiness` probe is exposed at `/health/ready`.
 <4> Using a custom health check for a pseudo database that is always `UP`.
 <5> Route the `observe` feature exclusively on the `observe` socket.
 <6> The default socket uses port 8080 for the default routes.
