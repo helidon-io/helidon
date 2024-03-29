@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.time.Duration;
 import java.util.List;
 
 import io.helidon.metrics.api.DistributionSummary;
@@ -39,12 +40,14 @@ class TestDistributionSummary {
 
     @Test
     void testUnwrap() {
-        DistributionSummary summary = meterRegistry.getOrCreate(DistributionSummary.builder("a"));
+        DistributionSummary.Builder builder = DistributionSummary.builder("a");
+        builder.unwrap(io.micrometer.core.instrument.DistributionSummary.Builder.class)
+                .distributionStatisticExpiry(Duration.ofMinutes(10));
+        DistributionSummary summary = meterRegistry.getOrCreate(builder);
         List.of(1D, 3D, 5D)
                 .forEach(summary::record);
         io.micrometer.core.instrument.DistributionSummary mSummary =
                 summary.unwrap(io.micrometer.core.instrument.DistributionSummary.class);
-
         mSummary.record(7D);
 
         assertThat("Mean", summary.mean(), is(4D));

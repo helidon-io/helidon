@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
         }
     }
 
-    abstract static class Builder<B extends Builder<B, M>, M extends Meter> {
+    abstract static class Builder<B extends Builder<B, M>, M extends Meter> implements Wrapper {
 
         private final String name;
         private final Map<String, String> tags = new TreeMap<>(); // tree map for ordering by tag name
@@ -214,6 +214,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         public Optional<String> scope() {
             return Optional.ofNullable(scope);
+        }
+
+        @Override
+        public <R> R unwrap(Class<? extends R> c) {
+            return c.cast(this);
         }
     }
 
