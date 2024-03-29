@@ -191,8 +191,6 @@ class TestSpanAndBaggage {
 
     @Test
     void testExtractWithNoCurrentSpan() {
-        final String BAGGAGE_KEY = "mykey";
-        final String BAGGAGE_VALUE = "myvalue";
         final var tracer = io.helidon.tracing.Tracer.global();
 
         HeaderProvider headers = HeaderProvider.create(Map.of("not-a-trace", List.of("1234567890123456"),
