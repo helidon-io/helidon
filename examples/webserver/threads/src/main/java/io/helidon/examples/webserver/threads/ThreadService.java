@@ -58,15 +58,15 @@ class ThreadService implements HttpService {
          * The second is a virtual thread executor service.
          * See `application.yaml` for configuration of each of these.
          */
-        ThreadPoolSupplier platformThreadPoolSupplier = ThreadPoolSupplier.builder()
+        ThreadPoolSupplier platformThreadSupplier = ThreadPoolSupplier.builder()
                 .config(appConfig.get("application-platform-executor"))
                 .build();
-        platformExecutorService = platformThreadPoolSupplier.get();
+        platformExecutorService = platformThreadSupplier.get();
 
-        ThreadPoolSupplier virtualThreadPoolSupplier = ThreadPoolSupplier.builder()
+        ThreadPoolSupplier virtualThreadSupplier = ThreadPoolSupplier.builder()
                 .config(appConfig.get("application-virtual-executor"))
                 .build();
-        virtualExecutorService = virtualThreadPoolSupplier.get();
+        virtualExecutorService = virtualThreadSupplier.get();
     }
 
     @Override
@@ -91,8 +91,8 @@ class ThreadService implements HttpService {
     private void computeHandler(ServerRequest request, ServerResponse response) {
         int iterations = request.path().pathParameters().first("iterations").asInt().orElse(1);
         try {
-            // We execute the computation on a platform thread. This prevents pining of the virtual
-            // thread, plus provides us the ability to limit the number of concurrent computation requests
+            // We execute the computation on a platform thread. This prevents unbounded obstruction of virtual
+            // threads, plus provides us the ability to limit the number of concurrent computation requests
             // we handle by limiting the thread pool work queue length (as defined in application.yaml)
             Future<Double> future = platformExecutorService.submit(() -> compute(iterations));
             response.send(future.get().toString());
