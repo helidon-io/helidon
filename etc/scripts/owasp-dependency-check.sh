@@ -43,9 +43,11 @@ source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 die(){ cat ${RESULT_FILE} ; echo "Dependency report in ${WS_DIR}/target" ; echo "${1}" ; exit 1 ;}
 
+# Setting NVD_API_KEY is not required but improves behavior of NVD API thrott    ling
 mvn ${MAVEN_ARGS} -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN org.owasp:dependency-check-maven:aggregate \
         -f ${WS_DIR}/pom.xml \
         -Dtop.parent.basedir="${WS_DIR}" \
+        -Dnvd-api-key=${NVD_API_KEY} \
         > ${RESULT_FILE} || die "Error running the Maven command"
 
 grep -i "One or more dependencies were identified with known vulnerabilities" ${RESULT_FILE} \
