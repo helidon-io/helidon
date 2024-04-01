@@ -116,7 +116,7 @@ public interface Meter extends Wrapper {
      * @param <B> type of the builder
      * @param <M> type of the meter the builder creates
      */
-    interface Builder<B extends Builder<B, M>, M extends Meter> {
+    interface Builder<B extends Builder<B, M>, M extends Meter> extends Wrapper {
 
         /**
          * Returns the type-correct "this".
@@ -202,6 +202,8 @@ public interface Meter extends Wrapper {
          * @return the assigned scope if set; empty otherwise
          */
         Optional<String> scope();
+
+
     }
 
     /**

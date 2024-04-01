@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.time.Duration;
 import java.util.List;
 
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,12 +39,14 @@ class TestDistributionSummary {
 
     @Test
     void testUnwrap() {
-        DistributionSummary summary = meterRegistry.getOrCreate(DistributionSummary.builder("a"));
+        DistributionSummary.Builder builder = DistributionSummary.builder("a");
+        builder.unwrap(io.micrometer.core.instrument.DistributionSummary.Builder.class)
+                .distributionStatisticExpiry(Duration.ofMinutes(10));
+        DistributionSummary summary = meterRegistry.getOrCreate(builder);
         List.of(1D, 3D, 5D)
                 .forEach(summary::record);
         io.micrometer.core.instrument.DistributionSummary mSummary =
                 summary.unwrap(io.micrometer.core.instrument.DistributionSummary.class);
-
         mSummary.record(7D);
 
         assertThat("Mean", summary.mean(), is(4D));
