@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -842,7 +842,7 @@ public interface Config {
     /**
      * Register a {@link Consumer} that is invoked each time a change occurs on whole Config or on a particular Config node.
      * <p>
-     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
+     * A user can subscribe on root Config node and then will be notified on any change of Configuration.
      * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
      * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
      * with a node you are subscribed on.
