@@ -83,6 +83,8 @@ abstract class StaticContentHandler implements StaticContentService {
         etag = unquoteETag(etag);
 
         Header newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, '"' + etag + '"');
+        // Put ETag into the response
+        responseHeaders.set(newEtag);
 
         // Process If-None-Match header
         if (requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
@@ -115,9 +117,6 @@ abstract class StaticContentHandler implements StaticContentService {
                 }
             }
         }
-
-        // Put ETag into the response
-        responseHeaders.set(newEtag);
     }
 
     static void processModifyHeaders(Instant modified,
