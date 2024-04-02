@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ class StaticContentHandlerTest {
         when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
-        verify(res).set(ETAG, ETAG_VALUE);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
     }
 
     @Test
@@ -79,7 +79,7 @@ class StaticContentHandlerTest {
         when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"ccc\"", "W/\"aaa\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.NOT_MODIFIED_304);
-        verify(res).set(ETAG, ETAG_VALUE);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
     }
 
     @Test
@@ -90,7 +90,7 @@ class StaticContentHandlerTest {
         when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.PRECONDITION_FAILED_412);
-        verify(res).set(ETAG, ETAG_VALUE);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
     }
 
     @Test
@@ -101,7 +101,7 @@ class StaticContentHandlerTest {
         when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "\"ccc\"", "\"aaa\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
-        verify(res).set(ETAG, ETAG_VALUE);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
     }
 
     @Test
