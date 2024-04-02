@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,8 +81,9 @@ abstract class StaticContentHandler implements StaticContentService {
             return;
         }
         etag = unquoteETag(etag);
-        // Put ETag into the response
-        responseHeaders.set(HeaderNames.ETAG, '"' + etag + '"');
+
+        Header newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, '"' + etag + '"');
+
         // Process If-None-Match header
         if (requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
             List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
@@ -90,7 +91,8 @@ abstract class StaticContentHandler implements StaticContentService {
                 ifNoneMatch = unquoteETag(ifNoneMatch);
                 if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
                     // using exception to handle normal flow (same as in reactive static content)
-                    throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true);
+                    throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true)
+                            .header(newEtag);
                 }
             }
         }
@@ -108,10 +110,14 @@ abstract class StaticContentHandler implements StaticContentService {
                     }
                 }
                 if (!ifMatchChecked) {
-                    throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true);
+                    throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true)
+                            .header(newEtag);
                 }
             }
         }
+
+        // Put ETag into the response
+        responseHeaders.set(newEtag);
     }
 
     static void processModifyHeaders(Instant modified,
