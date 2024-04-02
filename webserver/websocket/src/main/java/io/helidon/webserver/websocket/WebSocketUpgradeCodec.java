@@ -18,6 +18,7 @@ package io.helidon.webserver.websocket;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,8 +42,10 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 
 class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
-
     private static final Logger LOGGER = Logger.getLogger(WebSocketUpgradeCodec.class.getName());
+
+    private static final String SEC_WEBSOCKET_ACCEPT = "Sec-WebSocket-Accept";
+    private static final String SEC_WEBSOCKET_PROTOCOL = "Sec-WebSocket-Protocol";
 
     private final WebSocketRouting webSocketRouting;
     private String path;
@@ -73,23 +76,26 @@ class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
             TyrusUpgradeResponse upgradeResponse = wsHandler.upgradeResponse();
             if (upgradeResponse.getStatus() != Http.Status.SWITCHING_PROTOCOLS_101.code()) {
                 // prepare headers for failed response
-                upgradeResponse.getHeaders().remove(Http.Header.UPGRADE);
-                upgradeResponse.getHeaders().remove(Http.Header.CONNECTION);
-                upgradeResponse.getHeaders().remove("sec-websocket-accept");
+                Map<String, List<String>> upgradeHeaders = upgradeResponse.getHeaders();
+                upgradeHeaders.remove(Http.Header.UPGRADE);
+                upgradeHeaders.remove(Http.Header.CONNECTION);
+                upgradeHeaders.remove(SEC_WEBSOCKET_ACCEPT);
+                upgradeHeaders.remove(SEC_WEBSOCKET_PROTOCOL);
                 HttpHeaders headers = new DefaultHttpHeaders();
-                upgradeResponse.getHeaders().forEach(headers::add);
+                upgradeHeaders.forEach(headers::add);
 
                 // set payload as text/plain with reason phrase
                 headers.add(Http.Header.CONTENT_TYPE, "text/plain");
                 String reasonPhrase = upgradeResponse.getReasonPhrase() == null ? ""
                         : upgradeResponse.getReasonPhrase();
-                HttpResponse r = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                HttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                         HttpResponseStatus.valueOf(upgradeResponse.getStatus()),
                         Unpooled.wrappedBuffer(reasonPhrase.getBytes(Charset.defaultCharset())),
-                        headers, EmptyHttpHeaders.INSTANCE);
+                        headers,
+                        EmptyHttpHeaders.INSTANCE);     // trailing headers
 
                 // write, flush and later close connection
-                ChannelFuture writeComplete = ctx.writeAndFlush(r);
+                ChannelFuture writeComplete = ctx.writeAndFlush(httpResponse);
                 writeComplete.addListener(ChannelFutureListener.CLOSE);
                 return false;
             }
