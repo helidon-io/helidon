@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.webserver.websocket.test;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -28,6 +29,7 @@ import jakarta.websocket.Session;
 import jakarta.websocket.server.HandshakeRequest;
 import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.server.ServerEndpointConfig;
+import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 
 import static io.helidon.webserver.websocket.test.UppercaseCodec.isDecoded;
 
@@ -86,6 +88,19 @@ public class EchoEndpoint {
             LOGGER.info("ServerConfigurator called during handshake");
             super.modifyHandshake(sec, request, response);
             EchoEndpoint.modifyHandshakeCalled.set(true);
+
+            // if not user Helidon, fail to authenticate, return reason and user header
+            String user = getUserFromParams(request);
+            if (!user.equals("Helidon") && response instanceof TyrusUpgradeResponse tyrusResponse) {
+                tyrusResponse.setStatus(401);
+                tyrusResponse.setReasonPhrase("Failed to authenticate");
+                tyrusResponse.getHeaders().put("Endpoint", List.of("EchoEndpoint"));
+            }
+        }
+
+        private String getUserFromParams(HandshakeRequest request) {
+            List<String> values = request.getParameterMap().get("user");
+            return values != null && !values.isEmpty() ? values.get(0) : "";
         }
     }
 

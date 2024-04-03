@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,37 @@
  */
 package io.helidon.webserver.websocket;
 
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.Http;
 import io.helidon.webserver.ForwardingHandler;
 
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import org.glassfish.tyrus.core.TyrusUpgradeResponse;
 
 class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
-
     private static final Logger LOGGER = Logger.getLogger(WebSocketUpgradeCodec.class.getName());
+
+    private static final String SEC_WEBSOCKET_ACCEPT = "Sec-WebSocket-Accept";
+    private static final String SEC_WEBSOCKET_PROTOCOL = "Sec-WebSocket-Protocol";
 
     private final WebSocketRouting webSocketRouting;
     private String path;
@@ -52,14 +67,43 @@ class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
                                           HttpHeaders upgradeResponseHeaders) {
         try {
             path = upgradeRequest.uri();
-            upgradeResponseHeaders.remove("upgrade");
-            upgradeResponseHeaders.remove("connection");
-            this.wsHandler = new WebSocketHandler(ctx, path, upgradeRequest, upgradeResponseHeaders, webSocketRouting);
-            return true;
+            upgradeResponseHeaders.remove(Http.Header.UPGRADE);
+            upgradeResponseHeaders.remove(Http.Header.CONNECTION);
+            wsHandler = new WebSocketHandler(ctx, path, upgradeRequest, upgradeResponseHeaders, webSocketRouting);
+
+            // if not 101 code, create and write to channel a custom user response of
+            // type text/plain using reason as payload and return false back to Netty
+            TyrusUpgradeResponse upgradeResponse = wsHandler.upgradeResponse();
+            if (upgradeResponse.getStatus() != Http.Status.SWITCHING_PROTOCOLS_101.code()) {
+                // prepare headers for failed response
+                Map<String, List<String>> upgradeHeaders = upgradeResponse.getHeaders();
+                upgradeHeaders.remove(Http.Header.UPGRADE);
+                upgradeHeaders.remove(Http.Header.CONNECTION);
+                upgradeHeaders.remove(SEC_WEBSOCKET_ACCEPT);
+                upgradeHeaders.remove(SEC_WEBSOCKET_PROTOCOL);
+                HttpHeaders headers = new DefaultHttpHeaders();
+                upgradeHeaders.forEach(headers::add);
+
+                // set payload as text/plain with reason phrase
+                headers.add(Http.Header.CONTENT_TYPE, "text/plain");
+                String reasonPhrase = upgradeResponse.getReasonPhrase() == null ? ""
+                        : upgradeResponse.getReasonPhrase();
+                HttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                        HttpResponseStatus.valueOf(upgradeResponse.getStatus()),
+                        Unpooled.wrappedBuffer(reasonPhrase.getBytes(Charset.defaultCharset())),
+                        headers,
+                        EmptyHttpHeaders.INSTANCE);     // trailing headers
+
+                // write, flush and later close connection
+                ChannelFuture writeComplete = ctx.writeAndFlush(httpResponse);
+                writeComplete.addListener(ChannelFutureListener.CLOSE);
+                return false;
+            }
         } catch (Throwable cause) {
             LOGGER.log(Level.SEVERE, "Error during upgrade to WebSocket", cause);
             return false;
         }
+        return true;
     }
 
     @Override
