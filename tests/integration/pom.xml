@@ -53,6 +53,7 @@
         <module>mp-gh-5328</module>
         <module>mp-gh-8478</module>
         <module>mp-gh-8495</module>
+        <module>mp-gh-8493</module>
         <module>kafka</module>
         <module>jpa</module>
         <module>jms</module>
