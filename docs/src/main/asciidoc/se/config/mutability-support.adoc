@@ -145,8 +145,8 @@ method on the node of interest.
 include::{sourcedir}/se/config/MutabilitySupportSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Navigate to the `Config` node on which you want to register.
-<2> Invoke the `onChange` method, passing a function (`Function<Config, Boolean>`).
-The config system invokes that function each time the subtree rooted at the
+<2> Invoke the `onChange` method, passing a consumer (`Consumer<Config>`).
+The config system invokes that consumer each time the subtree rooted at the
 `greeting` node changes. The `changedNode` is a new instance of `Config`
 representing the updated subtree rooted at `greeting`.
 

@@ -50,7 +50,7 @@ class MutabilitySupportSnippets {
     void snippet_3(Config config) {
         // tag::snippet_3[]
         config.get("greeting") // <1>
-                .onChange((changedNode) -> { // <2>
+                .onChange(changedNode -> { // <2>
                     System.out.println("Node " + changedNode.key() + " has changed!");
                 });
         // end::snippet_3[]
