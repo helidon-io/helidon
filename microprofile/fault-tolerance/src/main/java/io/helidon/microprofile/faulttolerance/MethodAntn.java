@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,12 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.get
 abstract class MethodAntn {
     private static final System.Logger LOGGER = System.getLogger(MethodAntn.class.getName());
 
-    private static final AnnotationFinder ANNOTATION_FINDER = AnnotationFinder.create(Retry.class.getPackage());
-
-    private final AnnotatedType<?> annotatedType;
+    /**
+     * Annotation finder for annotations in either this package or the microprofile
+     * fault tolerance package.
+     */
+    private static final AnnotationFinder ANNOTATION_FINDER =
+            AnnotationFinder.create(Retry.class.getPackage(), MethodAntn.class.getPackage());
 
     private final AnnotatedMethod<?> annotatedMethod;
 
@@ -80,7 +83,7 @@ abstract class MethodAntn {
      */
     MethodAntn(AnnotatedMethod<?> annotatedMethod) {
         this.annotatedMethod = annotatedMethod;
-        this.annotatedType = annotatedMethod.getDeclaringType();
+        AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
     }
 
     Method method() {

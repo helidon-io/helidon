@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,15 @@ package io.helidon.microprofile.faulttolerance;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 
 /**
  * A stateful bean that defines some async methods.
@@ -164,5 +168,35 @@ class AsynchronousBean {
         CompletableFuture<String> future = new CompletableFuture<>();
         future.completeExceptionally(new IOException("oops"));
         return future;
+    }
+
+    /**
+     * Normal asynchronous call.
+     *
+     * @return A future.
+     */
+    @Asynchronous
+    @WithExecutor("platform-thread-executor")
+    CompletableFuture<String> asyncWithExecutor() {
+        called.set(!Thread.currentThread().isVirtual());
+        FaultToleranceTest.printStatus("AsynchronousBean::asyncWithExecutor", "success");
+        return CompletableFuture.completedFuture("success");
+    }
+
+    @Produces
+    @WithExecutor("platform-thread-executor")
+    ExecutorService executorService() {
+        return Executors.newFixedThreadPool(10);
+    }
+
+    /**
+     * Bad executor name, should throw a {@link FaultToleranceException}.
+     *
+     * @return A future.
+     */
+    @Asynchronous
+    @WithExecutor("does-not-exist")
+    CompletableFuture<String> asyncWithBadExecutor() {
+        return CompletableFuture.completedFuture("failed");
     }
 }

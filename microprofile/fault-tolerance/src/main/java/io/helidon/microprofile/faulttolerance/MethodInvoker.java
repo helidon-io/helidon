@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -31,7 +32,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.faulttolerance.Async;
+import io.helidon.faulttolerance.AsyncConfig;
 import io.helidon.faulttolerance.Bulkhead;
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.CircuitBreaker.State;
@@ -42,9 +43,12 @@ import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryTimeoutException;
 import io.helidon.faulttolerance.Timeout;
 
+import jakarta.enterprise.inject.UnsatisfiedResolutionException;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 import org.eclipse.microprofile.metrics.Counter;
 
 import static io.helidon.faulttolerance.SupplierHelper.toRuntimeException;
@@ -334,7 +338,21 @@ class MethodInvoker implements FtSupplier<Object> {
 
         // Call supplier in new thread
         ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-        CompletableFuture<Object> asyncFuture = Async.create().invoke(() -> {
+        AsyncConfig.Builder asyncBuilder = AsyncConfig.builder();
+
+        // Handle a user-provided executor via @WithExecutor
+        if (introspector.hasWithExecutor()) {
+            WithExecutor withExecutor = introspector.withExecutor();
+            try {
+                ExecutorService executorService = CDI.current().select(ExecutorService.class, withExecutor).get();
+                asyncBuilder.executor(executorService);
+            } catch (UnsatisfiedResolutionException e) {
+                throw new FaultToleranceException(e);
+            }
+        }
+
+        // Invoke async call
+        CompletableFuture<Object> asyncFuture = asyncBuilder.build().invoke(() -> {
             Thread.currentThread().setContextClassLoader(ccl);
             try {
                 return callSupplier(wrappedSupplier);

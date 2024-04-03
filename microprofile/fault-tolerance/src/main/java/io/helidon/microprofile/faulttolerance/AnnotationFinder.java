@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import jakarta.interceptor.InterceptorBinding;
  * Searches for transitive annotations associated with interceptor bindings in
  * a given Java package. Some of these operations can be expensive, so their
  * results should be cached.
- *
+ * <p>
  * For example, a new annotation {@code @TimedRetry} is itself annotated by
  * {@code @Timeout} and {@code @Retry}, and both need to be found if a method
  * uses {@code @TimedRetry} instead.
@@ -48,25 +48,25 @@ public class AnnotationFinder {
             "org.eclipse.microprofile."
     };
 
-    private final Package pkg;
+    private final Package[] packages;
 
-    private AnnotationFinder(Package pkg) {
-        this.pkg = pkg;
+    private AnnotationFinder(Package... pkg) {
+        this.packages = pkg;
     }
 
     /**
-     * Create a find given a Java package.
+     * Create an annotation finder given an array of Java package.
      *
-     * @param pkg a package
+     * @param packages the packages
      * @return the finder
      */
-    static AnnotationFinder create(Package pkg) {
-        Objects.requireNonNull(pkg);
-        return new AnnotationFinder(pkg);
+    static AnnotationFinder create(Package... packages) {
+        Objects.requireNonNull(packages);
+        return new AnnotationFinder(packages);
     }
 
     Set<Annotation> findAnnotations(Set<Annotation> set, BeanManager bm) {
-        return findAnnotations(set, new HashSet<>(), new HashSet<>(), pkg, bm);
+        return findAnnotations(set, new HashSet<>(), new HashSet<>(), packages, bm);
     }
 
     /**
@@ -77,25 +77,34 @@ public class AnnotationFinder {
      * @param set set of annotations to start with
      * @param result set of annotations returned
      * @param seen set of annotations already processed
-     * @param pkg the package
+     * @param packages the packages
      * @return the result set of annotations
      */
     private Set<Annotation> findAnnotations(Set<Annotation> set, Set<Annotation> result,
-                                            Set<Annotation> seen, Package pkg, BeanManager bm) {
+                                            Set<Annotation> seen, Package[] packages, BeanManager bm) {
         for (Annotation a1 : set) {
             Class<? extends Annotation> a1Type = a1.annotationType();
-            if (a1Type.getName().startsWith(pkg.getName())) {       // Avoid getPackage() - Issue #4296
+            if (isInPackages(a1Type, packages)) {
                 result.add(a1);
             } else if (!seen.contains(a1) && isOfInterest(a1, bm)) {
                 seen.add(a1);
                 Set<Annotation> a1Set = Set.of(a1Type.getAnnotations());
-                findAnnotations(a1Set, result, seen, pkg, bm);
+                findAnnotations(a1Set, result, seen, packages, bm);
             }
         }
         return result;
     }
 
-    private boolean isOfInterest(Annotation a, BeanManager bm) {
+    private static boolean isInPackages(Class<? extends Annotation> type, Package[] packages) {
+        for (Package pkg : packages) {
+            if (type.getName().startsWith(pkg.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isOfInterest(Annotation a, BeanManager bm) {
         if (bm != null && bm.isInterceptorBinding(a.annotationType())
                 || a.annotationType().isAnnotationPresent(InterceptorBinding.class)) {
             Optional<String> matches = Stream.of(SKIP_PACKAGE_PREFIXES)
