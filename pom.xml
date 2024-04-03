@@ -61,7 +61,7 @@
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
         <version.lib.commons-io>2.11.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.microprofile-core-profile>10.0.2</version.lib.microprofile-core-profile>
+        <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
         <version.lib.sigtest>1.4</version.lib.sigtest>
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.0.12</version.lib.microprofile-cdi-tck>
