@@ -29,11 +29,11 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Application;
 import org.glassfish.jersey.inject.hk2.Hk2InjectionManagerFactory;
 import org.glassfish.jersey.inject.hk2.ImmediateHk2InjectionManager;
+import org.glassfish.jersey.innate.inject.InstanceBinding;
 import org.glassfish.jersey.internal.inject.Binder;
 import org.glassfish.jersey.internal.inject.Binding;
 import org.glassfish.jersey.internal.inject.ForeignDescriptor;
 import org.glassfish.jersey.internal.inject.InjectionManager;
-import org.glassfish.jersey.internal.inject.InstanceBinding;
 import org.glassfish.jersey.internal.inject.ServiceHolder;
 import org.glassfish.jersey.server.ResourceConfig;
 

@@ -1479,5 +1479,21 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>staging</id>
+            <repositories>
+                <repository>
+                    <id>staging</id>
+                    <name>OSS Sonatype Staging</name>
+                    <url>https://jakarta.oss.sonatype.org/content/repositories/staging</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                </repository>
+            </repositories>
+        </profile>
     </profiles>
 </project>

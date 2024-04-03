@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.server;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -240,7 +242,13 @@ class ServerSseTest {
         public void listenToEvents(@Context SseEventSink eventSink, @Context Sse sse) {
             eventSink.send(sse.newEvent("hello"))
                 .exceptionally(e -> fail(e))
-                .thenRun(eventSink::close); // critical
+                .thenRun(() -> {
+                    try {
+                        eventSink.close();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }); // critical
         }
     }
 

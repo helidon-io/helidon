@@ -131,6 +131,7 @@
                         <org.jboss.weld.executor.threadPoolType>SINGLE_THREAD</org.jboss.weld.executor.threadPoolType>
                         <jimage.dir>${project.build.directory}/jdk11-bundle</jimage.dir>
                         <signature.sigTestClasspath>${project.build.directory}/lib/jakarta.xml.bind-api-${version.lib.jakarta.xml.bind-api}.jar:${project.build.directory}/lib/jakarta.ws.rs-api-${version.lib.jakarta.jaxrs-api}.jar:${project.build.directory}/jdk11-bundle/java.base:${project.build.directory}/jdk11-bundle/java.rmi:${project.build.directory}/jdk11-bundle/java.sql:${project.build.directory}/jdk11-bundle/java.naming</signature.sigTestClasspath>
+                        <porting.ts.url.class.1>ee.jakarta.tck.ws.rs.lib.implementation.sun.common.SunRIURL</porting.ts.url.class.1>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Predicate;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.FileSource;
@@ -287,6 +288,16 @@ public class BasicRequestTest extends AbstractTest {
                 @Override
                 public String getHeaderString(String name) {
                     return requestHeaders.getHeader(name).firstValue();
+                }
+
+                @Override
+                public boolean containsHeaderString(String s, String s1, Predicate<String> predicate) {
+                    return false;
+                }
+
+                @Override
+                public boolean containsHeaderString(String name, Predicate<String> valuePredicate) {
+                    return HttpHeaders.super.containsHeaderString(name, valuePredicate);
                 }
 
                 @Override
