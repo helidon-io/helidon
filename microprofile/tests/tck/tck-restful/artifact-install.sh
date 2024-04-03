@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,5 +21,5 @@ VERSION="$1"
 
 # jar
 mvn org.apache.maven.plugins:maven-install-plugin:3.0.0-M1:install-file \
--Dfile=target/jakarta-restful-ws-tck-"$VERSION".jar -DgroupId=jakarta.ws.rs \
+-Dfile=target/restful-ws-tck/artifacts/jakarta-restful-ws-tck-"$VERSION".jar -DgroupId=jakarta.ws.rs \
 -DartifactId=jakarta-restful-ws-tck -Dversion="$VERSION" -Dpackaging=jar
