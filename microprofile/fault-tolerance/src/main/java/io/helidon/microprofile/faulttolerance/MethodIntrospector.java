@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,8 @@ class MethodIntrospector {
 
     private final Bulkhead bulkhead;
 
+    private final WithExecutor withExecutor;
+
     private Tag methodNameTag;
 
     /**
@@ -78,6 +80,7 @@ class MethodIntrospector {
         this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(annotatedMethod) : null;
         this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(annotatedMethod) : null;
         this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(annotatedMethod) : null;
+        this.withExecutor = method.getAnnotation(WithExecutor.class);
     }
 
     /**
@@ -147,6 +150,14 @@ class MethodIntrospector {
 
     Bulkhead getBulkhead() {
         return bulkhead;
+    }
+
+    boolean hasWithExecutor() {
+        return withExecutor != null;
+    }
+
+    WithExecutor withExecutor() {
+        return withExecutor;
     }
 
     /**

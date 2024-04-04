@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,13 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
-
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for asynchronous invocations using {@code Asynchronous}.
@@ -122,5 +123,20 @@ class AsynchronousTest extends FaultToleranceTest {
         CompletableFuture<String> completableFuture = bean.asyncCompletableFutureWithFallbackFailure();
         assertThat(completableFuture.get(), is("fallback"));
         assertThat(bean.wasCalled(), is(true));
+    }
+
+    @Test
+    void testAsyncWithExecutor() throws Exception {
+        assertThat(bean.wasCalled(), is(false));
+        CompletableFuture<String> future = bean.asyncWithExecutor();
+        future.get();
+        assertThat(bean.wasCalled(), is(true));
+    }
+
+    @Test
+    void testAsyncWithBadExecutor() {
+        assertThat(bean.wasCalled(), is(false));
+        assertThrows(FaultToleranceException.class, () -> bean.asyncWithBadExecutor());
+        assertThat(bean.wasCalled(), is(false));
     }
 }
