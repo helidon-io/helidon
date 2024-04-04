@@ -967,6 +967,17 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-multipart</artifactId>
+                <version>${version.lib.jersey}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.hk2.external</groupId>
+                        <artifactId>jakarta.inject</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish.jersey.ext.microprofile</groupId>
                 <artifactId>jersey-mp-rest-client</artifactId>
                 <version>${version.lib.jersey}</version>
