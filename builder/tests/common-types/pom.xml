@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.builder.tests</groupId>
         <artifactId>helidon-builder-tests-project</artifactId>
-        <version>4.0.7-SNAPSHOT</version>
+        <version>4.0.7</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
