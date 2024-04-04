@@ -37,6 +37,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -437,10 +438,19 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     protected ClientUri resolveUri(ClientUri toResolve) {
         if (uriTemplate != null) {
             String resolved = resolvePathParams(uriTemplate);
+            URI uri;
             if (skipUriEncoding) {
-                toResolve.resolve(URI.create(resolved));
+                uri = URI.create(resolved);
             } else {
-                toResolve.resolve(URI.create(UriEncoding.encodeUri(resolved)));
+                uri = URI.create(UriEncoding.encodeUri(resolved));
+            }
+            toResolve.resolve(uri);
+
+            if (uri.isAbsolute()) { // query parameters are cleared when resolving against absolute URIs
+                UriQuery query = clientUri.query();
+                if (!query.isEmpty()) {
+                    toResolve.writeableQuery().from(query);
+                }
             }
         }
         return toResolve;
