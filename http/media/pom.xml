@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.http</groupId>
         <artifactId>helidon-http-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.7-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.http.media</groupId>
