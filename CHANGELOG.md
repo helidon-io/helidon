@@ -11,6 +11,47 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.7]
+
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+
+Java 21 is required to use Helidon 4.0.7.
+
+### CHANGES
+
+- Builders: Avoid using replicated default values for Lists when creating from builder or instance [8428](https://github.com/helidon-io/helidon/pull/8428)
+- CORS: Properly handle opaque origin ("null") in CORS processing [8537](https://github.com/helidon-io/helidon/pull/8537)
+- JAX-RS: Fix failure with input stream obtained more than once for post with more than one JAX-RS app [8558](https://github.com/helidon-io/helidon/pull/8558)
+- Metrics: Add `unwrap` support to metrics builders [8588](https://github.com/helidon-io/helidon/pull/8588)
+- Observability: Observers now inherit weight of the ObserveFeature. [8554](https://github.com/helidon-io/helidon/pull/8554)
+- Security: Disabled OidcFeature no longer throws an NPE. [8520](https://github.com/helidon-io/helidon/pull/8520)
+- Security: If there is no configuration of oidc provider, it is considered disabled [8603](https://github.com/helidon-io/helidon/pull/8603)
+- Security: Support for disabling security providers through configuration. [8521](https://github.com/helidon-io/helidon/pull/8521)
+- TLS: Fixed method that compares SSLParameters for equality [8570](https://github.com/helidon-io/helidon/pull/8570)
+- Tracing: Fix baggage propagation from current active span [8512](https://github.com/helidon-io/helidon/pull/8512)
+- Tracing: Properly return Optional.empty() for current span if there is no current OTel span [8583](https://github.com/helidon-io/helidon/pull/8583)
+- WebServer: Fix static content sending 304 with entity. [8599](https://github.com/helidon-io/helidon/pull/8599)
+- WebServer: Make HttpRouting an interface [8523](https://github.com/helidon-io/helidon/pull/8523)
+- WebServer: Validate that header has at least one value when list is used. [8489](https://github.com/helidon-io/helidon/pull/8489)
+- Build: Add version check to release script [8481](https://github.com/helidon-io/helidon/pull/8481)
+- Build: Upgrade upload-artifact to v4 [8610](https://github.com/helidon-io/helidon/pull/8610)
+- Dependencies: Integrate Helidon Build Tools v4.0.6 [8476](https://github.com/helidon-io/helidon/pull/8476)
+- Dependencies: Upgrade netty to 4.1.108.Final [8532](https://github.com/helidon-io/helidon/pull/8532)
+- Dependencies: Upgrade oci-sdk to 3.39.0 [8611](https://github.com/helidon-io/helidon/pull/8611)
+- Docs: Add MP observability page; discuss weight setting to resolve some routing conflicts [8580](https://github.com/helidon-io/helidon/pull/8580)
+- Docs: Clarify ordinal definition of meta-config [8581](https://github.com/helidon-io/helidon/pull/8581)
+- Docs: Fix SE Health endpoint path to match code snippet [8587](https://github.com/helidon-io/helidon/pull/8587)
+- Docs: Fix wrong example for Config.onChange (#8607) [8608](https://github.com/helidon-io/helidon/pull/8608)
+- Examples: Archetype - Add opens WEB to module info for multipart [8506](https://github.com/helidon-io/helidon/pull/8506)
+- Examples: Archetype - Fix Json code duplication [8507](https://github.com/helidon-io/helidon/pull/8507)
+- Examples: Archetype - Kubernetes uses `ClusterIP` instead of `NodePort` [8488](https://github.com/helidon-io/helidon/pull/8488)
+- Examples: Update streaming example so it starts and downloads last uploaded file [8515](https://github.com/helidon-io/helidon/pull/8515)
+- Examples: remove netty logging config from logging.properties [8534](https://github.com/helidon-io/helidon/pull/8534)
+- Examples: threading example [8576](https://github.com/helidon-io/helidon/pull/8576)
+- Tests: Avoid implementing the OCI Monitoring interface. [8474](https://github.com/helidon-io/helidon/pull/8474)
+- Tests: Introducing a test to validate that combination of config annotations… [8491](https://github.com/helidon-io/helidon/pull/8491)
+- Tests: Upgrade core profile tests to version 10.0.3 [8606](https://github.com/helidon-io/helidon/pull/8606)
+
 ## [4.0.6]
 
 This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
@@ -1094,6 +1135,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.7]: https://github.com/oracle/helidon/compare/4.0.6...4.0.7
 [4.0.6]: https://github.com/oracle/helidon/compare/4.0.5...4.0.6
 [4.0.5]: https://github.com/oracle/helidon/compare/4.0.4...4.0.5
 [4.0.4]: https://github.com/oracle/helidon/compare/4.0.3...4.0.4
