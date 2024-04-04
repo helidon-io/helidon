@@ -27,11 +27,11 @@ import jakarta.interceptor.InterceptorBinding;
 
 /**
  * Annotation used to specify an executor for an asynchronous call. Can be used
- * for example to create platform instead of virtual threads.
+ * e.g. to create platform instead of virtual threads. Targets only a method.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.METHOD})
 @Inherited
 @Qualifier
 @InterceptorBinding
