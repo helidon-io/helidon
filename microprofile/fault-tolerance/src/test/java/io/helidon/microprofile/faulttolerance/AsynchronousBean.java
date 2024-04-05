@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
-import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 
 /**
  * A stateful bean that defines some async methods.
@@ -187,16 +186,5 @@ class AsynchronousBean {
     @WithExecutor("platform-thread-executor")
     ExecutorService executorService() {
         return Executors.newFixedThreadPool(10);
-    }
-
-    /**
-     * Bad executor name, should throw a {@link FaultToleranceException}.
-     *
-     * @return A future.
-     */
-    @Asynchronous
-    @WithExecutor("does-not-exist")
-    CompletableFuture<String> asyncWithBadExecutor() {
-        return CompletableFuture.completedFuture("failed");
     }
 }

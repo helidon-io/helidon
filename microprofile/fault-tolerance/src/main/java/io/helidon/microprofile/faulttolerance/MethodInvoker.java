@@ -43,12 +43,10 @@ import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryTimeoutException;
 import io.helidon.faulttolerance.Timeout;
 
-import jakarta.enterprise.inject.UnsatisfiedResolutionException;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
-import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 import org.eclipse.microprofile.metrics.Counter;
 
 import static io.helidon.faulttolerance.SupplierHelper.toRuntimeException;
@@ -343,12 +341,8 @@ class MethodInvoker implements FtSupplier<Object> {
         // Handle a user-provided executor via @WithExecutor
         if (introspector.hasWithExecutor()) {
             WithExecutor withExecutor = introspector.withExecutor();
-            try {
-                ExecutorService executorService = CDI.current().select(ExecutorService.class, withExecutor).get();
-                asyncBuilder.executor(executorService);
-            } catch (UnsatisfiedResolutionException e) {
-                throw new FaultToleranceException(e);
-            }
+            ExecutorService executorService = CDI.current().select(ExecutorService.class, withExecutor).get();
+            asyncBuilder.executor(executorService);
         }
 
         // Invoke async call

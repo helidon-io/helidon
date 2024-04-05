@@ -17,12 +17,14 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import jakarta.annotation.Priority;
@@ -33,6 +35,7 @@ import jakarta.enterprise.inject.spi.AnnotatedConstructor;
 import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.BeforeShutdown;
@@ -50,6 +53,7 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 import org.glassfish.jersey.process.internal.RequestScope;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
@@ -210,8 +214,6 @@ public class FaultToleranceExtension implements Extension {
                              @Initialized(ApplicationScoped.class) Object event) {
         if (FaultToleranceMetrics.enabled()) {
             getRegisteredMethods().forEach(annotatedMethod -> {
-                final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
-
                 // Metrics depending on the annotationSet present
                 if (MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)) {
                     new RetryAntn(annotatedMethod).validate();
@@ -230,8 +232,22 @@ public class FaultToleranceExtension implements Extension {
                 }
                 if (MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)) {
                     new AsynchronousAntn(annotatedMethod).validate();
+                    validateWithExecutor(bm, annotatedMethod.getJavaMember());
                 }
             });
+        }
+    }
+
+    static void validateWithExecutor(BeanManager bm, Method method) {
+        WithExecutor withExecutor = method.getAnnotation(WithExecutor.class);
+        if (withExecutor != null) {
+            Set<Bean<?>> beans = bm.getBeans(ExecutorService.class, withExecutor);
+            if (beans.isEmpty()) {
+                throw new FaultToleranceDefinitionException("Unable to resolved named executor service '"
+                        + withExecutor.value() + "' at "
+                        + method.getDeclaringClass().getName() + "::"
+                        + method.getName());
+            }
         }
     }
 

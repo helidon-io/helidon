@@ -22,12 +22,10 @@ import java.util.concurrent.Future;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for asynchronous invocations using {@code Asynchronous}.
@@ -131,12 +129,5 @@ class AsynchronousTest extends FaultToleranceTest {
         CompletableFuture<String> future = bean.asyncWithExecutor();
         future.get();
         assertThat(bean.wasCalled(), is(true));
-    }
-
-    @Test
-    void testAsyncWithBadExecutor() {
-        assertThat(bean.wasCalled(), is(false));
-        assertThrows(FaultToleranceException.class, () -> bean.asyncWithBadExecutor());
-        assertThat(bean.wasCalled(), is(false));
     }
 }
