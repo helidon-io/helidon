@@ -141,13 +141,34 @@ class GreetResourceMockedTest {
         public CreateAlarmResponse createAlarm(CreateAlarmRequest createAlarmRequest) {return null;}
 
         @Override
+        public CreateAlarmSuppressionResponse createAlarmSuppression(CreateAlarmSuppressionRequest createAlarmSuppressionRequest) {
+            return null;
+        }
+
+        @Override
         public DeleteAlarmResponse deleteAlarm(DeleteAlarmRequest deleteAlarmRequest) {return null;}
+
+        @Override
+        public DeleteAlarmSuppressionResponse deleteAlarmSuppression(DeleteAlarmSuppressionRequest deleteAlarmSuppressionRequest) {
+            return null;
+        }
 
         @Override
         public GetAlarmResponse getAlarm(GetAlarmRequest getAlarmRequest) {return null;}
 
         @Override
         public GetAlarmHistoryResponse getAlarmHistory(GetAlarmHistoryRequest getAlarmHistoryRequest) {return null;}
+
+        @Override
+        public GetAlarmSuppressionResponse getAlarmSuppression(GetAlarmSuppressionRequest getAlarmSuppressionRequest) {
+            return null;
+        }
+
+        @Override
+        public ListAlarmSuppressionsResponse listAlarmSuppressions(ListAlarmSuppressionsRequest listAlarmSuppressionsRequest) {
+            return null;
+        }
+
 
         @Override
         public ListAlarmsResponse listAlarms(ListAlarmsRequest listAlarmsRequest) {return null;}
@@ -180,6 +201,11 @@ class GreetResourceMockedTest {
 
         @Override
         public RetrieveDimensionStatesResponse retrieveDimensionStates(RetrieveDimensionStatesRequest retrieveDimensionStatesRequest) {
+            return null;
+        }
+
+        @Override
+        public SummarizeAlarmSuppressionHistoryResponse summarizeAlarmSuppressionHistory(SummarizeAlarmSuppressionHistoryRequest summarizeAlarmSuppressionHistoryRequest) {
             return null;
         }
 
