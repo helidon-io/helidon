@@ -45,7 +45,6 @@
             <value key="helidon-test">true</value>
             <value key="mainClass" if="${jpms}">${package}.Main</value>
             <value key="idea-main-class" if="${jpms}">${package}.Main</value>
-            <value key="idea-main-class" if="!(${jpms})">io.helidon.Main</value>
             <list key="microprofile-config-entries">
                 <value file="files/microprofile-config.properties"/>
             </list>
