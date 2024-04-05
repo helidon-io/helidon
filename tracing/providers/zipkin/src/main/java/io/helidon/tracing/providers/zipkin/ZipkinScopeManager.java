@@ -15,7 +15,7 @@
  */
 package io.helidon.tracing.providers.zipkin;
 
-import io.helidon.tracing.SpanInfo;
+import io.helidon.tracing.Tracer;
 
 import brave.opentracing.BraveScopeManager;
 import io.opentracing.Scope;
@@ -54,20 +54,43 @@ class ZipkinScopeManager implements ScopeManager {
         return scopeManager.activeSpan();
     }
 
-    private static class ZipkinScope implements Scope, SpanInfo.ScopeInfo {
+    private static class ZipkinScope implements Scope {
 
         private final Scope delegate;
         private final ZipkinSpan zSpan;
+        private final Limited limited;
+        private boolean isClosed;
 
         private ZipkinScope(Scope delegate, ZipkinSpan zSpan) {
             this.delegate = delegate;
             this.zSpan = zSpan;
+            limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
         }
 
         @Override
         public void close() {
             delegate.close();
-            ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterClose(zSpan, this));
+            isClosed = true;
+            Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterClose(zSpan.limited(), limited));
+        }
+
+        static class Limited implements io.helidon.tracing.Scope {
+
+            private final ZipkinScope delegate;
+
+            private Limited(ZipkinScope delegate) {
+                this.delegate = delegate;
+            }
+
+            @Override
+            public void close() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isClosed() {
+                return delegate.isClosed;
+            }
         }
     }
 }

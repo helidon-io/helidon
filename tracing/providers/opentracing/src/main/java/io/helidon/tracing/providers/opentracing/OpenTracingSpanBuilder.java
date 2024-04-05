@@ -22,19 +22,20 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
-import io.helidon.tracing.SpanInfo;
 
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 
-class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder>, SpanInfo.BuilderInfo<OpenTracingSpanBuilder> {
+class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     private final Tracer.SpanBuilder delegate;
     private final Tracer tracer;
+    private final Limited limited;
     private Map<String, String> baggage;
 
     OpenTracingSpanBuilder(Tracer tracer, Tracer.SpanBuilder delegate) {
         this.tracer = tracer;
         this.delegate = delegate;
+        limited = io.helidon.tracing.Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
     }
 
     @Override
@@ -94,12 +95,12 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder>, Sp
     @Override
     public Span start(Instant instant) {
         long micro = TimeUnit.MILLISECONDS.toMicros(instant.toEpochMilli());
-        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.beforeStart(this));
-        Span result = new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start());
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.beforeStart(limited));
+        OpenTracingSpan result = new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start());
         if (baggage != null) {
             baggage.forEach((k, v) -> result.baggage().set(k, v));
         }
-        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterStart(result));
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterStart(result.limited()));
         return result;
     }
 
@@ -113,5 +114,46 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder>, Sp
         }
         throw new IllegalArgumentException("Cannot provide an instance of " + type.getName()
                                                    + ", span builder is: " + delegate.getClass().getName());
+    }
+
+    private record Limited(OpenTracingSpanBuilder delegate) implements Span.Builder<Limited> {
+
+        @Override
+        public Span build() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Limited parent(SpanContext spanContext) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Limited kind(Span.Kind kind) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Limited tag(String key, String value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Limited tag(String key, Boolean value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Limited tag(String key, Number value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Span start(Instant instant) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

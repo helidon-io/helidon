@@ -16,6 +16,7 @@
 package io.helidon.tracing;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -25,7 +26,7 @@ import java.util.Optional;
  * Span is the base reporting unit of tracing. Spans can have a parent ({@link Builder#parent(SpanContext)},
  * you can add {@link #tag(Tag)} to it, and you can log {@link #addEvent(String, java.util.Map)}.
  */
-public interface Span extends SpanInfo {
+public interface Span {
     /**
      * Provide current span if one is available.
      * This is using a thread local, so it may provide unexpected results in a reactive environment. Please use
@@ -49,6 +50,32 @@ public interface Span extends SpanInfo {
         return this;
     }
 
+    /**
+     * Add a string tag.
+     *
+     * @param key   tag key
+     * @param value tag value
+     * @return current span
+     */
+    Span tag(String key, String value);
+
+    /**
+     * Add a boolean tag.
+     *
+     * @param key   tag key
+     * @param value tag value
+     * @return current span
+     */
+    Span tag(String key, Boolean value);
+
+    /**
+     * Add a numeric tag.
+     *
+     * @param key   tag key
+     * @param value tag value
+     * @return current span
+     */
+    Span tag(String key, Number value);
 
     /**
      * Span status, mostly used to configure {@link Status#ERROR}.
@@ -64,6 +91,14 @@ public interface Span extends SpanInfo {
      * @return context of this span
      */
     SpanContext context();
+
+    /**
+     * Add an event to this span.
+     *
+     * @param name name of the event
+     * @param attributes event attributes to be recorded
+     */
+    void addEvent(String name, Map<String, ?> attributes);
 
     /**
      * End this tag (finish processing) using current timestamp.
@@ -106,6 +141,22 @@ public interface Span extends SpanInfo {
      */
     @Deprecated(since = "4.0.5", forRemoval = true)
     Optional<String> baggage(String key);
+
+    /**
+     * Returns writable baggage associated with this span.
+     *
+     * @return the mutable baggage instance for the span
+     */
+    WritableBaggage baggage();
+
+    /**
+     * Add a new event to this span.
+     *
+     * @param logMessage message to log
+     */
+    default void addEvent(String logMessage) {
+        addEvent(logMessage, Map.of());
+    }
 
     /**
      * Access the underlying span by specific type.
@@ -174,7 +225,7 @@ public interface Span extends SpanInfo {
      *
      * @param <B> type of the builder that implements this interface, to have correct return types of builder methods
      */
-    interface Builder<B extends Builder<B>> extends SpanInfo.BuilderInfo<B>, io.helidon.common.Builder<B, Span> {
+    interface Builder<B extends Builder<B>> extends io.helidon.common.Builder<B, Span> {
         /**
          * Parent span of the new span.
          *
@@ -201,6 +252,33 @@ public interface Span extends SpanInfo {
             tag.apply(this);
             return identity();
         }
+
+        /**
+         * Add a string tag.
+         *
+         * @param key   tag key
+         * @param value tag value
+         * @return updated builder instance
+         */
+        B tag(String key, String value);
+
+        /**
+         * Add a boolean tag.
+         *
+         * @param key   tag key
+         * @param value tag value
+         * @return updated builder instance
+         */
+        B tag(String key, Boolean value);
+
+        /**
+         * Add a number tag.
+         *
+         * @param key   tag key
+         * @param value tag value
+         * @return updated builder instance
+         */
+        B tag(String key, Number value);
 
         /**
          * Build and start the span with current timestamp.

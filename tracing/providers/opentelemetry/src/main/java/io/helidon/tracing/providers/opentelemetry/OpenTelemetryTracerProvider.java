@@ -15,14 +15,11 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -31,7 +28,6 @@ import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.spi.SpanLifeCycleListener;
 import io.helidon.tracing.spi.TracerProvider;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -68,9 +64,6 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
         });
     }
 
-    private static final List<SpanLifeCycleListener> LIFE_CYCLE_LISTENERS = HelidonServiceLoader.create(
-            ServiceLoader.load(SpanLifeCycleListener.class)).asList();
-
     /**
      * Creates a new provider; reserved for service loading.
      */
@@ -95,10 +88,6 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
      */
     public static Tracer globalTracer() {
         return GLOBAL_TRACER.get();
-    }
-
-    static List<SpanLifeCycleListener> lifeCycleListeners() {
-        return LIFE_CYCLE_LISTENERS;
     }
 
     /**

@@ -16,9 +16,9 @@
 
 package io.helidon.tracing.providers.zipkin;
 
+import java.time.Instant;
 import java.util.List;
 
-import io.helidon.tracing.SpanInfo;
 import io.helidon.tracing.Tag;
 
 import io.opentracing.Span;
@@ -32,16 +32,19 @@ import io.opentracing.Tracer;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-class ZipkinSpanBuilder implements Tracer.SpanBuilder, SpanInfo.BuilderInfo<Tracer.SpanBuilder> {
+class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     private final Tracer tracer;
     private final Tracer.SpanBuilder spanBuilder;
-    private final List<Tag<?>> tags;
+
+    private final Limited limited;
     private boolean isClient;
+
 
     ZipkinSpanBuilder(Tracer tracer, Tracer.SpanBuilder spanBuilder, List<Tag<?>> tags) {
         this.tracer = tracer;
         this.spanBuilder = spanBuilder;
-        this.tags = tags;
+        tags.forEach(t -> this.withTag(t.key(), t)); // Updates both the native span builder and our internal tags structure.
+        limited = new Limited(this);
     }
 
     @Override
@@ -91,7 +94,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder, SpanInfo.BuilderInfo<Trac
 
     @Override
     public Span start() {
-        ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.beforeStart(this));
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.beforeStart(limited));
         Span span = spanBuilder.start();
 
         if (isClient) {
@@ -101,7 +104,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder, SpanInfo.BuilderInfo<Trac
         }
 
         var result = new ZipkinSpan(span, isClient);
-        ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterStart(result));
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterStart(result.limited()));
 
         return result;
     }
@@ -113,31 +116,74 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder, SpanInfo.BuilderInfo<Trac
 
     @Override
     public <T> Tracer.SpanBuilder withTag(io.opentracing.tag.Tag<T> tag, T value) {
+        switch (value) {
+            case Boolean b -> Tag.create(tag.getKey(), b);
+            case Number n -> Tag.create(tag.getKey(), n);
+            case String s -> Tag.create(tag.getKey(), s);
+            default -> Tag.create(tag.getKey(), value.toString());
+        }
         return spanBuilder.withTag(tag, value);
     }
 
-    @Override
-    public Tracer.SpanBuilder tag(Tag<?> tag) {
-        return switch (tag.value()) {
-            case Boolean b -> withTag(tag.key(), b);
-            case Number n -> withTag(tag.key(), n);
-            case String s -> withTag(tag.key(), s);
-            default -> withTag(tag.key(), tag.value().toString());
-        };
+    private Tracer.SpanBuilder withTag(String key, Object value) {
+        switch (value) {
+            case Number n -> withTag(key, n);
+            case Boolean b -> withTag(key, b);
+            case String s -> withTag(key, s);
+            default -> withTag(key, value.toString());
+        }
+        return this;
     }
 
-    @Override
-    public Tracer.SpanBuilder tag(String key, String value) {
-        return withTag(key, value);
-    }
+    private record Limited(ZipkinSpanBuilder delegate) implements io.helidon.tracing.Span.Builder<Limited> {
 
-    @Override
-    public Tracer.SpanBuilder tag(String key, Boolean value) {
-        return withTag(key, value);
-    }
+        @Override
+            public io.helidon.tracing.Span build() {
+                throw new UnsupportedOperationException();
+            }
 
-    @Override
-    public Tracer.SpanBuilder tag(String key, Number value) {
-        return withTag(key, value);
-    }
+            @Override
+            public Limited parent(io.helidon.tracing.SpanContext spanContext) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Limited kind(io.helidon.tracing.Span.Kind kind) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Limited tag(Tag<?> tag) {
+                delegate.withTag(tag.key(), tag);
+                return this;
+            }
+
+            @Override
+            public Limited tag(String key, String value) {
+                delegate.withTag(key, value);
+                return this;
+            }
+
+            @Override
+            public Limited tag(String key, Boolean value) {
+                delegate.withTag(key, value);
+                return this;
+            }
+
+            @Override
+            public Limited tag(String key, Number value) {
+                delegate.withTag(key, value);
+                return this;
+            }
+
+            @Override
+            public io.helidon.tracing.Span start() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public io.helidon.tracing.Span start(Instant instant) {
+                throw new UnsupportedOperationException();
+            }
+        }
 }

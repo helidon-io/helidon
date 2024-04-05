@@ -31,7 +31,7 @@
     </Match>
     <Match>
         <Class name="io.helidon.tracing.Tag$StringTag"/>
-        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFJFECT,UC_USELESS_VOID_METHOD" />
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT,UC_USELESS_VOID_METHOD" />
     </Match>
     <Match>
         <Class name="io.helidon.tracing.Tag$NumericTag"/>

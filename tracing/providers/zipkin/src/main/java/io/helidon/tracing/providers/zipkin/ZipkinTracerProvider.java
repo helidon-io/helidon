@@ -19,15 +19,12 @@ import java.lang.System.Logger.Level;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.ServiceLoader;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider;
-import io.helidon.tracing.spi.SpanLifeCycleListener;
 
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -50,13 +47,6 @@ public class ZipkinTracerProvider implements OpenTracingProvider {
 
     private static final List<String> TRACING_CONTEXT_PROPAGATION_HEADERS =
             List.of(X_OT_SPAN_CONTEXT, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
-
-    private static final List<SpanLifeCycleListener> LIFE_CYCLE_LISTENERS = HelidonServiceLoader.create(
-            ServiceLoader.load(SpanLifeCycleListener.class)).asList();
-
-    static List<SpanLifeCycleListener> lifeCycleListeners() {
-        return LIFE_CYCLE_LISTENERS;
-    }
 
     @Override
     public ZipkinTracerBuilder createBuilder() {
