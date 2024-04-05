@@ -18,18 +18,24 @@ package io.helidon.tracing.providers.opentelemetry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.tracing.Scope;
+import io.helidon.tracing.Tracer;
 
 class OpenTelemetryScope implements Scope {
+    private final OpenTelemetrySpan span;
     private final io.opentelemetry.context.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final Limited limited;
 
-    OpenTelemetryScope(io.opentelemetry.context.Scope scope) {
+    OpenTelemetryScope(OpenTelemetrySpan span, io.opentelemetry.context.Scope scope) {
+        this.span = span;
         delegate = scope;
+        limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
+            Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterClose(span.limited(), limited));
             delegate.close();
         }
     }
@@ -38,4 +44,21 @@ class OpenTelemetryScope implements Scope {
     public boolean isClosed() {
         return closed.get();
     }
+
+    Scope limited() {
+        return limited;
+    }
+
+    private record Limited(OpenTelemetryScope delegate) implements Scope {
+
+        @Override
+            public void close() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isClosed() {
+                return delegate.isClosed();
+            }
+        }
 }

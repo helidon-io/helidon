@@ -161,6 +161,8 @@ Your code can create a `SpanContext` from other sources as well. The `SpanContex
 
 The JavaDoc for the types describes how to get and set baggage entries, get all the baggage keys, and check whether a baggage key exists in the baggage.
 
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;brief,leveloffset=+1]
+
 == Helidon Spans
 
 include::{rootdir}/includes/tracing/common-spans.adoc[]
