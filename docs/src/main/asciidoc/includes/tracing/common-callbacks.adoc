@@ -1,0 +1,100 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/../..]
+include::{rootdir}/attributes.adoc
+
+// tag::defs[]
+:tracing-javadoc: {tracing-javadoc-base-url}/io/helidon/tracing
+:tracing-spi-javadoc: {tracing-javadoc}/spi
+:listener-type: SpanLifeCycleListener
+// end::defs[]
+
+
+// tag::detailed[]
+// tag::intro[]
+== Responding to Span Life Cycle Events [[Tracing-callbacks]]
+
+Applications and libraries can register listeners to be notified at several moments during the lifecycle of every span:
+
+* Before a new span starts
+* After a new span has started
+* After a span ends
+* After a span is activated (creating a new scope)
+* After a scope is closed
+
+// end::intro[]
+
+The next sections explain how you can write and add a listener and what it can do. See the link:{tracing-spi-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
+
+=== Understanding What Listeners Do
+A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span.
+Often a listener does additional work that does not change the span or scope such as logging a message.
+
+The parameter types which Helidon passes to the listener methods limit the access the listener has to the span or scope, as summarized in the following table.
+
+|====
+| Tracing type | Listener parameter type | Changes allowed
+
+| link:{tracing-javadoc}/Span.html[`Span`] | link:{tracing-javadoc}/SpanInfo.html[`SpanInfo`] | Retrieve and update baggage, add events, add tags
+
+| link:{tracing-javadoc}/Span.Builder.html[`Span.Builder`] | link:{tracing-javadoc}/SpanInfo.BuilderInfo.html[`SpanInfo.BuilderInfo`] | Add tags
+
+| link:{tracing-javadoc}/Scope.html[`Scope`] | link:{tracing-javadoc}/SpanInfo.ScopeInfo.html[`SpanInfo.ScopeInfo`] |
+
+|====
+Basically, the `Info` types expose a subset of the methods available on the corresponding tracing type.
+
+=== Adding a Listener
+Helidon uses Java service loading to locate and invoke listeners.
+Follow these steps to add one.
+
+1. Implement the link:{tracing-spi-javadoc}/{listener-type}.html[`{listener-type}`] interface.
+2. Declare your implementation as a loadable service:
+   a. Create the file `META-INF/services/io.helidon.tracing.spi.{listener-type}` containing a line with the fully-qualified name of your class which implements `{listener-type}`.
+   b. If your service has a `module-info.java` file add the following line to it:
++
+[source,java,subs="attributes+"]
+----
+provides <your-implementation-class> as io.helidon.tracing.spi.{listener-type};
+----
+
+The `{listener-type}` interface declares default implementations for all the methods, so your listener can implement only the methods it needs to.
+
+Helidon invokes each listener's methods in the following order:
+
+|====
+| Method | When invoked
+
+| `beforeStart(SpanInfo.BuilderInfo<?> spanBuilder)` | Just before a span is started from its builder.
+| `afterStart(SpanInfo span)` | Just after a span has started.
+| `afterActivate(SpanInfo span, SpanInfo.ScopeInfo scope)` | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code.
+| `afterClose(SpanInfo span, SpanInfo.ScopeInfo scope)` | After a scope has been closed.
+| `afterEnd(SpanInfo span)` | After a span has ended successfully.
+| `afterEnd(SpanInfo span, Throwable t)` | After a span has ended unsuccessfully.
+|====
+
+
+
+// end::detailed[]
+
+// tag::brief[]
+include::common-callbacks.adoc[tag=intro]
+
+See the link:{tracing-spi-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
+// end::brief[]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.tracing.providers.zipkin;
+
+import io.helidon.tracing.Tracer;
 
 import brave.opentracing.BraveScopeManager;
 import io.opentracing.Scope;
@@ -33,7 +35,8 @@ class ZipkinScopeManager implements ScopeManager {
 
     @Override
     public Scope activate(Span span) {
-        return scopeManager.activate(unwrap(span));
+        ZipkinSpan zSpan = (span instanceof ZipkinSpan z) ? z : new ZipkinSpan(span, false);
+        return new ZipkinScope(scopeManager.activate(unwrap(span)), zSpan);
     }
 
     private Span unwrap(Span span) {
@@ -49,5 +52,45 @@ class ZipkinScopeManager implements ScopeManager {
     @Override
     public Span activeSpan() {
         return scopeManager.activeSpan();
+    }
+
+    private static class ZipkinScope implements Scope {
+
+        private final Scope delegate;
+        private final ZipkinSpan zSpan;
+        private final Limited limited;
+        private boolean isClosed;
+
+        private ZipkinScope(Scope delegate, ZipkinSpan zSpan) {
+            this.delegate = delegate;
+            this.zSpan = zSpan;
+            limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+            isClosed = true;
+            Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterClose(zSpan.limited(), limited));
+        }
+
+        static class Limited implements io.helidon.tracing.Scope {
+
+            private final ZipkinScope delegate;
+
+            private Limited(ZipkinScope delegate) {
+                this.delegate = delegate;
+            }
+
+            @Override
+            public void close() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isClosed() {
+                return delegate.isClosed;
+            }
+        }
     }
 }

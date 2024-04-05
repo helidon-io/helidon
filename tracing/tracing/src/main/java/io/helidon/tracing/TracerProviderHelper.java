@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
+import io.helidon.tracing.spi.SpanLifeCycleListener;
 import io.helidon.tracing.spi.TracerProvider;
 
 /**
@@ -28,6 +30,9 @@ import io.helidon.tracing.spi.TracerProvider;
 final class TracerProviderHelper {
     private static final System.Logger LOGGER = System.getLogger(TracerProviderHelper.class.getName());
     private static final TracerProvider TRACER_PROVIDER;
+
+    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
 
     static {
         TracerProvider provider = null;
@@ -85,5 +90,9 @@ final class TracerProviderHelper {
             throw new IllegalStateException("Use before initialization has completed");
         }
         return TRACER_PROVIDER.createBuilder();
+    }
+
+    static List<SpanLifeCycleListener> spanLifeCycleListeners() {
+        return SPAN_LIFE_CYCLE_LISTENERS.get();
     }
 }

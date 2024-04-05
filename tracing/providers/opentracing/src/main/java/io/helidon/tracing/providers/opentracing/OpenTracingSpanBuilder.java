@@ -29,16 +29,18 @@ import io.opentracing.tag.Tags;
 class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     private final Tracer.SpanBuilder delegate;
     private final Tracer tracer;
+    private final Limited limited;
     private Map<String, String> baggage;
 
     OpenTracingSpanBuilder(Tracer tracer, Tracer.SpanBuilder delegate) {
         this.tracer = tracer;
         this.delegate = delegate;
+        limited = io.helidon.tracing.Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
     }
 
     @Override
     public Span build() {
-        return new OpenTracingSpan(tracer, delegate.start());
+        return start();
     }
 
     @Override
@@ -93,10 +95,12 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     @Override
     public Span start(Instant instant) {
         long micro = TimeUnit.MILLISECONDS.toMicros(instant.toEpochMilli());
-        Span result = new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start());
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.beforeStart(limited));
+        OpenTracingSpan result = new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start());
         if (baggage != null) {
-            baggage.forEach(result::baggage);
+            baggage.forEach((k, v) -> result.baggage().set(k, v));
         }
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterStart(result.limited()));
         return result;
     }
 
@@ -110,5 +114,46 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
         }
         throw new IllegalArgumentException("Cannot provide an instance of " + type.getName()
                                                    + ", span builder is: " + delegate.getClass().getName());
+    }
+
+    private record Limited(OpenTracingSpanBuilder delegate) implements Span.Builder<Limited> {
+
+        @Override
+        public Span build() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Limited parent(SpanContext spanContext) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Limited kind(Span.Kind kind) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Limited tag(String key, String value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Limited tag(String key, Boolean value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Limited tag(String key, Number value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Span start(Instant instant) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
