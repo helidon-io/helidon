@@ -15,7 +15,10 @@
  */
 package io.helidon.tracing;
 
+import java.util.List;
 import java.util.Optional;
+
+import io.helidon.tracing.spi.SpanLifeCycleListener;
 
 /**
  * Tracer abstraction.
@@ -48,6 +51,15 @@ public interface Tracer {
 
     static void global(Tracer tracer) {
         TracerProviderHelper.global(tracer);
+    }
+
+    /**
+     * Returns the discovered span life cycle listeners. (Intended for internal use by Helidon.)
+     *
+     * @return list of {@link io.helidon.tracing.spi.SpanLifeCycleListener}
+     */
+    static List<SpanLifeCycleListener> spanLifeCycleListeners() {
+        return TracerProviderHelper.spanLifeCycleListeners();
     }
 
     /**

@@ -17,13 +17,14 @@
 package io.helidon.tracing.providers.zipkin;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import io.helidon.tracing.SpanInfo;
+import io.helidon.tracing.Baggage;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.WritableBaggage;
 
 import io.opentracing.Span;
@@ -37,13 +38,16 @@ import io.opentracing.tag.Tag;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-class ZipkinSpan implements Span, SpanInfo {
+class ZipkinSpan implements Span {
     private final Span span;
     private final boolean isClient;
+    private final Limited limited;
+    private final Set<String> baggageKeys = new HashSet<>();
 
     ZipkinSpan(Span span, boolean isClient) {
         this.span = span;
         this.isClient = isClient;
+        limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this, span.context());
     }
 
     @Override
@@ -55,14 +59,14 @@ class ZipkinSpan implements Span, SpanInfo {
     public void finish() {
         finishLog();
         span.finish();
-        ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this));
+        Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterEnd(limited));
     }
 
     @Override
     public void finish(long finishMicros) {
         finishLog();
         span.finish(finishMicros);
-        ZipkinTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this));
+        Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterEnd(limited));
     }
 
     @Override
@@ -110,6 +114,7 @@ class ZipkinSpan implements Span, SpanInfo {
     @Override
     public Span setBaggageItem(String key, String value) {
         span.setBaggageItem(key, value);
+        baggageKeys.add(key);
         return this;
     }
 
@@ -134,68 +139,8 @@ class ZipkinSpan implements Span, SpanInfo {
         return span;
     }
 
-    @Override
-    public void addEvent(String name, Map<String, ?> attributes) {
-        Map<String, Object> attrsWithName = new HashMap<>(attributes);
-        attrsWithName.put("event", name);
-        span.log(attrsWithName);
-    }
-
-    @Override
-    public WritableBaggage baggage() {
-        return new WritableBaggage() {
-            @Override
-            public WritableBaggage set(String key, String value) {
-                span.setBaggageItem(key, value);
-                return this;
-            }
-
-            @Override
-            public Optional<String> get(String key) {
-                return Optional.ofNullable(span.getBaggageItem(key));
-            }
-
-            @Override
-            public Set<String> keys() {
-                return StreamSupport.stream(context().baggageItems().spliterator(), false)
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toSet());
-            }
-
-            @Override
-            public boolean containsKey(String key) {
-                return getBaggageItem(key) != null;
-            }
-        };
-    }
-
-    @Override
-    public SpanInfo tag(io.helidon.tracing.Tag<?> tag) {
-        switch (tag.value()) {
-            case Boolean b -> setTag(tag.key(), b);
-            case Number n -> setTag(tag.key(), n);
-            case String s -> setTag(tag.key(), s);
-            default -> setTag(tag.key(), tag.value().toString());
-        }
-        return this;
-    }
-
-    @Override
-    public SpanInfo tag(String key, String value) {
-        setTag(key, value);
-        return this;
-    }
-
-    @Override
-    public SpanInfo tag(String key, Boolean value) {
-        setTag(key, value);
-        return this;
-    }
-
-    @Override
-    public SpanInfo tag(String key, Number value) {
-        setTag(key, value);
-        return this;
+    io.helidon.tracing.Span limited() {
+        return limited;
     }
 
     private void finishLog() {
@@ -203,6 +148,125 @@ class ZipkinSpan implements Span, SpanInfo {
             span.log("cr");
         } else {
             span.log("ss");
+        }
+    }
+
+    private record Limited(ZipkinSpan delegateSpan, SpanContext delegateSpanContext, WritableBaggage baggage)
+            implements io.helidon.tracing.Span {
+
+        Limited(ZipkinSpan delegateSpan, SpanContext delegateSpanContext) {
+            this(delegateSpan, delegateSpanContext, writableBaggage(delegateSpan));
+        }
+
+        private static WritableBaggage writableBaggage(ZipkinSpan delegateSpan) {
+            return new WritableBaggage() {
+                @Override
+                public WritableBaggage set(String key, String value) {
+                    delegateSpan.setBaggageItem(key, value);
+                    return this;
+                }
+
+                @Override
+                public Optional<String> get(String key) {
+                    return Optional.ofNullable(delegateSpan.getBaggageItem(key));
+                }
+
+                @Override
+                public Set<String> keys() {
+                    return delegateSpan.baggageKeys;
+                }
+
+                @Override
+                public boolean containsKey(String key) {
+                    return delegateSpan.baggageKeys.contains(key);
+                }
+            };
+        }
+
+        @Override
+        public io.helidon.tracing.Span tag(String key, String value) {
+            delegateSpan.setTag(key, value);
+            return this;
+        }
+
+        @Override
+        public io.helidon.tracing.Span tag(String key, Boolean value) {
+            delegateSpan.setTag(key, value);
+            return this;
+        }
+
+        @Override
+        public io.helidon.tracing.Span tag(String key, Number value) {
+            delegateSpan.setTag(key, value);
+            return this;
+        }
+
+        @Override
+        public void status(Status status) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public io.helidon.tracing.SpanContext context() {
+            return new io.helidon.tracing.SpanContext() {
+                @Override
+                public String traceId() {
+                    return delegateSpanContext.toTraceId();
+                }
+
+                @Override
+                public String spanId() {
+                    return delegateSpanContext.toSpanId();
+                }
+
+                @Override
+                public void asParent(Builder<?> spanBuilder) {
+                    spanBuilder.parent(this);
+                }
+
+                @Override
+                public Baggage baggage() {
+                    return baggage;
+                }
+            };
+        }
+
+        @Override
+        public void addEvent(String name, Map<String, ?> attributes) {
+            Map<String, Object> newMap = new HashMap<>(attributes);
+            newMap.put("event", name);
+            delegateSpan.log(newMap);
+        }
+
+        @Override
+        public void end() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void end(Throwable t) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Scope activate() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public io.helidon.tracing.Span baggage(String key, String value) {
+            delegateSpan.setBaggageItem(key, value);
+            return this;
+        }
+
+        @Override
+        public Optional<String> baggage(String key) {
+            return Optional.ofNullable(delegateSpan.getBaggageItem(key));
+        }
+
+        @Override
+        public WritableBaggage baggage() {
+            return baggage;
         }
     }
 }

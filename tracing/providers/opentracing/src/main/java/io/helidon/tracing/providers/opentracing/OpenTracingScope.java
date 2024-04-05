@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,47 @@ package io.helidon.tracing.providers.opentracing;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.tracing.Scope;
+import io.helidon.tracing.Tracer;
 
 class OpenTracingScope implements Scope {
+    private final OpenTracingSpan span;
     private final io.opentracing.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final Limited limited;
 
-    OpenTracingScope(io.opentracing.Scope scope) {
+    OpenTracingScope(OpenTracingSpan span, io.opentracing.Scope scope) {
+        this.span = span;
         this.delegate = scope;
+        limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
+            Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterClose(span.limited(), limited));
         }
+    }
+
+    Scope limited() {
+        return limited;
     }
 
     @Override
     public boolean isClosed() {
         return closed.get();
+    }
+
+    private record Limited(OpenTracingScope delegate) implements Scope {
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isClosed() {
+            return delegate.isClosed();
+        }
     }
 }

@@ -33,12 +33,14 @@ class OpenTracingSpan implements Span {
     private final io.opentracing.Span delegate;
     private final OpenTracingContext context;
     private final WritableBaggage baggage;
+    private final Limited limited;
 
     OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate) {
         this.tracer = tracer;
         this.delegate = delegate;
         this.context = new OpenTracingContext(delegate.context());
         baggage = OpenTracingBaggage.create(context, delegate);
+        limited = io.helidon.tracing.Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
     }
 
 
@@ -82,7 +84,7 @@ class OpenTracingSpan implements Span {
     @Override
     public void end() {
         delegate.finish();
-        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this));
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterEnd(limited));
     }
 
     @Override
@@ -93,13 +95,13 @@ class OpenTracingSpan implements Span {
                             "error.object", throwable,
                             "message", throwable.getMessage()));
         delegate.finish();
-        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterEnd(this, throwable));
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterEnd(limited, throwable));
     }
 
     @Override
     public Scope activate() {
-        var result = new OpenTracingScope(tracer.activateSpan(delegate));
-        OpenTracingTracerProvider.lifeCycleListeners().forEach(listener -> listener.afterActivate(this, result));
+        var result = new OpenTracingScope(this, tracer.activateSpan(delegate));
+        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterActivate(limited, result.limited()));
         return result;
     }
 
@@ -134,4 +136,75 @@ class OpenTracingSpan implements Span {
         throw new IllegalArgumentException("Cannot provide an instance of " + spanClass.getName()
                                                    + ", open tracing span is: " + delegate.getClass().getName());
     }
+
+    Span limited() {
+        return limited;
+    }
+
+    private record Limited(OpenTracingSpan delegate) implements Span {
+
+        @Override
+            public Span tag(String key, String value) {
+                delegate.tag(key, value);
+                return this;
+            }
+
+            @Override
+            public Span tag(String key, Boolean value) {
+                delegate.tag(key, value);
+                return this;
+            }
+
+            @Override
+            public Span tag(String key, Number value) {
+                delegate.tag(key, value);
+                return this;
+            }
+
+            @Override
+            public void status(Status status) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public SpanContext context() {
+                return delegate.context();
+            }
+
+            @Override
+            public void addEvent(String name, Map<String, ?> attributes) {
+                delegate.addEvent(name, attributes);
+            }
+
+            @Override
+            public void end() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void end(Throwable t) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Scope activate() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Span baggage(String key, String value) {
+                delegate.baggage(key, value);
+                return this;
+            }
+
+            @Override
+            public Optional<String> baggage(String key) {
+                return delegate.baggage(key);
+            }
+
+            @Override
+            public WritableBaggage baggage() {
+                return delegate.baggage();
+            }
+        }
 }

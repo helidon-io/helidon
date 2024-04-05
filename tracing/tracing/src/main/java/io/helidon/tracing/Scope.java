@@ -18,7 +18,7 @@ package io.helidon.tracing;
 /**
  * A Scope that can be (eventually) closed. Used when making a span active.
  */
-public interface Scope extends SpanInfo.ScopeInfo, AutoCloseable {
+public interface Scope extends AutoCloseable {
     @Override
     void close();
 
