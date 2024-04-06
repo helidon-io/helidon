@@ -17,7 +17,6 @@
 package io.helidon.tracing.providers.zipkin;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 
@@ -71,7 +70,7 @@ public class ZipkinTracer implements Tracer {
         return new ZipkinSpanBuilder(this,
                                      tracer.buildSpan(operationName),
                                      tags,
-                                     Collections.unmodifiableList(spanLifeCycleListeners));
+                                     spanLifeCycleListeners);
     }
 
     @Override
@@ -87,7 +86,7 @@ public class ZipkinTracer implements Tracer {
     @Override
     public ScopeManager scopeManager() {
         return new ZipkinScopeManager(tracer.scopeManager(),
-                                      Collections.unmodifiableList(spanLifeCycleListeners));
+                                      spanLifeCycleListeners);
     }
 
     @Override

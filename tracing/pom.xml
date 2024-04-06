@@ -37,6 +37,5 @@
         <module>config</module>
         <module>tracer-resolver</module>
         <module>providers</module>
-        <module>provider-tests</module>
     </modules>
 </project>

@@ -15,8 +15,6 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
-
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,7 +73,7 @@ public final class HelidonOpenTelemetry {
      * @return Helidon {@link io.helidon.tracing.Span}
      */
     public static io.helidon.tracing.Span create(Span span) {
-        return new OpenTelemetrySpan(span, Collections.unmodifiableList(SPAN_LIFE_CYCLE_LISTENERS.get()));
+        return new OpenTelemetrySpan(span, SPAN_LIFE_CYCLE_LISTENERS.get());
     }
 
     /**
@@ -86,7 +84,7 @@ public final class HelidonOpenTelemetry {
      * @return Helidon (@link io.helidon.tracing.Span}
      */
     public static io.helidon.tracing.Span create(Span span, Baggage baggage) {
-        return new OpenTelemetrySpan(span, baggage, Collections.unmodifiableList(SPAN_LIFE_CYCLE_LISTENERS.get()));
+        return new OpenTelemetrySpan(span, baggage, SPAN_LIFE_CYCLE_LISTENERS.get());
     }
 
     /**

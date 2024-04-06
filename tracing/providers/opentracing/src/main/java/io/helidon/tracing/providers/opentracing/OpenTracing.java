@@ -15,7 +15,6 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 
@@ -56,7 +55,7 @@ public final class OpenTracing {
      * @return Helidon {@link io.helidon.tracing.Span}
      */
     public static Span create(Tracer tracer, io.opentracing.Span span) {
-        return new OpenTracingSpan(tracer, span, Collections.unmodifiableList(SPAN_LIFE_CYCLE_LISTENERS.get()));
+        return new OpenTracingSpan(tracer, span, SPAN_LIFE_CYCLE_LISTENERS.get());
     }
 
 }

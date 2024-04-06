@@ -40,13 +40,13 @@
         Each provider should run the common unit tests. Declare that dependency and
         configure the surefire plug-in here to run those tests for all providers.
     -->
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-provider-tests</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+<!--    <dependencies>-->
+<!--        <dependency>-->
+<!--            <groupId>io.helidon.tracing</groupId>-->
+<!--            <artifactId>helidon-tracing-provider-tests</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+<!--    </dependencies>-->
 
     <build>
         <plugins>

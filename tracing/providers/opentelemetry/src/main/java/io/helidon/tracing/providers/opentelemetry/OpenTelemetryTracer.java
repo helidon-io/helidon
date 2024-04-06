@@ -16,7 +16,6 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,7 +73,7 @@ class OpenTelemetryTracer implements Tracer {
     @Override
     public Span.Builder<?> spanBuilder(String name) {
         OpenTelemetrySpanBuilder builder = new OpenTelemetrySpanBuilder(delegate.spanBuilder(name),
-                                                                        Collections.unmodifiableList(spanLifeCycleListeners));
+                                                                        spanLifeCycleListeners);
         tags.forEach(builder::tag);
         Span.current().ifPresent(it -> builder.parent(it.context()));
         return builder;
