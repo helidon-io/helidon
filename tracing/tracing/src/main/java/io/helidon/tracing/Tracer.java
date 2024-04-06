@@ -15,10 +15,7 @@
  */
 package io.helidon.tracing;
 
-import java.util.List;
 import java.util.Optional;
-
-import io.helidon.tracing.spi.SpanLifeCycleListener;
 
 /**
  * Tracer abstraction.
@@ -53,14 +50,14 @@ public interface Tracer {
         TracerProviderHelper.global(tracer);
     }
 
-    /**
-     * Returns the discovered span life cycle listeners. (Intended for internal use by Helidon.)
-     *
-     * @return list of {@link io.helidon.tracing.spi.SpanLifeCycleListener}
-     */
-    static List<SpanLifeCycleListener> spanLifeCycleListeners() {
-        return TracerProviderHelper.spanLifeCycleListeners();
-    }
+//    /**
+//     * Returns the discovered span life cycle listeners. (Intended for internal use by Helidon.)
+//     *
+//     * @return list of {@link io.helidon.tracing.SpanLifeCycleListener}
+//     */
+//    static List<SpanLifeCycleListener> spanLifeCycleListeners() {
+//        return TracerProviderHelper.spanLifeCycleListeners();
+//    }
 
     /**
      * Whether this tracer is enabled or not.
@@ -113,4 +110,13 @@ public interface Tracer {
             throw new IllegalArgumentException("This tracer is not compatible with " + tracerClass.getName());
         }
     }
+
+    /**
+     * Registers with the tracer a life cycle event listener to receive events from span builders, spans, and scopes
+     * derived from this tracer.
+     *
+     * @param listener the {@link SpanLifeCycleListener} to register
+     * @return the updated {@code Tracer}
+     */
+    Tracer register(SpanLifeCycleListener listener);
 }

@@ -630,6 +630,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-provider-tests</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <!-- to add tracer builder -->
                 <groupId>io.helidon.tracing.providers</groupId>
                 <artifactId>helidon-tracing-providers-opentracing</artifactId>

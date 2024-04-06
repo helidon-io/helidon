@@ -32,7 +32,7 @@ module io.helidon.tracing.providers.opentelemetry {
 
     exports io.helidon.tracing.providers.opentelemetry;
 
-    uses io.helidon.tracing.spi.SpanLifeCycleListener;
+    uses io.helidon.tracing.SpanLifeCycleListener;
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;

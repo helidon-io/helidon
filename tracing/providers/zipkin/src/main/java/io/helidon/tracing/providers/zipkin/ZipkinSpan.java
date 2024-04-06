@@ -18,13 +18,14 @@ package io.helidon.tracing.providers.zipkin;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.tracing.Baggage;
 import io.helidon.tracing.Scope;
-import io.helidon.tracing.Tracer;
+import io.helidon.tracing.SpanLifeCycleListener;
 import io.helidon.tracing.WritableBaggage;
 
 import io.opentracing.Span;
@@ -41,13 +42,15 @@ import io.opentracing.tag.Tag;
 class ZipkinSpan implements Span {
     private final Span span;
     private final boolean isClient;
-    private final Limited limited;
+    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private Limited limited;
     private final Set<String> baggageKeys = new HashSet<>();
 
-    ZipkinSpan(Span span, boolean isClient) {
+
+    ZipkinSpan(Span span, boolean isClient, List<SpanLifeCycleListener> spanLifeCycleListeners) {
         this.span = span;
         this.isClient = isClient;
-        limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this, span.context());
+        this.spanLifeCycleListeners = spanLifeCycleListeners;
     }
 
     @Override
@@ -59,14 +62,14 @@ class ZipkinSpan implements Span {
     public void finish() {
         finishLog();
         span.finish();
-        Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterEnd(limited));
+        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited));
     }
 
     @Override
     public void finish(long finishMicros) {
         finishLog();
         span.finish(finishMicros);
-        Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterEnd(limited));
+        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited));
     }
 
     @Override
@@ -139,7 +142,33 @@ class ZipkinSpan implements Span {
         return span;
     }
 
-    io.helidon.tracing.Span limited() {
+    Limited limited() {
+        if (limited == null) {
+            if (!spanLifeCycleListeners.isEmpty()) {
+                limited = new Limited(this, span.context(), new WritableBaggage() {
+                    @Override
+                    public WritableBaggage set(String key, String value) {
+                        setBaggageItem(key, value);
+                        return this;
+                    }
+
+                    @Override
+                    public Optional<String> get(String key) {
+                        return Optional.ofNullable(getBaggageItem(key));
+                    }
+
+                    @Override
+                    public Set<String> keys() {
+                        return baggageKeys;
+                    }
+
+                    @Override
+                    public boolean containsKey(String key) {
+                        return baggageKeys.contains(key);
+                    }
+                });
+            }
+        }
         return limited;
     }
 

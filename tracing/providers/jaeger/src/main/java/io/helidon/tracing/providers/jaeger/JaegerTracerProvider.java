@@ -23,9 +23,9 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanLifeCycleListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
-import io.helidon.tracing.spi.SpanLifeCycleListener;
 import io.helidon.tracing.spi.TracerProvider;
 
 /**

@@ -15,7 +15,9 @@
  */
 package io.helidon.tracing.providers.zipkin;
 
-import io.helidon.tracing.Tracer;
+import java.util.List;
+
+import io.helidon.tracing.SpanLifeCycleListener;
 
 import brave.opentracing.BraveScopeManager;
 import io.opentracing.Scope;
@@ -28,15 +30,17 @@ import io.opentracing.Span;
  */
 class ZipkinScopeManager implements ScopeManager {
     private final BraveScopeManager scopeManager;
+    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
 
-    ZipkinScopeManager(BraveScopeManager scopeManager) {
+    ZipkinScopeManager(BraveScopeManager scopeManager, List<SpanLifeCycleListener> spanLifeCycleListeners) {
         this.scopeManager = scopeManager;
+        this.spanLifeCycleListeners = spanLifeCycleListeners;
     }
 
     @Override
     public Scope activate(Span span) {
-        ZipkinSpan zSpan = (span instanceof ZipkinSpan z) ? z : new ZipkinSpan(span, false);
-        return new ZipkinScope(scopeManager.activate(unwrap(span)), zSpan);
+        ZipkinSpan zSpan = (span instanceof ZipkinSpan z) ? z : new ZipkinSpan(span, false, spanLifeCycleListeners);
+        return new ZipkinScope(scopeManager.activate(unwrap(span)), zSpan, spanLifeCycleListeners);
     }
 
     private Span unwrap(Span span) {
@@ -58,20 +62,31 @@ class ZipkinScopeManager implements ScopeManager {
 
         private final Scope delegate;
         private final ZipkinSpan zSpan;
-        private final Limited limited;
+        private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+        private Limited limited;
         private boolean isClosed;
 
-        private ZipkinScope(Scope delegate, ZipkinSpan zSpan) {
+        private ZipkinScope(Scope delegate, ZipkinSpan zSpan, List<SpanLifeCycleListener> spanLifeCycleListeners) {
             this.delegate = delegate;
             this.zSpan = zSpan;
-            limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
+            this.spanLifeCycleListeners = spanLifeCycleListeners;
         }
 
         @Override
         public void close() {
             delegate.close();
             isClosed = true;
-            Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterClose(zSpan.limited(), limited));
+            spanLifeCycleListeners.forEach(listener -> listener.afterClose(zSpan.limited(), limited));
+        }
+
+        Limited limited() {
+            return limited == null
+                    ? null : spanLifeCycleListeners.isEmpty() ? null : newLimited();
+        }
+
+        private Limited newLimited() {
+            limited = new Limited(this);
+            return limited;
         }
 
         static class Limited implements io.helidon.tracing.Scope {

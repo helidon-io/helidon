@@ -16,6 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.tracing.SpanLifeCycleListener;
 
 /**
  * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
@@ -40,6 +41,6 @@ module io.helidon.tracing {
     exports io.helidon.tracing.spi;
 
     uses io.helidon.tracing.spi.TracerProvider;
-    uses io.helidon.tracing.spi.SpanLifeCycleListener;
+    uses SpanLifeCycleListener;
 
 }
