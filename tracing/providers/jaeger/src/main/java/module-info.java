@@ -43,10 +43,13 @@ module io.helidon.tracing.providers.jaeger {
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.tracing;
+    requires io.opentelemetry.context;
+    requires io.opentelemetry.extension.trace.propagation;
+    requires io.opentelemetry.semconv;
 
     exports io.helidon.tracing.providers.jaeger;
 
-    uses io.helidon.tracing.spi.SpanLifeCycleListener;
+    uses io.helidon.tracing.SpanLifeCycleListener;
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.jaeger.JaegerTracerProvider;

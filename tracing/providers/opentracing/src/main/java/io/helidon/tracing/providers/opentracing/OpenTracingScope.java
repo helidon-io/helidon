@@ -15,38 +15,45 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.tracing.Scope;
-import io.helidon.tracing.Tracer;
+import io.helidon.tracing.SpanLifeCycleListener;
 
 class OpenTracingScope implements Scope {
     private final OpenTracingSpan span;
     private final io.opentracing.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final Limited limited;
+    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private Limited limited;
 
-    OpenTracingScope(OpenTracingSpan span, io.opentracing.Scope scope) {
+    OpenTracingScope(OpenTracingSpan span, io.opentracing.Scope scope, List<SpanLifeCycleListener> spanLifeCycleListeners) {
         this.span = span;
         this.delegate = scope;
-        limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
+        this.spanLifeCycleListeners = spanLifeCycleListeners;
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
-            Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterClose(span.limited(), limited));
+            spanLifeCycleListeners.forEach(listener -> listener.afterClose(span.limited(), limited()));
         }
-    }
-
-    Scope limited() {
-        return limited;
     }
 
     @Override
     public boolean isClosed() {
         return closed.get();
+    }
+
+    Limited limited() {
+        if (limited == null) {
+            if (!spanLifeCycleListeners.isEmpty()) {
+                limited = new Limited(this);
+            }
+        }
+        return limited;
     }
 
     private record Limited(OpenTracingScope delegate) implements Scope {

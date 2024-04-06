@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,14 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.ServiceLoader;
+
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanLifeCycleListener;
 
 import io.opentracing.Tracer;
 
@@ -23,6 +30,11 @@ import io.opentracing.Tracer;
  * Open Tracing factory methods to create wrappers for Open Tracing types.
  */
 public final class OpenTracing {
+
+    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+
+
     private OpenTracing() {
     }
 
@@ -44,7 +56,7 @@ public final class OpenTracing {
      * @return Helidon {@link io.helidon.tracing.Span}
      */
     public static Span create(Tracer tracer, io.opentracing.Span span) {
-        return new OpenTracingSpan(tracer, span);
+        return new OpenTracingSpan(tracer, span, Collections.unmodifiableList(SPAN_LIFE_CYCLE_LISTENERS.get()));
     }
 
 }

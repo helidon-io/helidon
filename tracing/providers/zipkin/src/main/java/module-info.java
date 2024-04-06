@@ -47,7 +47,7 @@ module io.helidon.tracing.providers.zipkin {
 
     exports io.helidon.tracing.providers.zipkin;
 
-    uses io.helidon.tracing.spi.SpanLifeCycleListener;
+    uses io.helidon.tracing.SpanLifeCycleListener;
 
     provides io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider
             with io.helidon.tracing.providers.zipkin.ZipkinTracerProvider;

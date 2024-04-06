@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,14 @@
 
 package io.helidon.tracing.providers.zipkin;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.ServiceLoader;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
+import io.helidon.tracing.SpanLifeCycleListener;
 import io.helidon.tracing.Tag;
 
 import brave.opentracing.BraveTracer;
@@ -39,8 +45,14 @@ import io.opentracing.propagation.Format;
  * @see ZipkinSpanBuilder
  */
 public class ZipkinTracer implements Tracer {
+
+    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+
     private final BraveTracer tracer;
     private final List<Tag<?>> tags;
+
+    private final List<SpanLifeCycleListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
 
     /**
      * Create a zipkin tracer from the delegate (BraveTracer) and
@@ -56,7 +68,10 @@ public class ZipkinTracer implements Tracer {
 
     @Override
     public SpanBuilder buildSpan(String operationName) {
-        return new ZipkinSpanBuilder(this, tracer.buildSpan(operationName), tags);
+        return new ZipkinSpanBuilder(this,
+                                     tracer.buildSpan(operationName),
+                                     tags,
+                                     Collections.unmodifiableList(spanLifeCycleListeners));
     }
 
     @Override
@@ -71,7 +86,8 @@ public class ZipkinTracer implements Tracer {
 
     @Override
     public ScopeManager scopeManager() {
-        return new ZipkinScopeManager(tracer.scopeManager());
+        return new ZipkinScopeManager(tracer.scopeManager(),
+                                      Collections.unmodifiableList(spanLifeCycleListeners));
     }
 
     @Override

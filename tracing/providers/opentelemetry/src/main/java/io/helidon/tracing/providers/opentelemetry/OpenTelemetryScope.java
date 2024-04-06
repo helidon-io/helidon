@@ -15,27 +15,31 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.tracing.Scope;
-import io.helidon.tracing.Tracer;
+import io.helidon.tracing.SpanLifeCycleListener;
 
 class OpenTelemetryScope implements Scope {
     private final OpenTelemetrySpan span;
     private final io.opentelemetry.context.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final Limited limited;
+    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private Limited limited;
 
-    OpenTelemetryScope(OpenTelemetrySpan span, io.opentelemetry.context.Scope scope) {
+    OpenTelemetryScope(OpenTelemetrySpan span,
+                       io.opentelemetry.context.Scope scope,
+                       List<SpanLifeCycleListener> spanLifeCycleListeners) {
         this.span = span;
         delegate = scope;
-        limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
+        this.spanLifeCycleListeners = spanLifeCycleListeners;
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
-            Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterClose(span.limited(), limited));
+            spanLifeCycleListeners.forEach(listener -> listener.afterClose(span.limited(), limited));
             delegate.close();
         }
     }
@@ -45,7 +49,14 @@ class OpenTelemetryScope implements Scope {
         return closed.get();
     }
 
-    Scope limited() {
+    Limited limited() {
+        if (limited !=  null) {
+            return limited;
+        }
+        if (spanLifeCycleListeners.isEmpty()) {
+            return null;
+        }
+        limited = new Limited(this);
         return limited;
     }
 

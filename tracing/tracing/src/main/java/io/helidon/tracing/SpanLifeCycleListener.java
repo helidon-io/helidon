@@ -13,20 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tracing.spi;
-
-import io.helidon.tracing.Scope;
-import io.helidon.tracing.Span;
+package io.helidon.tracing;
 
 /**
  * Behavior of listeners notified of span life cycle events.
  * <p>
  * The interface declares default empty implementations for each method, allowing concrete implementations of the
  * interface to implement only the methods that are relevant for them.
- * <p>
- * Helidon locates and invokes span life cycle listeners using Java service loading. Make sure you create the file
- * {@code META-INF/services/io.helidon.tracing.spi.SpanLifeCycleListener} and add a line containing the fully-qualified
- * type name for each listener you implement.
  * <p>
  * Helidon invokes the applicable methods of a life cycle listener in the following order:
  * <table>
@@ -47,19 +40,19 @@ import io.helidon.tracing.Span;
  *     </tr>
  *     <tr>
  *         <td>{@linkplain #afterActivate(io.helidon.tracing.Span, io.helidon.tracing.Scope)
- *         afterActivate †}</td>
+ *         afterActivate} †</td>
  *         <td>After a span has been activated, creating a new scope in the process. </td>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #afterClose(io.helidon.tracing.Span, io.helidon.tracing.Scope) afterClose †}</td>
+ *         <td>{@linkplain #afterClose(io.helidon.tracing.Span, io.helidon.tracing.Scope) afterClose} †</td>
  *         <td>After a scope has been closed.</td>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #afterEnd(io.helidon.tracing.Span) afterEnd (successful) *}</td>
+ *         <td>{@linkplain #afterEnd(io.helidon.tracing.Span) afterEnd (successful)} *</td>
  *         <td>After a span has ended successfully.</td>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #afterEnd(io.helidon.tracing.Span, Throwable) afterEnd (unsuccessful) *}</td>
+ *         <td>{@linkplain #afterEnd(io.helidon.tracing.Span, Throwable) afterEnd (unsuccessful)} *</td>
  *         <td>After a span has ended unsuccessfully. </td>
  *     </tr>
  *     </tbody>

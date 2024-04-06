@@ -16,10 +16,11 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import java.time.Instant;
+import java.util.List;
 
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
-import io.helidon.tracing.Tracer;
+import io.helidon.tracing.SpanLifeCycleListener;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -28,13 +29,14 @@ import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder> {
     private final SpanBuilder spanBuilder;
-    private final Limited limited;
+    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private Limited limited;
     private boolean parentSet;
     private Baggage parentBaggage;
 
-    OpenTelemetrySpanBuilder(SpanBuilder spanBuilder) {
+    OpenTelemetrySpanBuilder(SpanBuilder spanBuilder, List<SpanLifeCycleListener> spanLifeCycleListeners) {
         this.spanBuilder = spanBuilder;
-        limited = Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
+        this.spanLifeCycleListeners = spanLifeCycleListeners;
     }
 
     @Override
@@ -92,13 +94,13 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
             spanBuilder.setNoParent();
         }
         spanBuilder.setStartTimestamp(instant);
-        Tracer.spanLifeCycleListeners().forEach(listener -> listener.beforeStart(limited));
+        spanLifeCycleListeners.forEach(listener -> listener.beforeStart(limited()));
         io.opentelemetry.api.trace.Span span = spanBuilder.startSpan();
-        OpenTelemetrySpan result = new OpenTelemetrySpan(span);
+        OpenTelemetrySpan result = new OpenTelemetrySpan(span, spanLifeCycleListeners);
         if (parentBaggage != null) {
             parentBaggage.forEach((key, baggageEntry) -> result.baggage().set(key, baggageEntry.getValue()));
         }
-        Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterStart(result.limited()));
+        spanLifeCycleListeners.forEach(listener -> listener.afterStart(result.limited()));
 
         return result;
     }
@@ -120,6 +122,17 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
     void parent(Context context) {
         this.parentSet = true;
         this.spanBuilder.setParent(context);
+    }
+
+    Limited limited() {
+        if (limited !=  null) {
+            return limited;
+        }
+        if (spanLifeCycleListeners.isEmpty()) {
+            return null;
+        }
+        limited = new Limited(this);
+        return limited;
     }
 
     private record Limited(OpenTelemetrySpanBuilder delegate) implements Span.Builder<Limited> {

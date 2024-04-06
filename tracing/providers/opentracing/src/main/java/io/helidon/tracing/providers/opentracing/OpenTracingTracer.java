@@ -15,16 +15,23 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.SpanLifeCycleListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
@@ -34,8 +41,13 @@ import io.opentracing.propagation.TextMap;
 import io.opentracing.propagation.TextMapAdapter;
 
 class OpenTracingTracer implements Tracer {
+
+    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+
     private final io.opentracing.Tracer delegate;
     private final boolean enabled;
+    private final List<SpanLifeCycleListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
 
     private OpenTracingTracer(io.opentracing.Tracer delegate, boolean enabled) {
         this.delegate = delegate;
@@ -57,7 +69,9 @@ class OpenTracingTracer implements Tracer {
 
     @Override
     public Span.Builder<?> spanBuilder(String name) {
-        return new OpenTracingSpanBuilder(delegate, delegate.buildSpan(name));
+        return new OpenTracingSpanBuilder(delegate,
+                                          delegate.buildSpan(name),
+                                          Collections.unmodifiableList(spanLifeCycleListeners));
     }
 
     @Override
@@ -111,6 +125,12 @@ class OpenTracingTracer implements Tracer {
         }
         throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
                                                    + ", open tracing tracer is: " + delegate.getClass().getName());
+    }
+
+    @Override
+    public Tracer register(SpanLifeCycleListener listener) {
+        spanLifeCycleListeners.add(listener);
+        return this;
     }
 
     io.opentracing.Tracer openTracing() {

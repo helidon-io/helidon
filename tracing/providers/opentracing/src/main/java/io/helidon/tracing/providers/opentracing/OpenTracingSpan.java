@@ -16,6 +16,7 @@
 package io.helidon.tracing.providers.opentracing;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.SpanLifeCycleListener;
 import io.helidon.tracing.WritableBaggage;
 
 import io.opentracing.Tracer;
@@ -33,14 +35,15 @@ class OpenTracingSpan implements Span {
     private final io.opentracing.Span delegate;
     private final OpenTracingContext context;
     private final WritableBaggage baggage;
-    private final Limited limited;
+    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private Limited limited;
 
-    OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate) {
+    OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate, List<SpanLifeCycleListener> spanLifeCycleListeners) {
         this.tracer = tracer;
         this.delegate = delegate;
         this.context = new OpenTracingContext(delegate.context());
+        this.spanLifeCycleListeners = spanLifeCycleListeners;
         baggage = OpenTracingBaggage.create(context, delegate);
-        limited = io.helidon.tracing.Tracer.spanLifeCycleListeners().isEmpty() ? null : new Limited(this);
     }
 
 
@@ -84,7 +87,7 @@ class OpenTracingSpan implements Span {
     @Override
     public void end() {
         delegate.finish();
-        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterEnd(limited));
+        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited()));
     }
 
     @Override
@@ -95,13 +98,13 @@ class OpenTracingSpan implements Span {
                             "error.object", throwable,
                             "message", throwable.getMessage()));
         delegate.finish();
-        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterEnd(limited, throwable));
+        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited(), throwable));
     }
 
     @Override
     public Scope activate() {
-        var result = new OpenTracingScope(this, tracer.activateSpan(delegate));
-        io.helidon.tracing.Tracer.spanLifeCycleListeners().forEach(listener -> listener.afterActivate(limited, result.limited()));
+        var result = new OpenTracingScope(this, tracer.activateSpan(delegate), spanLifeCycleListeners);
+        spanLifeCycleListeners.forEach(listener -> listener.afterActivate(limited(), result.limited()));
         return result;
     }
 
@@ -137,7 +140,12 @@ class OpenTracingSpan implements Span {
                                                    + ", open tracing span is: " + delegate.getClass().getName());
     }
 
-    Span limited() {
+    Limited limited() {
+        if (limited == null) {
+            if (!spanLifeCycleListeners.isEmpty()) {
+                limited = new Limited(this);
+            }
+        }
         return limited;
     }
 
