@@ -15,7 +15,6 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -66,7 +65,7 @@ public class OpenTracingTracerProvider implements TracerProvider {
         return Optional.ofNullable(tracer.activeSpan())
                 .flatMap(it -> it instanceof NoopSpan ? Optional.empty() : Optional.of(it))
                 .map(it -> new OpenTracingSpan(tracer, it,
-                                               Collections.unmodifiableList(SPAN_LIFE_CYCLE_LISTENERS.get())));
+                                               SPAN_LIFE_CYCLE_LISTENERS.get()));
     }
 
     @Override

@@ -16,7 +16,6 @@
 package io.helidon.tracing.providers.opentracing;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -71,7 +70,7 @@ class OpenTracingTracer implements Tracer {
     public Span.Builder<?> spanBuilder(String name) {
         return new OpenTracingSpanBuilder(delegate,
                                           delegate.buildSpan(name),
-                                          Collections.unmodifiableList(spanLifeCycleListeners));
+                                          spanLifeCycleListeners);
     }
 
     @Override
