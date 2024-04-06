@@ -96,7 +96,7 @@ class OpenTracingSpan implements Span {
         delegate.log(Map.of("event", "error",
                             "error.kind", "Exception",
                             "error.object", throwable,
-                            "message", throwable.getMessage()));
+                            "message", throwable.getMessage() != null ? throwable.getMessage() : "none"));
         delegate.finish();
         spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited(), throwable));
     }
