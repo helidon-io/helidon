@@ -18,6 +18,13 @@ package io.helidon.tracing;
 /**
  * Indicates a failed attempt to activate a {@link io.helidon.tracing.Span} due to an error
  * in a {@link io.helidon.tracing.SpanLifeCycleListener} callback.
+ * <p>
+ *     Callers should normally catch this exception and then retrieve and close the {@link io.helidon.tracing.Scope}.
+ *     Helidon activates the scope before invoking span life cycle listeners, so the span and baggage have already
+ *     been added to the current tracing context. In the absence of this exception being thrown, the
+ *     {@link io.helidon.tracing.Span#activate()} method returns the {@code Scope} so the caller can close it. But
+ *     when Helidon throws this exception due to an error in a listener, the caller has no access to the {@code Scope} return value
+ *     return value.
  */
 public class UnsupportedActivationException extends UnsupportedOperationException {
 

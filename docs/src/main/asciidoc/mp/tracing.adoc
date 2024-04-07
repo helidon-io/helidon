@@ -41,7 +41,7 @@ include::{rootdir}/includes/mp.adoc[]
 == Overview
 
 WARNING: The OpenTracing Specification that MP OpenTracing is based on is no longer maintained.
-The MP OpenTracing specification is no longer required by MicroProfile. This feature is marked as `@Deprecated` in Helidon. The specification is Superseded by link:https://github.com/eclipse/microprofile-telemetry[MicroProfile Telemetry specification].
+The MP OpenTracing specification is no longer required by MicroProfile. This feature is marked as `@Deprecated` in Helidon. The specification is superseded by the link:https://github.com/eclipse/microprofile-telemetry[MicroProfile Telemetry specification].
 
 Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
 within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work,
@@ -509,7 +509,7 @@ include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
 
 
-include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;brief,leveloffset=+1]
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
 
 == Reference
 

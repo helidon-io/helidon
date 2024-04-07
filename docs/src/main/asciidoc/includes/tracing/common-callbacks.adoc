@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ include::{rootdir}/attributes.adoc
 
 // tag::defs[]
 :tracing-javadoc: {tracing-javadoc-base-url}/io/helidon/tracing
-:tracing-spi-javadoc: {tracing-javadoc}/spi
+:tracing-api-javadoc: {tracing-javadoc}
 :listener-type: SpanLifeCycleListener
 // end::defs[]
 
@@ -40,41 +40,100 @@ Applications and libraries can register listeners to be notified at several mome
 
 // end::intro[]
 
-The next sections explain how you can write and add a listener and what it can do. See the link:{tracing-spi-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
+The next sections explain how you can write and add a listener and what it can do. See the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
 
 === Understanding What Listeners Do
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span.
 Often a listener does additional work that does not change the span or scope such as logging a message.
 
-The parameter types which Helidon passes to the listener methods limit the access the listener has to the span or scope, as summarized in the following table.
+When Helidon invokes the listener's methods it passes safe adapters for the parameter types. These adapters limit the access the listener has to the span builder, span, or scope, as summarized in the following table.
+
+.Summary of Permitted Operations on Safe Adapters Passed to Listeners
+|====
+| Tracing type | Changes allowed
+
+| link:{tracing-javadoc}/Span.html[`Span`] |  Retrieve and update baggage, add events, add tags
+
+| link:{tracing-javadoc}/Span.Builder.html[`Span.Builder`]  | Add tags
+
+| link:{tracing-javadoc}/Scope.html[`Scope`]  | none
 
 |====
-| Tracing type | Listener parameter type | Changes allowed
 
-| link:{tracing-javadoc}/Span.html[`Span`] | link:{tracing-javadoc}/SpanInfo.html[`SpanInfo`] | Retrieve and update baggage, add events, add tags
+The following tables list specifically what operations the safe adapters permit.
 
-| link:{tracing-javadoc}/Span.Builder.html[`Span.Builder`] | link:{tracing-javadoc}/SpanInfo.BuilderInfo.html[`SpanInfo.BuilderInfo`] | Add tags
 
-| link:{tracing-javadoc}/Scope.html[`Scope`] | link:{tracing-javadoc}/SpanInfo.ScopeInfo.html[`SpanInfo.ScopeInfo`] |
+.link:{tracing-javadoc}/Span.Builder.html[`io.helidon.tracing.Span.Builder`] Operations
+|====
+| Method | Purpose | OK?
+| `build()` | Starts the span. | -
+| `end` methods | Ends the span. | -
+| `get()` | Starts the span. | -
+| `kind(Kind)` | Sets the "kind" of span (server, client, internal, etc.) | -
+| `parent(SpanContext)` | Sets the parent of the span to be created from the builder. | -
+| `start()` | Starts the span. | -
+| `start(Instant)` | Starts the span. | -
+| `tag` methods| Add a tag to the builder before the span is built. | &check;
+| `unwrap(Class)` | Cast the builder to the specified implementation type. † | &check;
+|====
+
+† Helidon returns the unwrapped object, not a safe adapter to it.
+
+
+.link:{tracing-javadoc}/Span.html[`io.helidon.tracing.Span`] Operations
+|====
+| Method    | Purpose | OK?
+| `activate()` | Makes the span "current", returning a `Scope`. * | -
+| `addEvent` methods | Associate a string (and optionally other info) with a span. | &check;
+| `baggage()` | Returns the `Baggage` instance associated with the span.| &check;
+| `context()` | Returns the `SpanContext` associated with the span.| &check;
+| `status(Status)` | Sets the status of the span. | -
+| any `tag` method| Add a tag to the span. | &check;
+| `unwrap(Class)` | Cast the span to the specified implementation type. † | &check;
 
 |====
-Basically, the `Info` types expose a subset of the methods available on the corresponding tracing type.
+
+{empty}* Helidon throws the link:{tracing-javadoc}/UnsupportedActivationException.html[`UnsupportedActivationException`] if a listener attempts an illegal operation from inside its `afterActivation` method. This Helidon exception extends `UnsupportedOperationException` and adds the `Scope scope()` method. Callers should catch this exception and close the `Scope`; Helidon will have activated the span and created the scope _before_ it invoked the listeners.
+
+† Helidon returns the unwrapped object, not a safe adapter to it.
+
+.link:{tracing-javadoc}/Scope.html[`io.helidon.tracing.Scope`] Operations
+|====
+| Method    | Purpose | OK?
+| `close()` | Close the scope. | -
+| `isClosed()`| Reports whether the scope is closed. | &check;
+|====
+
+.link:{tracing-javadoc}/SpanContext.html[`io.helidon.tracing.SpanContext`] Operations
+|====
+| Method    | Purpose | OK?
+| `asParent(Span.Builder)` | Sets this context as the parent of a new span builder. | &check;
+| `baggage()` | Returns `Baggage` instance associated with the span context. | &check;
+| `spanId()` | Returns the span ID. | &check;
+| `traceId()` | Returns the trace ID.| &check;
+
+|====
 
 === Adding a Listener
-Helidon uses Java service loading to locate and invoke listeners.
-Follow these steps to add one.
+==== Explicitly Registering a Listener on a link:{tracing-javadoc}/Tracer.html[`Tracer`]
+Create a `{listener-type}` instance and invoke the `Tracer#register({listener-type})` method to make the listener known to that tracer.
 
-1. Implement the link:{tracing-spi-javadoc}/{listener-type}.html[`{listener-type}`] interface.
+==== Automatically Registering a Listener on all `Tracer` Instances
+
+Helidon also uses Java service loading to locate listeners and register them automatically on all `Tracer` objects.
+Follow these steps to add an auto-loaded listener.
+
+1. Implement the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] interface.
 2. Declare your implementation as a loadable service:
-   a. Create the file `META-INF/services/io.helidon.tracing.spi.{listener-type}` containing a line with the fully-qualified name of your class which implements `{listener-type}`.
+   a. Create the file `META-INF/services/io.helidon.tracing.{listener-type}` containing a line with the fully-qualified name of your class which implements `{listener-type}`.
    b. If your service has a `module-info.java` file add the following line to it:
 +
 [source,java,subs="attributes+"]
 ----
-provides <your-implementation-class> as io.helidon.tracing.spi.{listener-type};
+provides io.helidon.tracing.{listener-type} with <your-implementation-class>;
 ----
 
-The `{listener-type}` interface declares default implementations for all the methods, so your listener can implement only the methods it needs to.
+The `{listener-type}` interface declares default no-op implementations for all the methods, so your listener can implement only the methods it needs to.
 
 Helidon invokes each listener's methods in the following order:
 
@@ -96,5 +155,5 @@ Helidon invokes each listener's methods in the following order:
 // tag::brief[]
 include::common-callbacks.adoc[tag=intro]
 
-See the link:{tracing-spi-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
+See the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
 // end::brief[]
