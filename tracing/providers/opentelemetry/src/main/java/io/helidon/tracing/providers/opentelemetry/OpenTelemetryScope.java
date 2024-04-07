@@ -39,8 +39,8 @@ class OpenTelemetryScope implements Scope {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
-            spanLifeCycleListeners.forEach(listener -> listener.afterClose(span.limited(), limited));
             delegate.close();
+            spanLifeCycleListeners.forEach(listener -> listener.afterClose(span.limited(), limited()));
         }
     }
 

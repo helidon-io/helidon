@@ -104,7 +104,21 @@ class OpenTracingSpan implements Span {
     @Override
     public Scope activate() {
         var result = new OpenTracingScope(this, tracer.activateSpan(delegate), spanLifeCycleListeners);
-        spanLifeCycleListeners.forEach(listener -> listener.afterActivate(limited(), result.limited()));
+        UnsupportedOperationException ex = new UnsupportedOperationException();
+        spanLifeCycleListeners.forEach(listener -> {
+            try {
+                listener.afterActivate(limited(), result.limited());
+            } catch (Throwable t) {
+                ex.addSuppressed(t);
+            }
+        });
+
+        if (ex.getSuppressed().length > 0) {
+            // Force the scope closed; otherwise we would leave incorrect context.
+            // Even though we are about to throw an exception, the caller might catch it so clean up the context.
+            result.close();
+            throw ex;
+        }
         return result;
     }
 

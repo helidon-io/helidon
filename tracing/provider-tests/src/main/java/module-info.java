@@ -23,4 +23,6 @@ module io.helidon.tracing.provider.tests {
 
     requires org.junit.jupiter.api;
     requires hamcrest.all;
+
+    provides io.helidon.tracing.SpanLifeCycleListener with io.helidon.tracing.providers.tests.AutoLoadedSpanLifeCycleListener;
 }

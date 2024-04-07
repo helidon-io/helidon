@@ -62,14 +62,14 @@ class ZipkinSpan implements Span {
     public void finish() {
         finishLog();
         span.finish();
-        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited));
+        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited()));
     }
 
     @Override
     public void finish(long finishMicros) {
         finishLog();
         span.finish(finishMicros);
-        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited));
+        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited()));
     }
 
     @Override

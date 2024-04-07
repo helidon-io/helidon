@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,16 +38,17 @@ class JaegerDataPropagationProviderTest {
         context.register(tracer);
         Span span = tracer.spanBuilder("span").start();
         context.register(span);
-        Scope scope = span.activate();
-        context.register(scope);
+        try (Scope scope = span.activate()) {
+            context.register(scope);
 
-        Contexts.runInContext(context, () -> {
-            assertThat(scope.isClosed(), is(false));
-            JaegerDataPropagationProvider.JaegerContext data = provider.data();
-            provider.propagateData(data);
-            assertThat(data.scope().isClosed(), is(false));
-            provider.clearData(data);
-            assertThat(data.scope().isClosed(), is(true));
-        });
+            Contexts.runInContext(context, () -> {
+                assertThat(scope.isClosed(), is(false));
+                JaegerDataPropagationProvider.JaegerContext data = provider.data();
+                provider.propagateData(data);
+                assertThat(data.scope().isClosed(), is(false));
+                provider.clearData(data);
+                assertThat(data.scope().isClosed(), is(true));
+            });
+        }
     }
 }

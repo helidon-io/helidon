@@ -76,16 +76,15 @@ class ZipkinScopeManager implements ScopeManager {
         public void close() {
             delegate.close();
             isClosed = true;
-            spanLifeCycleListeners.forEach(listener -> listener.afterClose(zSpan.limited(), limited));
+            spanLifeCycleListeners.forEach(listener -> listener.afterClose(zSpan.limited(), limited()));
         }
 
         Limited limited() {
-            return limited == null
-                    ? null : spanLifeCycleListeners.isEmpty() ? null : newLimited();
-        }
-
-        private Limited newLimited() {
-            limited = new Limited(this);
+            if (limited == null) {
+                if (!spanLifeCycleListeners.isEmpty()) {
+                    limited = new Limited(this);
+                }
+            }
             return limited;
         }
 

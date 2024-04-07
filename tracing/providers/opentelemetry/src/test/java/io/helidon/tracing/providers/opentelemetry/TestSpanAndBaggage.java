@@ -173,7 +173,7 @@ class TestSpanAndBaggage {
         assertThat("Injected headers", allKeys, hasItem("baggage"));
         assertThat("Injected baggage expression",
                    consumer.get("baggage"),
-                   OptionalMatcher.optionalValue(Matchers.equalTo(BAGGAGE_KEY + "=" + BAGGAGE_VALUE)));
+                   OptionalMatcher.optionalValue(Matchers.containsString(BAGGAGE_KEY + "=" + BAGGAGE_VALUE)));
     }
 
     private SpanContext currentSpanContext() {
