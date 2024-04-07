@@ -32,12 +32,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestSpanCallbacks {
 
@@ -61,6 +61,8 @@ class TestSpanCallbacks {
         checkSpanStartEnd(
                 hasEntry("afterEnd", AFTER_END_BAGGAGE_VALUE),
                 not(hasKey("afterEndBad")),
+                hasEntry("auto-afterEndOk", AutoLoadedSpanLifeCycleListener.AFTER_END_OK),
+                not(hasKey("auto-afterEndBad")),
                 Span::end);
     }
 
@@ -69,6 +71,8 @@ class TestSpanCallbacks {
         checkSpanStartEnd(
                 not(hasKey("afterEnd")),
                 hasEntry("afterEndBad", AFTER_END_BAD_BAGGAGE_VALUE),
+                not(hasKey("auto-afterEndOk")),
+                hasEntry("auto-afterEndBad", AutoLoadedSpanLifeCycleListener.AFTER_END_BAD),
                 span -> span.end(new Throwable()));
     }
 
@@ -189,13 +193,14 @@ class TestSpanCallbacks {
         tracer.register(l1);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterEndBad");
         Span span = spanBuilder.start();
-
         assertThrows(UnsupportedOperationException.class,
                      () -> span.end(new Throwable()));
     }
 
     private void checkSpanStartEnd(Matcher<Map<? extends String, ?>> spanEndOkMatcher,
                                    Matcher<Map<? extends String, ?>> spanEndBadMatcher,
+                                   Matcher<Map<? extends String, ?>> spanAutoEndOkMatcher,
+                                   Matcher<Map<? extends String, ?>> spanAutoEndBadMatcher,
                                    Consumer<Span> spanEnder) {
         Map<String, Object> listenerInfo = new HashMap<>();
         TestLifeCycleListener listener = new TestLifeCycleListener(listenerInfo);
@@ -214,7 +219,12 @@ class TestSpanCallbacks {
                          not(hasKey("afterActivate")),
                          not(hasKey("afterClose")),
                          not(hasKey("afterEnd")),
-                         not(hasKey("afterEndBad"))));
+                         not(hasKey("afterEndBad")),
+                         hasEntry("auto-afterStart", AutoLoadedSpanLifeCycleListener.AFTER_START),
+                         not(hasKey("auto-afterActivate")),
+                         not(hasKey("auto-afterClose")),
+                         not(hasKey("auto-afterEndOk")),
+                         not(hasKey("auto-afterEndBad"))));
 
         try (Scope scope = span.activate()) {
             assertThat("After activate", baggageAsMap(span.baggage()),
@@ -222,7 +232,12 @@ class TestSpanCallbacks {
                              hasEntry("afterActivate", AFTER_ACTIVATE_BAGGAGE_VALUE),
                              not(hasKey("afterClose")),
                              not(hasKey("afterEnd")),
-                             not(hasKey("afterEndBad"))));
+                             not(hasKey("afterEndBad")),
+                             hasEntry("auto-afterStart", AutoLoadedSpanLifeCycleListener.AFTER_START),
+                             hasEntry("auto-afterActivate", AutoLoadedSpanLifeCycleListener.AFTER_ACTIVATE),
+                             not(hasKey("auto-afterClose")),
+                             not(hasKey("auto-afterEndOk")),
+                             not(hasKey("auto-afterEndBad"))));
         }
 
         assertThat("After close", baggageAsMap(span.baggage()),
@@ -230,7 +245,12 @@ class TestSpanCallbacks {
                          hasEntry("afterActivate", AFTER_ACTIVATE_BAGGAGE_VALUE),
                          hasEntry("afterClose", AFTER_CLOSE_BAGGAGE_VALUE),
                          not(hasKey("afterEnd")),
-                         not(hasKey("afterEndBad"))));
+                         not(hasKey("afterEndBad")),
+                         hasEntry("auto-afterStart", AutoLoadedSpanLifeCycleListener.AFTER_START),
+                         hasEntry("auto-afterActivate", AutoLoadedSpanLifeCycleListener.AFTER_ACTIVATE),
+                         hasEntry("auto-afterClose", AutoLoadedSpanLifeCycleListener.AFTER_CLOSE),
+                         not(hasKey("auto-afterEndOk")),
+                         not(hasKey("auto-afterEndBad"))));
 
         spanEnder.accept(span);
         assertThat("After end",
@@ -239,8 +259,12 @@ class TestSpanCallbacks {
                          hasEntry("afterActivate", AFTER_ACTIVATE_BAGGAGE_VALUE),
                          hasEntry("afterClose", AFTER_CLOSE_BAGGAGE_VALUE),
                          spanEndOkMatcher,
-                         spanEndBadMatcher));
-
+                         spanEndBadMatcher,
+                         hasEntry("auto-afterStart", AutoLoadedSpanLifeCycleListener.AFTER_START),
+                         hasEntry("auto-afterActivate", AutoLoadedSpanLifeCycleListener.AFTER_ACTIVATE),
+                         hasEntry("auto-afterClose", AutoLoadedSpanLifeCycleListener.AFTER_CLOSE),
+                         spanAutoEndOkMatcher,
+                         spanAutoEndBadMatcher));
     }
 
     private Map<String, String> baggageAsMap(Baggage baggage) {
