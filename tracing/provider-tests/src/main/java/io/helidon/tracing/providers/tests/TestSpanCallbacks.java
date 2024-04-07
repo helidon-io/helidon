@@ -26,6 +26,7 @@ import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanLifeCycleListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.UnsupportedActivationException;
 
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeAll;
@@ -123,8 +124,9 @@ class TestSpanCallbacks {
         tracer.register(l1);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterActivateSpan");
         Span span = spanBuilder.start();
-        assertThrows(UnsupportedOperationException.class,
+        UnsupportedActivationException ex = assertThrows(UnsupportedActivationException.class,
                      span::activate);
+        ex.scope().close();
     }
 
     @Test
@@ -159,7 +161,8 @@ class TestSpanCallbacks {
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterCloseScope");
         Span span = spanBuilder.start();
 
-        assertThrows(UnsupportedOperationException.class, span::activate);
+        UnsupportedActivationException ex = assertThrows(UnsupportedActivationException.class, span::activate);
+        ex.scope().close();
     }
 
     @Test
