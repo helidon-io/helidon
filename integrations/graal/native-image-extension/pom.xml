@@ -34,6 +34,9 @@
          to have a bad module-info.  So for now we skip generating javadocs.
         -->
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <version.lib.lz4>1.3.0</version.lib.lz4>
+        <version.lib.jboss-marshalling>2.1.1.Final</version.lib.jboss-marshalling>
+        <version.lib.zstd-jni>1.5.6-2</version.lib.zstd-jni>
     </properties>
 
     <dependencies>
@@ -58,6 +61,34 @@
             <artifactId>graal-sdk</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- These are Netty dependencies needed to silence warnings at native-image compile time -->
+        <!-- These are not used at runtime and are only provided to silence native-image warnings -->
+        <!-- See https://github.com/helidon-io/helidon/issues/5878 for details -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.jpountz.lz4</groupId>
+            <artifactId>lz4</artifactId>
+            <version>${version.lib.lz4}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.marshalling</groupId>
+            <artifactId>jboss-marshalling</artifactId>
+            <version>${version.lib.jboss-marshalling}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+            <version>${version.lib.zstd-jni}</version>
+        </dependency>
+
     </dependencies>
 
     <profiles>
