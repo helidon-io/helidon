@@ -83,7 +83,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value><![CDATA[
     @Path("/{name}")
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Counted(name = PERSONALIZED_GETS_COUNTER_NAME,
              absolute = true,
              description = PERSONALIZED_GETS_COUNTER_DESCRIPTION)
@@ -184,7 +183,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value><![CDATA[
     @Path("/{name}")
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Counted(name = PERSONALIZED_GETS_COUNTER_NAME, description = PERSONALIZED_GETS_COUNTER_DESCRIPTION, absolute = true)
     @Timed(name = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, absolute = true)
     public String getMessage(@PathParam("name") String name) {
