@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>3.2.7-SNAPSHOT</version>
+        <version>3.2.8-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -1262,7 +1262,7 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
         <profile>
             <id>examples</id>
             <modules>
-                <module>examples</module>
+                <module>helidon-examples</module>
             </modules>
         </profile>
         <profile>

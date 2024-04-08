@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>3.2.7-SNAPSHOT</version>
+        <version>3.2.8-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration</groupId>
@@ -51,6 +51,8 @@
         <module>mp-gh-4123</module>
         <module>mp-gh-4654</module>
         <module>mp-gh-5328</module>
+        <module>mp-gh-8478</module>
+        <module>mp-gh-8495</module>
         <module>kafka</module>
         <module>jpa</module>
         <module>jms</module>

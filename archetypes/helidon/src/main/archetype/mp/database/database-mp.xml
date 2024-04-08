@@ -32,7 +32,7 @@
             <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>jakarta.annotation</value>
                 <value>jakarta.persistence</value>
                 <value>jakarta.transaction</value>

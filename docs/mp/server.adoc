@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -400,4 +400,4 @@ NOTE: The `requestContext.getUriInfo()` method returns the Jakarta RESTful web s
 == Reference
 
 * link:https://helidon.io/docs/v2/apidocs/io.helidon.microprofile.server/module-summary.html[Helidon MicroProfile Server Javadoc]
-* link:https://github.com/oracle/helidon/tree/master/microprofile/server[Helidon MicroProfile Server on GitHub]
+* link:{helidon-github-tree-url}/microprofile/server[Helidon MicroProfile Server on GitHub]

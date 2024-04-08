@@ -89,7 +89,7 @@
                 <value>static org.hamcrest.MatcherAssert.assertThat</value>
                 <value>static org.hamcrest.Matchers.is</value>
             </list>
-            <list key="modules">
+            <list key="module-requires">
                 <value>io.helidon.webserver</value>
                 <value>io.helidon.common.http</value>
                 <value>io.helidon.config</value>

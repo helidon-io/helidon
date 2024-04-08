@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -482,7 +482,7 @@ messaging = Messaging.builder()
 
 Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 
-* https://github.com/oracle/helidon/tree/master/examples/messaging
+* link:{helidon-github-examples-url}/messaging[Helidon Messaging Examples]
 
 ==== JMS Connector
 
@@ -621,7 +621,7 @@ messaging = Messaging.builder()
 
 Don't forget to check out the examples with pre-configured ActiveMQ docker image, for easy testing:
 
-* https://github.com/oracle/helidon/tree/master/examples/messaging
+* link:{helidon-github-examples-url}/messaging[Helidon Messaging Examples]
 
 ==== AQ Connector
 

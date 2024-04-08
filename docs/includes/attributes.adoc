@@ -23,15 +23,17 @@ ifndef::attributes-included[]
 // functional attributes
 :imagesdir: {rootdir}/images
 
-:helidon-version: 3.2.7-SNAPSHOT
-:helidon-version-is-release: true
+:helidon-version: 3.2.8-SNAPSHOT
+:helidon-version-is-release: false
 
 ifeval::["{helidon-version-is-release}" != "true"]
-:helidon-github-tree-url: https://github.com/oracle/helidon/tree/master
+:helidon-github-tree-url: https://github.com/helidon-io/helidon/tree/helidon-3.x
+:helidon-github-examples-url: https://github.com/helidon-io/helidon-examples/tree/helidon-3.x/examples
 endif::[]
 
 ifeval::["{helidon-version-is-release}" == "true"]
-:helidon-github-tree-url: https://github.com/oracle/helidon/tree/{helidon-version}
+:helidon-github-tree-url: https://github.com/helidon-io/helidon/tree/{helidon-version}
+:helidon-github-examples-url: https://github.com/helidon-io/helidon-examples/tree/{helidon-version}/examples
 endif::[]
 
 // versions
@@ -85,7 +87,7 @@ endif::[]
 :jdk-doc-url: https://docs.oracle.com/en/java/javase/17
 :jdk-javadoc-url: {jdk-doc-url}/docs/api
 
-:helidon-maven-plugin-doc-url: https://github.com/oracle/helidon-build-tools/blob/{version-plugin-helidon}/maven-plugins/helidon-maven-plugin/README.md
+:helidon-maven-plugin-doc-url: https://github.com/helidon-io/helidon-build-tools/blob/{version-plugin-helidon}/maven-plugins/helidon-maven-plugin/README.md
 
 // MicroProfile versioned URLs
 

@@ -1,6 +1,15 @@
 
 module {{package}} {
-{{#modules}}
+{{#module-requires}}
     requires {{.}};
-{{/modules}}
+{{/module-requires}}
+
+    exports {{package}};
+
+{{#module-opens}}
+    opens {{.}};
+{{/module-opens}}
+{{#module-opens-package}}
+    opens {{package}};
+{{/module-opens-package}}
 }

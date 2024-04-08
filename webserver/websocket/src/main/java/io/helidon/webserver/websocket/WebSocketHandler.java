@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     private volatile Connection connection;
     private final WebSocketEngine.UpgradeInfo upgradeInfo;
     private final BufferedEmittingPublisher<ByteBuf> emitter;
+    private final TyrusUpgradeResponse upgradeResponse = new TyrusUpgradeResponse();
 
     WebSocketHandler(ChannelHandlerContext ctx, String path,
                             FullHttpRequest upgradeRequest,
@@ -140,6 +141,10 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         this.upgradeInfo = upgrade(ctx);
     }
 
+    TyrusUpgradeResponse upgradeResponse() {
+        return upgradeResponse;
+    }
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         LOGGER.log(Level.SEVERE, "WS handler ERROR ", cause);
@@ -195,9 +200,7 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         upgradeRequest.headers().forEach(e -> requestContext.getHeaders().put(e.getKey(), List.of(e.getValue())));
 
         // Use Tyrus to process a WebSocket upgrade request
-        final TyrusUpgradeResponse upgradeResponse = new TyrusUpgradeResponse();
-        final WebSocketEngine.UpgradeInfo upgradeInfo = engine.upgrade(requestContext, upgradeResponse);
-
+        WebSocketEngine.UpgradeInfo upgradeInfo = engine.upgrade(requestContext, upgradeResponse);
         upgradeResponse.getHeaders().forEach(this.upgradeResponseHeaders::add);
         return upgradeInfo;
     }

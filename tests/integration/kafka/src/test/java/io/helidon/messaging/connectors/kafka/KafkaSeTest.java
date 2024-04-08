@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -425,7 +425,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
                 .publisher(toKafka,
-                        Multi.from(IntStream.rangeClosed(1, 3).boxed())
+                        Multi.create(IntStream.rangeClosed(1, 3).boxed())
                                 .map(KafkaMessage::of)
                                 .peek(msg -> msg.getHeaders()
                                         .add("secret header",

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -173,6 +173,8 @@
                     <enum id="server" name="Select a Database Server" default="h2" optional="true">
                         <option value="h2" name="H2" description="In-memory relational database">
                             <output>
+                                <file source="../database/files/src/main/resources/META-INF/init_script.sql.default"
+                                      target="src/main/resources/META-INF/init_script.sql"/>
                                 <model>
                                     <value key="readme-description">Helidon MP application that uses the dbclient API with an in-memory H2 database.</value>
                                     <value key="readme-native-docker">docker run -d -p 1521:1521 -p 81:81 -e H2_OPTIONS='-ifNotExists' --name=h2 oscarfonts/h2</value>
@@ -275,10 +277,12 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
                         </option>
                         <option value="mysql" name="MySQL" description="Relational database">
                             <output>
+                                <file source="../database/files/src/main/resources/META-INF/init_script.sql.default"
+                                      target="src/main/resources/META-INF/init_script.sql"/>
                                 <model>
                                     <value key="helidon-test">false</value>
                                     <value key="readme-description">Helidon MP application that uses the dbclient API with MySQL database.</value>
-                                    <value key="readme-native-docker">docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7</value>
+                                    <value key="readme-native-docker">docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=changeit  mysql:5.7</value>
                                     <value key="readme-native-url">url: jdbc:mysql:tcp://127.0.0.1:3306/pokemon?useSSL=false</value>
                                     <value key="integration-artifactId">helidon-integrations-db-mysql</value>
                                     <value key="db">MySQL</value>
@@ -287,7 +291,7 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
 This example requires a MySQL database, start it using docker:
 
 ```
-docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=changeit  mysql:5.7
 ```
 ]]></value>
                                     </list>
@@ -311,12 +315,14 @@ docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_D
                                     <value key="jdbcDataSource">com.mysql.cj.jdbc.MysqlDataSource</value>
                                     <value key="databaseUrl">jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false</value>
                                     <value key="dbUser">user</value>
-                                    <value key="userPassword">password</value>
+                                    <value key="userPassword">changeit</value>
                                 </model>
                             </output>
                         </option>
                         <option value="oracledb" name="Oracle DB" description="Multi-model database">
                             <output>
+                                <file source="../database/files/src/main/resources/META-INF/init_script.sql.oracle"
+                                      target="src/main/resources/META-INF/init_script.sql"/>
                                 <model>
                                     <value key="helidon-test">false</value>
                                     <value key="readme-description">Helidon MP application that uses the dbclient API with OracleDB database.</value>
@@ -383,12 +389,6 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                     <text id="ds-name" name="Datasource Name" default="ds1" optional="true"/>
                 </inputs>
                 <output>
-                    <files>
-                        <directory>../database/files</directory>
-                        <includes>
-                            <include>src/*/resources/*/init_script.sql</include>
-                        </includes>
-                    </files>
                     <templates engine="mustache" transformations="mustache,packaged">
                         <directory>../database/files</directory>
                         <includes>
@@ -463,7 +463,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                 <value key="scope">runtime</value>
                             </map>
                         </list>
-                        <list key="modules">
+                        <list key="module-requires">
                             <value>jakarta.xml.bind</value>
                         </list>
                         <list key="maven-plugins">
@@ -494,6 +494,10 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                     </execution>
                 </executions>
             </plugin>]]></value>
+                        </list>
+                        <list key="gitignore">
+                            <value>ObjectStore/</value>
+                            <value>PutObjectStoreDirHere/</value>
                         </list>
                     </model>
                 </output>
