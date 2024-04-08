@@ -20,11 +20,14 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.Config;
+
 import jakarta.enterprise.inject.Produces;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 
@@ -170,21 +173,37 @@ class AsynchronousBean {
     }
 
     /**
-     * Normal asynchronous call.
+     * Async call that uses a separate executor to run the method in a platform thread.
+     * A CDI producer must be present with the same {@code @WithExecutor} annotation.
      *
-     * @return A future.
+     * @return a future
+     * @see #threadPoolSupplier()
      */
     @Asynchronous
     @WithExecutor("platform-thread-executor")
     CompletableFuture<String> asyncWithExecutor() {
-        called.set(!Thread.currentThread().isVirtual());
+        Thread thread = Thread.currentThread();
+        called.set(thread.getName().contains("platform-threads") && !thread.isVirtual());
         FaultToleranceTest.printStatus("AsynchronousBean::asyncWithExecutor", "success");
         return CompletableFuture.completedFuture("success");
     }
 
+    /**
+     * CDI producer that uses Helidon's configurable thread pool supplier to create
+     * an executor service. See application.yaml for more information. See configuration
+     * in {@code application.yaml}.
+     *
+     * @return configured executor service for async
+     * @see #asyncWithExecutor()
+     */
     @Produces
     @WithExecutor("platform-thread-executor")
-    ExecutorService executorService() {
-        return Executors.newFixedThreadPool(10);
+    ExecutorService threadPoolSupplier() {
+        Config config = (Config) ConfigProvider.getConfig();
+        ThreadPoolSupplier threadPoolSupplier = ThreadPoolSupplier.builder()
+                .config(config.get("fault-tolerance.executor-service"))
+                .virtualThreads(false)      // platform thread
+                .build();
+        return threadPoolSupplier.get();
     }
 }
