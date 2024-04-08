@@ -1,7 +1,16 @@
 # OpenAPI Helidon Quickstart
 
-This is a sample for Helidon Quickstart project.
+MP client example
 
 
 ## Overview
-This project was generated using the Helidon OpenAPI Generator.
+mp-server shall be running on port 8080 before running the client
+
+```shell
+mvn package
+java -jar target/openapi-mp-client.jar
+```
+
+```shell
+curl http://localhost:8081/greet
+```

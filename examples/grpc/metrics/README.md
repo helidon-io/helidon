@@ -4,28 +4,28 @@ A basic example using metrics with gRPC server.
 
 ## Build and run
 
-```bash
+```shell
 mvn -f ../pom.xml -pl common,metrics package
 java -jar target/helidon-examples-grpc-metrics.jar
 ```
 
 Run the GreetService client:
-```bash
+```shell
 java -cp target/helidon-examples-grpc-metrics.jar io.helidon.grpc.examples.common.GreetClient
 ```
 
 Run the StringService client:
-```bash
+```shell
 java -cp target/helidon-examples-grpc-metrics.jar io.helidon.grpc.examples.common.StringClient
 ```
 
 Retrieve the metrics:
-```bash
+```shell
 curl http://localhost:8080/metrics
 ```
 
 Notice that you will get application metrics from the Helidon server metric response similar to this:
-```bash
+```text
 ...
 # TYPE application_GreetService_Greet_total counter
 # HELP application_GreetService_Greet_total 

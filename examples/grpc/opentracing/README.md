@@ -3,23 +3,23 @@
 ## Start Zipkin
 
 With Docker:
-```bash
+```shell
 docker run --name zipkin -d -p 9411:9411 openzipkin/zipkin
 ```
 
-```bash
+```shell
 curl -sSL https://zipkin.io/quickstart.sh | bash -s
 java -jar zipkin.jar
 ```
 
 ## Build and run
-```bash
+```shell
 mvn -f ../pom.xml -pl common,opentracing package
 java -jar target/helidon-examples-grpc-opentracing.jar
 ```
 
 Exercise the gRPC endpoint with GreeClient and StringClient:
-```bash
+```shell
 java -cp target/helidon-examples-grpc-opentracing.jar io.helidon.grpc.examples.common.GreetClient
 java -cp target/helidon-examples-grpc-opentracing.jar io.helidon.grpc.examples.common.StringClient
 ```
@@ -27,6 +27,6 @@ java -cp target/helidon-examples-grpc-opentracing.jar io.helidon.grpc.examples.c
 Then check out the traces at http://localhost:9411 from a browser.
 
 Stop zipkin if run with the docker container:
-```bash
+```shell
 docker stop zipkin && docker rm zipkin
 ```

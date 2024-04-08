@@ -13,19 +13,21 @@ There are two examples with exactly the same behavior:
 
 ## Build and run
 
-```bash
+```shell
 mvn package
-java -jar target/helidon-examples-security-webserver-basic-auth.jar
+java -jar target//helidon-examples-security-webserver-basic-uath.jar
 ```
 
 Try the application:
 
 The application starts on a random port, the following assumes it is `56551`
-```bash
+
+```shell
+export PORT=37667
 curl http://localhost:56551/public
-curl -u "jill:password" http://localhost:56551/noRoles
-curl -u "john:password" http://localhost:56551/user
-curl -u "jack:password" http://localhost:56551/admin
-curl -v -u "john:password" http://localhost:56551/deny
-curl -u "jack:password" http://localhost:56551/noAuthn
+curl -u "jill:changeit" http://localhost:${PORT}/noRoles
+curl -u "john:changeit" http://localhost:${PORT}/user
+curl -u "jack:changeit" http://localhost:${PORT}/admin
+curl -v -u "john:changeit" http://localhost:${PORT}/deny
+curl -u "jack:changeit" http://localhost:${PORT}/noAuthn
 ```

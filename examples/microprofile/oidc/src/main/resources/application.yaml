@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ security:
     oidc-identity-uri: "https://tenant.some-server.com/oauth2/default"
     # when you create a new client in identity server configuration, you should get a client id and a client secret
     oidc-client-id: "some client id"
-    oidc-client-secret: "some client secret"
+    oidc-client-secret: "changeit"
     # issuer of the tokens - identity server specific (maybe even configurable)
     oidc-issuer: "https://tenant.some-server.com/oauth2/default"
     # audience of the tokens - identity server specific (usually configurable)

@@ -5,43 +5,42 @@ This example implements a simple Hello World REST service using MicroProfile
 
 ## Build and run
 
-With JDK11+
-```bash
+```shell
 mvn package
 java -jar target/helidon-standalone-quickstart-mp.jar
 ```
 
 ## Exercise the application
 
-```
+```shell
 curl -X GET http://localhost:8080/greet
-{"message":"Hello World!"}
+#{"message":"Hello World!"}
 
 curl -X GET http://localhost:8080/greet/Joe
-{"message":"Hello Joe!"}
+#{"message":"Hello Joe!"}
 
-curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
+curl -X PUT -H "Content-Type: application/json" -d '{"message" : "Hola"}' http://localhost:8080/greet/greeting
 
 curl -X GET http://localhost:8080/greet/Jose
-{"message":"Hola Jose!"}
+#{"message":"Hola Jose!"}
 ```
 
 ## Try health and metrics
 
-```
+```shell
 curl -s -X GET http://localhost:8080/health
-{"outcome":"UP",...
-. . .
+#{"outcome":"UP",...
+#. . .
 
 # Prometheus Format
 curl -s -X GET http://localhost:8080/metrics
 # TYPE base:gc_g1_young_generation_count gauge
-. . .
+#. . .
 
 # JSON Format
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
-{"base":...
-. . .
+#{"base":...
+#. . .
 
 ```
 

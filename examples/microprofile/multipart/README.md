@@ -7,7 +7,7 @@ This project implements a simple file service web application that supports uplo
 
 ## Build
 
-```
+```shell
 mvn package
 ```
 
@@ -15,7 +15,7 @@ mvn package
 
 First, start the server:
 
-```
+```shell
 java -jar target/helidon-examples-microprofile-multipart.jar
 ```
 

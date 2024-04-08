@@ -12,13 +12,13 @@ There are three examples with exactly the same behavior
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-security-jersey.jar
 ```
 
 Try the endpoints:
-```bash
+```shell
 curl http://localhost:8080/rest
 curl -v http://localhost:8080/rest/protected
 curl -u "jack:password" http://localhost:8080/rest/protected

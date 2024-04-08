@@ -29,8 +29,7 @@ threadpool.
 
 ## Build and run
 
-With JDK11+
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-webserver-threadpool.jar
 ```
@@ -48,17 +47,17 @@ See `logging.properties` for the logging configuration.
 
 Each request will return the name of the thread the created the response. For example:
 
-```
+```shell
 $ curl -X GET http://localhost:8080/greet/Jane
-{"message":"Hello Jane!","thread":"Thread[nioEventLoopGroup-3-2,10,main]"}
+#{"message":"Hello Jane!","thread":"Thread[nioEventLoopGroup-3-2,10,main]"}
 ```
 
 `nioEventLoopGroup-` indicates that this is a Netty worker thread. To exercise
 the application thread pool do this:
 
-```
+```shell
 curl -X GET http://localhost:8080/greet/slowly/Jane
-{"message":"Hello Jane!","thread":"Thread[my-thread-1,5,helidon-thread-pool-2]"}
+#{"message":"Hello Jane!","thread":"Thread[my-thread-1,5,helidon-thread-pool-2]"}
 ```
 
 You'll notice that the response takes ~3 seconds to return -- that's an artificial delay

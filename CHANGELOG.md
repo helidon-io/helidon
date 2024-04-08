@@ -9,6 +9,37 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.7]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- Fault Tolerance: Reset fault tolerance method cache on CDI shutdown [8487](https://github.com/helidon-io/helidon/pull/8487)
+- Security: Support for disabling security providers through configuration. (#8521) [8547](https://github.com/helidon-io/helidon/pull/8547)
+- Security: Disabled OidcFeature no longer throws an NPE. (#8520) [8545](https://github.com/helidon-io/helidon/pull/8545)
+- Dependencies: Upgrade netty to 4.1.108.Final [8514](https://github.com/helidon-io/helidon/pull/8514)
+- Examples: examples cleanup [8498](https://github.com/helidon-io/helidon/pull/8498)
+- Examples: align README.md vs functionality [8473](https://github.com/helidon-io/helidon/pull/8473)
+- Tests: Avoid implementing the OCI Monitoring interface. [8555](https://github.com/helidon-io/helidon/pull/8555)
+
+## [2.6.6]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- Media: 7110 Bad media type log level [8031](https://github.com/helidon-io/helidon/pull/8031)
+- Metrics: Generalize OCI metrics support; add tests for the generalization [8419](https://github.com/helidon-io/helidon/pull/8419)
+- RestClient: Support Jersey Multipart feature by Helidon Connector [7652](https://github.com/helidon-io/helidon/pull/7652)
+- RestClient: TLS replace in HelidonConnector fix [8248](https://github.com/helidon-io/helidon/pull/8248)
+- JWT: propagation is now disabled when not configured [8240](https://github.com/helidon-io/helidon/pull/8240)
+- Build: Upgrade checkout to v4, setup-java to v4.1.0 [8447](https://github.com/helidon-io/helidon/pull/8447)
+- Dependencies: Upgrade to Jersey 2.41 [8347](https://github.com/helidon-io/helidon/pull/8347)
+- Dependencies: PostgreSQL JDBC driver updated to 42.4.4. [8415](https://github.com/helidon-io/helidon/pull/8415)
+- Examples: Archetype - Add Main class to MP projects [8332](https://github.com/helidon-io/helidon/pull/8332)
+- Tests: fix unstable messaging tests (backport) [8453](https://github.com/helidon-io/helidon/pull/8453)
+
 ## [2.6.5]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2203,6 +2234,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.7]: https://github.com/oracle/helidon/compare/2.6.6...2.6.7
+[2.6.6]: https://github.com/oracle/helidon/compare/2.6.5...2.6.6
 [2.6.5]: https://github.com/oracle/helidon/compare/2.6.4...2.6.5
 [2.6.4]: https://github.com/oracle/helidon/compare/2.6.3...2.6.4
 [2.6.3]: https://github.com/oracle/helidon/compare/2.6.2...2.6.3

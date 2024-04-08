@@ -13,7 +13,7 @@ To run MySQL's `mysql:8` Docker image in a Docker container named
 and uses `tiger` as the MySQL root password and that will
 automatically be removed when it is stopped:
 
-```sh
+```shell
 docker container run --rm -d -p 3306:3306 \
     --env MYSQL_ROOT_PASSWORD=tiger \
     --name mysql \
@@ -30,7 +30,7 @@ running in this Docker container, verify that the following lines
 (among others) are present in
 `src/main/resources/META-INF/microprofile-config.properties`:
 
-```sh
+```properties
 javax.sql.DataSource.example.dataSourceClassName=com.mysql.cj.jdbc.MysqlDataSource
 javax.sql.DataSource.example.dataSource.url = jdbc:mysql://localhost:3306
 javax.sql.DataSource.example.dataSource.user = root
@@ -40,18 +40,18 @@ javax.sql.DataSource.example.dataSource.password = tiger
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-integrations-examples-datasource-hikaricp-mysql.jar
 ```
 
 Try the endpoint:
-```sh
+```shell
 curl http://localhost:8080/tables
 ```
 
 Stop the docker container:
-```bash
+```shell
 docker stop mysql
 ```
 

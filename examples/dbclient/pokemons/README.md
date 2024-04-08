@@ -36,12 +36,12 @@ To switch between JDBC drivers:
 ## Build
 
 To build a jar file
-```
+```shell
 mvn package
 ```
 
 To build a native image (supported only with Oracle, MongoDB, or H2 databases)
-```
+```shell
 mvn package -Pnative-image
 ```
 
@@ -53,45 +53,45 @@ Start your database before running this example.
 Example docker commands to start databases in temporary containers: 
 
 Oracle:
-```
+```shell
 docker run --rm --name xe -p 1521:1521 -p 8888:8080 wnameless/oracle-xe-11g-r2
 ```
 For details on an Oracle Docker image, see https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance
 
 H2:
-```
+```shell
 docker run --rm --name h2 -p 9092:9082 -p 8082:8082 nemerosa/h2
 ```
 For details, see http://www.h2database.com/html/cheatSheet.html
 
 MySQL:
-```
+```shell
 docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root \
-       -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+       -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=changeit  mysql:5.7
 ```
 
 
 ## Run
 
 Then run the `io.helidon.examples.dbclient.pokemons.PokemonMain` class:
-```
+```shell
 java -jar target/helidon-examples-dbclient-pokemons.jar
 ```
 
 Or run the native image:
-```
+```shell
 ./target/helidon-examples-dbclient-pokemons
 ```
 
 ### Run with MongoDB
 
 It's possible to run example with MongoDB database. Start it using docker:
-```
+```shell
 docker run --rm --name mongo -p 27017:27017 mongo
 ```
 
 Then run the `io.helidon.examples.dbclient.pokemons.PokemonMain` class with `mongo` argument:
-```
+```shell
 java -jar target/helidon-examples-dbclient-pokemons.jar mongo
 ```
 
@@ -108,18 +108,45 @@ The query operation adds database trace.
 
 `curl` commands:
 
-- `curl http://localhost:8079/db/pokemon | json_pp` - list all pokemons in the database
-- `curl http://localhost:8079/db/type | json_pp` - list all pokemon types in the database
-- `curl http://localhost:8079/db/pokemon/2 | json_pp` - get a single pokemon by id
-- `curl http://localhost:8079/db/pokemon/name/Squirtle | json_pp` - get a single pokemon by name
-- `curl -i -X POST -d '{"id":7,"name":"Rattata","idType":1}' http://localhost:8079/db/pokemon` - add a new pokemon Rattata
-- `curl -i -X PUT -d '{"id":7,"name":"Raticate","idType":2}' http://localhost:8079/db/pokemon` - rename pokemon with id 7 to Raticate
-- `curl -i -X DELETE http://localhost:8079/db/pokemon/7` - delete pokemon with id 7
+```shell
+#  - list all pokemons in the database
+
+curl http://localhost:8079/db/pokemon | json_pp
+```
+```shell
+#  - list all pokemon types in the database
+
+curl http://localhost:8079/db/type | json_pp
+```
+```shell
+#  - get a single pokemon by id
+
+curl http://localhost:8079/db/pokemon/2 | json_pp
+```
+```shell
+#  - get a single pokemon by name
+
+curl http://localhost:8079/db/pokemon/name/Squirtle | json_pp
+```
+```shell
+#  - add a new pokemon Rattata
+
+curl -i -X POST -d '{"id":7,"name":"Rattata","idType":1}' http://localhost:8079/db/pokemon
+```
+```shell
+#  - rename pokemon with id 7 to Raticate
+curl -i -X PUT -d '{"id":7,"name":"Raticate","idType":2}' http://localhost:8079/db/pokemon
+```
+```shell
+#  - delete pokemon with id 7
+
+curl -i -X DELETE http://localhost:8079/db/pokemon/7
+```
 
 ### Proxy
 
 Make sure that `localhost` is not being accessed trough proxy when proxy is configured on your system:
-```
+```shell
 export NO_PROXY='localhost'
 ```
 

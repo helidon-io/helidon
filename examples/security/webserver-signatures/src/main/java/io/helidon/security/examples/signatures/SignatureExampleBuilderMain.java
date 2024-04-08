@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,9 +55,9 @@ public class SignatureExampleBuilderMain {
     private static WebServer service2Server;
 
     static {
-        addUser("jack", "password", List.of("user", "admin"));
-        addUser("jill", "password", List.of("user"));
-        addUser("john", "password", List.of());
+        addUser("jack", "changeit", List.of("user", "admin"));
+        addUser("jill", "changeit", List.of("user"));
+        addUser("john", "changeit", List.of());
     }
 
     private SignatureExampleBuilderMain() {
@@ -110,9 +110,9 @@ public class SignatureExampleBuilderMain {
         System.out.println("Signature example: from builder");
         System.out.println();
         System.out.println("Users:");
-        System.out.println("jack/password in roles: user, admin");
-        System.out.println("jill/password in roles: user");
-        System.out.println("john/password in no roles");
+        System.out.println("jack/changeit in roles: user, admin");
+        System.out.println("jill/changeit in roles: user");
+        System.out.println("john/changeit in no roles");
         System.out.println();
         System.out.println("***********************");
         System.out.println("** Endpoints:        **");
@@ -172,14 +172,14 @@ public class SignatureExampleBuilderMain {
                 .addProvider(HttpSignProvider.builder()
                                      .addInbound(InboundClientDefinition.builder("service1-hmac")
                                                          .principalName("Service1 - HMAC signature")
-                                                         .hmacSecret("somePasswordForHmacShouldBeEncrypted")
+                                                         .hmacSecret("changeit")
                                                          .build())
                                      .addInbound(InboundClientDefinition.builder("service1-rsa")
                                                          .principalName("Service1 - RSA signature")
                                                          .publicKeyConfig(KeyConfig.keystoreBuilder()
                                                                                   .keystore(Resource.create(Paths.get(
                                                                                           "src/main/resources/keystore.p12")))
-                                                                                  .keystorePassphrase("password".toCharArray())
+                                                                                  .keystorePassphrase("changeit".toCharArray())
                                                                                   .certAlias("service_cert")
                                                                                   .build())
                                                          .build())
@@ -217,7 +217,7 @@ public class SignatureExampleBuilderMain {
                                       .privateKeyConfig(KeyConfig.keystoreBuilder()
                                                                 .keystore(Resource.create(Paths.get(
                                                                         "src/main/resources/keystore.p12")))
-                                                                .keystorePassphrase("password".toCharArray())
+                                                                .keystorePassphrase("changeit".toCharArray())
                                                                 .keyAlias("myPrivateKey")
                                                                 .build())
                                       .build())
@@ -231,7 +231,7 @@ public class SignatureExampleBuilderMain {
                 .customObject(
                         OutboundTargetDefinition.class,
                         OutboundTargetDefinition.builder("service1-hmac")
-                                .hmacSecret("somePasswordForHmacShouldBeEncrypted")
+                                .hmacSecret("changeit")
                                 .build())
                 .build();
     }

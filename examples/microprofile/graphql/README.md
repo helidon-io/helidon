@@ -10,13 +10,13 @@ for an introduction to using GraphQL in Helidon MP.
 
 1. Build
 
-```bash
+```shell
 mvn clean install
 ```              
 
 2. Run the example
 
-```bash
+```shell
 java -jar target/helidon-examples-microprofile-graphql.jar
 ```
 
@@ -26,7 +26,7 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
 
 1. Display the generated GraphQL Schema
 
-    ```bash
+    ```shell
     curl http://127.0.0.1:7001/graphql/schema.graphql
     ```       
    
@@ -64,7 +64,7 @@ Access the `/graphql` endpoint via `http://127.0.0.1:7001/graphql`:
    
 1. Create a Task
 
-    ```bash
+    ```shell
     curl -X POST http://127.0.0.1:7001/graphql -d '{"query":"mutation createTask { createTask(description: \"Task Description 1\") { id description createdAt completed }}"}'    
     ```   
    
@@ -84,9 +84,10 @@ In the case below we have also appended `/application` to the URL to just retrie
 > Note: `jq` has been used to format the JSON output. This can be downloaded from https://stedolan.github.io/jq/download/ or you can
 > format the output with an alternate utility.
 
-```bash
+```shell
 $ curl  -H 'Accept: application/json' http://127.0.0.1:7001/metrics/application | jq
-
+```
+```json
 {
   "io.helidon.examples.graphql.basics.TaskApi.TaskApi": {
     "count": 1,

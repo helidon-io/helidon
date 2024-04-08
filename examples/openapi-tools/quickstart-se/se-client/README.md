@@ -22,3 +22,11 @@ To use the generated API, your code performs the following steps.
 4. Invoke methods on the returned `Single<WebClientResponse>` to process the response and any output from it.
 
 Browse the methods and JavaDoc on the generated classes for more information.
+```shell
+mvn package
+java -jar target/openapi-se-client.jar
+```
+
+```shell
+curl http://localhost:8081/greet
+```

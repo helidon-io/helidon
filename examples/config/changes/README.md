@@ -23,7 +23,7 @@ the most up-to-date value. Sometimes that is all you need.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-config-changes.jar
 ```

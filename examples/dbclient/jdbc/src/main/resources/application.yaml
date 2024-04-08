@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,10 +40,10 @@ db:
     # MySQL configuration
     #
     # docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root \
-    #   -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+    #   -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=changeit  mysql:5.7
 #    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
 #    username: user
-#    password: password
+#    password: changeit
 #    poolName: mysql
     #
     # Oracle configuration

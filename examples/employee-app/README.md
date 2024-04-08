@@ -13,9 +13,9 @@ The service uses Helidon DB Client that provides reactive and non-blocking acces
 
 ## Build and run
 
-```bash
+```shell
 mvn package
-java -jar target/employee-app.jar
+java -jar target/helidon-examples-employee-app.jar
 ```
 
 ## Create script
@@ -38,7 +38,7 @@ CREATE SEQUENCE EMPLOYEE_SEQ INCREMENT BY 1 NOCACHE NOCYCLE;
 
 ## Exercise the application
 Get all employees.
-```sh
+```shell
 curl -X GET curl -X GET http://localhost:8080/employees
 ```
 
@@ -60,7 +60,7 @@ Only 1 output record is shown for brevity:
 
 
 Get all employees whose last name contains "S".
-```sh
+```shell
 curl -X GET http://localhost:8080/employees/lastname/S
 ```
 
@@ -81,7 +81,7 @@ Only 1 output record is shown for brevity:
 ```
 
 Get an individual record.
-```sh
+```shell
 curl -X GET http://localhost:8080/employees/48cf06ad-6ed4-47e6-ac44-3ea9c67cbe2d
 ```
 Output:
@@ -101,14 +101,14 @@ Output:
 ```
 
 Connect with a web brower at:
-```txt
+```text
 http://localhost:8080/public/index.html
 ```
 
 
 ## Try health and metrics
 
-```sh
+```shell
 curl -s -X GET http://localhost:8080/health
 ```
 
@@ -150,19 +150,19 @@ curl -s -X GET http://localhost:8080/health
 
 ### Prometheus Format
 
-```sh
+```shell
 curl -s -X GET http://localhost:8080/metrics
 ```
 
 Only 1 output item is shown for brevity:
-```txt
+```text
 # TYPE base:classloader_current_loaded_class_count counter
 # HELP base:classloader_current_loaded_class_count Displays the number of classes that are currently loaded in the Java virtual machine.
 base:classloader_current_loaded_class_count 3995
 ```
 
 ### JSON Format
-```sh
+```shell
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ```
 
@@ -210,13 +210,13 @@ Output:
 
 ## Build the Docker Image
 
-```sh
+```shell
 docker build -t employee-app .
 ```
 
 ## Start the application with Docker
 
-```sh
+```shell
 docker run --rm -p 8080:8080 employee-app:latest
 ```
 
@@ -224,7 +224,7 @@ Exercise the application as described above.
 
 ## Deploy the application to Kubernetes
 
-```txt
+```shell
 kubectl cluster-info                # Verify which cluster
 kubectl get pods                    # Verify connectivity to cluster
 kubectl create -f app.yaml   # Deply application

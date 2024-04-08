@@ -9,50 +9,50 @@ when it cannot contact the Zipkin server to report the tracing spans. Even so, t
 will contain valid exemplars.
 
 With Docker:
-```bash
+```shell
 docker run --name zipkin -d -p 9411:9411 openzipkin/zipkin
 ```
 
 ## Build and run
 
 With JDK11+
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-metrics-exemplar.jar
 ```
 
 ## Exercise the application
 
-```
+```shell
 curl -X GET http://localhost:8080/greet
-{"message":"Hello World!"}
+#{"message":"Hello World!"}
 
 curl -X GET http://localhost:8080/greet/Joe
-{"message":"Hello Joe!"}
+#{"message":"Hello Joe!"}
 
 curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
 
 curl -X GET http://localhost:8080/greet/Jose
-{"message":"Hola Jose!"}
+#{"message":"Hola Jose!"}
 
 curl -X GET http://localhost:8080/greet          
-{"message":"Hola World!"}
+#{"message":"Hola World!"}
 ```
 
 ## Retrieve application metrics
 
-```
+```shell
 # Prometheus format with exemplars
 
 curl -s -X GET http://localhost:8080/metrics/application
 # TYPE application_counterForPersonalizedGreetings_total counter
 # HELP application_counterForPersonalizedGreetings_total 
-application_counterForPersonalizedGreetings_total 2 # {trace_id="78e61eed351f4c9d"} 1 1617812495.016000
-. . .
+#application_counterForPersonalizedGreetings_total 2 # {trace_id="78e61eed351f4c9d"} 1 1617812495.016000
+#. . .
 # TYPE application_timerForGets_mean_seconds gauge
-application_timerForGets_mean_seconds 0.005772598385062112 # {trace_id="b22f13c37ba8b879"} 0.001563945 1617812578.687000
+#application_timerForGets_mean_seconds 0.005772598385062112 # {trace_id="b22f13c37ba8b879"} 0.001563945 1617812578.687000
 # TYPE application_timerForGets_max_seconds gauge
-application_timerForGets_max_seconds 0.028018165 # {trace_id="a1b127002725143c"} 0.028018165 1617812467.524000
+#application_timerForGets_max_seconds 0.028018165 # {trace_id="a1b127002725143c"} 0.028018165 1617812467.524000
 ```
 The examplars contain `trace_id` values tying them to specific samples.
 Note that the exemplar for the counter refers to the most recent update to the counter. 
