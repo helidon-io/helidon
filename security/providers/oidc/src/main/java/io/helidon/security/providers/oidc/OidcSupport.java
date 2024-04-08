@@ -576,19 +576,18 @@ public final class OidcSupport implements Service {
         private Builder() {
         }
 
-        private static Config findMyKey(Config rootConfig, String providerName) {
+        private static Optional<Config> findMyKey(Config rootConfig, String providerName) {
             if (rootConfig.key().name().equals(providerName)) {
-                return rootConfig;
+                return Optional.of(rootConfig);
             }
 
             return rootConfig.get("security.providers")
                     .asNodeList()
-                    .get()
+                    .orElseGet(List::of)
                     .stream()
                     .filter(it -> it.get(providerName).exists())
                     .findFirst()
-                    .map(it -> it.get(providerName))
-                    .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
+                    .map(it -> it.get(providerName));
         }
 
         @Override
@@ -644,7 +643,10 @@ public final class OidcSupport implements Service {
             // if this is root config, we need to honor `security.enabled`
             config.get("security.enabled").asBoolean().ifPresent(this::enabled);
 
-            config(findMyKey(config, providerName));
+            findMyKey(config, providerName)
+                    .ifPresentOrElse(this::config,
+                                     () -> enabled(false));
+
             return this;
         }
 
