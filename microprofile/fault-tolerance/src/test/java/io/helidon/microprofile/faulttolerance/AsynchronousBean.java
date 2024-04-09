@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -36,7 +37,7 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
  */
 class AsynchronousBean {
 
-    private AtomicBoolean called = new AtomicBoolean(false);
+    private final AtomicBoolean called = new AtomicBoolean(false);
 
     boolean wasCalled() {
         return called.get();
@@ -177,7 +178,7 @@ class AsynchronousBean {
      * A CDI producer must be present with the same {@code @WithExecutor} annotation.
      *
      * @return a future
-     * @see #threadPoolSupplier()
+     * @see ExecutorServiceProducer#threadPoolSupplier()
      */
     @Asynchronous
     @WithExecutor("platform-thread-executor")
@@ -193,17 +194,25 @@ class AsynchronousBean {
      * an executor service. See application.yaml for more information. See configuration
      * in {@code application.yaml}.
      *
-     * @return configured executor service for async
      * @see #asyncWithExecutor()
      */
-    @Produces
-    @WithExecutor("platform-thread-executor")
-    ExecutorService threadPoolSupplier() {
-        Config config = (Config) ConfigProvider.getConfig();
-        ThreadPoolSupplier threadPoolSupplier = ThreadPoolSupplier.builder()
-                .config(config.get("fault-tolerance.executor-service"))
-                .virtualThreads(false)      // platform thread
-                .build();
-        return threadPoolSupplier.get();
+    @ApplicationScoped
+    static class ExecutorServiceProducer {
+
+        private final ThreadPoolSupplier threadPoolSupplier;
+
+        ExecutorServiceProducer() {
+            Config config = (Config) ConfigProvider.getConfig();
+            threadPoolSupplier = ThreadPoolSupplier.builder()
+                    .config(config.get("fault-tolerance.executor-service"))
+                    .virtualThreads(false)      // platform thread
+                    .build();
+        }
+
+        @Produces
+        @WithExecutor("platform-thread-executor")
+        ExecutorService threadPoolSupplier() {
+            return threadPoolSupplier.get();
+        }
     }
 }
