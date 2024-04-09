@@ -140,12 +140,12 @@ Helidon invokes each listener's methods in the following order:
 |====
 | Method | When invoked
 
-| `beforeStart(SpanInfo.BuilderInfo<?> spanBuilder)` | Just before a span is started from its builder.
-| `afterStart(SpanInfo span)` | Just after a span has started.
-| `afterActivate(SpanInfo span, SpanInfo.ScopeInfo scope)` | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code.
-| `afterClose(SpanInfo span, SpanInfo.ScopeInfo scope)` | After a scope has been closed.
-| `afterEnd(SpanInfo span)` | After a span has ended successfully.
-| `afterEnd(SpanInfo span, Throwable t)` | After a span has ended unsuccessfully.
+| `beforeStart(Span.Builder<?> spanBuilder)` | Just before a span is started from its builder.
+| `afterStart(Span span)` | Just after a span has started.
+| `afterActivate(Span span, Scope scope)` | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code.
+| `afterClose(Span span, Scope scope)` | After a scope has been closed.
+| `afterEnd(Span span)` | After a span has ended successfully.
+| `afterEnd(Span span, Throwable t)` | After a span has ended unsuccessfully.
 |====
 
 
