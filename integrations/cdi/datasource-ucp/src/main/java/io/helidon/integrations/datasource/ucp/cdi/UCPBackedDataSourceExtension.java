@@ -40,6 +40,8 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import jakarta.enterprise.util.TypeLiteral;
 import jakarta.inject.Named;
+import oracle.ucp.UniversalConnectionPoolException;
+import oracle.ucp.admin.UniversalConnectionPoolManagerImpl;
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceFactory;
 import oracle.ucp.jdbc.PoolDataSourceImpl;
@@ -141,7 +143,10 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
             .produceWith(instance -> {
                     try {
                         return createDataSource(instance, dataSourceName, xa, dataSourceProperties);
-                    } catch (IntrospectionException | ReflectiveOperationException | SQLException exception) {
+                    } catch (IntrospectionException
+                             | ReflectiveOperationException
+                             | SQLException
+                             | UniversalConnectionPoolException exception) {
                         throw new CreationException(exception.getMessage(), exception);
                     }
                 })
@@ -162,7 +167,7 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                                                    Named dataSourceName,
                                                    boolean xa,
                                                    Properties properties)
-        throws IntrospectionException, ReflectiveOperationException, SQLException {
+        throws IntrospectionException, ReflectiveOperationException, SQLException, UniversalConnectionPoolException {
         // See
         // https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/get-started.html#GUID-2CC8D6EC-483F-4942-88BA-C0A1A1B68226
         // for the general pattern.
@@ -269,7 +274,22 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
             }
         }
         if (returnValue.getConnectionPoolName() == null) {
-          returnValue.setConnectionPoolName(dataSourceName.value());
+            String proposedConnectionPoolName = dataSourceName.value();
+            String[] existingConnectionPoolNames =
+                UniversalConnectionPoolManagerImpl.getUniversalConnectionPoolManager().getConnectionPoolNames();
+            for (String existingConnectionPoolName : existingConnectionPoolNames) {
+                if (proposedConnectionPoolName.equals(existingConnectionPoolName)) {
+                    // If the return value of an invocation of PoolDataSource#getConnectionPoolName() equals the name of
+                    // an already existing UniversalConnectionPool instance, the first invocation of
+                    // PoolDataSource#getConnection(), or any other operation that requires pool creation, will throw a
+                    // SQLException (!). In this case only we let the auto-generated name (!) be used instead.
+                    proposedConnectionPoolName = null;
+                    break;
+                }
+            }
+            if (proposedConnectionPoolName != null) {
+                returnValue.setConnectionPoolName(proposedConnectionPoolName);
+            }
         }
         Instance<SSLContext> sslContextInstance = instance.select(SSLContext.class, dataSourceName);
         if (!sslContextInstance.isUnsatisfied()) {
