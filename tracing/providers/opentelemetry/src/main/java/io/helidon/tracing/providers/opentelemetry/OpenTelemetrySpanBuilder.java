@@ -68,12 +68,14 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
     @Override
     public OpenTelemetrySpanBuilder tag(String key, String value) {
         spanBuilder.setAttribute(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
     @Override
     public OpenTelemetrySpanBuilder tag(String key, Boolean value) {
         spanBuilder.setAttribute(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
@@ -84,6 +86,7 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
         } else {
             spanBuilder.setAttribute(key, value.longValue());
         }
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
 
         return this;
     }

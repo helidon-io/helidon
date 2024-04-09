@@ -53,12 +53,14 @@ class OpenTelemetrySpan implements Span {
     @Override
     public Span tag(String key, String value) {
         delegate.setAttribute(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
     @Override
     public Span tag(String key, Boolean value) {
         delegate.setAttribute(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
@@ -69,6 +71,7 @@ class OpenTelemetrySpan implements Span {
         } else {
             delegate.setAttribute(key, value.longValue());
         }
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
@@ -90,6 +93,7 @@ class OpenTelemetrySpan implements Span {
     @Override
     public void addEvent(String name, Map<String, ?> attributes) {
         delegate.addEvent(name, toAttributes(attributes));
+        spanLifeCycleListeners.forEach(listener -> listener.addEvent(limited(), name, attributes));
     }
 
     @Override

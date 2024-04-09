@@ -76,6 +76,11 @@ class OpenTelemetryTracer implements Tracer {
                                                                         spanLifeCycleListeners);
         tags.forEach(builder::tag);
         Span.current().ifPresent(it -> builder.parent(it.context()));
+        spanLifeCycleListeners.forEach(listener -> {
+            listener.newSpanBuilder(this, builder, name);
+            tags.forEach((key, stringValue) -> listener.tag(builder, key, stringValue));
+        });
+
         return builder;
     }
 

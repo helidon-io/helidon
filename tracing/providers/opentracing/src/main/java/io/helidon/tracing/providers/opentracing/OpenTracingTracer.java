@@ -68,9 +68,11 @@ class OpenTracingTracer implements Tracer {
 
     @Override
     public Span.Builder<?> spanBuilder(String name) {
-        return new OpenTracingSpanBuilder(delegate,
-                                          delegate.buildSpan(name),
-                                          spanLifeCycleListeners);
+        Span.Builder<?> result = new OpenTracingSpanBuilder(delegate,
+                                                            delegate.buildSpan(name),
+                                                            spanLifeCycleListeners);
+        spanLifeCycleListeners.forEach(listener -> listener.newSpanBuilder(this, result, name));
+        return result;
     }
 
     @Override

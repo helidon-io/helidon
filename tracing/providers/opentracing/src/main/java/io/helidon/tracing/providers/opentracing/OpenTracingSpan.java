@@ -51,18 +51,21 @@ class OpenTracingSpan implements Span {
     @Override
     public Span tag(String key, String value) {
         delegate.setTag(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
     @Override
     public Span tag(String key, Boolean value) {
         delegate.setTag(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
     @Override
     public Span tag(String key, Number value) {
         delegate.setTag(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
@@ -83,6 +86,7 @@ class OpenTracingSpan implements Span {
         Map<String, Object> newMap = new HashMap<>(attributes);
         newMap.put("event", name);
         delegate.log(newMap);
+        spanLifeCycleListeners.forEach(listener -> listener.addEvent(this, name, attributes));
     }
 
     @Override

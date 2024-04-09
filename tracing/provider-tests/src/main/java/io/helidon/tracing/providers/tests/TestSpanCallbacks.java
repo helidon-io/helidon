@@ -18,12 +18,14 @@ package io.helidon.tracing.providers.tests;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.tracing.Baggage;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.Tag;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.UnsupportedActivationException;
@@ -35,8 +37,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -198,6 +202,172 @@ class TestSpanCallbacks {
         Span span = spanBuilder.start();
         assertThrows(UnsupportedOperationException.class,
                      () -> span.end(new Throwable()));
+    }
+
+    @Test
+    void checkNewSpanBuilder() {
+        Tracer tracer = tracerBuilder.build();
+        AtomicReference<String> nameRef = new AtomicReference<>();
+
+        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+            @Override
+            public void newSpanBuilder(Tracer tracer, Span.Builder<?> spanBuilder, String name) {
+                nameRef.set(name);
+            }
+        };
+
+        tracer.register(l1);
+        tracer.spanBuilder("newSpan");
+
+        assertThat("Span builder name", nameRef.get(), is(equalTo("newSpan")));
+    }
+
+    @Test
+    void checkTagOnSpanBuilder() {
+        Map<String, Object> tags = new HashMap<>();
+        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+            @Override
+            public void tag(Span.Builder<?> spanBuilder, Tag<?> tag) {
+                tags.put(tag.key(), tag.value());
+            }
+
+            @Override
+            public void tag(Span.Builder<?> spanBuilder, String key, String value) {
+                tags.put(key, value);
+            }
+
+            @Override
+            public void tag(Span.Builder<?> spanBuilder, String key, Boolean value) {
+                tags.put(key, value);
+            }
+
+            @Override
+            public void tag(Span.Builder<?> spanBuilder, String key, Number value) {
+                tags.put(key, value);
+            }
+        };
+
+        Tracer tracer = tracerBuilder.build();
+        tracer.register(l1);
+
+        Span.Builder<?> spanBuilder = tracer.spanBuilder("builder1");
+        spanBuilder.tag(Tag.create("keys1", "string1"));
+        spanBuilder.tag(Tag.create("keyb1", true));
+        spanBuilder.tag(Tag.create("keyn1", 4.1D));
+        spanBuilder.tag("keys2", "string2");
+        spanBuilder.tag("keyb2", true);
+        spanBuilder.tag("keyn2", 4L);
+
+        assertThat("Tags after assignment to span builder",
+                   tags,
+                   hasEntry("keys1", "string1"));
+        assertThat("Tags after assignment to span builder",
+                   tags,
+                   hasEntry("keyb1", true));
+        assertThat("Tags after assignment to span builder",
+                   tags,
+                   hasEntry("keyn1", 4.1D));
+        assertThat("Tags after assignment to span builder",
+                   tags,
+                   hasEntry("keys2", "string2"));
+        assertThat("Tags after assignment to span builder",
+                   tags,
+                   hasEntry("keyb2", true));
+        assertThat("Tags after assignment to span builder",
+                   tags,
+                   hasEntry("keyn2", 4L));
+    }
+
+    @Test
+    void checkTagOnSpan() {
+        Map<String, Object> tags = new HashMap<>();
+        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+            @Override
+            public void tag(Span span, Tag<?> tag) {
+                tags.put(tag.key(), tag.value());
+            }
+
+            @Override
+            public void tag(Span span, String key, String value) {
+                tags.put(key, value);
+            }
+
+            @Override
+            public void tag(Span span, String key, Boolean value) {
+                tags.put(key, value);
+            }
+
+            @Override
+            public void tag(Span span, String key, Number value) {
+                tags.put(key, value);
+            }
+        };
+
+        Tracer tracer = tracerBuilder.build();
+        tracer.register(l1);
+
+        Span span = tracer.spanBuilder("builder1").start();
+        span.tag(Tag.create("keys1", "string1"));
+        span.tag(Tag.create("keyb1", true));
+        span.tag(Tag.create("keyn1", 4.1D));
+        span.tag("keys2", "string2");
+        span.tag("keyb2", true);
+        span.tag("keyn2", 4L);
+
+        try {
+            assertThat("Tags after assignment to span",
+                       tags,
+                       hasEntry("keys1", "string1"));
+            assertThat("Tags after assignment to span",
+                       tags,
+                       hasEntry("keys1", "string1"));
+            assertThat("Tags after assignment to span",
+                       tags,
+                       hasEntry("keyb1", true));
+            assertThat("Tags after assignment to span",
+                       tags,
+                       hasEntry("keyn1", 4.1D));
+            assertThat("Tags after assignment to span",
+                       tags,
+                       hasEntry("keys2", "string2"));
+            assertThat("Tags after assignment to span",
+                       tags,
+                       hasEntry("keyb2", true));
+            assertThat("Tags after assignment to span",
+                       tags,
+                       hasEntry("keyn2", 4L));
+        } catch (Throwable t) {
+            span.end();
+        }
+    }
+
+    @Test
+    void checkEventsAddedToSpan() {
+        Map<String, Map<String, ?>> events = new HashMap<>();
+        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+            @Override
+            public void addEvent(Span span, String message, Map<String, ?> attributes) {
+                events.put(message, attributes);
+            }
+        };
+
+        Tracer tracer = tracerBuilder.build();
+        tracer.register(l1);
+
+        Span span = tracer.spanBuilder("builder1").start();
+        span.addEvent("ev1");
+        span.addEvent("ev2", Map.of("attr1", "val1"));
+
+        try {
+            assertThat("Event with no attrs",
+                       events,
+                       hasEntry("ev1", Map.of()));
+            assertThat("Event with attrs",
+                       events,
+                       hasEntry("ev2", Map.of("attr1", "val1")));
+        } catch (Throwable t) {
+            span.end();
+        }
     }
 
     private void checkSpanStartEnd(Matcher<Map<? extends String, ?>> spanEndOkMatcher,

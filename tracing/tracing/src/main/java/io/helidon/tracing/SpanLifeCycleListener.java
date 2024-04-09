@@ -15,6 +15,8 @@
  */
 package io.helidon.tracing;
 
+import java.util.Map;
+
 /**
  * Behavior of listeners notified of span life cycle events.
  * <p>
@@ -76,6 +78,104 @@ package io.helidon.tracing;
  *     for example, Helidon throws an {@link java.lang.UnsupportedOperationException}.
  */
 public interface SpanLifeCycleListener {
+
+    /**
+     * Invoked after a {@link Span.Builder} is created.
+     *
+     * @param tracer the {@link io.helidon.tracing.Tracer} which created the new {@code Span.Builder}
+     * @param spanBuilder the new {@code Span.Builder}
+     * @param name the name assigned to the new {@code Span.Builder}
+     */
+    default void newSpanBuilder(Tracer tracer, Span.Builder<?> spanBuilder, String name) {
+    }
+
+    /**
+     * Invoked when a tag is set on a {@link Span.Builder}.
+     *
+     * @param spanBuilder the span builder on which the tag is set
+     * @param tag the tag assigned to the span builder
+     */
+    default void tag(Span.Builder<?> spanBuilder, Tag<?> tag) {
+    }
+
+    /**
+     * Invoked when a tag is set on a {@link Span.Builder}.
+     *
+     * @param spanBuilder the span builder on which the tag is set
+     * @param key tag key
+     * @param value tag value
+     */
+    default void tag(Span.Builder<?> spanBuilder, String key, String value) {
+    }
+
+    /**
+     * Invoked when a tag is set on a {@link Span.Builder}.
+     *
+     * @param spanBuilder the span builder on which the tag is set
+     * @param key tag key
+     * @param value tag value
+     */
+    default void tag(Span.Builder<?> spanBuilder, String key, Boolean value) {
+    }
+
+    /**
+     * Invoked when a tag is set on a {@link Span.Builder}.
+     *
+     * @param spanBuilder the span builder on which the tag is set
+     * @param key tag key
+     * @param value tag value
+     */
+    default void tag(Span.Builder<?> spanBuilder, String key, Number value) {
+    }
+
+    /**
+     * Invoked when a tag is set on a {@link io.helidon.tracing.Span}.
+     *
+     * @param span the span on which the tag is set
+     * @param tag the tag assigned to the span
+     */
+    default void tag(Span span, Tag<?> tag) {
+    }
+
+    /**
+     * Invokes when a tag is set on a {@link io.helidon.tracing.Span}.
+     *
+     * @param span the span on which the tag is set
+     * @param key tag key
+     * @param value tag value
+     */
+    default void tag(Span span, String key, String value) {
+    }
+
+    /**
+     * Invokes when a tag is set on a {@link io.helidon.tracing.Span}.
+     *
+     * @param span the span on which the tag is set
+     * @param key tag key
+     * @param value tag value
+     */
+    default void tag(Span span, String key, Boolean value) {
+    }
+
+    /**
+     * Invokes when a tag is set on a {@link io.helidon.tracing.Span}.
+     *
+     * @param span the span on which the tag is set
+     * @param key tag key
+     * @param value tag value
+     */
+    default void tag(Span span, String key, Number value) {
+    }
+
+    /**
+     * Invoked when an event is added to a {@link io.helidon.tracing.Span}.
+     *
+     * @param span the span to which the event is added
+     * @param message event message
+     * @param attributes event attributes
+     */
+    default void addEvent(Span span, String message, Map<String, ?> attributes) {
+    }
 
     /**
      * Invoked just prior to a {@linkplain io.helidon.tracing.Span span} being started from its
