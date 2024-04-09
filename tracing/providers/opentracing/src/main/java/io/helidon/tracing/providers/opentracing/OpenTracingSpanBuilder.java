@@ -80,18 +80,21 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     @Override
     public OpenTracingSpanBuilder tag(String key, String value) {
         delegate.withTag(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
     @Override
     public OpenTracingSpanBuilder tag(String key, Boolean value) {
         delegate.withTag(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
     @Override
     public OpenTracingSpanBuilder tag(String key, Number value) {
         delegate.withTag(key, value);
+        spanLifeCycleListeners.forEach(listener -> listener.tag(limited(), key, value));
         return this;
     }
 
