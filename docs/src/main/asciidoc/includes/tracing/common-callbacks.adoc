@@ -32,8 +32,12 @@ include::{rootdir}/attributes.adoc
 
 Applications and libraries can register listeners to be notified at several moments during the lifecycle of every span:
 
+* When a new span builder is created
+* When a tag is added to a span builder
 * Before a new span starts
 * After a new span has started
+* When a tag is added to a span
+* When an event is added to a span
 * After a span ends
 * After a span is activated (creating a new scope)
 * After a scope is closed
@@ -140,8 +144,12 @@ Helidon invokes each listener's methods in the following order:
 |====
 | Method | When invoked
 
+| `newSpanBuilder(Tracer, Span.Builder<?>, String)` | When a new span builder is created.
+| `tag(Span.Builder<?>)` methods | When a tag is set on a span builder
 | `beforeStart(Span.Builder<?> spanBuilder)` | Just before a span is started from its builder.
 | `afterStart(Span span)` | Just after a span has started.
+| `tag(Span)` methods | When a tag is set on a span
+| `addEvent(Span, String, Map)` | When an event is added to a span
 | `afterActivate(Span span, Scope scope)` | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code.
 | `afterClose(Span span, Scope scope)` | After a scope has been closed.
 | `afterEnd(Span span)` | After a span has ended successfully.
