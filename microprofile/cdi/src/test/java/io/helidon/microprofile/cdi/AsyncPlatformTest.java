@@ -35,7 +35,6 @@ class AsyncPlatformTest {
     @BeforeAll
     @SuppressWarnings("unchecked")
     static void startCdi() {
-        System.setProperty("mp.initializer.allow", "true");
         seContainer = SeContainerInitializer.newInstance()
                 .disableDiscovery()
                 .addExtensions(AsyncPlatformExtension.class)
