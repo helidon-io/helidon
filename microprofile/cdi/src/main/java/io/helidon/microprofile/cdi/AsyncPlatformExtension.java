@@ -15,18 +15,58 @@
  */
 package io.helidon.microprofile.cdi;
 
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import io.helidon.common.LazyValue;
+
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
 
 /**
  * CDI extension to support the {@link AsyncPlatform} annotation.
  */
 public class AsyncPlatformExtension implements Extension {
 
+    private final LazyValue<Map<Method, AnnotatedMethod<?>>> methodMap = LazyValue.create(ConcurrentHashMap::new);
+
+    void registerMethods(BeanManager bm, @Observes ProcessSyntheticBean<?> event) {
+        registerMethods(bm.createAnnotatedType(event.getBean().getBeanClass()));
+    }
+
+    void registerMethods(@Observes ProcessManagedBean<?> event) {
+        registerMethods(event.getAnnotatedBeanClass());
+    }
+
+    private void registerMethods(AnnotatedType<?> type) {
+        for (AnnotatedMethod<?> method : type.getMethods()) {
+            if (method.isAnnotationPresent(AsyncPlatform.class)) {
+                methodMap.get().put(method.getJavaMember(), method);
+            }
+        }
+    }
+
+    AsyncPlatform getAnnotation(Method method) {
+        AnnotatedMethod<?> annotatedMethod = methodMap.get().get(method);
+        if (annotatedMethod != null) {
+            return annotatedMethod.getAnnotation(AsyncPlatform.class);
+        }
+        throw new IllegalArgumentException("Unable to map method " + method);
+    }
+
     void registerInterceptors(@Observes BeforeBeanDiscovery discovery, BeanManager bm) {
         discovery.addAnnotatedType(bm.createAnnotatedType(AsyncPlatformInterceptor.class),
                 AsyncPlatformInterceptor.class.getName());
+    }
+
+    void clearMethodMap() {
+        methodMap.get().clear();
     }
 }

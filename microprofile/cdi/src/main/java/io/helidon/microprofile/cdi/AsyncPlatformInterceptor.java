@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 
 import jakarta.annotation.Priority;
+import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
@@ -48,6 +49,9 @@ class AsyncPlatformInterceptor {
         }
     }
 
+    @Inject
+    private AsyncPlatformExtension extension;
+
     /**
      * Intercepts a call to bean method annotated by {@code @AsyncPlatform}.
      *
@@ -57,7 +61,7 @@ class AsyncPlatformInterceptor {
      */
     @AroundInvoke
     public Object runWithExecutor(InvocationContext context) throws Throwable {
-        AsyncPlatform asyncPlatform = context.getMethod().getAnnotation(AsyncPlatform.class);
+        AsyncPlatform asyncPlatform = extension.getAnnotation(context.getMethod());
         Future<Object> future = EXECUTOR_SERVICE.get().submit(context::proceed);
         return future.get(asyncPlatform.value(), asyncPlatform.unit());
     }
