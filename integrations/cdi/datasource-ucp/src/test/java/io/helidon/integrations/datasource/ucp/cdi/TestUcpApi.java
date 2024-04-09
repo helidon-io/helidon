@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.datasource.ucp.cdi;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -75,6 +76,29 @@ class TestUcpApi {
         UniversalConnectionPoolManager ucpManager = UniversalConnectionPoolManagerImpl.getUniversalConnectionPoolManager();
         assertThrows(UniversalConnectionPoolException.class,
                      () -> ucpManager.createConnectionPool((UniversalConnectionPoolAdapter) getPoolDataSource()));
+    }
+
+    @Test
+    void testTwoPoolDataSourceCreationsWithSameName() throws SQLException, UniversalConnectionPoolException {
+        PoolDataSource pds = getPoolDataSource();
+        pds.setConnectionFactoryClassName("org.h2.jdbcx.JdbcDataSource");
+        pds.setURL("jdbc:h2:mem:test");
+        pds.setConnectionPoolName("pool0");
+        try (Connection c = pds.getConnection()) { // creates the pool
+        }
+        UniversalConnectionPoolManager ucpManager = UniversalConnectionPoolManagerImpl.getUniversalConnectionPoolManager();
+        String[] names = ucpManager.getConnectionPoolNames();
+        assertThat("Connection pool names: " + java.util.Arrays.asList(names), names.length, is(1));
+        assertThat(names[0], is("pool0"));
+        pds = getPoolDataSource(); // new one
+        pds.setConnectionFactoryClassName("org.h2.jdbcx.JdbcDataSource");
+        pds.setURL("jdbc:h2:mem:test");
+        pds.setConnectionPoolName("pool0");
+        assertThrows(SQLException.class, pds::getConnection); // !!
+        pds.setConnectionPoolName(null);
+        try (Connection c = pds.getConnection()) {
+        }
+        assertThat(pds.getConnectionPoolName(), is(not(nullValue()))); // !!
     }
 
     @Test
