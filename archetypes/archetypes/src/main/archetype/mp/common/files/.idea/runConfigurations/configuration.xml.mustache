@@ -1,11 +1,11 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="{{artifactId}}" type="Application" factoryName="Application">
-    {{#idea-main-class}}
-    <option name="MAIN_CLASS_NAME" value="{{idea-main-class}}" />
-    {{/idea-main-class}}
-    {{^idea-main-class}}
+    {{#mainClass}}
+    <option name="MAIN_CLASS_NAME" value="{{mainClass}}" />
+    {{/mainClass}}
+    {{^mainClass}}
     <option name="MAIN_CLASS_NAME" value="io.helidon.Main" />
-    {{/idea-main-class}}
+    {{/mainClass}}
     <module name="{{artifactId}}" />
     <method v="2">
       <option name="Make" enabled="true" />
