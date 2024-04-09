@@ -59,7 +59,7 @@ jobs:
           git config user.name "Helidon Robot"
           etc/scripts/release.sh release_build
       - name: Upload Staged Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: io-helidon-artifacts-${{ github.ref_name }}
           path: parent/target/nexus-staging/
