@@ -50,15 +50,6 @@ public interface Tracer {
         TracerProviderHelper.global(tracer);
     }
 
-//    /**
-//     * Returns the discovered span life cycle listeners. (Intended for internal use by Helidon.)
-//     *
-//     * @return list of {@link io.helidon.tracing.SpanLifeCycleListener}
-//     */
-//    static List<SpanLifeCycleListener> spanLifeCycleListeners() {
-//        return TracerProviderHelper.spanLifeCycleListeners();
-//    }
-
     /**
      * Whether this tracer is enabled or not.
      * A no op tracer is disabled.
