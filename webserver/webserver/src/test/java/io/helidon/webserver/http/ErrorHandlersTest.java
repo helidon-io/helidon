@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntityBase;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 
@@ -43,6 +44,8 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -119,6 +122,24 @@ class ErrorHandlersTest {
         testHandler(handlers, new TopRuntimeException(), "Top");
         testHandler(handlers, new ChildRuntimeException(), "Child");
         testNoHandler(handlers, new OtherException(), "Other");
+    }
+
+    @Test
+    public void testCloseConnectionExceptionContainsCause() {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        RoutingRequest req = mock(RoutingRequest.class);
+        RoutingResponse res = mock(RoutingResponse.class);
+        when(res.reset()).thenReturn(false);
+        ErrorHandlers handlers = ErrorHandlers.create(Map.of(OtherException.class,
+                (request, response, t) -> res.send(t.getMessage())));
+        try {
+            handlers.runWithErrorHandling(ctx, req, res, () -> {
+                throw new OtherException();
+            });
+            fail("It is expected a CloseConnectionException");
+        } catch (CloseConnectionException e) {
+            assertEquals(OtherException.class, e.getCause().getClass());
+        }
     }
 
     private void testNoHandler(ErrorHandlers handlers, Exception e, String message) {
