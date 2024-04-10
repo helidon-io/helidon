@@ -53,12 +53,14 @@ class AsyncPlatformTest {
 
         @AsyncPlatform
         void cpuIntensive() {
-            success.set(!Thread.currentThread().isVirtual());
+            Thread thread = Thread.currentThread();
+            success.set(!thread.isVirtual() && thread.getName().startsWith("my-platform-thread"));
         }
 
         @AsyncPlatform(10000)
         void evenMoreCpuIntensive() {
-            success.set(!Thread.currentThread().isVirtual());
+            Thread thread = Thread.currentThread();
+            success.set(!thread.isVirtual() && thread.getName().startsWith("my-platform-thread"));
         }
     }
 

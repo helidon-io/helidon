@@ -21,12 +21,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.mp.MpConfig;
 
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * Intercepts calls to bean methods to be asynchronously executed on a separate
@@ -37,13 +40,20 @@ import jakarta.interceptor.InvocationContext;
 @Priority(Interceptor.Priority.PLATFORM_AFTER + 10)
 class AsyncPlatformInterceptor {
 
+    private static final String ASYNC_PLATFORM_THREAD = "async-platform-thread";
+    private static final String EXECUTOR_SERVICE_CONFIG = "helidon.async-platform.executor-service";
+
     private static final AtomicReference<ExecutorService> EXECUTOR_SERVICE = new AtomicReference<>();
 
     AsyncPlatformInterceptor() {
         if (EXECUTOR_SERVICE.get() == null) {
+            Config mpConfig = ConfigProvider.getConfig();
+            io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
             EXECUTOR_SERVICE.compareAndSet(null,
-                    ThreadPoolSupplier.builder()        // TODO config
-                                      .virtualThreads(false)
+                    ThreadPoolSupplier.builder()
+                                      .threadNamePrefix(ASYNC_PLATFORM_THREAD)
+                                      .config(config.get(EXECUTOR_SERVICE_CONFIG))
+                                      .virtualThreads(false)        // platform threads
                                       .build()
                                       .get());
         }

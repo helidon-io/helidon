@@ -23,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
+import jakarta.enterprise.util.Nonbinding;
 import jakarta.interceptor.InterceptorBinding;
 
 /**
@@ -41,6 +42,7 @@ public @interface AsyncPlatform {
      *
      * @return waiting time value
      */
+    @Nonbinding
     long value() default 5000L;
 
     /**
@@ -48,5 +50,6 @@ public @interface AsyncPlatform {
      *
      * @return waiting time unit.
      */
+    @Nonbinding
     TimeUnit unit() default TimeUnit.MILLISECONDS;
 }
