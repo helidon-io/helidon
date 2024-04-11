@@ -212,7 +212,7 @@ public final class ErrorHandlers {
         if (!response.reset()) {
             ctx.log(LOGGER, System.Logger.Level.WARNING, "Unable to reset response for error handler.");
             throw new CloseConnectionException(
-                    "Cannot send response of a simple handler, status and headers already written");
+                    "Cannot send response of a simple handler, status and headers already written", e);
         }
         try {
             it.handle(request, response, e);
