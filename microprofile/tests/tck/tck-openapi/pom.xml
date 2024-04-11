@@ -78,11 +78,6 @@
             <artifactId>parsson</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!--
             RestAssured xml-path, used by the TCK, requires the javax flavor of JAX-B, so add the API and impl.
         -->

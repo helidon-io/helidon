@@ -32,10 +32,6 @@
                     <value key="artifactId">jandex</value>
                     <value key="scope">runtime</value>
                 </map>
-                <map>
-                    <value key="groupId">jakarta.activation</value>
-                    <value key="artifactId">jakarta.activation-api</value>
-                </map>
                 <map order="0">
                     <value key="groupId">org.junit.jupiter</value>
                     <value key="artifactId">junit-jupiter-api</value>
