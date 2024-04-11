@@ -297,5 +297,19 @@ class ZipkinSpan implements Span {
         public WritableBaggage baggage() {
             return baggage;
         }
+
+        @Override
+        public <T> T unwrap(Class<T> spanClass) {
+            if (spanClass.isInstance(this)) {
+                return spanClass.cast(this);
+            }
+            Span span = delegateSpan.unwrap();
+            if (spanClass.isInstance(span)) {
+                return spanClass.cast(span);
+            }
+            throw new IllegalArgumentException("Cannot provide an instance of " + spanClass.getName()
+                                                       + ", Zipkin span is: " + delegateSpan.getClass().getName());
+
+        }
     }
 }

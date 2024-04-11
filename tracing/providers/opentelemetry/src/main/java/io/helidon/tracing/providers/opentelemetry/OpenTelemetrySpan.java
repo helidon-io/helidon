@@ -236,67 +236,75 @@ class OpenTelemetrySpan implements Span {
     private record Limited(OpenTelemetrySpan delegate) implements Span {
 
         @Override
-            public Span tag(String key, String value) {
-                delegate.tag(key, value);
-                return this;
-            }
-
-            @Override
-            public Span tag(String key, Boolean value) {
-                delegate.tag(key, value);
-                return this;
-            }
-
-            @Override
-            public Span tag(String key, Number value) {
-                delegate.tag(key, value);
-                return this;
-            }
-
-            @Override
-            public void status(Status status) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public SpanContext context() {
-                return delegate.context();
-            }
-
-            @Override
-            public void addEvent(String name, Map<String, ?> attributes) {
-                delegate.addEvent(name, attributes);
-            }
-
-            @Override
-            public void end() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void end(Throwable t) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Scope activate() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Span baggage(String key, String value) {
-                delegate.baggage().set(key, value);
-                return this;
-            }
-
-            @Override
-            public Optional<String> baggage(String key) {
-                return delegate.baggage(key);
-            }
-
-            @Override
-            public WritableBaggage baggage() {
-                return delegate.baggage();
-            }
+        public Span tag(String key, String value) {
+            delegate.tag(key, value);
+            return this;
         }
+
+        @Override
+        public Span tag(String key, Boolean value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Span tag(String key, Number value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public void status(Status status) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SpanContext context() {
+            return delegate.context();
+        }
+
+        @Override
+        public void addEvent(String name, Map<String, ?> attributes) {
+            delegate.addEvent(name, attributes);
+        }
+
+        @Override
+        public void end() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void end(Throwable t) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Scope activate() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Span baggage(String key, String value) {
+            delegate.baggage().set(key, value);
+            return this;
+        }
+
+        @Override
+        public Optional<String> baggage(String key) {
+            return delegate.baggage(key);
+        }
+
+        @Override
+        public WritableBaggage baggage() {
+            return delegate.baggage();
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> spanClass) {
+            if (spanClass.isInstance(this)) {
+                return spanClass.cast(this);
+            }
+            return delegate.unwrap(spanClass);
+        }
+    }
 }
