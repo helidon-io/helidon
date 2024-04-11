@@ -35,6 +35,7 @@ module io.helidon.microprofile.testing.lra {
 
     exports io.helidon.microprofile.testing.lra;
 
-    provides ConfigSource with io.helidon.microprofile.testing.lra.TestLraCoordinatorConfigSource;
+    provides org.eclipse.microprofile.config.spi.ConfigSource
+            with io.helidon.microprofile.testing.lra.TestLraCoordinatorConfigSource;
 
 }

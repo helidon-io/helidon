@@ -38,14 +38,16 @@ import static org.hamcrest.Matchers.is;
 @AddBean(TestLraCoordinator.class)
 public class LraExternalResourceTest {
 
-    @Inject
-    private WithdrawTestResource withdrawTestResource;
+    private final WithdrawTestResource withdrawTestResource;
+    private final TestLraCoordinator coordinator;
+    private final WebTarget target;
 
     @Inject
-    private TestLraCoordinator coordinator;
-
-    @Inject
-    private WebTarget target;
+    public LraExternalResourceTest(WithdrawTestResource withdrawTestResource, TestLraCoordinator coordinator, WebTarget target) {
+        this.withdrawTestResource = withdrawTestResource;
+        this.coordinator = coordinator;
+        this.target = target;
+    }
 
     @Test
     public void testLraComplete() {

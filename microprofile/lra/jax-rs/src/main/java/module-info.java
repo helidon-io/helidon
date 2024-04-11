@@ -47,6 +47,7 @@ module io.helidon.microprofile.lra {
 
     requires jakarta.cdi;
     requires transitive jersey.common;
+    requires io.helidon.config.mp;
 
     uses io.helidon.lra.coordinator.client.CoordinatorClient;
 

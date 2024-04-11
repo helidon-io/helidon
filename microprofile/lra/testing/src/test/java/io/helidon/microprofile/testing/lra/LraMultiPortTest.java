@@ -62,13 +62,14 @@ public class LraMultiPortTest {
     private final WebTarget otherTarget;
     private final Set<String> completedLras;
     private final Set<String> cancelledLras;
+    private final TestLraCoordinator coordinator;
 
     @Inject
-    private TestLraCoordinator coordinator;
-
-    @Inject
-    public LraMultiPortTest(WebTarget target, @Socket("test-route") WebTarget otherTarget) {
+    public LraMultiPortTest(WebTarget target,
+                            TestLraCoordinator coordinator,
+                            @Socket("test-route") WebTarget otherTarget) {
         this.target = target;
+        this.coordinator = coordinator;
         this.otherTarget = otherTarget;
         this.completedLras = new CopyOnWriteArraySet<>();
         this.cancelledLras = new CopyOnWriteArraySet<>();

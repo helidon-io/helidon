@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.http.HttpService;
 
@@ -109,7 +110,7 @@ public class LraCdiExtension implements Extension {
      * Initialize MicroProfile Long Running Actions CDI extension.
      */
     public LraCdiExtension() {
-        config = ((Config) ConfigProvider.getConfig()).get(CONFIG_PREFIX);
+        config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(CONFIG_PREFIX);
         indexer = new Indexer();
         classLoader = Thread.currentThread().getContextClassLoader();
         // Needs to be always indexed

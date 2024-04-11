@@ -65,7 +65,7 @@ class LraImpl implements Lra {
         lraId = lraUUID;
         this.config = config;
         lraCtr.increment();
-        coordinatorURL = LazyValue.create(coordinatorService.getCoordinatorURL());
+        coordinatorURL = LazyValue.create(coordinatorService.coordinatorURL());
     }
 
     LraImpl(CoordinatorService coordinatorService, String lraUUID, URI parentId, Config config) {
@@ -73,7 +73,7 @@ class LraImpl implements Lra {
         this.parentId = parentId;
         this.config = config;
         lraCtr.increment();
-        coordinatorURL = LazyValue.create(coordinatorService.getCoordinatorURL());
+        coordinatorURL = LazyValue.create(coordinatorService.coordinatorURL());
     }
 
     @Override

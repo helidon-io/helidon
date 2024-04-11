@@ -240,7 +240,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public void leave(URI lraId, PropagatedHeaders headers, Participant p) {
-        logF("Leaving LRA " + lraId + " participant: " + p);
+        logF("Leaving LRA {0} participant: {1}", lraId, p);
         retry.invoke(() -> {
             var req = prepareWebClient(lraId)
                     .put()
@@ -267,7 +267,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public LRAStatus status(URI lraId, PropagatedHeaders headers) {
-        logF("Checking status of LRA " + lraId);
+        logF("Checking status of LRA {0}", lraId);
         return retry.invoke(() -> {
             var req = prepareWebClient(lraId)
                     .get()

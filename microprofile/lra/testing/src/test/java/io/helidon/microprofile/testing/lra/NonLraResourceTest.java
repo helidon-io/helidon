@@ -32,8 +32,12 @@ import static org.hamcrest.Matchers.is;
 @Path("/test/non-lra")
 public class NonLraResourceTest {
 
+    private final WebTarget target;
+
     @Inject
-    private WebTarget target;
+    public NonLraResourceTest(WebTarget target) {
+        this.target = target;
+    }
 
     @GET
     @Path("/say-hi")

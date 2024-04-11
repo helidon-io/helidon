@@ -155,11 +155,11 @@ public class CoordinatorService implements HttpService {
      * @param lraId without coordinator uri prefix
      * @return LRA when managed by this coordinator or null
      */
-    public Lra getLra(String lraId) {
+    public Lra lra(String lraId) {
         return this.lraPersistentRegistry.get(lraId);
     }
 
-    LazyValue<URI> getCoordinatorURL() {
+    LazyValue<URI> coordinatorURL() {
         return coordinatorURL;
     }
 

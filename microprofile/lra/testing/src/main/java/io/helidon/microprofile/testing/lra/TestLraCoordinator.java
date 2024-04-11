@@ -93,9 +93,9 @@ public class TestLraCoordinator {
             return null;
         }
         if (lraId.startsWith(getUrl() + "/")) {
-            return coordinatorService.getLra(lraId.substring(getUrl().toString().length() + 1));
+            return coordinatorService.lra(lraId.substring(getUrl().toString().length() + 1));
         }
-        return coordinatorService.getLra(lraId);
+        return coordinatorService.lra(lraId);
     }
 
     private void ready(@Observes @Priority(PLATFORM_AFTER + 101) @Initialized(ApplicationScoped.class) Object e, BeanManager b) {

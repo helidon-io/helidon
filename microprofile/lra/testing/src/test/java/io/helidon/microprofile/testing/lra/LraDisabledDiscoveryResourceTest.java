@@ -60,13 +60,13 @@ public class LraDisabledDiscoveryResourceTest {
     private final WebTarget target;
     private final Set<String> completedLras;
     private final Set<String> cancelledLras;
+    private final TestLraCoordinator coordinator;
 
     @Inject
-    private TestLraCoordinator coordinator;
-
-    @Inject
-    public LraDisabledDiscoveryResourceTest(WebTarget target) {
+    public LraDisabledDiscoveryResourceTest(WebTarget target,
+                                            TestLraCoordinator coordinator) {
         this.target = target;
+        this.coordinator = coordinator;
         this.completedLras = new CopyOnWriteArraySet<>();
         this.cancelledLras = new CopyOnWriteArraySet<>();
     }
