@@ -342,7 +342,8 @@ final class GenerateAbstractBuilder {
         Method.Builder methodBuilder = Method.builder()
                 .name("from")
                 .returnType(TypeArgument.create("BUILDER"))
-                .description("Update this builder from an existing prototype instance.")
+                .description("Update this builder from an existing prototype instance. "
+                                     + "This method disables automatic service discovery.")
                 .addParameter(param -> param.name("prototype")
                         .type(prototype)
                         .description("existing prototype to update this builder from"))
@@ -382,6 +383,9 @@ final class GenerateAbstractBuilder {
                     methodBuilder.addContent(property.typeHandler().getterName());
                     methodBuilder.addContentLine("());");
                 }
+            }
+            if (property.configuredOption().provider()) {
+                methodBuilder.addContentLine(property.typeHandler().name() + "DiscoverServices = false;");
             }
         }
         methodBuilder.addContentLine("return self();");
@@ -457,7 +461,10 @@ final class GenerateAbstractBuilder {
                     methodBuilder.addContentLine(setterName + "(builder." + getterName + "());");
                 }
             }
-
+            if (property.configuredOption().provider()) {
+                methodBuilder.addContent(property.name() + "DiscoverServices");
+                methodBuilder.addContentLine(" = builder." + property.name() + "DiscoverServices;");
+            }
         }
         methodBuilder.addContentLine("return self();");
         classBuilder.addMethod(methodBuilder);
