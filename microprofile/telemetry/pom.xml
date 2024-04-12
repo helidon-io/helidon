@@ -85,12 +85,6 @@
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <!-- Jersey on java 9 -->
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <!-- testing -->
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
