@@ -68,12 +68,6 @@
             <version>${version.lib.jaxb-api}</version>
         </dependency>
 
-
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>runtime</scope>
-        </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
