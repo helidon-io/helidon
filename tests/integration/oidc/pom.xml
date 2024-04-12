@@ -29,15 +29,15 @@
     <artifactId>helidon-tests-integration-oidc</artifactId>
 
     <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.sun.activation</groupId>
-                <artifactId>jakarta.activation</artifactId>
-                <version>1.2.2</version>
-                <!-- Needed here to resolve enforcer issues.-->
-                <!-- It is better to avoid placing this dependency to the overall pom. -->
-            </dependency>
-        </dependencies>
+       <dependencies>
+           <dependency>
+               <groupId>com.sun.activation</groupId>
+               <artifactId>jakarta.activation</artifactId>
+               <version>${version.lib.activation-api}</version>
+               <!-- Needed here to resolve enforcer issues.-->
+               <!-- It is better to avoid placing this dependency to the overall pom. -->
+           </dependency>
+       </dependencies>
     </dependencyManagement>
 
     <dependencies>
@@ -88,11 +88,6 @@
                     <artifactId>resteasy-client</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jsoup</groupId>
