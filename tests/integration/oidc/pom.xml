@@ -28,6 +28,18 @@
     <name>Helidon Integration Test OIDC</name>
     <artifactId>helidon-tests-integration-oidc</artifactId>
 
+    <dependencyManagement>
+       <dependencies>
+           <dependency>
+               <groupId>com.sun.activation</groupId>
+               <artifactId>jakarta.activation</artifactId>
+               <version>${version.lib.activation-api}</version>
+               <!-- Needed here to resolve enforcer issues.-->
+               <!-- It is better to avoid placing this dependency to the overall pom. -->
+           </dependency>
+       </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
