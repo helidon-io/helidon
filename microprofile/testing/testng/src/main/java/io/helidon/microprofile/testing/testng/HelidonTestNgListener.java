@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.testing.testng.ConfigBlob.Type;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -105,6 +106,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
         classLevelConfigMeta.addConfig(configs);
         classLevelConfigMeta.configuration(testClass.getAnnotation(Configuration.class));
+        classLevelConfigMeta.configBlob(testClass.getAnnotation(ConfigBlob.class));
         configProviderResolver = ConfigProviderResolver.instance();
 
         AddExtension[] extensions = getAnnotations(testClass, AddExtension.class);
@@ -171,6 +173,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             ConfigMeta methodLevelConfigMeta = classLevelConfigMeta.nextMethod();
             methodLevelConfigMeta.addConfig(configs);
             methodLevelConfigMeta.configuration(method.getAnnotation(Configuration.class));
+            methodLevelConfigMeta.configBlob(method.getAnnotation(ConfigBlob.class));
 
             configure(methodLevelConfigMeta);
 
@@ -333,6 +336,9 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                     builder.withSources(MpConfigSources.classPath(it).toArray(new ConfigSource[0]));
                 }
             });
+            if (configMeta.type != null) {
+                builder.withSources(configMeta.type.configSource(configMeta.content));
+            }
             config = builder
                     .withSources(MpConfigSources.create(configMeta.additionalKeys))
                     .addDefaultSources()
@@ -485,6 +491,8 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private static final class ConfigMeta {
         private final Map<String, String> additionalKeys = new HashMap<>();
         private final List<String> additionalSources = new ArrayList<>();
+        private Type type;
+        private String content;
         private boolean useExisting;
         private String profile;
 
@@ -515,6 +523,14 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             additionalSources.addAll(List.of(config.configSources()));
             //set additional key for profile
             additionalKeys.put("mp.config.profile", profile);
+        }
+
+        private void configBlob(ConfigBlob config) {
+            if (config == null) {
+                return;
+            }
+            this.type = config.type();
+            this.content = config.content();
         }
 
         ConfigMeta nextMethod() {
