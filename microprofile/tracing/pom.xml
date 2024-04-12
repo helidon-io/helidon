@@ -77,12 +77,6 @@
             <artifactId>helidon-tracing-tracer-resolver</artifactId>
         </dependency>
         <dependency>
-            <!-- Jersey on java 9 -->
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

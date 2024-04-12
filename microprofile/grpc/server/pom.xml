@@ -45,18 +45,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <!--
-            Needed by jersey in Java 9
-            Added as a dependency to correctly run tests (without the long exception
-            from hk2). If you run application on Java 9, you need to add this dependency
-            in compile scope to prevent the error messages.
-            -->
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
         </dependency>
