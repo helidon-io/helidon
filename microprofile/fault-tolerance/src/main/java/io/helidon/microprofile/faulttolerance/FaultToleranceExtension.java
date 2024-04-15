@@ -243,7 +243,7 @@ public class FaultToleranceExtension implements Extension {
         if (withExecutor != null) {
             Set<Bean<?>> beans = bm.getBeans(ExecutorService.class, withExecutor);
             if (beans.isEmpty()) {
-                throw new FaultToleranceDefinitionException("Unable to resolved named executor service '"
+                throw new FaultToleranceDefinitionException("Unable to resolve named executor service '"
                         + withExecutor.value() + "' at "
                         + method.getDeclaringClass().getName() + "::"
                         + method.getName());
