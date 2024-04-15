@@ -48,7 +48,12 @@ public @interface OnNewThread {
         /**
          * A thread of type virtual.
          */
-        VIRTUAL
+        VIRTUAL,
+
+        /**
+         * A named executor lookup using CDI.
+         */
+        EXECUTOR
     }
 
     /**
@@ -70,8 +75,16 @@ public @interface OnNewThread {
     /**
      * Waiting time unit.
      *
-     * @return waiting time unit.
+     * @return waiting time unit
      */
     @Nonbinding
     TimeUnit unit() default TimeUnit.MILLISECONDS;
+
+    /**
+     * Name of executor when {@link ThreadType#EXECUTOR} is selected.
+     *
+     * @return executor name
+     */
+    @Nonbinding
+    String executorName() default "";
 }

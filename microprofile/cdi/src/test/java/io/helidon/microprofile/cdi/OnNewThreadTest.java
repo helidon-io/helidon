@@ -15,9 +15,14 @@
  */
 package io.helidon.microprofile.cdi;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Named;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -36,7 +41,7 @@ class OnNewThreadTest {
         seContainer = SeContainerInitializer.newInstance()
                 .disableDiscovery()
                 .addExtensions(OnNewThreadExtension.class)
-                .addBeanClasses(AsyncPlatformBean.class)
+                .addBeanClasses(OnNewThreadBean.class)
                 .initialize();
     }
 
@@ -45,7 +50,7 @@ class OnNewThreadTest {
         seContainer.close();
     }
 
-    static class AsyncPlatformBean {
+    static class OnNewThreadBean {
 
         @OnNewThread
         boolean cpuIntensive() {
@@ -70,29 +75,47 @@ class OnNewThreadTest {
             Thread thread = Thread.currentThread();
             return thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
         }
+
+        @OnNewThread(value = ThreadType.EXECUTOR, executorName = "my-executor")
+        boolean onMyExecutor() {
+            Thread thread = Thread.currentThread();
+            return !thread.isVirtual() && thread.getName().startsWith("pool");
+        }
+
+        @Produces
+        @Named("my-executor")
+        ExecutorService myExecutor() {
+            return Executors.newFixedThreadPool(2);
+        }
     }
 
     @Test
     void cpuIntensiveTest() {
-        AsyncPlatformBean bean = CDI.current().select(AsyncPlatformBean.class).get();
+        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
         assertThat(bean.cpuIntensive(), is(true));
     }
 
     @Test
     void cpuIntensiveWithTypeTest() {
-        AsyncPlatformBean bean = CDI.current().select(AsyncPlatformBean.class).get();
+        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
         assertThat(bean.cpuIntensiveWithType(), is(true));
     }
 
     @Test
     void evenMoreCpuIntensiveTest() {
-        AsyncPlatformBean bean = CDI.current().select(AsyncPlatformBean.class).get();
+        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
         assertThat(bean.evenMoreCpuIntensive(), is(true));
     }
 
     @Test
     void onVirtualThread() {
-        AsyncPlatformBean bean = CDI.current().select(AsyncPlatformBean.class).get();
+        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
         assertThat(bean.onVirtualThread(), is(true));
+    }
+
+    @Test
+    void onMyExecutor() {
+        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
+        assertThat(bean.onMyExecutor(), is(true));
     }
 }

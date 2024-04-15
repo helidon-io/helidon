@@ -23,6 +23,9 @@ import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.mp.MpConfig;
 
 import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
@@ -31,8 +34,7 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
- * Intercepts calls to bean methods to be asynchronously executed on a separate
- * platform thread.
+ * Intercepts calls to bean methods to be executed on a new thread.
  */
 @Interceptor
 @OnNewThread
@@ -86,6 +88,19 @@ class OnNewThreadInterceptor {
             case VIRTUAL -> VIRTUAL_EXECUTOR_SERVICE.get()
                     .submit(context::proceed)
                     .get(onNewThread.timeout(), onNewThread.unit());
+            case EXECUTOR -> findExecutor(onNewThread.executorName())
+                    .submit(context::proceed)
+                    .get(onNewThread.timeout(), onNewThread.unit());
         };
+    }
+
+    /**
+     * Find executor by name. Validation in {@link OnNewThreadExtension#validateAnnotations(BeanManager, Object)}.
+     *
+     * @param executorName name of executor
+     * @return executor instance looked up via CDI
+     */
+    private static ExecutorService findExecutor(String executorName) {
+        return CDI.current().select(ExecutorService.class, NamedLiteral.of(executorName)).get();
     }
 }

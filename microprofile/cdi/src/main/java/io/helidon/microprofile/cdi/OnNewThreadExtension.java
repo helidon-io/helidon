@@ -17,13 +17,19 @@ package io.helidon.microprofile.cdi;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.LazyValue;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.literal.NamedLiteral;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
@@ -46,9 +52,27 @@ public class OnNewThreadExtension implements Extension {
     }
 
     private void registerMethods(AnnotatedType<?> type) {
-        for (AnnotatedMethod<?> method : type.getMethods()) {
-            if (method.isAnnotationPresent(OnNewThread.class)) {
-                methodMap.get().put(method.getJavaMember(), method);
+        for (AnnotatedMethod<?> annotatedMethod : type.getMethods()) {
+            if (annotatedMethod.isAnnotationPresent(OnNewThread.class)) {
+                methodMap.get().put(annotatedMethod.getJavaMember(), annotatedMethod);
+            }
+        }
+    }
+
+    void validateAnnotations(BeanManager bm, @Observes @Initialized(ApplicationScoped.class) Object event) {
+        methodMap.get().forEach((method, annotatedMethod) -> validateExecutor(bm, annotatedMethod));
+    }
+
+    private static void validateExecutor(BeanManager bm, AnnotatedMethod<?> method) {
+        OnNewThread onNewThread = method.getAnnotation(OnNewThread.class);
+        if (onNewThread.value() == OnNewThread.ThreadType.EXECUTOR) {
+            String executorName = onNewThread.executorName();
+            Set<Bean<?>> beans = bm.getBeans(ExecutorService.class, NamedLiteral.of(executorName));
+            if (beans.isEmpty()) {
+                throw new IllegalArgumentException("Unable to resolve named executor service '"
+                        + onNewThread.value() + "' at "
+                        + method.getJavaMember().getDeclaringClass().getName() + "::"
+                        + method.getJavaMember().getName());
             }
         }
     }
