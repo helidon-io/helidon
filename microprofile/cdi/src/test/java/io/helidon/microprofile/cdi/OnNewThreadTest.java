@@ -15,20 +15,18 @@
  */
 package io.helidon.microprofile.cdi;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.microprofile.cdi.OnNewThread.ThreadType;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class AsyncPlatformTest {
+class OnNewThreadTest {
 
     static SeContainer seContainer;
 
@@ -37,7 +35,7 @@ class AsyncPlatformTest {
     static void startCdi() {
         seContainer = SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(AsyncPlatformExtension.class)
+                .addExtensions(OnNewThreadExtension.class)
                 .addBeanClasses(AsyncPlatformBean.class)
                 .initialize();
     }
@@ -47,39 +45,54 @@ class AsyncPlatformTest {
         seContainer.close();
     }
 
-    static AtomicBoolean success = new AtomicBoolean();
-
     static class AsyncPlatformBean {
 
-        @AsyncPlatform
-        void cpuIntensive() {
+        @OnNewThread
+        boolean cpuIntensive() {
             Thread thread = Thread.currentThread();
-            success.set(!thread.isVirtual() && thread.getName().startsWith("my-platform-thread"));
+            return !thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
         }
 
-        @AsyncPlatform(10000)
-        void evenMoreCpuIntensive() {
+        @OnNewThread(ThreadType.PLATFORM)
+        boolean cpuIntensiveWithType() {
             Thread thread = Thread.currentThread();
-            success.set(!thread.isVirtual() && thread.getName().startsWith("my-platform-thread"));
+            return !thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
         }
-    }
 
-    @BeforeEach
-    void reset() {
-        success.set(false);
+        @OnNewThread(timeout = 10000)
+        boolean evenMoreCpuIntensive() {
+            Thread thread = Thread.currentThread();
+            return !thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
+        }
+
+        @OnNewThread(ThreadType.VIRTUAL)
+        boolean onVirtualThread() {
+            Thread thread = Thread.currentThread();
+            return thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
+        }
     }
 
     @Test
     void cpuIntensiveTest() {
         AsyncPlatformBean bean = CDI.current().select(AsyncPlatformBean.class).get();
-        bean.cpuIntensive();
-        assertThat(success.get(), is(true));
+        assertThat(bean.cpuIntensive(), is(true));
+    }
+
+    @Test
+    void cpuIntensiveWithTypeTest() {
+        AsyncPlatformBean bean = CDI.current().select(AsyncPlatformBean.class).get();
+        assertThat(bean.cpuIntensiveWithType(), is(true));
     }
 
     @Test
     void evenMoreCpuIntensiveTest() {
         AsyncPlatformBean bean = CDI.current().select(AsyncPlatformBean.class).get();
-        bean.evenMoreCpuIntensive();
-        assertThat(success.get(), is(true));
+        assertThat(bean.evenMoreCpuIntensive(), is(true));
+    }
+
+    @Test
+    void onVirtualThread() {
+        AsyncPlatformBean bean = CDI.current().select(AsyncPlatformBean.class).get();
+        assertThat(bean.onVirtualThread(), is(true));
     }
 }

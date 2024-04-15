@@ -31,9 +31,9 @@ import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
 
 /**
- * CDI extension to support the {@link AsyncPlatform} annotation.
+ * CDI extension to support the {@link OnNewThread} annotation.
  */
-public class AsyncPlatformExtension implements Extension {
+public class OnNewThreadExtension implements Extension {
 
     private final LazyValue<Map<Method, AnnotatedMethod<?>>> methodMap = LazyValue.create(ConcurrentHashMap::new);
 
@@ -47,23 +47,23 @@ public class AsyncPlatformExtension implements Extension {
 
     private void registerMethods(AnnotatedType<?> type) {
         for (AnnotatedMethod<?> method : type.getMethods()) {
-            if (method.isAnnotationPresent(AsyncPlatform.class)) {
+            if (method.isAnnotationPresent(OnNewThread.class)) {
                 methodMap.get().put(method.getJavaMember(), method);
             }
         }
     }
 
-    AsyncPlatform getAnnotation(Method method) {
+    OnNewThread getAnnotation(Method method) {
         AnnotatedMethod<?> annotatedMethod = methodMap.get().get(method);
         if (annotatedMethod != null) {
-            return annotatedMethod.getAnnotation(AsyncPlatform.class);
+            return annotatedMethod.getAnnotation(OnNewThread.class);
         }
         throw new IllegalArgumentException("Unable to map method " + method);
     }
 
     void registerInterceptors(@Observes BeforeBeanDiscovery discovery, BeanManager bm) {
-        discovery.addAnnotatedType(bm.createAnnotatedType(AsyncPlatformInterceptor.class),
-                AsyncPlatformInterceptor.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(OnNewThreadInterceptor.class),
+                OnNewThreadInterceptor.class.getName());
     }
 
     void clearMethodMap() {

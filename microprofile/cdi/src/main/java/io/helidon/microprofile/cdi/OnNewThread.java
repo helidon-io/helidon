@@ -27,23 +27,45 @@ import jakarta.enterprise.util.Nonbinding;
 import jakarta.interceptor.InterceptorBinding;
 
 /**
- * Annotates a CDI bean method that shall be asynchronously executed in a
- * separate platform thread.
+ * Annotates a CDI bean method that shall be executed on a new thread.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Inherited
 @InterceptorBinding
-public @interface AsyncPlatform {
+public @interface OnNewThread {
 
     /**
-     * Waiting time value.
+     * Type of thread to use for invocation.
+     */
+    enum ThreadType {
+        /**
+         * A thread of type platform (non-virtual).
+         */
+        PLATFORM,
+
+        /**
+         * A thread of type virtual.
+         */
+        VIRTUAL
+    }
+
+    /**
+     * Thread type for invocation.
      *
-     * @return waiting time value
+     * @return thread type
      */
     @Nonbinding
-    long value() default 5000L;
+    ThreadType value() default ThreadType.PLATFORM;
+
+    /**
+     * Waiting timeout.
+     *
+     * @return waiting timeout
+     */
+    @Nonbinding
+    long timeout() default 10000L;
 
     /**
      * Waiting time unit.

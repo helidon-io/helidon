@@ -16,6 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.microprofile.cdi.OnNewThreadExtension;
 
 /**
  * CDI implementation enhancements for Helidon MP.
@@ -71,7 +72,7 @@ module io.helidon.microprofile.cdi {
             with io.helidon.microprofile.cdi.ExecutorServices;
 
     provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.microprofile.cdi.AsyncPlatformExtension;
+            with OnNewThreadExtension;
 
     opens io.helidon.microprofile.cdi to weld.core.impl;
 	

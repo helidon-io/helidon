@@ -15,7 +15,7 @@
 #
 
 helidon:
-  async-platform:
+  on-new-thread:
     executor-service:
       thread-name-prefix: "my-platform-thread"
       core-pool-size: 1
