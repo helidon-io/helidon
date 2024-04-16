@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ifndef::rootdir[:rootdir: {docdir}/../..]
+ifndef::rootdir[:rootdir: {docdir}/..]
 include::{rootdir}/attributes.adoc
 
 // tag::defs[]
@@ -52,9 +52,9 @@ When Helidon invokes the listener's methods it passes proxies for the parameter 
 |====
 | Tracing type | Changes allowed
 
-| link:{tracing-javadoc}/Span.html[`Span`] |  Retrieve and update baggage, add events, add tags
-
 | link:{tracing-javadoc}/Span.Builder.html[`Span.Builder`]  | Add tags
+
+| link:{tracing-javadoc}/Span.html[`Span`] |  Retrieve and update baggage, add events, add tags
 
 | link:{tracing-javadoc}/Scope.html[`Scope`]  | none
 
@@ -66,6 +66,7 @@ The following tables list specifically what operations the proxies permit.
 .link:{tracing-javadoc}/Span.Builder.html[`io.helidon.tracing.Span.Builder`] Operations
 |====
 | Method | Purpose | OK?
+
 | `build()` | Starts the span. | -
 | `end` methods | Ends the span. | -
 | `get()` | Starts the span. | -
@@ -83,6 +84,7 @@ The following tables list specifically what operations the proxies permit.
 .link:{tracing-javadoc}/Span.html[`io.helidon.tracing.Span`] Operations
 |====
 | Method    | Purpose | OK?
+
 | `activate()` | Makes the span "current", returning a `Scope`. * | -
 | `addEvent` methods | Associate a string (and optionally other info) with a span. | &check;
 | `baggage()` | Returns the `Baggage` instance associated with the span.| &check;
@@ -100,6 +102,7 @@ The following tables list specifically what operations the proxies permit.
 .link:{tracing-javadoc}/Scope.html[`io.helidon.tracing.Scope`] Operations
 |====
 | Method    | Purpose | OK?
+
 | `close()` | Close the scope. | -
 | `isClosed()`| Reports whether the scope is closed. | &check;
 |====
@@ -107,6 +110,7 @@ The following tables list specifically what operations the proxies permit.
 .link:{tracing-javadoc}/SpanContext.html[`io.helidon.tracing.SpanContext`] Operations
 |====
 | Method    | Purpose | OK?
+
 | `asParent(Span.Builder)` | Sets this context as the parent of a new span builder. | &check;
 | `baggage()` | Returns `Baggage` instance associated with the span context. | &check;
 | `spanId()` | Returns the span ID. | &check;
@@ -137,6 +141,7 @@ The `{listener-type}` interface declares default no-op implementations for all t
 
 Helidon invokes each listener's methods in the following order:
 
+.Order in which Helidon Invokes Listener Methods
 |====
 | Method | When invoked
 
