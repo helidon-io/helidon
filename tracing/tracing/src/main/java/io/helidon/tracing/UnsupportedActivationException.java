@@ -17,7 +17,7 @@ package io.helidon.tracing;
 
 /**
  * Indicates a failed attempt to activate a {@link io.helidon.tracing.Span} due to an error
- * in a {@link io.helidon.tracing.SpanLifeCycleListener} callback.
+ * in a {@link SpanListener} callback.
  * <p>
  *     Callers should normally catch this exception and then retrieve and close the {@link io.helidon.tracing.Scope}.
  *     Helidon activates the scope before invoking span life cycle listeners, so the span and baggage have already

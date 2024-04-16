@@ -16,6 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.tracing.SpanListener;
 
 /**
  * Zipkin tracing support.
@@ -47,7 +48,7 @@ module io.helidon.tracing.providers.zipkin {
 
     exports io.helidon.tracing.providers.zipkin;
 
-    uses io.helidon.tracing.SpanLifeCycleListener;
+    uses SpanListener;
 
     provides io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider
             with io.helidon.tracing.providers.zipkin.ZipkinTracerProvider;

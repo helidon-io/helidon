@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.tracing.SpanListener;
+import io.helidon.tracing.providers.tests.AutoLoadedSpanListener;
+
 /**
  * Tests applicable to all tracing providers.
  */
@@ -24,5 +28,5 @@ module io.helidon.tracing.provider.tests {
     requires org.junit.jupiter.api;
     requires hamcrest.all;
 
-    provides io.helidon.tracing.SpanLifeCycleListener with io.helidon.tracing.providers.tests.AutoLoadedSpanLifeCycleListener;
+    provides SpanListener with AutoLoadedSpanListener;
 }

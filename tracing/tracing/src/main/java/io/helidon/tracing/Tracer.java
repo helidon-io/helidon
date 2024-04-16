@@ -106,8 +106,8 @@ public interface Tracer {
      * Registers with the tracer a life cycle event listener to receive events from span builders, spans, and scopes
      * derived from this tracer.
      *
-     * @param listener the {@link SpanLifeCycleListener} to register
+     * @param listener the {@link SpanListener} to register
      * @return the updated {@code Tracer}
      */
-    Tracer register(SpanLifeCycleListener listener);
+    Tracer register(SpanListener listener);
 }

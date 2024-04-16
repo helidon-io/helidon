@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
@@ -31,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
-class TestSpanLifeCycleListenerUnwrap {
+class TestSpanListenerUnwrap {
 
     @Test
     void testSpanListenerUnwrap() {
@@ -40,9 +40,9 @@ class TestSpanLifeCycleListenerUnwrap {
 
         AtomicReference<UnwrapResults> unwrapResults = new AtomicReference<>();
 
-        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+        SpanListener l1 = new SpanListener() {
             @Override
-            public void afterStart(Span span) throws UnsupportedOperationException {
+            public void started(Span span) throws UnsupportedOperationException {
                 io.opentelemetry.api.trace.Span otelSpan = span.unwrap(io.opentelemetry.api.trace.Span.class);
                 ReadableSpan readableSpan = (ReadableSpan) otelSpan;
                 unwrapResults.set(UnwrapResults.create(readableSpan));

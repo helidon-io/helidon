@@ -19,16 +19,16 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.tracing.Scope;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
 class OpenTracingScope implements Scope {
     private final OpenTracingSpan span;
     private final io.opentracing.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanLifeCycleListeners;
     private Limited limited;
 
-    OpenTracingScope(OpenTracingSpan span, io.opentracing.Scope scope, List<SpanLifeCycleListener> spanLifeCycleListeners) {
+    OpenTracingScope(OpenTracingSpan span, io.opentracing.Scope scope, List<SpanListener> spanLifeCycleListeners) {
         this.span = span;
         this.delegate = scope;
         this.spanLifeCycleListeners = spanLifeCycleListeners;
@@ -38,7 +38,7 @@ class OpenTracingScope implements Scope {
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
-            spanLifeCycleListeners.forEach(listener -> listener.afterClose(span.limited(), limited()));
+            spanLifeCycleListeners.forEach(listener -> listener.closed(span.limited(), limited()));
         }
     }
 

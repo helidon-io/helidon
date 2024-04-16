@@ -28,7 +28,7 @@ import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
@@ -43,15 +43,15 @@ class OpenTelemetryTracer implements Tracer {
     private static final TextMapGetter GETTER = new Getter();
     private static final TextMapSetter SETTER = new Setter();
 
-    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     private final OpenTelemetry telemetry;
     private final io.opentelemetry.api.trace.Tracer delegate;
     private final boolean enabled;
     private final TextMapPropagator propagator;
     private final Map<String, String> tags;
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
+    private final List<SpanListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
 
     OpenTelemetryTracer(OpenTelemetry telemetry, io.opentelemetry.api.trace.Tracer tracer, Map<String, String> tags) {
         this.telemetry = telemetry;
@@ -102,7 +102,7 @@ class OpenTelemetryTracer implements Tracer {
     }
 
     @Override
-    public Tracer register(SpanLifeCycleListener listener) {
+    public Tracer register(SpanListener listener) {
         spanLifeCycleListeners.add(listener);
         return this;
     }

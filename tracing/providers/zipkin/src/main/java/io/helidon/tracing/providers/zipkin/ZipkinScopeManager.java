@@ -17,7 +17,7 @@ package io.helidon.tracing.providers.zipkin;
 
 import java.util.List;
 
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
 import brave.opentracing.BraveScopeManager;
 import io.opentracing.Scope;
@@ -30,9 +30,9 @@ import io.opentracing.Span;
  */
 class ZipkinScopeManager implements ScopeManager {
     private final BraveScopeManager scopeManager;
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanLifeCycleListeners;
 
-    ZipkinScopeManager(BraveScopeManager scopeManager, List<SpanLifeCycleListener> spanLifeCycleListeners) {
+    ZipkinScopeManager(BraveScopeManager scopeManager, List<SpanListener> spanLifeCycleListeners) {
         this.scopeManager = scopeManager;
         this.spanLifeCycleListeners = spanLifeCycleListeners;
     }
@@ -62,11 +62,11 @@ class ZipkinScopeManager implements ScopeManager {
 
         private final Scope delegate;
         private final ZipkinSpan zSpan;
-        private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+        private final List<SpanListener> spanLifeCycleListeners;
         private Limited limited;
         private boolean isClosed;
 
-        private ZipkinScope(Scope delegate, ZipkinSpan zSpan, List<SpanLifeCycleListener> spanLifeCycleListeners) {
+        private ZipkinScope(Scope delegate, ZipkinSpan zSpan, List<SpanListener> spanLifeCycleListeners) {
             this.delegate = delegate;
             this.zSpan = zSpan;
             this.spanLifeCycleListeners = spanLifeCycleListeners;
@@ -76,7 +76,7 @@ class ZipkinScopeManager implements ScopeManager {
         public void close() {
             delegate.close();
             isClosed = true;
-            spanLifeCycleListeners.forEach(listener -> listener.afterClose(zSpan.limited(), limited()));
+            spanLifeCycleListeners.forEach(listener -> listener.closed(zSpan.limited(), limited()));
         }
 
         Limited limited() {

@@ -23,7 +23,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 import io.helidon.tracing.spi.TracerProvider;
@@ -34,8 +34,8 @@ import io.helidon.tracing.spi.TracerProvider;
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class JaegerTracerProvider implements TracerProvider {
 
-    private static final List<SpanLifeCycleListener> LIFE_CYCLE_LISTENERS = HelidonServiceLoader.create(ServiceLoader.load(
-            SpanLifeCycleListener.class)).asList();
+    private static final List<SpanListener> LIFE_CYCLE_LISTENERS = HelidonServiceLoader.create(ServiceLoader.load(
+            SpanListener.class)).asList();
 
     @Override
     public Tracer global() {
@@ -62,7 +62,7 @@ public class JaegerTracerProvider implements TracerProvider {
         return true;
     }
 
-    static List<SpanLifeCycleListener> lifeCycleListeners() {
+    static List<SpanListener> lifeCycleListeners() {
         return LIFE_CYCLE_LISTENERS;
     }
 }

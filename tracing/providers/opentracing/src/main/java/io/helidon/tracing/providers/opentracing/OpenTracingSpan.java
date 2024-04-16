@@ -24,7 +24,7 @@ import java.util.Optional;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.UnsupportedActivationException;
 import io.helidon.tracing.WritableBaggage;
 
@@ -36,10 +36,10 @@ class OpenTracingSpan implements Span {
     private final io.opentracing.Span delegate;
     private final OpenTracingContext context;
     private final WritableBaggage baggage;
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanLifeCycleListeners;
     private Limited limited;
 
-    OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate, List<SpanLifeCycleListener> spanLifeCycleListeners) {
+    OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate, List<SpanListener> spanLifeCycleListeners) {
         this.tracer = tracer;
         this.delegate = delegate;
         this.context = new OpenTracingContext(delegate.context());
@@ -88,7 +88,7 @@ class OpenTracingSpan implements Span {
     @Override
     public void end() {
         delegate.finish();
-        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited()));
+        spanLifeCycleListeners.forEach(listener -> listener.ended(limited()));
     }
 
     @Override
@@ -99,7 +99,7 @@ class OpenTracingSpan implements Span {
                             "error.object", throwable,
                             "message", throwable.getMessage() != null ? throwable.getMessage() : "none"));
         delegate.finish();
-        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited(), throwable));
+        spanLifeCycleListeners.forEach(listener -> listener.ended(limited(), throwable));
     }
 
     @Override
@@ -108,7 +108,7 @@ class OpenTracingSpan implements Span {
         UnsupportedActivationException ex = new UnsupportedActivationException("Error activating span", result);
         spanLifeCycleListeners.forEach(listener -> {
             try {
-                listener.afterActivate(limited(), result.limited());
+                listener.activated(limited(), result.limited());
             } catch (Throwable t) {
                 ex.addSuppressed(t);
             }

@@ -19,18 +19,18 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.tracing.Scope;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
 class OpenTelemetryScope implements Scope {
     private final OpenTelemetrySpan span;
     private final io.opentelemetry.context.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanLifeCycleListeners;
     private Limited limited;
 
     OpenTelemetryScope(OpenTelemetrySpan span,
                        io.opentelemetry.context.Scope scope,
-                       List<SpanLifeCycleListener> spanLifeCycleListeners) {
+                       List<SpanListener> spanLifeCycleListeners) {
         this.span = span;
         delegate = scope;
         this.spanLifeCycleListeners = spanLifeCycleListeners;
@@ -40,7 +40,7 @@ class OpenTelemetryScope implements Scope {
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
-            spanLifeCycleListeners.forEach(listener -> listener.afterClose(span.limited(), limited()));
+            spanLifeCycleListeners.forEach(listener -> listener.closed(span.limited(), limited()));
         }
     }
 

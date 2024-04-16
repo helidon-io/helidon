@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import io.helidon.tracing.Baggage;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.UnsupportedActivationException;
@@ -60,9 +60,9 @@ class TestSpanCallbacks {
     @Test
     void checkSpanStartEndOk() {
         checkSpanStartEnd(
-                hasEntry("afterEnd", AFTER_END_BAGGAGE_VALUE),
+                hasEntry("ended", AFTER_END_BAGGAGE_VALUE),
                 not(hasKey("afterEndBad")),
-                hasEntry("auto-afterEndOk", AutoLoadedSpanLifeCycleListener.AFTER_END_OK),
+                hasEntry("auto-afterEndOk", AutoLoadedSpanListener.AFTER_END_OK),
                 not(hasKey("auto-afterEndBad")),
                 Span::end);
     }
@@ -70,18 +70,18 @@ class TestSpanCallbacks {
     @Test
     void checkSpanStartEndNotOk() {
         checkSpanStartEnd(
-                not(hasKey("afterEnd")),
+                not(hasKey("ended")),
                 hasEntry("afterEndBad", AFTER_END_BAD_BAGGAGE_VALUE),
                 not(hasKey("auto-afterEndOk")),
-                hasEntry("auto-afterEndBad", AutoLoadedSpanLifeCycleListener.AFTER_END_BAD),
+                hasEntry("auto-afterEndBad", AutoLoadedSpanListener.AFTER_END_BAD),
                 span -> span.end(new Throwable()));
     }
 
     @Test
     void checkRejectBeforeStart() {
-        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+        SpanListener l1 = new SpanListener() {
             @Override
-            public void beforeStart(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
+            public void starting(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
                 spanBuilder.start();
             }
         };
@@ -96,9 +96,9 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterStart() {
-        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+        SpanListener l1 = new SpanListener() {
             @Override
-            public void afterStart(Span span) throws UnsupportedOperationException {
+            public void started(Span span) throws UnsupportedOperationException {
                 span.end();
             }
         };
@@ -113,9 +113,9 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterActivateEndSpan() {
-        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+        SpanListener l1 = new SpanListener() {
             @Override
-            public void afterActivate(Span span, Scope scope) throws UnsupportedOperationException {
+            public void activated(Span span, Scope scope) throws UnsupportedOperationException {
                 span.end();
             }
         };
@@ -131,9 +131,9 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterCloseSpan() {
-        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+        SpanListener l1 = new SpanListener() {
             @Override
-            public void afterClose(Span span, Scope scope) throws UnsupportedOperationException {
+            public void closed(Span span, Scope scope) throws UnsupportedOperationException {
                 span.end();
             }
         };
@@ -149,9 +149,9 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterCloseScope() {
-        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+        SpanListener l1 = new SpanListener() {
             @Override
-            public void afterActivate(Span span, Scope scope) throws UnsupportedOperationException {
+            public void activated(Span span, Scope scope) throws UnsupportedOperationException {
                 scope.close();
             }
         };
@@ -167,9 +167,9 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterEndOk() {
-        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+        SpanListener l1 = new SpanListener() {
             @Override
-            public void afterEnd(Span span) throws UnsupportedOperationException {
+            public void ended(Span span) throws UnsupportedOperationException {
                 span.end();
             }
         };
@@ -185,9 +185,9 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterEndBad() {
-        SpanLifeCycleListener l1 = new SpanLifeCycleListener() {
+        SpanListener l1 = new SpanListener() {
             @Override
-            public void afterEnd(Span span, Throwable t) throws UnsupportedOperationException {
+            public void ended(Span span, Throwable t) throws UnsupportedOperationException {
                 span.end(new Throwable());
             }
         };
@@ -206,7 +206,7 @@ class TestSpanCallbacks {
                                    Matcher<Map<? extends String, ?>> spanAutoEndBadMatcher,
                                    Consumer<Span> spanEnder) {
         Map<String, Object> listenerInfo = new HashMap<>();
-        TestLifeCycleListener listener = new TestLifeCycleListener(listenerInfo);
+        TestListener listener = new TestListener(listenerInfo);
 
         Tracer tracer = tracerBuilder.build();
 
@@ -215,57 +215,57 @@ class TestSpanCallbacks {
         Span.Builder<?> spanBuilder = tracer.spanBuilder(spanName);
         Span span = spanBuilder.start();
 
-        assertThat("Before start", listenerInfo, hasKey("beforeStart"));
+        assertThat("Before start", listenerInfo, hasKey("starting"));
 
         assertThat("After start", baggageAsMap(span.baggage()),
-                   allOf(hasEntry("afterStart", AFTER_START_BAGGAGE_VALUE),
-                         not(hasKey("afterActivate")),
-                         not(hasKey("afterClose")),
-                         not(hasKey("afterEnd")),
+                   allOf(hasEntry("started", AFTER_START_BAGGAGE_VALUE),
+                         not(hasKey("activated")),
+                         not(hasKey("closed")),
+                         not(hasKey("ended")),
                          not(hasKey("afterEndBad")),
-                         hasEntry("auto-afterStart", AutoLoadedSpanLifeCycleListener.AFTER_START),
-                         not(hasKey("auto-afterActivate")),
-                         not(hasKey("auto-afterClose")),
+                         hasEntry("auto-started", AutoLoadedSpanListener.AFTER_START),
+                         not(hasKey("auto-activated")),
+                         not(hasKey("auto-closed")),
                          not(hasKey("auto-afterEndOk")),
                          not(hasKey("auto-afterEndBad"))));
 
         try (Scope scope = span.activate()) {
             assertThat("After activate", baggageAsMap(span.baggage()),
-                       allOf(hasEntry("afterStart", AFTER_START_BAGGAGE_VALUE),
-                             hasEntry("afterActivate", AFTER_ACTIVATE_BAGGAGE_VALUE),
-                             not(hasKey("afterClose")),
-                             not(hasKey("afterEnd")),
+                       allOf(hasEntry("started", AFTER_START_BAGGAGE_VALUE),
+                             hasEntry("activated", AFTER_ACTIVATE_BAGGAGE_VALUE),
+                             not(hasKey("closed")),
+                             not(hasKey("ended")),
                              not(hasKey("afterEndBad")),
-                             hasEntry("auto-afterStart", AutoLoadedSpanLifeCycleListener.AFTER_START),
-                             hasEntry("auto-afterActivate", AutoLoadedSpanLifeCycleListener.AFTER_ACTIVATE),
-                             not(hasKey("auto-afterClose")),
+                             hasEntry("auto-started", AutoLoadedSpanListener.AFTER_START),
+                             hasEntry("auto-activated", AutoLoadedSpanListener.AFTER_ACTIVATE),
+                             not(hasKey("auto-closed")),
                              not(hasKey("auto-afterEndOk")),
                              not(hasKey("auto-afterEndBad"))));
         }
 
         assertThat("After close", baggageAsMap(span.baggage()),
-                   allOf(hasEntry("afterStart", AFTER_START_BAGGAGE_VALUE),
-                         hasEntry("afterActivate", AFTER_ACTIVATE_BAGGAGE_VALUE),
-                         hasEntry("afterClose", AFTER_CLOSE_BAGGAGE_VALUE),
-                         not(hasKey("afterEnd")),
+                   allOf(hasEntry("started", AFTER_START_BAGGAGE_VALUE),
+                         hasEntry("activated", AFTER_ACTIVATE_BAGGAGE_VALUE),
+                         hasEntry("closed", AFTER_CLOSE_BAGGAGE_VALUE),
+                         not(hasKey("ended")),
                          not(hasKey("afterEndBad")),
-                         hasEntry("auto-afterStart", AutoLoadedSpanLifeCycleListener.AFTER_START),
-                         hasEntry("auto-afterActivate", AutoLoadedSpanLifeCycleListener.AFTER_ACTIVATE),
-                         hasEntry("auto-afterClose", AutoLoadedSpanLifeCycleListener.AFTER_CLOSE),
+                         hasEntry("auto-started", AutoLoadedSpanListener.AFTER_START),
+                         hasEntry("auto-activated", AutoLoadedSpanListener.AFTER_ACTIVATE),
+                         hasEntry("auto-closed", AutoLoadedSpanListener.AFTER_CLOSE),
                          not(hasKey("auto-afterEndOk")),
                          not(hasKey("auto-afterEndBad"))));
 
         spanEnder.accept(span);
         assertThat("After end",
                    baggageAsMap(span.baggage()),
-                   allOf(hasEntry("afterStart", AFTER_START_BAGGAGE_VALUE),
-                         hasEntry("afterActivate", AFTER_ACTIVATE_BAGGAGE_VALUE),
-                         hasEntry("afterClose", AFTER_CLOSE_BAGGAGE_VALUE),
+                   allOf(hasEntry("started", AFTER_START_BAGGAGE_VALUE),
+                         hasEntry("activated", AFTER_ACTIVATE_BAGGAGE_VALUE),
+                         hasEntry("closed", AFTER_CLOSE_BAGGAGE_VALUE),
                          spanEndOkMatcher,
                          spanEndBadMatcher,
-                         hasEntry("auto-afterStart", AutoLoadedSpanLifeCycleListener.AFTER_START),
-                         hasEntry("auto-afterActivate", AutoLoadedSpanLifeCycleListener.AFTER_ACTIVATE),
-                         hasEntry("auto-afterClose", AutoLoadedSpanLifeCycleListener.AFTER_CLOSE),
+                         hasEntry("auto-started", AutoLoadedSpanListener.AFTER_START),
+                         hasEntry("auto-activated", AutoLoadedSpanListener.AFTER_ACTIVATE),
+                         hasEntry("auto-closed", AutoLoadedSpanListener.AFTER_CLOSE),
                          spanAutoEndOkMatcher,
                          spanAutoEndBadMatcher));
     }
@@ -278,77 +278,77 @@ class TestSpanCallbacks {
                          HashMap::putAll);
     }
 
-    private static class TestLifeCycleListener implements SpanLifeCycleListener {
+    private static class TestListener implements SpanListener {
         private final Map<String, Object> listenerInfo;
 
-        private TestLifeCycleListener(Map<String, Object> listenerInfo) {
+        private TestListener(Map<String, Object> listenerInfo) {
             this.listenerInfo = listenerInfo;
         }
 
         @Override
-        public void beforeStart(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
-            listenerInfo.put("beforeStart", spanBuilder);
+        public void starting(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
+            listenerInfo.put("starting", spanBuilder);
         }
 
         @Override
-        public void afterStart(Span span) throws UnsupportedOperationException {
-            span.baggage().set("afterStart", AFTER_START_BAGGAGE_VALUE);
+        public void started(Span span) throws UnsupportedOperationException {
+            span.baggage().set("started", AFTER_START_BAGGAGE_VALUE);
         }
 
         @Override
-        public void afterActivate(Span span, Scope scope) throws UnsupportedOperationException {
-            span.baggage().set("afterActivate", AFTER_ACTIVATE_BAGGAGE_VALUE);
+        public void activated(Span span, Scope scope) throws UnsupportedOperationException {
+            span.baggage().set("activated", AFTER_ACTIVATE_BAGGAGE_VALUE);
         }
 
         @Override
-        public void afterClose(Span span, Scope scope) throws UnsupportedOperationException {
-            span.baggage().set("afterClose", AFTER_CLOSE_BAGGAGE_VALUE);
+        public void closed(Span span, Scope scope) throws UnsupportedOperationException {
+            span.baggage().set("closed", AFTER_CLOSE_BAGGAGE_VALUE);
         }
 
         @Override
-        public void afterEnd(Span span) {
-            span.baggage().set("afterEnd", AFTER_END_BAGGAGE_VALUE);
+        public void ended(Span span) {
+            span.baggage().set("ended", AFTER_END_BAGGAGE_VALUE);
         }
 
         @Override
-        public void afterEnd(Span span, Throwable t) {
+        public void ended(Span span, Throwable t) {
             span.baggage().set("afterEndBad", AFTER_END_BAD_BAGGAGE_VALUE);
         }
     }
 
-    private static class BadListener implements SpanLifeCycleListener {
+    private static class BadListener implements SpanListener {
 
 
         BadListener() {
         }
 
         @Override
-        public void beforeStart(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
+        public void starting(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
             spanBuilder.start();
         }
 
         @Override
-        public void afterStart(Span span) throws UnsupportedOperationException {
+        public void started(Span span) throws UnsupportedOperationException {
             span.end();
         }
 
         @Override
-        public void afterActivate(Span span, Scope scope) throws UnsupportedOperationException {
+        public void activated(Span span, Scope scope) throws UnsupportedOperationException {
             scope.close();
         }
 
         @Override
-        public void afterClose(Span span, Scope scope) throws UnsupportedOperationException {
+        public void closed(Span span, Scope scope) throws UnsupportedOperationException {
             span.end();
         }
 
         @Override
-        public void afterEnd(Span span) {
+        public void ended(Span span) {
         }
 
         @Override
-        public void afterEnd(Span span, Throwable t) {
-            io.helidon.tracing.SpanLifeCycleListener.super.afterEnd(span, t);
+        public void ended(Span span, Throwable t) {
+            SpanListener.super.ended(span, t);
         }
     }
 }

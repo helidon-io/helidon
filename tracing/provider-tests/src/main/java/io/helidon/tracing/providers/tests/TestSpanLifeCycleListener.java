@@ -20,9 +20,9 @@ import java.util.function.Consumer;
 
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
-class TestSpanLifeCycleListener implements SpanLifeCycleListener {
+class TestSpanLifeCycleListener implements SpanListener {
 
 
     private Consumer<Span.Builder<?>> beforeStartCheck;
@@ -33,42 +33,42 @@ class TestSpanLifeCycleListener implements SpanLifeCycleListener {
     private BiConsumer<Span, Throwable> afterEndFailureCheck;
 
     @Override
-    public void beforeStart(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
+    public void starting(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
         if (beforeStartCheck != null) {
             beforeStartCheck.accept(spanBuilder);
         }
     }
 
     @Override
-    public void afterStart(Span span) throws UnsupportedOperationException {
+    public void started(Span span) throws UnsupportedOperationException {
         if (beforeStartCheck != null) {
             afterStartCheck.accept(span);
         }
     }
 
     @Override
-    public void afterActivate(Span span, Scope scope) throws UnsupportedOperationException {
+    public void activated(Span span, Scope scope) throws UnsupportedOperationException {
         if (afterActivateCheck != null) {
             afterActivateCheck.accept(span, scope);
         }
     }
 
     @Override
-    public void afterClose(Span span, Scope scope) throws UnsupportedOperationException {
+    public void closed(Span span, Scope scope) throws UnsupportedOperationException {
         if (afterCloseCheck != null) {
             afterCloseCheck.accept(span, scope);
         }
     }
 
     @Override
-    public void afterEnd(Span span) {
+    public void ended(Span span) {
         if (afterEndOkCheck != null) {
             afterEndOkCheck.accept(span);
         }
     }
 
     @Override
-    public void afterEnd(Span span, Throwable t) {
+    public void ended(Span span, Throwable t) {
         if (afterEndFailureCheck != null) {
             afterEndFailureCheck.accept(span, t);
         }

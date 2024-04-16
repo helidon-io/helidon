@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
 /**
  * Open tracing support for Helidon tracing.
@@ -36,7 +36,7 @@ module io.helidon.tracing.providers.opentracing {
     exports io.helidon.tracing.providers.opentracing;
 
     uses io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider;
-    uses SpanLifeCycleListener;
+    uses SpanListener;
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.opentracing.OpenTracingTracerProvider;

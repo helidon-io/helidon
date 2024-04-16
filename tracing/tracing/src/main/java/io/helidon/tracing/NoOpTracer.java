@@ -89,7 +89,7 @@ class NoOpTracer implements Tracer {
     }
 
     @Override
-    public Tracer register(SpanLifeCycleListener listener) {
+    public Tracer register(SpanListener listener) {
         return this;
     }
 

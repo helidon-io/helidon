@@ -21,7 +21,7 @@ import java.util.ServiceLoader;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
 import io.opentracing.Tracer;
 
@@ -30,8 +30,8 @@ import io.opentracing.Tracer;
  */
 public final class OpenTracing {
 
-    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
 
     private OpenTracing() {

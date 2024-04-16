@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -31,11 +31,11 @@ import io.opentracing.tag.Tags;
 class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     private final Tracer.SpanBuilder delegate;
     private final Tracer tracer;
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanLifeCycleListeners;
     private Map<String, String> baggage;
     private Limited limited;
 
-    OpenTracingSpanBuilder(Tracer tracer, Tracer.SpanBuilder delegate, List<SpanLifeCycleListener> spanLifeCycleListeners) {
+    OpenTracingSpanBuilder(Tracer tracer, Tracer.SpanBuilder delegate, List<SpanListener> spanLifeCycleListeners) {
         this.tracer = tracer;
         this.delegate = delegate;
         this.spanLifeCycleListeners = spanLifeCycleListeners;
@@ -98,12 +98,12 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     @Override
     public Span start(Instant instant) {
         long micro = TimeUnit.MILLISECONDS.toMicros(instant.toEpochMilli());
-        spanLifeCycleListeners.forEach(listener -> listener.beforeStart(limited()));
+        spanLifeCycleListeners.forEach(listener -> listener.starting(limited()));
         OpenTracingSpan result = new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start(), spanLifeCycleListeners);
         if (baggage != null) {
             baggage.forEach((k, v) -> result.baggage().set(k, v));
         }
-        spanLifeCycleListeners.forEach(listener -> listener.afterStart(result.limited()));
+        spanLifeCycleListeners.forEach(listener -> listener.started(result.limited()));
         return result;
     }
 

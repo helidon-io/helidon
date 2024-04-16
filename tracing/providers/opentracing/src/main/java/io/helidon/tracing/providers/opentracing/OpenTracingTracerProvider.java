@@ -24,7 +24,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
@@ -39,8 +39,8 @@ import io.opentracing.util.GlobalTracer;
 @Weight(Weighted.DEFAULT_WEIGHT - 50) // low weight, so it is easy to override
 public class OpenTracingTracerProvider implements TracerProvider {
 
-    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     @Override
     public TracerBuilder<?> createBuilder() {

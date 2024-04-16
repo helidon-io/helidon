@@ -17,12 +17,12 @@ package io.helidon.tracing.providers.tests;
 
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
 /**
  * Test listener.
  */
-public class AutoLoadedSpanLifeCycleListener implements SpanLifeCycleListener {
+public class AutoLoadedSpanListener implements SpanListener {
 
     /**
      * After start value.
@@ -52,31 +52,31 @@ public class AutoLoadedSpanLifeCycleListener implements SpanLifeCycleListener {
     /**
      * For service loading.
      */
-    public AutoLoadedSpanLifeCycleListener() {
+    public AutoLoadedSpanListener() {
     }
 
     @Override
-    public void afterStart(Span span) throws UnsupportedOperationException {
-        span.baggage().set("auto-afterStart", AFTER_START);
+    public void started(Span span) throws UnsupportedOperationException {
+        span.baggage().set("auto-started", AFTER_START);
     }
 
     @Override
-    public void afterActivate(Span span, Scope scope) throws UnsupportedOperationException {
-        span.baggage().set("auto-afterActivate", AFTER_ACTIVATE);
+    public void activated(Span span, Scope scope) throws UnsupportedOperationException {
+        span.baggage().set("auto-activated", AFTER_ACTIVATE);
     }
 
     @Override
-    public void afterClose(Span span, Scope scope) throws UnsupportedOperationException {
-        span.baggage().set("auto-afterClose", AFTER_CLOSE);
+    public void closed(Span span, Scope scope) throws UnsupportedOperationException {
+        span.baggage().set("auto-closed", AFTER_CLOSE);
     }
 
     @Override
-    public void afterEnd(Span span) {
+    public void ended(Span span) {
         span.baggage().set("auto-afterEndOk", AFTER_END_OK);
     }
 
     @Override
-    public void afterEnd(Span span, Throwable t) {
+    public void ended(Span span, Throwable t) {
         span.baggage().set("auto-afterEndBad", AFTER_END_BAD);
     }
 }

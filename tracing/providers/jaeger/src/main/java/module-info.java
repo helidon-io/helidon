@@ -16,6 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.tracing.SpanListener;
 
 /**
  * Jaeger tracing support.
@@ -49,7 +50,7 @@ module io.helidon.tracing.providers.jaeger {
 
     exports io.helidon.tracing.providers.jaeger;
 
-    uses io.helidon.tracing.SpanLifeCycleListener;
+    uses SpanListener;
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.jaeger.JaegerTracerProvider;

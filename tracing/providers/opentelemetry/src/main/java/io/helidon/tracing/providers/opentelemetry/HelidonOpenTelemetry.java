@@ -23,7 +23,7 @@ import java.util.ServiceLoader;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
@@ -48,8 +48,8 @@ public final class HelidonOpenTelemetry {
     public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
 
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
-    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
 
     private HelidonOpenTelemetry() {

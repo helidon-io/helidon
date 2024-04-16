@@ -22,7 +22,7 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tag;
 
 import brave.opentracing.BraveTracer;
@@ -45,13 +45,13 @@ import io.opentracing.propagation.Format;
  */
 public class ZipkinTracer implements Tracer {
 
-    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     private final BraveTracer tracer;
     private final List<Tag<?>> tags;
 
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
+    private final List<SpanListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
 
     /**
      * Create a zipkin tracer from the delegate (BraveTracer) and

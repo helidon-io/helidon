@@ -22,13 +22,13 @@ include::{rootdir}/attributes.adoc
 // tag::defs[]
 :tracing-javadoc: {tracing-javadoc-base-url}/io/helidon/tracing
 :tracing-api-javadoc: {tracing-javadoc}
-:listener-type: SpanLifeCycleListener
+:listener-type: SpanListener
 // end::defs[]
 
 
 // tag::detailed[]
 // tag::intro[]
-== Responding to Span Life Cycle Events [[Tracing-callbacks]]
+== Responding to Span Lifecycle Events [[Tracing-callbacks]]
 
 Applications and libraries can register listeners to be notified at several moments during the lifecycle of every span:
 
@@ -40,15 +40,15 @@ Applications and libraries can register listeners to be notified at several mome
 
 // end::intro[]
 
-The next sections explain how you can write and add a listener and what it can do. See the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
+The next sections explain how you can write and add a listener and what it can do. See the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] Javadoc for more information.
 
 === Understanding What Listeners Do
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span.
 Often a listener does additional work that does not change the span or scope such as logging a message.
 
-When Helidon invokes the listener's methods it passes safe adapters for the parameter types. These adapters limit the access the listener has to the span builder, span, or scope, as summarized in the following table.
+When Helidon invokes the listener's methods it passes proxies for the parameter types. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table.
 
-.Summary of Permitted Operations on Safe Adapters Passed to Listeners
+.Summary of Permitted Operations on Proxies Passed to Listeners
 |====
 | Tracing type | Changes allowed
 
@@ -60,7 +60,7 @@ When Helidon invokes the listener's methods it passes safe adapters for the para
 
 |====
 
-The following tables list specifically what operations the safe adapters permit.
+The following tables list specifically what operations the proxies permit.
 
 
 .link:{tracing-javadoc}/Span.Builder.html[`io.helidon.tracing.Span.Builder`] Operations
@@ -77,7 +77,7 @@ The following tables list specifically what operations the safe adapters permit.
 | `unwrap(Class)` | Cast the builder to the specified implementation type. † | &check;
 |====
 
-† Helidon returns the unwrapped object, not a safe adapter to it.
+† Helidon returns the unwrapped object, not a proxy to it.
 
 
 .link:{tracing-javadoc}/Span.html[`io.helidon.tracing.Span`] Operations
@@ -95,7 +95,7 @@ The following tables list specifically what operations the safe adapters permit.
 
 {empty}* Helidon throws the link:{tracing-javadoc}/UnsupportedActivationException.html[`UnsupportedActivationException`] if a listener attempts an illegal operation from inside its `afterActivation` method. This Helidon exception extends `UnsupportedOperationException` and adds the `Scope scope()` method. Callers should catch this exception and close the `Scope`; Helidon will have activated the span and created the scope _before_ it invoked the listeners.
 
-† Helidon returns the unwrapped object, not a safe adapter to it.
+† Helidon returns the unwrapped object, not a proxy to it.
 
 .link:{tracing-javadoc}/Scope.html[`io.helidon.tracing.Scope`] Operations
 |====
@@ -121,10 +121,10 @@ Create a `{listener-type}` instance and invoke the `Tracer#register({listener-ty
 ==== Automatically Registering a Listener on all `Tracer` Instances
 
 Helidon also uses Java service loading to locate listeners and register them automatically on all `Tracer` objects.
-Follow these steps to add an auto-loaded listener.
+Follow these steps to add listener service provider.
 
 1. Implement the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] interface.
-2. Declare your implementation as a loadable service:
+2. Declare your implementation as a service provider:
    a. Create the file `META-INF/services/io.helidon.tracing.{listener-type}` containing a line with the fully-qualified name of your class which implements `{listener-type}`.
    b. If your service has a `module-info.java` file add the following line to it:
 +
@@ -140,12 +140,12 @@ Helidon invokes each listener's methods in the following order:
 |====
 | Method | When invoked
 
-| `beforeStart(Span.Builder<?> spanBuilder)` | Just before a span is started from its builder.
-| `afterStart(Span span)` | Just after a span has started.
-| `afterActivate(Span span, Scope scope)` | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code.
-| `afterClose(Span span, Scope scope)` | After a scope has been closed.
-| `afterEnd(Span span)` | After a span has ended successfully.
-| `afterEnd(Span span, Throwable t)` | After a span has ended unsuccessfully.
+| `starting(Span.Builder<?> spanBuilder)` | Just before a span is started from its builder.
+| `started(Span span)` | Just after a span has started.
+| `activated(Span span, Scope scope)` | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code.
+| `closed(Span span, Scope scope)` | After a scope has been closed.
+| `ended(Span span)` | After a span has ended successfully.
+| `ended(Span span, Throwable t)` | After a span has ended unsuccessfully.
 |====
 
 
@@ -155,5 +155,5 @@ Helidon invokes each listener's methods in the following order:
 // tag::brief[]
 include::common-callbacks.adoc[tag=intro]
 
-See the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] JavaDoc for more information.
+See the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] Javadoc for more information.
 // end::brief[]

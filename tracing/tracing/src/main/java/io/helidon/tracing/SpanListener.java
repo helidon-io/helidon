@@ -16,12 +16,12 @@
 package io.helidon.tracing;
 
 /**
- * Behavior of listeners notified of span life cycle events.
+ * A listener notified of span life cycle events.
  * <p>
- * The interface declares default empty implementations for each method, allowing concrete implementations of the
- * interface to implement only the methods that are relevant for them.
+ * All methods are {@code default} no-op methods, allowing concrete implementations
+ * to implement only the methods that are relevant for them.
  * <p>
- * Helidon invokes the applicable methods of a life cycle listener in the following order:
+ * Helidon invokes the applicable methods of a listener in the following order:
  * <table>
  *     <caption style="text-align:left">Order of Invocation of Listener Methods</caption>
  *
@@ -31,35 +31,35 @@ package io.helidon.tracing;
  *         <th style="text-align:left">When invoked</th>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #beforeStart(io.helidon.tracing.Span.Builder) beforeStart}</td>
+ *         <td>{@linkplain #starting(io.helidon.tracing.Span.Builder) starting}</td>
  *         <td>Before a span is started from its builder.</td>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #afterStart(io.helidon.tracing.Span) afterStart}</td>
+ *         <td>{@linkplain #started(io.helidon.tracing.Span) started}</td>
  *         <td>After a span has started.</td>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #afterActivate(io.helidon.tracing.Span, io.helidon.tracing.Scope)
- *         afterActivate} †</td>
+ *         <td>{@linkplain #activated(io.helidon.tracing.Span, io.helidon.tracing.Scope)
+ *         activated} †</td>
  *         <td>After a span has been activated, creating a new scope in the process. </td>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #afterClose(io.helidon.tracing.Span, io.helidon.tracing.Scope) afterClose} †</td>
+ *         <td>{@linkplain #closed(io.helidon.tracing.Span, io.helidon.tracing.Scope) closed} †</td>
  *         <td>After a scope has been closed.</td>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #afterEnd(io.helidon.tracing.Span) afterEnd (successful)} *</td>
+ *         <td>{@linkplain #ended(io.helidon.tracing.Span) ended (successful)} *</td>
  *         <td>After a span has ended successfully.</td>
  *     </tr>
  *     <tr>
- *         <td>{@linkplain #afterEnd(io.helidon.tracing.Span, Throwable) afterEnd (unsuccessful)} *</td>
+ *         <td>{@linkplain #ended(io.helidon.tracing.Span, Throwable) ended (unsuccessful)} *</td>
  *         <td>After a span has ended unsuccessfully. </td>
  *     </tr>
  *     </tbody>
  *      <tfoot>
  *         <tr>
  *             <td colspan="2">† Not all spans are activated; it is up to the application or library code that creates and manages the span.
- *              As a result Helidon might not invoke your listener's {@code afterActivate} and {@code afterClose} methods for
+ *              As a result Helidon might not invoke your listener's {@code activated} and {@code closed} methods for
  *              every span.
  *              <p>
  *              * The successful or unsuccessful nature of a span's end is not about whether the tracing or telemetry
@@ -72,10 +72,10 @@ package io.helidon.tracing;
  * <p>
  *     When Helidon invokes the listener methods it passes implementations of the key span types ({@link Span.Builder},
  *     {@link Span}, {@link io.helidon.tracing.Scope}) which <em>do not</em> support lifecycle state changes.
- *     If a lifecycle listener tries to start or end or activate a span,
+ *     If a listener tries to start or end or activate a span,
  *     for example, Helidon throws an {@link java.lang.UnsupportedOperationException}.
  */
-public interface SpanLifeCycleListener {
+public interface SpanListener {
 
     /**
      * Invoked just prior to a {@linkplain io.helidon.tracing.Span span} being started from its
@@ -84,7 +84,7 @@ public interface SpanLifeCycleListener {
      * @param spanBuilder the {@link Span.Builder} for the builder about to be used to start a span
      * @throws java.lang.UnsupportedOperationException if the listener tries to start the span
      */
-    default void beforeStart(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
+    default void starting(Span.Builder<?> spanBuilder) {
     }
 
     /**
@@ -93,7 +93,7 @@ public interface SpanLifeCycleListener {
      * @param span {@link io.helidon.tracing.Span} for the newly-started span
      * @throws java.lang.UnsupportedOperationException if the listener tries to end the span
      */
-    default void afterStart(Span span) throws UnsupportedOperationException {
+    default void started(Span span) {
     }
 
     /**
@@ -101,7 +101,7 @@ public interface SpanLifeCycleListener {
      * <p>
      *     Callers should normally catch the {@link io.helidon.tracing.UnsupportedActivationException}, retrieve the
      *     {@link io.helidon.tracing.Scope} from it, and then close that {@code Scope}.
-     *     Helidon activates the scope before invoking span life cycle listeners, so Helidon has added the span and baggage
+     *     Helidon activates the scope before invoking span listeners, so Helidon has added the span and baggage
      *     to the current tracing context by the time Helidon throws this exception. In the absence of this exception being
      *     thrown, the {@link io.helidon.tracing.Span#activate()} method returns the {@code Scope} so the caller can close it.
      *     But when Helidon throws this exception due to an error in a listener, the caller has no access to the {@code Scope}
@@ -112,7 +112,7 @@ public interface SpanLifeCycleListener {
      *              the span
      * @throws io.helidon.tracing.UnsupportedActivationException if the listener tries to close the scope or end the span
      */
-    default void afterActivate(Span span, Scope scope) throws UnsupportedActivationException {
+    default void activated(Span span, Scope scope) {
     }
 
     /**
@@ -122,7 +122,7 @@ public interface SpanLifeCycleListener {
      * @param scope the just-closed {@link io.helidon.tracing.Scope}
      * @throws java.lang.UnsupportedOperationException if the listener tries to end the span
      */
-    default void afterClose(Span span, Scope scope) throws UnsupportedOperationException {
+    default void closed(Span span, Scope scope) {
     }
 
     /**
@@ -130,7 +130,7 @@ public interface SpanLifeCycleListener {
      *
      * @param span the just-ended {@link io.helidon.tracing.Span}
      */
-    default void afterEnd(Span span) {
+    default void ended(Span span) {
     }
 
     /**
@@ -139,6 +139,6 @@ public interface SpanLifeCycleListener {
      * @param span the just-ended {@link io.helidon.tracing.Span}
      * @param t    {@link java.lang.Throwable} indicating the problem associated with the ended span
      */
-    default void afterEnd(Span span, Throwable t) {
+    default void ended(Span span, Throwable t) {
     }
 }

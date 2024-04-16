@@ -30,7 +30,7 @@ import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
@@ -41,12 +41,12 @@ import io.opentracing.propagation.TextMapAdapter;
 
 class OpenTracingTracer implements Tracer {
 
-    private static final LazyValue<List<SpanLifeCycleListener>> SPAN_LIFE_CYCLE_LISTENERS =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanLifeCycleListener.class)).asList());
+    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     private final io.opentracing.Tracer delegate;
     private final boolean enabled;
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
+    private final List<SpanListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
 
     private OpenTracingTracer(io.opentracing.Tracer delegate, boolean enabled) {
         this.delegate = delegate;
@@ -127,7 +127,7 @@ class OpenTracingTracer implements Tracer {
     }
 
     @Override
-    public Tracer register(SpanLifeCycleListener listener) {
+    public Tracer register(SpanListener listener) {
         spanLifeCycleListeners.add(listener);
         return this;
     }

@@ -25,7 +25,7 @@ import java.util.Set;
 
 import io.helidon.tracing.Baggage;
 import io.helidon.tracing.Scope;
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.WritableBaggage;
 
 import io.opentracing.Span;
@@ -42,12 +42,12 @@ import io.opentracing.tag.Tag;
 class ZipkinSpan implements Span {
     private final Span span;
     private final boolean isClient;
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanLifeCycleListeners;
     private Limited limited;
     private final Set<String> baggageKeys = new HashSet<>();
 
 
-    ZipkinSpan(Span span, boolean isClient, List<SpanLifeCycleListener> spanLifeCycleListeners) {
+    ZipkinSpan(Span span, boolean isClient, List<SpanListener> spanLifeCycleListeners) {
         this.span = span;
         this.isClient = isClient;
         this.spanLifeCycleListeners = spanLifeCycleListeners;
@@ -62,14 +62,14 @@ class ZipkinSpan implements Span {
     public void finish() {
         finishLog();
         span.finish();
-        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited()));
+        spanLifeCycleListeners.forEach(listener -> listener.ended(limited()));
     }
 
     @Override
     public void finish(long finishMicros) {
         finishLog();
         span.finish(finishMicros);
-        spanLifeCycleListeners.forEach(listener -> listener.afterEnd(limited()));
+        spanLifeCycleListeners.forEach(listener -> listener.ended(limited()));
     }
 
     @Override

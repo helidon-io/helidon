@@ -19,7 +19,7 @@ package io.helidon.tracing.providers.zipkin;
 import java.time.Instant;
 import java.util.List;
 
-import io.helidon.tracing.SpanLifeCycleListener;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tag;
 
 import io.opentracing.Span;
@@ -36,18 +36,18 @@ import io.opentracing.Tracer;
 class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     private final Tracer tracer;
     private final Tracer.SpanBuilder spanBuilder;
-    private final List<SpanLifeCycleListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanLifeCycleListeners;
     private Limited limited;
     private boolean isClient;
 
     ZipkinSpanBuilder(Tracer tracer,
                       Tracer.SpanBuilder spanBuilder,
                       List<Tag<?>> tags,
-                      List<SpanLifeCycleListener> spanLifeCycleListeners) {
+                      List<SpanListener> spanListeners) {
         this.tracer = tracer;
         this.spanBuilder = spanBuilder;
         tags.forEach(t -> this.withTag(t.key(), t)); // Updates both the native span builder and our internal tags structure.
-        this.spanLifeCycleListeners = spanLifeCycleListeners;
+        this.spanLifeCycleListeners = spanListeners;
     }
 
     @Override
@@ -97,7 +97,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
     @Override
     public Span start() {
-        spanLifeCycleListeners.forEach(listener -> listener.beforeStart(limited()));
+        spanLifeCycleListeners.forEach(listener -> listener.starting(limited()));
         Span span = spanBuilder.start();
 
         if (isClient) {
@@ -107,7 +107,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
         }
 
         var result = new ZipkinSpan(span, isClient, spanLifeCycleListeners);
-        spanLifeCycleListeners.forEach(listener -> listener.afterStart(result.limited()));
+        spanLifeCycleListeners.forEach(listener -> listener.started(result.limited()));
 
         return result;
     }
