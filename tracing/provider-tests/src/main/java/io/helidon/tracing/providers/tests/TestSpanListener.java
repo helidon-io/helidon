@@ -22,7 +22,7 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanListener;
 
-class TestSpanLifeCycleListener implements SpanListener {
+class TestSpanListener implements SpanListener {
 
 
     private Consumer<Span.Builder<?>> beforeStartCheck;
@@ -74,32 +74,32 @@ class TestSpanLifeCycleListener implements SpanListener {
         }
     }
 
-    TestSpanLifeCycleListener beforeStart(Consumer<Span.Builder<?>> beforeStart) {
+    TestSpanListener beforeStart(Consumer<Span.Builder<?>> beforeStart) {
         this.beforeStartCheck = beforeStart;
         return this;
     }
 
-    TestSpanLifeCycleListener afterStart(Consumer<Span> afterStart) {
+    TestSpanListener afterStart(Consumer<Span> afterStart) {
         this.afterStartCheck = afterStart;
         return this;
     }
 
-    TestSpanLifeCycleListener afterActivate(BiConsumer<Span, Scope> afterActivate) {
+    TestSpanListener afterActivate(BiConsumer<Span, Scope> afterActivate) {
         this.afterActivateCheck = afterActivate;
         return this;
     }
 
-    TestSpanLifeCycleListener afterClose(BiConsumer<Span, Scope> afterClose) {
+    TestSpanListener afterClose(BiConsumer<Span, Scope> afterClose) {
         this.afterCloseCheck = afterClose;
         return this;
     }
 
-    TestSpanLifeCycleListener afterEndOk(Consumer<Span> afterEnd) {
+    TestSpanListener afterEndOk(Consumer<Span> afterEnd) {
         this.afterEndOkCheck = afterEnd;
         return this;
     }
 
-    TestSpanLifeCycleListener afterEndFailure(BiConsumer<Span, Throwable> afterEnd) {
+    TestSpanListener afterEndFailure(BiConsumer<Span, Throwable> afterEnd) {
         this.afterEndFailureCheck = afterEnd;
         return this;
     }

@@ -25,22 +25,22 @@ class OpenTelemetryScope implements Scope {
     private final OpenTelemetrySpan span;
     private final io.opentelemetry.context.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final List<SpanListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanListeners;
     private Limited limited;
 
     OpenTelemetryScope(OpenTelemetrySpan span,
                        io.opentelemetry.context.Scope scope,
-                       List<SpanListener> spanLifeCycleListeners) {
+                       List<SpanListener> spanListeners) {
         this.span = span;
         delegate = scope;
-        this.spanLifeCycleListeners = spanLifeCycleListeners;
+        this.spanListeners = spanListeners;
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
-            spanLifeCycleListeners.forEach(listener -> listener.closed(span.limited(), limited()));
+            spanListeners.forEach(listener -> listener.closed(span.limited(), limited()));
         }
     }
 
@@ -53,7 +53,7 @@ class OpenTelemetryScope implements Scope {
         if (limited !=  null) {
             return limited;
         }
-        if (spanLifeCycleListeners.isEmpty()) {
+        if (spanListeners.isEmpty()) {
             return null;
         }
         limited = new Limited(this);

@@ -39,7 +39,7 @@ import io.opentracing.util.GlobalTracer;
 @Weight(Weighted.DEFAULT_WEIGHT - 50) // low weight, so it is easy to override
 public class OpenTracingTracerProvider implements TracerProvider {
 
-    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     @Override
@@ -65,7 +65,7 @@ public class OpenTracingTracerProvider implements TracerProvider {
         return Optional.ofNullable(tracer.activeSpan())
                 .flatMap(it -> it instanceof NoopSpan ? Optional.empty() : Optional.of(it))
                 .map(it -> new OpenTracingSpan(tracer, it,
-                                               SPAN_LIFE_CYCLE_LISTENERS.get()));
+                                               SPAN_LISTENERS.get()));
     }
 
     @Override

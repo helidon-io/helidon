@@ -16,7 +16,7 @@
 package io.helidon.tracing;
 
 /**
- * A listener notified of span life cycle events.
+ * A listener notified of span lifecycle events.
  * <p>
  * All methods are {@code default} no-op methods, allowing concrete implementations
  * to implement only the methods that are relevant for them.

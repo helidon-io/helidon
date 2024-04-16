@@ -42,15 +42,15 @@ import io.opentracing.tag.Tag;
 class ZipkinSpan implements Span {
     private final Span span;
     private final boolean isClient;
-    private final List<SpanListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanListeners;
     private Limited limited;
     private final Set<String> baggageKeys = new HashSet<>();
 
 
-    ZipkinSpan(Span span, boolean isClient, List<SpanListener> spanLifeCycleListeners) {
+    ZipkinSpan(Span span, boolean isClient, List<SpanListener> spanListeners) {
         this.span = span;
         this.isClient = isClient;
-        this.spanLifeCycleListeners = spanLifeCycleListeners;
+        this.spanListeners = spanListeners;
     }
 
     @Override
@@ -62,14 +62,14 @@ class ZipkinSpan implements Span {
     public void finish() {
         finishLog();
         span.finish();
-        spanLifeCycleListeners.forEach(listener -> listener.ended(limited()));
+        spanListeners.forEach(listener -> listener.ended(limited()));
     }
 
     @Override
     public void finish(long finishMicros) {
         finishLog();
         span.finish(finishMicros);
-        spanLifeCycleListeners.forEach(listener -> listener.ended(limited()));
+        spanListeners.forEach(listener -> listener.ended(limited()));
     }
 
     @Override
@@ -144,7 +144,7 @@ class ZipkinSpan implements Span {
 
     Limited limited() {
         if (limited == null) {
-            if (!spanLifeCycleListeners.isEmpty()) {
+            if (!spanListeners.isEmpty()) {
                 limited = new Limited(this, span.context(), new WritableBaggage() {
                     @Override
                     public WritableBaggage set(String key, String value) {

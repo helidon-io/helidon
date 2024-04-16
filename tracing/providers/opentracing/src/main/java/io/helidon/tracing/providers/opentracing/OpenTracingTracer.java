@@ -41,12 +41,12 @@ import io.opentracing.propagation.TextMapAdapter;
 
 class OpenTracingTracer implements Tracer {
 
-    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     private final io.opentracing.Tracer delegate;
     private final boolean enabled;
-    private final List<SpanListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
+    private final List<SpanListener> spanListeners = new ArrayList<>(SPAN_LISTENERS.get());
 
     private OpenTracingTracer(io.opentracing.Tracer delegate, boolean enabled) {
         this.delegate = delegate;
@@ -70,7 +70,7 @@ class OpenTracingTracer implements Tracer {
     public Span.Builder<?> spanBuilder(String name) {
         return new OpenTracingSpanBuilder(delegate,
                                           delegate.buildSpan(name),
-                                          spanLifeCycleListeners);
+                                          spanListeners);
     }
 
     @Override
@@ -128,7 +128,7 @@ class OpenTracingTracer implements Tracer {
 
     @Override
     public Tracer register(SpanListener listener) {
-        spanLifeCycleListeners.add(listener);
+        spanListeners.add(listener);
         return this;
     }
 

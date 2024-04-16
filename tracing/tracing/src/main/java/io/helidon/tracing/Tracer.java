@@ -103,8 +103,8 @@ public interface Tracer {
     }
 
     /**
-     * Registers with the tracer a life cycle event listener to receive events from span builders, spans, and scopes
-     * derived from this tracer.
+     * Registers with the tracer a {@linkplain io.helidon.tracing.SpanListener lifecycle event listener} to receive events from
+     * span builders, spans, and scopes derived from this tracer.
      *
      * @param listener the {@link SpanListener} to register
      * @return the updated {@code Tracer}

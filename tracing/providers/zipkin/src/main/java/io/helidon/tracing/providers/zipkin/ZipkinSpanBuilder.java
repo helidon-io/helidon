@@ -36,7 +36,7 @@ import io.opentracing.Tracer;
 class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     private final Tracer tracer;
     private final Tracer.SpanBuilder spanBuilder;
-    private final List<SpanListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanListeners;
     private Limited limited;
     private boolean isClient;
 
@@ -47,7 +47,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
         this.tracer = tracer;
         this.spanBuilder = spanBuilder;
         tags.forEach(t -> this.withTag(t.key(), t)); // Updates both the native span builder and our internal tags structure.
-        this.spanLifeCycleListeners = spanListeners;
+        this.spanListeners = spanListeners;
     }
 
     @Override
@@ -97,7 +97,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
     @Override
     public Span start() {
-        spanLifeCycleListeners.forEach(listener -> listener.starting(limited()));
+        spanListeners.forEach(listener -> listener.starting(limited()));
         Span span = spanBuilder.start();
 
         if (isClient) {
@@ -106,8 +106,8 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
             span.log("sr");
         }
 
-        var result = new ZipkinSpan(span, isClient, spanLifeCycleListeners);
-        spanLifeCycleListeners.forEach(listener -> listener.started(result.limited()));
+        var result = new ZipkinSpan(span, isClient, spanListeners);
+        spanListeners.forEach(listener -> listener.started(result.limited()));
 
         return result;
     }
@@ -130,7 +130,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
     Limited limited() {
         if (limited == null) {
-            if (!spanLifeCycleListeners.isEmpty()) {
+            if (!spanListeners.isEmpty()) {
                 limited = new Limited(this);
             }
         }

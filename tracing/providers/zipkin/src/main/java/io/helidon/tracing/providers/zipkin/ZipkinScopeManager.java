@@ -30,17 +30,17 @@ import io.opentracing.Span;
  */
 class ZipkinScopeManager implements ScopeManager {
     private final BraveScopeManager scopeManager;
-    private final List<SpanListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanListeners;
 
-    ZipkinScopeManager(BraveScopeManager scopeManager, List<SpanListener> spanLifeCycleListeners) {
+    ZipkinScopeManager(BraveScopeManager scopeManager, List<SpanListener> spanListeners) {
         this.scopeManager = scopeManager;
-        this.spanLifeCycleListeners = spanLifeCycleListeners;
+        this.spanListeners = spanListeners;
     }
 
     @Override
     public Scope activate(Span span) {
-        ZipkinSpan zSpan = (span instanceof ZipkinSpan z) ? z : new ZipkinSpan(span, false, spanLifeCycleListeners);
-        return new ZipkinScope(scopeManager.activate(unwrap(span)), zSpan, spanLifeCycleListeners);
+        ZipkinSpan zSpan = (span instanceof ZipkinSpan z) ? z : new ZipkinSpan(span, false, spanListeners);
+        return new ZipkinScope(scopeManager.activate(unwrap(span)), zSpan, spanListeners);
     }
 
     private Span unwrap(Span span) {
@@ -62,26 +62,26 @@ class ZipkinScopeManager implements ScopeManager {
 
         private final Scope delegate;
         private final ZipkinSpan zSpan;
-        private final List<SpanListener> spanLifeCycleListeners;
+        private final List<SpanListener> spanListeners;
         private Limited limited;
         private boolean isClosed;
 
-        private ZipkinScope(Scope delegate, ZipkinSpan zSpan, List<SpanListener> spanLifeCycleListeners) {
+        private ZipkinScope(Scope delegate, ZipkinSpan zSpan, List<SpanListener> spanListeners) {
             this.delegate = delegate;
             this.zSpan = zSpan;
-            this.spanLifeCycleListeners = spanLifeCycleListeners;
+            this.spanListeners = spanListeners;
         }
 
         @Override
         public void close() {
             delegate.close();
             isClosed = true;
-            spanLifeCycleListeners.forEach(listener -> listener.closed(zSpan.limited(), limited()));
+            spanListeners.forEach(listener -> listener.closed(zSpan.limited(), limited()));
         }
 
         Limited limited() {
             if (limited == null) {
-                if (!spanLifeCycleListeners.isEmpty()) {
+                if (!spanListeners.isEmpty()) {
                     limited = new Limited(this);
                 }
             }

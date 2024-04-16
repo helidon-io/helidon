@@ -34,7 +34,7 @@ import io.helidon.tracing.spi.TracerProvider;
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class JaegerTracerProvider implements TracerProvider {
 
-    private static final List<SpanListener> LIFE_CYCLE_LISTENERS = HelidonServiceLoader.create(ServiceLoader.load(
+    private static final List<SpanListener> SPAN_LISTENERS = HelidonServiceLoader.create(ServiceLoader.load(
             SpanListener.class)).asList();
 
     @Override
@@ -63,6 +63,6 @@ public class JaegerTracerProvider implements TracerProvider {
     }
 
     static List<SpanListener> lifeCycleListeners() {
-        return LIFE_CYCLE_LISTENERS;
+        return SPAN_LISTENERS;
     }
 }

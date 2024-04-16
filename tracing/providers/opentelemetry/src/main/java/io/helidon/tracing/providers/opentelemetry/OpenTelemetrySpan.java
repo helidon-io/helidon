@@ -37,17 +37,17 @@ import io.opentelemetry.context.Context;
 class OpenTelemetrySpan implements Span {
     private final io.opentelemetry.api.trace.Span delegate;
     private final Baggage baggage;
-    private final List<SpanListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanListeners;
     private Limited limited;
 
-    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, List<SpanListener> spanLifeCycleListeners) {
-        this(span, new MutableOpenTelemetryBaggage(), spanLifeCycleListeners);
+    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, List<SpanListener> spanListeners) {
+        this(span, new MutableOpenTelemetryBaggage(), spanListeners);
     }
 
-    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, Baggage baggage, List<SpanListener> spanLifeCycleListeners) {
+    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, Baggage baggage, List<SpanListener> spanListeners) {
         delegate = span;
         this.baggage = baggage;
-        this.spanLifeCycleListeners = spanLifeCycleListeners;
+        this.spanListeners = spanListeners;
     }
 
     @Override
@@ -95,7 +95,7 @@ class OpenTelemetrySpan implements Span {
     @Override
     public void end() {
         delegate.end();
-        spanLifeCycleListeners.forEach(listener -> listener.ended(limited()));
+        spanListeners.forEach(listener -> listener.ended(limited()));
     }
 
     @Override
@@ -103,22 +103,26 @@ class OpenTelemetrySpan implements Span {
         delegate.recordException(t);
         delegate.setStatus(StatusCode.ERROR);
         delegate.end();
-        spanLifeCycleListeners.forEach(listener -> listener.ended(limited(), t));
+        spanListeners.forEach(listener -> listener.ended(limited(), t));
     }
 
     @Override
     public Scope activate() {
         io.opentelemetry.context.Scope scope = otelContextWithSpanAndBaggage().makeCurrent();
-        var result = new OpenTelemetryScope(this, scope, spanLifeCycleListeners);
-        UnsupportedActivationException ex = new UnsupportedActivationException("Error activating span", result);
-        spanLifeCycleListeners.forEach(listener -> {
+        var result = new OpenTelemetryScope(this, scope, spanListeners);
+        UnsupportedActivationException ex = null;
+        for (SpanListener listener : spanListeners) {
             try {
                 listener.activated(limited(), result.limited());
             } catch (Throwable t) {
+                if (ex == null) {
+                    ex = new UnsupportedActivationException("Error activating span", result);
+                }
                 ex.addSuppressed(t);
             }
-        });
-        if (ex.getSuppressed().length > 0) {
+        }
+
+        if (ex != null) {
             throw ex;
         }
         return result;
@@ -161,7 +165,7 @@ class OpenTelemetrySpan implements Span {
         if (limited !=  null) {
             return limited;
         }
-        if (spanLifeCycleListeners.isEmpty()) {
+        if (spanListeners.isEmpty()) {
             return null;
         }
         limited = new Limited(this);

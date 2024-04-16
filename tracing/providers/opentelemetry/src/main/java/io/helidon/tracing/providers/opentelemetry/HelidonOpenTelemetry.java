@@ -48,7 +48,7 @@ public final class HelidonOpenTelemetry {
     public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
 
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
-    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
 
@@ -73,7 +73,7 @@ public final class HelidonOpenTelemetry {
      * @return Helidon {@link io.helidon.tracing.Span}
      */
     public static io.helidon.tracing.Span create(Span span) {
-        return new OpenTelemetrySpan(span, SPAN_LIFE_CYCLE_LISTENERS.get());
+        return new OpenTelemetrySpan(span, SPAN_LISTENERS.get());
     }
 
     /**
@@ -84,7 +84,7 @@ public final class HelidonOpenTelemetry {
      * @return Helidon (@link io.helidon.tracing.Span}
      */
     public static io.helidon.tracing.Span create(Span span, Baggage baggage) {
-        return new OpenTelemetrySpan(span, baggage, SPAN_LIFE_CYCLE_LISTENERS.get());
+        return new OpenTelemetrySpan(span, baggage, SPAN_LISTENERS.get());
     }
 
     /**

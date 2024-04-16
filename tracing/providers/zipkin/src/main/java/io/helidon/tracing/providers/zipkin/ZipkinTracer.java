@@ -45,16 +45,16 @@ import io.opentracing.propagation.Format;
  */
 public class ZipkinTracer implements Tracer {
 
-    private static final LazyValue<List<SpanListener>> SPAN_LIFE_CYCLE_LISTENERS =
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     private final BraveTracer tracer;
     private final List<Tag<?>> tags;
 
-    private final List<SpanListener> spanLifeCycleListeners = new ArrayList<>(SPAN_LIFE_CYCLE_LISTENERS.get());
+    private final List<SpanListener> spanListeners = new ArrayList<>(SPAN_LISTENERS.get());
 
     /**
-     * Create a zipkin tracer from the delegate (BraveTracer) and
+     * Create a zipkin tracer from the delegate (BraveTracer) anda
      * tags to be used by default for all traces.
      *
      * @param tracer tracer to wrap
@@ -70,7 +70,7 @@ public class ZipkinTracer implements Tracer {
         return new ZipkinSpanBuilder(this,
                                      tracer.buildSpan(operationName),
                                      tags,
-                                     spanLifeCycleListeners);
+                                     spanListeners);
     }
 
     @Override
@@ -86,7 +86,7 @@ public class ZipkinTracer implements Tracer {
     @Override
     public ScopeManager scopeManager() {
         return new ZipkinScopeManager(tracer.scopeManager(),
-                                      spanLifeCycleListeners);
+                                      spanListeners);
     }
 
     @Override

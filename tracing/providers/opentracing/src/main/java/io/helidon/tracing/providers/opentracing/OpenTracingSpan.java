@@ -36,14 +36,14 @@ class OpenTracingSpan implements Span {
     private final io.opentracing.Span delegate;
     private final OpenTracingContext context;
     private final WritableBaggage baggage;
-    private final List<SpanListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanListeners;
     private Limited limited;
 
-    OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate, List<SpanListener> spanLifeCycleListeners) {
+    OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate, List<SpanListener> spanListeners) {
         this.tracer = tracer;
         this.delegate = delegate;
         this.context = new OpenTracingContext(delegate.context());
-        this.spanLifeCycleListeners = spanLifeCycleListeners;
+        this.spanListeners = spanListeners;
         baggage = OpenTracingBaggage.create(context, delegate);
     }
 
@@ -88,7 +88,7 @@ class OpenTracingSpan implements Span {
     @Override
     public void end() {
         delegate.finish();
-        spanLifeCycleListeners.forEach(listener -> listener.ended(limited()));
+        spanListeners.forEach(listener -> listener.ended(limited()));
     }
 
     @Override
@@ -99,22 +99,25 @@ class OpenTracingSpan implements Span {
                             "error.object", throwable,
                             "message", throwable.getMessage() != null ? throwable.getMessage() : "none"));
         delegate.finish();
-        spanLifeCycleListeners.forEach(listener -> listener.ended(limited(), throwable));
+        spanListeners.forEach(listener -> listener.ended(limited(), throwable));
     }
 
     @Override
     public Scope activate() {
-        var result = new OpenTracingScope(this, tracer.activateSpan(delegate), spanLifeCycleListeners);
-        UnsupportedActivationException ex = new UnsupportedActivationException("Error activating span", result);
-        spanLifeCycleListeners.forEach(listener -> {
+        var result = new OpenTracingScope(this, tracer.activateSpan(delegate), spanListeners);
+        UnsupportedActivationException ex = null;
+        for (SpanListener listener : spanListeners) {
             try {
                 listener.activated(limited(), result.limited());
             } catch (Throwable t) {
+                if (ex == null) {
+                    ex = new UnsupportedActivationException("Error activating span", result);
+                }
                 ex.addSuppressed(t);
             }
-        });
+        }
 
-        if (ex.getSuppressed().length > 0) {
+        if (ex != null) {
             throw ex;
         }
         return result;
@@ -154,7 +157,7 @@ class OpenTracingSpan implements Span {
 
     Limited limited() {
         if (limited == null) {
-            if (!spanLifeCycleListeners.isEmpty()) {
+            if (!spanListeners.isEmpty()) {
                 limited = new Limited(this);
             }
         }
