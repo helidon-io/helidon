@@ -145,31 +145,29 @@ class ZipkinSpan implements Span {
     }
 
     Limited limited() {
-        if (limited == null) {
-            if (!spanListeners.isEmpty()) {
-                limited = new Limited(this, span.context(), new WritableBaggage() {
-                    @Override
-                    public WritableBaggage set(String key, String value) {
-                        setBaggageItem(key, value);
-                        return this;
-                    }
+        if (limited == null && !spanListeners.isEmpty()) {
+            limited = new Limited(this, span.context(), new WritableBaggage() {
+                @Override
+                public WritableBaggage set(String key, String value) {
+                    setBaggageItem(key, value);
+                    return this;
+                }
 
-                    @Override
-                    public Optional<String> get(String key) {
-                        return Optional.ofNullable(getBaggageItem(key));
-                    }
+                @Override
+                public Optional<String> get(String key) {
+                    return Optional.ofNullable(getBaggageItem(key));
+                }
 
-                    @Override
-                    public Set<String> keys() {
-                        return baggageKeys;
-                    }
+                @Override
+                public Set<String> keys() {
+                    return baggageKeys;
+                }
 
-                    @Override
-                    public boolean containsKey(String key) {
-                        return baggageKeys.contains(key);
-                    }
-                });
-            }
+                @Override
+                public boolean containsKey(String key) {
+                    return baggageKeys.contains(key);
+                }
+            });
         }
         return limited;
     }

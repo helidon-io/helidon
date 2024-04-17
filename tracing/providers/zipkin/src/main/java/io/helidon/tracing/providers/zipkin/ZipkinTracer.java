@@ -57,7 +57,7 @@ public class ZipkinTracer implements Tracer {
     private final List<SpanListener> spanListeners = new ArrayList<>(SPAN_LISTENERS.get());
 
     /**
-     * Create a zipkin tracer from the delegate (BraveTracer) anda
+     * Create a zipkin tracer from the delegate (BraveTracer) and
      * tags to be used by default for all traces.
      *
      * @param tracer tracer to wrap

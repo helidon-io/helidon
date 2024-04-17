@@ -131,10 +131,8 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     }
 
     Limited limited() {
-        if (limited == null) {
-            if (!spanListeners.isEmpty()) {
-                limited = new Limited(this);
-            }
+        if (limited == null && !spanListeners.isEmpty()) {
+            limited = new Limited(this);
         }
         return limited;
     }

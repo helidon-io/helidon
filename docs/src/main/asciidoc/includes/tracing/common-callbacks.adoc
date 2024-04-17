@@ -46,7 +46,7 @@ The next sections explain how you can write and add a listener and what it can d
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span.
 Often a listener does additional work that does not change the span or scope such as logging a message.
 
-When Helidon invokes the listener's methods it passes proxies for the parameter types. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke an forbidden operation, the proxies throw an `UnsupportedOperationException` and Helidon then logs a `WARNING` message describing the invalid operation invocation.
+When Helidon invokes the listener's methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxies throw an `UnsupportedOperationException` and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
 .Summary of Permitted Operations on Proxies Passed to Listeners
 |====
@@ -78,7 +78,7 @@ The following tables list specifically what operations the proxies permit.
 | `unwrap(Class)` | Cast the builder to the specified implementation type. † | &check;
 |====
 
-† Helidon returns the unwrapped object, not a proxy to it.
+† Helidon returns the unwrapped object, not a proxy for it.
 
 
 .link:{tracing-javadoc}/Span.html[`io.helidon.tracing.Span`] Operations

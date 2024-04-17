@@ -98,19 +98,11 @@ public interface SpanListener {
 
     /**
      * Invoked just after a {@linkplain io.helidon.tracing.Span span} has been activated.
-     * <p>
-     *     Callers should normally catch the {@link io.helidon.tracing.UnsupportedActivationException}, retrieve the
-     *     {@link io.helidon.tracing.Scope} from it, and then close that {@code Scope}.
-     *     Helidon activates the scope before invoking span listeners, so Helidon has added the span and baggage
-     *     to the current tracing context by the time Helidon throws this exception. In the absence of this exception being
-     *     thrown, the {@link io.helidon.tracing.Span#activate()} method returns the {@code Scope} so the caller can close it.
-     *     But when Helidon throws this exception due to an error in a listener, the caller has no access to the {@code Scope}
-     *     return value and needs to use the {@link UnsupportedActivationException#scope()} method to retrieve it.
      *
      * @param span  the just-activated {@link io.helidon.tracing.Span}
      * @param scope the just-created {@linkplain io.helidon.tracing.Scope scope} which resulted from activating
      *              the span
-     * @throws io.helidon.tracing.UnsupportedActivationException if the listener tries to close the scope or end the span
+     * @throws java.lang.UnsupportedOperationException if the listener tries to close the scope or end the span
      */
     default void activated(Span span, Scope scope) {
     }
