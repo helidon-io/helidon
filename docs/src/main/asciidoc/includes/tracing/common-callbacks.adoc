@@ -46,7 +46,7 @@ The next sections explain how you can write and add a listener and what it can d
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span.
 Often a listener does additional work that does not change the span or scope such as logging a message.
 
-When Helidon invokes the listener's methods it passes proxies for the parameter types. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table.
+When Helidon invokes the listener's methods it passes proxies for the parameter types. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke an forbidden operation, the proxies throw an `UnsupportedOperationException` and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
 .Summary of Permitted Operations on Proxies Passed to Listeners
 |====
@@ -85,17 +85,14 @@ The following tables list specifically what operations the proxies permit.
 |====
 | Method    | Purpose | OK?
 
-| `activate()` | Makes the span "current", returning a `Scope`. * | -
+| `activate()` | Makes the span "current", returning a `Scope`. | -
 | `addEvent` methods | Associate a string (and optionally other info) with a span. | &check;
 | `baggage()` | Returns the `Baggage` instance associated with the span.| &check;
 | `context()` | Returns the `SpanContext` associated with the span.| &check;
 | `status(Status)` | Sets the status of the span. | -
 | any `tag` method| Add a tag to the span. | &check;
 | `unwrap(Class)` | Cast the span to the specified implementation type. † | &check;
-
 |====
-
-{empty}* Helidon throws the link:{tracing-javadoc}/UnsupportedActivationException.html[`UnsupportedActivationException`] if a listener attempts an illegal operation from inside its `afterActivation` method. This Helidon exception extends `UnsupportedOperationException` and adds the `Scope scope()` method. Callers should catch this exception and close the `Scope`; Helidon will have activated the span and created the scope _before_ it invoked the listeners.
 
 † Helidon returns the unwrapped object, not a proxy to it.
 
@@ -125,7 +122,7 @@ Create a `{listener-type}` instance and invoke the `Tracer#register({listener-ty
 ==== Automatically Registering a Listener on all `Tracer` Instances
 
 Helidon also uses Java service loading to locate listeners and register them automatically on all `Tracer` objects.
-Follow these steps to add listener service provider.
+Follow these steps to add a listener service provider.
 
 1. Implement the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] interface.
 2. Declare your implementation as a service provider:
