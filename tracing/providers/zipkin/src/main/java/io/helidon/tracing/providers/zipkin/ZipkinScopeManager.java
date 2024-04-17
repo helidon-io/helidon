@@ -29,6 +29,7 @@ import io.opentracing.Span;
  * We need to "unwrap" the span before activating it, as otherwise we got a class cast exception.
  */
 class ZipkinScopeManager implements ScopeManager {
+    private static final System.Logger LOGGER = System.getLogger(ZipkinScopeManager.class.getName());
     private final BraveScopeManager scopeManager;
     private final List<SpanListener> spanListeners;
 
@@ -76,7 +77,7 @@ class ZipkinScopeManager implements ScopeManager {
         public void close() {
             delegate.close();
             isClosed = true;
-            spanListeners.forEach(listener -> listener.closed(zSpan.limited(), limited()));
+            ZipkinTracer.invokeListeners(spanListeners, LOGGER, listener -> listener.closed(zSpan.limited(), limited()));
         }
 
         Limited limited() {

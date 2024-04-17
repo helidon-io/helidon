@@ -25,13 +25,14 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.SpanListener;
-import io.helidon.tracing.UnsupportedActivationException;
 import io.helidon.tracing.WritableBaggage;
 
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 
 class OpenTracingSpan implements Span {
+    private static final System.Logger LOGGER = System.getLogger(OpenTracingSpan.class.getName());
+
     private final Tracer tracer;
     private final io.opentracing.Span delegate;
     private final OpenTracingContext context;
@@ -88,7 +89,7 @@ class OpenTracingSpan implements Span {
     @Override
     public void end() {
         delegate.finish();
-        spanListeners.forEach(listener -> listener.ended(limited()));
+        OpenTracing.invokeListeners(spanListeners, LOGGER, listener -> listener.ended(limited()));
     }
 
     @Override
@@ -99,27 +100,13 @@ class OpenTracingSpan implements Span {
                             "error.object", throwable,
                             "message", throwable.getMessage() != null ? throwable.getMessage() : "none"));
         delegate.finish();
-        spanListeners.forEach(listener -> listener.ended(limited(), throwable));
+        OpenTracing.invokeListeners(spanListeners, LOGGER, listener -> listener.ended(limited(), throwable));
     }
 
     @Override
     public Scope activate() {
         var result = new OpenTracingScope(this, tracer.activateSpan(delegate), spanListeners);
-        UnsupportedActivationException ex = null;
-        for (SpanListener listener : spanListeners) {
-            try {
-                listener.activated(limited(), result.limited());
-            } catch (Throwable t) {
-                if (ex == null) {
-                    ex = new UnsupportedActivationException("Error activating span", result);
-                }
-                ex.addSuppressed(t);
-            }
-        }
-
-        if (ex != null) {
-            throw ex;
-        }
+        OpenTracing.invokeListeners(spanListeners, LOGGER, listener -> listener.activated(limited(), result.limited()));
         return result;
     }
 

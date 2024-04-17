@@ -16,19 +16,25 @@
 package io.helidon.tracing.providers.tests;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
+import io.helidon.common.testing.junit5.InMemoryLoggingHandler;
+import io.helidon.common.testing.junit5.LogRecordMatcher;
 import io.helidon.tracing.Baggage;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.UnsupportedActivationException;
 
 import org.hamcrest.Matcher;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -36,9 +42,12 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.Matchers.notNullValue;
 
 class TestSpanCallbacks {
 
@@ -50,12 +59,18 @@ class TestSpanCallbacks {
 
     private static TracerBuilder<?> tracerBuilder;
 
+    private static List<Logger> strongLoggers = new ArrayList<>();
+
     @BeforeAll
     static void setup() {
         tracerBuilder = TracerBuilder.create("spanCallbackTracer");
         tracerBuilder.registerGlobal(false);
     }
 
+    @AfterAll
+    static void cleanup() {
+        strongLoggers.clear();
+    }
 
     @Test
     void checkSpanStartEndOk() {
@@ -90,8 +105,7 @@ class TestSpanCallbacks {
         tracer.register(l1);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectBeforeStart");
 
-        assertThrows(UnsupportedOperationException.class,
-                     spanBuilder::build);
+        checkForUnsupported(spanBuilder, () -> spanBuilder.start());
     }
 
     @Test
@@ -107,8 +121,7 @@ class TestSpanCallbacks {
         tracer.register(l1);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterStart");
 
-        assertThrows(UnsupportedOperationException.class,
-                     spanBuilder::build);
+        checkForUnsupported(spanBuilder, spanBuilder::build);
     }
 
     @Test
@@ -124,9 +137,9 @@ class TestSpanCallbacks {
         tracer.register(l1);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterActivateSpan");
         Span span = spanBuilder.start();
-        UnsupportedActivationException ex = assertThrows(UnsupportedActivationException.class,
-                     span::activate);
-        ex.scope().close();
+        try (Scope scope = checkForUnsupported(span, span::activate)) {
+            assertThat("Scope with bad listener", span, is(notNullValue()));
+        }
     }
 
     @Test
@@ -143,8 +156,9 @@ class TestSpanCallbacks {
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterCloseSpan");
         Span span = spanBuilder.start();
 
-        Scope scope = span.activate();
-        assertThrows(UnsupportedOperationException.class, scope::close);
+        try (Scope scope = span.activate()) {
+            checkForUnsupported(scope, () -> scope.close());
+        }
     }
 
     @Test
@@ -161,8 +175,9 @@ class TestSpanCallbacks {
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterCloseScope");
         Span span = spanBuilder.start();
 
-        UnsupportedActivationException ex = assertThrows(UnsupportedActivationException.class, span::activate);
-        ex.scope().close();
+        try (Scope scope = checkForUnsupported(span, span::activate)) {
+            assertThat("Scope with bad listener", scope, is(notNullValue()));
+        }
     }
 
     @Test
@@ -179,8 +194,8 @@ class TestSpanCallbacks {
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterEndOk");
         Span span = spanBuilder.start();
 
-        assertThrows(UnsupportedOperationException.class,
-                     span::end);
+        checkForUnsupported(span, () -> span.end());
+
     }
 
     @Test
@@ -196,9 +211,50 @@ class TestSpanCallbacks {
         tracer.register(l1);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterEndBad");
         Span span = spanBuilder.start();
-        assertThrows(UnsupportedOperationException.class,
-                     () -> span.end(new Throwable()));
+        checkForUnsupported(span, () -> span.end(new Throwable()));
     }
+
+    private <V> V checkForUnsupported(Object tracingItem, Callable<V> work) {
+        Logger logger = Logger.getLogger(tracingItem.getClass().getName());
+        strongLoggers.add(logger); // To avoid SpotBugs complaints about LogManager keeping wk refcs.
+        InMemoryLoggingHandler handler = InMemoryLoggingHandler.create(logger);
+        logger.addHandler(handler);
+
+        try {
+            V result = work.call();
+            assertThat("Expected exception",
+                       handler.logRecords(),
+                       hasItem(LogRecordMatcher.withThrown(instanceOf(UnsupportedOperationException.class))));
+            return result;
+
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            logger.removeHandler(handler);
+            strongLoggers.remove(logger);
+        }
+    }
+
+    private void checkForUnsupported(Object tracingItem, Runnable work) {
+        Logger logger = Logger.getLogger(tracingItem.getClass().getName());
+        strongLoggers.add(logger); // To avoid SpotBugs complaints about LogManager keeping wk refcs.
+        InMemoryLoggingHandler handler = InMemoryLoggingHandler.create(logger);
+        logger.addHandler(handler);
+
+        try {
+            work.run();
+            assertThat("Expected exception",
+                       handler.logRecords(),
+                       hasItem(LogRecordMatcher.withThrown(instanceOf(UnsupportedOperationException.class))));
+
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            logger.removeHandler(handler);
+            strongLoggers.remove(logger);
+        }
+    }
+
 
     private void checkSpanStartEnd(Matcher<Map<? extends String, ?>> spanEndOkMatcher,
                                    Matcher<Map<? extends String, ?>> spanEndBadMatcher,

@@ -15,8 +15,10 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -29,6 +31,8 @@ import io.opentracing.Tracer;
  * Open Tracing factory methods to create wrappers for Open Tracing types.
  */
 public final class OpenTracing {
+
+    static final String UNSUPPORTED_OPERATION_MESSAGE = "Span listener attempted to invoke an illegal operation";
 
     private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
@@ -56,6 +60,30 @@ public final class OpenTracing {
      */
     public static Span create(Tracer tracer, io.opentracing.Span span) {
         return new OpenTracingSpan(tracer, span, SPAN_LISTENERS.get());
+    }
+
+    static void invokeListeners(List<SpanListener> spanListeners, System.Logger logger, Consumer<SpanListener> operation) {
+        List<Throwable> throwables = new ArrayList<>();
+        for (SpanListener listener : spanListeners) {
+            try {
+                operation.accept(listener);
+            } catch (Throwable t) {
+                throwables.add(t);
+            }
+        }
+
+        Throwable throwableToLog = null;
+        if (throwables.size() == 1) {
+            // If only one exception is present, propagate that one in the log record.
+            throwableToLog = throwables.getFirst();
+        } else if (!throwables.isEmpty()) {
+            // Propagate a RuntimeException with multiple suppressed exceptions in the log record.
+            throwableToLog = new RuntimeException();
+            throwables.forEach(throwableToLog::addSuppressed);
+        }
+        if (throwableToLog != null) {
+            logger.log(System.Logger.Level.WARNING, "Error(s) from listener(s)", throwableToLog);
+        }
     }
 
 }

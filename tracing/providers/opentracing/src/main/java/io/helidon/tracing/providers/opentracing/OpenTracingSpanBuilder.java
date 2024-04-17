@@ -29,6 +29,9 @@ import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 
 class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
+
+    private static final System.Logger LOGGER = System.getLogger(OpenTracingSpanBuilder.class.getName());
+
     private final Tracer.SpanBuilder delegate;
     private final Tracer tracer;
     private final List<SpanListener> spanListeners;
@@ -98,12 +101,12 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     @Override
     public Span start(Instant instant) {
         long micro = TimeUnit.MILLISECONDS.toMicros(instant.toEpochMilli());
-        spanListeners.forEach(listener -> listener.starting(limited()));
+        OpenTracing.invokeListeners(spanListeners, LOGGER, listener -> listener.starting(limited()));
         OpenTracingSpan result = new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start(), spanListeners);
         if (baggage != null) {
             baggage.forEach((k, v) -> result.baggage().set(k, v));
         }
-        spanListeners.forEach(listener -> listener.started(result.limited()));
+        OpenTracing.invokeListeners(spanListeners, LOGGER, listener -> listener.started(result.limited()));
         return result;
     }
 

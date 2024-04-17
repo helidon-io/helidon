@@ -25,7 +25,6 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.SpanListener;
-import io.helidon.tracing.UnsupportedActivationException;
 import io.helidon.tracing.WritableBaggage;
 
 import io.opentelemetry.api.baggage.Baggage;
@@ -35,6 +34,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpan implements Span {
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetrySpan.class.getName());
     private final io.opentelemetry.api.trace.Span delegate;
     private final Baggage baggage;
     private final List<SpanListener> spanListeners;
@@ -95,7 +95,7 @@ class OpenTelemetrySpan implements Span {
     @Override
     public void end() {
         delegate.end();
-        spanListeners.forEach(listener -> listener.ended(limited()));
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, (listener -> listener.ended(limited())));
     }
 
     @Override
@@ -103,28 +103,14 @@ class OpenTelemetrySpan implements Span {
         delegate.recordException(t);
         delegate.setStatus(StatusCode.ERROR);
         delegate.end();
-        spanListeners.forEach(listener -> listener.ended(limited(), t));
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.ended(limited(), t));
     }
 
     @Override
     public Scope activate() {
         io.opentelemetry.context.Scope scope = otelContextWithSpanAndBaggage().makeCurrent();
         var result = new OpenTelemetryScope(this, scope, spanListeners);
-        UnsupportedActivationException ex = null;
-        for (SpanListener listener : spanListeners) {
-            try {
-                listener.activated(limited(), result.limited());
-            } catch (Throwable t) {
-                if (ex == null) {
-                    ex = new UnsupportedActivationException("Error activating span", result);
-                }
-                ex.addSuppressed(t);
-            }
-        }
-
-        if (ex != null) {
-            throw ex;
-        }
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.activated(limited(), result.limited()));
         return result;
     }
 

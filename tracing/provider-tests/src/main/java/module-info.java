@@ -22,6 +22,7 @@ import io.helidon.tracing.providers.tests.AutoLoadedSpanListener;
  */
 module io.helidon.tracing.provider.tests {
 
+    requires java.logging;
     requires io.helidon.tracing;
     requires io.helidon.common.testing.junit5;
 

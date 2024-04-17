@@ -34,6 +34,8 @@ import io.opentracing.Tracer;
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
 class ZipkinSpanBuilder implements Tracer.SpanBuilder {
+    private static final System.Logger LOGGER = System.getLogger(ZipkinSpanBuilder.class.getName());
+
     private final Tracer tracer;
     private final Tracer.SpanBuilder spanBuilder;
     private final List<SpanListener> spanListeners;
@@ -97,7 +99,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
     @Override
     public Span start() {
-        spanListeners.forEach(listener -> listener.starting(limited()));
+        ZipkinTracer.invokeListeners(spanListeners, LOGGER, listener -> listener.starting(limited()));
         Span span = spanBuilder.start();
 
         if (isClient) {
@@ -107,7 +109,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
         }
 
         var result = new ZipkinSpan(span, isClient, spanListeners);
-        spanListeners.forEach(listener -> listener.started(result.limited()));
+        ZipkinTracer.invokeListeners(spanListeners, LOGGER, listener -> listener.started(result.limited()));
 
         return result;
     }

@@ -40,6 +40,8 @@ import io.opentracing.tag.Tag;
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
 class ZipkinSpan implements Span {
+    private static final System.Logger LOGGER = System.getLogger(ZipkinSpan.class.getName());
+
     private final Span span;
     private final boolean isClient;
     private final List<SpanListener> spanListeners;
@@ -62,14 +64,14 @@ class ZipkinSpan implements Span {
     public void finish() {
         finishLog();
         span.finish();
-        spanListeners.forEach(listener -> listener.ended(limited()));
+        ZipkinTracer.invokeListeners(spanListeners, LOGGER, listener -> listener.ended(limited()));
     }
 
     @Override
     public void finish(long finishMicros) {
         finishLog();
         span.finish(finishMicros);
-        spanListeners.forEach(listener -> listener.ended(limited()));
+        ZipkinTracer.invokeListeners(spanListeners, LOGGER, listener-> listener.ended(limited()));
     }
 
     @Override

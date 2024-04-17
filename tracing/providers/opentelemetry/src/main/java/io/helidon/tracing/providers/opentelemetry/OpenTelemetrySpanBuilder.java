@@ -28,6 +28,7 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder> {
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetrySpanBuilder.class.getName());
     private final SpanBuilder spanBuilder;
     private final List<SpanListener> spanListeners;
     private Limited limited;
@@ -94,13 +95,13 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
             spanBuilder.setNoParent();
         }
         spanBuilder.setStartTimestamp(instant);
-        spanListeners.forEach(listener -> listener.starting(limited()));
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.starting(limited()));
         io.opentelemetry.api.trace.Span span = spanBuilder.startSpan();
         OpenTelemetrySpan result = new OpenTelemetrySpan(span, spanListeners);
         if (parentBaggage != null) {
             parentBaggage.forEach((key, baggageEntry) -> result.baggage().set(key, baggageEntry.getValue()));
         }
-        spanListeners.forEach(listener -> listener.started(result.limited()));
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.started(result.limited()));
 
         return result;
     }

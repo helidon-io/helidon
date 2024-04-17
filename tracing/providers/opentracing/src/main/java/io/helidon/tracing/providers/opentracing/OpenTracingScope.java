@@ -22,23 +22,25 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.SpanListener;
 
 class OpenTracingScope implements Scope {
+    private static final System.Logger LOGGER = System.getLogger(OpenTracingScope.class.getName());
+
     private final OpenTracingSpan span;
     private final io.opentracing.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final List<SpanListener> spanLifeCycleListeners;
+    private final List<SpanListener> spanListeners;
     private Limited limited;
 
-    OpenTracingScope(OpenTracingSpan span, io.opentracing.Scope scope, List<SpanListener> spanLifeCycleListeners) {
+    OpenTracingScope(OpenTracingSpan span, io.opentracing.Scope scope, List<SpanListener> spanListeners) {
         this.span = span;
         this.delegate = scope;
-        this.spanLifeCycleListeners = spanLifeCycleListeners;
+        this.spanListeners = spanListeners;
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
-            spanLifeCycleListeners.forEach(listener -> listener.closed(span.limited(), limited()));
+            OpenTracing.invokeListeners(spanListeners, LOGGER, listener -> listener.closed(span.limited(), limited()));
         }
     }
 
@@ -49,7 +51,7 @@ class OpenTracingScope implements Scope {
 
     Limited limited() {
         if (limited == null) {
-            if (!spanLifeCycleListeners.isEmpty()) {
+            if (!spanListeners.isEmpty()) {
                 limited = new Limited(this);
             }
         }

@@ -22,6 +22,7 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.SpanListener;
 
 class OpenTelemetryScope implements Scope {
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetryScope.class.getName());
     private final OpenTelemetrySpan span;
     private final io.opentelemetry.context.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -40,7 +41,7 @@ class OpenTelemetryScope implements Scope {
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
-            spanListeners.forEach(listener -> listener.closed(span.limited(), limited()));
+            HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.closed(span.limited(), limited()));
         }
     }
 
