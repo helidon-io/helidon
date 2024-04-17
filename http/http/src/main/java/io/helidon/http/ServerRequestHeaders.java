@@ -136,27 +136,30 @@ public interface ServerRequestHeaders extends Headers {
         if (mediaTypes.length == 0) {
             return Optional.empty();
         }
-        List<HttpMediaType> accepted = acceptedTypes();
-        if (accepted.isEmpty()) {
-            return Optional.of(mediaTypes[0]);
-        }
-        double best = 0;
-        MediaType result = null;
-        for (MediaType mt : mediaTypes) {
-            for (HttpMediaType acc : accepted) {
-                double q = acc.qualityFactor();
-                if (q > best && acc.test(mt)) {
-                    if (q == 1) {
-                        return Optional.of(mt);
-                    } else {
-                        best = q;
-                        result = mt;
+        try {
+            List<HttpMediaType> accepted = acceptedTypes();
+            if (accepted.isEmpty()) {
+                return Optional.of(mediaTypes[0]);
+            }
+            double best = 0;
+            MediaType result = null;
+            for (MediaType mt : mediaTypes) {
+                for (HttpMediaType acc : accepted) {
+                    double q = acc.qualityFactor();
+                    if (q > best && acc.test(mt)) {
+                        if (q == 1) {
+                            return Optional.of(mt);
+                        } else {
+                            best = q;
+                            result = mt;
+                        }
                     }
                 }
             }
+            return Optional.ofNullable(result);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Unable to parse Accept header", e);
         }
-
-        return Optional.ofNullable(result);
     }
 
     /**
