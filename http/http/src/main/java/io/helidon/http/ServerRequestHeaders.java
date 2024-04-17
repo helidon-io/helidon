@@ -158,7 +158,7 @@ public interface ServerRequestHeaders extends Headers {
             }
             return Optional.ofNullable(result);
         } catch (IllegalArgumentException e) {
-            return Optional.empty();        // invalid accept type
+            throw new BadRequestException("Unable to parse Accept header", e);
         }
     }
 
