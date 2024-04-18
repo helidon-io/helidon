@@ -18,6 +18,7 @@ This is a bugfix release of Helidon and is recommended for all users of Helidon 
 - Native image: resolve native-image warnings after Netty upgrade [7084](https://github.com/helidon-io/helidon/pull/7084)
 - OIDC: Oidc feature is not failing if not configured. [8625](https://github.com/helidon-io/helidon/pull/8625)
 - Tracing: Fix OTel extract when there is no current context [8578](https://github.com/helidon-io/helidon/pull/8578)
+- WebServer: Improves handling of invalid Accept types [8679](https://github.com/helidon-io/helidon/pull/8679)
 - WebSocket: support for users to control the outcome of a WebSocket upgrade request [8594](https://github.com/helidon-io/helidon/pull/8594)
 - Dependencies: Upgrade kafka-clients to 3.6.2 [8663](https://github.com/helidon-io/helidon/pull/8663)
 - Dependencies: Upgrade oci sdk to 3.39.0 [8621](https://github.com/helidon-io/helidon/pull/8621)
