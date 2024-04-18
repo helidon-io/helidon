@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
+package io.helidon.spi;
+
 /**
- * Types needed to start a Helidon application.
+ * Handles shutdown of the VM.
+ * <p>
+ * Register an instance with {@link io.helidon.Main#addShutdownHandler(HelidonShutdownHandler)},
+ * remove with {@link io.helidon.Main#removeShutdownHandler(HelidonShutdownHandler)}.
+ * Shutdown handlers are compared via instances, not via equals methods.
  */
-module io.helidon {
-    // this is required due to a bug in JDK (see Main for details and link)
-    requires java.logging;
-
-    requires io.helidon.common;
-    requires io.helidon.logging.common;
-
-    exports io.helidon;
-    exports io.helidon.spi;
-
-    uses io.helidon.spi.HelidonStartupProvider;
-
+@FunctionalInterface
+public interface HelidonShutdownHandler {
+    /**
+     * Handle the shutdown work of this component.
+     */
+    void shutdown();
 }
