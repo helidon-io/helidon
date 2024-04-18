@@ -21,14 +21,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import jakarta.inject.Inject;
 
-import io.helidon.microprofile.testing.junit5.ConfigBlob;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 @HelidonTest
-@ConfigBlob(content = """
+@AddConfigBlock("""
     some.key1=some.value1
     some.key2=some.value2
 """)

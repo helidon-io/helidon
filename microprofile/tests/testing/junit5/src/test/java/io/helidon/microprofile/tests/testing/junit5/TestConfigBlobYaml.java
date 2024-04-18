@@ -21,15 +21,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import jakarta.inject.Inject;
 
-import io.helidon.microprofile.testing.junit5.ConfigBlob;
-import io.helidon.microprofile.testing.junit5.ConfigBlob.Type;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock.Type;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 @HelidonTest
-@ConfigBlob(type = Type.YAML, content = """
+@AddConfigBlock(type = Type.YAML, value = """
     another1:
       key: "another1.value"
     another2:

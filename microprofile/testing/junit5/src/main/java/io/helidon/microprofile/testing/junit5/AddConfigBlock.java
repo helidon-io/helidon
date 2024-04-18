@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.testing.testng;
+package io.helidon.microprofile.testing.junit5;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,16 +33,16 @@ import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
- * Defines the configuration as a String in {@link #content()} for the
+ * Defines the configuration as a String in {@link #value()} for the
  * given type.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Inherited
-public @interface ConfigBlob {
+public @interface AddConfigBlock {
 
     /**
-     * Specifies the format type of the {@link #content()}.
+     * Specifies the format type of the {@link #value()}.
      *
      * It defaults to {@link Type#PROPERTIES}.
      *
@@ -51,14 +51,14 @@ public @interface ConfigBlob {
     Type type() default Type.PROPERTIES;
 
     /**
-     * Configuration content.
+     * Configuration value.
      *
-     * @return String with content.
+     * @return String with value.
      */
-    String content();
+    String value();
 
     /**
-     * Different formats of the configuration content.
+     * Different formats of the configuration.
      */
     enum Type {
 
@@ -67,15 +67,15 @@ public @interface ConfigBlob {
          */
         PROPERTIES {
             @Override
-            protected ConfigSource configSource(String content) {
-                Objects.requireNonNull(content);
+            protected ConfigSource configSource(String value) {
+                Objects.requireNonNull(value);
                 Properties p = new Properties();
                 try {
-                    p.load(new StringReader(content));
+                    p.load(new StringReader(value));
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-                return MpConfigSources.create("PropertiesConfigBlob", p);
+                return MpConfigSources.create("PropertiesAddConfigBlock", p);
             }
         },
         /**
@@ -83,18 +83,18 @@ public @interface ConfigBlob {
          */
         YAML {
             @Override
-            protected ConfigSource configSource(String content) {
-                Objects.requireNonNull(content);
-                return YamlMpConfigSource.create("YamlConfigBlob", new StringReader(content));
+            protected ConfigSource configSource(String value) {
+                Objects.requireNonNull(value);
+                return YamlMpConfigSource.create("YamlAddConfigBlock", new StringReader(value));
             }
         };
 
         /**
-         * Create the ConfigSource given the content.
+         * Create the ConfigSource given the value.
          *
-         * @param content
+         * @param value
          * @return the configuration
          */
-        protected abstract ConfigSource configSource(String content);
+        protected abstract ConfigSource configSource(String value);
     }
 }
