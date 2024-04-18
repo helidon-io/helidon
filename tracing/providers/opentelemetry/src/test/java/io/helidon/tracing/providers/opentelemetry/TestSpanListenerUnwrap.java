@@ -42,7 +42,7 @@ class TestSpanListenerUnwrap {
 
         SpanListener l1 = new SpanListener() {
             @Override
-            public void started(Span span) throws UnsupportedOperationException {
+            public void started(Span span) throws SpanListener.ForbiddenOperationException {
                 io.opentelemetry.api.trace.Span otelSpan = span.unwrap(io.opentelemetry.api.trace.Span.class);
                 ReadableSpan readableSpan = (ReadableSpan) otelSpan;
                 unwrapResults.set(UnwrapResults.create(readableSpan));

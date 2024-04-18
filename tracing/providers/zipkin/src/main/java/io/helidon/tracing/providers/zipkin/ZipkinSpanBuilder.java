@@ -151,17 +151,17 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
         @Override
             public io.helidon.tracing.Span build() {
-                throw new UnsupportedOperationException();
+                throw new SpanListener.ForbiddenOperationException();
             }
 
             @Override
             public Limited parent(io.helidon.tracing.SpanContext spanContext) {
-                throw new UnsupportedOperationException();
+                throw new SpanListener.ForbiddenOperationException();
             }
 
             @Override
             public Limited kind(io.helidon.tracing.Span.Kind kind) {
-                throw new UnsupportedOperationException();
+                throw new SpanListener.ForbiddenOperationException();
             }
 
             @Override
@@ -190,12 +190,12 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
             @Override
             public io.helidon.tracing.Span start() {
-                throw new UnsupportedOperationException();
+                throw new SpanListener.ForbiddenOperationException();
             }
 
             @Override
             public io.helidon.tracing.Span start(Instant instant) {
-                throw new UnsupportedOperationException();
+                throw new SpanListener.ForbiddenOperationException();
             }
         }
 }

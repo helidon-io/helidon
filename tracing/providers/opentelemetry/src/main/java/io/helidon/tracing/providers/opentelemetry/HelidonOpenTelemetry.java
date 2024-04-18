@@ -143,6 +143,9 @@ public final class HelidonOpenTelemetry {
     }
 
     static void invokeListeners(List<SpanListener> spanListeners, System.Logger logger, Consumer<SpanListener> operation) {
+        if (spanListeners.isEmpty()) {
+            return;
+        }
         List<Throwable> throwables = new ArrayList<>();
         for (SpanListener listener : spanListeners) {
             try {

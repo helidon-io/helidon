@@ -119,7 +119,7 @@ class OpenTelemetrySpan implements Span {
         if (baggage instanceof WritableBaggage writableBaggage) {
             writableBaggage.set(key, value);
         } else {
-            throw new UnsupportedOperationException(
+            throw new SpanListener.ForbiddenOperationException(
                     "Attempt to set baggage on a span with read-only baggage (perhaps from context");
         }
         return this;
@@ -181,7 +181,7 @@ class OpenTelemetrySpan implements Span {
         return new WritableBaggage() {
             @Override
             public WritableBaggage set(String key, String value) {
-                throw new UnsupportedOperationException("Attempt to modify read-only baggage");
+                throw new SpanListener.ForbiddenOperationException("Attempt to modify read-only baggage");
             }
 
             @Override
@@ -245,7 +245,7 @@ class OpenTelemetrySpan implements Span {
 
         @Override
         public void status(Status status) {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
@@ -260,17 +260,17 @@ class OpenTelemetrySpan implements Span {
 
         @Override
         public void end() {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
         public void end(Throwable t) {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
         public Scope activate() {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override

@@ -96,7 +96,7 @@ class TestSpanCallbacks {
     void checkRejectBeforeStart() {
         SpanListener l1 = new SpanListener() {
             @Override
-            public void starting(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
+            public void starting(Span.Builder<?> spanBuilder) throws SpanListener.ForbiddenOperationException {
                 spanBuilder.start();
             }
         };
@@ -112,7 +112,7 @@ class TestSpanCallbacks {
     void checkRejectAfterStart() {
         SpanListener l1 = new SpanListener() {
             @Override
-            public void started(Span span) throws UnsupportedOperationException {
+            public void started(Span span) throws SpanListener.ForbiddenOperationException {
                 span.end();
             }
         };
@@ -128,7 +128,7 @@ class TestSpanCallbacks {
     void checkRejectAfterActivateEndSpan() {
         SpanListener l1 = new SpanListener() {
             @Override
-            public void activated(Span span, Scope scope) throws UnsupportedOperationException {
+            public void activated(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
                 span.end();
             }
         };
@@ -146,7 +146,7 @@ class TestSpanCallbacks {
     void checkRejectAfterCloseSpan() {
         SpanListener l1 = new SpanListener() {
             @Override
-            public void closed(Span span, Scope scope) throws UnsupportedOperationException {
+            public void closed(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
                 span.end();
             }
         };
@@ -165,7 +165,7 @@ class TestSpanCallbacks {
     void checkRejectAfterCloseScope() {
         SpanListener l1 = new SpanListener() {
             @Override
-            public void activated(Span span, Scope scope) throws UnsupportedOperationException {
+            public void activated(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
                 scope.close();
             }
         };
@@ -184,7 +184,7 @@ class TestSpanCallbacks {
     void checkRejectAfterEndOk() {
         SpanListener l1 = new SpanListener() {
             @Override
-            public void ended(Span span) throws UnsupportedOperationException {
+            public void ended(Span span) throws SpanListener.ForbiddenOperationException {
                 span.end();
             }
         };
@@ -202,7 +202,7 @@ class TestSpanCallbacks {
     void checkRejectAfterEndBad() {
         SpanListener l1 = new SpanListener() {
             @Override
-            public void ended(Span span, Throwable t) throws UnsupportedOperationException {
+            public void ended(Span span, Throwable t) throws SpanListener.ForbiddenOperationException {
                 span.end(new Throwable());
             }
         };
@@ -224,7 +224,7 @@ class TestSpanCallbacks {
             V result = work.call();
             assertThat("Expected exception",
                        handler.logRecords(),
-                       hasItem(LogRecordMatcher.withThrown(instanceOf(UnsupportedOperationException.class))));
+                       hasItem(LogRecordMatcher.withThrown(instanceOf(SpanListener.ForbiddenOperationException.class))));
             return result;
 
         } catch (Exception ex) {
@@ -245,7 +245,7 @@ class TestSpanCallbacks {
             work.run();
             assertThat("Expected exception",
                        handler.logRecords(),
-                       hasItem(LogRecordMatcher.withThrown(instanceOf(UnsupportedOperationException.class))));
+                       hasItem(LogRecordMatcher.withThrown(instanceOf(SpanListener.ForbiddenOperationException.class))));
 
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -342,22 +342,22 @@ class TestSpanCallbacks {
         }
 
         @Override
-        public void starting(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
+        public void starting(Span.Builder<?> spanBuilder) throws SpanListener.ForbiddenOperationException {
             listenerInfo.put("starting", spanBuilder);
         }
 
         @Override
-        public void started(Span span) throws UnsupportedOperationException {
+        public void started(Span span) throws SpanListener.ForbiddenOperationException {
             span.baggage().set("started", AFTER_START_BAGGAGE_VALUE);
         }
 
         @Override
-        public void activated(Span span, Scope scope) throws UnsupportedOperationException {
+        public void activated(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
             span.baggage().set("activated", AFTER_ACTIVATE_BAGGAGE_VALUE);
         }
 
         @Override
-        public void closed(Span span, Scope scope) throws UnsupportedOperationException {
+        public void closed(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
             span.baggage().set("closed", AFTER_CLOSE_BAGGAGE_VALUE);
         }
 
@@ -379,22 +379,22 @@ class TestSpanCallbacks {
         }
 
         @Override
-        public void starting(Span.Builder<?> spanBuilder) throws UnsupportedOperationException {
+        public void starting(Span.Builder<?> spanBuilder) throws SpanListener.ForbiddenOperationException {
             spanBuilder.start();
         }
 
         @Override
-        public void started(Span span) throws UnsupportedOperationException {
+        public void started(Span span) throws SpanListener.ForbiddenOperationException {
             span.end();
         }
 
         @Override
-        public void activated(Span span, Scope scope) throws UnsupportedOperationException {
+        public void activated(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
             scope.close();
         }
 
         @Override
-        public void closed(Span span, Scope scope) throws UnsupportedOperationException {
+        public void closed(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
             span.end();
         }
 

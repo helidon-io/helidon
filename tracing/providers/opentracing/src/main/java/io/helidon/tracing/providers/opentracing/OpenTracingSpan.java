@@ -173,7 +173,7 @@ class OpenTracingSpan implements Span {
 
         @Override
         public void status(Status status) {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
@@ -188,17 +188,17 @@ class OpenTracingSpan implements Span {
 
         @Override
         public void end() {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
         public void end(Throwable t) {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
         public Scope activate() {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override

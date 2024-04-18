@@ -135,17 +135,17 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
 
         @Override
         public Span build() {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
         public Limited parent(SpanContext spanContext) {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
         public Limited kind(Span.Kind kind) {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
@@ -168,7 +168,7 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
 
         @Override
         public Span start(Instant instant) {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
     }
 }

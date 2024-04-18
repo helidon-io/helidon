@@ -56,17 +56,17 @@ public class AutoLoadedSpanListener implements SpanListener {
     }
 
     @Override
-    public void started(Span span) throws UnsupportedOperationException {
+    public void started(Span span) throws SpanListener.ForbiddenOperationException {
         span.baggage().set("auto-started", AFTER_START);
     }
 
     @Override
-    public void activated(Span span, Scope scope) throws UnsupportedOperationException {
+    public void activated(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
         span.baggage().set("auto-activated", AFTER_ACTIVATE);
     }
 
     @Override
-    public void closed(Span span, Scope scope) throws UnsupportedOperationException {
+    public void closed(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
         span.baggage().set("auto-closed", AFTER_CLOSE);
     }
 

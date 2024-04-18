@@ -73,7 +73,7 @@ package io.helidon.tracing;
  *     When Helidon invokes the listener methods it passes implementations of the key span types ({@link Span.Builder},
  *     {@link Span}, {@link io.helidon.tracing.Scope}) which <em>do not</em> support lifecycle state changes.
  *     If a listener tries to start or end or activate a span,
- *     for example, Helidon throws an {@link java.lang.UnsupportedOperationException}.
+ *     for example, Helidon throws an {@link io.helidon.tracing.SpanListener.ForbiddenOperationException}.
  */
 public interface SpanListener {
 
@@ -82,7 +82,7 @@ public interface SpanListener {
      * {@linkplain io.helidon.tracing.Span.Builder builder}.
      *
      * @param spanBuilder the {@link Span.Builder} for the builder about to be used to start a span
-     * @throws java.lang.UnsupportedOperationException if the listener tries to start the span
+     * @throws io.helidon.tracing.SpanListener.ForbiddenOperationException if the listener tries to start the span
      */
     default void starting(Span.Builder<?> spanBuilder) {
     }
@@ -91,7 +91,7 @@ public interface SpanListener {
      * Invoked just after a {@linkplain io.helidon.tracing.Span span} has been started.
      *
      * @param span {@link io.helidon.tracing.Span} for the newly-started span
-     * @throws java.lang.UnsupportedOperationException if the listener tries to end the span
+     * @throws io.helidon.tracing.SpanListener.ForbiddenOperationException if the listener tries to end the span
      */
     default void started(Span span) {
     }
@@ -102,7 +102,7 @@ public interface SpanListener {
      * @param span  the just-activated {@link io.helidon.tracing.Span}
      * @param scope the just-created {@linkplain io.helidon.tracing.Scope scope} which resulted from activating
      *              the span
-     * @throws java.lang.UnsupportedOperationException if the listener tries to close the scope or end the span
+     * @throws io.helidon.tracing.SpanListener.ForbiddenOperationException if the listener tries to close the scope or end the span
      */
     default void activated(Span span, Scope scope) {
     }
@@ -112,7 +112,7 @@ public interface SpanListener {
      *
      * @param span  {@link io.helidon.tracing.Span} for which a {@linkplain io.helidon.tracing.Scope scope} was closed
      * @param scope the just-closed {@link io.helidon.tracing.Scope}
-     * @throws java.lang.UnsupportedOperationException if the listener tries to end the span
+     * @throws io.helidon.tracing.SpanListener.ForbiddenOperationException if the listener tries to end the span
      */
     default void closed(Span span, Scope scope) {
     }
@@ -132,5 +132,30 @@ public interface SpanListener {
      * @param t    {@link java.lang.Throwable} indicating the problem associated with the ended span
      */
     default void ended(Span span, Throwable t) {
+    }
+
+    /**
+     * Exception indicating that a {@code SpanListener} has invoked an operation that is not permitted.
+     * <p>
+     *     If a listener invokes a method which alters the state of a {@link io.helidon.tracing.Span.Builder}, {@link io.helidon.tracing.Span}, or
+     *     {@link io.helidon.tracing.Scope} passed as a parameter, Helidon throws this exception.
+     * </p>
+     */
+    class ForbiddenOperationException extends RuntimeException {
+
+        /**
+         * Creates a new instance of the exception with the specified message.
+         *
+         * @param message message to set for the exception
+         */
+        public ForbiddenOperationException(String message) {
+            super(message);
+        }
+
+        /**
+         * Creates a new instance of the exception with no message.
+         */
+        public ForbiddenOperationException() {
+        }
     }
 }

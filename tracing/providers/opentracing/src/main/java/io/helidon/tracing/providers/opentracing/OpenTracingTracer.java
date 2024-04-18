@@ -97,7 +97,7 @@ class OpenTracingTracer implements Tracer {
             delegate.inject(otc.openTracing(), Format.Builtin.HTTP_HEADERS, new TextMap() {
                 @Override
                 public Iterator<Map.Entry<String, String>> iterator() {
-                    throw new UnsupportedOperationException(
+                    throw new SpanListener.ForbiddenOperationException(
                             "TextMapInjectAdapter should only be used with Tracer.inject()");
                 }
 

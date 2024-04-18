@@ -62,7 +62,7 @@ class OpenTracingScope implements Scope {
 
         @Override
         public void close() {
-            throw new UnsupportedOperationException();
+            throw new SpanListener.ForbiddenOperationException();
         }
 
         @Override
