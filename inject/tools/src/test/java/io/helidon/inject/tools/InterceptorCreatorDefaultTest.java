@@ -58,7 +58,12 @@ class InterceptorCreatorDefaultTest extends AbstractBaseCreator {
                    containsInAnyOrder(
                            Annotation.create(Documented.class),
                            Annotation.create(Retention.class, "java.lang.annotation.RetentionPolicy.CLASS"),
-                           Annotation.create(Target.class, "{java.lang.annotation.ElementType.ANNOTATION_TYPE}")
+                           Annotation.create(Target.class, "{java.lang.annotation.ElementType.ANNOTATION_TYPE}"),
+                           Annotation.builder()
+                                   .type(Deprecated.class)
+                                   .putValue("forRemoval", "true")
+                                   .putValue("since", "4.0.8")
+                                   .build()
                    ));
     }
 

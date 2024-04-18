@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import jakarta.inject.Qualifier;
  * This configured prototype should be acting as a config bean. This means that if appropriate configuration
  * exists (must be a root configured type with a defined prefix), an instance will be created from that configuration.
  * Additional setup is possible to ensure an instance even if not present in config, and to create default (unnamed) instance.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target(java.lang.annotation.ElementType.TYPE)
