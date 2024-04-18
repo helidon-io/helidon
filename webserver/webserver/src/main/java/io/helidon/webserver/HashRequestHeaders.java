@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,6 @@ class HashRequestHeaders extends ReadOnlyHeaders implements RequestHeaders {
 
             if (acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.equals(acceptValues.get(0))) {
                 result = HUC_ACCEPT_DEFAULT_TYPES;
-
             } else {
                 result = LazyList.create(acceptValues.stream()
                         .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
@@ -145,29 +144,33 @@ class HashRequestHeaders extends ReadOnlyHeaders implements RequestHeaders {
         if (mediaTypes == null || mediaTypes.length == 0) {
             return Optional.empty();
         }
-        List<MediaType> accepts = acceptedTypes();
-        if (accepts == null || accepts.isEmpty()) {
-            return Optional.ofNullable(mediaTypes[0]);
-        }
+        try {
+            List<MediaType> accepts = acceptedTypes();
+            if (accepts == null || accepts.isEmpty()) {
+                return Optional.ofNullable(mediaTypes[0]);
+            }
 
-        double best = 0;
-        MediaType result = null;
-        for (MediaType mt : mediaTypes) {
-            if (mt != null) {
-                for (MediaType acc : accepts) {
-                    double q = acc.qualityFactor();
-                    if (q > best && acc.test(mt)) {
-                        if (q == 1) {
-                            return Optional.of(mt);
-                        } else {
-                            best = q;
-                            result = mt;
+            double best = 0;
+            MediaType result = null;
+            for (MediaType mt : mediaTypes) {
+                if (mt != null) {
+                    for (MediaType acc : accepts) {
+                        double q = acc.qualityFactor();
+                        if (q > best && acc.test(mt)) {
+                            if (q == 1) {
+                                return Optional.of(mt);
+                            } else {
+                                best = q;
+                                result = mt;
+                            }
                         }
                     }
                 }
             }
+            return Optional.ofNullable(result);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Unable to parse Accept header", e);
         }
-        return Optional.ofNullable(result);
     }
 
     @Override
