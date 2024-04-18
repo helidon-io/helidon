@@ -1,8 +1,0 @@
-[
-    {
-        "name": "com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector",
-        "methods": [
-            { "name": "<init>", "parameterTypes": [] }
-        ]
-    }
-]
