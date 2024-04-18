@@ -337,7 +337,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 // the OutboundConfig.create() expects the provider configuration, not the outbound configuration
                 Config outboundConfig = config.get("outbound");
                 if (outboundConfig.exists()) {
-                    outboundConfig(OutboundConfig.create(outboundConfig));
+                    outboundConfig(OutboundConfig.create(config));
                 }
             }
             config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
