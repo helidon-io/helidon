@@ -16,7 +16,10 @@
 
 package io.helidon.microprofile.testing.junit5;
 
+import java.io.IOException;
 import java.io.Serial;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -30,13 +33,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.testing.junit5.AddConfigBlock.Type;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -323,8 +326,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     builder.withSources(MpConfigSources.classPath(it).toArray(new ConfigSource[0]));
                 }
             });
-            if (configMeta.type != null) {
-                builder.withSources(configMeta.type.configSource(configMeta.block));
+            if (configMeta.type != null && configMeta.block != null) {
+                builder.withSources(configSource(configMeta.type, configMeta.block));
             }
             config = builder
                     .withSources(MpConfigSources.create(configMeta.additionalKeys))
@@ -333,6 +336,23 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     .addDiscoveredConverters()
                     .build();
             configProviderResolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
+        }
+    }
+
+    private ConfigSource configSource(String type, String block) {
+        String lowerCase = type.toLowerCase();
+        if ("properties".equals(lowerCase)) {
+            Properties p = new Properties();
+            try {
+                p.load(new StringReader(block));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return MpConfigSources.create("PropertiesAddConfigBlock", p);
+        } else if ("yaml".equals(lowerCase)) {
+            return YamlMpConfigSource.create("YamlAddConfigBlock", new StringReader(block));
+        } else {
+            throw new IllegalArgumentException(type + " is not supported");
         }
     }
 
@@ -606,7 +626,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private static final class ConfigMeta {
         private final Map<String, String> additionalKeys = new HashMap<>();
         private final List<String> additionalSources = new ArrayList<>();
-        private Type type;
+        private String type;
         private String block;
         private boolean useExisting;
         private String profile;
