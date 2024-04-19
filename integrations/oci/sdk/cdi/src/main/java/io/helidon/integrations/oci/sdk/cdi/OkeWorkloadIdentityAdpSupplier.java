@@ -15,8 +15,10 @@
  */
 package io.helidon.integrations.oci.sdk.cdi;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
@@ -172,8 +174,8 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
      *
      * @return {@code true} if and only if the file identified by the value of the {@code
      * OCI_KUBERNETES_SERVICE_ACCOUNT_CERT_PATH} environment variable, or the default value "{@code
-     * /var/run/secrets/kubernetes.io/serviceaccount/ca.crt}", {@linkplain BasicFileAttributes#isRegularFile() is a
-     * regular file}; {@code false} in all other cases
+     * /var/run/secrets/kubernetes.io/serviceaccount/ca.crt}", exists and {@linkplain
+     * BasicFileAttributes#isRegularFile() is a regular file}; {@code false} in all other cases
      *
      * @exception UncheckedIOException if there was an error checking attributes of the (extant) file
      */
@@ -184,6 +186,8 @@ class OkeWorkloadIdentityAdpSupplier implements AdpSupplier<OkeWorkloadIdentityA
                                        .orElse("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")),
                                BasicFileAttributes.class)
                 .isRegularFile(); // (symbolic links are followed by default)
+        } catch (FileNotFoundException | NoSuchFileException e) {
+            return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e.getMessage(), e);
         }
