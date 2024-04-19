@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the element kind
      * @see io.helidon.common.types.TypeInfo
-     * @deprecated use {@link #kind()} instead
+     * @deprecated use {@link io.helidon.common.types.TypedElementInfo#kind()} instead
      */
     @Option.Required
     @Option.Deprecated("kind")
@@ -84,7 +84,7 @@ interface TypedElementInfoBlueprint extends Annotated {
     Optional<String> defaultValue();
 
     /**
-     * The list of known annotations on the type name referenced by {@link #typeName()}.
+     * The list of known annotations on the type name referenced by {@link io.helidon.common.types.TypedElementInfo#typeName()}.
      *
      * @return the list of annotations on this element's (return) type.
      */
@@ -104,7 +104,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return element modifiers
      * @see io.helidon.common.types.TypeInfo
-     * @deprecated use {@link #elementModifiers()} instead
+     * @deprecated use {@link io.helidon.common.types.TypedElementInfo#elementModifiers()} instead
      */
     @Option.Singular
     @Option.Redundant

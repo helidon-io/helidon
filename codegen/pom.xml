@@ -33,6 +33,11 @@
 
     <packaging>pom</packaging>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+        <dependency-plugin.skip>false</dependency-plugin.skip>
+    </properties>
+
     <modules>
         <module>codegen</module>
         <module>class-model</module>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,25 @@ public class SingleSubscriberHolder<T> {
     private final CompletableFuture<Flow.Subscriber<? super T>> subscriber = new CompletableFuture<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicBoolean onSubscribeCalled = new AtomicBoolean(false);
+
+    /**
+     * This constructor should not be exposed.
+     *
+     * @deprecated use {@link #create()} instead.
+     */
+    @Deprecated(forRemoval = true, since = "4.0.9")
+    public SingleSubscriberHolder() {
+    }
+
+    /**
+     * Create a new instance.
+     *
+     * @return a new instance to use as a subscriber holder
+     * @param <T> type of the subscriber
+     */
+    public static <T> SingleSubscriberHolder<T> create() {
+        return new SingleSubscriberHolder<>();
+    }
 
     /**
      * Register a new subscriber.

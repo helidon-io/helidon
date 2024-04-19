@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,13 @@ public class SocketHttpClient implements AutoCloseable {
     private boolean connected;
     private BufferedReader socketReader;
 
+    /**
+     * Create a new client connecting to the specified coordinates.
+     *
+     * @param host host to connect to
+     * @param port port to connect to
+     * @param timeout socket timeout
+     */
     protected SocketHttpClient(String host, int port, Duration timeout) {
         this.host = host;
         this.port = port;
@@ -555,7 +562,7 @@ public class SocketHttpClient implements AutoCloseable {
      *
      * @param payload text to be sent
      * @return this http client
-     * @throws IOException
+     * @throws IOException in case the underlying socket throws an exception
      */
     public SocketHttpClient continuePayload(String payload)
             throws IOException {
@@ -572,7 +579,7 @@ public class SocketHttpClient implements AutoCloseable {
      *
      * @param payload of the chunk
      * @return this http client
-     * @throws IOException
+     * @throws IOException in case the underlying socket throws an exception
      */
     public SocketHttpClient sendChunk(String payload) throws IOException {
         continuePayload(Integer.toHexString(payload.length()) + EOL + payload + EOL);

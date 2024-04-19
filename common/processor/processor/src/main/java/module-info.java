@@ -22,7 +22,6 @@
 @Deprecated(forRemoval = true, since = "4.1.0")
 module io.helidon.common.processor {
 
-    requires io.helidon.common.processor.classmodel;
     requires jdk.compiler;
 
     requires transitive io.helidon.common.types;

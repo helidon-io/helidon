@@ -527,7 +527,7 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
+                    <artifactId>maven-resources-plugin</artifactId>
                     <version>${version.plugin.resources}</version>
                 </plugin>
                 <plugin>
@@ -918,7 +918,7 @@
                             <ignoredPackagings>
                                 <packaging>pom</packaging>
                             </ignoredPackagings>
-                            <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
+                            <ignoreNonCompile>true</ignoreNonCompile>
                             <failOnWarning>true</failOnWarning>
                         </configuration>
                     </execution>

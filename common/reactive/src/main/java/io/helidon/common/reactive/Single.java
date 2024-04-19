@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
-import io.helidon.common.mapper.Mapper;
 
 /**
  * Represents a {@link Flow.Publisher} that may: signal one item then completes, complete without
@@ -320,7 +319,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
-     * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
+     * Map this {@link Single} instance to a publisher using the given mapper.
      *
      * @param <U>    mapped items type
      * @param mapper mapper
