@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,6 +182,10 @@ abstract class Response implements ServerResponse {
                 sendPublisher.subscribe(bareResponse);
             }, content == null);
             return whenSent();
+        } catch (IllegalStateException e) {
+            eventListener.finish();
+            throw e.getCause() instanceof IllegalArgumentException
+                    ? new BadRequestException("Unable to process request", e) : e;
         } catch (RuntimeException | Error e) {
             eventListener.finish();
             throw e;
