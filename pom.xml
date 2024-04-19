@@ -49,8 +49,14 @@
         <spotbugs.skip>false</spotbugs.skip>
         <spotbugs.threshold>Medium</spotbugs.threshold>
 
+        <!-- owasp dependency check -->
         <dependency-check.skip>false</dependency-check.skip>
         <checkstyle.skip>false</checkstyle.skip>
+
+        <!-- Maven dependency check -->
+        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
+        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
+
         <!--
         !Version statement! - begin
 
@@ -264,6 +270,7 @@
                     <configuration>
                         <source>${version.java}</source>
                         <failOnError>true</failOnError>
+                        <failOnWarnings>${javadoc.fail-on-warnings}</failOnWarnings>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <offline>true</offline>
@@ -520,7 +527,7 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
+                    <artifactId>maven-dependency-plugin</artifactId>
                     <version>${version.plugin.resources}</version>
                 </plugin>
                 <plugin>
@@ -893,6 +900,27 @@
                         <goals>
                             <goal>services</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <phase>verify</phase>
+                        <configuration>
+                            <skip>${dependency-plugin-check-dependencies.skip}</skip>
+                            <ignoredPackagings>
+                                <packaging>pom</packaging>
+                            </ignoredPackagings>
+                            <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
+                            <failOnWarning>true</failOnWarning>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
