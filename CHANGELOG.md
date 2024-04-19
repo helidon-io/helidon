@@ -9,6 +9,22 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.8]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Native image: resolve native-image warnings after Netty upgrade [7084](https://github.com/helidon-io/helidon/pull/7084)
+- OIDC: Oidc feature is not failing if not configured. [8625](https://github.com/helidon-io/helidon/pull/8625)
+- Tracing: Fix OTel extract when there is no current context [8578](https://github.com/helidon-io/helidon/pull/8578)
+- WebServer: Improves handling of invalid Accept types [8679](https://github.com/helidon-io/helidon/pull/8679)
+- WebSocket: support for users to control the outcome of a WebSocket upgrade request [8594](https://github.com/helidon-io/helidon/pull/8594)
+- Dependencies: Upgrade kafka-clients to 3.6.2 [8663](https://github.com/helidon-io/helidon/pull/8663)
+- Dependencies: Upgrade oci sdk to 3.39.0 [8621](https://github.com/helidon-io/helidon/pull/8621)
+- Dependencies: Remove dependency on jakarta.activation-api [8654](https://github.com/helidon-io/helidon/pull/8654)
+- Docs: Fix wrong example for Config.onChange (#7716) [8592](https://github.com/helidon-io/helidon/pull/8592)
+
 ## [3.2.7]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -36,7 +52,6 @@ This is a bugfix release of Helidon and is recommended for all users of Helidon 
 - Examples: cleanup for archetypes [8454](https://github.com/helidon-io/helidon/pull/8454)
 - Examples: example removal (migration to helidon-examples) [8437](https://github.com/helidon-io/helidon/pull/8437)
 - Examples: validation flow for external examples repo [7889](https://github.com/helidon-io/helidon/pull/7889)
-
 
 ## [3.2.6]
 
@@ -892,6 +907,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.8]: https://github.com/helidon-io/helidon/compare/3.2.7...3.2.8
 [3.2.7]: https://github.com/helidon-io/helidon/compare/3.2.6...3.2.7
 [3.2.6]: https://github.com/helidon-io/helidon/compare/3.2.5...3.2.6
 [3.2.5]: https://github.com/helidon-io/helidon/compare/3.2.4...3.2.5
