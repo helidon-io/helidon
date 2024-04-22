@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import io.helidon.inject.api.InjectionPointProvider;
  * Defines how the generator should allow the presence of {@link jakarta.inject.Provider}'s or
  * {@link InjectionPointProvider}'s. Since providers add a level of non-deterministic behavior
  * to the system it is required for the application to explicitly define whether this feature should be permitted.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public enum PermittedProviderType {
 
     /**

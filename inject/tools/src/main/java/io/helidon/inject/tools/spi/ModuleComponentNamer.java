@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import io.helidon.inject.api.ModuleComponent;
  * {@link ModuleComponent} being generated. Note that this provider will only be called if there is some
  * ambiguity in choosing a name (e.g., there are no exports or there is no {@code module-info} for the module being processed,
  * etc.)
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public interface ModuleComponentNamer {
 
     /**

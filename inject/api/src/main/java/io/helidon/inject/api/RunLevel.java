@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@ import static java.lang.annotation.ElementType.TYPE;
 /**
  * Indicates the desired startup sequence for a service class. This is not used internally by Injection, but is available as a
  * convenience to the caller in support for a specific startup sequence for service activations.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target(TYPE)

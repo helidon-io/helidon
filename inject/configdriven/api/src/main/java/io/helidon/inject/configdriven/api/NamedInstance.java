@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ package io.helidon.inject.configdriven.api;
  * @param instance instance of config bean
  * @param name the instance may have a name, if this is the default (not named), the name is set to {@value #DEFAULT_NAME}
  * @param <T> type of the instance
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public record NamedInstance<T>(T instance, String name) {
     /**
      * Default name of an instance that is not named for the purpose of injection, for example.

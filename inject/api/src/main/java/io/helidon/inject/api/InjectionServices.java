@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ import io.helidon.common.types.TypeName;
  * primordial bootstrap configuration to the {@code Injection} services provider. One must establish any bootstrap instance
  * prior to the first call to {@link #injectionServices()} as it will use a default configuration if not explicitly set. Once
  * the bootstrap has been set it cannot be changed for the lifespan of the JVM.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public interface InjectionServices {
     /**
      * Tag for putting Injection tooling, processing, and runtime into debug mode.
