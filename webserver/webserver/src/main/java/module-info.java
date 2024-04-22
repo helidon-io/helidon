@@ -32,8 +32,8 @@ module io.helidon.webserver {
     requires io.helidon.common.task;
     requires io.helidon.common.uri;
     requires io.helidon.logging.common;
-    requires java.logging; // only used to keep logging active until shutdown hook finishes
     requires java.management;
+    requires io.helidon;
 
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.context;
