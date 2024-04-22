@@ -64,13 +64,13 @@ class OpenTelemetryScope implements Scope {
     private record Limited(OpenTelemetryScope delegate) implements Scope {
 
         @Override
-            public void close() {
-                throw new SpanListener.ForbiddenOperationException();
-            }
-
-            @Override
-            public boolean isClosed() {
-                return delegate.isClosed();
-            }
+        public void close() {
+            throw new SpanListener.ForbiddenOperationException();
         }
+
+        @Override
+        public boolean isClosed() {
+            return delegate.isClosed();
+        }
+    }
 }
