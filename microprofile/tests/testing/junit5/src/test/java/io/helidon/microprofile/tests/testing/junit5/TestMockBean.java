@@ -34,11 +34,16 @@ import org.mockito.Mockito;
 @HelidonTest
 @AddBean(TestMockBean.Resource.class)
 //@AddBean(TestMockBean.Service.class)
+//@AddBean(TestMockBean.OtherService.class)
 public class TestMockBean {
 
-    @Inject
+    // Without @Inject
     @MockBean
     private Service service;
+    // With @Inject
+    @Inject
+    @MockBean
+    private OtherService otherService;
     @Inject
     private WebTarget target;
 
@@ -47,6 +52,8 @@ public class TestMockBean {
         Mockito.when(service.test()).thenReturn("Mocked");
         String response = target.path("/test").request().get(String.class);
         assertThat(response, is("Mocked"));
+        Mockito.when(otherService.test()).thenReturn("Mocked");
+        assertThat(otherService.test(), is("Mocked"));
     }
 
     @Path("/test")
@@ -65,6 +72,14 @@ public class TestMockBean {
 
         public String test() {
             return "Not Mocked";
+        }
+
+    }
+
+    public static class OtherService {
+
+        public String test() {
+            return "OtherService";
         }
 
     }

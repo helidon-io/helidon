@@ -25,7 +25,8 @@ import java.lang.annotation.Target;
  * A field annotated with @MockBean will be mocked by Mockito
  * and injected in every place it is referenced.
  */
-@Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 public @interface MockBean {
+
 }

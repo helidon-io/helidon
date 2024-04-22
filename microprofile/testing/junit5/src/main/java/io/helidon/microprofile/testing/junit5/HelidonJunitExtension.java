@@ -545,6 +545,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 MockBean mockBean = field.getAnnotated().getAnnotation(MockBean.class);
                 if (mockBean != null) {
                     Field f = field.getAnnotated().getJavaMember();
+                    // Adds @Inject if not found, so it is more user friendly
+                    field.add(Literal.INSTANCE);
                     Class<?> fieldType = f.getType();
                     mocks.add(fieldType);
                 }
@@ -575,7 +577,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 event.addBean()
                     .addType(type)
                     .scope(ApplicationScoped.class)
-                    .createWith(inst -> Mockito.mock(type));
+                    .createWith(inst -> Mockito.mock(type))
+                    .priority(0);
             });
         }
 
@@ -765,4 +768,15 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
     }
 
+    /**
+     * Supports inline instantiation of the {@link Inject} annotation.
+     */
+    private static final class Literal extends AnnotationLiteral<Inject> implements Inject {
+
+        private static final Literal INSTANCE = new Literal();
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+    }
 }
