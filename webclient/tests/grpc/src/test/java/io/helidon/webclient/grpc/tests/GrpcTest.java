@@ -117,6 +117,13 @@ class GrpcTest extends GrpcBaseTest {
     }
 
     @Test
+    void testServerStreamingSplitEmpty() {
+        Iterator<Strings.StringMessage> res = grpcClient.serviceClient(serviceDescriptor)
+                .serverStream("Split", newStringMessage(""));
+        assertThat(res.hasNext(), is(false));
+    }
+
+    @Test
     void testServerStreamingSplitAsync() throws ExecutionException, InterruptedException, TimeoutException {
         CompletableFuture<Iterator<Strings.StringMessage>> future = new CompletableFuture<>();
         grpcClient.serviceClient(serviceDescriptor)

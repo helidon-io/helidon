@@ -87,6 +87,14 @@ class GrpcStubTest extends GrpcBaseTest {
     }
 
     @Test
+    void testServerStreamingSplitEmpty() {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
+        Iterator<Strings.StringMessage> res = service.split(newStringMessage(""));
+        assertThat(res.hasNext(), is(false));
+    }
+
+    @Test
     void testServerStreamingSplitAsync() throws ExecutionException, InterruptedException, TimeoutException {
         GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
         StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(grpcClient.channel());

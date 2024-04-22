@@ -153,7 +153,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         frameData = clientStream().readOne(WAIT_TIME_MILLIS_DURATION);
                     } catch (StreamTimeoutException e) {
                         socket().log(LOGGER, ERROR, "[Reading thread] read timeout");
-                        continue;
+                        break;
                     }
                     if (frameData != null) {
                         receivingQueue.add(frameData.data());

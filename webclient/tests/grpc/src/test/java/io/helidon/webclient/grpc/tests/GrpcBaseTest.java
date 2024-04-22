@@ -93,12 +93,15 @@ class GrpcBaseTest {
 
     static void split(Strings.StringMessage req,
                               StreamObserver<Strings.StringMessage> streamObserver) {
-        String[] strings = req.getText().split(" ");
-        for (String string : strings) {
-            streamObserver.onNext(Strings.StringMessage.newBuilder()
-                    .setText(string)
-                    .build());
+        String reqString = req.getText();
+        if (!reqString.isEmpty()) {
+            String[] strings = reqString.split(" ");
+            for (String s : strings) {
+                streamObserver.onNext(Strings.StringMessage.newBuilder()
+                        .setText(s)
+                        .build());
 
+            }
         }
         streamObserver.onCompleted();
     }
