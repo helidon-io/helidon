@@ -46,6 +46,8 @@ import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AnnotatedParameter;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
@@ -77,6 +79,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
 
@@ -521,11 +524,12 @@ class HelidonJunitExtension implements BeforeAllCallback,
         private final HashMap<String, Annotation> socketAnnotations = new HashMap<>();
         private final Set<Class<?>> mocks = new HashSet<>();
 
+        private MockSettings mockSettings;
+
         private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
             this.testClass = testClass;
             this.addBeans = addBeans;
         }
-
 
         void processSocketInjectionPoints(@Observes ProcessInjectionPoint<?, WebTarget> event) throws Exception{
              InjectionPoint injectionPoint = event.getInjectionPoint();
@@ -537,6 +541,20 @@ class HelidonJunitExtension implements BeforeAllCallback,
                         break;
                     }
                 }
+        }
+
+        private MockSettings mockSettings(BeanManager beanManager) {
+            if (mockSettings == null) {
+                Set<Bean<?>> beans = beanManager.getBeans(MockSettings.class);
+                if (!beans.isEmpty()) {
+                    Bean<?> bean = beans.iterator().next();
+                    mockSettings = (MockSettings) beanManager.getReference(bean, MockSettings.class,
+                            beanManager.createCreationalContext(null));
+                } else {
+                    mockSettings = Mockito.withSettings();
+                }
+            }
+            return mockSettings;
         }
 
         void processMockBean(@Observes @WithAnnotations(MockBean.class) ProcessAnnotatedType<?> obj) throws Exception {
@@ -566,7 +584,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             });
         }
 
-        void registerOtherBeans(@Observes AfterBeanDiscovery event) {
+        void registerOtherBeans(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
 
             Client client = ClientBuilder.newClient();
 
@@ -591,7 +609,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     .addType(type)
                     .scope(ApplicationScoped.class)
                     .alternative(true)
-                    .createWith(inst -> Mockito.mock(type))
+                    .createWith(inst -> Mockito.mock(type, mockSettings(beanManager)))
                     .priority(0);
             });
         }

@@ -19,6 +19,7 @@ package io.helidon.microprofile.tests.testing.junit5;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -29,6 +30,8 @@ import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.microprofile.testing.junit5.MockBean;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
+import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
 @HelidonTest
@@ -49,11 +52,19 @@ class TestMockBeanField {
 
     @Test
     void injectionTest() {
-        Mockito.when(service.test()).thenReturn("Mocked");
         String response = target.path("/test").request().get(String.class);
+        // Defaults to specified in @Produces
+        assertThat(response, is("Not Mocked"));
+        Mockito.when(service.test()).thenReturn("Mocked");
+        response = target.path("/test").request().get(String.class);
         assertThat(response, is("Mocked"));
         Mockito.when(otherService.test()).thenReturn("Mocked");
         assertThat(otherService.test(), is("Mocked"));
+    }
+
+    @Produces
+    MockSettings mockSettings() {
+        return Mockito.withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS);
     }
 
     @Path("/test")
