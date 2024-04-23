@@ -33,8 +33,8 @@ import org.mockito.Mockito;
 
 @HelidonTest
 @AddBean(TestMockBean.Resource.class)
-//@AddBean(TestMockBean.Service.class)
-//@AddBean(TestMockBean.OtherService.class)
+@AddBean(TestMockBean.Service.class)
+@AddBean(TestMockBean.OtherService.class)
 public class TestMockBean {
 
     // Without @Inject

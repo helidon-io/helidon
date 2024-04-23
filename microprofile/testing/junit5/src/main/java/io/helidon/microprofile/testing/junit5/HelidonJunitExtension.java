@@ -577,6 +577,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 event.addBean()
                     .addType(type)
                     .scope(ApplicationScoped.class)
+                    .alternative(true)
                     .createWith(inst -> Mockito.mock(type))
                     .priority(0);
             });
