@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,12 +46,15 @@ import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.InjectionTarget;
 import jakarta.enterprise.inject.spi.InjectionTargetFactory;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
@@ -62,6 +66,8 @@ import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
+import org.mockito.MockSettings;
+import org.mockito.Mockito;
 import org.testng.IClassListener;
 import org.testng.ITestClass;
 import org.testng.ITestListener;
@@ -301,6 +307,11 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                         + " injection into fields or constructor is not supported, as each"
                         + " test method uses a different CDI container. Field " + field
                         + " is annotated with @Inject");
+            } else if (field.getAnnotation(MockBean.class) != null) {
+                throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
+                        + " injection into fields or constructor is not supported, as each"
+                        + " test method uses a different CDI container. Field " + field
+                        + " is annotated with @MockBean");
             }
         }
 
@@ -311,6 +322,11 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                         + " injection into fields or constructor is not supported, as each"
                         + " test method uses a different CDI container. Field " + field
                         + " is annotated with @Inject");
+            } else if (field.getAnnotation(MockBean.class) != null) {
+                throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
+                        + " injection into fields or constructor is not supported, as each"
+                        + " test method uses a different CDI container. Field " + field
+                        + " is annotated with @MockBean");
             }
         }
     }
@@ -419,6 +435,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private static class AddBeansExtension implements Extension {
         private final Class<?> testClass;
         private final List<AddBean> addBeans;
+        private final Set<Class<?>> mocks = new HashSet<>();
 
         private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
             this.testClass = testClass;
@@ -426,7 +443,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
 
         @SuppressWarnings("unchecked")
-        void registerOtherBeans(@Observes AfterBeanDiscovery event) {
+        void registerOtherBeans(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
             Client client = ClientBuilder.newClient();
 
             event.addBean()
@@ -445,6 +462,26 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                             return client.target("http://localhost:7001");
                         }
                     });
+
+            // Register all mocks
+            mocks.forEach(type -> {
+                event.addBean()
+                    .addType(type)
+                    .scope(ApplicationScoped.class)
+                    .alternative(true)
+                    .createWith(inst -> {
+                        Set<Bean<?>> beans = beanManager.getBeans(MockSettings.class);
+                        if (!beans.isEmpty()) {
+                            Bean<?> bean = beans.iterator().next();
+                            MockSettings mockSettings = (MockSettings) beanManager.getReference(bean, MockSettings.class,
+                                    beanManager.createCreationalContext(null));
+                            return Mockito.mock(type, mockSettings);
+                        } else {
+                            return Mockito.mock(type);
+                        }
+                    })
+                    .priority(0);
+            });
         }
 
         void registerAddedBeans(@Observes BeforeBeanDiscovery event) {
@@ -469,6 +506,20 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                     configurator.add(scope);
                 }
             }
+        }
+
+        void processMockBean(@Observes @WithAnnotations(MockBean.class) ProcessAnnotatedType<?> obj) throws Exception {
+            var configurator = obj.configureAnnotatedType();
+            configurator.fields().forEach(field -> {
+                MockBean mockBean = field.getAnnotated().getAnnotation(MockBean.class);
+                if (mockBean != null) {
+                    Field f = field.getAnnotated().getJavaMember();
+                    // Adds @Inject to be more user friendly
+                    field.add(Literal.INSTANCE);
+                    Class<?> fieldType = f.getType();
+                    mocks.add(fieldType);
+                }
+            });
         }
 
         private boolean hasBda(Class<?> value) {
@@ -617,4 +668,15 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
     }
 
+    /**
+     * Supports inline instantiation of the {@link Inject} annotation.
+     */
+    private static final class Literal extends AnnotationLiteral<Inject> implements Inject {
+
+        private static final Literal INSTANCE = new Literal();
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+    }
 }
