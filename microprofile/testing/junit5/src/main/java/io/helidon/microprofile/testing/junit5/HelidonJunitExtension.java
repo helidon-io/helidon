@@ -524,8 +524,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
         private final HashMap<String, Annotation> socketAnnotations = new HashMap<>();
         private final Set<Class<?>> mocks = new HashSet<>();
 
-        private MockSettings mockSettings;
-
         private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
             this.testClass = testClass;
             this.addBeans = addBeans;
@@ -541,20 +539,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                         break;
                     }
                 }
-        }
-
-        private MockSettings mockSettings(BeanManager beanManager) {
-            if (mockSettings == null) {
-                Set<Bean<?>> beans = beanManager.getBeans(MockSettings.class);
-                if (!beans.isEmpty()) {
-                    Bean<?> bean = beans.iterator().next();
-                    mockSettings = (MockSettings) beanManager.getReference(bean, MockSettings.class,
-                            beanManager.createCreationalContext(null));
-                } else {
-                    mockSettings = Mockito.withSettings();
-                }
-            }
-            return mockSettings;
         }
 
         void processMockBean(@Observes @WithAnnotations(MockBean.class) ProcessAnnotatedType<?> obj) throws Exception {
@@ -609,7 +593,17 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     .addType(type)
                     .scope(ApplicationScoped.class)
                     .alternative(true)
-                    .createWith(inst -> Mockito.mock(type, mockSettings(beanManager)))
+                    .createWith(inst -> {
+                        Set<Bean<?>> beans = beanManager.getBeans(MockSettings.class);
+                        if (!beans.isEmpty()) {
+                            Bean<?> bean = beans.iterator().next();
+                            MockSettings mockSettings = (MockSettings) beanManager.getReference(bean, MockSettings.class,
+                                    beanManager.createCreationalContext(null));
+                            return Mockito.mock(type, mockSettings);
+                        } else {
+                            return Mockito.mock(type);
+                        }
+                    })
                     .priority(0);
             });
         }
