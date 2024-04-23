@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,9 @@ import io.helidon.common.types.TypeName;
  * first looks for
  * {@link io.helidon.common.Weighted}, then {@link jakarta.annotation.Priority}, and finally by the alphabetic ordering according
  * to the type name (package and class canonical name).
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public interface Services {
 
     /**

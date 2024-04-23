@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,9 @@ import static io.helidon.inject.api.ServiceInfoBasics.DEFAULT_INJECT_WEIGHT;
  * instance will track the set of loaded modules and applications that are loaded by this JVM.
  *
  * @see InjectionServices#injectionServices()
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 @Singleton
 @Weight(DEFAULT_INJECT_WEIGHT)
 public class DefaultInjectionServicesProvider implements InjectionServicesProvider, Resettable {

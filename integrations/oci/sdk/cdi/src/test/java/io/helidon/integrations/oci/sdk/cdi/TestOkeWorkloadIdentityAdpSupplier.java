@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.integrations.oci.sdk.cdi;
 
-package io.helidon.inject.api;
+import org.junit.jupiter.api.Test;
 
-/**
- * The kind of injection target.
- * @deprecated Helidon inject is deprecated and will be replaced in a future version
- */
-@Deprecated(forRemoval = true, since = "4.0.8")
-public enum ElementKind {
-    /**
-     * The injectable constructor.  Note that there can be at most 1 injectable constructor.
-     */
-    CONSTRUCTOR,
+import static io.helidon.integrations.oci.sdk.cdi.OkeWorkloadIdentityAdpSupplier.available;
 
-    /**
-     * A field.
-     */
-    FIELD,
+class TestOkeWorkloadIdentityAdpSupplier {
 
-    /**
-     * A method.
-     */
-    METHOD
+    private TestOkeWorkloadIdentityAdpSupplier() {
+        super();
+    }
+
+    @Test
+    void testAvailability() {
+        available(); // make sure this does not throw any exception, whether its backing file exists or not
+    }
+
 }

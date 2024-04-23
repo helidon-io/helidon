@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.inject.api;
+package io.helidon.spi;
 
 /**
- * The kind of injection target.
- * @deprecated Helidon inject is deprecated and will be replaced in a future version
+ * Handles shutdown of the VM.
+ * <p>
+ * Register an instance with {@link io.helidon.Main#addShutdownHandler(HelidonShutdownHandler)},
+ * remove with {@link io.helidon.Main#removeShutdownHandler(HelidonShutdownHandler)}.
+ * Shutdown handlers are compared via instances, not via equals methods.
  */
-@Deprecated(forRemoval = true, since = "4.0.8")
-public enum ElementKind {
+@FunctionalInterface
+public interface HelidonShutdownHandler {
     /**
-     * The injectable constructor.  Note that there can be at most 1 injectable constructor.
+     * Handle the shutdown work of this component.
      */
-    CONSTRUCTOR,
-
-    /**
-     * A field.
-     */
-    FIELD,
-
-    /**
-     * A method.
-     */
-    METHOD
+    void shutdown();
 }

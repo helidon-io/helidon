@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,9 @@ import io.helidon.inject.api.ModuleComponent;
  * This class is used to generate the source and resources originating from either annotation processing or maven-plugin
  * invocation. It also provides a circuit breaker in case the filer should be disabled from actually writing out source
  * and resources, and instead will use the filer's messager to report what it would have performed (applicable for apt cases).
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public class CodeGenFiler {
     private static final boolean FORCE_MODULE_INFO_INTO_SCRATCH_DIR = true;
     private static final boolean FILER_WRITE_ONCE_PER_TYPE = true;
