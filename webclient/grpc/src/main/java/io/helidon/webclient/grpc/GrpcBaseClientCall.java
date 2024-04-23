@@ -61,7 +61,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     protected static final int READ_TIMEOUT_SECONDS = 10;
     protected static final int BUFFER_SIZE_BYTES = 1024;
-    protected static final int WAIT_TIME_MILLIS = 100;
+    protected static final int WAIT_TIME_MILLIS = 2000;
     protected static final Duration WAIT_TIME_MILLIS_DURATION = Duration.ofMillis(WAIT_TIME_MILLIS);
 
     protected static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();

@@ -142,9 +142,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     // drain queue
                     drainReceivingQueue();
 
-                    // trailers received?
-                    if (clientStream().trailers().isDone()) {
-                        socket().log(LOGGER, DEBUG, "[Reading thread] trailers received");
+                    // trailers or eos received?
+                    if (clientStream().trailers().isDone() || !clientStream().hasEntity()) {
+                        socket().log(LOGGER, DEBUG, "[Reading thread] trailers or eos received");
                         break;
                     }
 
@@ -154,7 +154,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         frameData = clientStream().readOne(WAIT_TIME_MILLIS_DURATION);
                     } catch (StreamTimeoutException e) {
                         socket().log(LOGGER, ERROR, "[Reading thread] read timeout");
-                        break;
+                        continue;
                     }
                     if (frameData != null) {
                         receivingQueue.add(frameData.data());

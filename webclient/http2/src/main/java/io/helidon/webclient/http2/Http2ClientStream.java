@@ -195,7 +195,13 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return trailers;
     }
 
-    boolean hasEntity() {
+    /**
+     * Determines if an entity is expected. Set to {@code false} when an EOS flag
+     * is received.
+     *
+     * @return {@code true} if entity expected, {@code false} otherwise.
+     */
+    public boolean hasEntity() {
         return hasEntity;
     }
 
