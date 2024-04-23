@@ -32,10 +32,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 @HelidonTest
-@AddBean(TestMockBean.Resource.class)
-@AddBean(TestMockBean.Service.class)
-@AddBean(TestMockBean.OtherService.class)
-public class TestMockBean {
+@AddBean(TestMockBeanField.Resource.class)
+@AddBean(TestMockBeanField.Service.class)
+@AddBean(TestMockBeanField.OtherService.class)
+class TestMockBeanField {
 
     // Without @Inject
     @MockBean
@@ -48,7 +48,7 @@ public class TestMockBean {
     private WebTarget target;
 
     @Test
-    public void injectionTest() {
+    void injectionTest() {
         Mockito.when(service.test()).thenReturn("Mocked");
         String response = target.path("/test").request().get(String.class);
         assertThat(response, is("Mocked"));
@@ -68,17 +68,17 @@ public class TestMockBean {
         }
     }
 
-    public static class Service {
+    static class Service {
 
-        public String test() {
+        String test() {
             return "Not Mocked";
         }
 
     }
 
-    public static class OtherService {
+    static class OtherService {
 
-        public String test() {
+        String test() {
             return "OtherService";
         }
 

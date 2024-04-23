@@ -45,6 +45,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.AnnotatedParameter;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
@@ -52,7 +53,6 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.WithAnnotations;
-import jakarta.enterprise.inject.spi.configurator.AnnotatedFieldConfigurator;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
@@ -541,16 +541,29 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
         void processMockBean(@Observes @WithAnnotations(MockBean.class) ProcessAnnotatedType<?> obj) throws Exception {
             var configurator = obj.configureAnnotatedType();
-            for (AnnotatedFieldConfigurator<?> field : configurator.fields()) {
+            configurator.fields().forEach(field -> {
                 MockBean mockBean = field.getAnnotated().getAnnotation(MockBean.class);
                 if (mockBean != null) {
                     Field f = field.getAnnotated().getJavaMember();
-                    // Adds @Inject if not found, so it is more user friendly
+                    // Adds @Inject to be more user friendly
                     field.add(Literal.INSTANCE);
                     Class<?> fieldType = f.getType();
                     mocks.add(fieldType);
                 }
-            }
+            });
+            configurator.constructors().forEach(constructor -> {
+                processMockBeanParameters(constructor.getAnnotated().getParameters());
+            });
+        }
+
+        private void processMockBeanParameters(List<? extends AnnotatedParameter<?>> parameters) {
+            parameters.stream().forEach(parameter -> {
+                MockBean mockBean = parameter.getAnnotation(MockBean.class);
+                if (mockBean != null) {
+                    Class<?> parameterType = parameter.getJavaParameter().getType();
+                    mocks.add(parameterType);
+                }
+            });
         }
 
         void registerOtherBeans(@Observes AfterBeanDiscovery event) {
