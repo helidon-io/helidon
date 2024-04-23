@@ -133,4 +133,15 @@ class GrpcStubTest extends GrpcBaseTest {
         assertThat(res.next().getText(), is("world"));
         assertThat(res.hasNext(), is(false));
     }
+
+    @Test
+    void testBidirectionalEchoAsyncEmpty() throws ExecutionException, InterruptedException, TimeoutException {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(grpcClient.channel());
+        CompletableFuture<Iterator<Strings.StringMessage>> future = new CompletableFuture<>();
+        StreamObserver<Strings.StringMessage> req = service.echo(multiStreamObserver(future));
+        req.onCompleted();
+        Iterator<Strings.StringMessage> res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertThat(res.hasNext(), is(false));
+    }
 }

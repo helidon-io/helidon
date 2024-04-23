@@ -82,6 +82,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     public void halfClose() {
         socket().log(LOGGER, DEBUG, "halfClose called");
         sendingQueue.add(EMPTY_BUFFER_DATA);       // end marker
+        startWriteBarrier.countDown();
     }
 
     @Override

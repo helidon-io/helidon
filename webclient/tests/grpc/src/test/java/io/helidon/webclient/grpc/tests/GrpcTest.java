@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.grpc.tests;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -163,6 +164,13 @@ class GrpcTest extends GrpcBaseTest {
                         newStringMessage("world")).iterator());
         assertThat(res.next().getText(), is("hello"));
         assertThat(res.next().getText(), is("world"));
+        assertThat(res.hasNext(), is(false));
+    }
+
+    @Test
+    void testBidirectionalEchoEmpty() {
+        Iterator<Strings.StringMessage> res = grpcClient.serviceClient(serviceDescriptor)
+                .bidi("Echo", Collections.emptyIterator());
         assertThat(res.hasNext(), is(false));
     }
 
