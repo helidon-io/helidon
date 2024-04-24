@@ -54,7 +54,7 @@
         <checkstyle.skip>false</checkstyle.skip>
 
         <!-- Maven dependency check -->
-        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
+        <dependency-plugin-check-dependencies.skip>false</dependency-plugin-check-dependencies.skip>
         <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
 
         <!--
@@ -812,6 +812,31 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>${version.plugin.ant}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>check-dependencies</id>
+                            <goals>
+                                <goal>analyze-only</goal>
+                            </goals>
+                            <phase>verify</phase>
+                            <configuration>
+                                <skip>${dependency-plugin-check-dependencies.skip}</skip>
+                                <ignoredPackagings>
+                                    <packaging>pom</packaging>
+                                </ignoredPackagings>
+                                <ignoreNonCompile>true</ignoreNonCompile>
+                                <failOnWarning>true</failOnWarning>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -900,27 +925,6 @@
                         <goals>
                             <goal>services</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>check-dependencies</id>
-                        <goals>
-                            <goal>analyze-only</goal>
-                        </goals>
-                        <phase>verify</phase>
-                        <configuration>
-                            <skip>${dependency-plugin-check-dependencies.skip}</skip>
-                            <ignoredPackagings>
-                                <packaging>pom</packaging>
-                            </ignoredPackagings>
-                            <ignoreNonCompile>true</ignoreNonCompile>
-                            <failOnWarning>true</failOnWarning>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

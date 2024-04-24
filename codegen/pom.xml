@@ -35,7 +35,6 @@
 
     <properties>
         <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
-        <dependency-plugin.skip>false</dependency-plugin.skip>
     </properties>
 
     <modules>
@@ -46,4 +45,18 @@
         <module>scan</module>
         <module>compiler</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
