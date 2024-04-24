@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,18 @@ class TestUtils {
     static String loadStringFromResource(String resourceNamePath) {
         try {
             try (InputStream in = TestUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
-                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+                return normalizeNewLines(new String(in.readAllBytes(), StandardCharsets.UTF_8));
             }
         } catch (Exception e) {
             throw new ToolsException("Failed to load: " + resourceNamePath, e);
         }
+    }
+
+    private static String normalizeNewLines(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replaceAll("\r\n", "\n");
     }
 
 }

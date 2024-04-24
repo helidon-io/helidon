@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -199,8 +199,8 @@ final class ActiveProcessorUtils implements Messager {
     private Optional<ModuleInfoDescriptor> tryFindModuleInfoTheUnconventionalWayFromSourceMain(
             AtomicReference<File> moduleInfoFile,
             AtomicReference<File> srcPath) {
-        if (srcPath != null && srcPath.get() != null && srcPath.get().getPath().contains(TARGET_DIR)) {
-            String path = srcPath.get().getPath();
+        if (srcPath != null && srcPath.get() != null && normalizePath(srcPath.get().getPath()).contains(TARGET_DIR)) {
+            String path = normalizePath(srcPath.get().getPath());
             int pos = path.indexOf(TARGET_DIR);
             path = path.substring(0, pos);
             File srcRoot = new File(path, SRC_MAIN_JAVA_DIR);
@@ -254,6 +254,13 @@ final class ActiveProcessorUtils implements Messager {
         }
 
         return Optional.empty();
+    }
+
+    private static String normalizePath(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace(File.separator, "/");
     }
 
 }

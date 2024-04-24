@@ -56,7 +56,14 @@ class CustomNamedTest {
                 .build();
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter();
         String json = mapper.writer(printer).writeValueAsString(customNamed);
-        assertThat(json, equalTo("{\n" + "  \"stringSet\" : [ \"b\", \"a\", \"y\" ]\n" + "}"));
+        assertThat(normalizeNewLines(json), equalTo("{\n" + "  \"stringSet\" : [ \"b\", \"a\", \"y\" ]\n" + "}"));
+    }
+
+    private String normalizeNewLines(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replaceAll("\r\n", "\n");
     }
 
 }
