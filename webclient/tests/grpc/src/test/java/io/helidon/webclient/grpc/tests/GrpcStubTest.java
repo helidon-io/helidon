@@ -16,11 +16,14 @@
 
 package io.helidon.webclient.grpc.tests;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.IntStream;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
@@ -28,6 +31,7 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.ServerTest;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.grpc.stub.StreamObserver;
@@ -143,5 +147,35 @@ class GrpcStubTest extends GrpcBaseTest {
         req.onCompleted();
         Iterator<Strings.StringMessage> res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         assertThat(res.hasNext(), is(false));
+    }
+
+    @Test
+    void testBidirectionalEchoAsyncWithLargePayload() throws ExecutionException, InterruptedException, TimeoutException {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(grpcClient.channel());
+        CompletableFuture<Iterator<Strings.StringMessage>> future = new CompletableFuture<>();
+        StreamObserver<Strings.StringMessage> req = service.echo(multiStreamObserver(future));
+        byte[] array = new byte[2000];
+        new Random().nextBytes(array);
+        String largeString = new String(array, StandardCharsets.UTF_8);
+        req.onNext(newStringMessage(largeString));
+        req.onCompleted();
+        Iterator<Strings.StringMessage> res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertThat(res.next().getText(), is(largeString));
+        assertThat(res.hasNext(), is(false));
+    }
+
+    @Test
+    void testReceiveServerException() {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
+        Assertions.assertThrows(Throwable.class, () -> service.badMethod(newStringMessage("hello")));
+    }
+
+    @Test
+    void testCallingNotImplementMethodThrowsException() {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
+        Assertions.assertThrows(Throwable.class, () -> service.notImplementedMethod(newStringMessage("hello")));
     }
 }

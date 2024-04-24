@@ -23,6 +23,8 @@ service StringService {
   rpc Split (StringMessage) returns (stream StringMessage) {}
   rpc Join (stream StringMessage) returns (StringMessage) {}
   rpc Echo (stream StringMessage) returns (stream StringMessage) {}
+  rpc BadMethod (StringMessage) returns (StringMessage) {}
+  rpc NotImplementedMethod (StringMessage) returns (StringMessage) {}
 }
 
 message StringMessage {

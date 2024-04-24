@@ -85,11 +85,14 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         clientStream().writeData(BufferData.create(headerData, messageData), true);
         requestSent = true;
 
+        // read response headers
+        clientStream().readHeaders();
+
         while (isRemoteOpen()) {
-            // trailers received?
-            if (clientStream().trailers().isDone()) {
-                socket().log(LOGGER, DEBUG, "trailers received");
-                return;
+            // trailers or eos received?
+            if (clientStream().trailers().isDone() || !clientStream().hasEntity()) {
+                socket().log(LOGGER, DEBUG, "[Reading thread] trailers or eos received");
+                break;
             }
 
             // attempt to read and queue

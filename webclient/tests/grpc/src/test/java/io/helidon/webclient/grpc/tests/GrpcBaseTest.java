@@ -27,6 +27,7 @@ import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.helidon.common.Weight;
 import io.helidon.common.configurable.Resource;
@@ -74,7 +75,11 @@ class GrpcBaseTest {
                 .bidi(Strings.getDescriptor(),
                         "StringService",
                         "Echo",
-                        GrpcStubTest::echo);
+                        GrpcStubTest::echo)
+                .unary(Strings.getDescriptor(),
+                        "StringService",
+                        "BadMethod",
+                        GrpcStubTest::badMethod);
     }
 
     @BeforeEach
@@ -152,6 +157,10 @@ class GrpcBaseTest {
                 streamObserver.onCompleted();
             }
         };
+    }
+
+    static void badMethod(Strings.StringMessage req, StreamObserver<Strings.StringMessage> streamObserver) {
+        streamObserver.onError(Status.INTERNAL.asException());
     }
 
     Strings.StringMessage newStringMessage(String data) {

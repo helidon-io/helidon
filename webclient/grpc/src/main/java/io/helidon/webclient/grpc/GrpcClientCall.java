@@ -16,6 +16,10 @@
 
 package io.helidon.webclient.grpc;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -88,8 +92,18 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     @Override
     public void sendMessage(ReqT message) {
         socket().log(LOGGER, DEBUG, "sendMessage called");
-        BufferData messageData = BufferData.growing(BUFFER_SIZE_BYTES);
-        messageData.readFrom(requestMarshaller().stream(message));
+
+        // serialize message using a marshaller
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFFER_SIZE_BYTES);
+        try (InputStream is = requestMarshaller().stream(message)) {
+            is.transferTo(baos);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        byte[] serialized = baos.toByteArray();
+
+        // queue data message and start writer
+        BufferData messageData = BufferData.createReadOnly(serialized, 0, serialized.length);
         BufferData headerData = BufferData.create(5);
         headerData.writeInt8(0);                                // no compression
         headerData.writeUnsignedInt32(messageData.available());         // length prefixed
