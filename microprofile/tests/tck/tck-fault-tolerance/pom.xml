@@ -42,8 +42,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile</groupId>
+            <artifactId>helidon-microprofile-fault-tolerance</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
