@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.grpc.tests;
 
+import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Random;
@@ -23,7 +24,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.IntStream;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
@@ -68,6 +68,15 @@ class GrpcStubTest extends GrpcBaseTest {
         StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
         Strings.StringMessage res = service.upper(newStringMessage("hello"));
         assertThat(res.getText(), is("HELLO"));
+    }
+
+    @Test
+    void tesUnaryUpperLongString() {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
+        String s = CharBuffer.allocate(2000).toString().replace('\0', 'a');
+        Strings.StringMessage res = service.upper(newStringMessage(s));
+        assertThat(res.getText(), is(s.toUpperCase()));
     }
 
     @Test

@@ -16,7 +16,10 @@
 
 package io.helidon.webclient.grpc;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.Executor;
@@ -213,5 +216,15 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 return bufferData.available() > 0 ? bufferData.read() : -1;
             }
         });
+    }
+
+    protected byte[] serializeMessage(ReqT message) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFFER_SIZE_BYTES);
+        try (InputStream is = requestMarshaller().stream(message)) {
+            is.transferTo(baos);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return baos.toByteArray();
     }
 }
