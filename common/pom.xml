@@ -65,6 +65,7 @@
                 <executions>
                     <execution>
                         <id>check-dependencies</id>
+                        <phase>verify</phase>
                     </execution>
                 </executions>
             </plugin>
