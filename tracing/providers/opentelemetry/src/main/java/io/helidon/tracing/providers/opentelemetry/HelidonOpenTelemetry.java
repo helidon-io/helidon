@@ -15,11 +15,17 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.function.Consumer;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.tracing.SpanListener;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
@@ -43,7 +49,13 @@ public final class HelidonOpenTelemetry {
      */
     public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
 
+    static final String UNSUPPORTED_OPERATION_MESSAGE = "Span listener attempted to invoke an illegal operation";
+
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
+
+
     private HelidonOpenTelemetry() {
     }
     /**
@@ -65,7 +77,7 @@ public final class HelidonOpenTelemetry {
      * @return Helidon {@link io.helidon.tracing.Span}
      */
     public static io.helidon.tracing.Span create(Span span) {
-        return new OpenTelemetrySpan(span);
+        return new OpenTelemetrySpan(span, SPAN_LISTENERS.get());
     }
 
     /**
@@ -76,7 +88,7 @@ public final class HelidonOpenTelemetry {
      * @return Helidon (@link io.helidon.tracing.Span}
      */
     public static io.helidon.tracing.Span create(Span span, Baggage baggage) {
-        return new OpenTelemetrySpan(span, baggage);
+        return new OpenTelemetrySpan(span, baggage, SPAN_LISTENERS.get());
     }
 
     /**
@@ -128,5 +140,32 @@ public final class HelidonOpenTelemetry {
             return current().getClass().getName().contains("agent");
         }
 
+    }
+
+    static void invokeListeners(List<SpanListener> spanListeners, System.Logger logger, Consumer<SpanListener> operation) {
+        if (spanListeners.isEmpty()) {
+            return;
+        }
+        List<Throwable> throwables = new ArrayList<>();
+        for (SpanListener listener : spanListeners) {
+            try {
+                operation.accept(listener);
+            } catch (Throwable t) {
+                throwables.add(t);
+            }
+        }
+
+        Throwable throwableToLog = null;
+        if (throwables.size() == 1) {
+            // If only one exception is present, propagate that one in the log record.
+            throwableToLog = throwables.getFirst();
+        } else if (!throwables.isEmpty()) {
+            // Propagate a RuntimeException with multiple suppressed exceptions in the log record.
+            throwableToLog = new RuntimeException();
+            throwables.forEach(throwableToLog::addSuppressed);
+        }
+        if (throwableToLog != null) {
+            logger.log(System.Logger.Level.WARNING, "Error(s) from listener(s)", throwableToLog);
+        }
     }
 }

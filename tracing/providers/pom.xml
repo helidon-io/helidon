@@ -35,4 +35,30 @@
         <module>jaeger</module>
         <module>zipkin</module>
     </modules>
+
+    <!--
+        Each provider should run the common unit tests. Declare that dependency and
+        configure the surefire plug-in here to run those tests for all providers.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-provider-tests</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <dependenciesToScan>
+                        <dependency>io.helidon.tracing:helidon-tracing-provider-tests</dependency>
+                    </dependenciesToScan>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

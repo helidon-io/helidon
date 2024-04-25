@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -94,7 +95,7 @@ class JaegerBaggagePropagationTest {
             Optional<String> baggageHeader = headerConsumer.get("baggage");
             assertThat("Baggage contents in propagated headers",
                        baggageHeader,
-                       OptionalMatcher.optionalValue(is(equalTo(BAGGAGE_KEY + "=" + BAGGAGE_VALUE))));
+                       OptionalMatcher.optionalValue(containsString(BAGGAGE_KEY + "=" + BAGGAGE_VALUE)));
 
             // Now make sure the baggage is propagated to a new span context based on the header.
             Optional<SpanContext> propagatedSpanContext = tracer.extract(headerConsumer);

@@ -16,9 +16,11 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import java.time.Instant;
+import java.util.List;
 
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.SpanListener;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -26,12 +28,16 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder> {
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetrySpanBuilder.class.getName());
     private final SpanBuilder spanBuilder;
+    private final List<SpanListener> spanListeners;
+    private Limited limited;
     private boolean parentSet;
     private Baggage parentBaggage;
 
-    OpenTelemetrySpanBuilder(SpanBuilder spanBuilder) {
+    OpenTelemetrySpanBuilder(SpanBuilder spanBuilder, List<SpanListener> spanListeners) {
         this.spanBuilder = spanBuilder;
+        this.spanListeners = spanListeners;
     }
 
     @Override
@@ -89,11 +95,14 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
             spanBuilder.setNoParent();
         }
         spanBuilder.setStartTimestamp(instant);
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.starting(limited()));
         io.opentelemetry.api.trace.Span span = spanBuilder.startSpan();
-        Span result = new OpenTelemetrySpan(span);
+        OpenTelemetrySpan result = new OpenTelemetrySpan(span, spanListeners);
         if (parentBaggage != null) {
-            parentBaggage.forEach((key, baggageEntry) -> result.baggage(key, baggageEntry.getValue()));
+            parentBaggage.forEach((key, baggageEntry) -> result.baggage().set(key, baggageEntry.getValue()));
         }
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.started(result.limited()));
+
         return result;
     }
 
@@ -115,4 +124,56 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
         this.parentSet = true;
         this.spanBuilder.setParent(context);
     }
+
+    Limited limited() {
+        if (limited !=  null) {
+            return limited;
+        }
+        if (spanListeners.isEmpty()) {
+            return null;
+        }
+        limited = new Limited(this);
+        return limited;
+    }
+
+    private record Limited(OpenTelemetrySpanBuilder delegate) implements Span.Builder<Limited> {
+
+        @Override
+            public Span build() {
+                throw new SpanListener.ForbiddenOperationException();
+            }
+
+            @Override
+            public Limited parent(SpanContext spanContext) {
+                throw new SpanListener.ForbiddenOperationException();
+            }
+
+            @Override
+            public Limited kind(Span.Kind kind) {
+                throw new SpanListener.ForbiddenOperationException();
+            }
+
+            @Override
+            public Limited tag(String key, String value) {
+                delegate.tag(key, value);
+                return this;
+            }
+
+            @Override
+            public Limited tag(String key, Boolean value) {
+                delegate.tag(key, value);
+                return this;
+            }
+
+            @Override
+            public Limited tag(String key, Number value) {
+                delegate.tag(key, value);
+                return this;
+            }
+
+            @Override
+            public Span start(Instant instant) {
+                throw new SpanListener.ForbiddenOperationException();
+            }
+        }
 }

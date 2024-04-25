@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tracing;
 
 /**
- * A Scope that can be (eventually) closed. Used when making a span active.
+ * Tests applicable to all tracing providers.
  */
-public interface Scope extends AutoCloseable {
-    @Override
-    void close();
-
-    /**
-     * Whether the method {@link #close()} was already called or not.
-     * @return if this scope is closed
-     */
-    boolean isClosed();
-}
+package io.helidon.tracing.providers.tests;

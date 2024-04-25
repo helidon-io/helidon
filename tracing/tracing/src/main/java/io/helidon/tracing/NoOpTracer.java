@@ -88,6 +88,11 @@ class NoOpTracer implements Tracer {
                                                    + ",  tracer is: " + getClass().getName());
     }
 
+    @Override
+    public Tracer register(SpanListener listener) {
+        return this;
+    }
+
     private static class Builder implements Span.Builder<Builder> {
         @Override
         public Span build() {
