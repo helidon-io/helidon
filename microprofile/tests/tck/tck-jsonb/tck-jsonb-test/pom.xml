@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-jsonb</artifactId>
-        <version>4.0.8-SNAPSHOT</version>
+        <version>4.0.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-microprofile-tests-tck-jsonb-test</artifactId>
