@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.microprofile.weld</groupId>
         <artifactId>helidon-microprofile-weld-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.8-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
