@@ -14,7 +14,7 @@
     limitations under the License.
   -->
 
-<configuration>
+<configuration debug="true">
 
     <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
         <resetJUL>true</resetJUL>
