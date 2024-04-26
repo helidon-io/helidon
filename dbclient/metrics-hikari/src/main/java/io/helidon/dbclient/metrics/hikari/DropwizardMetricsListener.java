@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,9 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
 
     private static final String SCOPE = io.helidon.metrics.api.Meter.Scope.VENDOR;
 
-    /** Local logger instance. */
     private static final System.Logger LOGGER = System.getLogger(DropwizardMetricsListener.class.getName());
 
     private final String prefix;
-    // Helidon metrics registry
     private final LazyValue<MeterRegistry> registry = LazyValue.create(Metrics::globalRegistry);
 
     private DropwizardMetricsListener(String prefix) {
@@ -89,43 +87,31 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
 
     @Override
     public void onHistogramAdded(String name, Histogram histogram) {
-        //        LOGGER.log(Level.TRACE, () -> String.format("Histogram added: %s", name));
-        //        registry.get().register(prefix + name, new JdbcMetricsHistogram(histogram));
         LOGGER.log(Level.TRACE, () -> String.format("Ignoring histogram added: %s", name));
     }
 
     @Override
     public void onHistogramRemoved(String name) {
-        //        LOGGER.log(Level.TRACE, () -> String.format("Histogram removed: %s", name));
-        //        registry.get().remove(prefix + name);
         LOGGER.log(Level.TRACE, () -> String.format("Ignoring histogram removed: %s", name));
     }
 
     @Override
     public void onMeterAdded(String name, Meter meter) {
-        //        LOGGER.log(Level.TRACE, () -> String.format("Meter added: %s", name));
-        //        registry.get().register(prefix + name, new JdbcMetricsMeter(meter));
         LOGGER.log(Level.TRACE, () -> String.format("Ignoring meter added: %s", name));
     }
 
     @Override
     public void onMeterRemoved(String name) {
-        //        LOGGER.log(Level.TRACE, () -> String.format("Meter removed: %s", name));
-        //        registry.get().remove(prefix + name);
         LOGGER.log(Level.TRACE, () -> String.format("Ignoring meter removed: %s", name));
     }
 
     @Override
     public void onTimerAdded(String name, Timer timer) {
-        //        LOGGER.log(Level.TRACE, () -> String.format("Timer added: %s", name));
-        //        registry.get().register(prefix + name, new JdbcMetricsTimer(timer));
         LOGGER.log(Level.TRACE, () -> String.format("Ignoring timer added: %s", name));
     }
 
     @Override
     public void onTimerRemoved(String name) {
-        //        LOGGER.log(Level.TRACE, () -> String.format("Timer removed: %s", name));
-        //        registry.get().remove(prefix + name);
         LOGGER.log(Level.TRACE, () -> String.format("Ignoring histogram removed: %s", name));
     }
 
