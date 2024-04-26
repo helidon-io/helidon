@@ -52,7 +52,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <inherited>false</inherited>
                 <configuration>
                     <dependenciesToScan>
                         <dependency>org.eclipse.microprofile.reactive.messaging:microprofile-reactive-messaging-tck
