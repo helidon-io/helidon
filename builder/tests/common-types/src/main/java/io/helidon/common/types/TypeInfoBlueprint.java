@@ -58,7 +58,7 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return the type element kind.
      * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
-     * @deprecated use {@link #kind()} instead
+     * @deprecated use {@link io.helidon.common.types.TypeInfo#kind()} instead
      */
     @Option.Required
     @Option.Deprecated("kind")
@@ -186,7 +186,7 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return element modifiers
      * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-     * @deprecated use {@link #elementModifiers()} instead
+     * @deprecated use {@link io.helidon.common.types.TypeInfo#elementModifiers()} instead
      */
     @Option.Singular
     @Option.Redundant
@@ -229,7 +229,8 @@ interface TypeInfoBlueprint extends Annotated {
     Optional<Object> originatingElement();
 
     /**
-     * Uses {@link #referencedModuleNames()} to determine if the module name is known for the given type.
+     * Uses {@link io.helidon.common.types.TypeInfo#referencedModuleNames()} to determine if the module name is known for the
+     * given type.
      *
      * @param typeName the type name to lookup
      * @return the module name if it is known
