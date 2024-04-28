@@ -13,21 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * Extension for Graal VM native image to correctly build Helidon applications.
+ * API required to define services, and to compile the code generated sources for Helidon Service Registry,
+ * with a core service registry implementation (replacement for {@link java.util.ServiceLoader}).
+ * <p>
+ * The following main entry point for declaring services is {@link io.helidon.service.registry.Service}.
  */
-module io.helidon.graal.nativeimage {
-	
-    requires io.github.classgraph;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
-    requires io.helidon.service.registry;
-    requires jakarta.json;
-
-    requires transitive org.graalvm.nativeimage;
-
-    exports io.helidon.integrations.graal.nativeimage.extension;
-	
-}
+package io.helidon.service.registry;

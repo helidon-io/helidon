@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package io.helidon.service.codegen;
+
 /**
- * Extension for Graal VM native image to correctly build Helidon applications.
+ * Code generation extension for Helidon Service REgistry.
  */
-module io.helidon.graal.nativeimage {
-	
-    requires io.github.classgraph;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
-    requires io.helidon.service.registry;
-    requires jakarta.json;
+interface RegistryCodegenExtension {
+    /**
+     * Process a single round.
+     *
+     * @param roundContext round context
+     */
+    void process(RegistryRoundContext roundContext);
 
-    requires transitive org.graalvm.nativeimage;
-
-    exports io.helidon.integrations.graal.nativeimage.extension;
-	
+    /**
+     * Called when the processing is over, and there will not be an additional processing round.
+     */
+    default void processingOver() {
+    }
 }

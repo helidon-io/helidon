@@ -1051,6 +1051,14 @@
             <artifactId>helidon-inject-configdriven-processor</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-codegen</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
         </dependency>

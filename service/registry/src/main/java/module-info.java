@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * Extension for Graal VM native image to correctly build Helidon applications.
+ * Core service registry, supporting {@link io.helidon.service.registry.Service.Provider}.
  */
-module io.helidon.graal.nativeimage {
-	
-    requires io.github.classgraph;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
-    requires io.helidon.service.registry;
-    requires jakarta.json;
+module io.helidon.service.registry {
+    exports io.helidon.service.registry;
+    exports io.helidon.service.registry.spi;
 
-    requires transitive org.graalvm.nativeimage;
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.common.types;
 
-    exports io.helidon.integrations.graal.nativeimage.extension;
-	
+    uses io.helidon.service.registry.spi.ServiceRegistryManagerProvider;
 }
