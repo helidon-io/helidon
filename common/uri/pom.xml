@@ -30,6 +30,14 @@
 
     <dependencies>
         <dependency>
+            <artifactId>helidon-common</artifactId>
+            <groupId>io.helidon.common</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>helidon-common-mapper</artifactId>
+            <groupId>io.helidon.common</groupId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-parameters</artifactId>
         </dependency>

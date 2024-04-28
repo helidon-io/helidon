@@ -48,6 +48,12 @@ public class HelidonCopyrightProvider implements CopyrightProvider {
              */
             """;
 
+    /**
+     * Required by Java {@link java.util.ServiceLoader}.
+     */
+    public HelidonCopyrightProvider() {
+    }
+
     @Override
     public String copyright(TypeName generator, TypeName trigger, TypeName generatedType) {
         return COPYRIGHT_TEMPLATE.replace("{{year}}", year());

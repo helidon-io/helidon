@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@ import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 
-import io.helidon.common.mapper.Mapper;
-
 /**
- * Maps the upstream items via a {@link Mapper} function.
+ * Maps the upstream items via a mapper function.
  * @param <T> the upstream value type
  * @param <R> the result value type
  */

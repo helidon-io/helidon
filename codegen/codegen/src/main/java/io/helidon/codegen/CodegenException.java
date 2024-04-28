@@ -23,6 +23,10 @@ import java.util.Optional;
  * This exception can hold {@link #originatingElement()} that may be used to provide more information to the user.
  */
 public class CodegenException extends RuntimeException {
+    /**
+     * Originating element, depends on which codegen implementation is used.
+     * For annotation processor, this could be the Element that caused this exception.
+     */
     private final Object originatingElement;
 
     /**

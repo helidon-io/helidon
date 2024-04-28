@@ -49,8 +49,8 @@ abstract class ModelComponent {
         /**
          * Whether to include import type information among the imports.
          *
-         * @param includeImport
-         * @return
+         * @param includeImport whether imports should be included
+         * @return updated builder instance
          */
         public B includeImport(boolean includeImport) {
             this.includeImport = includeImport;
