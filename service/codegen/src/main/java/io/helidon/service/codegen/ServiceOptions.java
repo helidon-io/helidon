@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package io.helidon.service.codegen;
+
+import io.helidon.codegen.Option;
+
 /**
- * Extension for Graal VM native image to correctly build Helidon applications.
+ * Supported options specific to Helidon Service Registry.
  */
-module io.helidon.graal.nativeimage {
-	
-    requires io.github.classgraph;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
-    requires io.helidon.service.registry;
-    requires jakarta.json;
+final class ServiceOptions {
+    /**
+     * Treat all super types as a contract for a given service type being added.
+     */
+    public static final Option<Boolean> AUTO_ADD_NON_CONTRACT_INTERFACES =
+            Option.create("helidon.registry.autoAddNonContractInterfaces",
+                          "Treat all super types as a contract for a given service type being added.",
+                          false);
 
-    requires transitive org.graalvm.nativeimage;
-
-    exports io.helidon.integrations.graal.nativeimage.extension;
-	
+    private ServiceOptions() {
+    }
 }

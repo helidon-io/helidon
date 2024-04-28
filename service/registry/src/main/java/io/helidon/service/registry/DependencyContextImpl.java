@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Extension for Graal VM native image to correctly build Helidon applications.
- */
-module io.helidon.graal.nativeimage {
-	
-    requires io.github.classgraph;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
-    requires io.helidon.service.registry;
-    requires jakarta.json;
 
-    requires transitive org.graalvm.nativeimage;
+package io.helidon.service.registry;
 
-    exports io.helidon.integrations.graal.nativeimage.extension;
-	
+import java.util.Map;
+
+class DependencyContextImpl implements DependencyContext {
+    private final Map<Dependency, Object> dependencies;
+
+    DependencyContextImpl(Map<Dependency, Object> dependencies) {
+        this.dependencies = dependencies;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T dependency(Dependency dependency) {
+        return (T) dependencies.get(dependency);
+    }
 }

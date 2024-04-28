@@ -1390,6 +1390,18 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Service registry -->
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-registry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- Injection Integrations related -->
             <dependency>
                 <groupId>io.helidon.integrations.oci.sdk</groupId>
