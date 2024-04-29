@@ -14,37 +14,39 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.tests.testing.junit5;
+package io.helidon.microprofile.tests.testing.testng;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import jakarta.inject.Inject;
 
-import io.helidon.microprofile.testing.junit5.AddConfigBlock;
-import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.microprofile.testing.testng.AddConfigBlock;
+import io.helidon.microprofile.testing.testng.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
 @HelidonTest
-@AddConfigBlock("""
-    some.key1=some.value1
-    some.key2=some.value2
+@AddConfigBlock(type = "Yaml", value = """
+    another1:
+      key: "another1.value"
+    another2:
+      key: "another2.value"
 """)
-class TestConfigBlobProperties {
+class TestAddConfigBlockYaml {
 
     @Inject
-    @ConfigProperty(name = "some.key1")
-    private String value1;
+    @ConfigProperty(name = "another1.key")
+    private String another1;
 
     @Inject
-    @ConfigProperty(name = "some.key2")
-    private String value2;
+    @ConfigProperty(name = "another2.key")
+    private String another2;
 
     @Test
     void testValue() {
-        assertThat(value1, is("some.value1"));
-        assertThat(value2, is("some.value2"));
+        assertThat(another1, is("another1.value"));
+        assertThat(another2, is("another2.value"));
     }
 }

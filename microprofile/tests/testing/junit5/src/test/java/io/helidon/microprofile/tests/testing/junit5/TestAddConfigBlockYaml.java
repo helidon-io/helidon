@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.tests.testing.testng;
+package io.helidon.microprofile.tests.testing.junit5;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import jakarta.inject.Inject;
 
-import io.helidon.microprofile.testing.testng.AddConfigBlock;
-import io.helidon.microprofile.testing.testng.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 @HelidonTest
 @AddConfigBlock(type = "Yaml", value = """
@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
     another2:
       key: "another2.value"
 """)
-class TestConfigBlobYaml {
+class TestAddConfigBlockYaml {
 
     @Inject
     @ConfigProperty(name = "another1.key")

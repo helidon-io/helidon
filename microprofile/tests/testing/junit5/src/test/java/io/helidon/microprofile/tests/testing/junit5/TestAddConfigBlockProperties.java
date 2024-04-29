@@ -28,25 +28,23 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 @HelidonTest
-@AddConfigBlock(type = "Yaml", value = """
-    another1:
-      key: "another1.value"
-    another2:
-      key: "another2.value"
+@AddConfigBlock("""
+    some.key1=some.value1
+    some.key2=some.value2
 """)
-class TestConfigBlobYaml {
+class TestAddConfigBlockProperties {
 
     @Inject
-    @ConfigProperty(name = "another1.key")
-    private String another1;
+    @ConfigProperty(name = "some.key1")
+    private String value1;
 
     @Inject
-    @ConfigProperty(name = "another2.key")
-    private String another2;
+    @ConfigProperty(name = "some.key2")
+    private String value2;
 
     @Test
     void testValue() {
-        assertThat(another1, is("another1.value"));
-        assertThat(another2, is("another2.value"));
+        assertThat(value1, is("some.value1"));
+        assertThat(value2, is("some.value2"));
     }
 }
