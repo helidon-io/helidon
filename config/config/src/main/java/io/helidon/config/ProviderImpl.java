@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
@@ -114,6 +115,10 @@ class ProviderImpl implements Config.Context {
     @Override
     public synchronized Config last() {
         return lastConfig;
+    }
+
+    synchronized Optional<ConfigNode> lazyValue(String string) {
+        return configSource.lazyValue(string);
     }
 
     void onChange(Consumer<ConfigDiff> listener) {
