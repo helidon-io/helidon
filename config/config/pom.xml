@@ -51,15 +51,6 @@
             <artifactId>helidon-common-media-type</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
@@ -107,9 +98,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-Ainject.acceptPreview=true</arg>
-                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.common.features</groupId>
@@ -122,11 +110,6 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.inject</groupId>
-                            <artifactId>helidon-inject-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
                             <groupId>io.helidon.common.processor</groupId>
                             <artifactId>helidon-common-processor-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -135,19 +118,11 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <!-- this is required to add the processor to reactor at the right time -->
                         <groupId>io.helidon.common.features</groupId>
                         <artifactId>helidon-common-features-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <!-- this is required to add the processor to reactor at the right time -->
-                        <groupId>io.helidon.inject</groupId>
-                        <artifactId>helidon-inject-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <!-- this is required to add the processor to reactor at the right time -->
                         <groupId>io.helidon.builder</groupId>
                         <artifactId>helidon-builder-processor</artifactId>
                         <version>${helidon.version}</version>

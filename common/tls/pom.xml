@@ -32,20 +32,9 @@
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-        <!--
-        Once we remove dependency on Jakarta inject, this can be removed. Current warning:
-        The code being documented uses modules but the packages defined in
-         https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/ are in the unnamed module.
-        -->
-        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
     </properties>
 
     <dependencies>
-        <dependency>
-            <artifactId>helidon-inject-api</artifactId>
-            <groupId>io.helidon.inject</groupId>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
