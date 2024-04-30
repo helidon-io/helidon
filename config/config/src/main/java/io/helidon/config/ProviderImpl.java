@@ -117,7 +117,7 @@ class ProviderImpl implements Config.Context {
         return lastConfig;
     }
 
-    synchronized Optional<ConfigNode> lazyValue(String string) {
+    Optional<ConfigNode> lazyValue(String string) {
         return configSource.lazyValue(string);
     }
 

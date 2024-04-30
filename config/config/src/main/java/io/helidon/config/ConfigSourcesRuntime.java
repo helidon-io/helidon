@@ -76,6 +76,7 @@ final class ConfigSourcesRuntime {
     }
 
     Optional<ConfigNode> lazyValue(String key) {
+        // list of sources in `allSources` is final, there is no need to synchronize
         for (ConfigSourceRuntimeImpl source : allSources) {
             if (source.isLazy()) {
                 Optional<ConfigNode> node = source.node(key);

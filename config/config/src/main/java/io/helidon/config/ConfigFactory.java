@@ -17,11 +17,11 @@
 package io.helidon.config;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
 import io.helidon.config.spi.ConfigFilter;
@@ -41,7 +41,8 @@ final class ConfigFactory {
     private final ConfigFilter filter;
     private final ProviderImpl provider;
     private final Function<String, List<String>> aliasGenerator;
-    private final ConcurrentMap<PrefixedKey, AbstractConfigImpl> configCache;
+    private final Map<PrefixedKey, AbstractConfigImpl> configCache;
+    private final ReentrantReadWriteLock configCacheLock = new ReentrantReadWriteLock();
     private final Instant timestamp;
 
     /**
@@ -70,7 +71,8 @@ final class ConfigFactory {
         this.provider = provider;
         this.aliasGenerator = aliasGenerator;
 
-        this.configCache = new ConcurrentHashMap<>();
+        // all access must be guarded by configCacheLock
+        this.configCache = new HashMap<>();
         this.timestamp = Instant.now();
     }
 
@@ -97,7 +99,31 @@ final class ConfigFactory {
     AbstractConfigImpl config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         PrefixedKey prefixedKey = new PrefixedKey(prefix, key);
 
-        return configCache.computeIfAbsent(prefixedKey, it -> createConfig(prefix, key));
+        try {
+            configCacheLock.readLock().lock();
+            AbstractConfigImpl config = configCache.get(prefixedKey);
+            if (config != null) {
+                return config;
+            }
+        } finally {
+            configCacheLock.readLock().unlock();
+        }
+
+        // use write lock, re-check, and create if still missing (we want to have a guarantee each key is only created once)
+        try {
+            configCacheLock.writeLock().lock();
+            AbstractConfigImpl config = configCache.get(prefixedKey);
+            if (config != null) {
+                return config;
+            }
+            // we use locks, as this may be a blocking operation
+            // such as when using lazy config source that accesses remote servers
+            config = createConfig(prefix, key);
+            configCache.put(prefixedKey, config);
+            return config;
+        } finally {
+            configCacheLock.writeLock().unlock();
+        }
     }
 
     /**
