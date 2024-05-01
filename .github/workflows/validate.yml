@@ -88,7 +88,7 @@ jobs:
       - name: Maven build
         run: etc/scripts/github-build.sh
   examples:
-    timeout-minutes: 30
+    timeout-minutes: 40
     strategy:
       matrix:
         os: [ ubuntu-20.04, macos-14 ]
@@ -101,11 +101,20 @@ jobs:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: 21
+          distribution: graalvm-community
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: true
+          cache: maven
       - name: Maven build
         run: |
           mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
           cd examples
           mvn -B verify
+      - name: Test quickstarts native image
+        run: etc/scripts/test-quickstarts.sh
   mp-tck:
     timeout-minutes: 60
     name: "MicroProfile TCKs"
