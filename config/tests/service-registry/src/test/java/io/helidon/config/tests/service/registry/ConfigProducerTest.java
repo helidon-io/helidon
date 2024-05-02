@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import java.util.Optional;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.inject.api.Bootstrap;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -35,22 +33,25 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ConfigProducerTest {
+    private ServiceRegistryManager registryManager;
+
     @AfterEach
-    void reset() {
-        InjectionTestingSupport.resetAll();
+    void shutdownServices() {
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
     @Test
-    @Order(0) // this must be first, as once we set global config, this method will always fail
+    @Order(0)
+        // this must be first, as once we set global config, this method will always fail
     void testConfig() {
-        InjectionServices.globalBootstrap(Bootstrap.builder()
-                                             .config(GlobalConfig.config())
-                                             .build());
+        registryManager = ServiceRegistryManager.create();
 
         // value should be overridden using our custom config source
-        Config config = InjectionServices.realizedServices()
-                .lookup(Config.class)
-                .get();
+        Config config = registryManager
+                .registry()
+                .get(Config.class);
 
         assertThat(config.get("app.value").asString().asOptional(), is(Optional.of("source")));
     }
@@ -61,13 +62,11 @@ class ConfigProducerTest {
         // value should use the config as we provided it
         GlobalConfig.config(io.helidon.config.Config::create, true);
 
-        InjectionServices.globalBootstrap(Bootstrap.builder()
-                                             .config(GlobalConfig.config())
-                                             .build());
+        registryManager = ServiceRegistryManager.create();
 
-        Config config = InjectionServices.realizedServices()
-                .lookup(Config.class)
-                .get();
+        Config config = registryManager
+                .registry()
+                .get(Config.class);
 
         assertThat(config.get("app.value").asString().asOptional(), is(Optional.of("file")));
     }

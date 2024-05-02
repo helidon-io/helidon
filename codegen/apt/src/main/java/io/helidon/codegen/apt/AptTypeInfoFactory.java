@@ -589,7 +589,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         Optional<TypeInfo> found = create(ctx, annotationType, it -> false);
 
         if (found.isEmpty()) {
-            ctx.logger().log(System.Logger.Level.INFO, "Annotation " + annotationType
+            ctx.logger().log(System.Logger.Level.DEBUG, "Annotation " + annotationType
                     + " not available, cannot obtain inherited annotations");
             return;
         }

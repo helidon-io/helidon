@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-import jakarta.inject.Inject;
-
 class RetryImpl implements Retry {
     private final ErrorChecker errorChecker;
     private final long maxTimeNanos;
@@ -35,7 +33,6 @@ class RetryImpl implements Retry {
     private final AtomicLong retryCounter = new AtomicLong(0L);
     private final String name;
 
-    @Inject
     RetryImpl(RetryConfig retryConfig) {
         this.name = retryConfig.name().orElseGet(() -> "retry-" + System.identityHashCode(retryConfig));
         this.errorChecker = ErrorChecker.create(retryConfig.skipOn(), retryConfig.applyOn());
