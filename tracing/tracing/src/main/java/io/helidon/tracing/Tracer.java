@@ -101,4 +101,13 @@ public interface Tracer {
             throw new IllegalArgumentException("This tracer is not compatible with " + tracerClass.getName());
         }
     }
+
+    /**
+     * Registers with the tracer a {@linkplain io.helidon.tracing.SpanListener lifecycle event listener} to receive events from
+     * span builders, spans, and scopes derived from this tracer.
+     *
+     * @param listener the {@link SpanListener} to register
+     * @return the updated {@code Tracer}
+     */
+    Tracer register(SpanListener listener);
 }

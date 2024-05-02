@@ -590,7 +590,7 @@ public final class OidcFeature implements HttpFeature {
     // if they try to provide wrong data
     private void sendErrorResponse(ServerResponse serverResponse) {
         serverResponse.status(Status.UNAUTHORIZED_401);
-        serverResponse.send("Not a valid authorization code2");
+        serverResponse.send("Not a valid authorization code");
     }
 
     String increaseRedirectCounter(String state) {

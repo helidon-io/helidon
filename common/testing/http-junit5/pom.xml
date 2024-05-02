@@ -31,6 +31,8 @@
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+        <!-- we want to provide ease of use to users, so helidon-common-testing-junit5 is a transitive dep even if not used -->
+        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
     </properties>
 
     <dependencies>

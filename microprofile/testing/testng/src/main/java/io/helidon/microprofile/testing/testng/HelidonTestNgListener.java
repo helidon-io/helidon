@@ -16,7 +16,10 @@
 
 package io.helidon.microprofile.testing.testng;
 
+import java.io.IOException;
 import java.io.Serial;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -30,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
@@ -111,6 +115,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
         classLevelConfigMeta.addConfig(configs);
         classLevelConfigMeta.configuration(testClass.getAnnotation(Configuration.class));
+        classLevelConfigMeta.addConfigBlock(testClass.getAnnotation(AddConfigBlock.class));
         configProviderResolver = ConfigProviderResolver.instance();
 
         AddExtension[] extensions = getAnnotations(testClass, AddExtension.class);
@@ -177,6 +182,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             ConfigMeta methodLevelConfigMeta = classLevelConfigMeta.nextMethod();
             methodLevelConfigMeta.addConfig(configs);
             methodLevelConfigMeta.configuration(method.getAnnotation(Configuration.class));
+            methodLevelConfigMeta.addConfigBlock(method.getAnnotation(AddConfigBlock.class));
 
             configure(methodLevelConfigMeta);
 
@@ -349,6 +355,9 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                     builder.withSources(MpConfigSources.classPath(it).toArray(new ConfigSource[0]));
                 }
             });
+            if (configMeta.type != null && configMeta.block != null) {
+                builder.withSources(configSource(configMeta.type, configMeta.block));
+            }
             config = builder
                     .withSources(MpConfigSources.create(configMeta.additionalKeys))
                     .addDefaultSources()
@@ -356,6 +365,23 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                     .addDiscoveredConverters()
                     .build();
             configProviderResolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
+        }
+    }
+
+    private ConfigSource configSource(String type, String block) {
+        String lowerCase = type.toLowerCase();
+        if ("properties".equals(lowerCase)) {
+            Properties p = new Properties();
+            try {
+                p.load(new StringReader(block));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return MpConfigSources.create("PropertiesAddConfigBlock", p);
+        } else if ("yaml".equals(lowerCase)) {
+            return YamlMpConfigSource.create("YamlAddConfigBlock", new StringReader(block));
+        } else {
+            throw new IllegalArgumentException(type + " is not supported");
         }
     }
 
@@ -536,6 +562,8 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private static final class ConfigMeta {
         private final Map<String, String> additionalKeys = new HashMap<>();
         private final List<String> additionalSources = new ArrayList<>();
+        private String type;
+        private String block;
         private boolean useExisting;
         private String profile;
 
@@ -566,6 +594,14 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             additionalSources.addAll(List.of(config.configSources()));
             //set additional key for profile
             additionalKeys.put("mp.config.profile", profile);
+        }
+
+        private void addConfigBlock(AddConfigBlock config) {
+            if (config == null) {
+                return;
+            }
+            this.type = config.type();
+            this.block = config.value();
         }
 
         ConfigMeta nextMethod() {

@@ -29,6 +29,7 @@ import io.helidon.tracing.spi.TracerProvider;
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class JaegerTracerProvider implements TracerProvider {
+
     @Override
     public Tracer global() {
         return OpenTelemetryTracerProvider.globalTracer();
@@ -53,4 +54,5 @@ public class JaegerTracerProvider implements TracerProvider {
     public boolean available() {
         return true;
     }
+
 }

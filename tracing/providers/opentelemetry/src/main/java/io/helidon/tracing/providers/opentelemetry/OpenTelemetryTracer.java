@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,20 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
@@ -36,11 +42,16 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 class OpenTelemetryTracer implements Tracer {
     private static final TextMapGetter GETTER = new Getter();
     private static final TextMapSetter SETTER = new Setter();
+
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
+
     private final OpenTelemetry telemetry;
     private final io.opentelemetry.api.trace.Tracer delegate;
     private final boolean enabled;
     private final TextMapPropagator propagator;
     private final Map<String, String> tags;
+    private final List<SpanListener> spanListeners = new ArrayList<>(SPAN_LISTENERS.get());
 
     OpenTelemetryTracer(OpenTelemetry telemetry, io.opentelemetry.api.trace.Tracer tracer, Map<String, String> tags) {
         this.telemetry = telemetry;
@@ -61,7 +72,8 @@ class OpenTelemetryTracer implements Tracer {
 
     @Override
     public Span.Builder<?> spanBuilder(String name) {
-        OpenTelemetrySpanBuilder builder = new OpenTelemetrySpanBuilder(delegate.spanBuilder(name));
+        OpenTelemetrySpanBuilder builder = new OpenTelemetrySpanBuilder(delegate.spanBuilder(name),
+                                                                        spanListeners);
         tags.forEach(builder::tag);
         Span.current().ifPresent(it -> builder.parent(it.context()));
         return builder;
@@ -87,6 +99,12 @@ class OpenTelemetryTracer implements Tracer {
         }
         throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
                                                    + ", telemetry tracer is: " + delegate.getClass().getName());
+    }
+
+    @Override
+    public Tracer register(SpanListener listener) {
+        spanListeners.add(listener);
+        return this;
     }
 
     static class Builder implements TracerBuilder<Builder> {

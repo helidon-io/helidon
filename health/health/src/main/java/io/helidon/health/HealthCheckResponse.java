@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.health;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Health check response.
@@ -69,12 +69,15 @@ public interface HealthCheckResponse {
      * Fluent API builder for {@link HealthCheckResponse}.
      */
     class Builder implements io.helidon.common.Builder<Builder, HealthCheckResponse> {
-        private final Map<String, Object> details = new HashMap<>();
+
+        // Use a TreeMap to preserve stability of the details in JSON output.
+        private final Map<String, Object> details = new TreeMap<>();
         private Status status = Status.UP;
 
         @Override
         public HealthCheckResponse build() {
-            return new HealthResponseImpl(this.status, this.details);
+            // Use a new map in case the builder is reused and mutated after this  invocation of build().
+            return new HealthResponseImpl(this.status, new TreeMap<>(this.details));
         }
 
         /**

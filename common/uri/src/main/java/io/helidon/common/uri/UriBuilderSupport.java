@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,11 @@ final class UriBuilderSupport {
         private UriInfoCustomMethods() {
         }
 
+        /**
+         * Authority of the request, to be converted to host and port.
+         *
+         * @param authority authority of the request (host:port)
+         */
         @Prototype.BuilderMethod
         static void authority(UriInfo.BuilderBase<?, ?> builder, String authority) {
             int index = authority.lastIndexOf(':');
@@ -69,6 +74,11 @@ final class UriBuilderSupport {
             builder.port(Integer.parseInt(authority.substring(index + 1)));
         }
 
+        /**
+         * Path of the request, to be converted to {@link io.helidon.common.uri.UriPath}.
+         *
+         * @param path of the request
+         */
         @Prototype.BuilderMethod
         static void path(UriInfo.BuilderBase<?, ?> builder, String path) {
             builder.path(UriPath.createFromDecoded(path));

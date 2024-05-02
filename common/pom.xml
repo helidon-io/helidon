@@ -30,6 +30,10 @@
     <packaging>pom</packaging>
     <name>Helidon Common Project</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>buffers</module>
         <module>common</module>
@@ -52,4 +56,19 @@
         <module>types</module>
         <module>uri</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

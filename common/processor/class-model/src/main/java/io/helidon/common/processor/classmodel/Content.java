@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.types.TypeName;
-
-import static io.helidon.common.processor.classmodel.ClassModel.PADDING_TOKEN;
-import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 class Content {
 
@@ -85,9 +82,12 @@ class Content {
     /**
      * Fluent API builder for {@link Content}.
      */
+    @SuppressWarnings("removal")
     static final class Builder implements io.helidon.common.Builder<Builder, Content> {
 
-        private static final Pattern TYPE_NAME_PATTERN = Pattern.compile(TYPE_TOKEN + "(.*?)" + TYPE_TOKEN);
+        private static final Pattern TYPE_NAME_PATTERN =
+                Pattern.compile(io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN + "(.*?)"
+                                        + io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN);
         private static final Pattern TYPE_IDENTIFICATION_PATTERN = Pattern.compile("[.a-zA-Z0-9_]+");
 
         private final StringBuilder content = new StringBuilder();
@@ -195,7 +195,7 @@ class Content {
          * @return updated builder instance
          */
         Builder padding() {
-            this.content.append(PADDING_TOKEN);
+            this.content.append(io.helidon.common.processor.classmodel.ClassModel.PADDING_TOKEN);
             return this;
         }
 
@@ -207,7 +207,7 @@ class Content {
          * @return updated builder instance
          */
         Builder padding(int repetition) {
-            this.content.append(PADDING_TOKEN.repeat(repetition));
+            this.content.append(io.helidon.common.processor.classmodel.ClassModel.PADDING_TOKEN.repeat(repetition));
             return this;
         }
 
@@ -219,7 +219,7 @@ class Content {
          */
         Builder increasePadding() {
             this.extraPaddingLevel++;
-            this.extraPadding = PADDING_TOKEN.repeat(this.extraPaddingLevel);
+            this.extraPadding = io.helidon.common.processor.classmodel.ClassModel.PADDING_TOKEN.repeat(this.extraPaddingLevel);
             return this;
         }
 
@@ -234,7 +234,7 @@ class Content {
             if (this.extraPaddingLevel < 0) {
                 throw new ClassModelException("Content padding cannot be negative");
             }
-            this.extraPadding = PADDING_TOKEN.repeat(this.extraPaddingLevel);
+            this.extraPadding = io.helidon.common.processor.classmodel.ClassModel.PADDING_TOKEN.repeat(this.extraPaddingLevel);
             return this;
         }
 

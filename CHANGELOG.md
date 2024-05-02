@@ -11,6 +11,43 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.8]
+
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+
+Java 21 is required to use Helidon 4.0.8.
+
+### CHANGES
+
+- Builders: Generated builders honor service discovery from copied instance [8648](https://github.com/helidon-io/helidon/pull/8648)
+- Common: Properly handles an empty input stream in GrowingBufferData [8694](https://github.com/helidon-io/helidon/pull/8694)
+- DBClient: Closeable jdbc pool [8571](https://github.com/helidon-io/helidon/pull/8571)
+- DBClient: Remove unnecessary comments [8658](https://github.com/helidon-io/helidon/pull/8658)
+- Datasource: Addresses a shortcoming of the UCP pool creation logic in certain test scenarios [8642](https://github.com/helidon-io/helidon/pull/8642)
+- Health: Preserve stability in details JSON output [8697](https://github.com/helidon-io/helidon/pull/8697)
+- OCI: Fixes bug in OkeWorkloadIdentityAdpSupplier.available() method [8689](https://github.com/helidon-io/helidon/pull/8689)
+- OCI: Retires dependency of ...cdi.OciExtension on ...runtime.OciExtension [8486](https://github.com/helidon-io/helidon/pull/8486)
+- OIDC: double outbound fix [8680](https://github.com/helidon-io/helidon/pull/8680)
+- OIDC: original uri resolving query fix [8701](https://github.com/helidon-io/helidon/pull/8701)
+- Tracing: Clear default propagator when one is explicitly added [8695](https://github.com/helidon-io/helidon/pull/8695)
+- Tracing: Support span event listeners [8619](https://github.com/helidon-io/helidon/pull/8619)
+- WebClient: Allows transition from HEADERS to END in HTTP2 client stream [8702](https://github.com/helidon-io/helidon/pull/8702)
+- WebClient: Client header duplication fixed [8628](https://github.com/helidon-io/helidon/pull/8628)
+- WebClient: WsClient accept `Connection` header with `upgrade` value lowercase [8675](https://github.com/helidon-io/helidon/pull/8675)
+- WebServer: Add shutdown handler to control shutdown sequence in a deterministic … [8684](https://github.com/helidon-io/helidon/pull/8684)
+- WebServer: ErrorHandlers class swallows exception object if response can't be reset [8634](https://github.com/helidon-io/helidon/pull/8634)
+- WebServer: Proper handling of invalid Accept types [8669](https://github.com/helidon-io/helidon/pull/8669)
+- WebServer: Use delegation instead of inheritance from BufferedOutputStream [8662](https://github.com/helidon-io/helidon/pull/8662)
+- Dependencies: Remove dependency on jakarta.activation-api as no longer needed [8650](https://github.com/helidon-io/helidon/pull/8650)
+- Dependencies: Upgrade kafka-clients to 3.6.2 [8665](https://github.com/helidon-io/helidon/pull/8665)
+- Deprecation: Add deprecation to helidon-inject modules in prep for service registry [8678](https://github.com/helidon-io/helidon/pull/8678)
+- Docs: Fix wrong description for bean validation annotations (#8505) [8556](https://github.com/helidon-io/helidon/pull/8556)
+- Docs: Move example WebClient code into a snippet [8699](https://github.com/helidon-io/helidon/pull/8699)
+- Examples: Archetype - Add intellij configuration file for MP projects [8609](https://github.com/helidon-io/helidon/pull/8609)
+- Examples: Archetype - Implement MP JSON and metrics combination [8629](https://github.com/helidon-io/helidon/pull/8629)
+- Tests: Remove unused private methods from HelloWorldAsyncResponseWithRestRequestTest [8624](https://github.com/helidon-io/helidon/pull/8624)
+
+
 ## [4.0.7]
 
 This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
@@ -1135,6 +1172,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.8]: https://github.com/oracle/helidon/compare/4.0.7...4.0.8
 [4.0.7]: https://github.com/oracle/helidon/compare/4.0.6...4.0.7
 [4.0.6]: https://github.com/oracle/helidon/compare/4.0.5...4.0.6
 [4.0.5]: https://github.com/oracle/helidon/compare/4.0.4...4.0.5

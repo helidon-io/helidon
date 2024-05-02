@@ -33,6 +33,10 @@
 
     <dependencies>
         <dependency>
+            <artifactId>helidon-common</artifactId>
+            <groupId>io.helidon.common</groupId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-types</artifactId>
         </dependency>

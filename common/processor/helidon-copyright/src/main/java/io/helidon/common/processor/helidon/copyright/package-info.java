@@ -16,8 +16,8 @@
 
 /**
  * Custom copyright provider that generates Helidon copyright headers.
- *
- * @deprecated use {@code helidon-codegen-helidon-copyright} instead.
+ * <p>
+ * Use {@code helidon-codegen-helidon-copyright} instead.
  */
 @Deprecated(forRemoval = true, since = "4.1.0")
 package io.helidon.common.processor.helidon.copyright;

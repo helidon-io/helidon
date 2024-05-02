@@ -49,8 +49,14 @@
         <spotbugs.skip>false</spotbugs.skip>
         <spotbugs.threshold>Medium</spotbugs.threshold>
 
+        <!-- owasp dependency check -->
         <dependency-check.skip>false</dependency-check.skip>
         <checkstyle.skip>false</checkstyle.skip>
+
+        <!-- Maven dependency check -->
+        <dependency-plugin-check-dependencies.skip>false</dependency-plugin-check-dependencies.skip>
+        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
+
         <!--
         !Version statement! - begin
 
@@ -264,6 +270,7 @@
                     <configuration>
                         <source>${version.java}</source>
                         <failOnError>true</failOnError>
+                        <failOnWarnings>${javadoc.fail-on-warnings}</failOnWarnings>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <offline>true</offline>
@@ -527,6 +534,23 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${version.plugin.dependency}</version>
+                    <executions>
+                        <execution>
+                            <id>check-dependencies</id>
+                            <goals>
+                                <goal>analyze-only</goal>
+                            </goals>
+                            <phase>none</phase>
+                            <configuration>
+                                <skip>${dependency-plugin-check-dependencies.skip}</skip>
+                                <ignoredPackagings>
+                                    <packaging>pom</packaging>
+                                </ignoredPackagings>
+                                <ignoreNonCompile>true</ignoreNonCompile>
+                                <failOnWarning>true</failOnWarning>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

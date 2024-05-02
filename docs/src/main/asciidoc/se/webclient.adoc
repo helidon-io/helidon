@@ -102,17 +102,19 @@ request methods. These methods will create a new instance of link:{webclient-jav
 
 === Customizing the Request
 
-Configuration can be set for every request type before it is sent. Below are some examples of the optional parameters.
+Configuration can be set for every request type before it is sent.
 
-|===
-|Parameter |Description
+.Customizing a request
+[source,java]
+----
+include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_12, indent=0]
+----
 
-|`uri("http://example.com")`   |Overrides baseUri from WebClient
-|`path("/path")`   |Adds path to the uri
-|`queryParam("query", "parameter")`   |Adds query parameter to the request
-|`fragment("someFragment")`   |Adds fragment to the request
-|`headers(headers -> headers.addAccept(MediaType.APPLICATION_JSON))`   |Adds header to the request
-|===
+<1> Overrides `baseUri` from WebClient
+<2> Adds path to the uri
+<3> Adds query parameter to the request
+<4> Adds fragment to the request
+<5> Adds header to the request
 
 For more information about these optional parameters, check out link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/ClientRequestBase.html[ClientRequestBase] API, which is a parent class of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest].
 
