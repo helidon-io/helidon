@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,14 +180,13 @@ class ToolBoxTest {
         List<ServiceProvider<ModuleComponent>> allModules = services.lookupAll(ModuleComponent.class);
         List<String> desc = allModules.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // note that order matters here
-        // there is now config module as active as well
         assertThat("ensure that Annotation Processors are enabled in the tools module meta-inf/services",
-                   desc, contains("Injection$$Module:ACTIVE", "Injection$$Module:ACTIVE", "Injection$$TestModule:ACTIVE"));
+                   desc, contains("Injection$$Module:ACTIVE", "Injection$$TestModule:ACTIVE"));
         List<String> names = allModules.stream()
                 .sorted()
                 .map(m -> m.get().named().orElse(m.get().getClass().getSimpleName() + ":null")).collect(Collectors.toList());
         assertThat(names,
-                   contains("io.helidon.config", "io.helidon.inject.tests.inject", "io.helidon.inject.tests.inject/test"));
+                   contains("io.helidon.inject.tests.inject", "io.helidon.inject.tests.inject/test"));
     }
 
     /**
@@ -304,8 +303,7 @@ class ToolBoxTest {
         assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.OuterCommonContractImpl"), "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.CommonContractImpl"), "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.TestingSingleton"), "ACTIVE->DESTROYED"));
-        // ConfigProducer is the 9th
-        assertThat(report + " : expected 9 services to be present", report.size(), equalTo(9));
+        assertThat(report + " : expected 8 services to be present", report.size(), equalTo(8));
 
         assertThat(TestingSingleton.postConstructCount(), equalTo(1));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(1));
@@ -322,8 +320,7 @@ class ToolBoxTest {
                 .collect(Collectors.toMap(Map.Entry::getKey,
                                           e2 -> e2.getValue().startingActivationPhase().toString()
                                                   + "->" + e2.getValue().finishingActivationPhase()));
-        // now contains config as well
-        assertThat(report.toString(), report.size(), is(9));
+        assertThat(report.toString(), report.size(), is(8));
 
         tearDown();
         map = injectionServices.shutdown().orElseThrow();

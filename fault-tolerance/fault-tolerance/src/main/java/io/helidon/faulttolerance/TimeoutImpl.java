@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import jakarta.inject.Inject;
-
 class TimeoutImpl implements Timeout {
     private static final System.Logger LOGGER = System.getLogger(TimeoutImpl.class.getName());
 
@@ -34,7 +32,6 @@ class TimeoutImpl implements Timeout {
     private final String name;
     private final TimeoutConfig config;
 
-    @Inject
     TimeoutImpl(TimeoutConfig config) {
         this.timeoutMillis = config.timeout().toMillis();
         this.executor = config.executor().orElseGet(FaultTolerance.executor());

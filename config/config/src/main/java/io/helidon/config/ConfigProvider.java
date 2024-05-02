@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,34 +19,44 @@ package io.helidon.config;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
 import io.helidon.common.config.ConfigValue;
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigMapperProvider;
+import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.inject.api.ExternalContracts;
+import io.helidon.service.registry.Service;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
-
-@Singleton
-@ExternalContracts(Config.class)
-class ConfigProducer implements Config {
+@Service.Provider
+@Service.ExternalContracts(Config.class)
+class ConfigProvider implements Config {
     private final Config config;
 
-    @Inject
-    ConfigProducer(List<Provider<ConfigSource>> serviceProviders) {
+    ConfigProvider(Supplier<MetaConfig> metaConfig,
+                   Supplier<List<ConfigSource>> configSources,
+                   Supplier<List<ConfigParser>> configParsers,
+                   Supplier<List<ConfigFilter>> configFilters,
+                   Supplier<List<ConfigMapperProvider>> configMappers) {
         if (GlobalConfig.configured()) {
             config = GlobalConfig.config();
         } else {
             config = io.helidon.config.Config.builder()
-                    .metaConfig()
-                    .update(it -> serviceProviders.stream()
-                            .map(Provider::get)
-                            .map(ConfigSource.class::cast)
+                    .config(metaConfig.get().metaConfiguration())
+                    .update(it -> configSources.get()
                             .forEach(it::addSource))
+                    .disableParserServices()
+                    .update(it -> configParsers.get()
+                            .forEach(it::addParser))
+                    .disableFilterServices()
+                    .update(it -> configFilters.get()
+                            .forEach(it::addFilter))
+                    .disableMapperServices()
+                    .update(it -> configMappers.get()
+                            .forEach(it::addMapper))
                     .build();
         }
     }

@@ -78,8 +78,13 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
+                            <artifactId>helidon-builder-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
@@ -91,8 +96,13 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
                         <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-processor</artifactId>
+                        <artifactId>helidon-builder-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
