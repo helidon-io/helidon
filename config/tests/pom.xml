@@ -63,5 +63,6 @@
         <module>service-registry</module>
         <module>config-metadata-meta-api</module>
         <module>config-metadata-builder-api</module>
+        <module>test-lazy-source</module>
     </modules>
 </project>
