@@ -41,9 +41,12 @@ class TestingJunit5Snippets {
     class Snippet1 {
 
         // tag::snippet_1[]
-        @TestInstance(TestInstance.Lifecycle.PER_METHOD)
         @HelidonTest
         class MyTest {
+
+            @Test
+            void testOne(WebTarget target) {
+            }
         }
         // end::snippet_1[]
     }
@@ -51,6 +54,16 @@ class TestingJunit5Snippets {
     class Snippet2 {
 
         // tag::snippet_2[]
+        @TestInstance(TestInstance.Lifecycle.PER_METHOD)
+        @HelidonTest
+        class MyTest {
+        }
+        // end::snippet_2[]
+    }
+
+    class Snippet3 {
+
+        // tag::snippet_3[]
         @HelidonTest
         @Priority(1) // <3>
         class MyTest {
@@ -98,6 +111,6 @@ class TestingJunit5Snippets {
                 return "Not Mocked";
             }
         }
-        // end::snippet_2[]
+        // end::snippet_3[]
     }
 }

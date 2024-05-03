@@ -307,6 +307,11 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
         }
 
         @Override
+        public List<Method> addConfigSources() {
+            return classInfo.addConfigSources();
+        }
+
+        @Override
         public <A extends Annotation, C extends Annotation> Stream<A> annotations(Class<A> aType,
                                                                                   Class<C> cType,
                                                                                   Function<C, A[]> function) {
