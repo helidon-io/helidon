@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,5 +71,13 @@ class UriQueryTest {
     @Test
     void testNullUriFails() {
         assertThrows(NullPointerException.class, () -> UriQuery.create((URI) null));
+    }
+
+    @Test
+    void issue8710() {
+        UriQuery uriQuery = UriQuery.create(URI.create("http://foo/bar?a&b=c"));
+
+        assertThat(uriQuery.all("a"), hasItems());
+        assertThat(uriQuery.all("b"), hasItems("c"));
     }
 }
