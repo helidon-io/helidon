@@ -43,6 +43,7 @@ import org.eclipse.microprofile.lra.annotation.Complete;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -54,6 +55,7 @@ import static org.hamcrest.Matchers.is;
 @AddBean(TestLraCoordinator.class)
 @AddExtension(LraCdiExtension.class)
 @AddExtension(ConfigCdiExtension.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Path("/test/internal")
 public class LraDisabledDiscoveryResourceTest {
 

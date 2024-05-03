@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,32 @@
 package io.helidon.microprofile.testing.junit5;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A repeatable container for {@link io.helidon.microprofile.testing.junit5.AddExtension}.
- * No need to use this annotation, just repeat {@link io.helidon.microprofile.testing.junit5.AddExtension} annotation
- * on test class.
+ * A repeatable container for {@link AddExtension}.
+ * <p>
+ * This annotation is optional, you can instead repeat {@link AddExtension}.
+ * <p>
+ * E.g.
+ * <pre>
+ * &#64;AddExtension(FooExtension.class)
+ * &#64;AddExtension(BarExtension.class)
+ * class MyTest {
+ * }
+ * </pre>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Inherited
 public @interface AddExtensions {
     /**
-     * Extensions to be added.
-     * @return extensions
+     * Get the contained annotations.
+     *
+     * @return annotations
      */
     AddExtension[] value();
 }

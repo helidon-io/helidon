@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,24 +47,13 @@ class MainTest {
     private static final String DISABLED_METRIC = "base/thread.count";
     private static final String HEALTH_URI = "/myhealth";
 
-    private static Client client;
-
+    private final Client client;
     private final ServerCdiExtension server;
 
     @Inject
     MainTest(ServerCdiExtension server) {
         this.server = server;
         this.client = ClientBuilder.newClient();
-    }
-
-    @BeforeAll
-    static void initClass() {
-        client = ClientBuilder.newClient();
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        client.close();
     }
 
     static Stream<Params> initParams() {

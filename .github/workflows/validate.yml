@@ -100,7 +100,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-20.04 ]
-        moduleSet: [ core, it, dbclient, dbclient-oracle, others ]
+        moduleSet: [ core, it, jpa, jpa-oracle, dbclient, dbclient-oracle, others ]
         include:
           - { os: ubuntu-20.04, platform: linux }
     runs-on: ${{ matrix.os }}

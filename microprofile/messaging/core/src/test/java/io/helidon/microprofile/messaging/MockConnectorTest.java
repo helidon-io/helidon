@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import static io.helidon.messaging.connectors.mock.MockConnector.CONNECTOR_NAME;
 import static org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory.INCOMING_PREFIX;
@@ -54,6 +55,7 @@ import static org.hamcrest.Matchers.contains;
 @AddConfig(key = INCOMING_PREFIX + "test-channel-5.mock-data-type", value = "java.lang.Long")
 @AddConfig(key = INCOMING_PREFIX + "test-channel-5.mock-data", value = "9,10,11,12")
 @AddConfig(key = OUTGOING_PREFIX + "test-channel-6.connector", value = CONNECTOR_NAME)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MockConnectorTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);

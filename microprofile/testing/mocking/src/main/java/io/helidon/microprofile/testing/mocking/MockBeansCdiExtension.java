@@ -38,7 +38,7 @@ import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
 /**
- * CDI extension for Mocking implementation.
+ * CDI extension that supports {@link MockBean}.
  */
 public class MockBeansCdiExtension implements Extension {
 
