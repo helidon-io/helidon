@@ -38,6 +38,7 @@ class ParametersTest {
     @Test
     void testEmpty() {
         Parameters empty = Parameters.empty(UNIT_TEST);
+        assertThat(empty.first(UNIT_TEST).isEmpty(), is(true));
         assertThat(empty.component(), is(UNIT_TEST));
         assertThat("Empty parameters should not contain anything", empty.contains("anything"), is(false));
         assertThat("Empty parameters should have size 0", empty.size(), is(0));
