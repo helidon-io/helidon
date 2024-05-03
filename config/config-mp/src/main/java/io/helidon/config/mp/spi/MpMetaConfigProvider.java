@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.mp.spi;
 
+import java.io.Reader;
 import java.util.List;
 import java.util.Set;
 
@@ -44,4 +45,12 @@ public interface MpMetaConfigProvider {
      * @return list of config sources
      */
     List<? extends ConfigSource> create(String type, Config metaConfig, String profile);
+
+    /**
+     * Create the {@link ConfigSource} from the given content.
+     *
+     * @param content a reader with the content data
+     * @return config source
+     */
+    ConfigSource create(Reader content);
 }

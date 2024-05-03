@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.oci.secrets.mp.configsource;
 
+import java.io.Reader;
 import java.util.List;
 import java.util.Set;
 
@@ -91,6 +92,11 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
     @SuppressWarnings("deprecation")
     public Set<String> supportedTypes() {
         return this.p.supported();
+    }
+
+    @Override
+    public ConfigSource create(Reader content) {
+        throw new UnsupportedOperationException("Operation not supported");
     }
 
 }
