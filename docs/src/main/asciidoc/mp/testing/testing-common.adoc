@@ -1,0 +1,393 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Testing with Helidon MP
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+:mp-testing-javadoc-url: {mp-testing-javadoc-base-url}/io/helidon/microprofile/testing
+:mp-mocking-javadoc-url: {mp-mocking-javadoc-base-url}/io/helidon/microprofile/testing/mocking
+:mp-server-javadoc-url: {mp-server-javadoc-base-url}/io/helidon/microprofile/server
+:mp-config-javadoc-url: {mp-config-javadoc-base-url}/io/helidon/microprofile/config
+:jakarta-jaxrs-javadoc-url: {jakarta-jaxrs-base-url}/apidocs/jakarta/ws/rs
+:jakarta-cdi-javadoc-url: {jakarta-cdi-base-url}/apidocs/jakarta.cdi/jakarta/enterprise
+:microprofile-config-javadoc-url: {microprofile-config-base-url}/apidocs/org/eclipse/microprofile/config
+
+== Usage
+
+// tag::usage[]
+[source,java]
+.Basic usage
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_1, indent=0]
+----
+<1> Enable the test class
+
+=== CDI Container Setup
+
+By default, CDI discovery is enabled:
+
+- CDI beans and extensions in the classpath are added automatically
+- If disabled, the CDI beans and extensions must be added manually
+
+[NOTE]
+====
+Customization of the CDI container on a test method changes the CDI container affinity.
+
+I.e. The test method will use a dedicated CDI container.
+====
+
+[NOTE]
+====
+It is not recommended to provide a `beans.xml` along the test classes, as it would combine beans from all tests.
+
+Instead, you should use link:{mp-testing-javadoc-url}/AddBean.html[`@AddBean`] to specify the beans per test or method.
+====
+
+CDI discovery can be disabled using link:{mp-testing-javadoc-url}/DisableDiscovery.html[`@DisableDiscovery`].
+
+[source,java]
+.Disable discovery
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_2, indent=0]
+----
+<1> Disable CDI discovery
+<2> Add a bean class
+
+When disabling discovery, it can be difficult to identify the CDI extensions needed to activate the desired features.
+
+JAXRS (Jersey) support can be added easily using link:{mp-testing-javadoc-url}/AddJaxRs.html[`@AddJaxRs`].
+
+[source,java]
+.Add JAX-RS (Jersey)
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_3, indent=0]
+----
+<1> Add JAX-RS (Jersey) support
+<2> Add a resource class to the CDI container
+
+Note the following Helidon CDI extensions:
+
+[cols="1,3"]
+|===
+|Extension | Note
+
+|link:{mp-config-javadoc-url}/ConfigCdiExtension.html[`ConfigCdiExtension`]
+|Add MicroProfile Config injection support
+
+|link:{mp-server-javadoc-url}/ServerCdiExtension.html[`ServerCdiExtension`]
+|Optional if using link:{mp-testing-javadoc-url}/AddJaxRs.html[`@AddJaxRs`]
+
+|link:{mp-server-javadoc-url}/JaxRsCdiExtension.html[`JaxRsCdiExtension`]
+|Optional if using link:{mp-testing-javadoc-url}/AddJaxRs.html[`@AddJaxRs`]
+
+|===
+
+=== CDI Container Afinity
+
+By default, one CDI container is created per test class and is shared by all test methods.
+
+However, test methods can also require a dedicated CDI container:
+
+- By forcing a reset of the CDI container between methods
+- By customizing the CDI container per test method
+
+[source,java]
+.Reset the CDI container between methods
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_4, indent=0]
+----
+<1> `testOne` executes in a dedicated CDI container
+<2> `testTwo` also executes in a dedicated CDI container
+
+[source,java]
+.Customize the CDI container per method
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_5, indent=0]
+----
+<1> `testOne` executes in the shared CDI container
+<2> `testTwo` executes in a dedicated CDI container
+
+=== Configuration
+
+The test configuration can be set up in two exclusive ways:
+
+- Using the "synthetic" configuration expressed with annotations (default)
+- Using the "existing" configuration of the current environment
+
+Use link:{mp-testing-javadoc-url}/Configuration.html[`@Configuration`] to switch to the "existing" configuration.
+
+[source,java]
+.Switch to the existing configuration
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_6, indent=0]
+----
+
+[NOTE]
+====
+Customization of the test configuration on a test method changes the CDI container affinity.
+
+I.e. The test method will use a dedicated CDI container.
+====
+
+==== Synthetic Configuration
+
+The "synthetic" configuration can be expressed using the following annotations:
+
+[cols="1,3"]
+|===
+|Type | Usage
+
+|link:{mp-testing-javadoc-url}/AddConfig.html[`@AddConfig`]
+|Key value pair
+
+|link:{mp-testing-javadoc-url}/AddConfigBlock.html[`@AddConfigBlock`]
+|Formatted text block
+
+|link:{mp-testing-javadoc-url}/Configuration.html[`@Configuration`]
+| Classpath resources using
+
+|===
+
+[source,java]
+.Add a key value pair
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_7, indent=0]
+----
+
+[source,java]
+.Add a properties text block
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_8, indent=0]
+----
+
+[source,java]
+.Add a YAML text block
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_9, indent=0]
+----
+
+[source,java]
+.Add classpath resources
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_10, indent=0]
+----
+
+==== Configuration Ordering
+
+The ordering of the test configuration can be controlled using the mechanism defined by the
+link:{microprofile-config-spec-url}#_configsource_ordering[MicroProfile Config specification].
+
+NOTE: The configuration expressed with link:{mp-testing-javadoc-url}/AddConfig.html[`@AddConfig`] has a fixed ordinal value
+of `1000`
+
+[source,java]
+.Add a properties text block with ordinal
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_11, indent=0]
+----
+
+=== Injectable Types
+
+Helidon provides injection support for types that reflect the current server. E.g. JAXRS client.
+
+Here are all the built-in types that can be injected:
+[cols="1,3"]
+|===
+|Type | Usage
+
+|link:{jakarta-jaxrs-javadoc-url}/client/WebTarget.html[`WebTarget`]
+|A JAX-RS client configured for the current server.
+
+|`URI`
+|A URI representing the current server
+
+|`String`
+|A raw URI representing the current server
+
+|link:{jakarta-cdi-javadoc-url}/inject/se/SeContainer.html[`SeContainer`]
+| The current CDI container instance
+
+|===
+
+NOTE: Types that reflect the current server require link:{mp-server-javadoc-url}/ServerCdiExtension.html[`ServerCdiExtension`]
+
+NOTE: All the injectable types are also available as method parameters.
+
+[source,java]
+.Inject a JAX-RS client for the default socket
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_12, indent=0]
+----
+
+Use link:{mp-testing-javadoc-url}/Socket.html[`@Socket`] to specify the socket for the clients and URIs.
+
+[source,java]
+.Inject a JAX-RS client for the admin socket
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_13, indent=0]
+----
+
+[source,java]
+.Using a method parameter
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_14, indent=0]
+----
+// end::usage[]
+
+== API
+
+// tag::api[]
+Here is a brief overview of the MicroProfile testing annotations:
+
+[cols="1,3"]
+|===
+|Annotation | Usage
+
+|link:{mp-testing-javadoc-url}/AddBean.html[`@AddBean`]
+|Add a CDI bean class to the CDI container
+
+|link:{mp-testing-javadoc-url}/AddExtension.html[`@AddExtension`]
+|Add a CDI extension to the CDI container
+
+|link:{mp-testing-javadoc-url}/DisableDiscovery.html[`@DisableDiscovery`]
+|Disable automated discovery of beans and extensions
+
+|link:{mp-testing-javadoc-url}/AddJaxRs.html[`@AddJaxRs`]
+|Shorthand to add JAX-RS (Jersey) support
+
+|link:{mp-testing-javadoc-url}/AddConfig.html[`@AddConfig`]
+|Define a key value pair in the "synthetic" configuration
+
+|link:{mp-testing-javadoc-url}/AddConfigBlock.html[`@AddConfigBlock`]
+|Define a formatted text block in the "synthetic" configuration
+
+|link:{mp-testing-javadoc-url}/Configuration.html[`@Configuration`]
+| Switch between "synthetic" and "existing" ; Add classpath resources to the "synthetic" configuration
+
+|link:{mp-testing-javadoc-url}/Socket.html[`@Socket`]
+|  CDI qualifier to inject a JAX-RS client or URI for a named socket
+
+|link:{mp-testing-javadoc-url}/AfterStop.html[`@AfterStop`]
+| Mark a static method to be executed after the container is stopped
+
+|===
+// end::api[]
+
+== Examples
+
+// tag::examples[]
+=== Config Injection Example
+
+The following example demonstrates how to enable the use of
+ link:{microprofile-config-javadoc-url}/inject/ConfigProperty.html[`@ConfigProperty`] without CDI discovery.
+
+[source,java]
+.Config Injection Example
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_15, indent=0]
+----
+<1> CDI discovery is disabled
+<2> Add `MyBean` to the CDI container
+<3> Add link:{mp-config-javadoc-url}/ConfigCdiExtension.html[`ConfigCdiExtension`] to the CDI container
+<4> Define test configuration
+<5> Inject the configuration
+
+=== Request Scope Example
+
+The following example demonstrates how to use link:{jakarta-cdi-javadoc-url}/context/RequestScoped.html[`@RequestScoped`] with
+JAXRS without CDI discovery.
+
+[source,java]
+.Request Scope Example
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_16, indent=0]
+----
+<1> CDI discovery is disabled
+<2> Add JAXRS (Jersey) support
+<3> Add `MyResource` to the CDI container
+// end::examples[]
+
+== Mock Support
+
+// tag::mock-support[]
+Mocking in Helidon MP is all about replacing CDI beans with instrumented mock classes.
+
+This can be done using CDI alternatives, however Helidon provides an annotation to make it easy.
+
+=== Maven Coordinates
+
+To enable mock mupport add the following dependency to your project’s pom.xml.
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.testing</groupId>
+    <artifactId>helidon-microprofile-testing-mocking</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+=== Usage
+
+Use the link:{mp-mocking-javadoc-url}/MockBean.html[`@MockBean`] annotation to inject an instrumentd CDI bean in your test,
+ and customize it in the test method.
+
+==== Example
+
+[source,java]
+.Mocking using `@MockBean`
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_17, indent=0]
+----
+<1> Instrument `MyService` using `Answers.CALLS_REAL_METHODS`
+<2> Customize the behavior
+// end::mock-support[]
+
+== Virtual Threads
+
+// tag::virtual-threads[]
+Virtual Threads pinning can be detected during tests.
+
+A virtual thread is "pinning" when it blocks its carrier thread in a way that prevents the virtual thread scheduler from
+ scheduling other virtual threads.
+
+This can happen when blocking in native code, or prior to JDK24 when a blocking IO operation happens in a synchronized block.
+
+Pinning can in some cases negatively affect application performance.
+
+[source,java]
+.Enable pinning detection
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_18, indent=0]
+----
+
+Pinning is considered harmful when it takes longer than 20 milliseconds,
+that is also the default when detecting it within tests.
+
+Pinning threshold can be changed with:
+
+[source,java]
+.Configure pinning threshold
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_19, indent=0]
+----
+<1> Change pinning threshold from default(20) to 50 milliseconds.
+
+When pinning is detected, the test fails with a stacktrace pointing at the culprit.
+// end::virtual-threads[]

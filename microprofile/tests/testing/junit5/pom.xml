@@ -28,10 +28,9 @@
     <artifactId>helidon-microprofile-tests-testing-junit5</artifactId>
     <name>Helidon Microprofile Tests Junit5 unit tests</name>
 
-    <description>
-        Test for JUnit5 integration to prevent cyclic dependendcies,
-        so the module can be used in MP config implementation
-    </description>
+    <properties>
+        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -51,12 +50,17 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.testing</groupId>
             <artifactId>helidon-microprofile-testing-mocking</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -69,6 +73,22 @@
             <artifactId>junit-platform-testkit</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>
+                            ${project.build.testOutputDirectory}/logging.properties
+                        </java.util.logging.config.file>
+                    </systemPropertyVariables>
+                    <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

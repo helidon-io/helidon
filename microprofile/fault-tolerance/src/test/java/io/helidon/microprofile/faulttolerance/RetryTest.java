@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.faulttolerance;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
@@ -36,17 +37,18 @@ import static org.hamcrest.Matchers.is;
  */
 @AddBean(RetryBean.class)
 @AddBean(SyntheticRetryBean.class)
-public class RetryTest extends FaultToleranceTest {
+class RetryTest extends FaultToleranceTest {
 
     static Stream<Arguments> createBeans() {
         return Stream.of(
-                Arguments.of(newBean(RetryBean.class), "ManagedRetryBean"),
-                Arguments.of(newNamedBean(SyntheticRetryBean.class), "SyntheticRetryBean"));
+                Arguments.of((Supplier<RetryBean>) () -> newBean(RetryBean.class), "ManagedRetryBean"),
+                Arguments.of((Supplier<RetryBean>) () -> newNamedBean(SyntheticRetryBean.class), "SyntheticRetryBean"));
     }
 
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
-    public void testRetryBean(RetryBean bean, String unused) {
+    void testRetryBean(Supplier<RetryBean> supplier, String unused) {
+        RetryBean bean = supplier.get();
         bean.reset();
         assertThat(bean.getInvocations(), is(0));
         bean.retry();
@@ -55,7 +57,8 @@ public class RetryTest extends FaultToleranceTest {
 
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
-    public void testRetryBeanFallback(RetryBean bean, String unused) {
+    void testRetryBeanFallback(Supplier<RetryBean> supplier, String unused) {
+        RetryBean bean = supplier.get();
         bean.reset();
         assertThat(bean.getInvocations(), is(0));
         String value = bean.retryWithFallback();
@@ -65,7 +68,8 @@ public class RetryTest extends FaultToleranceTest {
 
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
-    public void testRetryAsync(RetryBean bean, String unused) throws Exception {
+    void testRetryAsync(Supplier<RetryBean> supplier, String unused) throws Exception {
+        RetryBean bean = supplier.get();
         bean.reset();
         CompletableFuture<String> future = bean.retryAsync();
         future.get();
@@ -74,7 +78,8 @@ public class RetryTest extends FaultToleranceTest {
 
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
-    public void testRetryWithDelayAndJitter(RetryBean bean, String unused) throws Exception {
+    void testRetryWithDelayAndJitter(Supplier<RetryBean> supplier, String unused) {
+        RetryBean bean = supplier.get();
         bean.reset();
         long millis = System.currentTimeMillis();
         bean.retryWithDelayAndJitter();
@@ -84,13 +89,13 @@ public class RetryTest extends FaultToleranceTest {
     /**
      * Inspired by a TCK test which makes sure failed executions propagate correctly.
      *
-     * @param bean the bean to invoke
+     * @param supplier supplier of the bean to invoke
      * @param unused bean name to use for the specific test invocation
-     * @throws Exception
      */
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
-    public void testRetryWithException(RetryBean bean, String unused) throws Exception {
+    void testRetryWithException(Supplier<RetryBean> supplier, String unused) {
+        RetryBean bean = supplier.get();
         bean.reset();
         CompletionStage<String> future = bean.retryWithException();
         assertCompleteExceptionally(future.toCompletableFuture(), IOException.class, "Simulated error");
@@ -99,7 +104,8 @@ public class RetryTest extends FaultToleranceTest {
 
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
-    public void testRetryCompletionStageWithEventualSuccess(RetryBean bean, String unused) {
+    void testRetryCompletionStageWithEventualSuccess(Supplier<RetryBean> supplier, String unused) {
+        RetryBean bean = supplier.get();
         bean.reset();
         assertCompleteOk(bean.retryWithUltimateSuccess(), "success");
         assertThat(bean.getInvocations(), is(3));
@@ -107,7 +113,8 @@ public class RetryTest extends FaultToleranceTest {
 
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
-    public void testRetryWithCustomRuntimeException(RetryBean bean, String unused) {
+    void testRetryWithCustomRuntimeException(Supplier<RetryBean> supplier, String unused) {
+        RetryBean bean = supplier.get();
         bean.reset();
         assertThat(bean.getInvocations(), is(0));
         assertCompleteOk(bean.retryOnCustomRuntimeException(), "success");

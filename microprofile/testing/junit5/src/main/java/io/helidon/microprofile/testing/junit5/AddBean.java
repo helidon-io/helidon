@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,37 +17,45 @@ package io.helidon.microprofile.testing.junit5;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import jakarta.enterprise.context.ApplicationScoped;
-
 /**
- * Add a bean.
- * This is intended for test sources where we do not want to add {@code beans.xml} as this would add
- * all test classes as beans.
- * The bean will be added by default with {@link jakarta.enterprise.context.ApplicationScoped}.
- * The class will be instantiated using CDI and will be available for injection into test classes and other beans.
+ * Add a CDI bean to the container.
+ * <p>
  * This annotation can be repeated.
+ * <p>
+ * If used on a method, the container will be reset regardless of the test lifecycle.
+ * <p>
+ * The bean scope is defined as follows:
+ * <ul>
+ *     <li>If a scope is set with {@link #value()}, it overrides any scope defined on the bean</li>
+ *     <li>Otherwise, the scope defined on the bean is used</li>
+ *     <li>If the bean does not define a scope, {@link jakarta.enterprise.context.ApplicationScoped ApplicationScoped}
+ *     is used</li>
+ * </ul>
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddBean} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddBeans.class)
+@Deprecated(since = "4.2.0")
 public @interface AddBean {
     /**
-     * Class of the bean.
-     * @return the class of a bean
+     * The bean class.
+     *
+     * @return bean class
      */
     Class<?> value();
 
     /**
-     * Scope of the bean.
-     * Only {@link jakarta.inject.Singleton}, {@link jakarta.enterprise.context.ApplicationScoped}
-     *   and {@link jakarta.enterprise.context.RequestScoped} scopes are supported.
+     * Override the bean scope.
      *
-     * @return scope of the bean
+     * @return scope class
      */
-    Class<? extends Annotation> scope() default ApplicationScoped.class;
+    Class<? extends Annotation> scope() default Annotation.class;
 }

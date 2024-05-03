@@ -215,10 +215,14 @@ endif::[]
 :metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
 :prometheus-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.prometheus
+:mp-config-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.config
 :mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
+:mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
 :mp-server-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.server
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
-:mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
+:mp-testing-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing
+:mp-junit5-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing.junit5
+:mp-mocking-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing.mocking
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
 :openapi-ui-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.openapi.ui
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive

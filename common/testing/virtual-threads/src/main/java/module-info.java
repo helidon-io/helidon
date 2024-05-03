@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 module io.helidon.common.testing.vitualthreads {
     requires jdk.jfr;
     exports io.helidon.common.testing.virtualthreads to
+            io.helidon.microprofile.testing,
             io.helidon.microprofile.testing.junit5,
             io.helidon.microprofile.testing.testng,
             io.helidon.webserver.testing.junit5;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,33 +19,42 @@ package io.helidon.microprofile.tests.testing.testng;
 import java.util.Arrays;
 
 import io.helidon.common.testing.virtualthreads.PinningAssertionError;
-import io.helidon.microprofile.tests.testing.testng.programmatic.PinningExtraThreadTest;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.testng.Assert;
+import org.testng.ITestResult;
 import org.testng.TestListenerAdapter;
-import org.testng.TestNG;
 import org.testng.annotations.Test;
 
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsCollectionContaining.hasItem;
 
 public class TestPinnedThread {
 
-    private static final String EXPECTED_PINNING_METHOD_NAME = "lambda$testPinningExtraThread$0";
+    private static final String EXPECTED_PINNING_METHOD_NAME = "lambda$testPinned$0";
 
     @Test
-    void testListener() {
-        TestNG testng = new TestNG();
-        testng.setTestClasses(new Class[] {PinningExtraThreadTest.class});
-        TestListenerAdapter tla = new TestListenerAdapter();
-        testng.addListener(tla);
-        PinningAssertionError pinningAssertionError = Assert.expectThrows(PinningAssertionError.class, testng::run);
-        assertThat(pinningAssertionError.getMessage(), startsWith("Pinned virtual threads were detected:"));
-        assertThat("Method with pinning is missing from stack strace.", Arrays.asList(pinningAssertionError.getStackTrace()),
-                   hasItem(new StackTraceElementMatcher(EXPECTED_PINNING_METHOD_NAME)));
+    void testPinnedThread() {
+        TestListenerAdapter tla = new TestNGRunner()
+                .name("TestPinnedThread")
+                .parameter("TestPinnedThread", "true")
+                .testClasses(TestPinnedThreadExtra.class)
+                .printErrors(false)
+                .run();
+        Throwable ex = tla.getFailedTests().stream()
+                .findFirst()
+                .map(ITestResult::getThrowable)
+                .orElse(null);
+        assertThat(ex, is(not(nullValue())));
+        assertThat(ex, is(instanceOf(PinningAssertionError.class)));
+        assertThat(ex.getMessage(), startsWith("Pinned virtual threads were detected:"));
+        assertThat("Method with pinning is missing from stack strace.", Arrays.asList(ex.getStackTrace()),
+                hasItem(new StackTraceElementMatcher(EXPECTED_PINNING_METHOD_NAME)));
     }
 
     private static class StackTraceElementMatcher extends BaseMatcher<StackTraceElement> {
@@ -70,7 +79,6 @@ public class TestPinnedThread {
 
         @Override
         public void describeTo(Description description) {
-
         }
     }
 }

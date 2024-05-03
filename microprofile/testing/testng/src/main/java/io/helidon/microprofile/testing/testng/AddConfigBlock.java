@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,28 +23,35 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines the configuration as a String in {@link #value()} for the
- * given type.
+ * Add a configuration fragment to the {@link Configuration#useExisting() synthetic test configuration}.
+ * <p>
+ * This annotation can be repeated.
+ * <p>
+ * If used on a method, the container will be reset regardless of the test lifecycle.
+ *
+ * @see AddConfig
+ * @see AddConfigs
+ * @see Configuration
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddConfigBlock} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddConfigBlock {
-
     /**
-     * Specifies the format type of the {@link #value()}.
-     *
-     * It defaults to 'properties'.
+     * Specifies the configuration format.
+     * <p>
+     * The default format is 'properties'
      *
      * @return the supported type
      */
     String type() default "properties";
 
     /**
-     * Configuration value.
+     * Configuration fragment.
      *
-     * @return String with value.
+     * @return fragment
      */
     String value();
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.tests.testing.testng.programmatic;
+package io.helidon.microprofile.tests.testing.testng;
 
 import io.helidon.microprofile.testing.testng.HelidonTest;
 
 import org.testng.annotations.Test;
 
 /**
- * Test executed programmatically from TestPinnedThread Test.
+ * Test executed programmatically from {@link TestPinnedThread}.
  */
+@EnabledIfParameter(key = "TestPinnedThread", value = "true")
 @HelidonTest(pinningDetection = true)
-public class PinningExtraThreadTest {
+public class TestPinnedThreadExtra {
 
     @Test
-    void testPinningExtraThread() throws InterruptedException {
+    void testPinned() throws InterruptedException {
         Thread.ofVirtual().start(() -> {
             synchronized (this) {
                 try {

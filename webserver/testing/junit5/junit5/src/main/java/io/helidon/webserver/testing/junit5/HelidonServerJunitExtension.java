@@ -110,7 +110,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             addRouting(builder);
 
             server = builder
-                    .serverContext(super.context(context).orElseThrow()) // created above when we call super.beforeAll
+                    .serverContext(staticContext(context).orElseThrow()) // created above when we call super.beforeAll
                     .build()
                     .start();
             if (server.hasTls()) {

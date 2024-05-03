@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,10 @@
 
 package io.helidon.microprofile.tests.testing.junit5;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import jakarta.inject.Inject;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+import jakarta.inject.Inject;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
@@ -33,9 +30,10 @@ import io.helidon.microprofile.testing.junit5.HelidonTest;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 @TestMetaAnnotation.MetaAnnotation
-// @HelidonTest is still mandatory in the test and it has no effect in the MetaAnnotation
-@HelidonTest
 class TestMetaAnnotation {
 
     @Inject
@@ -78,8 +76,9 @@ class TestMetaAnnotation {
         """)
     @AddConfig(key = "second-key", value = "test-custom-config-second-value")
     @Configuration(configSources = {"testConfigSources.properties", "testConfigSources.yaml"})
+    @HelidonTest
     @Retention(RetentionPolicy.RUNTIME)
-    static @interface MetaAnnotation {
+    @interface MetaAnnotation {
     }
 
     static class MyBean {
