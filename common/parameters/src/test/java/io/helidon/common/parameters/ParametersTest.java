@@ -16,7 +16,6 @@
 
 package io.helidon.common.parameters;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +118,7 @@ class ParametersTest {
     @Test
     void issue8710() {
         Map<String, List<String>> params = new HashMap<>();
-        params.put("param", Collections.emptyList());
+        params.put("param", List.of());
         Parameters parameters = Parameters.create("test", params);
         OptionalValue<String> value = parameters.first("param");
         assertThat(value.isEmpty(), is(true));
