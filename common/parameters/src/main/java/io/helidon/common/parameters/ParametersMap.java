@@ -97,8 +97,9 @@ class ParametersMap implements Parameters {
 
     @Override
     public OptionalValue<String> first(String name) {
-        if (contains(name)) {
-            return OptionalValue.create(mapperManager, name, get(name), GenericType.STRING, qualifiers);
+        List<String> value = params.get(name);
+        if (value != null && !value.isEmpty()) {
+            return OptionalValue.create(mapperManager, name, value.get(0), GenericType.STRING, qualifiers);
         }
         return OptionalValue.create(mapperManager, name, GenericType.STRING, qualifiers);
     }
